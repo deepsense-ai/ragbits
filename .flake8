@@ -1,0 +1,12 @@
+[flake8]
+ignore=
+  # line too long - is to be checked by black
+  E501,
+  # E203 (spaces around :)
+  E203,
+  # and W503 (line break before binary operator) are output as a result of Black formatting
+  W503
+
+dictionaries=en_US,python,technical
+docstring-convention=google
+spellcheck-targets=comments

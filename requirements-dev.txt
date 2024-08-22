@@ -1,0 +1,7 @@
+# Requirements as needed for development for this project.
+# ---------------------------------------------------------
+
+# developer tools:
+pre-commit
+pytest>=6.2.5
+pytest-cov
