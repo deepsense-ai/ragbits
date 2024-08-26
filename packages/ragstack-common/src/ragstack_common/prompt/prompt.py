@@ -1,21 +1,22 @@
-from abc import ABCMeta
 import textwrap
-from typing import Optional, Union, List, Dict, get_args, get_origin, Type, Tuple, Any, overload
-from typing_extensions import TypeVar, get_original_bases, Generic
-from jinja2 import Template, Environment, meta
+from abc import ABCMeta
+from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union, get_args, get_origin, overload
 
-
+from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
+from typing_extensions import TypeVar, get_original_bases
 
-InputT = TypeVar("InputT", bound=Optional[BaseModel], default=None)
-OutputT= TypeVar("OutputT", bound=Union[str, BaseModel], default=str)
+InputT = TypeVar("InputT", bound=Optional[BaseModel])
+OutputT = TypeVar("OutputT", bound=Union[str, BaseModel])
 
 ChatFormat = List[Dict[str, str]]
+
 
 class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
     """
     Generic class for prompts. It contains the system and user prompts, and additional messages.
     """
+
     system_prompt: Optional[str] = None
     user_prompt: str
     additional_messages: ChatFormat = []
@@ -34,16 +35,18 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
                 args = get_args(base)
                 input_type = args[0] if len(args) > 0 else None
                 output_type = args[1] if len(args) > 1 else str
-                assert input_type is None or issubclass(input_type, BaseModel), \
-                    "Input type must be a subclass of BaseModel"
-                assert output_type is str or issubclass(output_type, BaseModel), \
-                    "Output type must be a subclass of BaseModel or str"
+                assert input_type is None or issubclass(
+                    input_type, BaseModel
+                ), "Input type must be a subclass of BaseModel"
+                assert output_type is str or issubclass(
+                    output_type, BaseModel
+                ), "Output type must be a subclass of BaseModel or str"
                 return (input_type, output_type)
         return (None, str)
 
     @classmethod
     def _parse_template(cls, template: str) -> Template:
-        env = Environment()
+        env = Environment()  # nosec B701 - HTML autoescaping not needed for plain text
         ast = env.parse(template)
         template_variables = meta.find_undeclared_variables(ast)
         input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()
@@ -60,7 +63,7 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
         if isinstance(input_data, BaseModel):
             context = input_data.model_dump()
         return template.render(**context)
-    
+
     @classmethod
     def _format_message(cls, message: str) -> str:
         return textwrap.dedent(message).strip()
@@ -71,24 +74,29 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
             raise ValueError("User prompt must be provided")
 
         cls.input_type, cls.output_type = cls._get_io_types()
-        cls.system_prompt_template = cls._parse_template(cls._format_message(cls.system_prompt)) if cls.system_prompt else None
+        cls.system_prompt_template = (
+            cls._parse_template(cls._format_message(cls.system_prompt)) if cls.system_prompt else None
+        )
         cls.user_prompt_template = cls._parse_template(cls._format_message(cls.user_prompt))
 
         return super().__init_subclass__(**kwargs)
 
-
     @overload
     def __init__(self: "Prompt[None, OutputT]") -> None:
         ...
+
     @overload
     def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None:
         ...
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")
         if self.input_type and input_data is None:
             raise ValueError("Input data must be provided")
 
-        self.system_message = self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
+        self.system_message = (
+            self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
+        )
         self.user_message = self._render_template(self.user_prompt_template, input_data)
         super().__init__()
 

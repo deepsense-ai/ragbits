@@ -17,3 +17,19 @@ $ source venv/bin/activate
 ```
 This will create a new venv and install all packages from this repository in editable mode.
 It will also intall their dependencies and the dev dependencies from `requirements-dev.txt`.
+
+## Install pre-commit
+
+To ensure code quality we use pre-commit hook with several checks. Setup it by:
+
+```
+pre-commit install
+```
+
+All updated files will be reformatted and linted before the commit.
+
+To reformat and lint all files in the project, use:
+
+`pre-commit run --all-files`
+
+The used linters are configured in `.pre-commit-config.yaml`. You can use `pre-commit autoupdate` to bump tools to the latest versions.

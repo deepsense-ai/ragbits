@@ -1,0 +1,201 @@
+default:
+  tags:
+    - all-ds
+
+variables:
+  PYTHON_DOCKER_IMAGE: python:3.10-buster
+  DOCKER_REGISTRY: $CI_REGISTRY/$CI_PROJECT_PATH
+  PRECOMMIT_IMAGE: $DOCKER_REGISTRY/precommit
+
+# run CI on default branch or MR only
+workflow:
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+    - if: "$CI_MERGE_REQUEST_IID"
+
+stages:
+  - preparation
+  - lint
+  - tests
+  - pages
+  - package
+  - deploy
+
+### DOCKER PREPARATION ########################################
+# Here we only rebuild docker image if the commit
+# changed either dockerfile or precommit configuration
+"precommit docker":
+  stage: preparation
+  image: docker:23
+  interruptible: true
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - docker/precommit/Dockerfile
+        - .pre-commit-config.yaml
+  services:
+    - docker:dind
+  before_script:
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - set -e
+    - docker pull $PRECOMMIT_IMAGE:latest || true
+    - >
+      docker build -t $PRECOMMIT_IMAGE:dev-$CI_COMMIT_SHA
+      --pull
+      --cache-from $PRECOMMIT_IMAGE:latest
+      --label "org.opencontainers.image.title=$CI_PROJECT_TITLE"
+      --label "org.opencontainers.image.url=$CI_PROJECT_URL"
+      --label "org.opencontainers.image.version=$CI_COMMIT_REF_NAME"
+      --label "org.opencontainers.image.created=$CI_JOB_STARTED_AT"
+      --label "org.opencontainers.image.revision=$CI_COMMIT_SHA"
+      -f docker/precommit/Dockerfile .
+    - docker push $PRECOMMIT_IMAGE:dev-$CI_COMMIT_SHA
+
+# Here, the goal is to tag the "master" branch of previous step as "latest"
+"Publish precommit docker":
+  stage: preparation
+  image: docker:23
+  rules:
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      changes:
+        - docker/precommit/Dockerfile
+        - .pre-commit-config.yaml
+      when: always
+  services:
+    - docker:dind
+  before_script:
+    - echo -n $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  needs: ["precommit docker"]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    # Because we have no guarantee that this job will be picked up by the same runner
+    # that built the image in the previous step, we pull it again locally
+    - docker pull $PRECOMMIT_IMAGE:dev-$CI_COMMIT_SHA
+    - docker tag $PRECOMMIT_IMAGE:dev-$CI_COMMIT_SHA $PRECOMMIT_IMAGE:latest
+    - docker push $PRECOMMIT_IMAGE:latest
+
+#########################################
+
+# Jobs to enforce code quality and style consistency.
+
+# Running linters and autoformatters with docker image.
+# NOTE: using latest is not best practice but necessary
+# for automation and bootstrapping a new project.
+# Consider to use stable commit SHA from main branch instead
+# and manual changes to reduce surprises.
+
+# To overcome issue that latest might not be present
+# and assume that this either new project / done in
+# atomic merge request and is not main branch
+lint:
+  image: $PRECOMMIT_IMAGE:latest
+  stage: lint
+  interruptible: true
+  script:
+    - pre-commit run --all-files
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      changes:
+        - docker/precommit/Dockerfile
+        - .pre-commit-config.yaml
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" || '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+      when: always
+
+# this runs whenever docker is prebuilt
+# instead of standard lint job
+lint-precommit-changed:
+  image: $PRECOMMIT_IMAGE:dev-$CI_COMMIT_SHA
+  stage: lint
+  interruptible: true
+  script:
+    - pre-commit run --all-files
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - docker/precommit/Dockerfile
+        - .pre-commit-config.yaml
+      when: always
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      when: never
+
+#############################################
+
+# Running linters and autoformatters without precommit docker image.
+# You can remove preparation stage and use this job instead:
+# lint:
+#   image: $PYTHON_DOCKER_IMAGE
+#   stage: lint
+#   interruptible: true
+#   before_script:
+#     - pip install pre-commit
+#     - pre-commit install
+#   script:
+#     - pre-commit run --all-files
+
+###########################################
+
+# Job to run pytest with code coverage + license check
+# TODO make installing bump2version below conditional on cookiecutter parameter choice
+tests:
+  image: $PYTHON_DOCKER_IMAGE
+  stage: tests
+  interruptible: true
+  before_script:
+    - . setup_dev_env.sh
+    - pip install build
+  script:
+    # fused check license here as it would take more time to do it in different place.
+    - ./check_licenses.sh
+    # test package building
+    - for dir in packages/*/; do python -m build "$dir"; done
+    # generate pip freeze
+    - pip freeze > requirements-freeze.txt
+    - cat requirements-freeze.txt
+    # run with coverage to not execute tests twice
+    - coverage run -m pytest -v -p no:warnings --junitxml=report.xml
+    - coverage report
+    - coverage xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    when: always
+    paths:
+      - licenses.txt
+      - requirements-freeze.txt
+    reports:
+      junit: "report.xml"
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: "30 days"
+
+# Job for scanning for vulnerabilities:
+"trivy security scan":
+  image: $PYTHON_DOCKER_IMAGE
+  stage: tests
+  interruptible: true
+  before_script:
+    - export TRIVY_VERSION=$(wget -qO - "https://api.github.com/repos/aquasecurity/trivy/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+    - echo $TRIVY_VERSION
+    - wget --no-verbose https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz -O - | tar -zxvf -
+  allow_failure: true
+  script:
+    # Build report
+    - ./trivy fs --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@contrib/gitlab.tpl" -o gl-scanning-report.json ./
+    # Build html report
+    - ./trivy fs --exit-code 0 --cache-dir .trivycache/ --no-progress --format template --template "@contrib/html.tpl" -o gl-scanning-report.html ./
+    # Print report
+    - ./trivy fs --exit-code 0 --cache-dir .trivycache/ --no-progress ./
+    # Fail on severe vulnerabilities
+    - ./trivy fs --exit-code 1 --cache-dir .trivycache/ --severity CRITICAL --no-progress ./
+  cache:
+    paths:
+      - .trivycache/
+  artifacts:
+    paths:
+      - gl-scanning-report.html
+    reports:
+      dependency_scanning: gl-scanning-report.json
+    expire_in: never

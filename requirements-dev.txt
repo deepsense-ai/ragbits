@@ -5,3 +5,4 @@
 pre-commit
 pytest>=6.2.5
 pytest-cov
+pip-licenses>=4.0.0,<5.0.0

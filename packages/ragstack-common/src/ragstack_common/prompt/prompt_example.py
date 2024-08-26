@@ -7,6 +7,7 @@ class LoremPromptInput(BaseModel):
     """
     Input format for the LoremPrompt.
     """
+
     theme: str
     nsfw_allowed: bool = False
 
@@ -15,6 +16,7 @@ class LoremPromptOutput(BaseModel):
     """
     Output format for the LoremPrompt.
     """
+
     text: str
 
 
@@ -32,6 +34,7 @@ class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     user_prompt = """
      theme: {{ theme }}
     """
+
 
 lorem_prompt = LoremPrompt(LoremPromptInput(theme="business"))
 lorem_prompt.add_assistant_message("Lorem Ipsum biznessum dolor copy machinum yearly reportum")

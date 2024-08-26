@@ -1,0 +1,24 @@
+3-Clause BSD License
+Apache 2
+Apache License 2
+Apache Software License
+Apache Software License, BSD License
+Apache Software License, MIT License
+Apache-2
+Apache License, Version 2
+BSD
+BSD License
+BSD License, Apache Software License
+CC0 1.0 Universal (CC0 1.0) Public Domain Dedication
+Freely Distributable
+ISC License (ISCL)
+MIT
+MIT License
+MIT License, Mozilla Public License 2.0 (MPL 2.0)
+Mozilla Public License 2.0 (MPL 2.0)
+Public Domain
+Python Software Foundation License
+Python Software Foundation License, MIT License
+Unlicense
+Proprietary License
+Historical Permission Notice and Disclaimer (HPND)
