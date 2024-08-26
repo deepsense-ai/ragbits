@@ -151,3 +151,13 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
         if issubclass(cls.output_type, BaseModel):
             return cls.output_type.model_json_schema()
         return None
+
+    @property
+    def json_mode(self) -> bool:
+        """
+        Returns whether the prompt should be sent in JSON mode.
+
+        Returns:
+            bool: Whether the prompt should be sent in JSON mode.
+        """
+        return issubclass(self.output_type, BaseModel)

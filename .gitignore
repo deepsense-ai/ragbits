@@ -92,3 +92,6 @@ benchmarks/sql/data/
 
 # mkdocs generated files
 site/
+
+# build artifacts
+dist/
