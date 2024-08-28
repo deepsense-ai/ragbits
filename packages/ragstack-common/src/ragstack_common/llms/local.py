@@ -3,7 +3,7 @@ from typing import Optional
 
 from transformers import AutoTokenizer
 
-from ragstack_common.prompt import Prompt
+from ragstack_common.prompt.base import BasePrompt
 
 from .base import LLM
 from .clients.local import LocalLLMClient, LocalLLMOptions
@@ -46,7 +46,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         """
         return LocalLLMClient(model_name=self.model_name, hf_api_key=self.api_key)
 
-    def count_tokens(self, prompt: Prompt) -> int:
+    def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the messages.
 

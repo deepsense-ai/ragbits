@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 try:
     import litellm
 
-    HAVE_LITELLM = True
+    HAS_LITELLM = True
 except ImportError:
-    HAVE_LITELLM = False
+    HAS_LITELLM = False
 
 
 from ragstack_common.prompt import ChatFormat
@@ -61,7 +61,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         Raises:
             ImportError: If the litellm package is not installed.
         """
-        if not HAVE_LITELLM:
+        if not HAS_LITELLM:
             raise ImportError("You need to install litellm package to use LiteLLM models")
 
         super().__init__(model_name)
@@ -74,6 +74,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         conversation: ChatFormat,
         options: LiteLLMOptions,
         json_mode: bool = False,
+        json_schema: Optional[Dict] = None,
     ) -> str:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -82,6 +83,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
+            json_schema: JSON schema for structured response.
 
         Returns:
             Response string from LLM.
@@ -91,7 +93,12 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        response_format = {"type": "json_object"} if json_mode else None
+        if json_schema is not None:
+            response_format = {"type": "json_schema", "json_schema": json_schema, "strict": True}
+        elif json_mode:
+            response_format = {"type": "json"}
+        else:
+            response_format = None
 
         try:
             response = await litellm.acompletion(

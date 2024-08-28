@@ -1,25 +1,32 @@
 import textwrap
 from abc import ABCMeta
-from typing import Any, Dict, Generic, List, Optional, Tuple, Type, Union, get_args, get_origin, overload
+from typing import Any, Callable, Dict, Generic, Optional, Tuple, Type, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
+from .base import BasePromptWithParser, ChatFormat, OutputT
+from .parsers import DEFAULT_PARSERS, build_pydantic_parser
+
 InputT = TypeVar("InputT", bound=Optional[BaseModel])
-OutputT = TypeVar("OutputT", bound=Union[str, BaseModel])
-
-ChatFormat = List[Dict[str, str]]
 
 
-class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
+class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
     """
     Generic class for prompts. It contains the system and user prompts, and additional messages.
+
+    To create a new prompt, subclass this class and provide the system and user prompts,
+    and optionally the input and output types. The system prompt is optional.
     """
 
     system_prompt: Optional[str] = None
     user_prompt: str
     additional_messages: ChatFormat = []
+
+    # function that parses the response from the LLM to specific output type
+    # if not provided, the class tries to set it automatically based on the output type
+    response_parser: Callable[[str], OutputT]
 
     # Automatically set in __init_subclass__
     input_type: Optional[Type[InputT]]
@@ -34,13 +41,12 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
             if get_origin(base) is Prompt:
                 args = get_args(base)
                 input_type = args[0] if len(args) > 0 else None
+                input_type = None if input_type is type(None) else input_type
                 output_type = args[1] if len(args) > 1 else str
+
                 assert input_type is None or issubclass(
                     input_type, BaseModel
                 ), "Input type must be a subclass of BaseModel"
-                assert output_type is str or issubclass(
-                    output_type, BaseModel
-                ), "Output type must be a subclass of BaseModel or str"
                 return (input_type, output_type)
         return (None, str)
 
@@ -69,6 +75,16 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
         return textwrap.dedent(message).strip()
 
     @classmethod
+    def _detect_response_parser(cls) -> Callable[[str], OutputT]:
+        if hasattr(cls, "response_parser") and cls.response_parser is not None:
+            return cls.response_parser
+        if issubclass(cls.output_type, BaseModel):
+            return cast(Callable[[str], OutputT], build_pydantic_parser(cls.output_type))
+        if cls.output_type in DEFAULT_PARSERS:
+            return DEFAULT_PARSERS[cls.output_type]
+        raise ValueError(f"Response parser not provided for output type {cls.output_type}")
+
+    @classmethod
     def __init_subclass__(cls, **kwargs: Any) -> None:
         if not hasattr(cls, "user_prompt") or cls.user_prompt is None:
             raise ValueError("User prompt must be provided")
@@ -78,6 +94,7 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
             cls._parse_template(cls._format_message(cls.system_prompt)) if cls.system_prompt else None
         )
         cls.user_prompt_template = cls._parse_template(cls._format_message(cls.user_prompt))
+        cls.response_parser = staticmethod(cls._detect_response_parser())
 
         return super().__init_subclass__(**kwargs)
 
@@ -139,17 +156,16 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
         self.additional_messages.append({"role": "assistant", "content": message})
         return self
 
-    @classmethod
-    def output_schema(cls) -> Optional[Dict]:
+    def output_schema(self) -> Optional[Dict]:
         """
         Returns the JSON schema of the desired output. Can be used to request structured output from the LLM API
         or to validate the output.
 
         Returns:
-            Optional[Dict]: The JSON schema of the output (None if no Pydantic model was given).
+            Optional[Dict]: The JSON schema of the desired output.
         """
-        if issubclass(cls.output_type, BaseModel):
-            return cls.output_type.model_json_schema()
+        if issubclass(self.output_type, BaseModel):
+            return self.output_type.model_json_schema()
         return None
 
     @property
@@ -161,3 +177,18 @@ class Prompt(Generic[InputT, OutputT], metaclass=ABCMeta):
             bool: Whether the prompt should be sent in JSON mode.
         """
         return issubclass(self.output_type, BaseModel)
+
+    def parse_response(self, response: str) -> OutputT:
+        """
+        Parse the response from the LLM to the desired output type.
+
+        Args:
+            response (str): The response from the LLM.
+
+        Returns:
+            OutputT: The parsed response.
+
+        Raises:
+            ResponseParsingError: If the response cannot be parsed.
+        """
+        return self.response_parser(response)

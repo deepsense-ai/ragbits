@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, Dict, Generic, TypeVar
+from typing import Any, ClassVar, Dict, Generic, Optional, TypeVar
 
 from ragstack_common.prompt import ChatFormat
 
@@ -68,6 +68,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
         conversation: ChatFormat,
         options: LLMClientOptions,
         json_mode: bool = False,
+        json_schema: Optional[Dict] = None,
     ) -> str:
         """
         Calls LLM inference API.
@@ -76,6 +77,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
+            json_schema: JSON schema for structured response.
 
         Returns:
             Response string from LLM.

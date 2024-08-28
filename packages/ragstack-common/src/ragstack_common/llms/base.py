@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Generic, Optional, Type
+from typing import Generic, Optional, Type, cast
 
-from ragstack_common.prompt import Prompt
+from ragstack_common.prompt.base import BasePrompt, BasePromptWithParser, OutputT
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 
@@ -39,7 +39,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         Client for the LLM.
         """
 
-    def count_tokens(self, prompt: Prompt) -> int:
+    def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the prompt.
 
@@ -51,21 +51,21 @@ class LLM(Generic[LLMClientOptions], ABC):
         """
         return sum(len(message["content"]) for message in prompt.chat)
 
-    async def generate_text(
+    async def generate_raw(
         self,
-        prompt: Prompt,
+        prompt: BasePrompt,
         *,
         options: Optional[LLMOptions] = None,
     ) -> str:
         """
-        Prepares and sends a prompt to the LLM and returns the response.
+        Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
         Args:
-            prompt: Formatted prompt template with conversation and response parsing configuration.
+            prompt: Formatted prompt template with conversation.
             options: Options to use for the LLM client.
 
         Returns:
-            Text response from LLM.
+            Raw text response from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
 
@@ -73,6 +73,31 @@ class LLM(Generic[LLMClientOptions], ABC):
             conversation=prompt.chat,
             options=options,
             json_mode=prompt.json_mode,
+            json_schema=prompt.output_schema(),
         )
 
         return response
+
+    async def generate(
+        self,
+        prompt: BasePromptWithParser[OutputT] | BasePrompt,
+        *,
+        options: Optional[LLMOptions] = None,
+    ) -> OutputT:
+        """
+        Prepares and sends a prompt to the LLM and returns response parsed to the
+        output type of the prompt (if available).
+
+        Args:
+            prompt: Formatted prompt template with conversation and optional response parsing configuration.
+            options: Options to use for the LLM client.
+
+        Returns:
+            Text response from LLM.
+        """
+        response = await self.generate_raw(prompt, options=options)
+
+        if isinstance(prompt, BasePromptWithParser):
+            return prompt.parse_response(response)
+
+        return cast(OutputT, response)

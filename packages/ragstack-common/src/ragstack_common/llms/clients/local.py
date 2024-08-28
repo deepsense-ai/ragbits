@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -62,6 +62,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         conversation: ChatFormat,
         options: LocalLLMOptions,
         json_mode: bool = False,
+        json_schema: Optional[Dict] = None,
     ) -> str:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -69,7 +70,8 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         Args:
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
+            json_mode: Force the response to be in JSON format (not used).
+            json_schema: JSON schema for structured output (not used).
 
         Returns:
             Response string from LLM.

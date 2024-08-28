@@ -38,17 +38,17 @@ repos:
 
       # Used to have proper type annotations for library code.
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.6.1
+      rev: v1.11.2
       hooks:
           - id: mypy
             # You can add additional plugins for mypy below
             # such as types-python-dateutil
-            additional_dependencies: []
+            additional_dependencies: [pydantic>=2.8.2]
             exclude: (/test_|setup.py|/tests/|docs/)
 
       # Sort imports alphabetically, and automatically separated into sections and by type.
     - repo: https://github.com/timothycrosley/isort
-      rev: 5.12.0
+      rev: 5.13.2
       hooks:
           - id: isort
             args: ["--profile", "black"]
@@ -56,7 +56,7 @@ repos:
 
       # Checks Python source files for errors.
     - repo: https://github.com/PyCQA/flake8
-      rev: 6.1.0
+      rev: 7.1.1
       hooks:
           - id: flake8
             name: flake8
@@ -68,7 +68,7 @@ repos:
 
       # Enforces a coding standard, looks for code smells, and can make suggestions about how the code could be refactored.
     - repo: https://github.com/pycqa/pylint
-      rev: v3.0.1
+      rev: v3.2.6
       hooks:
           - id: pylint
             exclude: (/test_|tests/|docs/)

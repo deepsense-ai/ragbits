@@ -4,11 +4,11 @@ from typing import Optional
 try:
     import litellm
 
-    HAVE_LITELLM = True
+    HAS_LITELLM = True
 except ImportError:
-    HAVE_LITELLM = False
+    HAS_LITELLM = False
 
-from ragstack_common.prompt import Prompt
+from ragstack_common.prompt.base import BasePrompt
 
 from .base import LLM
 from .clients.litellm import LiteLLMClient, LiteLLMOptions
@@ -46,7 +46,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Raises:
             ImportError: If the litellm package is not installed.
         """
-        if not HAVE_LITELLM:
+        if not HAS_LITELLM:
             raise ImportError("You need to install litellm package to use LiteLLM models")
 
         super().__init__(model_name, default_options)
@@ -66,7 +66,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             api_version=self.api_version,
         )
 
-    def count_tokens(self, prompt: Prompt) -> int:
+    def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the prompt.
 

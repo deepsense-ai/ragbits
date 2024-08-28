@@ -139,16 +139,6 @@ def test_input_type_must_be_pydantic_model():
             user_prompt = "Hello"
 
 
-def test_output_type_must_be_pydantic_model_or_str():
-    """Test that an error is raised when the output type is not a Pydantic model or a string."""
-    with pytest.raises(AssertionError):
-
-        class TestPrompt(Prompt[_PromptInput, int]):  # type: ignore # pylint: disable=unused-variable
-            """A test prompt"""
-
-            user_prompt = "Hello"
-
-
 def test_adding_messages():
     """Test that messages can be added to the conversation."""
 
@@ -194,7 +184,8 @@ def test_output_format():
 
         user_prompt = "Hello"
 
-    assert TestPrompt.output_schema() == {
+    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="pop"))
+    assert prompt.output_schema() == {
         "title": "_PromptOutput",
         "description": "Output format for the TestPrompt.",
         "type": "object",
