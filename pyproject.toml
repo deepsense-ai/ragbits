@@ -1,0 +1,138 @@
+
+[tool.isort]
+multi_line_output = 3
+line_length = 120
+include_trailing_comma = true
+known_first_party = ['ragstack_common']
+known_third_party = [ # Most popular libraries. Extend if necessary.
+    'IPython',
+    'PIL',
+    'cv2',
+    'dotenv',
+    'editdistance',
+    'fastapi',
+    'fire',
+    'hydra',
+    'joblib',
+    'loguru',
+    'luigi',
+    'matplotlib',
+    'neptune',
+    'neptune_config',
+    'nltk',
+    'numpy',
+    'omegaconf',
+    'pandas',
+    'pqdm',
+    'pydantic',
+    'pytest',
+    'pytorch_lightning',
+    'requests',
+    'scipy',
+    'setuptools',
+    'shapely',
+    'skimage',
+    'sklearn',
+    'streamlit',
+    'torch',
+    'torchvision',
+    'tqdm',
+    'typer',
+]
+skip_gitignore = true
+
+[tool.black]
+line_length = 120
+
+[tool.pytest]
+norecursedirs = [
+    '.git',
+    '.tox',
+    '.env',
+    'dist',
+    'build',
+    'migrations',
+    'docker',
+    'config',
+    'notebooks',
+    'research',
+]
+python_files = ['test_*.py']
+addopts = [
+    '-ra',
+    '--showlocals',
+    '--strict-markers',
+    '--ignore=docs/conf.py',
+    '--ignore=setup.py',
+    '--ignore=ci',
+    '--ignore=.eggs',
+    '--doctest-modules',
+    '--doctest-glob=\*.rst',
+    '--tb=short',
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.mypy]
+warn_unused_configs = true
+ignore_missing_imports = true
+warn_unused_ignores = false
+show_error_codes = true
+check_untyped_defs = true
+no_implicit_optional = true
+mypy_path = ['packages']
+
+[[tool.mypy.overrides]]
+module = "ragstack_common.*"
+ignore_missing_imports = false
+disallow_untyped_defs = true
+
+[tool.pylint.basic]
+good-names = "i,j,x,y,z,x1,y1,z1,x2,y2,z2,cv,df,dx,dy,dz,w,h,c,b,g,qa,q,a"
+max-args = 8
+
+[tool.pylint.main]
+load-plugins = ["pylint.extensions.docparams"]
+
+[tool.pylint.messages_control]
+disable = [
+    "suppressed-message",
+    # therefore we wouldn't have to install full dependency set in order to lint
+    "import-error",
+    # sometimes we create a dataclass or Pydantic module and just don't need public methods
+    "too-few-public-methods",
+    # below is handled by pycln
+    "unused-import",
+    # below is handled by isort
+    "wrong-import-order",
+    # too restrictive
+    "too-many-instance-attributes",
+    # not necessary nor useful in our projects
+    "missing-module-docstring",
+]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint.miscellaneous]
+notes = ["XXX"]
+
+[tool.pylint.parameter_documentation]
+accept-no-param-doc = false
+accept-no-raise-doc = false
+accept-no-return-doc = false
+accept-no-yields-doc = false
+default-docstring-type = "google"
+
+[tool.pylint.design]
+max-locals = 20
+
+[tool.pylint.similarities]
+min-similarity-lines = 10
+
+[tool.bandit]
+exclude_dirs = ["venv"]
+# B101 disables errors for asserts in the code
+# remember to not use asserts for security and control flows
+skips = ["B101"]
