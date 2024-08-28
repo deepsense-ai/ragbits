@@ -1,7 +1,12 @@
 from functools import cached_property
 from typing import Optional
 
-from transformers import AutoTokenizer
+try:
+    from transformers import AutoTokenizer
+
+    HAS_LOCAL_LLM = True
+except ImportError:
+    HAS_LOCAL_LLM = False
 
 from ragstack_common.prompt.base import BasePrompt
 
@@ -31,6 +36,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
         """
+        if not HAS_LOCAL_LLM:
+            raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
         super().__init__(model_name, default_options)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=api_key)

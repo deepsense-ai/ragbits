@@ -1,8 +1,13 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Union
 
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+try:
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    HAS_LOCAL_LLM = True
+except ImportError:
+    HAS_LOCAL_LLM = False
 
 from ragstack_common.prompt import ChatFormat
 
@@ -49,6 +54,8 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
             model_name: Name of the model to use.
             hf_api_key: The Hugging Face API key for authentication.
         """
+        if not HAS_LOCAL_LLM:
+            raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
         super().__init__(model_name)
 
