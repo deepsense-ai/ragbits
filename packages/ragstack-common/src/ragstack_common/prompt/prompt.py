@@ -156,17 +156,15 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self.additional_messages.append({"role": "assistant", "content": message})
         return self
 
-    def output_schema(self) -> Optional[Dict]:
+    def output_schema(self) -> Optional[Dict | Type[BaseModel]]:
         """
-        Returns the JSON schema of the desired output. Can be used to request structured output from the LLM API
-        or to validate the output.
+        Returns the schema of the desired output. Can be used to request structured output from the LLM API
+        or to validate the output. Can return either a Pydantic model or a JSON schema.
 
         Returns:
-            Optional[Dict]: The JSON schema of the desired output.
+            Optional[Dict | Type[BaseModel]]: The schema of the desired output or the model describing it.
         """
-        if issubclass(self.output_type, BaseModel):
-            return self.output_type.model_json_schema()
-        return None
+        return self.output_type if issubclass(self.output_type, BaseModel) else None
 
     @property
     def json_mode(self) -> bool:

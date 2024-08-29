@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Generic, Optional, Type, cast
+from typing import Generic, Optional, Type, cast, overload
 
 from ragstack_common.prompt.base import BasePrompt, BasePromptWithParser, OutputT
 
@@ -73,14 +73,32 @@ class LLM(Generic[LLMClientOptions], ABC):
             conversation=prompt.chat,
             options=options,
             json_mode=prompt.json_mode,
-            json_schema=prompt.output_schema(),
+            output_schema=prompt.output_schema(),
         )
 
         return response
 
+    @overload
     async def generate(
         self,
-        prompt: BasePromptWithParser[OutputT] | BasePrompt,
+        prompt: BasePromptWithParser[OutputT],
+        *,
+        options: Optional[LLMOptions] = None,
+    ) -> OutputT:
+        ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: Optional[LLMOptions] = None,
+    ) -> OutputT:
+        ...
+
+    async def generate(
+        self,
+        prompt: BasePrompt,
         *,
         options: Optional[LLMOptions] = None,
     ) -> OutputT:

@@ -36,7 +36,11 @@ class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
 
-lorem_prompt = LoremPrompt(LoremPromptInput(theme="business"))
-lorem_prompt.add_assistant_message("Lorem Ipsum biznessum dolor copy machinum yearly reportum")
-print(lorem_prompt.chat)
-print(lorem_prompt.output_schema())
+if __name__ == "__main__":
+    lorem_prompt = LoremPrompt(LoremPromptInput(theme="business"))
+    lorem_prompt.add_assistant_message("Lorem Ipsum biznessum dolor copy machinum yearly reportum")
+    print("CHAT:")
+    print(lorem_prompt.chat)
+    print()
+    print("OUTPUT MODEL:")
+    print(lorem_prompt.output_schema())

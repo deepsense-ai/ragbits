@@ -29,6 +29,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
+        use_structured_output: bool = False,
     ) -> None:
         """
         Constructs a new LiteLLM instance.
@@ -42,6 +43,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/providers).
             api_version: API version to be used. If not specified, the default version will be used.
+            use_structured_output: Whether to request a
+                [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
+                from the model. Default is False. Can only be combined with models that support structured output.
 
         Raises:
             ImportError: If the litellm package is not installed.
@@ -53,6 +57,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
+        self.use_structured_output = use_structured_output
 
     @cached_property
     def client(self) -> LiteLLMClient:
@@ -64,6 +69,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             base_url=self.base_url,
             api_key=self.api_key,
             api_version=self.api_version,
+            use_structured_output=self.use_structured_output,
         )
 
     def count_tokens(self, prompt: BasePrompt) -> int:

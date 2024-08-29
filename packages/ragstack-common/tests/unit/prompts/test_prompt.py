@@ -185,13 +185,16 @@ def test_output_format():
         user_prompt = "Hello"
 
     prompt = TestPrompt(_PromptInput(name="John", age=15, theme="pop"))
-    assert prompt.output_schema() == {
-        "title": "_PromptOutput",
-        "description": "Output format for the TestPrompt.",
-        "type": "object",
-        "properties": {
-            "song_title": {"title": "Song Title", "type": "string"},
-            "song_lyrics": {"title": "Song Lyrics", "type": "string"},
-        },
-        "required": ["song_title", "song_lyrics"],
-    }
+    assert prompt.output_schema() == _PromptOutput
+
+
+def test_output__format_no_pydantic():
+    """Test that the output model and schema are not returned when output type is not a Pydantic model."""
+
+    class TestPrompt(Prompt[_PromptInput, str]):
+        """A test prompt"""
+
+        user_prompt = "Hello"
+
+    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="pop"))
+    assert prompt.output_schema() is None

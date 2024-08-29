@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 try:
     import litellm
@@ -31,6 +33,7 @@ class LiteLLMOptions(LLMOptions):
     stop: Union[Optional[Union[str, List[str]]], NotGiven] = NOT_GIVEN
     temperature: Union[Optional[float], NotGiven] = NOT_GIVEN
     top_p: Union[Optional[float], NotGiven] = NOT_GIVEN
+    mock_response: Union[Optional[str], NotGiven] = NOT_GIVEN
 
 
 class LiteLLMClient(LLMClient[LiteLLMOptions]):
@@ -48,6 +51,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         base_url: Optional[str] = None,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
+        use_structured_output: bool = False,
     ) -> None:
         """
         Constructs a new LiteLLMClient instance.
@@ -57,6 +61,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             base_url: Base URL of the LLM API.
             api_key: API key used to authenticate with the LLM API.
             api_version: API version of the LLM API.
+            use_structured_output: Whether to request a structured output from the model. Default is False.
 
         Raises:
             ImportError: If the litellm package is not installed.
@@ -68,13 +73,14 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
+        self.use_structured_output = use_structured_output
 
     async def call(
         self,
         conversation: ChatFormat,
         options: LiteLLMOptions,
         json_mode: bool = False,
-        json_schema: Optional[Dict] = None,
+        output_schema: Optional[Type[BaseModel] | Dict] = None,
     ) -> str:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -83,7 +89,8 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
-            json_schema: JSON schema for structured response.
+            output_schema: Output schema for requesting a specific response format.
+            Only used if the client has been initialized with `use_structured_output=True`.
 
         Returns:
             Response string from LLM.
@@ -93,12 +100,14 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        if json_schema is not None:
-            response_format = {"type": "json_schema", "json_schema": json_schema, "strict": True}
-        elif json_mode:
-            response_format = {"type": "json"}
-        else:
-            response_format = None
+        supported_params = litellm.get_supported_openai_params(model=self.model_name)
+
+        response_format = None
+        if supported_params is not None and "response_format" in supported_params:
+            if output_schema is not None and self.use_structured_output:
+                response_format = output_schema
+            elif json_mode:
+                response_format = {"type": "json_object"}
 
         try:
             response = await litellm.acompletion(

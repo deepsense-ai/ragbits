@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Type, Union
+
+from pydantic import BaseModel
 
 try:
     import torch
@@ -69,7 +71,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         conversation: ChatFormat,
         options: LocalLLMOptions,
         json_mode: bool = False,
-        json_schema: Optional[Dict] = None,
+        output_schema: Optional[Type[BaseModel] | Dict] = None,
     ) -> str:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -78,7 +80,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
-            json_schema: JSON schema for structured output (not used).
+            output_schema: Output schema for requesting a specific response format (not used).
 
         Returns:
             Response string from LLM.

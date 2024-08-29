@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Generic, List, Optional
+from typing import Dict, Generic, List, Optional, Type
 
+from pydantic import BaseModel
 from typing_extensions import TypeVar
 
 ChatFormat = List[Dict[str, str]]
@@ -29,10 +30,10 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return self.output_schema() is not None
 
-    def output_schema(self) -> Optional[Dict]:
+    def output_schema(self) -> Optional[Dict | Type[BaseModel]]:
         """
-        Returns the JSON schema of the desired output. Can be used to request structured output from the LLM API
-        or to validate the output.
+        Returns the schema of the desired output. Can be used to request structured output from the LLM API
+        or to validate the output. Can return either a Pydantic model or a JSON schema.
         """
         return None
 
