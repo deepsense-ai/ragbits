@@ -11,7 +11,7 @@ except ImportError:
     HAS_LITELLM = False
 
 
-from ragstack_common.prompt import ChatFormat
+from ragnarok_common.prompt import ChatFormat
 
 from ..types import NOT_GIVEN, NotGiven
 from .base import LLMClient, LLMOptions

@@ -1,4 +1,4 @@
-# RAG-Stack (to be renamed)
+# Ragnarok
 
 Repository for internal experiment with our upcoming LLM framework.
 

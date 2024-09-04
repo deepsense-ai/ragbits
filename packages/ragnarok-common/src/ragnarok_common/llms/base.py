@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Generic, Optional, Type, cast, overload
 
-from ragstack_common.prompt.base import BasePrompt, BasePromptWithParser, OutputT
+from ragnarok_common.prompt.base import BasePrompt, BasePromptWithParser, OutputT
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 

@@ -8,7 +8,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragstack_common.prompt.base import BasePrompt
+from ragnarok_common.prompt.base import BasePrompt
 
 from .base import LLM
 from .clients.litellm import LiteLLMClient, LiteLLMOptions

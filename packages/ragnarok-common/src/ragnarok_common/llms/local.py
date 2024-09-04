@@ -8,7 +8,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragstack_common.prompt.base import BasePrompt
+from ragnarok_common.prompt.base import BasePrompt
 
 from .base import LLM
 from .clients.local import LocalLLMClient, LocalLLMOptions
