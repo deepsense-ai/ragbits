@@ -63,27 +63,6 @@ def get_prompts_list(path: str, state: gr.State) -> gr.State:
     return state
 
 
-def set_state_variables(llm_name: str, llm_api_key: str, state: PromptState) -> gr.State:
-    """
-    Sets the LLM model name and API key in the application state.
-
-    This function updates the PromptState object with the provided LLM model name and API key.
-
-    Args:
-        llm_name (str): The name of the LLM model to use.
-        llm_api_key (str): The API key for the chosen LLM model.
-        state (PromptState): The application state object to update.
-
-    Returns:
-        PromptState: The updated application state object.
-    """
-
-    state.llm_model_name = llm_name
-    state.llm_api_key = llm_api_key
-
-    return state
-
-
 def display_data(key: str, state: PromptState) -> tuple[gr.Textbox, gr.Textbox]:
     """
     Displays system and user prompts for a given key from the prompts state.
@@ -191,7 +170,7 @@ typer_app = typer.Typer(no_args_is_help=True)
 
 
 @typer_app.command()
-def run_app(prompts_paths: str, llm_model: str, llm_api_key: str) -> None:
+def run_app(prompts_paths: str, llm_model: str, llm_api_key: str = None) -> None:
     """
     Launches the interactive application for working with Large Language Models (LLMs).
 
@@ -214,8 +193,8 @@ def run_app(prompts_paths: str, llm_model: str, llm_api_key: str) -> None:
     """
     with gr.Blocks() as gr_app:
         prompt_state_obj = PromptState()
-
-        prompt_state_obj = set_state_variables(llm_name=llm_model, llm_api_key=llm_api_key, state=prompt_state_obj)
+        prompt_state_obj.llm_model_name = llm_model
+        prompt_state_obj.llm_api_key = llm_api_key
 
         prompts_state = gr.State(value=prompt_state_obj)
 

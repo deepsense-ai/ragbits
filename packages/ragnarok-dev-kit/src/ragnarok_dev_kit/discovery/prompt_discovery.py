@@ -61,8 +61,7 @@ class PromptDiscovery:
                 if len(temp_dict.keys()) == 0:
                     continue
 
-                new_key = list(temp_dict.keys())[0]
-                result_dict[new_key] = temp_dict[new_key]
+                result_dict = {**result_dict, **temp_dict}
 
         return result_dict
 
@@ -94,11 +93,3 @@ class PromptDiscovery:
 
         return result_dict
 
-
-if __name__ == "__main__":
-    # PATH_TO_FILE = f"{rc_pkg.prompt.__path__[0]}/prompt_example.py"
-    PATH_TO_FILE = "ragnarok_common"
-    # PATH_TO_FILE="ragnarok_common.prompt"
-    # PATH_TO_FILE="ragnarok_common.prompt.prompt_example"
-    pd_obj = PromptDiscovery(file_paths=[PATH_TO_FILE])
-    print(pd_obj.discover())
