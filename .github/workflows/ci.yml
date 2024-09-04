@@ -1,0 +1,203 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  lints:
+    name: Run linters
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Cache pre-commit
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Install pre-commit
+        run: pip3 install pre-commit
+
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files --show-diff-on-failure --color always
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          ignore-unfixed: true
+          exit-code: 0 # change if you want to fail build on vulnerabilities
+          severity: "CRITICAL,HIGH,MEDIUM"
+          format: "table"
+          output: "trivy-scanning-results.txt"
+
+      - name: Format trivy message
+        run: |
+          echo "Trivy scanning results." >> trivy.txt
+          cat trivy-scanning-results.txt >> trivy.txt
+
+      - name: Add trivy report to PR
+        uses: thollander/actions-comment-pull-request@v2
+        continue-on-error: true
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          filePath: trivy.txt
+          reactions: ""
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          comment_tag: trivy
+
+      - name: Create venv
+        run: . ./setup_dev_env.sh
+
+      - name: Check licenses
+        run: |
+          source venv/bin/activate
+          ./check_licenses.sh
+
+      - name: Generate pip freeze
+        run: |
+          source venv/bin/activate
+          pip freeze > requirements-freeze.txt
+
+      - name: Publish Artefacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        continue-on-error: true
+        with:
+          name: results
+          path: |
+            requirements-freeze.txt
+            licenses.txt
+            trivy-scanning-results.txt
+          retention-days: 30
+
+      - name: Publish Test Report
+        uses: actions/upload-artifact@v3
+        if: always()
+        continue-on-error: true
+        with:
+          name: test-report
+          path: report.xml
+          retention-days: 10
+
+      - name: Validate package build
+        run: |
+          source venv/bin/activate
+          python -m pip install -U build
+          for dir in packages/*/; do python -m build "$dir"; done
+
+      - name: Publish Package
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        if: success()
+        with:
+          name: packages
+          path: dist/**
+          retention-days: 3
+
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: write # required for advanced coverage reporting (to keep branch)
+    strategy:
+      fail-fast: false # do not stop all jobs if one fails
+      matrix:
+        include:
+          - python-version: "3.10"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}-${{ hashFiles('**/setup.cfg') }}-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install Dependencies
+        run: . ./setup_dev_env.sh
+
+      - name: Run Tests With Coverage
+        run: |
+          # run with coverage to not execute tests twice
+          source venv/bin/activate
+          coverage run -m pytest -v -p no:warnings --junitxml=report.xml 
+          coverage report
+          coverage xml
+
+      - name: Test Report
+        uses: mikepenz/action-junit-report@v4
+        continue-on-error: true
+        if: always()
+        with:
+          report_paths: 'report.xml'
+
+      - name: Publish Test Report
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        if: always()
+        with:
+          name: test-report
+          path: report.xml
+          retention-days: 10
+
+      # simpler version for code coverage reporting
+      # - name: Produce Coverage report
+      #   uses: 5monkeys/cobertura-action@v13
+      #   continue-on-error: true
+      #   with:
+      #     path: coverage.xml
+      #     minimum_coverage: 70
+      #     fail_below_threshold: false
+
+      # more complex version for better coverage reporting
+      - name: Produce the coverage report
+        uses: insightsengineering/coverage-action@v2
+        continue-on-error: true
+        with:
+          # Path to the Cobertura XML report.
+          path: coverage.xml
+          # Minimum total coverage, if you want to the
+          # workflow to enforce it as a standard.
+          # This has no effect if the `fail` arg is set to `false`.
+          threshold: 60
+          # Fail the workflow if the minimum code coverage
+          # reuqirements are not satisfied.
+          fail: false
+          # Publish the rendered output as a PR comment
+          publish: true
+          # Create a coverage diff report.
+          diff: true
+          # Branch to diff against.
+          # Compare the current coverage to the coverage
+          # determined on this branch.
+          diff-branch: ${{ github.event.repository.default_branch }}
+          # make report togglable
+          togglable-report: true
+          # This is where the coverage reports for the
+          # `diff-branch` are stored.
+          # Branch is created if it doesn't already exist'.
+          diff-storage: _xml_coverage_reports
+          # A custom title that can be added to the code
+          # coverage summary in the PR comment.
+          coverage-summary-title: "Code Coverage Summary"
