@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from ragstack_common.prompt import Prompt
-from ragstack_common.prompt.parsers import ResponseParsingError
+from ragnarok_common.prompt import Prompt
+from ragnarok_common.prompt.parsers import ResponseParsingError
 
 from .test_prompt import _PromptOutput
 

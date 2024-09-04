@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ragstack_common.prompt import Prompt
+from ragnarok_common.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):

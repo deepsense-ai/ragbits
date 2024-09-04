@@ -1,7 +1,7 @@
 import pydantic
 import pytest
 
-from ragstack_common.prompt import Prompt
+from ragnarok_common.prompt import Prompt
 
 
 class _PromptInput(pydantic.BaseModel):

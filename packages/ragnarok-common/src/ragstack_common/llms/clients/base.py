@@ -4,7 +4,7 @@ from typing import Any, ClassVar, Dict, Generic, Optional, Type, TypeVar
 
 from pydantic import BaseModel
 
-from ragstack_common.prompt import ChatFormat
+from ragnarok_common.prompt import ChatFormat
 
 from ..types import NotGiven
 

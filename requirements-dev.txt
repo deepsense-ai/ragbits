@@ -9,4 +9,4 @@ pytest_asyncio>=0.24.0
 pip-licenses>=4.0.0,<5.0.0
 
 # extras required by tests:
--e packages/ragstack-common[litellm]
+-e packages/ragnarok-common[litellm]
