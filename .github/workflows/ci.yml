@@ -141,7 +141,7 @@ jobs:
         run: |
           # run with coverage to not execute tests twice
           source venv/bin/activate
-          coverage run -m pytest -v -p no:warnings --junitxml=report.xml 
+          coverage run -m pytest -v -p no:warnings --junitxml=report.xml
           coverage report
           coverage xml
 

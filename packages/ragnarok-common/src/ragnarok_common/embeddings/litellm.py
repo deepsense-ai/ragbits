@@ -1,7 +1,5 @@
 from typing import Optional
 
-from ragnarok_common.embeddings.exceptions import EmbeddingConnectionError, EmbeddingStatusError, EmbeddingResponseError
-
 try:
     import litellm
 
@@ -10,6 +8,7 @@ except ImportError:
     HAS_LITELLM = False
 
 from ragnarok_common.embeddings.base import Embeddings
+from ragnarok_common.embeddings.exceptions import EmbeddingConnectionError, EmbeddingResponseError, EmbeddingStatusError
 
 
 class LiteLLMEmbeddings(Embeddings):

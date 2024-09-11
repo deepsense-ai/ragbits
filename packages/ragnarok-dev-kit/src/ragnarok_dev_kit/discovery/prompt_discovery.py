@@ -92,4 +92,3 @@ class PromptDiscovery:
                     )._asdict()
 
         return result_dict
-

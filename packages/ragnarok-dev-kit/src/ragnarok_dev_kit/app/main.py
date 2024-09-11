@@ -5,10 +5,10 @@ import gradio as gr
 import jinja2
 import typer
 from pydantic import BaseModel
+from ragnarok_dev_kit.discovery.prompt_discovery import PromptDiscovery
 
 from ragnarok_common.llms import LiteLLM
 from ragnarok_common.llms.clients import LiteLLMOptions
-from ragnarok_dev_kit.discovery.prompt_discovery import PromptDiscovery
 
 
 class PromptState:
@@ -26,7 +26,7 @@ class PromptState:
                                  "Render Prompt" button and reflects in the "Rendered Prompt" field.
                                  It is used for communication with the LLM.
         llm_model_name (str): The name of the selected LLM model.
-        llm_api_key (str): The API key for the chosen LLM model.
+        llm_api_key (str | None): The API key for the chosen LLM model.
         temp_field_name (str): Temporary field name used internally.
     """
 
@@ -35,7 +35,7 @@ class PromptState:
     dynamic_tb: dict = {}
     current_prompt = None
     llm_model_name: str = ""
-    llm_api_key: str = ""
+    llm_api_key: str | None = ""
     temp_field_name: str = ""
 
 
@@ -170,7 +170,7 @@ typer_app = typer.Typer(no_args_is_help=True)
 
 
 @typer_app.command()
-def run_app(prompts_paths: str, llm_model: str, llm_api_key: str = None) -> None:
+def run_app(prompts_paths: str, llm_model: str, llm_api_key: str | None = None) -> None:
     """
     Launches the interactive application for working with Large Language Models (LLMs).
 
