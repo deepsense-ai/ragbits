@@ -1,10 +1,9 @@
 import asyncio
 
+from ragbits.common.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
-
-from ragbits.common.embeddings.litellm import LiteLLMEmbeddings
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),

@@ -5,10 +5,10 @@ import gradio as gr
 import jinja2
 import typer
 from pydantic import BaseModel
-from ragbits.dev_kit.discovery.prompt_discovery import PromptDiscovery
 
 from ragbits.common.llms import LiteLLM
 from ragbits.common.llms.clients import LiteLLMOptions
+from ragbits.dev_kit.discovery.prompt_discovery import PromptDiscovery
 
 
 class PromptState:

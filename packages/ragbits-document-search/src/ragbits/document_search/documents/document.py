@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union
 
 from pydantic import BaseModel, Field
+
 from ragbits.document_search.documents.sources import LocalFileSource
 
 
