@@ -2,7 +2,7 @@
 multi_line_output = 3
 line_length = 120
 include_trailing_comma = true
-known_first_party = ['ragbits_common']
+known_first_party = ['ragbits']
 known_third_party = [ # Most popular libraries. Extend if necessary.
     'IPython',
     'PIL',
@@ -84,7 +84,7 @@ no_implicit_optional = true
 mypy_path = ['packages']
 
 [[tool.mypy.overrides]]
-module = "ragbits_common.*"
+module = "ragbits.*"
 ignore_missing_imports = false
 disallow_untyped_defs = true
 

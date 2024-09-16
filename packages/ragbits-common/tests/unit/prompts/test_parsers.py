@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from ragbits_common.prompt import Prompt
-from ragbits_common.prompt.parsers import ResponseParsingError
+from ragbits.common.prompt import Prompt
+from ragbits.common.prompt.parsers import ResponseParsingError
 
 from .test_prompt import _PromptOutput
 

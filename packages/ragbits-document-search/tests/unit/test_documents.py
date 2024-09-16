@@ -1,8 +1,8 @@
 import tempfile
 from pathlib import Path
 
-from ragbits_document_search.documents.document import DocumentMeta, DocumentType, TextDocument
-from ragbits_document_search.documents.sources import LocalFileSource
+from ragbits.document_search.documents.document import DocumentMeta, DocumentType, TextDocument
+from ragbits.document_search.documents.sources import LocalFileSource
 
 
 async def test_loading_local_file_source():
