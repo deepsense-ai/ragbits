@@ -21,7 +21,7 @@ body:
     attributes:
       label: How can we reproduce it?
       description: Please provide a code snippet to reproduce the bug.
-      placeholder: import ragnarok
+      placeholder: import ragbits
       render: python
   - type: textarea
     id: logs
