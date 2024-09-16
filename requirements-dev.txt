@@ -10,4 +10,4 @@ pip-licenses>=4.0.0,<5.0.0
 gradio==4.42.0
 
 # extras required by tests:
--e packages/ragnarok-common[litellm]
+-e packages/ragbits-common[litellm]

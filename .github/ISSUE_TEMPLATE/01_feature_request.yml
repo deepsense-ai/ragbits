@@ -1,12 +1,12 @@
 name: 🚀 Feature Request
-description: Submit a proposal/request for a new ragnarok feature.
+description: Submit a proposal/request for a new ragbits feature.
 title: "feat: "
 labels: ["feature"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for contributing to ragnarok!
+        Thanks for contributing to ragbits!
   - type: textarea
     id: feature-description
     attributes:
