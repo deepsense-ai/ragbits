@@ -2,9 +2,9 @@ import numpy as np
 from ragnarok_document_search.vector_store.base import VectorDBEntry, VectorStore
 
 
-class SimpleVectorStore(VectorStore):
+class InMemoryVectorStore(VectorStore):
     """
-    A simple implementation of Vector Store, storing vectors in memory.
+    A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
     def __init__(self):

@@ -2,7 +2,7 @@ import asyncio
 
 from ragnarok_document_search import DocumentSearch
 from ragnarok_document_search.documents.document import DocumentMeta
-from ragnarok_document_search.vector_store.simple import SimpleVectorStore
+from ragnarok_document_search.vector_store.in_memory import InMemoryVectorStore
 
 from ragnarok_common.embeddings.litellm import LiteLLMEmbeddings
 
@@ -20,7 +20,7 @@ documents = [
 async def main():
     """Run the example."""
 
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=SimpleVectorStore())
+    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
 
     for document in documents:
         await document_search.ingest_document(document)

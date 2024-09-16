@@ -3,11 +3,11 @@ from pathlib import Path
 from ragnarok_document_search.documents.document import DocumentMeta, DocumentType
 from ragnarok_document_search.documents.element import TextElement
 from ragnarok_document_search.documents.sources import LocalFileSource
-from ragnarok_document_search.vector_store.simple import SimpleVectorStore
+from ragnarok_document_search.vector_store.in_memory import InMemoryVectorStore
 
 
 async def test_simple_vector_store():
-    store = SimpleVectorStore()
+    store = InMemoryVectorStore()
 
     document = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
     elements = [

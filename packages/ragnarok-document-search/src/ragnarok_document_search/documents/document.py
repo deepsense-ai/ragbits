@@ -63,12 +63,13 @@ class DocumentMeta(BaseModel):
         )
 
 
-class Document(DocumentMeta):
+class Document(BaseModel):
     """
     An object representing a document which is downloaded and stored locally.
     """
 
     local_path: Path
+    metadata: DocumentMeta
 
     @classmethod
     def from_document_meta(cls, document_meta: DocumentMeta, local_path: Path) -> "Document":
@@ -83,11 +84,9 @@ class Document(DocumentMeta):
         Returns:
             The document.
         """
-        new_obj = {"local_path": local_path, **document_meta.model_dump()}
-
         if document_meta.document_type in [DocumentType.MD, DocumentType.TXT]:
-            return TextDocument.model_validate(new_obj)
-        return cls.model_validate(new_obj)
+            return TextDocument(local_path=local_path, metadata=document_meta)
+        return cls(local_path=local_path, metadata=document_meta)
 
 
 class TextDocument(Document):
