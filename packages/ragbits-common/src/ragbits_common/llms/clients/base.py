@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from ragbits_common.prompt import ChatFormat
 
-from ..types import NotGiven
+from ...types import NotGiven
 
 LLMClientOptions = TypeVar("LLMClientOptions", bound="LLMOptions")
 

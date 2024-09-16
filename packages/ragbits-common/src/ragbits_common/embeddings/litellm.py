@@ -1,11 +1,9 @@
+from functools import cached_property
 from typing import Optional
 
-try:
-    import litellm
+from .base import Embeddings
+from .clients.litellm import LiteLLMEmbeddingsClient, LiteLLMOptions
 
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
 
 from ragbits_common.embeddings.base import Embeddings
 from ragbits_common.embeddings.exceptions import EmbeddingConnectionError, EmbeddingResponseError, EmbeddingStatusError
@@ -13,73 +11,48 @@ from ragbits_common.embeddings.exceptions import EmbeddingConnectionError, Embed
 
 class LiteLLMEmbeddings(Embeddings):
     """
-    Client for creating text embeddings using LiteLLM API.
+    Class for interaction with any encoder supported by LiteLLM API.
     """
+
+    _options_cls = LiteLLMOptions
 
     def __init__(
         self,
-        model: str = "text-embedding-3-small",
-        options: Optional[dict] = None,
+        model_name: str = "text-embedding-3-small",
+        default_options: Optional[LiteLLMOptions] = None,
         api_base: Optional[str] = None,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
     ) -> None:
         """
-        Constructs the LiteLLMEmbeddingClient.
+        Constructs a new LiteLLMEmbeddings instance.
 
         Args:
-            model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
+            model_name: Name of the
+                [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)
                 to be used. Default is "text-embedding-3-small".
-            options: Additional options to pass to the LiteLLM API.
+            default_options: Default options to be used.
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
 
-        Raises:
-            ImportError: If the litellm package is not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install litellm package to use LiteLLM models")
 
-        super().__init__()
-        self.model = model
-        self.options = options or {}
+        super().__init__(model_name, default_options)
         self.api_base = api_base
         self.api_key = api_key
         self.api_version = api_version
 
-    async def embed_text(self, data: list[str]) -> list[list[float]]:
+    @cached_property
+    def client(self) -> LiteLLMEmbeddingsClient:
         """
-        Creates embeddings for the given strings.
-
-        Args:
-            data: List of strings to get embeddings for.
-
-        Returns:
-            List of embeddings for the given strings.
-
-        Raises:
-            EmbeddingConnectionError: If there is a connection error with the embedding API.
-            EmbeddingStatusError: If the embedding API returns an error status code.
-            EmbeddingResponseError: If the embedding API response is invalid.
+        Client for the LiteLLM encoder.
         """
-
-        try:
-            response = await litellm.aembedding(
-                input=data,
-                model=self.model,
-                api_base=self.api_base,
-                api_key=self.api_key,
-                api_version=self.api_version,
-                **self.options,
-            )
-        except litellm.openai.APIConnectionError as exc:
-            raise EmbeddingConnectionError() from exc
-        except litellm.openai.APIStatusError as exc:
-            raise EmbeddingStatusError(exc.message, exc.status_code) from exc
-        except litellm.openai.APIResponseValidationError as exc:
-            raise EmbeddingResponseError() from exc
-
-        return [embedding["embedding"] for embedding in response.data]
+        return LiteLLMEmbeddingsClient(
+            model_name=self.model_name,
+            api_base=self.api_base,
+            api_key=self.api_key,
+            api_version=self.api_version,
+        )
