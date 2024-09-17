@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from ragbits_dev_kit.discovery.prompt_discovery import PromptDiscovery
+from ragbits.dev_kit.prompt_lab.discovery.prompt_discovery import PromptDiscovery
 
 
 def test_prompt_discovery_from_file():

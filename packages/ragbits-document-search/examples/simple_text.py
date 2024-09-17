@@ -1,10 +1,16 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-document-search",
+#     "ragbits[litellm]",
+# ]
+# ///
 import asyncio
 
-from ragbits_document_search import DocumentSearch
-from ragbits_document_search.documents.document import DocumentMeta
-from ragbits_document_search.vector_store.in_memory import InMemoryVectorStore
-
-from ragbits_common.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),

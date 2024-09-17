@@ -1,8 +1,41 @@
+[project]
+name = "ragbits-workspace"
+version = "0.1.0"
+description = "Ragbits development workspace"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "ragbits[litellm,local]",
+    "ragbits-dev-kit",
+    "ragbits-document-search"
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pre-commit~=3.8.0",
+    "pytest~=8.3.3",
+    "pytest-cov~=5.0.0",
+    "pytest-asyncio~=0.24.0",
+    "pip-licenses>=4.0.0,<5.0.0"
+]
+
+[tool.uv.sources]
+ragbits = { workspace = true }
+ragbits-dev-kit = { workspace = true }
+ragbits-document-search = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "packages/ragbits-core",
+    "packages/ragbits-dev-kit",
+    "packages/ragbits-document-search"
+]
+
 [tool.isort]
 multi_line_output = 3
 line_length = 120
 include_trailing_comma = true
-known_first_party = ['ragbits_common']
+known_first_party = ['ragbits']
 known_third_party = [ # Most popular libraries. Extend if necessary.
     'IPython',
     'PIL',
@@ -81,10 +114,15 @@ warn_unused_ignores = false
 show_error_codes = true
 check_untyped_defs = true
 no_implicit_optional = true
-mypy_path = ['packages']
+explicit_package_bases = true
+mypy_path = [
+    'packages/ragbits-core/src',
+    'packages/ragbits-dev-kit/src',
+    'packages/ragbits-document-search/src',
+]
 
 [[tool.mypy.overrides]]
-module = "ragbits_common.*"
+module = "ragbits.*"
 ignore_missing_imports = false
 disallow_untyped_defs = true
 

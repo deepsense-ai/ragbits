@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-. venv/bin/activate
+source .venv/bin/activate
 
-pip-licenses --from=mixed  --ignore-packages `cat .libraries-whitelist.txt`> licenses.txt
+uv run pip-licenses --from=mixed  --ignore-packages `cat .libraries-whitelist.txt`> licenses.txt
 cat licenses.txt
 
 FOUND=$(tail -n +2 licenses.txt | grep -v -f .license-whitelist.txt | wc -l)
