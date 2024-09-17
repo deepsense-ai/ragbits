@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 try:
     import torch
@@ -10,17 +10,6 @@ except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
 from ragbits_common.embeddings.base import Embeddings
-
-
-def _batch(iterable: Any, per_batch: int = 1) -> Iterator:
-    length = len(iterable)
-    for ndx in range(0, length, per_batch):
-        yield iterable[ndx : min(ndx + per_batch, length)]
-
-
-def _average_pool(last_hidden_states: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-    last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
-    return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
 
 class LocalEmbeddings(Embeddings):
@@ -66,17 +55,27 @@ class LocalEmbeddings(Embeddings):
         Returns:
             List of embeddings for the given strings.
         """
-
         embeddings = []
-        for batch in _batch(data, batch_size):
+        for batch in self._batch(data, batch_size):
             batch_dict = self.tokenizer(
                 batch, max_length=self.tokenizer.model_max_length, padding=True, truncation=True, return_tensors="pt"
             ).to(self.device)
             with torch.no_grad():
                 outputs = self.model(**batch_dict)
-                batch_embeddings = _average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
+                batch_embeddings = self._average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
                 batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
             embeddings.extend(batch_embeddings.to("cpu").tolist())
 
         torch.cuda.empty_cache()
         return embeddings
+
+    @staticmethod
+    def _batch(data: list[str], batch_size: int) -> Iterator[list[str]]:
+        length = len(data)
+        for ndx in range(0, length, batch_size):
+            yield data[ndx : min(ndx + batch_size, length)]
+
+    @staticmethod
+    def _average_pool(last_hidden_states: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+        last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
+        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
