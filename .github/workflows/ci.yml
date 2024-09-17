@@ -100,9 +100,7 @@ jobs:
       - name: Validate package build
         run: |
           source .venv/bin/activate
-          uv build packages/ragbits-core --out-dir dist
-          uv build packages/ragbits-dev-kit --out-dir dist
-          uv build packages/ragbits-document-search --out-dir dist
+          for dir in packages/*/; do uv build "$dir" --out-dir dist; done
 
       - name: Publish Package
         uses: actions/upload-artifact@v3
