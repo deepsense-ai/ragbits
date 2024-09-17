@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits",
+# ]
+# ///
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt

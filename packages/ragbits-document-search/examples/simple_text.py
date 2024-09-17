@@ -1,3 +1,10 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-document-search",
+#     "ragbits[litellm]",
+# ]
+# ///
 import asyncio
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings

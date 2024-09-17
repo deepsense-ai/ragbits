@@ -1,3 +1,9 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits[litellm]",
+# ]
+# ///
 import asyncio
 
 from pydantic import BaseModel
