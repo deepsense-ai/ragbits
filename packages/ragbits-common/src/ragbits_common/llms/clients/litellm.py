@@ -13,7 +13,7 @@ except ImportError:
 
 from ragbits_common.prompt import ChatFormat
 
-from ...types import NOT_GIVEN, NotGiven
+from ..types import NOT_GIVEN, NotGiven
 from .base import LLMClient, LLMOptions
 from .exceptions import LLMConnectionError, LLMResponseError, LLMStatusError
 

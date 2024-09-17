@@ -9,7 +9,7 @@ try:
 except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
-from .base import Embeddings
+from ragbits_common.embeddings.base import Embeddings
 
 
 def _batch(iterable: Any, per_batch: int = 1) -> Iterator:
