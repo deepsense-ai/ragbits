@@ -39,6 +39,9 @@ class LocalEmbeddings(Embeddings):
         Args:
             model_name: Name of the model to use.
             api_key: The API key for Hugging Face authentication.
+
+        Raises:
+            ImportError: If the 'local' extra requirements are not installed.
         """
         if not HAS_LOCAL_EMBEDDINGS:
             raise ImportError("You need to install the 'local' extra requirements to use local embeddings models")

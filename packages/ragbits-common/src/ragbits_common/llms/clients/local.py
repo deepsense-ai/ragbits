@@ -56,7 +56,6 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
             model_name: Name of the model to use.
             hf_api_key: The Hugging Face API key for authentication.
 
-
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
         """

@@ -38,10 +38,10 @@ class LiteLLMEmbeddings(Embeddings):
             api_version: The API version for the call.
 
         Raises:
-            ImportError: If the litellm package is not installed.
+            ImportError: If the 'litellm' extra requirements are not installed.
         """
         if not HAS_LITELLM:
-            raise ImportError("You need to install litellm package to use LiteLLM models")
+            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM embeddings models")
 
         super().__init__()
         self.model = model

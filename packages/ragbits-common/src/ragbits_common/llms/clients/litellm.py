@@ -64,10 +64,10 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             use_structured_output: Whether to request a structured output from the model. Default is False.
 
         Raises:
-            ImportError: If the litellm package is not installed.
+            ImportError: If the 'litellm' extra requirements are not installed.
         """
         if not HAS_LITELLM:
-            raise ImportError("You need to install litellm package to use LiteLLM models")
+            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM models")
 
         super().__init__(model_name)
         self.base_url = base_url
