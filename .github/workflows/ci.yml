@@ -143,7 +143,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/uv
-          key: ${{ runner.os }}-pip-${{ ${{ hashFiles('**/pyproject.toml') }}
+          key: ${{ runner.os }}-pip-${{ ${{ hashFiles('**/pyproject.toml') }} }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
