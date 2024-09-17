@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ragbits.common.prompt import Prompt
+from ragbits.core.prompt import Prompt
 
 
 class PromptForTestInputB(BaseModel):

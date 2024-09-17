@@ -1,4 +1,4 @@
-from ragbits.common.embeddings.base import Embeddings
+from ragbits.core.embeddings.base import Embeddings
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessor
