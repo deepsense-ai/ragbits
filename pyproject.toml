@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits[litellm,local]",
+    "ragbits-dev-kit",
     "ragbits-document-search"
 ]
 
@@ -20,10 +21,15 @@ dev-dependencies = [
 
 [tool.uv.sources]
 ragbits = { workspace = true }
+ragbits-dev-kit = { workspace = true }
 ragbits-document-search = { workspace = true }
 
 [tool.uv.workspace]
-members = ["packages/ragbits-core", "packages/ragbits-document-search"]
+members = [
+    "packages/ragbits-core",
+    "packages/ragbits-dev-kit",
+    "packages/ragbits-document-search"
+]
 
 [tool.isort]
 multi_line_output = 3
