@@ -100,8 +100,9 @@ jobs:
       - name: Validate package build
         run: |
           source .venv/bin/activate
-          python -m pip install -U build
-          for dir in packages/*/; do python -m build "$dir"; done
+          uv build packages/ragbits-core --out-dir dist
+          uv build packages/ragbits-dev-kit --out-dir dist
+          uv build packages/ragbits-document-search --out-dir dist
 
       - name: Publish Package
         uses: actions/upload-artifact@v3
@@ -141,8 +142,8 @@ jobs:
       - name: Cache Dependencies
         uses: actions/cache@v3
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}-${{ hashFiles('**/setup.cfg') }}-${{ hashFiles('**/pyproject.toml') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-pip-${{ ${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
