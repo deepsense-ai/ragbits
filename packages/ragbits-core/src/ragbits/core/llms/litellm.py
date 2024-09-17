@@ -48,10 +48,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 from the model. Default is False. Can only be combined with models that support structured output.
 
         Raises:
-            ImportError: If the litellm package is not installed.
+            ImportError: If the 'litellm' extra requirements are not installed.
         """
         if not HAS_LITELLM:
-            raise ImportError("You need to install litellm package to use LiteLLM models")
+            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM models")
 
         super().__init__(model_name, default_options)
         self.base_url = base_url

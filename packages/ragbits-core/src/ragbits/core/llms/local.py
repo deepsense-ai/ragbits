@@ -35,6 +35,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
             model_name: Name of the model to use. This should be a model from the CausalLM class.
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
+
+        Raises:
+            ImportError: If the 'local' extra requirements are not installed.
         """
         if not HAS_LOCAL_LLM:
             raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
