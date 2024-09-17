@@ -1,22 +1,19 @@
-# ragbits
+# Ragbits
 
 Repository for internal experiment with our upcoming LLM framework.
 
+# Installation
 
-# Setup developer environment
+## Build from source
 
-To start, you need to setup your local machine.
+To build and run Ragbits from the source code:
 
-## Setup venv
-
-You need to setup virtual environment, simplest way is to run from project root directory:
+1. Requirements: [**uv**](https://docs.astral.sh/uv/getting-started/installation/) & [**python**](https://docs.astral.sh/uv/guides/install-python/) 3.10 or higher
+2. Install dependencies and run venv in editable mode:
 
 ```bash
-$ . ./setup_dev_env.sh
-$ source venv/bin/activate
+$ source ./setup_dev_env.sh
 ```
-This will create a new venv and install all packages from this repository in editable mode.
-It will also intall their dependencies and the dev dependencies from `requirements-dev.txt`.
 
 ## Install pre-commit
 

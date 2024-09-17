@@ -1,7 +1,7 @@
 [project]
-name = "ragbits-dev-kit"
+name = "ragbits"
 version = "0.1.0"
-description = "Development kit for Ragbits"
+description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -15,8 +15,7 @@ keywords = [
     "LLMs",
     "Generative AI",
     "GenAI",
-    "Prompt Management",
-    "Development Kit",
+    "Prompt Management"
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -33,12 +32,19 @@ classifiers = [
     "Private :: Do Not Upload"
 ]
 dependencies = [
-    "gradio~=4.44.0",
-    "typer~=0.12.5"
+    "jinja2>=3.1.4",
+    "pydantic>=2.9.1"
 ]
 
-[project.scripts]
-prompt-lab = "ragbits.dev_kit.app:main"
+[project.optional-dependencies]
+litellm = [
+    "litellm~=1.46.0",
+]
+local = [
+    "torch~=2.2.1",
+    "transformers~=4.44.2",
+    "numpy~=1.24.0"
+]
 
 [tool.uv]
 dev-dependencies = [
@@ -46,8 +52,7 @@ dev-dependencies = [
     "pytest~=8.3.3",
     "pytest-cov~=5.0.0",
     "pytest-asyncio~=0.24.0",
-    "pip-licenses>=4.0.0,<5.0.0",
-    "ragbits[litellm,local]"
+    "pip-licenses>=4.0.0,<5.0.0"
 ]
 
 [build-system]
