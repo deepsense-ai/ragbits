@@ -1,4 +1,4 @@
-# ragbits
+# Ragbits
 
 Repository for internal experiment with our upcoming LLM framework.
 
@@ -12,11 +12,10 @@ To start, you need to setup your local machine.
 You need to setup virtual environment, simplest way is to run from project root directory:
 
 ```bash
-$ . ./setup_dev_env.sh
-$ source venv/bin/activate
+$ source ./setup_dev_env.sh
 ```
+
 This will create a new venv and install all packages from this repository in editable mode.
-It will also intall their dependencies and the dev dependencies from `requirements-dev.txt`.
 
 ## Install pre-commit
 

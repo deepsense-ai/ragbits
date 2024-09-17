@@ -1,7 +1,7 @@
 [project]
-name = "ragbits-document-search"
+name = "ragbits"
 version = "0.1.0"
-description = "Document Search module for Ragbits"
+description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -15,7 +15,7 @@ keywords = [
     "LLMs",
     "Generative AI",
     "GenAI",
-    "Document Search"
+    "Prompt Management"
 ]
 classifiers = [
     "Development Status :: 1 - Planning",
@@ -32,8 +32,18 @@ classifiers = [
     "Private :: Do Not Upload"
 ]
 dependencies = [
-    "numpy~=1.24.0",
-    "ragbits"
+    "jinja2>=3.1.4",
+    "pydantic>=2.9.1"
+]
+
+[project.optional-dependencies]
+litellm = [
+    "litellm~=1.46.0",
+]
+local = [
+    "torch~=2.2.1",
+    "transformers~=4.44.2",
+    "numpy~=1.24.0"
 ]
 
 [tool.uv]
@@ -44,9 +54,6 @@ dev-dependencies = [
     "pytest-asyncio~=0.24.0",
     "pip-licenses>=4.0.0,<5.0.0"
 ]
-
-[tool.uv.sources]
-ragbits = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

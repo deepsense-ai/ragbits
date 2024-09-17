@@ -1,15 +1,11 @@
 #!/bin/bash
 
-if [ ! -d venv ]; then
-    python3 -m venv venv
-    . venv/bin/activate
-    pip install --upgrade pip
-    pip install --quiet wheel==0.41.3
-    pip install --quiet -r requirements-dev.txt
+if [ ! -d .venv ]; then
+    uv venv --python 3.10
+    source .venv/bin/activate
 
     # Install all packages in editable mode
-    for dir in packages/*/; do pip install -e "$dir"; done
-
+    uv sync
 fi
 
-. venv/bin/activate
+source .venv/bin/activate
