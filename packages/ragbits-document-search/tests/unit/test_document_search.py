@@ -1,9 +1,9 @@
 from unittest.mock import AsyncMock
 
-from ragbits_document_search import DocumentSearch
-from ragbits_document_search.documents.document import DocumentMeta
-from ragbits_document_search.documents.element import TextElement
-from ragbits_document_search.vector_store.in_memory import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 
 async def test_document_search():

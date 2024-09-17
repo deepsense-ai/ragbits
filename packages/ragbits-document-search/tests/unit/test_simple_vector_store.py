@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from ragbits_document_search.documents.document import DocumentMeta, DocumentType
-from ragbits_document_search.documents.element import TextElement
-from ragbits_document_search.documents.sources import LocalFileSource
-from ragbits_document_search.vector_store.in_memory import InMemoryVectorStore
+from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 
 async def test_simple_vector_store():

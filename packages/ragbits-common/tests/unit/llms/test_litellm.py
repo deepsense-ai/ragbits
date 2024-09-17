@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 
-from ragbits_common.llms.clients.litellm import LiteLLMOptions
-from ragbits_common.llms.litellm import LiteLLM
-from ragbits_common.prompt import Prompt
-from ragbits_common.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
+from ragbits.common.llms.clients.litellm import LiteLLMOptions
+from ragbits.common.llms.litellm import LiteLLM
+from ragbits.common.prompt import Prompt
+from ragbits.common.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
 
 
 class MockPrompt(BasePrompt):

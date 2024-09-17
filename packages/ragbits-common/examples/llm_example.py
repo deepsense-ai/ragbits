@@ -2,8 +2,8 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ragbits_common.llms.litellm import LiteLLM
-from ragbits_common.prompt import Prompt
+from ragbits.common.llms.litellm import LiteLLM
+from ragbits.common.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):

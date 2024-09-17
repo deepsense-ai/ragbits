@@ -1,7 +1,7 @@
 import pydantic
 import pytest
 
-from ragbits_common.prompt import Prompt
+from ragbits.common.prompt import Prompt
 
 
 class _PromptInput(pydantic.BaseModel):
