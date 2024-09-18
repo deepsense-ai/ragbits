@@ -36,6 +36,11 @@ dependencies = [
     "ragbits"
 ]
 
+[project.optional-dependencies]
+google-cloud-storage = [
+    "gcloud-aio-storage~=9.3.0"
+]
+
 [tool.uv]
 dev-dependencies = [
     "pre-commit~=3.8.0",
