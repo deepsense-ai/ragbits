@@ -73,7 +73,7 @@ class GoogleCloudStorageSource(Source):
     bucket: str
     object_name: str
 
-    path: Path
+    local_dir: Path = Path("tmp/ragbits/")
 
     def get_id(self) -> str:
         """
@@ -82,14 +82,17 @@ class GoogleCloudStorageSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"bucket_name: {self.bucket}\nobject_name: {self.path}"
+        return f"bucket_name: {self.bucket}\nobject_name: {self.object_name}"
 
     async def fetch(self) -> Path:
         """
-        Fetch the source.
+        Fetch the file from Google Cloud Storage and store it locally.
+
+        The file is downloaded to a local directory specified by `local_dir`. If the file already exists locally,
+        it will not be downloaded again. If the file doesn't exist locally, it will be fetched from GCS.
 
         Returns:
-            Tuple containing bucket name and file path.
+            Path: The local path to the downloaded file.
 
         Raises:
             ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
@@ -98,7 +101,13 @@ class GoogleCloudStorageSource(Source):
         if not HAS_GCLOUD_AIO:
             raise ImportError("You need to install the 'gcloud' package to use Google Cloud Storage")
 
-        async with Storage() as client:
-            await client.download_to_filename(bucket=self.bucket, object_name=self.object_name, filename=self.path)
+        bucket_local_dir = self.local_dir / self.bucket
 
-        return self.path
+        bucket_local_dir.mkdir(parents=True, exist_ok=True)
+        path = bucket_local_dir / self.object_name
+
+        if not path.is_file():
+            async with Storage() as client:
+                await client.download_to_filename(bucket=self.bucket, object_name=self.object_name, filename=path)
+
+        return path
