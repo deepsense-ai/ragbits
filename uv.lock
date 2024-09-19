@@ -2233,7 +2233,6 @@ name = "ragbits-document-search"
 version = "0.1.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
-    { name = "cryptography" },
     { name = "numpy" },
     { name = "ragbits" },
     { name = "unstructured" },
@@ -2251,7 +2250,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cryptography", specifier = ">=3.1" },
     { name = "numpy", specifier = "~=1.24.0" },
     { name = "ragbits", editable = "packages/ragbits-core" },
     { name = "unstructured", specifier = ">=0.15.12" },
