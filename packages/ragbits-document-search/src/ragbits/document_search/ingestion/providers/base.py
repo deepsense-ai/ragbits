@@ -19,8 +19,7 @@ class BaseProvider(ABC):
 
     @abstractmethod
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """
-        Process the document.
+        """Process the document.
 
         Args:
             document_meta: The document to process.

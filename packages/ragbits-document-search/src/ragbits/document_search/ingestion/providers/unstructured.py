@@ -47,8 +47,7 @@ class UnstructuredProvider(BaseProvider):
     }
 
     def __init__(self, partition_kwargs: Optional[dict] = None):
-        """
-        Initialize the UnstructuredProvider.
+        """Initialize the UnstructuredProvider.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
@@ -57,8 +56,7 @@ class UnstructuredProvider(BaseProvider):
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """
-        Process the document using the Unstructured API.
+        """Process the document using the Unstructured API.
 
         Args:
             document_meta: The document to process.

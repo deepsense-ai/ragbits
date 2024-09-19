@@ -18,7 +18,10 @@ def test_resolving_element_type():
             metadata={
                 "element_type": "custom_element",
                 "foo": "bar",
-                "document": {"document_type": "txt", "source": {"source_type": "local_file", "path": "/example/path"}},
+                "document_meta": {
+                    "document_type": "txt",
+                    "source": {"source_type": "local_file", "path": "/example/path"},
+                },
             },
         )
     )
