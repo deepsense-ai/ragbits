@@ -13,6 +13,22 @@ class DocumentType(str, Enum):
 
     MD = "md"
     TXT = "txt"
+    PDF = "pdf"
+    CSV = "csv"
+    DOC = "doc"
+    DOCX = "docx"
+    HTML = "html"
+    EPUB = "epub"
+    XLSX = "xlsx"
+    XLS = "xls"
+    ORG = "org"
+    ODT = "odt"
+    PPT = "ppt"
+    PPTX = "pptx"
+    RST = "rst"
+    RTF = "rtf"
+    TSV = "tsv"
+    XML = "xml"
 
 
 class DocumentMeta(BaseModel):
@@ -61,6 +77,22 @@ class DocumentMeta(BaseModel):
         return cls(
             document_type=DocumentType.TXT,
             source=LocalFileSource(path=Path(temp_file.name)),
+        )
+
+    @classmethod
+    def from_local_path(cls, local_path: Path) -> "DocumentMeta":
+        """
+        Create a document metadata from a local path.
+
+        Args:
+            local_path: The local path to the document.
+
+        Returns:
+            The document metadata.
+        """
+        return cls(
+            document_type=DocumentType(local_path.suffix[1:]),
+            source=LocalFileSource(path=local_path),
         )
 
 

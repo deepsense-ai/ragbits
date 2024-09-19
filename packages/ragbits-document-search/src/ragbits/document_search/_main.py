@@ -70,7 +70,7 @@ class DocumentSearch:
         """
         # TODO: This is a placeholder implementation. It should be replaced with a real implementation.
 
-        document_processor = DocumentProcessor()
+        document_processor = DocumentProcessor.from_config()
         elements = await document_processor.process(document)
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
