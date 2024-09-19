@@ -30,6 +30,8 @@ class DocumentType(str, Enum):
     TSV = "tsv"
     XML = "xml"
 
+    UNKNOWN = "unknown"
+
 
 class DocumentMeta(BaseModel):
     """

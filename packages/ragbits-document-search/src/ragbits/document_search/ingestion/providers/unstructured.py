@@ -28,6 +28,7 @@ class UnstructuredProvider(BaseProvider):
 
     SUPPORTED_DOCUMENT_TYPES = {
         DocumentType.TXT,
+        DocumentType.MD,
         DocumentType.PDF,
         DocumentType.DOCX,
         DocumentType.DOC,
