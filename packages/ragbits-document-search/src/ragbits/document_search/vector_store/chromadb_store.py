@@ -7,7 +7,6 @@ from ragbits.document_search.documents.element import TextElement
 
 try:
     import chromadb
-
     HAS_CHROMADB = True
 except ImportError:
     HAS_CHROMADB = False
@@ -89,7 +88,6 @@ class ChromaDBStore(InMemoryVectorStore):
         metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
         metadata["key"] = entry.key
         metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
-        # metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
 
 
         return id, embedding, text, metadata
@@ -98,7 +96,7 @@ class ChromaDBStore(InMemoryVectorStore):
         return {key: json.loads(val) if self.is_json(val) else val
             for key, val in metadata.items()}
 
-    def is_json(self, myjson):
+    def is_json(self, myjson) -> bool:
         try:
             if isinstance(myjson, str):
                 json.loads(myjson)
