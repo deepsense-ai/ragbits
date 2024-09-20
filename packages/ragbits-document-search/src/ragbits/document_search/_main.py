@@ -57,7 +57,7 @@ class DocumentSearch:
             search_vector = await self.embedder.embed_text([rephrased_query])
             # TODO: search parameters should be configurable
             entries = await self.vector_store.retrieve(search_vector[0], k=1)
-            chunks.extend([Element.from_vector_db_entry(entry) for entry in entries])
+            # chunks.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(chunks)
 

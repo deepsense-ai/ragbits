@@ -1,5 +1,9 @@
+from copy import deepcopy
 from hashlib import sha256
+import json
 from typing import Literal, Optional, Union, List
+
+from ragbits.document_search.documents.element import TextElement
 
 try:
     import chromadb
@@ -75,7 +79,44 @@ class ChromaDBStore(InMemoryVectorStore):
             return retrieved["documents"][0][0]
 
         return None
+    
+    def _process_db_entry(self, entry: VectorDBEntry):
+        id = sha256(entry.key.encode("utf-8")).hexdigest()
+        embedding = entry.vector
+        text = entry.metadata["content"]
 
+        metadata = deepcopy(entry.metadata)
+        metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
+        metadata["document"]["document_type"] = metadata["document"]["document_type"].value
+        metadata["key"] = entry.key
+        metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
+
+
+        return id, embedding, text, metadata
+
+    def _process_metadata(self, metadata):
+        """
+        Recursively process the metadata dictionary to handle nested dictionaries.
+        """
+        def is_json(myjson):
+            """
+            Checks if the input is a valid JSON.
+        
+            Args:
+                myjson: The input to check.
+        
+            Returns:
+                bool: True if the input is a valid JSON, False otherwise.
+            """
+            try:
+                json.loads(myjson)
+            except ValueError:
+                return False
+            return True
+        
+        return {key: json.loads(val) if is_json(val) else val
+                for key, val in metadata.items()}
+    
     async def store(self, entries: List[VectorDBEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
@@ -83,36 +124,14 @@ class ChromaDBStore(InMemoryVectorStore):
         Args:
             entries (List[VectorDBEntry]): The entries to store.
         """
-        formatted_data = [
-            {
-                "text": entry.vector,
-                "metadata": {
-                    "key": entry.key,
-                    "metadata": entry.metadata,
-                },
-            }
-            for entry in entries
-        ]
-        await self._store(formatted_data)
-
-    async def _store(self, data: List[dict]) -> None:
-        """
-        Fills chroma collection with embeddings of provided string. As the id uses hash value of the string.
-
-        Args:
-            data (List[dict]): The data to store.
-        """
-        ids = [sha256(item["text"].encode("utf-8")).hexdigest() for item in data]
-        texts = [item["text"] for item in data]
-        metadata = [item["metadata"] for item in data]
-
         collection = self._get_chroma_collection()
+        
 
-        if isinstance(self.embedding_function, Embeddings):
-            embeddings = await self.embedding_function.embed_text(texts)
-            collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadata)
-        else:
-            collection.add(ids=ids, documents=texts, metadatas=metadata)
+        
+        entries_processed = list(map(self._process_db_entry, entries))
+        ids, embeddings, texts, metadatas = map(list, zip(*entries_processed))
+
+        collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
 
     async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
         """
@@ -128,15 +147,18 @@ class ChromaDBStore(InMemoryVectorStore):
         collection = self._get_chroma_collection()
         query_result = collection.query(query_embeddings=[vector], n_results=k)
 
-        entries = []
+        elements = []
         for doc, meta in zip(query_result.get("documents"), query_result.get("metadatas")):
-            entry = VectorDBEntry(
+            db_entry = VectorDBEntry(
                 key=meta[0].get("key"),
-                vector=doc[0],
-                metadata=meta[0].get("metadata"),
-            )
-            entries.append(entry)
-        return entries
+                vector=vector,
+                metadata=self._process_metadata(meta[0]),
+                )
+
+            element = TextElement.from_vector_db_entry(db_entry)
+            elements.append(element)
+
+        return elements
 
     async def find_similar(self, text: str) -> Optional[str]:
         """
