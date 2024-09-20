@@ -36,6 +36,12 @@ dependencies = [
     "ragbits"
 ]
 
+
+[project.optional-dependencies]
+chromadb = [
+    "chromadb~=0.4.24",
+]
+
 [tool.uv]
 dev-dependencies = [
     "pre-commit~=3.8.0",
