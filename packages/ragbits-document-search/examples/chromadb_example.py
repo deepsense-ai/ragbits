@@ -9,11 +9,11 @@ import asyncio
 import os
 
 import chromadb
+
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.vector_store.chromadb_store import ChromaDBStore
-from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),

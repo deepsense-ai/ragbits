@@ -1,12 +1,11 @@
+import json
 from copy import deepcopy
 from hashlib import sha256
-import json
-from typing import Literal, Optional, Union, List
-
-from ragbits.document_search.documents.element import TextElement
+from typing import List, Literal, Optional, Union
 
 try:
     import chromadb
+
     HAS_CHROMADB = True
 except ImportError:
     HAS_CHROMADB = False
@@ -37,7 +36,7 @@ class ChromaDBStore(InMemoryVectorStore):
             distance_method (Literal["l2", "ip", "cosine"], default="l2"): The distance method to use.
         """
         if not HAS_CHROMADB:
-            raise ImportError("You need to install the 'ragbits-document-search[chromadb]' extra requirement of  to use LiteLLM embeddings models")
+            raise ImportError("Install the 'ragbits-document-search[chromadb]' extra to use LiteLLM embeddings models")
 
         super().__init__()
         self.index_name = index_name
@@ -78,9 +77,9 @@ class ChromaDBStore(InMemoryVectorStore):
             return retrieved["documents"][0][0]
 
         return None
-    
-    def _process_db_entry(self, entry: VectorDBEntry):
-        id = sha256(entry.key.encode("utf-8")).hexdigest()
+
+    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], str, dict]:
+        doc_id = sha256(entry.key.encode("utf-8")).hexdigest()
         embedding = entry.vector
         text = entry.metadata["content"]
 
@@ -89,14 +88,31 @@ class ChromaDBStore(InMemoryVectorStore):
         metadata["key"] = entry.key
         metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
 
+        return doc_id, embedding, text, metadata
 
-        return id, embedding, text, metadata
+    def _process_metadata(self, metadata: dict) -> dict[str, Union[str, int, float, bool]]:
+        """
+        Processes the metadata dictionary by parsing JSON strings if applicable.
 
-    def _process_metadata(self, metadata):
-        return {key: json.loads(val) if self.is_json(val) else val
-            for key, val in metadata.items()}
+        Args:
+            metadata (dict): A dictionary containing metadata where values may be JSON strings.
 
-    def is_json(self, myjson) -> bool:
+        Returns:
+            dict[str, Union[str, int, float, bool]]: A dictionary with the same keys as the input,
+            where JSON strings are parsed into their respective Python data types.
+        """
+        return {key: json.loads(val) if self.is_json(val) else val for key, val in metadata.items()}
+
+    def is_json(self, myjson: str) -> bool:
+        """
+        Check if the provided string is a valid JSON.
+
+        Args:
+            myjson (str): The string to be checked.
+
+        Returns:
+            bool: True if the string is a valid JSON, False otherwise.
+        """
         try:
             if isinstance(myjson, str):
                 json.loads(myjson)
@@ -104,8 +120,7 @@ class ChromaDBStore(InMemoryVectorStore):
             return False
         except ValueError:
             return False
-        
-    
+
     async def store(self, entries: List[VectorDBEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
@@ -114,9 +129,7 @@ class ChromaDBStore(InMemoryVectorStore):
             entries (List[VectorDBEntry]): The entries to store.
         """
         collection = self._get_chroma_collection()
-        
 
-        
         entries_processed = list(map(self._process_db_entry, entries))
         ids, embeddings, texts, metadatas = map(list, zip(*entries_processed))
 
@@ -137,12 +150,12 @@ class ChromaDBStore(InMemoryVectorStore):
         query_result = collection.query(query_embeddings=[vector], n_results=k)
 
         db_entries = []
-        for doc, meta in zip(query_result.get("documents"), query_result.get("metadatas")):
+        for meta in query_result.get("metadatas"):
             db_entry = VectorDBEntry(
                 key=meta[0].get("key"),
                 vector=vector,
                 metadata=self._process_metadata(meta[0]),
-                )
+            )
 
             db_entries.append(db_entry)
 
