@@ -1,0 +1,53 @@
+[project]
+name = "ragbits-cli"
+version = "0.1.0"
+description = "A CLI application for ragbits - building blocks for rapid development of GenAI applications"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "deepsense.ai", email = "contact@deepsense.ai"}
+]
+keywords = [
+    "Retrieval Augmented Generation",
+    "RAG",
+    "Large Language Models",
+    "LLMs",
+    "Generative AI",
+    "GenAI",
+    "Prompt Management"
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Private :: Do Not Upload"
+]
+dependencies = [
+    "typer>=0.12.5",
+]
+
+[project.scripts]
+ragbits = "ragbits.cli:main"
+rbts = "ragbits.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ragbits"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
