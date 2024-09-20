@@ -1,21 +1,25 @@
 from hashlib import sha256
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, List
 
-import chromadb
+try:
+    import chromadb
 
-from document_search.ingestion.embeddings.base import Embedder
-from document_search.utils.custom_types import Chunk, EmbeddedChunk, InMemoryDocument, Location
-from document_search.utils.vector_stores.base import VectorStore
+    HAS_CHROMADB = True
+except ImportError:
+    HAS_CHROMADB = False
+
+from ragbits.core.embeddings.base import Embeddings
+from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore, VectorDBEntry
 
 
-class ChromaDBStore(VectorStore):
+class ChromaDBStore(InMemoryVectorStore):
     """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
 
     def __init__(
         self,
         index_name: str,
         chroma_client: chromadb.ClientAPI,
-        embedding_function: Union[Embedder, chromadb.EmbeddingFunction],
+        embedding_function: Union[Embeddings, chromadb.EmbeddingFunction],
         max_distance: Optional[float] = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
     ):
@@ -25,10 +29,13 @@ class ChromaDBStore(VectorStore):
         Args:
             index_name (str): The name of the index.
             chroma_client (chromadb.ClientAPI): The ChromaDB client.
-            embedding_function (Union[Embedder, chromadb.EmbeddingFunction]): The embedding function.
+            embedding_function (Union[Embeddings, chromadb.EmbeddingFunction]): The embedding function.
             max_distance (Optional[float], default=None): The maximum distance for similarity.
             distance_method (Literal["l2", "ip", "cosine"], default="l2"): The distance method to use.
         """
+        if not HAS_CHROMADB:
+            raise ImportError("You need to install the 'ragbits-document-search[chromadb]' extra requirement of  to use LiteLLM embeddings models")
+
         super().__init__()
         self.index_name = index_name
         self.chroma_client = chroma_client
@@ -45,7 +52,7 @@ class ChromaDBStore(VectorStore):
         Returns:
             chromadb.Collection: Retrieved collection
         """
-        if isinstance(self.embedding_function, Embedder):
+        if isinstance(self.embedding_function, Embeddings):
             return self.chroma_client.get_or_create_collection(name=self.index_name, metadata=self._metadata)
 
         return self.chroma_client.get_or_create_collection(
@@ -69,31 +76,31 @@ class ChromaDBStore(VectorStore):
 
         return None
 
-    async def store_embedded_chunks(self, embedded_chunks: list[EmbeddedChunk]) -> None:
+    async def store(self, entries: List[VectorDBEntry]) -> None:
         """
-        Stores embedded chunks in the ChromaDB collection.
+        Stores entries in the ChromaDB collection.
 
         Args:
-            embedded_chunks (list[EmbeddedChunk]): The embedded chunks to store.
+            entries (List[VectorDBEntry]): The entries to store.
         """
         formatted_data = [
             {
-                "text": emb_chunk.chunk.content,
+                "text": entry.vector,
                 "metadata": {
-                    "location": emb_chunk.chunk.location.model_dump_json(),
-                    "title": emb_chunk.document.title,
+                    "key": entry.key,
+                    "metadata": entry.metadata,
                 },
             }
-            for emb_chunk in embedded_chunks
+            for entry in entries
         ]
         await self._store(formatted_data)
 
-    async def _store(self, data: list[dict]) -> None:
+    async def _store(self, data: List[dict]) -> None:
         """
         Fills chroma collection with embeddings of provided string. As the id uses hash value of the string.
 
         Args:
-            data (list[dict]): The data to store.
+            data (List[dict]): The data to store.
         """
         ids = [sha256(item["text"].encode("utf-8")).hexdigest() for item in data]
         texts = [item["text"] for item in data]
@@ -101,11 +108,35 @@ class ChromaDBStore(VectorStore):
 
         collection = self._get_chroma_collection()
 
-        if isinstance(self.embedding_function, Embedder):
+        if isinstance(self.embedding_function, Embeddings):
             embeddings = await self.embedding_function.embed_text(texts)
             collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadata)
         else:
             collection.add(ids=ids, documents=texts, metadatas=metadata)
+
+    async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
+        """
+        Retrieves entries from the ChromaDB collection.
+
+        Args:
+            vector (List[float]): The vector to query.
+            k (int, default=5): The number of entries to retrieve.
+
+        Returns:
+            List[VectorDBEntry]: The retrieved entries.
+        """
+        collection = self._get_chroma_collection()
+        query_result = collection.query(query_embeddings=[vector], n_results=k)
+
+        entries = []
+        for doc, meta in zip(query_result.get("documents"), query_result.get("metadatas")):
+            entry = VectorDBEntry(
+                key=meta[0].get("key"),
+                vector=doc[0],
+                metadata=meta[0].get("metadata"),
+            )
+            entries.append(entry)
+        return entries
 
     async def find_similar(self, text: str) -> Optional[str]:
         """
@@ -121,36 +152,13 @@ class ChromaDBStore(VectorStore):
 
         collection = self._get_chroma_collection()
 
-        if isinstance(self.embedding_function, Embedder):
+        if isinstance(self.embedding_function, Embeddings):
             embedding = await self.embedding_function.embed_text([text])
             retrieved = collection.query(query_embeddings=embedding, n_results=1)
         else:
             retrieved = collection.query(query_texts=[text], n_results=1)
 
         return self._return_best_match(retrieved)
-
-    def retrieve(self, vector: list[float]) -> list[Chunk]:
-        """
-        Retrieves documents based on vector embeddings.
-
-        Args:
-            vector (list[float]): The vector to query.
-
-        Returns:
-            list[Chunk]: A list of `Chunk` objects.
-        """
-        collection = self._get_chroma_collection()
-        chunks = []
-        query_result = collection.query(query_embeddings=vector, n_results=1)
-
-        for doc, meta in zip(query_result.get("documents"), query_result.get("metadatas")):
-            chunk = Chunk(
-                content=doc[0],
-                document=InMemoryDocument(title=meta[0].get("title"), content=doc[0]),
-                location=Location.model_validate_json(meta[0].get("location")),
-            )
-            chunks.append(chunk)
-        return chunks
 
     def __repr__(self) -> str:
         """
