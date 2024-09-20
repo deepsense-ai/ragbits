@@ -87,35 +87,26 @@ class ChromaDBStore(InMemoryVectorStore):
 
         metadata = deepcopy(entry.metadata)
         metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
-        metadata["document"]["document_type"] = metadata["document"]["document_type"].value
         metadata["key"] = entry.key
         metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
+        # metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
 
 
         return id, embedding, text, metadata
 
     def _process_metadata(self, metadata):
-        """
-        Recursively process the metadata dictionary to handle nested dictionaries.
-        """
-        def is_json(myjson):
-            """
-            Checks if the input is a valid JSON.
-        
-            Args:
-                myjson: The input to check.
-        
-            Returns:
-                bool: True if the input is a valid JSON, False otherwise.
-            """
-            try:
+        return {key: json.loads(val) if self.is_json(val) else val
+            for key, val in metadata.items()}
+
+    def is_json(self, myjson):
+        try:
+            if isinstance(myjson, str):
                 json.loads(myjson)
-            except ValueError:
-                return False
-            return True
+                return True
+            return False
+        except ValueError:
+            return False
         
-        return {key: json.loads(val) if is_json(val) else val
-                for key, val in metadata.items()}
     
     async def store(self, entries: List[VectorDBEntry]) -> None:
         """
@@ -147,7 +138,7 @@ class ChromaDBStore(InMemoryVectorStore):
         collection = self._get_chroma_collection()
         query_result = collection.query(query_embeddings=[vector], n_results=k)
 
-        elements = []
+        db_entries = []
         for doc, meta in zip(query_result.get("documents"), query_result.get("metadatas")):
             db_entry = VectorDBEntry(
                 key=meta[0].get("key"),
@@ -155,10 +146,9 @@ class ChromaDBStore(InMemoryVectorStore):
                 metadata=self._process_metadata(meta[0]),
                 )
 
-            element = TextElement.from_vector_db_entry(db_entry)
-            elements.append(element)
+            db_entries.append(db_entry)
 
-        return elements
+        return db_entries
 
     async def find_similar(self, text: str) -> Optional[str]:
         """

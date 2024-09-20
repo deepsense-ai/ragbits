@@ -52,14 +52,14 @@ class DocumentSearch:
             A list of chunks.
         """
         queries = self.query_rephraser.rephrase(query)
-        chunks = []
+        elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
             # TODO: search parameters should be configurable
             entries = await self.vector_store.retrieve(search_vector[0], k=1)
-            # chunks.extend([Element.from_vector_db_entry(entry) for entry in entries])
+            elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
-        return self.reranker.rerank(chunks)
+        return self.reranker.rerank(elements)
 
     async def ingest_document(self, document: DocumentMeta) -> None:
         """
