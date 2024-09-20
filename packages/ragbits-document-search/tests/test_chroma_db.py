@@ -1,7 +1,9 @@
 from hashlib import sha256
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
+import uuid
 
+import chromadb
 import pytest
 
 from ragbits.core.embeddings.base import Embeddings
@@ -78,9 +80,13 @@ def test_get_chroma_collection(chroma_db_store):
     assert chroma_db_store.chroma_client.get_or_create_collection.called
 
 
-def test_get_chroma_collection_with_custom_embedding_function(chromadb_store_with_custom_embedding_function, mock_chroma_client):
+def test_get_chroma_collection_with_custom_embedding_function(custom_embedding_function, chromadb_store_with_custom_embedding_function, mock_chroma_client):
     collection_mock = MagicMock()
-    mock_chroma_client.get_or_create_collection.return_value = collection_mock
+    mock_chroma_client.get_or_create_collection.return_value = chromadb.Collection(name="test_index",
+                                                                                   id=str(uuid.uuid4()),
+                                                                                   client=mock_chroma_client,
+                                                                                   metadata={"hnsw:space": "l2"},
+                                                                                   embedding_function=custom_embedding_function)
 
     result = chromadb_store_with_custom_embedding_function._get_chroma_collection()
 
