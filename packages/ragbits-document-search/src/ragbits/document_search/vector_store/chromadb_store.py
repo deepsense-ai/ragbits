@@ -141,7 +141,7 @@ class ChromaDBStore(InMemoryVectorStore):
 
         Args:
             vector (List[float]): The vector to query.
-            k (int, default=5): The number of entries to retrieve.
+            k (int): The number of entries to retrieve.
 
         Returns:
             List[VectorDBEntry]: The retrieved entries.
