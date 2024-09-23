@@ -37,7 +37,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-google-cloud-storage = [
+gcs = [
     "gcloud-aio-storage~=9.3.0"
 ]
 

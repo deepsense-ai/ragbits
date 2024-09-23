@@ -5,7 +5,7 @@ from typing import Union
 
 from pydantic import BaseModel, Field
 
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
@@ -21,7 +21,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource] = Field(..., discriminator="source_type")
+    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:

@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Literal
@@ -10,6 +11,8 @@ try:
     HAS_GCLOUD_AIO = True
 except ImportError:
     HAS_GCLOUD_AIO = False
+
+LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR_ENV"
 
 
 class Source(BaseModel, ABC):
@@ -63,17 +66,15 @@ class LocalFileSource(Source):
         return self.path
 
 
-class GoogleCloudStorageSource(Source):
+class GCSSource(Source):
     """
     An object representing a GCS file source.
     """
 
-    source_type: Literal["google_cloud_storage_file"] = "google_cloud_storage_file"
+    source_type: Literal["gcs_file"] = "gcs_file"
 
     bucket: str
     object_name: str
-
-    local_dir: Path = Path("tmp/ragbits/")
 
     def get_id(self) -> str:
         """
@@ -96,12 +97,17 @@ class GoogleCloudStorageSource(Source):
 
         Raises:
             ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
+            ValueError: If LOCAL_STORAGE_DIR_ENV is not set.
         """
 
         if not HAS_GCLOUD_AIO:
-            raise ImportError("You need to install the 'gcloud' package to use Google Cloud Storage")
+            raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 
-        bucket_local_dir = self.local_dir / self.bucket
+        if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is None:
+            raise ValueError(f"{LOCAL_STORAGE_DIR_ENV} environment variable is not set")
+
+        local_dir: Path = Path(local_dir_env)
+        bucket_local_dir = local_dir / self.bucket
 
         bucket_local_dir.mkdir(parents=True, exist_ok=True)
         path = bucket_local_dir / self.object_name
