@@ -1,3 +1,4 @@
+import copy
 from typing import Optional
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -56,7 +57,7 @@ class DocumentProcessor:
         Returns:
             The DocumentProcessor.
         """
-        config = DEFAULT_PROVIDERS_CONFIG.copy()
+        config = copy.deepcopy(DEFAULT_PROVIDERS_CONFIG)
         config.update(providers_config if providers_config is not None else {})
 
         return cls(providers=config)
