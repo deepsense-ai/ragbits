@@ -1,6 +1,5 @@
 import os
 import tempfile
-import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Literal
@@ -107,10 +106,6 @@ class GCSSource(Source):
             raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 
         if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is None:
-            warnings.warn(
-                "The environment variable 'LOCAL_STORAGE_DIR_ENV' is not set. A temporary directory will be used "
-                "to store the file."
-            )
             local_dir = Path(tempfile.gettempdir())
         else:
             local_dir = Path(local_dir_env)
