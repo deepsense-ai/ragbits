@@ -3,7 +3,9 @@
 # dependencies = [
 #     "tomlkit",
 #     "inquirer",
-#     "rich"
+#     "rich",
+#     "fire",
+#     "typing-extensions"
 # ]
 # ///
 # To run this script and update a package, run the following command:
@@ -17,8 +19,10 @@ from pathlib import Path
 from typing import Optional
 
 import tomlkit
+from fire import Fire
 from inquirer.shortcuts import confirm, list_input, text
 from rich import print as pprint
+from typing_extensions import Literal
 
 PACKAGES_DIR = Path(__file__).parent.parent / "packages"
 
@@ -31,6 +35,12 @@ class UpdateType(Enum):
     MAJOR = "major"
     MINOR = "minor"
     PATCH = "patch"
+
+
+def _update_type_to_enum(update_type: Optional[Literal["major", "minor", "patch"]] = None) -> Optional[UpdateType]:
+    if update_type is not None:
+        return UpdateType(update_type)
+    return None
 
 
 def _version_to_list(version_string):
@@ -50,7 +60,7 @@ def _check_update_type(version: str, new_version: str) -> Optional[UpdateType]:
     return None
 
 
-def _get_updated_version(version: str, update_type: UpdateType = UpdateType.PATCH) -> str:
+def _get_updated_version(version: str, update_type: UpdateType) -> str:
     version_list = _version_to_list(version)
 
     if update_type == UpdateType.MAJOR:
@@ -76,11 +86,11 @@ def _update_pkg_version(
     version = pkg_pyproject["project"]["version"]
 
     if not new_version:
-        if update_type:
-            new_version = _get_updated_version(version, update_type)
+        if update_type is not None:
+            new_version = _get_updated_version(version, update_type=update_type)
         else:
             pprint(f"Current version of the [bold]{pkg_name}[/bold] package is: [bold]{version}[/bold]")
-            new_version = text("Enter the new version", default=_get_updated_version(version))
+            new_version = text("Enter the new version", default=_get_updated_version(version, UpdateType.PATCH))
 
     pkg_pyproject["project"]["version"] = new_version
     (PACKAGES_DIR / pkg_name / "pyproject.toml").write_text(tomlkit.dumps(pkg_pyproject))
@@ -91,31 +101,56 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run() -> None:
+def run(pkg_name: Optional[str] = None, update_type: Optional[Literal["major", "minor", "patch"]] = None) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 
-    The user selects a package, and if it is 'ragbits-core', all packages are updated based on the version
-    update of 'ragbits-core'. Otherwise, the selected package is updated individually.
+    Based on the provided package name and update type, this function updates the version of a
+    specific package. If the package is "ragbits-core", all other packages that depend on it
+    will also be updated accordingly.
+
+    If no package name or update type is provided, the user will be prompted to select a package
+    and version update type interactively. For "ragbits-core", the user is asked for confirmation
+    before proceeding with a global update.
+
+    Args:
+        pkg_name: Name of the package to update. If not provided, the user is prompted.
+        update_type: Type of version update to apply. If not provided, the user is prompted for this input.
+
+    Raises:
+        ValueError: If the provided `pkg_name` is not found in the available packages.
     """
 
     packages: list[str] = [obj.name for obj in PACKAGES_DIR.iterdir() if obj.is_dir()]
-    pkg_name: str = list_input("Enter the package name", choices=packages)
+
+    if pkg_name is not None:
+        if pkg_name not in packages:
+            raise ValueError(f"Package '{pkg_name}' not found in available packages.")
+    else:
+        pkg_name = list_input("Enter the package name", choices=packages)
+
+    casted_update_type = _update_type_to_enum(update_type)
+
+    user_prompt_required = pkg_name is None or casted_update_type is None
 
     if pkg_name == "ragbits-core":
-        print("When upgrading the ragbits-core package it is also necessary to upgrade the other packages.")
-        is_continue = confirm(message="Do you want to continue?")
-        if is_continue:
-            ragbits_version, new_ragbits_version = _update_pkg_version(pkg_name)
-            update_type = _check_update_type(ragbits_version, new_ragbits_version)
+        if user_prompt_required:
+            print("When upgrading the ragbits-core package it is also necessary to upgrade the other packages.")
+            is_continue = confirm(message="Do you want to continue?")
+        else:
+            is_continue = True
 
-            for pkg_name in [pkg for pkg in packages if pkg != "ragbits-core"]:
-                pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg_name / "pyproject.toml").read_text())
+        if is_continue:
+            ragbits_version, new_ragbits_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
+            casted_update_type = _check_update_type(ragbits_version, new_ragbits_version)
+
+            for pkg in [pkg for pkg in packages if pkg != "ragbits-core"]:
+                pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg / "pyproject.toml").read_text())
                 pkg_pyproject["project"]["dependencies"] = [
                     dep for dep in pkg_pyproject["project"]["dependencies"] if "ragbits" not in dep
                 ]
                 pkg_pyproject["project"]["dependencies"].append(f"ragbits=={new_ragbits_version}")
-                _update_pkg_version(pkg_name, pkg_pyproject, update_type=update_type)
+                _update_pkg_version(pkg, pkg_pyproject, update_type=casted_update_type)
 
         else:
             pprint("[red]The ragbits-core package was not successfully updated.[/red]")
@@ -123,5 +158,10 @@ def run() -> None:
         _update_pkg_version(pkg_name)
 
 
+def main():
+    """Entrypoint to fire script."""
+    _ = Fire(run)
+
+
 if __name__ == "__main__":
-    run()
+    main()
