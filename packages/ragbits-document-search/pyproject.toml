@@ -33,7 +33,8 @@ classifiers = [
 ]
 dependencies = [
     "numpy~=1.24.0",
-    "ragbits"
+    "ragbits",
+    "unstructured>=0.15.12",
 ]
 
 [tool.uv]

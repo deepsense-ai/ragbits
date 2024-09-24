@@ -13,7 +13,7 @@ class Element(BaseModel, ABC):
     """
 
     element_type: str
-    document: DocumentMeta
+    document_meta: DocumentMeta
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 

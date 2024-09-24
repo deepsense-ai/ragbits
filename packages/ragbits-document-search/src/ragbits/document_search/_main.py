@@ -1,7 +1,8 @@
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessor
+from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker
@@ -70,7 +71,7 @@ class DocumentSearch:
         """
         # TODO: This is a placeholder implementation. It should be replaced with a real implementation.
 
-        document_processor = DocumentProcessor()
+        document_processor = DocumentProcessor.from_config({DocumentType.TXT: DummyProvider()})
         elements = await document_processor.process(document)
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
