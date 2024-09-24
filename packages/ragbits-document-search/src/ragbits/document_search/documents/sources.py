@@ -1,4 +1,6 @@
 import os
+import tempfile
+import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Literal
@@ -71,7 +73,7 @@ class GCSSource(Source):
     An object representing a GCS file source.
     """
 
-    source_type: Literal["gcs_file"] = "gcs_file"
+    source_type: Literal["gcs"] = "gcs"
 
     bucket: str
     object_name: str
@@ -91,29 +93,36 @@ class GCSSource(Source):
 
         The file is downloaded to a local directory specified by `local_dir`. If the file already exists locally,
         it will not be downloaded again. If the file doesn't exist locally, it will be fetched from GCS.
+        The local directory is determined by the environment variable `LOCAL_STORAGE_DIR_ENV`. If this environment
+        variable is not set, a temporary directory is used.
 
         Returns:
             Path: The local path to the downloaded file.
 
         Raises:
             ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
-            ValueError: If LOCAL_STORAGE_DIR_ENV is not set.
         """
 
         if not HAS_GCLOUD_AIO:
             raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 
         if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is None:
-            raise ValueError(f"{LOCAL_STORAGE_DIR_ENV} environment variable is not set")
+            warnings.warn(
+                "The environment variable 'LOCAL_STORAGE_DIR_ENV' is not set. A temporary directory will be used "
+                "to store the file."
+            )
+            local_dir = Path(tempfile.gettempdir())
+        else:
+            local_dir = Path(local_dir_env)
 
-        local_dir: Path = Path(local_dir_env)
         bucket_local_dir = local_dir / self.bucket
-
         bucket_local_dir.mkdir(parents=True, exist_ok=True)
         path = bucket_local_dir / self.object_name
 
         if not path.is_file():
             async with Storage() as client:
-                await client.download_to_filename(bucket=self.bucket, object_name=self.object_name, filename=path)
+                content = await client.download(self.bucket, self.object_name)
+                with open(path, mode="wb+") as file_object:
+                    file_object.write(content)
 
         return path
