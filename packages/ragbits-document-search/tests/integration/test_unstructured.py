@@ -7,7 +7,7 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.providers.unstructured import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
-    UNSTRUCTURED_API_URL_ENV,
+    UNSTRUCTURED_SERVER_URL_ENV,
     UnstructuredProvider,
 )
 
@@ -15,7 +15,7 @@ from ..helpers import env_vars_not_set
 
 
 @pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_API_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
+    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
 async def test_document_processor_processes_text_document_with_unstructured_provider():
@@ -30,7 +30,7 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
 
 
 @pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_API_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
+    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
 async def test_document_processor_processes_md_document_with_unstructured_provider():
@@ -44,7 +44,7 @@ async def test_document_processor_processes_md_document_with_unstructured_provid
 
 
 @pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_API_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
+    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
 async def test_unstructured_provider_document_with_default_partition_kwargs():
@@ -58,7 +58,7 @@ async def test_unstructured_provider_document_with_default_partition_kwargs():
 
 
 @pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_API_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
+    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
 async def test_unstructured_provider_document_with_custom_partition_kwargs():
