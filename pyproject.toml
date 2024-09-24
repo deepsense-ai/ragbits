@@ -7,7 +7,8 @@ requires-python = ">=3.10"
 dependencies = [
     "ragbits[litellm,local]",
     "ragbits-dev-kit",
-    "ragbits-document-search[gcs]"
+    "ragbits-document-search[gcs]",
+    "ragbits-cli"
 ]
 
 [tool.uv]
@@ -23,12 +24,14 @@ dev-dependencies = [
 ragbits = { workspace = true }
 ragbits-dev-kit = { workspace = true }
 ragbits-document-search = { workspace = true }
+ragbits-cli = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "packages/ragbits-core",
     "packages/ragbits-dev-kit",
-    "packages/ragbits-document-search"
+    "packages/ragbits-document-search",
+    "packages/ragbits-cli"
 ]
 
 [tool.isort]
@@ -119,6 +122,7 @@ mypy_path = [
     'packages/ragbits-core/src',
     'packages/ragbits-dev-kit/src',
     'packages/ragbits-document-search/src',
+    'packages/ragbits-cli/src',
 ]
 
 [[tool.mypy.overrides]]
