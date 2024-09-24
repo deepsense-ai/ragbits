@@ -75,8 +75,6 @@ class UnstructuredProvider(BaseProvider):
         if self._client is not None:
             return self._client
         if (api_key := os.getenv(UNSTRUCTURED_API_KEY_ENV)) is None:
-            print(api_key)
-            print("I should raise here")
             raise ValueError(f"{UNSTRUCTURED_API_KEY_ENV} environment variable is not set")
         if (server_url := os.getenv(UNSTRUCTURED_SERVER_URL_ENV)) is None:
             raise ValueError(f"{UNSTRUCTURED_SERVER_URL_ENV} environment variable is not set")
