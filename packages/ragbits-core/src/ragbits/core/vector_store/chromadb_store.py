@@ -85,7 +85,7 @@ class ChromaDBStore(VectorStore):
         text = entry.metadata["content"]
 
         metadata = deepcopy(entry.metadata)
-        metadata["document_meta"]["source"]["path"] = str(metadata["document_meta"]["source"]["path"])
+        metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
         metadata["key"] = entry.key
         metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
 
@@ -102,7 +102,7 @@ class ChromaDBStore(VectorStore):
             A dictionary with the same keys as the input, where JSON strings are parsed
             into their respective Python data types.
         """
-        metadata["document_meta"]=metadata.pop("document")
+        metadata["document_meta"] = metadata.pop("document")
         return {key: json.loads(val) if self._is_json(val) else val for key, val in metadata.items()}
 
     def _is_json(self, myjson: str) -> bool:

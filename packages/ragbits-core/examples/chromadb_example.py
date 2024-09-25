@@ -14,7 +14,6 @@ from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
-
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
     DocumentMeta.create_text_document_from_literal(
