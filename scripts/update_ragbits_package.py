@@ -4,8 +4,8 @@
 #     "tomlkit",
 #     "inquirer",
 #     "rich",
-#     "fire",
-#     "typing-extensions"
+#     "typing-extensions",
+#     "typer"
 # ]
 # ///
 # To run this script and update a package, run the following command:
@@ -19,10 +19,9 @@ from pathlib import Path
 from typing import Optional
 
 import tomlkit
-from fire import Fire
+import typer
 from inquirer.shortcuts import confirm, list_input, text
 from rich import print as pprint
-from typing_extensions import Literal
 
 PACKAGES_DIR = Path(__file__).parent.parent / "packages"
 
@@ -37,7 +36,7 @@ class UpdateType(Enum):
     PATCH = "patch"
 
 
-def _update_type_to_enum(update_type: Optional[Literal["major", "minor", "patch"]] = None) -> Optional[UpdateType]:
+def _update_type_to_enum(update_type: Optional[str] = None) -> Optional[UpdateType]:
     if update_type is not None:
         return UpdateType(update_type)
     return None
@@ -101,7 +100,7 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run(pkg_name: Optional[str] = None, update_type: Optional[Literal["major", "minor", "patch"]] = None) -> None:
+def run(pkg_name: Optional[str] = None, update_type: Optional[str] = None) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 
@@ -115,7 +114,8 @@ def run(pkg_name: Optional[str] = None, update_type: Optional[Literal["major", "
 
     Args:
         pkg_name: Name of the package to update. If not provided, the user is prompted.
-        update_type: Type of version update to apply. If not provided, the user is prompted for this input.
+        update_type: Type of version update to apply (major, minor or patch). If not provided,
+        the user is prompted for this input.
 
     Raises:
         ValueError: If the provided `pkg_name` is not found in the available packages.
@@ -158,10 +158,5 @@ def run(pkg_name: Optional[str] = None, update_type: Optional[Literal["major", "
         _update_pkg_version(pkg_name)
 
 
-def main():
-    """Entrypoint to fire script."""
-    _ = Fire(run)
-
-
 if __name__ == "__main__":
-    main()
+    typer.run(run)
