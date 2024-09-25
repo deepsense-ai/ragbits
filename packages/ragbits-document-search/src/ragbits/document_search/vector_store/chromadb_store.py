@@ -11,7 +11,7 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.vector_store.base import VectorStore 
+from ragbits.document_search.vector_store.base import VectorStore
 from ragbits.document_search.vector_store.in_memory import VectorDBEntry
 
 
@@ -44,9 +44,8 @@ class ChromaDBStore(VectorStore):
         self._chroma_client = chroma_client
         self._embedding_function = embedding_function
         self._max_distance = max_distance
-        self._collection = self._get_chroma_collection()
-
         self._metadata = {"hnsw:space": distance_method}
+        self._collection = self._get_chroma_collection()
 
     def _get_chroma_collection(self) -> chromadb.Collection:
         """
@@ -100,7 +99,8 @@ class ChromaDBStore(VectorStore):
             metadata: A dictionary containing metadata where values may be JSON strings.
 
         Returns:
-            A dictionary with the same keys as the input, where JSON strings are parsed into their respective Python data types.
+            A dictionary with the same keys as the input, where JSON strings are parsed
+            into their respective Python data types.
         """
         return {key: json.loads(val) if self._is_json(val) else val for key, val in metadata.items()}
 
@@ -121,6 +121,16 @@ class ChromaDBStore(VectorStore):
             return False
         except ValueError:
             return False
+
+    @property
+    def embedding_function(self) -> Union[Embeddings, chromadb.EmbeddingFunction]:
+        """
+        Returns the embedding function.
+
+        Returns:
+            The embedding function.
+        """
+        return self._embedding_function
 
     async def store(self, entries: List[VectorDBEntry]) -> None:
         """

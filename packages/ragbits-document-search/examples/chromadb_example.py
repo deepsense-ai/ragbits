@@ -6,7 +6,6 @@
 # ]
 # ///
 import asyncio
-import os
 
 import chromadb
 
@@ -34,7 +33,7 @@ async def main():
         chroma_client=chroma_client,
         embedding_function=embedding_client,
     )
-    document_search = DocumentSearch(embedder=vector_store._embedding_function, vector_store=vector_store)
+    document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
 
     for document in documents:
         await document_search.ingest_document(document)
