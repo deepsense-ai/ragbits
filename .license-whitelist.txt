@@ -6,6 +6,7 @@ Apache Software License, BSD License
 Apache Software License, MIT License
 Apache-2
 Apache License, Version 2
+Apache License v2.0
 BSD
 BSD License
 BSD License, Apache Software License
