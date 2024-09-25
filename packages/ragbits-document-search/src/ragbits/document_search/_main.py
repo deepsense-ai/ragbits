@@ -1,4 +1,5 @@
 from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.vector_store.base import VectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessor
@@ -7,7 +8,6 @@ from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
-from ragbits.document_search.vector_store.base import VectorStore
 
 
 class DocumentSearch:

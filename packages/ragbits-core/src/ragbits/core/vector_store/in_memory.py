@@ -1,6 +1,6 @@
 import numpy as np
 
-from ragbits.document_search.vector_store.base import VectorDBEntry, VectorStore
+from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
 
 
 class InMemoryVectorStore(VectorStore):

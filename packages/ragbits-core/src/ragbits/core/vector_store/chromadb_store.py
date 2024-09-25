@@ -11,8 +11,8 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.vector_store.base import VectorStore
-from ragbits.document_search.vector_store.in_memory import VectorDBEntry
+from ragbits.core.vector_store.base import VectorStore
+from ragbits.core.vector_store.in_memory import VectorDBEntry
 
 
 class ChromaDBStore(VectorStore):
@@ -85,7 +85,7 @@ class ChromaDBStore(VectorStore):
         text = entry.metadata["content"]
 
         metadata = deepcopy(entry.metadata)
-        metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
+        metadata["document_meta"]["source"]["path"] = str(metadata["document_meta"]["source"]["path"])
         metadata["key"] = entry.key
         metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
 
@@ -102,6 +102,7 @@ class ChromaDBStore(VectorStore):
             A dictionary with the same keys as the input, where JSON strings are parsed
             into their respective Python data types.
         """
+        metadata["document_meta"]=metadata.pop("document")
         return {key: json.loads(val) if self._is_json(val) else val for key, val in metadata.items()}
 
     def _is_json(self, myjson: str) -> bool:
@@ -139,12 +140,10 @@ class ChromaDBStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        collection = self._get_chroma_collection()
-
         entries_processed = list(map(self._process_db_entry, entries))
         ids, embeddings, texts, metadatas = map(list, zip(*entries_processed))
 
-        collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
+        self._collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
 
     async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
         """
@@ -157,8 +156,7 @@ class ChromaDBStore(VectorStore):
         Returns:
             The retrieved entries.
         """
-        collection = self._get_chroma_collection()
-        query_result = collection.query(query_embeddings=[vector], n_results=k)
+        query_result = self._collection.query(query_embeddings=[vector], n_results=k)
 
         db_entries = []
         for meta in query_result.get("metadatas"):
@@ -183,14 +181,11 @@ class ChromaDBStore(VectorStore):
         Returns:
             The most similar text or None if no similar text is found.
         """
-
-        collection = self._get_chroma_collection()
-
         if isinstance(self._embedding_function, Embeddings):
             embedding = await self._embedding_function.embed_text([text])
-            retrieved = collection.query(query_embeddings=embedding, n_results=1)
+            retrieved = self._collection.query(query_embeddings=embedding, n_results=1)
         else:
-            retrieved = collection.query(query_texts=[text], n_results=1)
+            retrieved = self._collection.query(query_texts=[text], n_results=1)
 
         return self._return_best_match(retrieved)
 
