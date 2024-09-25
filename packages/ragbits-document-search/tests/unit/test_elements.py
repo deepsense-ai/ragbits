@@ -1,6 +1,6 @@
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.vector_store.base import VectorDBEntry
+from ragbits.core.vector_store.base import VectorDBEntry
 
 
 def test_resolving_element_type():
