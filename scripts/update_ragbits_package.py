@@ -100,7 +100,7 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run(pkg_name: Optional[str] = None, update_type: Optional[str] = None) -> None:
+def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[str] = typer.Argument(None)) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 
@@ -155,7 +155,7 @@ def run(pkg_name: Optional[str] = None, update_type: Optional[str] = None) -> No
         else:
             pprint("[red]The ragbits-core package was not successfully updated.[/red]")
     else:
-        _update_pkg_version(pkg_name)
+        _update_pkg_version(pkg_name, update_type=casted_update_type)
 
 
 if __name__ == "__main__":
