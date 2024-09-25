@@ -74,8 +74,6 @@ def test_get_chroma_collection(mock_chromadb_store):
 def test_get_chroma_collection_with_custom_embedding_function(
     custom_embedding_function, mock_chromadb_store_with_custom_embedding_function, mock_chroma_client
 ):
-    _ = mock_chromadb_store_with_custom_embedding_function._get_chroma_collection()
-
     mock_chroma_client.get_or_create_collection.assert_called_once_with(
         name="test_index",
         metadata={"hnsw:space": "l2"},
