@@ -106,7 +106,7 @@ class GCSSource(Source):
             raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 
         if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is None:
-            local_dir = Path(tempfile.gettempdir())
+            local_dir = Path(tempfile.gettempdir()) / "ragbits"
         else:
             local_dir = Path(local_dir_env)
 
@@ -117,6 +117,7 @@ class GCSSource(Source):
         if not path.is_file():
             async with Storage() as client:
                 content = await client.download(self.bucket, self.object_name)
+                Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
                 with open(path, mode="wb+") as file_object:
                     file_object.write(content)
 
