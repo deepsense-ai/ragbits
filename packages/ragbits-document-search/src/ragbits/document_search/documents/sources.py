@@ -84,7 +84,7 @@ class GCSSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"bucket_name: {self.bucket}\nobject_name: {self.object_name}"
+        return f"gcs:gs://{self.bucket}/{self.object_name}"
 
     async def fetch(self) -> Path:
         """
