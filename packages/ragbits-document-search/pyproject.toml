@@ -37,6 +37,11 @@ dependencies = [
     "unstructured>=0.15.12",
 ]
 
+[project.optional-dependencies]
+gcs = [
+    "gcloud-aio-storage~=9.3.0"
+]
+
 [tool.uv]
 dev-dependencies = [
     "pre-commit~=3.8.0",
