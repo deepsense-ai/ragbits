@@ -68,7 +68,7 @@ def test_chromadbstore_init_import_error():
 
 def test_get_chroma_collection(mock_chromadb_store):
     _ = mock_chromadb_store._get_chroma_collection()
-    assert mock_chromadb_store.chroma_client.get_or_create_collection.called
+    assert mock_chromadb_store._chroma_client.get_or_create_collection.called
 
 
 def test_get_chroma_collection_with_custom_embedding_function(
@@ -82,7 +82,6 @@ def test_get_chroma_collection_with_custom_embedding_function(
     )
 
 
-@pytest.mark.asyncio
 async def test_stores_entries_correctly(mock_chromadb_store):
     data = [
         VectorDBEntry(
@@ -95,7 +94,7 @@ async def test_stores_entries_correctly(mock_chromadb_store):
         )
     ]
     await mock_chromadb_store.store(data)
-    mock_chromadb_store.chroma_client.get_or_create_collection().add.assert_called_once()
+    mock_chromadb_store._chroma_client.get_or_create_collection().add.assert_called_once()
 
 
 def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
@@ -112,13 +111,11 @@ def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
     assert metadata["key"] == "test_key"
 
 
-@pytest.mark.asyncio
 async def test_store(mock_chromadb_store, mock_vector_db_entry):
     await mock_chromadb_store.store([mock_vector_db_entry])
-    assert mock_chromadb_store.chroma_client.get_or_create_collection().add.called
+    assert mock_chromadb_store._chroma_client.get_or_create_collection().add.called
 
 
-@pytest.mark.asyncio
 async def test_retrieves_entries_correctly(mock_chromadb_store):
     vector = [0.1, 0.2, 0.3]
     mock_collection = mock_chromadb_store._get_chroma_collection()
@@ -140,7 +137,6 @@ async def test_retrieves_entries_correctly(mock_chromadb_store):
     assert entries[0].metadata["document"]["title"] == "test title"
 
 
-@pytest.mark.asyncio
 async def test_handles_empty_retrieve(mock_chromadb_store):
     vector = [0.1, 0.2, 0.3]
     mock_collection = mock_chromadb_store._get_chroma_collection()
@@ -149,11 +145,10 @@ async def test_handles_empty_retrieve(mock_chromadb_store):
     assert len(entries) == 0
 
 
-@pytest.mark.asyncio
 async def test_find_similar(mock_chromadb_store, mock_embedding_function):
     mock_embedding_function.embed_text.return_value = [[0.1, 0.2, 0.3]]
-    mock_chromadb_store.embedding_function = mock_embedding_function
-    mock_chromadb_store.chroma_client.get_or_create_collection().query.return_value = {
+    mock_chromadb_store._embedding_function = mock_embedding_function
+    mock_chromadb_store._chroma_client.get_or_create_collection().query.return_value = {
         "documents": [["test content"]],
         "distances": [[0.1]],
     }
@@ -161,10 +156,9 @@ async def test_find_similar(mock_chromadb_store, mock_embedding_function):
     assert result == "test content"
 
 
-@pytest.mark.asyncio
 async def test_find_similar_with_custom_embeddings(mock_chromadb_store, custom_embedding_function):
-    mock_chromadb_store.embedding_function = custom_embedding_function
-    mock_chromadb_store.chroma_client.get_or_create_collection().query.return_value = {
+    mock_chromadb_store._embedding_function = custom_embedding_function
+    mock_chromadb_store._chroma_client.get_or_create_collection().query.return_value = {
         "documents": [["test content"]],
         "distances": [[0.1]],
     }
@@ -185,7 +179,7 @@ def test_repr(mock_chromadb_store):
     ],
 )
 def test_return_best_match(mock_chromadb_store, retrieved, max_distance, expected):
-    mock_chromadb_store.max_distance = max_distance
+    mock_chromadb_store._max_distance = max_distance
     result = mock_chromadb_store._return_best_match(retrieved)
     assert result == expected
 
@@ -195,7 +189,7 @@ def test_is_json_valid_string(mock_chromadb_store):
     valid_json_string = '{"key": "value"}'
 
     # Act
-    result = mock_chromadb_store.is_json(valid_json_string)
+    result = mock_chromadb_store._is_json(valid_json_string)
 
     # Assert
     assert result is True

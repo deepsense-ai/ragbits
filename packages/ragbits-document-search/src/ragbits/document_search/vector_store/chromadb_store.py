@@ -11,10 +11,11 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore, VectorDBEntry
+from ragbits.document_search.vector_store.base import VectorStore 
+from ragbits.document_search.vector_store.in_memory import VectorDBEntry
 
 
-class ChromaDBStore(InMemoryVectorStore):
+class ChromaDBStore(VectorStore):
     """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
 
     def __init__(
@@ -29,20 +30,21 @@ class ChromaDBStore(InMemoryVectorStore):
         Initializes the ChromaDBStore with the given parameters.
 
         Args:
-            index_name (str): The name of the index.
-            chroma_client (chromadb.ClientAPI): The ChromaDB client.
-            embedding_function (Union[Embeddings, chromadb.EmbeddingFunction]): The embedding function.
-            max_distance (Optional[float], default=None): The maximum distance for similarity.
-            distance_method (Literal["l2", "ip", "cosine"], default="l2"): The distance method to use.
+            index_name: The name of the index.
+            chroma_client: The ChromaDB client.
+            embedding_function: The embedding function.
+            max_distance: The maximum distance for similarity.
+            distance_method: The distance method to use.
         """
         if not HAS_CHROMADB:
             raise ImportError("Install the 'ragbits-document-search[chromadb]' extra to use LiteLLM embeddings models")
 
         super().__init__()
-        self.index_name = index_name
-        self.chroma_client = chroma_client
-        self.embedding_function = embedding_function
-        self.max_distance = max_distance
+        self._index_name = index_name
+        self._chroma_client = chroma_client
+        self._embedding_function = embedding_function
+        self._max_distance = max_distance
+        self._collection = self._get_chroma_collection()
 
         self._metadata = {"hnsw:space": distance_method}
 
@@ -52,15 +54,15 @@ class ChromaDBStore(InMemoryVectorStore):
         If the collection doesn't exist, it creates one.
 
         Returns:
-            chromadb.Collection: Retrieved collection
+            Retrieved collection
         """
-        if isinstance(self.embedding_function, Embeddings):
-            return self.chroma_client.get_or_create_collection(name=self.index_name, metadata=self._metadata)
+        if isinstance(self._embedding_function, Embeddings):
+            return self._chroma_client.get_or_create_collection(name=self._index_name, metadata=self._metadata)
 
-        return self.chroma_client.get_or_create_collection(
-            name=self.index_name,
+        return self._chroma_client.get_or_create_collection(
+            name=self._index_name,
             metadata=self._metadata,
-            embedding_function=self.embedding_function,
+            embedding_function=self._embedding_function,
         )
 
     def _return_best_match(self, retrieved: dict) -> Optional[str]:
@@ -68,12 +70,12 @@ class ChromaDBStore(InMemoryVectorStore):
         Based on the retrieved data, returns the best match or None if no match is found.
 
         Args:
-            retrieved (dict): Retrieved data, with a column-first format
+            Retrieved data, with a column-first format
 
         Returns:
-            Optional[str]: The best match or None if no match is found
+            The best match or None if no match is found
         """
-        if self.max_distance is None or retrieved["distances"][0][0] <= self.max_distance:
+        if self._max_distance is None or retrieved["distances"][0][0] <= self._max_distance:
             return retrieved["documents"][0][0]
 
         return None
@@ -95,23 +97,22 @@ class ChromaDBStore(InMemoryVectorStore):
         Processes the metadata dictionary by parsing JSON strings if applicable.
 
         Args:
-            metadata (dict): A dictionary containing metadata where values may be JSON strings.
+            metadata: A dictionary containing metadata where values may be JSON strings.
 
         Returns:
-            dict[str, Union[str, int, float, bool]]: A dictionary with the same keys as the input,
-            where JSON strings are parsed into their respective Python data types.
+            A dictionary with the same keys as the input, where JSON strings are parsed into their respective Python data types.
         """
-        return {key: json.loads(val) if self.is_json(val) else val for key, val in metadata.items()}
+        return {key: json.loads(val) if self._is_json(val) else val for key, val in metadata.items()}
 
-    def is_json(self, myjson: str) -> bool:
+    def _is_json(self, myjson: str) -> bool:
         """
         Check if the provided string is a valid JSON.
 
         Args:
-            myjson (str): The string to be checked.
+            myjson: The string to be checked.
 
         Returns:
-            bool: True if the string is a valid JSON, False otherwise.
+            True if the string is a valid JSON, False otherwise.
         """
         try:
             if isinstance(myjson, str):
@@ -126,7 +127,7 @@ class ChromaDBStore(InMemoryVectorStore):
         Stores entries in the ChromaDB collection.
 
         Args:
-            entries (List[VectorDBEntry]): The entries to store.
+            entries: The entries to store.
         """
         collection = self._get_chroma_collection()
 
@@ -140,11 +141,11 @@ class ChromaDBStore(InMemoryVectorStore):
         Retrieves entries from the ChromaDB collection.
 
         Args:
-            vector (List[float]): The vector to query.
-            k (int): The number of entries to retrieve.
+            vector: The vector to query.
+            k: The number of entries to retrieve.
 
         Returns:
-            List[VectorDBEntry]: The retrieved entries.
+            The retrieved entries.
         """
         collection = self._get_chroma_collection()
         query_result = collection.query(query_embeddings=[vector], n_results=k)
@@ -167,16 +168,16 @@ class ChromaDBStore(InMemoryVectorStore):
         has distance bigger than `self.max_distance`.
 
         Args:
-            text (str): The text to find similar to.
+            text: The text to find similar to.
 
         Returns:
-            Optional[str]: The most similar text or None if no similar text is found.
+            The most similar text or None if no similar text is found.
         """
 
         collection = self._get_chroma_collection()
 
-        if isinstance(self.embedding_function, Embeddings):
-            embedding = await self.embedding_function.embed_text([text])
+        if isinstance(self._embedding_function, Embeddings):
+            embedding = await self._embedding_function.embed_text([text])
             retrieved = collection.query(query_embeddings=embedding, n_results=1)
         else:
             retrieved = collection.query(query_texts=[text], n_results=1)
@@ -188,6 +189,6 @@ class ChromaDBStore(InMemoryVectorStore):
         Returns the string representation of the object.
 
         Returns:
-            str: The string representation of the object.
+            The string representation of the object.
         """
-        return f"{self.__class__.__name__}(index_name={self.index_name})"
+        return f"{self.__class__.__name__}(index_name={self._index_name})"

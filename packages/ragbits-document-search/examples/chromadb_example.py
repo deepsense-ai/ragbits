@@ -27,16 +27,14 @@ async def main():
     """Run the example."""
 
     chroma_client = chromadb.PersistentClient(path="chroma")
-    embedding_client = LiteLLMEmbeddings(
-        api_key=os.getenv("OPENAI_API_KEY"),
-    )
+    embedding_client = LiteLLMEmbeddings()
 
     vector_store = ChromaDBStore(
         index_name="jokes",
         chroma_client=chroma_client,
         embedding_function=embedding_client,
     )
-    document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+    document_search = DocumentSearch(embedder=vector_store._embedding_function, vector_store=vector_store)
 
     for document in documents:
         await document_search.ingest_document(document)
