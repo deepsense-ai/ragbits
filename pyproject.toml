@@ -7,9 +7,10 @@ requires-python = ">=3.10"
 dependencies = [
     "ragbits[litellm,local]",
     "ragbits-dev-kit",
-    "ragbits-document-search[chromadb]",
+    "ragbits-document-search[chromadb,gcs]",
     "ragbits-cli"
 ]
+
 
 [tool.uv]
 dev-dependencies = [

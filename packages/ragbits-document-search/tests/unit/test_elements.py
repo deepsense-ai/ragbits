@@ -18,7 +18,10 @@ def test_resolving_element_type():
             metadata={
                 "element_type": "custom_element",
                 "foo": "bar",
-                "document": {"document_type": "txt", "source": {"source_type": "local_file", "path": "/example/path"}},
+                "document_meta": {
+                    "document_type": "txt",
+                    "source": {"source_type": "local_file", "path": "/example/path"},
+                },
             },
         )
     )
@@ -26,5 +29,5 @@ def test_resolving_element_type():
     assert isinstance(element, MyElement)
     assert element.foo == "bar"
     assert element.get_key() == "barbar"
-    assert element.document.document_type == DocumentType.TXT
-    assert element.document.source.source_type == "local_file"
+    assert element.document_meta.document_type == DocumentType.TXT
+    assert element.document_meta.source.source_type == "local_file"

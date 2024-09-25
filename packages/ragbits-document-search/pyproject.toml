@@ -33,13 +33,16 @@ classifiers = [
 ]
 dependencies = [
     "numpy~=1.24.0",
-    "ragbits"
+    "ragbits",
+    "unstructured>=0.15.12",
 ]
-
 
 [project.optional-dependencies]
 chromadb = [
     "chromadb~=0.4.24",
+]
+gcs = [
+    "gcloud-aio-storage~=9.3.0"
 ]
 
 [tool.uv]

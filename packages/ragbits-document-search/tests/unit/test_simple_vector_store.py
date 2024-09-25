@@ -9,10 +9,10 @@ from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 async def test_simple_vector_store():
     store = InMemoryVectorStore()
 
-    document = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
+    document_meta = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
     elements = [
-        (TextElement(content="dog", document=document), [0.5, 0.5]),
-        (TextElement(content="cat", document=document), [0.6, 0.6]),
+        (TextElement(content="dog", document_meta=document_meta), [0.5, 0.5]),
+        (TextElement(content="cat", document_meta=document_meta), [0.6, 0.6]),
     ]
 
     entries = [element[0].to_vector_db_entry(vector=element[1]) for element in elements]
