@@ -20,7 +20,6 @@ class PromptState:
 
     Attributes:
         prompts (list): A list containing discovered prompts.
-        prompts_names (list): A list of names of discovered prompts.
         variable_values (dict): A dictionary to store values entered by the user for prompt input fields.
         dynamic_tb (dict): A dictionary containing dynamically created textboxes based on prompt input fields.
         current_prompt (Prompt): The currently processed Prompt object. This is created upon clicking the
@@ -32,7 +31,6 @@ class PromptState:
     """
 
     prompts: list = []
-    prompts_names: list = []
     variable_values: dict = {}
     dynamic_tb: dict = {}
     current_prompt: Prompt | None = None
@@ -59,8 +57,6 @@ def load_prompts_list(pattern: str, state: gr.State) -> gr.State:
     obj = PromptDiscovery(file_pattern=pattern)
     discovered_prompts = list(obj.discover())
     state.value.prompts = discovered_prompts
-    names = [prompt.__name__ for prompt in discovered_prompts]
-    state.value.prompts_names = names
 
     return state
 
@@ -114,7 +110,7 @@ def list_prompt_choices(state: gr.State) -> list[tuple[str, int]]:
     Returns:
         list[tuple[str, int]]: A list of tuples containing prompt names and their indices.
     """
-    return [(name, idx) for idx, name in enumerate(state.value.prompts_names)]
+    return [(prompt.__name__, idx) for idx, prompt in enumerate(state.value.prompts)]
 
 
 def send_prompt_to_llm(state: gr.State) -> str:
