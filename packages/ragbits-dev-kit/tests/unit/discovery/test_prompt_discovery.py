@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ragbits.dev_kit.prompt_lab.discovery.prompt_discovery import PromptDiscovery
 
-current_dir = str(Path(__file__).parent)
+current_dir = Path(__file__).parent
 
 
 def test_prompt_discovery_from_file():

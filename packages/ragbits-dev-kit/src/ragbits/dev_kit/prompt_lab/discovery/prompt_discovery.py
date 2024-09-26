@@ -15,10 +15,10 @@ class PromptDiscovery:
 
     Args:
         file_pattern (str): The file pattern to search for Prompt objects. Defaults to "**/prompt_*.py"
-        root_path (str): The root path to search for Prompt objects. Defaults to the directory where the script is run.
+        root_path (Path): The root path to search for Prompt objects. Defaults to the directory where the script is run.
     """
 
-    def __init__(self, file_pattern: str = DEFAULT_FILE_PATTERN, root_path: str = "."):
+    def __init__(self, file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd()):
         self.file_pattern = file_pattern
         self.root_path = root_path
 
@@ -47,7 +47,7 @@ class PromptDiscovery:
 
         result_set: set[type[Prompt]] = set()
 
-        for file_path in Path(self.root_path).glob(self.file_pattern):
+        for file_path in self.root_path.glob(self.file_pattern):
             # remove file extenson and remove directory separators with dots
             module_name = str(file_path).rsplit(".", 1)[0].replace(os.sep, ".")
 

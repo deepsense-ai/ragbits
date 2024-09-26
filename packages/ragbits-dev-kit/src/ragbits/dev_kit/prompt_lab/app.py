@@ -203,21 +203,20 @@ def run_app(
             with gr.Row():
                 with gr.Column(scale=1):
                     with gr.Tab("Inputs"):
-                        if index is not None:
-                            input_fields: list = get_input_type_fields(prompt.input_type)
-                            tb_dict = {}
-                            for entry in input_fields:
-                                with gr.Row():
-                                    var = gr.Textbox(
-                                        label=entry["field_name"],
-                                        value=entry["field_default_value"],
-                                        interactive=True,
-                                    )
-                                    list_of_vars.append(var)
+                        input_fields: list = get_input_type_fields(prompt.input_type)
+                        tb_dict = {}
+                        for entry in input_fields:
+                            with gr.Row():
+                                var = gr.Textbox(
+                                    label=entry["field_name"],
+                                    value=entry["field_default_value"],
+                                    interactive=True,
+                                )
+                                list_of_vars.append(var)
 
-                                    tb_dict[entry["field_name"]] = var
+                                tb_dict[entry["field_name"]] = var
 
-                            state.dynamic_tb = tb_dict
+                        state.dynamic_tb = tb_dict
 
                         render_prompt_button = gr.Button(value="Render prompts")
 
