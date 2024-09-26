@@ -244,8 +244,8 @@ def run_app(
                                     label="Rendered User Prompt", value="", interactive=False
                                 )
 
-            # TODO: Gray out the "Send to LLM" button if LLM has not been configured
-            llm_request_button = gr.Button(value="Send to LLM")
+            llm_enabled = state.llm_model_name is not None
+            llm_request_button = gr.Button(value="Send to LLM", interactive=llm_enabled)
             llm_prompt_response = gr.Textbox(lines=10, label="LLM response")
 
             render_prompt_button.click(
