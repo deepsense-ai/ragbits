@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 from typing import Optional
 
+from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.partition.api import partition_via_api
 
@@ -16,6 +17,8 @@ DEFAULT_PARTITION_KWARGS: dict = {
     "split_pdf_allow_failed": True,
     "split_pdf_concurrency_level": 15,
 }
+
+DEFAULT_CHUNKING_KWARGS: dict = {}
 
 UNSTRUCTURED_API_KEY_ENV = "UNSTRUCTURED_API_KEY"
 UNSTRUCTURED_API_URL_ENV = "UNSTRUCTURED_API_URL"
@@ -47,7 +50,7 @@ class UnstructuredProvider(BaseProvider):
         DocumentType.XML,
     }
 
-    def __init__(self, partition_kwargs: Optional[dict] = None):
+    def __init__(self, partition_kwargs: Optional[dict] = None, chunking_kwargs: Optional[dict] = None):
         """Initialize the UnstructuredProvider.
 
         Args:
@@ -55,6 +58,7 @@ class UnstructuredProvider(BaseProvider):
                 for the available options: https://docs.unstructured.io/api-reference/api-services/api-parameters
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
+        self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
         """Process the document using the Unstructured API.
@@ -86,6 +90,7 @@ class UnstructuredProvider(BaseProvider):
             api_url=api_url,
             **self.partition_kwargs,
         )
+        elements = chunk_elements(elements, **self.chunking_kwargs)
         return [_to_text_element(element, document_meta) for element in elements]
 
 
