@@ -3,7 +3,6 @@ from typing import Any
 
 import gradio as gr
 import jinja2
-import typer
 from pydantic import BaseModel
 
 from ragbits.core.llms import LiteLLM
@@ -159,31 +158,12 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
     ]
 
 
-typer_app = typer.Typer(no_args_is_help=True)
-
-
-@typer_app.command()
-def run_app(
+def lab_app(  # pylint: disable=missing-param-doc
     file_pattern: str = DEFAULT_FILE_PATTERN, llm_model: str | None = None, llm_api_key: str | None = None
 ) -> None:
     """
-    Launches the interactive application for working with Large Language Models (LLMs).
-
-    This function serves as the entry point for the application. It performs several key tasks:
-
-    1. Initializes the application state using the PromptState class.
-    2. Sets the LLM model name and API key based on user-provided arguments.
-    3. Fetches a list of prompts from the specified paths using the load_prompts_list function.
-    4. Creates a Gradio interface with various UI elements:
-        - A dropdown menu for selecting prompts.
-        - Textboxes for displaying and potentially modifying system and user prompts.
-        - Textboxes for entering input values based on the selected prompt.
-        - Buttons for rendering prompts, sending prompts to the LLM, and displaying the response.
-
-    Args:
-        file_pattern (str): A pattern for looking up prompt files.
-        llm_model (str): The name of the LLM model to use.
-        llm_api_key (str): The API key for the chosen LLM model.
+    Launches the interactive application for listing, rendering, and testing prompts
+    defined within the current project.
     """
     with gr.Blocks() as gr_app:
         prompt_state_obj = PromptState()
@@ -262,7 +242,3 @@ def run_app(
             llm_request_button.click(send_prompt_to_llm, prompts_state, llm_prompt_response)
 
     gr_app.launch()
-
-
-if __name__ == "__main__":
-    typer_app()
