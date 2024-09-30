@@ -5,7 +5,7 @@ from typer import Typer
 
 import ragbits
 
-app = Typer()
+app = Typer(no_args_is_help=True)
 
 
 def main() -> None:
