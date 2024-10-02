@@ -218,3 +218,36 @@ def test_to_promptfoo():
         {"role": "system", "content": "You are a song generator for a adult named John."},
         {"role": "user", "content": "Theme for the song is pop."},
     ]
+
+
+def test_two_instances_do_not_share_additional_messages():
+    """
+    Test that two instances of a prompt do not share additional messages.
+    """
+
+    class TestPrompt(Prompt[_PromptInput, str]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You are a song generator for a {% if age > 18 %}adult{% else %}child{% endif %} named {{ name }}.
+        """
+        user_prompt = "Theme for the song is {{ theme }}."
+
+    prompt1 = TestPrompt(_PromptInput(name="John", age=15, theme="pop"))
+    prompt1.add_assistant_message("It's a really catchy tune.").add_user_message("I like it.")
+
+    prompt2 = TestPrompt(_PromptInput(name="Alice", age=30, theme="rock"))
+    prompt2.add_assistant_message("It's a nice tune.")
+
+    assert prompt1.chat == [
+        {"role": "system", "content": "You are a song generator for a child named John."},
+        {"role": "user", "content": "Theme for the song is pop."},
+        {"role": "assistant", "content": "It's a really catchy tune."},
+        {"role": "user", "content": "I like it."},
+    ]
+
+    assert prompt2.chat == [
+        {"role": "system", "content": "You are a song generator for a adult named Alice."},
+        {"role": "user", "content": "Theme for the song is rock."},
+        {"role": "assistant", "content": "It's a nice tune."},
+    ]
