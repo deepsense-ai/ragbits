@@ -22,7 +22,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     system_prompt: Optional[str] = None
     user_prompt: str
-    additional_messages: ChatFormat = []
+    additional_messages: Optional[ChatFormat] = None
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
@@ -125,10 +125,13 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        return [
+        chat = [
             *([{"role": "system", "content": self.system_message}] if self.system_message is not None else []),
             {"role": "user", "content": self.user_message},
-        ] + self.additional_messages
+        ]
+        if self.additional_messages:
+            chat.extend(self.additional_messages)
+        return chat
 
     def add_user_message(self, message: str) -> "Prompt[InputT, OutputT]":
         """
@@ -140,6 +143,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
+        if self.additional_messages is None:
+            self.additional_messages = []
         self.additional_messages.append({"role": "user", "content": message})
         return self
 
@@ -153,6 +158,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
+        if self.additional_messages is None:
+            self.additional_messages = []
         self.additional_messages.append({"role": "assistant", "content": message})
         return self
 
@@ -190,3 +197,16 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ResponseParsingError: If the response cannot be parsed.
         """
         return self.response_parser(response)
+
+    @classmethod
+    def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
+        """
+        Generate a prompt in the promptfoo format from a promptfoo test configuration.
+
+        Args:
+            config: The promptfoo test configuration.
+
+        Returns:
+            ChatFormat: The prompt in the format used by promptfoo.
+        """
+        return cls(cls.input_type.model_validate(config["vars"])).chat  # type: ignore
