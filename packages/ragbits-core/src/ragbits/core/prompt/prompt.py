@@ -190,3 +190,16 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ResponseParsingError: If the response cannot be parsed.
         """
         return self.response_parser(response)
+
+    @classmethod
+    def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
+        """
+        Generate a prompt in the promptfoo format from a promptfoo test configuration.
+
+        Args:
+            config: The promptfoo test configuration.
+
+        Returns:
+            ChatFormat: The prompt in the format used by promptfoo.
+        """
+        return cls(cls.input_type.model_validate(config["vars"])).chat  # type: ignore

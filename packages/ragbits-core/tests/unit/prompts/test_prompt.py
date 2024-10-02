@@ -198,3 +198,23 @@ def test_output__format_no_pydantic():
 
     prompt = TestPrompt(_PromptInput(name="John", age=15, theme="pop"))
     assert prompt.output_schema() is None
+
+
+def test_to_promptfoo():
+    """Test that a prompt can be converted to a promptfoo prompt."""
+    promptfoo_test_config = {
+        "vars": {"name": "John", "age": 25, "theme": "pop"},
+    }
+
+    class TestPrompt(Prompt[_PromptInput, str]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You are a song generator for a {% if age > 18 %}adult{% else %}child{% endif %} named {{ name }}.
+        """
+        user_prompt = "Theme for the song is {{ theme }}."
+
+    assert TestPrompt.to_promptfoo(promptfoo_test_config) == [
+        {"role": "system", "content": "You are a song generator for a adult named John."},
+        {"role": "user", "content": "Theme for the song is pop."},
+    ]
