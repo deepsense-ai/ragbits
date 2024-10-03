@@ -1,8 +1,10 @@
+from typing import Optional, Union
+
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.document_processor import DocumentProcessor
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker
@@ -36,11 +38,13 @@ class DocumentSearch:
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
+        document_processor_router: DocumentProcessorRouter | None = None,
     ) -> None:
         self.embedder = embedder
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
+        self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
 
     async def search(self, query: str) -> list[Element]:
         """
@@ -62,17 +66,22 @@ class DocumentSearch:
 
         return self.reranker.rerank(elements)
 
-    async def ingest_document(self, document: DocumentMeta) -> None:
+    async def ingest_document(
+        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
+    ) -> None:
         """
         Ingest a document.
 
         Args:
-            document: The document to ingest.
+            document: The document or document metadata to ingest.
+            document_processor: The document processor to use. If not provided, the document processor will be
+                determined based on the document metadata.
         """
-        # TODO: This is a placeholder implementation. It should be replaced with a real implementation.
+        document_meta = document if isinstance(document, DocumentMeta) else document.metadata
+        if document_processor is None:
+            document_processor = self.document_processor_router.get_provider(document_meta)
 
-        document_processor = DocumentProcessor.from_config({DocumentType.TXT: DummyProvider()})
-        elements = await document_processor.process(document)
+        elements = await document_processor.process(document_meta)
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
         await self.vector_store.store(entries)
