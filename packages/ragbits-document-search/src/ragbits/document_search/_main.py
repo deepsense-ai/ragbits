@@ -1,7 +1,6 @@
 from typing import Any, Optional, Union
 
-from onnxruntime.transformers.models.stable_diffusion.diffusion_models import BaseModel
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.document_search.documents.document import Document, DocumentMeta
