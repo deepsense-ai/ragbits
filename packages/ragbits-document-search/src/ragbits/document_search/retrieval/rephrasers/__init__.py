@@ -26,8 +26,6 @@ def get_rephraser(rephraser_config: Optional[dict]) -> QueryRephraser:
         return NoopQueryRephraser()
 
     rephraser_cls = get_cls_from_config(rephraser_config["type"], module)
-    config = rephraser_config.get("config")
+    config = rephraser_config.get("config", {})
 
-    if config is None:
-        return rephraser_cls
     return rephraser_cls(**config)

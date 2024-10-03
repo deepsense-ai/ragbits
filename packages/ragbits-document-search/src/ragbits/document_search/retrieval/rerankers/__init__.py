@@ -26,8 +26,6 @@ def get_reranker(reranker_config: Optional[dict]) -> Reranker:
         return NoopReranker()
 
     reranker_cls = get_cls_from_config(reranker_config["type"], module)
-    config = reranker_config.get("config")
+    config = reranker_config.get("config", {})
 
-    if config is None:
-        return reranker_cls()
     return reranker_cls(**config)

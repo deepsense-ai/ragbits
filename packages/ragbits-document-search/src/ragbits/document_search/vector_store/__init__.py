@@ -2,9 +2,10 @@ import sys
 
 from ..utils import get_cls_from_config
 from .base import VectorStore
+from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
-__all__ = ["InMemoryVectorStore", "VectorStore"]
+__all__ = ["InMemoryVectorStore", "VectorStore", "ChromaDBStore"]
 
 module = sys.modules[__name__]
 
@@ -22,8 +23,6 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     """
 
     vector_store_cls = get_cls_from_config(vector_store_config["type"], module)
-    config = vector_store_config.get("config")
+    config = vector_store_config.get("config", {})
 
-    if config is None:
-        return vector_store_cls()
     return vector_store_cls(**config)

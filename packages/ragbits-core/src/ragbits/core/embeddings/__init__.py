@@ -21,8 +21,6 @@ def get_embeddings(embedder_config: dict) -> Embeddings:
         (if any) or default arguments.
     """
     embeddings_type = embedder_config["type"]
-    config = embedder_config.get("config")
+    config = embedder_config.get("config", {})
 
-    if config is None:
-        return getattr(module, embeddings_type)()
     return getattr(module, embeddings_type)(**config)
