@@ -1,0 +1,1 @@
+{"config":{"indexing":"full","lang":["en"],"min_search_length":3,"prebuild_index":false,"separator":"[\\s\\-]+"},"docs":[{"location":"","text":"ragbits docs ragbits is a library for fast building RAG applications.","title":"rabgbits docs"},{"location":"#ragbits-docs","text":"ragbits is a library for fast building RAG applications.","title":"ragbits docs"}]}
