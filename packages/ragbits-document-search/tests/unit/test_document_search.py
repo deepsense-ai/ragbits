@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from ragbits.document_search import DocumentSearch
+from ragbits.document_search._main import SearchConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
@@ -65,3 +66,20 @@ async def test_document_search_with_no_results():
     results = await document_search.search("Peppa's sister")
 
     assert not results
+
+
+async def test_document_search_with_search_config():
+    embeddings_mock = AsyncMock()
+    embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
+
+    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
+
+    await document_search.ingest_document(
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+        document_processor=DummyProvider(),
+    )
+
+    results = await document_search.search("Peppa's brother", search_config=SearchConfig(vector_store_kwargs={"k": 1}))
+
+    assert len(results) == 1
+    assert results[0].content == "Name of Peppa's brother is George"

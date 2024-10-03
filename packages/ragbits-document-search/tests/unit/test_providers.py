@@ -1,5 +1,4 @@
 import pytest
-from dotenv import load_dotenv
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import DocumentTypeNotSupportedError
@@ -8,8 +7,6 @@ from ragbits.document_search.ingestion.providers.unstructured import (
     UNSTRUCTURED_API_URL_ENV,
     UnstructuredProvider,
 )
-
-load_dotenv()
 
 
 @pytest.mark.parametrize("document_type", UnstructuredProvider.SUPPORTED_DOCUMENT_TYPES)
