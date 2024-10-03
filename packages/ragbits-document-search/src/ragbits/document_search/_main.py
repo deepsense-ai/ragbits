@@ -1,4 +1,7 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union
+
+from onnxruntime.transformers.models.stable_diffusion.diffusion_models import BaseModel
+from pydantic import Field
 
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -10,6 +13,16 @@ from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 from ragbits.document_search.vector_store.base import VectorStore
+
+
+class SearchConfig(BaseModel):
+    """
+    Configuration for the search process.
+    """
+
+    reranker_kwargs: dict[str, Any] = Field(default_factory=dict)
+    vector_store_kwargs: dict[str, Any] = Field(default_factory=dict)
+    embedder_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
 class DocumentSearch:
@@ -46,12 +59,13 @@ class DocumentSearch:
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
 
-    async def search(self, query: str) -> list[Element]:
+    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
+            search_config: The search configuration.
 
         Returns:
             A list of chunks.
@@ -60,8 +74,7 @@ class DocumentSearch:
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
-            # TODO: search parameters should be configurable
-            entries = await self.vector_store.retrieve(search_vector[0], k=1)
+            entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(elements)
