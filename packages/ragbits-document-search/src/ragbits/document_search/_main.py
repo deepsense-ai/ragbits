@@ -85,7 +85,7 @@ class DocumentSearch:
         Ingest a document.
 
         Args:
-            document: The document or document metadata to ingest.
+            document: The document or metadata of the document to ingest.
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
@@ -98,10 +98,10 @@ class DocumentSearch:
 
     async def insert_elements(self, elements: list[Element]) -> None:
         """
-        Insert an elements into the vector store.
+        Insert Elements into the vector store.
 
         Args:
-            elements: The element to insert.
+            elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]

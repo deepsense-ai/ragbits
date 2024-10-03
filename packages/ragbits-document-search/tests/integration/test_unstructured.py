@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.document_processor import DocumentProcessor
+from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.unstructured import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
@@ -19,14 +19,14 @@ from ..helpers import env_vars_not_set
     reason="Unstructured API environment variables not set",
 )
 async def test_document_processor_processes_text_document_with_unstructured_provider():
-    document_processor = DocumentProcessor.from_config()
+    document_processor = DocumentProcessorRouter.from_config()
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
 
-    elements = await document_processor.process(document_meta)
+    elements = await document_processor.get_provider(document_meta).process(document_meta)
 
     assert isinstance(document_processor._providers[DocumentType.TXT], UnstructuredProvider)
     assert len(elements) == 1
-    assert elements[0].content == "Name of Peppa's brother is George"
+    assert elements[0].content == "Name of Peppa's brother is George."
 
 
 @pytest.mark.skipif(
@@ -34,13 +34,13 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
     reason="Unstructured API environment variables not set",
 )
 async def test_document_processor_processes_md_document_with_unstructured_provider():
-    document_processor = DocumentProcessor.from_config()
-    document_meta = DocumentMeta.from_local_path(Path(__file__).parent.parent.parent.parent.parent / "README.md")
+    document_processor = DocumentProcessorRouter.from_config()
+    document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
 
-    elements = await document_processor.process(document_meta)
+    elements = await document_processor.get_provider(document_meta).process(document_meta)
 
-    assert len(elements) > 0
-    assert elements[0].content == "Ragbits"
+    assert len(elements) == 1
+    assert elements[0].content == "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."
 
 
 @pytest.mark.skipif(
