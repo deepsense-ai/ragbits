@@ -7,8 +7,10 @@
 # ///
 import asyncio
 
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
@@ -20,17 +22,11 @@ documents = [
     ),
 ]
 
-config = {
-    "embedder": {"type": "LocalEmbeddings", "config": {"model_name": "Alibaba-NLP/gte-base-en-v1.5"}},
-    "vector_store": {"type": "InMemoryVectorStore"},
-}
-
 
 async def main():
     """Run the example."""
 
-    # document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
-    document_search = DocumentSearch.from_config(config)
+    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
 
     for document in documents:
         await document_search.ingest_document(document)
