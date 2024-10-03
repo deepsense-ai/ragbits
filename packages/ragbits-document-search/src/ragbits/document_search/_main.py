@@ -1,12 +1,16 @@
+from ragbits.core.embeddings import get_embeddings
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessor
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
+from ragbits.document_search.retrieval.rerankers import get_reranker
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
+from ragbits.document_search.vector_store import get_vector_store
 from ragbits.document_search.vector_store.base import VectorStore
 
 
@@ -41,6 +45,26 @@ class DocumentSearch:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
+
+    @classmethod
+    def from_config(cls, config: dict) -> "DocumentSearch":
+        """
+        Creates and returns an instance of the DocumentSearch class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the DocumentSearch instance.
+
+        Returns:
+            DocumentSearch: An initialized instance of the DocumentSearch class.
+        """
+
+        embedder = get_embeddings(config["embedder"])
+        query_rephraser = get_rephraser(config.get("rephraser"))
+        reranker = get_reranker(config.get("reranker"))
+        vector_store = get_vector_store(config["vector_store"])
+
+        self = DocumentSearch(embedder, vector_store, query_rephraser, reranker)
+        return self
 
     async def search(self, query: str) -> list[Element]:
         """
