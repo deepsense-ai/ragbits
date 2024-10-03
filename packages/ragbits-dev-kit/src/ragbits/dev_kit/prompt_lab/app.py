@@ -32,18 +32,6 @@ class PromptState:
     llm_model_name: str | None = None
     llm_api_key: str | None = None
 
-    def copy(self, **kwargs: Any) -> "PromptState":
-        """
-        Creates a copy of the current state with updated values.
-
-        Args:
-            **kwargs (Any): The updated values to be applied to the copied state.
-
-        Returns:
-            PromptState: A copy of the current state with the updated values.
-        """
-        return replace(self, **kwargs)
-
 
 def render_prompt(index: int, system_prompt: str, user_prompt: str, state: gr.State, *args: Any) -> gr.State:
     """
@@ -71,7 +59,7 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: gr.St
     variables = {field["field_name"]: value for field, value in zip(input_fields, args)}
     input_data = input_type(**variables) if input_type is not None else None
     prompt_object = prompt_class(input_data=input_data)
-    state = state.copy(rendered_prompt=prompt_object)
+    state = replace(state, rendered_prompt=prompt_object)
 
     return state
 
@@ -234,6 +222,5 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                 [prompts_state],
             )
             llm_request_button.click(send_prompt_to_llm, prompts_state, llm_prompt_response)
-            prompt_selection_dropdown.change(list_prompt_choices, prompts_state)
 
     gr_app.launch()
