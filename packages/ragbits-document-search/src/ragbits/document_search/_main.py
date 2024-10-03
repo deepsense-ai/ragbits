@@ -82,6 +82,15 @@ class DocumentSearch:
             document_processor = self.document_processor_router.get_provider(document_meta)
 
         elements = await document_processor.process(document_meta)
+        await self.insert_elements(elements)
+
+    async def insert_elements(self, elements: list[Element]) -> None:
+        """
+        Insert an elements into the vector store.
+
+        Args:
+            elements: The element to insert.
+        """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
         await self.vector_store.store(entries)
