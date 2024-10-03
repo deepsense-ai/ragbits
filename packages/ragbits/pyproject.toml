@@ -1,7 +1,7 @@
 [project]
-name = "ragbits-cli"
+name = "ragbits"
 version = "0.1.0"
-description = "A CLI application for ragbits - building blocks for rapid development of GenAI applications"
+description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -31,13 +31,10 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "typer>=0.12.5",
+    "ragbits-document-search==0.1.0",
+    "ragbits-cli==0.1.0",
     "ragbits-core==0.1.0"
 ]
-
-[project.scripts]
-ragbits = "ragbits.cli:main"
-rbts = "ragbits.cli:main"
 
 [build-system]
 requires = ["hatchling"]

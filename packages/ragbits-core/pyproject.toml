@@ -1,12 +1,12 @@
 [project]
-name = "ragbits"
+name = "ragbits-core"
 version = "0.1.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
-    { name = "deepsense.ai", email = "contact@deepsense.ai"}
+    { name = "deepsense.ai", email = "ragbits@deepsense.ai"}
 ]
 keywords = [
     "Retrieval Augmented Generation",
@@ -18,7 +18,7 @@ keywords = [
     "Prompt Management"
 ]
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
@@ -29,7 +29,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Private :: Do Not Upload"
 ]
 dependencies = [
     "jinja2>=3.1.4",

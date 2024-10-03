@@ -5,7 +5,7 @@ description = "Ragbits development workspace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "ragbits[litellm,local,lab,chromadb]",
+    "ragbits-core[litellm,local,lab,chromadb]",
     "ragbits-document-search[gcs]",
     "ragbits-cli"
 ]
@@ -21,7 +21,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-ragbits = { workspace = true }
+ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
 ragbits-cli = { workspace = true }
 
