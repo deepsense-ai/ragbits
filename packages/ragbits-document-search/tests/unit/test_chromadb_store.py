@@ -87,7 +87,6 @@ async def test_stores_entries_correctly(mock_chromadb_store):
 
 
 def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
-    print(mock_vector_db_entry)
     id, embedding, metadata = mock_chromadb_store._process_db_entry(mock_vector_db_entry)
 
     assert id == sha256(b"test_key").hexdigest()
