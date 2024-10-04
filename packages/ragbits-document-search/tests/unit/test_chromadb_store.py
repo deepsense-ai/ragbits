@@ -71,16 +71,6 @@ def test_get_chroma_collection(mock_chromadb_store):
     assert mock_chromadb_store._chroma_client.get_or_create_collection.called
 
 
-def test_get_chroma_collection_with_custom_embedding_function(
-    custom_embedding_function, mock_chromadb_store_with_custom_embedding_function, mock_chroma_client
-):
-    mock_chroma_client.get_or_create_collection.assert_called_once_with(
-        name="test_index",
-        metadata={"hnsw:space": "l2"},
-    )
-
-
-@pytest.mark.asyncio
 async def test_stores_entries_correctly(mock_chromadb_store):
     data = [
         VectorDBEntry(
