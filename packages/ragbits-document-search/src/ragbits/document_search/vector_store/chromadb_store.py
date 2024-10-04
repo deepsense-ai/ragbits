@@ -106,12 +106,10 @@ class ChromaDBStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        collection = self._get_chroma_collection()
-
         entries_processed = list(map(self._process_db_entry, entries))
         ids, embeddings, metadatas = map(list, zip(*entries_processed))
 
-        collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
+        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
 
     async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
         """
@@ -124,8 +122,7 @@ class ChromaDBStore(VectorStore):
         Returns:
             The retrieved entries.
         """
-        collection = self._get_chroma_collection()
-        query_result = collection.query(query_embeddings=[vector], n_results=k)
+        query_result = self._collection.query(query_embeddings=[vector], n_results=k)
 
         db_entries = []
         for meta in query_result.get("metadatas"):
@@ -138,28 +135,6 @@ class ChromaDBStore(VectorStore):
             db_entries.append(db_entry)
 
         return db_entries
-
-    async def find_similar(self, text: str) -> Optional[str]:
-        """
-        Finds the most similar text in the chroma collection or returns None if the most similar text
-        has distance bigger than `self.max_distance`.
-
-        Args:
-            text: The text to find similar to.
-
-        Returns:
-            The most similar text or None if no similar text is found.
-        """
-
-        collection = self._get_chroma_collection()
-
-        if isinstance(self._embedding_function, Embeddings):
-            embedding = await self._embedding_function.embed_text([text])
-            retrieved = collection.query(query_embeddings=embedding, n_results=1)
-        else:
-            retrieved = collection.query(query_texts=[text], n_results=1)
-
-        return self._return_best_match(retrieved)
 
     def __repr__(self) -> str:
         """
