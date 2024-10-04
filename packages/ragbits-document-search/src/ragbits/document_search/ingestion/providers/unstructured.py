@@ -50,15 +50,28 @@ class UnstructuredProvider(BaseProvider):
         DocumentType.XML,
     }
 
-    def __init__(self, partition_kwargs: Optional[dict] = None, chunking_kwargs: Optional[dict] = None):
+    def __init__(
+        self,
+        partition_kwargs: Optional[dict] = None,
+        chunking_kwargs: Optional[dict] = None,
+        api_key: Optional[str] = None,
+        api_server: Optional[str] = None,
+    ) -> None:
         """Initialize the UnstructuredProvider.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
                 for the available options: https://docs.unstructured.io/api-reference/api-services/api-parameters
+            chunking_kwargs: The additional arguments for the chunking.
+            api_key: The API key to use for the Unstructured API. If not specified, the UNSTRUCTURED_API_KEY environment
+                variable will be used.
+            api_server: The API server URL to use for the Unstructured API. If not specified, the
+                UNSTRUCTURED_SERVER_URL environment variable will be used.
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
         self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
+        self.api_key = api_key
+        self.api_server = api_server
         self._client = None
 
     @property
@@ -74,11 +87,9 @@ class UnstructuredProvider(BaseProvider):
         """
         if self._client is not None:
             return self._client
-        if (api_key := os.getenv(UNSTRUCTURED_API_KEY_ENV)) is None:
-            raise ValueError(f"{UNSTRUCTURED_API_KEY_ENV} environment variable is not set")
-        if (server_url := os.getenv(UNSTRUCTURED_SERVER_URL_ENV)) is None:
-            raise ValueError(f"{UNSTRUCTURED_SERVER_URL_ENV} environment variable is not set")
-        self._client = UnstructuredClient(api_key_auth=api_key, server_url=server_url)
+        api_key = _set_or_raise(name="api_key", value=self.api_key, env_var=UNSTRUCTURED_API_KEY_ENV)
+        api_server = _set_or_raise(name="api_server", value=self.api_server, env_var=UNSTRUCTURED_SERVER_URL_ENV)
+        self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
@@ -117,3 +128,11 @@ def _to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) 
         document_meta=document_meta,
         content=element.text,
     )
+
+
+def _set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
+    if value is not None:
+        return value
+    if (env_value := os.getenv(env_var)) is None:
+        raise ValueError(f"Either pass {name} argument or set the {env_var} environment variable")
+    return env_value
