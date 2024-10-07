@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.vector_store.chromadb_store import ChromaDBStore, VectorDBEntry
+from ragbits.core.vector_store.chromadb_store import ChromaDBStore, VectorDBEntry
 
 
 @pytest.fixture
@@ -61,13 +61,14 @@ def mock_vector_db_entry():
 
 
 def test_chromadbstore_init_import_error():
-    with patch("ragbits.document_search.vector_store.chromadb_store.HAS_CHROMADB", False):
+    with patch("ragbits.core.vector_store.chromadb_store.HAS_CHROMADB", False):
         with pytest.raises(ImportError):
             ChromaDBStore(index_name="test_index", chroma_client=MagicMock(), embedding_function=MagicMock())
 
 
 def test_get_chroma_collection(mock_chromadb_store):
     _ = mock_chromadb_store._get_chroma_collection()
+
     assert mock_chromadb_store._chroma_client.get_or_create_collection.called
 
 
@@ -82,7 +83,9 @@ async def test_stores_entries_correctly(mock_chromadb_store):
             },
         )
     ]
+
     await mock_chromadb_store.store(data)
+
     mock_chromadb_store._chroma_client.get_or_create_collection().add.assert_called_once()
 
 
@@ -100,6 +103,7 @@ def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
 
 async def test_store(mock_chromadb_store, mock_vector_db_entry):
     await mock_chromadb_store.store([mock_vector_db_entry])
+
     assert mock_chromadb_store._chroma_client.get_or_create_collection().add.called
 
 
@@ -117,7 +121,9 @@ async def test_retrieves_entries_correctly(mock_chromadb_store):
             ]
         ],
     }
+
     entries = await mock_chromadb_store.retrieve(vector)
+
     assert len(entries) == 1
     assert entries[0].metadata["content"] == "test content"
     assert entries[0].metadata["document"]["title"] == "test title"
@@ -127,7 +133,9 @@ async def test_handles_empty_retrieve(mock_chromadb_store):
     vector = [0.1, 0.2, 0.3]
     mock_collection = mock_chromadb_store._get_chroma_collection()
     mock_collection.query.return_value = {"documents": [], "metadatas": []}
+
     entries = await mock_chromadb_store.retrieve(vector)
+
     assert len(entries) == 0
 
 
@@ -145,5 +153,7 @@ def test_repr(mock_chromadb_store):
 )
 def test_return_best_match(mock_chromadb_store, retrieved, max_distance, expected):
     mock_chromadb_store._max_distance = max_distance
+
     result = mock_chromadb_store._return_best_match(retrieved)
+
     assert result == expected

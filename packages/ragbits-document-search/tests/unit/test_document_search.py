@@ -4,12 +4,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from ragbits.core.vector_store.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
-from ragbits.document_search.vector_store.in_memory import InMemoryVectorStore
 
 
 @pytest.mark.parametrize(

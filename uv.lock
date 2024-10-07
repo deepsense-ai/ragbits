@@ -2874,6 +2874,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+chromadb = [
+    { name = "chromadb" },
+]
 litellm = [
     { name = "litellm" },
 ]
@@ -2894,6 +2897,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "chromadb", marker = "extra == 'chromadb'", specifier = "~=0.4.24" },
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.24.0" },
@@ -2968,9 +2972,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-chromadb = [
-    { name = "chromadb" },
-]
 gcs = [
     { name = "gcloud-aio-storage" },
 ]
@@ -2987,7 +2988,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "chromadb", marker = "extra == 'chromadb'", specifier = "~=0.4.24" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "numpy", specifier = "~=1.24.0" },
     { name = "ragbits", editable = "packages/ragbits-core" },
@@ -3009,10 +3009,10 @@ name = "ragbits-workspace"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ragbits", extra = ["litellm", "local"] },
+    { name = "ragbits", extra = ["chromadb", "litellm", "local"] },
     { name = "ragbits-cli" },
     { name = "ragbits-dev-kit" },
-    { name = "ragbits-document-search", extra = ["chromadb", "gcs"] },
+    { name = "ragbits-document-search", extra = ["gcs"] },
 ]
 
 [package.dev-dependencies]
@@ -3026,10 +3026,10 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ragbits", extras = ["litellm", "local"], editable = "packages/ragbits-core" },
+    { name = "ragbits", extras = ["litellm", "local", "chromadb"], editable = "packages/ragbits-core" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-dev-kit", editable = "packages/ragbits-dev-kit" },
-    { name = "ragbits-document-search", extras = ["chromadb", "gcs"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["gcs"], editable = "packages/ragbits-document-search" },
 ]
 
 [package.metadata.requires-dev]
