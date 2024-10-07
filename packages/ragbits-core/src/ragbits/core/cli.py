@@ -1,7 +1,7 @@
 import typer
 
-from .prompt_lab.app import lab_app
-from .promptfoo import generate_configs
+from .prompt.lab.app import lab_app
+from .prompt.promptfoo import generate_configs
 
 prompts_app = typer.Typer(no_args_is_help=True)
 

@@ -5,8 +5,7 @@ description = "Ragbits development workspace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "ragbits[litellm,local,chromadb]",
-    "ragbits-dev-kit",
+    "ragbits[litellm,local,lab,chromadb]",
     "ragbits-document-search[gcs]",
     "ragbits-cli"
 ]
@@ -23,14 +22,12 @@ dev-dependencies = [
 
 [tool.uv.sources]
 ragbits = { workspace = true }
-ragbits-dev-kit = { workspace = true }
 ragbits-document-search = { workspace = true }
 ragbits-cli = { workspace = true }
 
 [tool.uv.workspace]
 members = [
     "packages/ragbits-core",
-    "packages/ragbits-dev-kit",
     "packages/ragbits-document-search",
     "packages/ragbits-cli"
 ]
@@ -121,7 +118,6 @@ no_implicit_optional = true
 explicit_package_bases = true
 mypy_path = [
     'packages/ragbits-core/src',
-    'packages/ragbits-dev-kit/src',
     'packages/ragbits-document-search/src',
     'packages/ragbits-cli/src',
 ]
