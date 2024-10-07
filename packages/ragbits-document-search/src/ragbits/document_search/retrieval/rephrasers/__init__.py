@@ -2,6 +2,7 @@ import sys
 from typing import Optional
 
 from ragbits.core.utils import get_cls_from_config
+
 from .base import QueryRephraser
 from .noop import NoopQueryRephraser
 

@@ -1,10 +1,10 @@
-from ragbits.core.embeddings.noop import NoopEmbeddings
 from pathlib import Path
 from typing import Union
 from unittest.mock import AsyncMock
 
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbeddings
 from ragbits.core.vector_store.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -14,9 +14,7 @@ from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
     "embedder": {"type": "NoopEmbeddings"},
-    "vector_store": {
-        "type": "packages.ragbits-core.src.ragbits.core.vector_store.in_memory:InMemoryVectorStore"
-    },
+    "vector_store": {"type": "packages.ragbits-core.src.ragbits.core.vector_store.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
 }
 
@@ -34,7 +32,7 @@ async def test_document_search():
 
     assert isinstance(first_result, TextElement)
     assert first_result.content == "Name of Peppa's brother is George"
-    
+
 
 async def test_document_search_from_config():
     document_search = DocumentSearch.from_config(CONFIG)
@@ -49,6 +47,7 @@ async def test_document_search_from_config():
     assert isinstance(first_result, TextElement)
     assert first_result.content == "Name of Peppa's brother is George"
 
+
 @pytest.mark.parametrize(
     "document",
     [
@@ -61,6 +60,17 @@ async def test_document_search_from_config():
 async def test_document_search_ingest_document(document: Union[DocumentMeta, Document]):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
+
+    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
+
+    await document_search.ingest_document(document, document_processor=DummyProvider())
+
+    results = await document_search.search("Peppa's brother")
+
+    first_result = results[0]
+
+    assert isinstance(first_result, TextElement)
+    assert first_result.content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_insert_elements():

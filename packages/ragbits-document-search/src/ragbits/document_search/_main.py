@@ -1,16 +1,16 @@
-from ragbits.core.embeddings import get_embeddings
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
+from ragbits.core.embeddings import get_embeddings
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.vector_store.base import VectorStore
 from ragbits.core.vector_store import get_vector_store
+from ragbits.core.vector_store.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers import get_reranker

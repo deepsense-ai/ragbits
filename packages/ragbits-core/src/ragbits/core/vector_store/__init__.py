@@ -2,10 +2,10 @@ import sys
 
 from ..utils import get_cls_from_config
 from .base import VectorStore
-# from .chromadb_store import ChromaDBStore
+from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
-__all__ = ["InMemoryVectorStore", "VectorStore"] # , "ChromaDBStore"]
+__all__ = ["InMemoryVectorStore", "VectorStore", "ChromaDBStore"]
 
 module = sys.modules[__name__]
 
