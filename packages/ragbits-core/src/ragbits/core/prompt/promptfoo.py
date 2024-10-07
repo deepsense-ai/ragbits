@@ -4,8 +4,8 @@ from pathlib import Path
 import yaml
 from rich.console import Console
 
-from ragbits.dev_kit.prompt_lab.discovery import PromptDiscovery
-from ragbits.dev_kit.prompt_lab.discovery.prompt_discovery import DEFAULT_FILE_PATTERN
+from ragbits.core.prompt.discovery import PromptDiscovery
+from ragbits.core.prompt.discovery.prompt_discovery import DEFAULT_FILE_PATTERN
 
 
 def generate_configs(
