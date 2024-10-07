@@ -23,9 +23,7 @@ documents = [
 config = {
     "embedder": {"type": "LiteLLMEmbeddings"},
     "vector_store": {"type": "InMemoryVectorStore"},
-    "reranker": {
-        "type": "packages.ragbits-document-search.src.ragbits.document_search.retrieval.rerankers.noop:NoopReranker"
-    },
+    "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
 }
 
 
