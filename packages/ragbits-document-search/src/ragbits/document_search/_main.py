@@ -63,8 +63,7 @@ class DocumentSearch:
         reranker = get_reranker(config.get("reranker"))
         vector_store = get_vector_store(config["vector_store"])
 
-        self = DocumentSearch(embedder, vector_store, query_rephraser, reranker)
-        return self
+        return cls(embedder, vector_store, query_rephraser, reranker)
 
     async def search(self, query: str) -> list[Element]:
         """
