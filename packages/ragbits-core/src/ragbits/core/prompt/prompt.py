@@ -22,7 +22,9 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     system_prompt: Optional[str] = None
     user_prompt: str
-    additional_messages: ChatFormat = []
+
+    # Additional messages to be added to the conversation after the system prompt
+    few_shots: ChatFormat = []
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
@@ -111,10 +113,14 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         if self.input_type and input_data is None:
             raise ValueError("Input data must be provided")
 
-        self.system_message = (
+        self.rendered_system_prompt = (
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )
-        self.user_message = self._render_template(self.user_prompt_template, input_data)
+        self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
+
+        # Additional few shot examples that can be added dynamically using methods
+        # (in opposite to the static `few_shots` attribute which is defined in the class)
+        self._instace_few_shots: ChatFormat = []
         super().__init__()
 
     @property
@@ -125,35 +131,31 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        return [
-            *([{"role": "system", "content": self.system_message}] if self.system_message is not None else []),
-            {"role": "user", "content": self.user_message},
-        ] + self.additional_messages
+        chat = [
+            *(
+                [{"role": "system", "content": self.rendered_system_prompt}]
+                if self.rendered_system_prompt is not None
+                else []
+            ),
+            *self.few_shots,
+            *self._instace_few_shots,
+            {"role": "user", "content": self.rendered_user_prompt},
+        ]
+        return chat
 
-    def add_user_message(self, message: str) -> "Prompt[InputT, OutputT]":
+    def add_few_shot(self, user_message: str, assistant_message: str) -> "Prompt[InputT, OutputT]":
         """
-        Add a message from the user to the conversation.
+        Add a few-shot example to the conversation.
 
         Args:
-            message (str): The message to add.
+            user_message (str): The message from the user.
+            assistant_message (str): The message from the assistant.
 
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
-        self.additional_messages.append({"role": "user", "content": message})
-        return self
-
-    def add_assistant_message(self, message: str) -> "Prompt[InputT, OutputT]":
-        """
-        Add a message from the assistant to the conversation.
-
-        Args:
-            message (str): The message to add.
-
-        Returns:
-            Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
-        """
-        self.additional_messages.append({"role": "assistant", "content": message})
+        self._instace_few_shots.append({"role": "user", "content": user_message})
+        self._instace_few_shots.append({"role": "assistant", "content": assistant_message})
         return self
 
     def output_schema(self) -> Optional[Dict | Type[BaseModel]]:
@@ -190,3 +192,16 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ResponseParsingError: If the response cannot be parsed.
         """
         return self.response_parser(response)
+
+    @classmethod
+    def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
+        """
+        Generate a prompt in the promptfoo format from a promptfoo test configuration.
+
+        Args:
+            config: The promptfoo test configuration.
+
+        Returns:
+            ChatFormat: The prompt in the format used by promptfoo.
+        """
+        return cls(cls.input_type.model_validate(config["vars"])).chat  # type: ignore

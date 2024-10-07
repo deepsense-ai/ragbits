@@ -1,12 +1,12 @@
-import importlib
+import importlib.util
 import inspect
 import os
-from collections import namedtuple
-from typing import Any
+from pathlib import Path
+from typing import Any, get_origin
 
 from ragbits.core.prompt import Prompt
 
-PromptDetails = namedtuple("PromptDetails", ["system_prompt", "user_prompt", "input_type", "object"])
+DEFAULT_FILE_PATTERN = "**/prompt_*.py"
 
 
 class PromptDiscovery:
@@ -14,81 +14,60 @@ class PromptDiscovery:
     Discovers Prompt objects within Python modules.
 
     Args:
-        file_paths (list[str]): List of file paths containing Prompt objects.
+        file_pattern (str): The file pattern to search for Prompt objects. Defaults to "**/prompt_*.py"
+        root_path (Path): The root path to search for Prompt objects. Defaults to the directory where the script is run.
     """
 
-    def __init__(self, file_paths: list[str]):
-        self.file_paths = file_paths
+    def __init__(self, file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd()):
+        self.file_pattern = file_pattern
+        self.root_path = root_path
 
-    def is_submodule(self, module: Any, sub_module: Any) -> bool:
+    @staticmethod
+    def is_prompt_subclass(obj: Any) -> bool:
         """
-        Checks if a module is a submodule of another.
+        Checks if an object is a class that is a subclass of Prompt (but not Prompt itself).
 
         Args:
-            module (module): The parent module.
-            sub_module (module): The potential submodule.
+            obj (any): The object to check.
 
         Returns:
-            bool: True if `sub_module` is a submodule of `module`, False otherwise.
+            bool: True if `obj` is a subclass of Prompt, False otherwise.
         """
+        # See https://bugs.python.org/issue44293 for the reason why we need to check for get_origin(obj)
+        # in order to avoid generic type aliases (which `isclass` sees as classes, but `issubclass` don't).
+        return inspect.isclass(obj) and not get_origin(obj) and issubclass(obj, Prompt) and obj != Prompt
 
-        try:
-            value = module.__spec__.submodule_search_locations[0] in sub_module.__spec__.submodule_search_locations[0]
-            return value
-        except TypeError:
-            return False
-
-    def process_module(self, module: Any, main_module: Any) -> dict:
-        """
-        Processes a module to find Prompt objects.
-
-        Args:
-            module (module): The module to process.
-            main_module (module): The main module.
-
-        Returns:
-            dict: A dictionary mapping Prompt names to their corresponding PromptDetails objects.
-        """
-        result_dict = {}
-
-        for key, value in inspect.getmembers(module):
-            if inspect.isclass(value) and key != "Prompt" and issubclass(value, Prompt):
-                result_dict[key] = value
-
-            elif inspect.ismodule(value) and not key.startswith("_") and self.is_submodule(main_module, value):
-                temp_dict = self.process_module(value, main_module)
-
-                if len(temp_dict.keys()) == 0:
-                    continue
-
-                result_dict = {**result_dict, **temp_dict}
-
-        return result_dict
-
-    def discover(self) -> dict:
+    def discover(self) -> set[type[Prompt]]:
         """
         Discovers Prompt objects within the specified file paths.
 
         Returns:
-            dict: A dictionary mapping Prompt names to their corresponding PromptDetails objects.
+            set[Prompt]: The discovered Prompt objects.
         """
 
-        result_dict = {}
-        for prompt_path_str in self.file_paths:
-            if prompt_path_str.endswith(".py"):
-                temp_module = importlib.import_module(os.path.basename(prompt_path_str[:-3]))
-            else:
-                temp_module = importlib.import_module(os.path.basename(prompt_path_str))
+        result_set: set[type[Prompt]] = set()
 
-            temp_results = self.process_module(temp_module, temp_module)
+        for file_path in self.root_path.glob(self.file_pattern):
+            # remove file extenson and remove directory separators with dots
+            module_name = str(file_path).rsplit(".", 1)[0].replace(os.sep, ".")
 
-            for key, test_obj in temp_results.items():
-                if key not in result_dict:
-                    result_dict[key] = PromptDetails(
-                        system_prompt=test_obj.system_prompt,
-                        user_prompt=test_obj.user_prompt,
-                        input_type=test_obj.input_type,
-                        object=test_obj,
-                    )._asdict()
+            spec = importlib.util.spec_from_file_location(module_name, file_path)
+            if spec is None:
+                print(f"Skipping {file_path}, not a Python module")
+                continue
 
-        return result_dict
+            module = importlib.util.module_from_spec(spec)
+
+            assert spec.loader is not None
+
+            try:
+                spec.loader.exec_module(module)
+            except Exception as e:  # pylint: disable=broad-except
+                print(f"Skipping {file_path}, loading failed: {e}")
+                continue
+
+            for _, obj in inspect.getmembers(module):
+                if self.is_prompt_subclass(obj):
+                    result_set.add(obj)
+
+        return result_set
