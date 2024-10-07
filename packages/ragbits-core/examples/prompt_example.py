@@ -43,8 +43,8 @@ class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
 
 
 if __name__ == "__main__":
-    lorem_prompt = LoremPrompt(LoremPromptInput(theme="business"))
-    lorem_prompt.add_assistant_message("Lorem Ipsum biznessum dolor copy machinum yearly reportum")
+    lorem_prompt = LoremPrompt(LoremPromptInput(theme="animals"))
+    lorem_prompt.add_few_shot("theme: business", "Lorem Ipsum biznessum dolor copy machinum yearly reportum")
     print("CHAT:")
     print(lorem_prompt.chat)
     print()

@@ -1,5 +1,4 @@
 import json
-from copy import deepcopy
 from hashlib import sha256
 from typing import List, Literal, Optional, Union
 
@@ -11,8 +10,8 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.document_search.vector_store.base import VectorStore
-from ragbits.document_search.vector_store.in_memory import VectorDBEntry
+from ragbits.core.vector_store.base import VectorStore
+from ragbits.core.vector_store.in_memory import VectorDBEntry
 
 
 class ChromaDBStore(VectorStore):
@@ -79,48 +78,16 @@ class ChromaDBStore(VectorStore):
 
         return None
 
-    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], str, dict]:
+    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], dict]:
         doc_id = sha256(entry.key.encode("utf-8")).hexdigest()
         embedding = entry.vector
-        text = entry.metadata["content"]
 
-        metadata = deepcopy(entry.metadata)
-        metadata["document"]["source"]["path"] = str(metadata["document"]["source"]["path"])
-        metadata["key"] = entry.key
-        metadata = {key: json.dumps(val) if isinstance(val, dict) else val for key, val in metadata.items()}
+        metadata = {
+            "__key": entry.key,
+            "__metadata": json.dumps(entry.metadata, default=str),
+        }
 
-        return doc_id, embedding, text, metadata
-
-    def _process_metadata(self, metadata: dict) -> dict[str, Union[str, int, float, bool]]:
-        """
-        Processes the metadata dictionary by parsing JSON strings if applicable.
-
-        Args:
-            metadata: A dictionary containing metadata where values may be JSON strings.
-
-        Returns:
-            A dictionary with the same keys as the input, where JSON strings are parsed
-            into their respective Python data types.
-        """
-        return {key: json.loads(val) if self._is_json(val) else val for key, val in metadata.items()}
-
-    def _is_json(self, myjson: str) -> bool:
-        """
-        Check if the provided string is a valid JSON.
-
-        Args:
-            myjson: The string to be checked.
-
-        Returns:
-            True if the string is a valid JSON, False otherwise.
-        """
-        try:
-            if isinstance(myjson, str):
-                json.loads(myjson)
-                return True
-            return False
-        except ValueError:
-            return False
+        return doc_id, embedding, metadata
 
     @property
     def embedding_function(self) -> Union[Embeddings, chromadb.EmbeddingFunction]:
@@ -139,12 +106,10 @@ class ChromaDBStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        collection = self._get_chroma_collection()
-
         entries_processed = list(map(self._process_db_entry, entries))
-        ids, embeddings, texts, metadatas = map(list, zip(*entries_processed))
+        ids, embeddings, metadatas = map(list, zip(*entries_processed))
 
-        collection.add(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
+        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
 
     async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
         """
@@ -157,42 +122,19 @@ class ChromaDBStore(VectorStore):
         Returns:
             The retrieved entries.
         """
-        collection = self._get_chroma_collection()
-        query_result = collection.query(query_embeddings=[vector], n_results=k)
+        query_result = self._collection.query(query_embeddings=[vector], n_results=k)
 
         db_entries = []
         for meta in query_result.get("metadatas"):
             db_entry = VectorDBEntry(
-                key=meta[0].get("key"),
+                key=meta[0]["__key"],
                 vector=vector,
-                metadata=self._process_metadata(meta[0]),
+                metadata=json.loads(meta[0]["__metadata"]),
             )
 
             db_entries.append(db_entry)
 
         return db_entries
-
-    async def find_similar(self, text: str) -> Optional[str]:
-        """
-        Finds the most similar text in the chroma collection or returns None if the most similar text
-        has distance bigger than `self.max_distance`.
-
-        Args:
-            text: The text to find similar to.
-
-        Returns:
-            The most similar text or None if no similar text is found.
-        """
-
-        collection = self._get_chroma_collection()
-
-        if isinstance(self._embedding_function, Embeddings):
-            embedding = await self._embedding_function.embed_text([text])
-            retrieved = collection.query(query_embeddings=embedding, n_results=1)
-        else:
-            retrieved = collection.query(query_texts=[text], n_results=1)
-
-        return self._return_best_match(retrieved)
 
     def __repr__(self) -> str:
         """

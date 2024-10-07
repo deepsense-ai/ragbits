@@ -1,7 +1,7 @@
 import sys
 from typing import Optional
 
-from ...utils import get_cls_from_config
+from ragbits.core.utils import get_cls_from_config
 from .base import Reranker
 from .noop import NoopReranker
 
