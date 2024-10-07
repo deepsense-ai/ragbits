@@ -10,6 +10,7 @@ from .base import BasePromptWithParser, ChatFormat, OutputT
 from .parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=Optional[BaseModel])
+FewShotExample = Tuple[str | InputT, str | OutputT]
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
@@ -25,7 +26,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     # Additional messages to be added to the conversation after the system prompt,
     # pairs of user message and assistant response
-    few_shots: list[tuple[str | InputT, str | OutputT]] = []
+    few_shots: list[FewShotExample[InputT, OutputT]] = []
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
@@ -121,7 +122,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instace_few_shots: list[tuple[str | InputT, str | OutputT]] = []
+        self._instace_few_shots: list[FewShotExample[InputT, OutputT]] = []
         super().__init__()
 
     @property
