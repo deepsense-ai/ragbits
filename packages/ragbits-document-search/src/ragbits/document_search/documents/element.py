@@ -3,8 +3,8 @@ from typing import ClassVar
 
 from pydantic import BaseModel
 
+from ragbits.core.vector_store.base import VectorDBEntry
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.vector_store.base import VectorDBEntry
 
 
 class Element(BaseModel, ABC):
