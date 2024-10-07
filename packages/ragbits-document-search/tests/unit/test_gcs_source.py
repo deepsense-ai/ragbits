@@ -18,5 +18,5 @@ async def test_gcs_source_fetch():
     assert path == TEST_FILE_PATH
 
     source = GCSSource(bucket="", object_name="not_found_file.py")
-    with pytest.raises(aiohttp.ClientConnectorError):
+    with pytest.raises(aiohttp.ClientConnectionError):
         await source.fetch()

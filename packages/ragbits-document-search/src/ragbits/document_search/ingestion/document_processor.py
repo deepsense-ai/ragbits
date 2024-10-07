@@ -2,11 +2,11 @@ import copy
 from typing import Optional
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.providers.unstructured import UnstructuredProvider
 
 ProvidersConfig = dict[DocumentType, BaseProvider]
+
 
 DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
     DocumentType.TXT: UnstructuredProvider(),
@@ -30,20 +30,21 @@ DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
 }
 
 
-class DocumentProcessor:
+class DocumentProcessorRouter:
     """
-    A class with an implementation of Document Processor, allowing to process documents.
+    The DocumentProcessorRouter is responsible for routing the document to the correct provider based on the document
+    metadata such as the document type.
     """
 
     def __init__(self, providers: dict[DocumentType, BaseProvider]):
         self._providers = providers
 
     @classmethod
-    def from_config(cls, providers_config: Optional[ProvidersConfig] = None) -> "DocumentProcessor":
+    def from_config(cls, providers_config: Optional[ProvidersConfig] = None) -> "DocumentProcessorRouter":
         """
-        Create a DocumentProcessor from a configuration. If the configuration is not provided, the default configuration
-        will be used. If the configuration is provided, it will be merged with the default configuration, overriding
-        the default values for the document types that are defined in the configuration.
+        Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
+        configuration will be used. If the configuration is provided, it will be merged with the default configuration,
+        overriding the default values for the document types that are defined in the configuration.
         Example of the configuration:
         {
             DocumentType.TXT: YourCustomProviderClass(),
@@ -55,30 +56,27 @@ class DocumentProcessor:
              provider class.
 
         Returns:
-            The DocumentProcessor.
+            The DocumentProcessorRouter.
         """
         config = copy.deepcopy(DEFAULT_PROVIDERS_CONFIG)
         config.update(providers_config if providers_config is not None else {})
 
         return cls(providers=config)
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    def get_provider(self, document_meta: DocumentMeta) -> BaseProvider:
         """
-        Process the document.
+        Get the provider for the document.
 
         Args:
-            document_meta: The document to process.
+            document_meta: The document metadata.
 
         Returns:
-            The list of elements extracted from the document.
+            The provider for processing the document.
 
         Raises:
-            ValueError: If the provider for the document type is not defined in the configuration.
+            ValueError: If no provider is found for the document type.
         """
         provider = self._providers.get(document_meta.document_type)
         if provider is None:
-            raise ValueError(
-                f"Provider for {document_meta.document_type} is not defined in the configuration:" f" {self._providers}"
-            )
-
-        return await provider.process(document_meta)
+            raise ValueError(f"No provider found for the document type {document_meta.document_type}")
+        return provider
