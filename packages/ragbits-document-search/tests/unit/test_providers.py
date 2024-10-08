@@ -23,7 +23,7 @@ def test_unsupported_provider_validates_supported_document_types_fails():
 @patch.dict(os.environ, {}, clear=True)
 async def test_unstructured_provider_raises_value_error_when_api_key_not_set():
     with pytest.raises(ValueError) as err:
-        await UnstructuredProvider().process(
+        await UnstructuredProvider(use_api=True).process(
             DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
         )
 
@@ -33,7 +33,7 @@ async def test_unstructured_provider_raises_value_error_when_api_key_not_set():
 @patch.dict(os.environ, {}, clear=True)
 async def test_unstructured_provider_raises_value_error_when_server_url_not_set():
     with pytest.raises(ValueError) as err:
-        await UnstructuredProvider(api_key="api_key").process(
+        await UnstructuredProvider(api_key="api_key", use_api=True).process(
             DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
         )
 
