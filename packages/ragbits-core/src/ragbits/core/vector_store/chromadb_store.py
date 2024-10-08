@@ -49,6 +49,15 @@ class ChromaDBStore(VectorStore):
 
     @classmethod
     def from_config(cls, config: dict) -> "ChromaDBStore":
+        """
+        Creates and returns an instance of the ChromaDBStore class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the ChromaDBStore instance.
+
+        Returns:
+            An initialized instance of the ChromaDBStore class.
+        """
         chroma_client = get_cls_from_config(config["chroma_client"]["type"], chromadb)(
             **config["chroma_client"].get("config", {})
         )
