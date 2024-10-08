@@ -2943,7 +2943,7 @@ requires-dist = [
     { name = "numpy", specifier = "~=1.24.0" },
     { name = "ragbits", editable = "packages/ragbits-core" },
     { name = "unstructured", specifier = ">=0.15.13" },
-    { name = "unstructured-client", specifier = "==0.26.0b2" },
+    { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -3743,7 +3743,7 @@ wheels = [
 
 [[package]]
 name = "unstructured-client"
-version = "0.26.0b2"
+version = "0.26.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
@@ -3757,9 +3757,9 @@ dependencies = [
     { name = "requests-toolbelt" },
     { name = "typing-inspect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/0a/63d63dfa06ab66da62c0ed8609cbc58d8132c5bce6c297511dd136841c6c/unstructured_client-0.26.0b2.tar.gz", hash = "sha256:bcdd5c58fa3dd982a3d10a8edfebb28144405af2a53259eb582deb92c897e8ac", size = 47671 }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/d7/7c3a2d484c08d6cee284e808114a5ae0c86fcb61c0542840cfdc4ac6def9/unstructured_client-0.26.0.tar.gz", hash = "sha256:d52ffde62ef06464a50b947e83b537b9a89a6118857442ed901315515b7d9918", size = 45751 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/ff/ae0beb170f46470d8728c9b66ab946b3669426966b41cc1ffff4fbd7871c/unstructured_client-0.26.0b2-py3-none-any.whl", hash = "sha256:a1c150db2f07daf328d6adcb23a0451f11730b7a12cd3b8a0c84df86d316ac2d", size = 60522 },
+    { url = "https://files.pythonhosted.org/packages/f6/50/04e6712de68500220e81a496cd8b480015cbd041206cd08358882f400a78/unstructured_client-0.26.0-py3-none-any.whl", hash = "sha256:399b69441b5473ee4cdee38a0208573a4b646c02566e01eab1108066381a2914", size = 59673 },
 ]
 
 [[package]]
