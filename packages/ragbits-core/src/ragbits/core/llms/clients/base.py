@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, Dict, Generic, Optional, Type, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel
-
 from ragbits.core.prompt import ChatFormat
 
 from ..types import NotGiven
@@ -13,15 +12,13 @@ LLMClientOptions = TypeVar("LLMClientOptions", bound="LLMOptions")
 
 @dataclass
 class LLMOptions(ABC):
-    """
-    Abstract dataclass that represents all available LLM call options.
+    """Abstract dataclass that represents all available LLM call options.
     """
 
     _not_given: ClassVar[Any] = None
 
     def __or__(self, other: "LLMOptions") -> "LLMOptions":
-        """
-        Merges two LLMOptions, prioritizing non-NOT_GIVEN values from the 'other' object.
+        """Merges two LLMOptions, prioritizing non-NOT_GIVEN values from the 'other' object.
         """
         self_dict = asdict(self)
         other_dict = asdict(other)
@@ -35,9 +32,8 @@ class LLMOptions(ABC):
 
         return self.__class__(**updated_dict)
 
-    def dict(self) -> Dict[str, Any]:
-        """
-        Creates a dictionary representation of the LLMOptions instance.
+    def dict(self) -> dict[str, Any]:
+        """Creates a dictionary representation of the LLMOptions instance.
         If a value is None, it will be replaced with a provider-specific not-given sentinel.
 
         Returns:
@@ -51,13 +47,11 @@ class LLMOptions(ABC):
 
 
 class LLMClient(Generic[LLMClientOptions], ABC):
-    """
-    Abstract client for a direct communication with LLM.
+    """Abstract client for a direct communication with LLM.
     """
 
     def __init__(self, model_name: str) -> None:
-        """
-        Constructs a new LLMClient instance.
+        """Constructs a new LLMClient instance.
 
         Args:
             model_name: Name of the model to be used.
@@ -70,10 +64,9 @@ class LLMClient(Generic[LLMClientOptions], ABC):
         conversation: ChatFormat,
         options: LLMClientOptions,
         json_mode: bool = False,
-        output_schema: Optional[Type[BaseModel] | Dict] = None,
+        output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
-        """
-        Calls LLM inference API.
+        """Calls LLM inference API.
 
         Args:
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.

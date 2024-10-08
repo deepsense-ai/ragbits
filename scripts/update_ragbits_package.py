@@ -16,7 +16,6 @@
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import tomlkit
 import typer
@@ -27,8 +26,7 @@ PACKAGES_DIR = Path(__file__).parent.parent / "packages"
 
 
 class UpdateType(Enum):
-    """
-    Enum representing the type of version update: major, minor, or patch.
+    """Enum representing the type of version update: major, minor, or patch.
     """
 
     MAJOR = "major"
@@ -36,7 +34,7 @@ class UpdateType(Enum):
     PATCH = "patch"
 
 
-def _update_type_to_enum(update_type: Optional[str] = None) -> Optional[UpdateType]:
+def _update_type_to_enum(update_type: str | None = None) -> UpdateType | None:
     if update_type is not None:
         return UpdateType(update_type)
     return None
@@ -46,7 +44,7 @@ def _version_to_list(version_string):
     return [int(part) for part in version_string.split(".")]
 
 
-def _check_update_type(version: str, new_version: str) -> Optional[UpdateType]:
+def _check_update_type(version: str, new_version: str) -> UpdateType | None:
     version_list = _version_to_list(version)
     new_version_list = _version_to_list(new_version)
 
@@ -75,9 +73,9 @@ def _get_updated_version(version: str, update_type: UpdateType) -> str:
 
 def _update_pkg_version(
     pkg_name: str,
-    pkg_pyproject: Optional[tomlkit.TOMLDocument] = None,
-    new_version: Optional[str] = None,
-    update_type: Optional[UpdateType] = None,
+    pkg_pyproject: tomlkit.TOMLDocument | None = None,
+    new_version: str | None = None,
+    update_type: UpdateType | None = None,
 ) -> tuple[str, str]:
     if not pkg_pyproject:
         pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg_name / "pyproject.toml").read_text())
@@ -100,9 +98,8 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[str] = typer.Argument(None)) -> None:
-    """
-    Main entry point for the package version updater. Updates package versions based on user input.
+def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
+    """Main entry point for the package version updater. Updates package versions based on user input.
 
     Based on the provided package name and update type, this function updates the version of a
     specific package. If the package is "ragbits-core", all other packages that depend on it
@@ -120,7 +117,6 @@ def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[st
     Raises:
         ValueError: If the provided `pkg_name` is not found in the available packages.
     """
-
     packages: list[str] = [obj.name for obj in PACKAGES_DIR.iterdir() if obj.is_dir()]
 
     if pkg_name is not None:

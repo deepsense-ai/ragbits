@@ -1,5 +1,4 @@
 import copy
-from typing import Optional
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import BaseProvider
@@ -31,8 +30,7 @@ DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
 
 
 class DocumentProcessorRouter:
-    """
-    The DocumentProcessorRouter is responsible for routing the document to the correct provider based on the document
+    """The DocumentProcessorRouter is responsible for routing the document to the correct provider based on the document
     metadata such as the document type.
     """
 
@@ -40,9 +38,8 @@ class DocumentProcessorRouter:
         self._providers = providers
 
     @classmethod
-    def from_config(cls, providers_config: Optional[ProvidersConfig] = None) -> "DocumentProcessorRouter":
-        """
-        Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
+    def from_config(cls, providers_config: ProvidersConfig | None = None) -> "DocumentProcessorRouter":
+        """Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
         configuration will be used. If the configuration is provided, it will be merged with the default configuration,
         overriding the default values for the document types that are defined in the configuration.
         Example of the configuration:
@@ -64,8 +61,7 @@ class DocumentProcessorRouter:
         return cls(providers=config)
 
     def get_provider(self, document_meta: DocumentMeta) -> BaseProvider:
-        """
-        Get the provider for the document.
+        """Get the provider for the document.
 
         Args:
             document_meta: The document metadata.

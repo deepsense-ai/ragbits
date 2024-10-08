@@ -1,16 +1,14 @@
 import importlib.util
 import pkgutil
 
-from typer import Typer
-
 import ragbits
+from typer import Typer
 
 app = Typer(no_args_is_help=True)
 
 
 def main() -> None:
-    """
-    Main entry point for the CLI.
+    """Main entry point for the CLI.
 
     This function registers all the CLI modules in the ragbits packages:
         - iterates over every package in the ragbits.* namespace
@@ -18,7 +16,6 @@ def main() -> None:
         - if found it imports the `register` function from the `cli` module and calls it with the `app` object
         - register function should add the CLI commands to the `app` object
     """
-
     cli_enabled_modules = [
         module
         for module in pkgutil.iter_modules(ragbits.__path__)

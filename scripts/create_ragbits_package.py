@@ -19,8 +19,7 @@ PACKAGES_DIR = Path(__file__).parent.parent / "packages"
 
 
 def run() -> None:
-    """
-    Create a new Ragbits package.
+    """Create a new Ragbits package.
     """
     package_name: str = text("Enter the package name", default="ragbits-")
 

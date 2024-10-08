@@ -1,14 +1,12 @@
 import os
 from io import BytesIO
-from typing import Optional
-
-from unstructured.chunking.basic import chunk_elements
-from unstructured.documents.elements import Element as UnstructuredElement
-from unstructured.partition.api import partition_via_api
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+from unstructured.chunking.basic import chunk_elements
+from unstructured.documents.elements import Element as UnstructuredElement
+from unstructured.partition.api import partition_via_api
 
 DEFAULT_PARTITION_KWARGS: dict = {
     "strategy": "hi_res",
@@ -25,8 +23,7 @@ UNSTRUCTURED_API_URL_ENV = "UNSTRUCTURED_API_URL"
 
 
 class UnstructuredProvider(BaseProvider):
-    """
-    A provider that uses the Unstructured API to process the documents.
+    """A provider that uses the Unstructured API to process the documents.
     """
 
     SUPPORTED_DOCUMENT_TYPES = {
@@ -50,7 +47,7 @@ class UnstructuredProvider(BaseProvider):
         DocumentType.XML,
     }
 
-    def __init__(self, partition_kwargs: Optional[dict] = None, chunking_kwargs: Optional[dict] = None):
+    def __init__(self, partition_kwargs: dict | None = None, chunking_kwargs: dict | None = None):
         """Initialize the UnstructuredProvider.
 
         Args:

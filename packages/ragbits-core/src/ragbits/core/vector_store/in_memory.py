@@ -1,19 +1,16 @@
 import numpy as np
-
 from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
 
 
 class InMemoryVectorStore(VectorStore):
-    """
-    A simple in-memory implementation of Vector Store, storing vectors in memory.
+    """A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
     def __init__(self) -> None:
         self._storage: dict[str, VectorDBEntry] = {}
 
     async def store(self, entries: list[VectorDBEntry]) -> None:
-        """
-        Store entries in the vector store.
+        """Store entries in the vector store.
 
         Args:
             entries: The entries to store.
@@ -22,8 +19,7 @@ class InMemoryVectorStore(VectorStore):
             self._storage[entry.key] = entry
 
     async def retrieve(self, vector: list[float], k: int = 5) -> list[VectorDBEntry]:
-        """
-        Retrieve entries from the vector store.
+        """Retrieve entries from the vector store.
 
         Args:
             vector: The vector to search for.

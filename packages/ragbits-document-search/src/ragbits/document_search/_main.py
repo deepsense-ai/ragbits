@@ -1,7 +1,6 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
-
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.core.vector_store.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -15,8 +14,7 @@ from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
 class SearchConfig(BaseModel):
-    """
-    Configuration for the search process.
+    """Configuration for the search process.
     """
 
     reranker_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -25,8 +23,7 @@ class SearchConfig(BaseModel):
 
 
 class DocumentSearch:
-    """
-    A main entrypoint to the DocumentSearch functionality.
+    """A main entrypoint to the DocumentSearch functionality.
 
     It provides methods for both ingestion and retrieval.
 
@@ -59,8 +56,7 @@ class DocumentSearch:
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
 
     async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
-        """
-        Search for the most relevant chunks for a query.
+        """Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
@@ -79,10 +75,9 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
+        self, document: DocumentMeta | Document, document_processor: BaseProvider | None = None
     ) -> None:
-        """
-        Ingest a document.
+        """Ingest a document.
 
         Args:
             document: The document or metadata of the document to ingest.
@@ -97,12 +92,11 @@ class DocumentSearch:
         await self.insert_elements(elements)
 
     async def insert_elements(self, elements: list[Element]) -> None:
-        """
-        Insert Elements into the vector store.
+        """Insert Elements into the vector store.
 
         Args:
             elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
         await self.vector_store.store(entries)

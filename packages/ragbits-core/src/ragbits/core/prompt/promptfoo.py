@@ -2,17 +2,15 @@ import os
 from pathlib import Path
 
 import yaml
-from rich.console import Console
-
 from ragbits.core.prompt.discovery import PromptDiscovery
 from ragbits.core.prompt.discovery.prompt_discovery import DEFAULT_FILE_PATTERN
+from rich.console import Console
 
 
 def generate_configs(
     file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd(), target_path: Path = Path("promptfooconfigs")
 ) -> None:
-    """
-    Generates promptfoo configuration files for all discovered prompts.
+    """Generates promptfoo configuration files for all discovered prompts.
 
     Args:
         file_pattern: The file pattern to search for Prompt objects. Defaults to "**/prompt_*.py"

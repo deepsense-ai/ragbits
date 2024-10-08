@@ -1,4 +1,3 @@
-from typing import Optional
 
 try:
     import litellm
@@ -12,20 +11,18 @@ from ragbits.core.embeddings.exceptions import EmbeddingConnectionError, Embeddi
 
 
 class LiteLLMEmbeddings(Embeddings):
-    """
-    Client for creating text embeddings using LiteLLM API.
+    """Client for creating text embeddings using LiteLLM API.
     """
 
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        options: Optional[dict] = None,
-        api_base: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        options: dict | None = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
     ) -> None:
-        """
-        Constructs the LiteLLMEmbeddingClient.
+        """Constructs the LiteLLMEmbeddingClient.
 
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
@@ -51,8 +48,7 @@ class LiteLLMEmbeddings(Embeddings):
         self.api_version = api_version
 
     async def embed_text(self, data: list[str]) -> list[list[float]]:
-        """
-        Creates embeddings for the given strings.
+        """Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
@@ -65,7 +61,6 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-
         try:
             response = await litellm.aembedding(
                 input=data,

@@ -11,18 +11,16 @@ except ImportError:
 
 import jinja2
 from pydantic import BaseModel
-from rich.console import Console
-
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.clients import LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.discovery.prompt_discovery import DEFAULT_FILE_PATTERN, PromptDiscovery
+from rich.console import Console
 
 
 @dataclass(frozen=True)
 class PromptState:
-    """
-    Class to store the current state of the application.
+    """Class to store the current state of the application.
 
     This class holds various data structures used throughout the application's lifecycle.
 
@@ -40,8 +38,7 @@ class PromptState:
 
 
 def render_prompt(index: int, system_prompt: str, user_prompt: str, state: PromptState, *args: Any) -> PromptState:
-    """
-    Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
+    """Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
 
     This function constructs a Prompt object using the prompt constructor and input constructor
     associated with the given key. It then updates the current prompt in the application state.
@@ -62,7 +59,7 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
 
     input_type = prompt_class.input_type
     input_fields = get_input_type_fields(input_type)
-    variables = {field["field_name"]: value for field, value in zip(input_fields, args)}
+    variables = {field["field_name"]: value for field, value in zip(input_fields, args, strict=False)}
     input_data = input_type(**variables) if input_type is not None else None
     prompt_object = prompt_class(input_data=input_data)
     state = replace(state, rendered_prompt=prompt_object)
@@ -71,8 +68,7 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
 
 
 def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
-    """
-    Returns a list of prompt choices based on the discovered prompts.
+    """Returns a list of prompt choices based on the discovered prompts.
 
     This function generates a list of tuples containing the names of discovered prompts and their
     corresponding indices.
@@ -87,8 +83,7 @@ def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
 
 
 def send_prompt_to_llm(state: PromptState) -> str:
-    """
-    Sends the current prompt to the LLM and returns the response.
+    """Sends the current prompt to the LLM and returns the response.
 
     This function creates a LiteLLM client using the LLM model name and API key stored in the
     application state. It then calls the LLM client to generate a response based on the current prompt.
@@ -114,8 +109,7 @@ def send_prompt_to_llm(state: PromptState) -> str:
 
 
 def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
-    """
-    Retrieves the field names and default values from the input type of a prompt.
+    """Retrieves the field names and default values from the input type of a prompt.
 
     This function inspects the input type object associated with a prompt and extracts information
     about its fields, including their names and default values.
@@ -137,8 +131,7 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
 def lab_app(  # pylint: disable=missing-param-doc
     file_pattern: str = DEFAULT_FILE_PATTERN, llm_model: str | None = None, llm_api_key: str | None = None
 ) -> None:
-    """
-    Launches the interactive application for listing, rendering, and testing prompts
+    """Launches the interactive application for listing, rendering, and testing prompts
     defined within the current project.
     """
     if not HAS_GRADIO:

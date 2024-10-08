@@ -1,4 +1,5 @@
-from typing import Any, Callable, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -6,8 +7,7 @@ PydanticModelT = TypeVar("PydanticModelT", bound=BaseModel)
 
 
 class ResponseParsingError(Exception):
-    """
-    Raised when there is an error parsing an API response.
+    """Raised when there is an error parsing an API response.
     """
 
     def __init__(self, message: str) -> None:
@@ -16,8 +16,7 @@ class ResponseParsingError(Exception):
 
 
 def int_parser(value: str) -> int:
-    """
-    Parses a string to an integer.
+    """Parses a string to an integer.
 
     Args:
         value: String to parse.
@@ -35,8 +34,7 @@ def int_parser(value: str) -> int:
 
 
 def str_parser(value: str) -> str:
-    """
-    Parses a string.
+    """Parses a string.
 
     Args:
         value: String to parse.
@@ -48,8 +46,7 @@ def str_parser(value: str) -> str:
 
 
 def float_parser(value: str) -> float:
-    """
-    Parses a string to a float.
+    """Parses a string to a float.
 
     Args:
         value: String to parse.
@@ -67,8 +64,7 @@ def float_parser(value: str) -> float:
 
 
 def bool_parser(value: str) -> bool:
-    """
-    Parses a string to a boolean.
+    """Parses a string to a boolean.
 
     Args:
         value: String to parse.
@@ -87,9 +83,8 @@ def bool_parser(value: str) -> bool:
     raise ResponseParsingError(f"Could not parse '{value}' as a boolean")
 
 
-def build_pydantic_parser(model: Type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
-    """
-    Builds a parser for a specific Pydantic model.
+def build_pydantic_parser(model: type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
+    """Builds a parser for a specific Pydantic model.
 
     Args:
         model: Pydantic model to build the parser for.
@@ -102,8 +97,7 @@ def build_pydantic_parser(model: Type[PydanticModelT]) -> Callable[[str], Pydant
     """
 
     def parser(value: str) -> PydanticModelT:
-        """
-        Parses a string to a Pydantic model.
+        """Parses a string to a Pydantic model.
 
         Args:
             value: String to parse.
@@ -122,7 +116,7 @@ def build_pydantic_parser(model: Type[PydanticModelT]) -> Callable[[str], Pydant
     return parser
 
 
-DEFAULT_PARSERS: dict[Type, Callable[[str], Any]] = {
+DEFAULT_PARSERS: dict[type, Callable[[str], Any]] = {
     int: int_parser,
     str: str_parser,
     float: float_parser,

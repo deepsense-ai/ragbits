@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 try:
     import litellm
@@ -15,8 +14,7 @@ from .clients.litellm import LiteLLMClient, LiteLLMOptions
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
-    """
-    Class for interaction with any LLM supported by LiteLLM API.
+    """Class for interaction with any LLM supported by LiteLLM API.
     """
 
     _options_cls = LiteLLMOptions
@@ -24,15 +22,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
     def __init__(
         self,
         model_name: str = "gpt-3.5-turbo",
-        default_options: Optional[LiteLLMOptions] = None,
+        default_options: LiteLLMOptions | None = None,
         *,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
-        """
-        Constructs a new LiteLLM instance.
+        """Constructs a new LiteLLM instance.
 
         Args:
             model_name: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/providers) to be used.\
@@ -61,8 +58,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     @cached_property
     def client(self) -> LiteLLMClient:
-        """
-        Client for the LLM.
+        """Client for the LLM.
         """
         return LiteLLMClient(
             model_name=self.model_name,
@@ -73,8 +69,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         )
 
     def count_tokens(self, prompt: BasePrompt) -> int:
-        """
-        Counts tokens in the prompt.
+        """Counts tokens in the prompt.
 
         Args:
             prompt: Formatted prompt template with conversation and response parsing configuration.

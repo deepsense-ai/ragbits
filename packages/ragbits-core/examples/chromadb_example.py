@@ -8,7 +8,6 @@
 import asyncio
 
 import chromadb
-
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch
@@ -24,7 +23,6 @@ documents = [
 
 async def main():
     """Run the example."""
-
     chroma_client = chromadb.PersistentClient(path="chroma")
     embedding_client = LiteLLMEmbeddings()
 

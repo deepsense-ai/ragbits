@@ -17,14 +17,12 @@ LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR_ENV"
 
 
 class Source(BaseModel, ABC):
-    """
-    An object representing a source.
+    """An object representing a source.
     """
 
     @abstractmethod
     def get_id(self) -> str:
-        """
-        Get the source ID.
+        """Get the source ID.
 
         Returns:
             The source ID.
@@ -32,8 +30,7 @@ class Source(BaseModel, ABC):
 
     @abstractmethod
     async def fetch(self) -> Path:
-        """
-        Load the source.
+        """Load the source.
 
         Returns:
             The path to the source.
@@ -41,16 +38,14 @@ class Source(BaseModel, ABC):
 
 
 class LocalFileSource(Source):
-    """
-    An object representing a local file source.
+    """An object representing a local file source.
     """
 
     source_type: Literal["local_file"] = "local_file"
     path: Path
 
     def get_id(self) -> str:
-        """
-        Get unique identifier of the object in the source.
+        """Get unique identifier of the object in the source.
 
         Returns:
             Unique identifier.
@@ -58,8 +53,7 @@ class LocalFileSource(Source):
         return f"local_file:{self.path.absolute()}"
 
     async def fetch(self) -> Path:
-        """
-        Fetch the source.
+        """Fetch the source.
 
         Returns:
             The local path to the object fetched from the source.
@@ -68,8 +62,7 @@ class LocalFileSource(Source):
 
 
 class GCSSource(Source):
-    """
-    An object representing a GCS file source.
+    """An object representing a GCS file source.
     """
 
     source_type: Literal["gcs"] = "gcs"
@@ -78,8 +71,7 @@ class GCSSource(Source):
     object_name: str
 
     def get_id(self) -> str:
-        """
-        Get unique identifier of the object in the source.
+        """Get unique identifier of the object in the source.
 
         Returns:
             Unique identifier.
@@ -87,8 +79,7 @@ class GCSSource(Source):
         return f"gcs:gs://{self.bucket}/{self.object_name}"
 
     async def fetch(self) -> Path:
-        """
-        Fetch the file from Google Cloud Storage and store it locally.
+        """Fetch the file from Google Cloud Storage and store it locally.
 
         The file is downloaded to a local directory specified by `local_dir`. If the file already exists locally,
         it will not be downloaded again. If the file doesn't exist locally, it will be fetched from GCS.
@@ -101,7 +92,6 @@ class GCSSource(Source):
         Raises:
             ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
         """
-
         if not HAS_GCLOUD_AIO:
             raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 

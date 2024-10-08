@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -20,25 +19,23 @@ from .exceptions import LLMConnectionError, LLMResponseError, LLMStatusError
 
 @dataclass
 class LiteLLMOptions(LLMOptions):
-    """
-    Dataclass that represents all available LLM call options for the LiteLLM client.
+    """Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
     """
 
-    frequency_penalty: Union[Optional[float], NotGiven] = NOT_GIVEN
-    max_tokens: Union[Optional[int], NotGiven] = NOT_GIVEN
-    n: Union[Optional[int], NotGiven] = NOT_GIVEN
-    presence_penalty: Union[Optional[float], NotGiven] = NOT_GIVEN
-    seed: Union[Optional[int], NotGiven] = NOT_GIVEN
-    stop: Union[Optional[Union[str, List[str]]], NotGiven] = NOT_GIVEN
-    temperature: Union[Optional[float], NotGiven] = NOT_GIVEN
-    top_p: Union[Optional[float], NotGiven] = NOT_GIVEN
-    mock_response: Union[Optional[str], NotGiven] = NOT_GIVEN
+    frequency_penalty: float | None | NotGiven = NOT_GIVEN
+    max_tokens: int | None | NotGiven = NOT_GIVEN
+    n: int | None | NotGiven = NOT_GIVEN
+    presence_penalty: float | None | NotGiven = NOT_GIVEN
+    seed: int | None | NotGiven = NOT_GIVEN
+    stop: str | list[str] | None | NotGiven = NOT_GIVEN
+    temperature: float | None | NotGiven = NOT_GIVEN
+    top_p: float | None | NotGiven = NOT_GIVEN
+    mock_response: str | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLMClient(LLMClient[LiteLLMOptions]):
-    """
-    Client for the LiteLLM that supports calls to 100+ LLMs APIs, including OpenAI, Anthropic, VertexAI,
+    """Client for the LiteLLM that supports calls to 100+ LLMs APIs, including OpenAI, Anthropic, VertexAI,
     Hugging Face and others.
     """
 
@@ -48,13 +45,12 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         self,
         model_name: str,
         *,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
-        """
-        Constructs a new LiteLLMClient instance.
+        """Constructs a new LiteLLMClient instance.
 
         Args:
             model_name: Name of the model to use.
@@ -80,10 +76,9 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         conversation: ChatFormat,
         options: LiteLLMOptions,
         json_mode: bool = False,
-        output_schema: Optional[Type[BaseModel] | Dict] = None,
+        output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
-        """
-        Calls the appropriate LLM endpoint with the given prompt and options.
+        """Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.

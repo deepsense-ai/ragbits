@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 try:
     import torch
@@ -13,17 +13,15 @@ from ragbits.core.embeddings.base import Embeddings
 
 
 class LocalEmbeddings(Embeddings):
-    """
-    Class for interaction with any encoder available in HuggingFace.
+    """Class for interaction with any encoder available in HuggingFace.
     """
 
     def __init__(
         self,
         model_name: str,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
-        """
-        Constructs a new local LLM instance.
+        """Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
@@ -45,8 +43,7 @@ class LocalEmbeddings(Embeddings):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
     async def embed_text(self, data: list[str], batch_size: int = 1) -> list[list[float]]:
-        """
-        Calls the appropriate encoder endpoint with the given data and options.
+        """Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.

@@ -7,14 +7,12 @@
 import asyncio
 
 from pydantic import BaseModel
-
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):
-    """
-    Input format for the LoremPrompt.
+    """Input format for the LoremPrompt.
     """
 
     theme: str
@@ -22,8 +20,7 @@ class LoremPromptInput(BaseModel):
 
 
 class LoremPromptOutput(BaseModel):
-    """
-    Output format for the LoremPrompt.
+    """Output format for the LoremPrompt.
     """
 
     joke: str
@@ -31,8 +28,7 @@ class LoremPromptOutput(BaseModel):
 
 
 class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
-    """
-    A prompt that generates jokes.
+    """A prompt that generates jokes.
     """
 
     system_prompt = """
@@ -48,8 +44,7 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
 
 
 async def main():
-    """
-    Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
+    """Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
     """
     llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
     prompt = JokePrompt(LoremPromptInput(theme="software developers", pun_allowed=True))
