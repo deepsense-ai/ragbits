@@ -15,7 +15,7 @@ hide:
 </div>
 
 <p align="center">
-  <em size="">Modern framework for efficiently building powerful RAG applications. </em>
+  <em size="">Building blocks for rapid development of GenAI applications.</em>
 </p>
 
 <div align="center">
