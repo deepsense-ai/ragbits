@@ -9,7 +9,7 @@ try:
 except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings import Embeddings
 
 
 class LocalEmbeddings(Embeddings):
