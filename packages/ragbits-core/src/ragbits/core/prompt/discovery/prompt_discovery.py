@@ -4,9 +4,8 @@ import os
 from pathlib import Path
 from typing import Any, get_origin
 
+from ragbits.core.config import core_config
 from ragbits.core.prompt import Prompt
-
-DEFAULT_FILE_PATTERN = "**/prompt_*.py"
 
 
 class PromptDiscovery:
@@ -18,7 +17,7 @@ class PromptDiscovery:
         root_path (Path): The root path to search for Prompt objects. Defaults to the directory where the script is run.
     """
 
-    def __init__(self, file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd()):
+    def __init__(self, file_pattern: str = core_config.prompt_path_pattern, root_path: Path = Path.cwd()):
         self.file_pattern = file_pattern
         self.root_path = root_path
 
