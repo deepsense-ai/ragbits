@@ -12,6 +12,17 @@ repos:
           - id: check-json
           - id: check-yaml
 
+    - repo: https://github.com/charliermarsh/ruff-pre-commit
+      rev: v0.6.9
+      hooks:
+        - id: ruff
+          types_or: [ python, pyi, jupyter ]
+          exclude: (/test_|tests/|docs/|notebooks/)
+#          args: [ --fix ]
+        - id: ruff-format
+          types_or: [ python, pyi, jupyter ]
+          exclude: (docs/)
+
       # PEP 8 compliant opinionated formatter.
     - repo: https://github.com/psf/black
       rev: 23.10.1

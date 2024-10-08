@@ -175,3 +175,71 @@ exclude_dirs = ["venv"]
 # B101 disables errors for asserts in the code
 # remember to not use asserts for security and control flows
 skips = ["B101"]
+
+[tool.ruff]
+exclude = [".venv"]
+extend-include = ["*.ipynb"]
+line-length = 120
+
+[tool.ruff.lint]
+preview = true
+explicit-preview-rules = true
+select = [
+    # Default rules
+    "E",    # pycodestyle errors
+    "F",    # Pyflakes
+
+    # Extra rules, by Michał Kustosz
+    "C4",   # flake8-comprehensions
+    "C90",  # mccabe complex structure
+    "D",    # pydocstyle
+    "I",    # isort
+    "PT",   # flake8-pytest-style
+    "PL",   # Pylint
+    "SIM",  # flake8-simplify
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+
+    # Extra rules, by Jakub Cierocki
+    "S",    # flake8-bandit
+    "ANN",  # flake8-annotations
+    "B",    # flake8-bugbear
+    "NPY",  # NumPy-specific rules
+]
+extend-select = [
+    # Extra, preview rules, by Jakub Cierocki
+    "RUF022",   # unsorted-dunder-all
+    "PLR6301",  # no-self-use
+]
+ignore = [
+    "B028",     # no-explicit-stacklevel, TODO confirm this
+    "C901",     # complex-structure, TODO confirm this
+    "D100",
+    "D104",
+    "D105",
+    "D205",
+    "D212",
+    "ANN002",
+    "ANN003",
+    "ANN101",
+    "ANN102",
+    "ANN204",
+    "PLR0913",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"*.ipynb" = [
+    "PLR2004",
+    "W293",
+    "D101",  # D*** - we should not require docs in every Jupyter notebook
+    "D102",
+    "D103",
+    "D107"
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 120
