@@ -9,8 +9,8 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "ragbits",
     "ragbits-cli",
+    "ragbits-core",
     "ragbits-document-search",
     "ragbits-workspace",
 ]
@@ -3077,6 +3077,35 @@ wheels = [
 [[package]]
 name = "ragbits"
 version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "ragbits-cli" },
+    { name = "ragbits-core" },
+    { name = "ragbits-document-search" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bc/72/1459951c9dac4e7b25ea5ea11029653fc49090c49ebc18c73887f8b345bd/ragbits-0.1.0.tar.gz", hash = "sha256:fed59d645121440ad3df2bdb58646c589cbf004601b6ba13c5e99afb0b0d826b", size = 1579 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/bb/a2861dacbe5d8005e9c8827676ae325df40663ab661093b6f1cf2a221f37/ragbits-0.1.0-py3-none-any.whl", hash = "sha256:50d82616d28e2994d9d673778c6e6ab9db6736901fbe1c2580e9e2beb0dd884d", size = 1176 },
+]
+
+[[package]]
+name = "ragbits-cli"
+version = "0.1.0"
+source = { editable = "packages/ragbits-cli" }
+dependencies = [
+    { name = "ragbits-core" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "typer", specifier = ">=0.12.5" },
+]
+
+[[package]]
+name = "ragbits-core"
+version = "0.1.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "jinja2" },
@@ -3132,23 +3161,12 @@ dev = [
 ]
 
 [[package]]
-name = "ragbits-cli"
-version = "0.1.0"
-source = { editable = "packages/ragbits-cli" }
-dependencies = [
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "typer", specifier = ">=0.12.5" }]
-
-[[package]]
 name = "ragbits-document-search"
 version = "0.1.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "numpy" },
-    { name = "ragbits" },
+    { name = "ragbits-core" },
     { name = "unstructured" },
     { name = "unstructured-client" },
 ]
@@ -3165,14 +3183,14 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
-    { name = "ragbits", extra = ["litellm", "local"] },
+    { name = "ragbits" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "numpy", specifier = "~=1.24.0" },
-    { name = "ragbits", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "unstructured", specifier = ">=0.15.13" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
@@ -3184,7 +3202,7 @@ dev = [
     { name = "pytest", specifier = "~=8.3.3" },
     { name = "pytest-asyncio", specifier = "~=0.24.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "ragbits", extras = ["litellm", "local"], editable = "packages/ragbits-core" },
+    { name = "ragbits", extras = ["litellm", "local"] },
 ]
 
 [[package]]
@@ -3192,8 +3210,8 @@ name = "ragbits-workspace"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "ragbits", extra = ["chromadb", "lab", "litellm", "local"] },
     { name = "ragbits-cli" },
+    { name = "ragbits-core", extra = ["chromadb", "lab", "litellm", "local"] },
     { name = "ragbits-document-search", extra = ["gcs"] },
 ]
 
@@ -3216,8 +3234,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ragbits", extras = ["litellm", "local", "lab", "chromadb"], editable = "packages/ragbits-core" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
+    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chromadb"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs"], editable = "packages/ragbits-document-search" },
 ]
 
