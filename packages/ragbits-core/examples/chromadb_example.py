@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits[litellm]",
+#     "ragbits-core[litellm]",
 # ]
 # ///
 import asyncio

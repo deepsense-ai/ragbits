@@ -9,8 +9,8 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "ragbits",
     "ragbits-cli",
+    "ragbits-core",
     "ragbits-document-search",
     "ragbits-workspace",
 ]
@@ -608,7 +608,7 @@ wheels = [
 
 [package.optional-dependencies]
 toml = [
-    { name = "tomli", marker = "python_full_version == '3.11'" },
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
 ]
 
 [[package]]
@@ -2843,16 +2843,42 @@ wheels = [
 
 [[package]]
 name = "ragbits"
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/f7/4dfc757e4d7adff14a8fad9989f47a88c063ca88456d0525d0d5d3593f54/ragbits-0.0.1.tar.gz", hash = "sha256:673b663730ee2ef0d2813ffe1d1619f3ce5042748a4c02c094c787f499f4c886", size = 1378 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/e1/2cef0ba62827617ebcd183ebe3a7b3ca7cfee8d45f99c953b4db005b9a88/ragbits-0.0.1-py2.py3-none-any.whl", hash = "sha256:101ef35803f4b78b600b7381cf8f3c86f18018fa54156055d9b6e95f708475bf", size = 1354 },
+]
+
+[[package]]
+name = "ragbits-cli"
+version = "0.1.0"
+source = { editable = "packages/ragbits-cli" }
+dependencies = [
+    { name = "ragbits-core" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "typer", specifier = ">=0.12.5" },
+]
+
+[[package]]
+name = "ragbits-core"
 version = "0.1.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "jinja2" },
     { name = "pydantic" },
-    { name = "ragbits-cli" },
     { name = "typer" },
 ]
 
 [package.optional-dependencies]
+chromadb = [
+    { name = "chromadb" },
+]
 lab = [
     { name = "gradio" },
 ]
@@ -2876,12 +2902,12 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "chromadb", marker = "extra == 'chromadb'", specifier = "~=0.4.24" },
     { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0" },
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.24.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
-    { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "torch", marker = "extra == 'local'", specifier = "~=2.2.1" },
     { name = "transformers", marker = "extra == 'local'", specifier = "~=4.44.2" },
     { name = "typer", specifier = "~=0.12.5" },
@@ -2897,31 +2923,17 @@ dev = [
 ]
 
 [[package]]
-name = "ragbits-cli"
-version = "0.1.0"
-source = { editable = "packages/ragbits-cli" }
-dependencies = [
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "typer", specifier = ">=0.12.5" }]
-
-[[package]]
 name = "ragbits-document-search"
 version = "0.1.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "numpy" },
-    { name = "ragbits" },
+    { name = "ragbits-core" },
     { name = "unstructured" },
     { name = "unstructured-client" },
 ]
 
 [package.optional-dependencies]
-chromadb = [
-    { name = "chromadb" },
-]
 gcs = [
     { name = "gcloud-aio-storage" },
 ]
@@ -2933,15 +2945,14 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
-    { name = "ragbits", extra = ["litellm", "local"] },
+    { name = "ragbits" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "chromadb", marker = "extra == 'chromadb'", specifier = "~=0.4.24" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "numpy", specifier = "~=1.24.0" },
-    { name = "ragbits", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "unstructured", specifier = ">=0.15.13" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
@@ -2953,7 +2964,7 @@ dev = [
     { name = "pytest", specifier = "~=8.3.3" },
     { name = "pytest-asyncio", specifier = "~=0.24.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "ragbits", extras = ["litellm", "local"], editable = "packages/ragbits-core" },
+    { name = "ragbits", extras = ["litellm", "local"] },
 ]
 
 [[package]]
@@ -2961,9 +2972,9 @@ name = "ragbits-workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "ragbits", extra = ["lab", "litellm", "local"] },
     { name = "ragbits-cli" },
-    { name = "ragbits-document-search", extra = ["chromadb", "gcs"] },
+    { name = "ragbits-core", extra = ["chromadb", "lab", "litellm", "local"] },
+    { name = "ragbits-document-search", extra = ["gcs"] },
 ]
 
 [package.dev-dependencies]
@@ -2977,9 +2988,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ragbits", extras = ["litellm", "local", "lab"], editable = "packages/ragbits-core" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-document-search", extras = ["chromadb", "gcs"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chromadb"], editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", extras = ["gcs"], editable = "packages/ragbits-document-search" },
 ]
 
 [package.metadata.requires-dev]
