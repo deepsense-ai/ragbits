@@ -38,20 +38,11 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
     assert elements[0].content == "Name of Peppa's brother is George."
 
 
-@pytest.mark.parametrize(
-    "config",
-    [
-        {},
-        pytest.param(
-            {DocumentType.TXT: UnstructuredProvider(use_api=True)},
-            marks=pytest.mark.skipif(
-                env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
-                reason="Unstructured API environment variables not set",
-            ),
-        ),
-    ],
+@pytest.mark.skipif(
+    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
+    reason="Unstructured API environment variables not set",
 )
-async def test_document_processor_processes_md_document_with_unstructured_provider(config):
+async def test_document_processor_processes_md_document_with_unstructured_provider():
     document_processor = DocumentProcessorRouter.from_config()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
 
