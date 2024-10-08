@@ -34,7 +34,8 @@ classifiers = [
 dependencies = [
     "numpy~=1.24.0",
     "ragbits",
-    "unstructured>=0.15.12",
+    "unstructured>=0.15.13",
+    "unstructured-client>=0.26.0",
 ]
 
 [project.optional-dependencies]
