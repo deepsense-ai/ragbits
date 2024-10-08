@@ -79,7 +79,8 @@ class DocumentSearch:
         reranker = get_reranker(config.get("reranker"))
         vector_store = get_vector_store(config["vector_store"])
 
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(config.get("providers"))
+        providers_config_dict: dict = config.get("providers", {})
+        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(providers_config_dict)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
