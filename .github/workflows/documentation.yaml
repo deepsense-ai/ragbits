@@ -1,8 +1,8 @@
 name: Deploy documentation
 
 on:
-  push:
-    branches: [chore/setup_docs]
+#  push:
+#    branches: [chore/setup_docs]
   workflow_dispatch:
 
 jobs:
