@@ -1,8 +1,10 @@
 import os
+from io import BytesIO
 from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
+from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
 
@@ -56,6 +58,7 @@ class UnstructuredProvider(BaseProvider):
         chunking_kwargs: Optional[dict] = None,
         api_key: Optional[str] = None,
         api_server: Optional[str] = None,
+        use_api: bool = False,
     ) -> None:
         """Initialize the UnstructuredProvider.
 
@@ -72,6 +75,7 @@ class UnstructuredProvider(BaseProvider):
         self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
         self.api_key = api_key
         self.api_server = api_server
+        self.use_api = use_api
         self._client = None
 
     @property
@@ -108,18 +112,27 @@ class UnstructuredProvider(BaseProvider):
         self.validate_document_type(document_meta.document_type)
         document = await document_meta.fetch()
 
-        res = await self.client.general.partition_async(
-            request={
-                "partition_parameters": {
-                    "files": {
-                        "content": document.local_path.read_bytes(),
-                        "file_name": document.local_path.name,
-                    },
-                    **self.partition_kwargs,
+        if self.use_api:
+            res = await self.client.general.partition_async(
+                request={
+                    "partition_parameters": {
+                        "files": {
+                            "content": document.local_path.read_bytes(),
+                            "file_name": document.local_path.name,
+                        },
+                        **self.partition_kwargs,
+                    }
                 }
-            }
-        )
-        elements = chunk_elements(elements_from_dicts(res.elements), **self.chunking_kwargs)
+            )
+            elements = elements_from_dicts(res.elements)
+        else:
+            elements = partition(
+                file=BytesIO(document.local_path.read_bytes()),
+                metadata_filename=document.local_path.name,
+                **self.partition_kwargs,
+            )
+
+        elements = chunk_elements(elements, **self.chunking_kwargs)
         return [_to_text_element(element, document_meta) for element in elements]
 
 
