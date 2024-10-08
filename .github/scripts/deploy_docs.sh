@@ -13,5 +13,5 @@ uv run mkdocs build
 gcloud storage cp -r site/* gs://ragbits-documentation
 
 # Invalidate cached content in the CDN
-gcloud compute url-maps invalidate-cdn-cache ragbis-documentation-lb \
+gcloud compute url-maps invalidate-cdn-cache ragbits-documentation-lb \
     --path "/*" --async
