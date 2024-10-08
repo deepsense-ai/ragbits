@@ -46,6 +46,7 @@ jobs:
         with:
           scan-type: "fs"
           ignore-unfixed: true
+          skip-dirs: .venv
           exit-code: 0 # change if you want to fail build on vulnerabilities
           severity: "CRITICAL,HIGH,MEDIUM"
           format: "table"
