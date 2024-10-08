@@ -25,4 +25,7 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     vector_store_cls = get_cls_from_config(vector_store_config["type"], module)
     config = vector_store_config.get("config", {})
 
+    if vector_store_config["type"] == "ChromaDBStore":
+        return vector_store_cls.from_config(config)
+
     return vector_store_cls(**config)

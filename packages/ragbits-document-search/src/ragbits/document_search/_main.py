@@ -79,7 +79,10 @@ class DocumentSearch:
         reranker = get_reranker(config.get("reranker"))
         vector_store = get_vector_store(config["vector_store"])
 
-        return cls(embedder, vector_store, query_rephraser, reranker)
+        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(config.get("providers"))
+        document_processor_router = DocumentProcessorRouter.from_config(providers_config)
+
+        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
     async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
         """

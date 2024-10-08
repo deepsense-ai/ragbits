@@ -10,6 +10,7 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.utils import get_cls_from_config
 from ragbits.core.vector_store.base import VectorStore
 from ragbits.core.vector_store.in_memory import VectorDBEntry
 
@@ -45,6 +46,23 @@ class ChromaDBStore(VectorStore):
         self._max_distance = max_distance
         self._metadata = {"hnsw:space": distance_method}
         self._collection = self._get_chroma_collection()
+
+    @classmethod
+    def from_config(cls, config: dict) -> "ChromaDBStore":
+        chroma_client = get_cls_from_config(config["chroma_client"]["type"], chromadb)(
+            **config["chroma_client"].get("config", {})
+        )
+        embedding_function = get_cls_from_config(config["embedding_function"]["type"], chromadb)(
+            **config["embedding_function"].get("config", {})
+        )
+
+        return cls(
+            config["index_name"],
+            chroma_client,
+            embedding_function,
+            max_distance=config.get("max_distance"),
+            distance_method=config.get("distance_method", "l2"),
+        )
 
     def _get_chroma_collection(self) -> chromadb.Collection:
         """

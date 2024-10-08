@@ -15,6 +15,7 @@ CONFIG = {
     "embedder": {"type": "NoopEmbeddings"},
     "vector_store": {"type": "ragbits.core.vector_store.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
+    "providers": {"txt": {"type": "DummyProvider"}},
 }
 
 
@@ -36,7 +37,7 @@ CONFIG = {
 async def test_document_search_from_config(document, expected):
     document_search = DocumentSearch.from_config(CONFIG)
 
-    await document_search.ingest_document(document, document_processor=DummyProvider())
+    await document_search.ingest_document(document)
     results = await document_search.search("Peppa's brother")
 
     first_result = results[0]

@@ -22,8 +22,16 @@ documents = [
 
 config = {
     "embedder": {"type": "LiteLLMEmbeddings"},
-    "vector_store": {"type": "InMemoryVectorStore"},
+    "vector_store": {
+        "type": "ChromaDBStore",
+        "config": {
+            "chroma_client": {"type": "PersistentClient", "config": {"path": "chroma"}},
+            "embedding_function": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
+            "index_name": "jokes",
+        },
+    },
     "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
+    "providers": {"txt": {"type": "DummyProvider"}},
 }
 
 
