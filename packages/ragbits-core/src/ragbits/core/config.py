@@ -12,4 +12,4 @@ class CoreConfig(BaseModel):
     prompt_path_pattern: str = "**/prompt_*.py"
 
 
-core_config = get_config_instance(CoreConfig)
+core_config = get_config_instance(CoreConfig, subproject="core")

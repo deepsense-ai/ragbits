@@ -5,9 +5,13 @@ import tomli
 from pydantic import BaseModel
 
 
-def find_pyproject() -> Path:
+def find_pyproject(current_dir: Path = Path.cwd()) -> Path:
     """
     Find the pyproject.toml file in the current directory or any of its parents.
+
+    Args:
+        current_dir (Path, optional): The directory to start searching from. Defaults to the
+            current working directory.
 
     Returns:
         Path: The path to the found pyproject.toml file.
@@ -15,7 +19,6 @@ def find_pyproject() -> Path:
     Raises:
         FileNotFoundError: If the pyproject.toml file is not found.
     """
-    current_dir = Path.cwd()
     possible_dirs = [current_dir, *current_dir.parents]
     for possible_dir in possible_dirs:
         pyproject = possible_dir / "pyproject.toml"
@@ -24,18 +27,22 @@ def find_pyproject() -> Path:
     raise FileNotFoundError("pyproject.toml not found")
 
 
-def get_ragbits_config() -> dict[str, Any]:
+def get_ragbits_config(current_dir: Path = Path.cwd()) -> dict[str, Any]:
     """
     Get the ragbits configuration from the project's pyproject.toml file.
 
     Only configuration from the [tool.ragbits] section is returned.
     If the project doesn't include any ragbits configuration, an empty dictionary is returned.
 
+    Args:
+        current_dir (Path, optional): The directory to start searching for the pyproject.toml file. Defaults to the
+            current working directory.
+
     Returns:
         dict: The ragbits configuration.
     """
     try:
-        pyproject = find_pyproject()
+        pyproject = find_pyproject(current_dir)
     except FileNotFoundError:
         # Projects are not required to use pyproject.toml
         # No file just means no configuration
@@ -49,7 +56,9 @@ def get_ragbits_config() -> dict[str, Any]:
 ConfigModelT = TypeVar("ConfigModelT", bound=BaseModel)
 
 
-def get_config_instance(model: type[ConfigModelT], subproject: str | None = None) -> ConfigModelT:
+def get_config_instance(
+    model: type[ConfigModelT], subproject: str | None = None, current_dir: Path = Path.cwd()
+) -> ConfigModelT:
     """
     Creates an instace of pydantic model loaded with the configuration from pyproject.toml.
 
@@ -57,11 +66,13 @@ def get_config_instance(model: type[ConfigModelT], subproject: str | None = None
         model (Type[BaseModel]): The pydantic model to instantiate.
         subproject (str, optional): The subproject to get the configuration for, defaults to giving entire
             ragbits configuration.
+        current_dir (Path, optional): The directory to start searching for the pyproject.toml file. Defaults to the
+            current working directory
 
     Returns:
         ConfigModelT: The model instance loaded with the configuration
     """
-    config = get_ragbits_config()
+    config = get_ragbits_config(current_dir)
     print(config)
     if subproject:
         config = config.get(subproject, {})
