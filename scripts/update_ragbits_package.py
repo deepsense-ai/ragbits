@@ -100,6 +100,26 @@ def _update_pkg_version(
     return version, new_version
 
 
+def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, update_type: UpdateType):
+    ragbits_pkg_project = tomlkit.parse((PACKAGES_DIR / "ragbits/pyproject.toml").read_text())
+    ragbits_deps: list[str] = [dep.split("==")[0] for dep in ragbits_pkg_project["project"]["dependencies"]]
+
+    if pkg_name in ragbits_deps:
+        idx = ragbits_pkg_project["project"]["dependencies"].index(f"{pkg_name}=={pkg_version}")
+        del ragbits_pkg_project["project"]["dependencies"][idx]
+        ragbits_pkg_project["project"]["dependencies"].insert(idx, f"{pkg_name}=={pkg_new_version}")
+
+        ragbits_old_version = ragbits_pkg_project["project"]["version"]
+        ragbits_new_version = _get_updated_version(ragbits_old_version, update_type=update_type)
+        ragbits_pkg_project["project"]["version"] = ragbits_new_version
+
+        (PACKAGES_DIR / "ragbits" / "pyproject.toml").write_text(tomlkit.dumps(ragbits_pkg_project))
+        pprint(
+            "[green]The ragbits package was successfully updated "
+            f"from {ragbits_old_version} to {ragbits_new_version}.[/green]"
+        )
+
+
 def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[str] = typer.Argument(None)) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
@@ -133,7 +153,10 @@ def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[st
 
     user_prompt_required = pkg_name is None or casted_update_type is None
 
-    if pkg_name == "ragbits-core":
+    if pkg_name == "ragbits":
+        _update_pkg_version(pkg_name, update_type=casted_update_type)
+
+    elif pkg_name == "ragbits-core":
         if user_prompt_required:
             print("When upgrading the ragbits-core package it is also necessary to upgrade the other packages.")
             is_continue = confirm(message="Do you want to continue?")
@@ -141,21 +164,23 @@ def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[st
             is_continue = True
 
         if is_continue:
-            ragbits_version, new_ragbits_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
-            casted_update_type = _check_update_type(ragbits_version, new_ragbits_version)
+            version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
+            casted_update_type = _check_update_type(version, new_version)
 
             for pkg in [pkg for pkg in packages if pkg != "ragbits-core"]:
                 pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg / "pyproject.toml").read_text())
                 pkg_pyproject["project"]["dependencies"] = [
                     dep for dep in pkg_pyproject["project"]["dependencies"] if "ragbits-core" not in dep
                 ]
-                pkg_pyproject["project"]["dependencies"].append(f"ragbits-core=={new_ragbits_version}")
+                pkg_pyproject["project"]["dependencies"].append(f"ragbits-core=={new_version}")
                 _update_pkg_version(pkg, pkg_pyproject, update_type=casted_update_type)
 
         else:
             pprint("[red]The ragbits-core package was not successfully updated.[/red]")
+
     else:
-        _update_pkg_version(pkg_name, update_type=casted_update_type)
+        version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
+        _sync_ragbits_deps(pkg_name, version, new_version, update_type)
 
 
 if __name__ == "__main__":

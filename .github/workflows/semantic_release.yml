@@ -17,9 +17,9 @@ on:
         required: true
         type: choice
         options:
+          - "ragbits"
           - "ragbits-cli"
           - "ragbits-core"
-          - "ragbits-dev-kit"
           - "ragbits-document-search"
 
 jobs:
