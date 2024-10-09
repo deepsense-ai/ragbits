@@ -59,3 +59,8 @@ class MyBasePrompt(Prompt, ABC):
 
 class MyPromptWithBase(MyBasePrompt):
     user_prompt = "custom user prompt"
+
+
+class PromptWithoutInput(Prompt):
+    system_prompt = "fake system prompt without typing"
+    user_prompt = "fake user prompt without typing"

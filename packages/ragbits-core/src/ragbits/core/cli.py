@@ -1,19 +1,18 @@
-from typer import Typer
+import typer
 
-prompts_app = Typer()
+from .prompt.lab.app import lab_app
+from .prompt.promptfoo import generate_configs
 
-
-@prompts_app.command()
-def placeholder() -> None:
-    """Placeholder command"""
-    print("foo")
+prompts_app = typer.Typer(no_args_is_help=True)
 
 
-def register(app: Typer) -> None:
+def register(app: typer.Typer) -> None:
     """
-    Register the CLI commands for the ragbits-core package.
+    Register the CLI commands for the package.
 
     Args:
         app: The Typer object to register the commands with.
     """
-    app.add_typer(prompts_app, name="prompts")
+    prompts_app.command(name="lab")(lab_app)
+    prompts_app.command(name="generate-promptfoo-configs")(generate_configs)
+    app.add_typer(prompts_app, name="prompts", help="Commands for managing prompts")
