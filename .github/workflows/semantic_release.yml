@@ -41,11 +41,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Update packagee
+      - name: Update packages
+        id: packages_update
         run: |
+          echo old_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
           uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }}
+          echo new_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
 
       - name: Commit updated packages
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: Update ${{ github.event.inputs.packageName }} to ${{ github.event.inputs.updateType }}
+          commit_message: Update ${{ github.event.inputs.packageName }} version from ${{ steps.packages_update.outputs.old_version }} to ${{ steps.packages_update.outputs.new_version }}
