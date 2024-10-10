@@ -44,7 +44,6 @@ class PromptDiscovery:
         Returns:
             set[Prompt]: The discovered Prompt objects.
         """
-
         result_set: set[type[Prompt]] = set()
 
         for file_path in self.root_path.glob(self.file_pattern):

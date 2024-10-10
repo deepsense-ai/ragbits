@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -79,7 +79,7 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
+        self, document: DocumentMeta | Document, document_processor: BaseProvider | None = None
     ) -> None:
         """
         Ingest a document.
@@ -104,5 +104,5 @@ class DocumentSearch:
             elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
         await self.vector_store.store(entries)

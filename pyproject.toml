@@ -36,46 +36,8 @@ members = [
 multi_line_output = 3
 line_length = 120
 include_trailing_comma = true
-known_first_party = ['ragbits']
-known_third_party = [ # Most popular libraries. Extend if necessary.
-    'IPython',
-    'PIL',
-    'cv2',
-    'dotenv',
-    'editdistance',
-    'fastapi',
-    'fire',
-    'hydra',
-    'joblib',
-    'loguru',
-    'luigi',
-    'matplotlib',
-    'neptune',
-    'neptune_config',
-    'nltk',
-    'numpy',
-    'omegaconf',
-    'pandas',
-    'pqdm',
-    'pydantic',
-    'pytest',
-    'pytorch_lightning',
-    'requests',
-    'scipy',
-    'setuptools',
-    'shapely',
-    'skimage',
-    'sklearn',
-    'streamlit',
-    'torch',
-    'torchvision',
-    'tqdm',
-    'typer',
-]
-skip_gitignore = true
 
-[tool.black]
-line_length = 120
+skip_gitignore = true
 
 [tool.pytest]
 norecursedirs = [
@@ -128,6 +90,7 @@ ignore_missing_imports = false
 disallow_untyped_defs = true
 
 [tool.pylint.basic]
+py-version=3.10
 good-names = "i,j,x,y,z,x1,y1,z1,x2,y2,z2,cv,df,dx,dy,dz,w,h,c,b,g,qa,q,a"
 max-args = 8
 
@@ -228,6 +191,7 @@ ignore = [
     "PLR0913",
 ]
 
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -244,3 +208,16 @@ convention = "google"
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
+
+
+[tool.ruff.lint.isort]
+#multi-line-output = "3"  # Matches multi_line_output = 3 in isort
+#include_trailing_comma = true
+known-first-party = ["ragbits"]
+known-third-party = [
+    "IPython", "PIL", "cv2", "dotenv", "editdistance", "fastapi", "fire", "hydra",
+    "joblib", "loguru", "luigi", "matplotlib", "neptune", "neptune_config", "nltk",
+    "numpy", "omegaconf", "pandas", "pqdm", "pydantic", "pytest", "pytorch_lightning",
+    "requests", "scipy", "setuptools", "shapely", "skimage", "sklearn", "streamlit",
+    "torch", "torchvision", "tqdm", "typer"
+]

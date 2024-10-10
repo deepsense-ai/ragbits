@@ -62,7 +62,7 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
 
     input_type = prompt_class.input_type
     input_fields = get_input_type_fields(input_type)
-    variables = {field["field_name"]: value for field, value in zip(input_fields, args)}
+    variables = {field["field_name"]: value for field, value in zip(input_fields, args, strict=False)}
     input_data = input_type(**variables) if input_type is not None else None
     prompt_object = prompt_class(input_data=input_data)
     state = replace(state, rendered_prompt=prompt_object)

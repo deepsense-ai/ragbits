@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 try:
     import torch
@@ -20,7 +20,7 @@ class LocalEmbeddings(Embeddings):
     def __init__(
         self,
         model_name: str,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
         """
         Constructs a new local LLM instance.

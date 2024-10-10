@@ -18,7 +18,6 @@ def main() -> None:
         - if found it imports the `register` function from the `cli` module and calls it with the `app` object
         - register function should add the CLI commands to the `app` object
     """
-
     cli_enabled_modules = [
         module
         for module in pkgutil.iter_modules(ragbits.__path__)

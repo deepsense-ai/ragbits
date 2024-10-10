@@ -1,6 +1,7 @@
 import textwrap
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Generic, Optional, Tuple, Type, cast, get_args, get_origin, overload
+from collections.abc import Callable
+from typing import Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
@@ -9,7 +10,7 @@ from typing_extensions import TypeVar, get_original_bases
 from .base import BasePromptWithParser, ChatFormat, OutputT
 from .parsers import DEFAULT_PARSERS, build_pydantic_parser
 
-InputT = TypeVar("InputT", bound=Optional[BaseModel])
+InputT = TypeVar("InputT", bound=BaseModel | None)
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
@@ -20,7 +21,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     and optionally the input and output types. The system prompt is optional.
     """
 
-    system_prompt: Optional[str] = None
+    system_prompt: str | None = None
     user_prompt: str
 
     # Additional messages to be added to the conversation after the system prompt
@@ -31,13 +32,13 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     response_parser: Callable[[str], OutputT]
 
     # Automatically set in __init_subclass__
-    input_type: Optional[Type[InputT]]
-    output_type: Type[OutputT]
-    system_prompt_template: Optional[Template]
+    input_type: type[InputT] | None
+    output_type: type[OutputT]
+    system_prompt_template: Template | None
     user_prompt_template: Template
 
     @classmethod
-    def _get_io_types(cls) -> Tuple:
+    def _get_io_types(cls) -> tuple:
         bases = get_original_bases(cls)
         for base in bases:
             if get_origin(base) is Prompt:
@@ -64,7 +65,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return Template(template)
 
     @classmethod
-    def _render_template(cls, template: Template, input_data: Optional[InputT]) -> str:
+    def _render_template(cls, template: Template, input_data: InputT | None) -> str:
         # Workaround for not being able to use `input is not None`
         # because of mypy issue: https://github.com/python/mypy/issues/12622
         context = {}
@@ -158,7 +159,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self._instace_few_shots.append({"role": "assistant", "content": assistant_message})
         return self
 
-    def output_schema(self) -> Optional[Dict | Type[BaseModel]]:
+    def output_schema(self) -> dict | type[BaseModel] | None:
         """
         Returns the schema of the desired output. Can be used to request structured output from the LLM API
         or to validate the output. Can return either a Pydantic model or a JSON schema.

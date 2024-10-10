@@ -1,6 +1,5 @@
 import os
 from io import BytesIO
-from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
@@ -50,7 +49,7 @@ class UnstructuredProvider(BaseProvider):
         DocumentType.XML,
     }
 
-    def __init__(self, partition_kwargs: Optional[dict] = None, chunking_kwargs: Optional[dict] = None):
+    def __init__(self, partition_kwargs: dict | None = None, chunking_kwargs: dict | None = None):
         """Initialize the UnstructuredProvider.
 
         Args:

@@ -1,4 +1,3 @@
-from typing import Optional
 
 try:
     import litellm
@@ -19,10 +18,10 @@ class LiteLLMEmbeddings(Embeddings):
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        options: Optional[dict] = None,
-        api_base: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        options: dict | None = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.
@@ -65,7 +64,6 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-
         try:
             response = await litellm.aembedding(
                 input=data,

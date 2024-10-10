@@ -1,7 +1,6 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Union
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +38,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
+    source: LocalFileSource | GCSSource = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:

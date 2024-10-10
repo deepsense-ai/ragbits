@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Generic, Optional, Type, cast, overload
+from typing import Generic, cast, overload
 
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, OutputT
 
@@ -12,9 +12,9 @@ class LLM(Generic[LLMClientOptions], ABC):
     Abstract class for interaction with Large Language Model.
     """
 
-    _options_cls: Type[LLMClientOptions]
+    _options_cls: type[LLMClientOptions]
 
-    def __init__(self, model_name: str, default_options: Optional[LLMOptions] = None) -> None:
+    def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
         """
         Constructs a new LLM instance.
 
@@ -55,7 +55,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -83,7 +83,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePromptWithParser[OutputT],
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> OutputT:
         ...
 
@@ -92,7 +92,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> OutputT:
         ...
 
@@ -100,7 +100,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> OutputT:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the

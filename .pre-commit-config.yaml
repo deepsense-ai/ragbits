@@ -18,7 +18,7 @@ repos:
         - id: ruff
           types_or: [ python, pyi, jupyter ]
           exclude: (/test_|tests/|docs/|notebooks/)
-#          args: [ --fix ]
+          args: [ --fix ]
         - id: ruff-format
           types_or: [ python, pyi, jupyter ]
           exclude: (docs/)
@@ -57,14 +57,6 @@ repos:
             # such as types-python-dateutil
             additional_dependencies: [pydantic>=2.8.2, types-pyyaml>=6.0.12]
             exclude: (/test_|setup.py|/tests/|docs/)
-
-      # Sort imports alphabetically, and automatically separated into sections and by type.
-    - repo: https://github.com/timothycrosley/isort
-      rev: 5.13.2
-      hooks:
-          - id: isort
-            args: ["--profile", "black"]
-            exclude: (docs/|notebooks/)
 
       # Checks Python source files for errors.
     - repo: https://github.com/PyCQA/flake8

@@ -1,5 +1,4 @@
 import copy
-from typing import Optional
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import BaseProvider
@@ -40,7 +39,7 @@ class DocumentProcessorRouter:
         self._providers = providers
 
     @classmethod
-    def from_config(cls, providers_config: Optional[ProvidersConfig] = None) -> "DocumentProcessorRouter":
+    def from_config(cls, providers_config: ProvidersConfig | None = None) -> "DocumentProcessorRouter":
         """
         Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
         configuration will be used. If the configuration is provided, it will be merged with the default configuration,

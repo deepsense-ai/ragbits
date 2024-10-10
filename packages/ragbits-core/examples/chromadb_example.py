@@ -24,7 +24,6 @@ documents = [
 
 async def main():
     """Run the example."""
-
     chroma_client = chromadb.PersistentClient(path="chroma")
     embedding_client = LiteLLMEmbeddings()
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, Dict, Generic, Optional, Type, TypeVar
+from typing import Any, ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel
 
@@ -35,7 +35,7 @@ class LLMOptions(ABC):
 
         return self.__class__(**updated_dict)
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """
         Creates a dictionary representation of the LLMOptions instance.
         If a value is None, it will be replaced with a provider-specific not-given sentinel.
@@ -70,7 +70,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
         conversation: ChatFormat,
         options: LLMClientOptions,
         json_mode: bool = False,
-        output_schema: Optional[Type[BaseModel] | Dict] = None,
+        output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
         """
         Calls LLM inference API.
