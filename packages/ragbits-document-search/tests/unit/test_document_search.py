@@ -11,6 +11,40 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
+CONFIG = {
+    "embedder": {"type": "NoopEmbeddings"},
+    "vector_store": {"type": "ragbits.core.vector_store.in_memory:InMemoryVectorStore"},
+    "reranker": {"type": "NoopReranker"},
+    "providers": {"txt": {"type": "DummyProvider"}},
+}
+
+
+@pytest.mark.parametrize(
+    "document, expected",
+    [
+        (
+            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+            "Name of Peppa's brother is George",
+        ),
+        (
+            Document.from_document_meta(
+                DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"), Path("test.txt")
+            ),
+            "Name of Peppa's brother is George",
+        ),
+    ],
+)
+async def test_document_search_from_config(document, expected):
+    document_search = DocumentSearch.from_config(CONFIG)
+
+    await document_search.ingest_document(document)
+    results = await document_search.search("Peppa's brother")
+
+    first_result = results[0]
+
+    assert isinstance(first_result, TextElement)
+    assert first_result.content == expected
+
 
 @pytest.mark.parametrize(
     "document",
