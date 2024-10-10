@@ -2872,6 +2872,7 @@ source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "jinja2" },
     { name = "pydantic" },
+    { name = "tomli" },
     { name = "typer" },
 ]
 
@@ -2908,6 +2909,7 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.24.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
+    { name = "tomli", specifier = "~=2.0.2" },
     { name = "torch", marker = "extra == 'local'", specifier = "~=2.2.1" },
     { name = "transformers", marker = "extra == 'local'", specifier = "~=4.44.2" },
     { name = "typer", specifier = "~=0.12.5" },
