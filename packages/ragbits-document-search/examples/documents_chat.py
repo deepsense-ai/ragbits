@@ -130,29 +130,31 @@ class RAGSystemWithUI:
         Returns:
             gradio layout
         """
-        with gr.Blocks(fill_height=True) as app:
+        with gr.Blocks(fill_height=True, fill_width=True) as app:
             with gr.Row():
-                documents_picker = gr.File(file_count="directory", label=self.DOCUMENT_PICKER_LABEL)
-                database_path = gr.Textbox(label=self.DATABASE_TEXT_BOX_LABEL)
+                with gr.Column(scale=1):
+                    with gr.Group():
+                        documents_picker = gr.File(file_count="directory", label=self.DOCUMENT_PICKER_LABEL)
+                        create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
+                        creating_status_display = gr.Textbox(
+                            label=self.DATABASE_CREATION_STATUS_LABEL,
+                            interactive=False,
+                            placeholder=self.DATABASE_CREATION_STATUS_PLACEHOLDER,
+                        )
 
-            with gr.Row():
-                create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
-                load_btn = gr.Button(self.DATABASE_LOAD_BUTTON_LABEL)
-            with gr.Row():
-                creating_status_display = gr.Textbox(
-                    label=self.DATABASE_CREATION_STATUS_LABEL,
-                    interactive=False,
-                    placeholder=self.DATABASE_CREATION_STATUS_PLACEHOLDER,
-                )
-                loading_status_display = gr.Textbox(
-                    label=self.DATABASE_LOADING_STATUS_LABEL,
-                    interactive=False,
-                    placeholder=self.DATABASE_LOADING_STATUS_PLACEHOLDER,
-                )
+                    with gr.Group():
+                        database_path = gr.Textbox(label=self.DATABASE_TEXT_BOX_LABEL)
+                        load_btn = gr.Button(self.DATABASE_LOAD_BUTTON_LABEL)
+                        loading_status_display = gr.Textbox(
+                            label=self.DATABASE_LOADING_STATUS_LABEL,
+                            interactive=False,
+                            placeholder=self.DATABASE_LOADING_STATUS_PLACEHOLDER,
+                        )
+                    load_btn.click(fn=self._load_database, inputs=database_path, outputs=loading_status_display)
+                    create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
 
-            gr.ChatInterface(self._handle_message)
-            load_btn.click(fn=self._load_database, inputs=database_path, outputs=loading_status_display)
-            create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
+                with gr.Column(scale=5):
+                    gr.ChatInterface(self._handle_message)
         return app
 
 
