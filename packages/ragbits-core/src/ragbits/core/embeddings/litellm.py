@@ -7,7 +7,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings import Embeddings
 from ragbits.core.embeddings.exceptions import EmbeddingConnectionError, EmbeddingResponseError, EmbeddingStatusError
 
 

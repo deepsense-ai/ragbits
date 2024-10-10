@@ -1,0 +1,7 @@
+:root {
+  --md-primary-fg-color:        #00b0e0;
+}
+
+.md-header__title {
+  margin-left: 0.5rem !important;
+}
