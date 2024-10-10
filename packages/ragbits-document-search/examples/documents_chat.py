@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "gradio",
+#     "ragbits-document-search",
+#     "ragbits-core[chromadb, litellm]",
+# ]
+# ///
 from pathlib import Path
 from typing import AsyncIterator
 
