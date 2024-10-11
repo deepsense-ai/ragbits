@@ -8,7 +8,9 @@ from rich.console import Console
 
 
 def generate_configs(
-    file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd(), target_path: Path = Path("promptfooconfigs")
+    file_pattern: str = DEFAULT_FILE_PATTERN,
+    root_path: Path = Path.cwd(),
+    target_path: Path = Path("promptfooconfigs"),
 ) -> None:
     """Generates promptfoo configuration files for all discovered prompts.
 

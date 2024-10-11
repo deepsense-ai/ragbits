@@ -1,7 +1,9 @@
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.providers.base import DocumentTypeNotSupportedError
+from ragbits.document_search.ingestion.providers.base import (
+    DocumentTypeNotSupportedError,
+)
 from ragbits.document_search.ingestion.providers.unstructured import (
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_API_URL_ENV,
@@ -10,7 +12,9 @@ from ragbits.document_search.ingestion.providers.unstructured import (
 
 
 @pytest.mark.parametrize("document_type", UnstructuredProvider.SUPPORTED_DOCUMENT_TYPES)
-def test_unsupported_provider_validates_supported_document_types_passes(document_type: DocumentType):
+def test_unsupported_provider_validates_supported_document_types_passes(
+    document_type: DocumentType,
+):
     UnstructuredProvider().validate_document_type(document_type)
 
 
@@ -30,7 +34,9 @@ async def test_unstructured_provider_raises_value_error_when_api_key_not_set():
     assert f"{UNSTRUCTURED_API_KEY_ENV} environment variable is not set" in str(err.value)
 
 
-async def test_unstructured_provider_raises_value_error_when_api_url_not_set(monkeypatch: pytest.MonkeyPatch):
+async def test_unstructured_provider_raises_value_error_when_api_url_not_set(
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.setenv(UNSTRUCTURED_API_KEY_ENV, "dummy_key")
     with pytest.raises(ValueError) as err:
         await UnstructuredProvider().process(

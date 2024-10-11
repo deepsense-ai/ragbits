@@ -36,46 +36,8 @@ members = [
 multi_line_output = 3
 line_length = 120
 include_trailing_comma = true
-known_first_party = ['ragbits']
-known_third_party = [ # Most popular libraries. Extend if necessary.
-    'IPython',
-    'PIL',
-    'cv2',
-    'dotenv',
-    'editdistance',
-    'fastapi',
-    'fire',
-    'hydra',
-    'joblib',
-    'loguru',
-    'luigi',
-    'matplotlib',
-    'neptune',
-    'neptune_config',
-    'nltk',
-    'numpy',
-    'omegaconf',
-    'pandas',
-    'pqdm',
-    'pydantic',
-    'pytest',
-    'pytorch_lightning',
-    'requests',
-    'scipy',
-    'setuptools',
-    'shapely',
-    'skimage',
-    'sklearn',
-    'streamlit',
-    'torch',
-    'torchvision',
-    'tqdm',
-    'typer',
-]
-skip_gitignore = true
 
-[tool.black]
-line_length = 120
+skip_gitignore = true
 
 [tool.pytest]
 norecursedirs = [
@@ -128,6 +90,7 @@ ignore_missing_imports = false
 disallow_untyped_defs = true
 
 [tool.pylint.basic]
+py-version=3.10
 good-names = "i,j,x,y,z,x1,y1,z1,x2,y2,z2,cv,df,dx,dy,dz,w,h,c,b,g,qa,q,a"
 max-args = 8
 
@@ -181,15 +144,13 @@ exclude = [".venv"]
 extend-include = ["*.ipynb"]
 line-length = 120
 
-#[tool.ruff.lint]
+[tool.ruff.lint]
 preview = true
 explicit-preview-rules = true
 select = [
     # Default rules
     "E",    # pycodestyle errors
     "F",    # Pyflakes
-
-    # Extra rules, by Michał Kustosz
     "C4",   # flake8-comprehensions
     "C90",  # mccabe complex structure
     "D",    # pydocstyle
@@ -199,15 +160,12 @@ select = [
     "SIM",  # flake8-simplify
     "UP",   # pyupgrade
     "W",    # pycodestyle warnings
-
-    # Extra rules, by Jakub Cierocki
     "S",    # flake8-bandit
     "ANN",  # flake8-annotations
     "B",    # flake8-bugbear
     "NPY",  # NumPy-specific rules
 ]
 extend-select = [
-    # Extra, preview rules, by Jakub Cierocki
     "RUF022",   # unsorted-dunder-all
     "PLR6301",  # no-self-use
 ]
@@ -217,7 +175,9 @@ ignore = [
     "D100",
     "D104",
     "D105",
+    "D200",
     "D205",
+    "D212",
     "ANN002",
     "ANN003",
     "ANN101",
@@ -226,11 +186,11 @@ ignore = [
     "PLR0913",
 ]
 
+
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
-"src/main.py" = ["D103"]
 "*.ipynb" = [
     "PLR2004",
     "W293",
@@ -243,3 +203,14 @@ convention = "google"
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
+
+
+[tool.ruff.lint.isort]
+known-first-party = ["ragbits"]
+known-third-party = [
+    "IPython", "PIL", "cv2", "dotenv", "editdistance", "fastapi", "fire", "hydra",
+    "joblib", "loguru", "luigi", "matplotlib", "neptune", "neptune_config", "nltk",
+    "numpy", "omegaconf", "pandas", "pqdm", "pydantic", "pytest", "pytorch_lightning",
+    "requests", "scipy", "setuptools", "shapely", "skimage", "sklearn", "streamlit",
+    "torch", "torchvision", "tqdm", "typer"
+]

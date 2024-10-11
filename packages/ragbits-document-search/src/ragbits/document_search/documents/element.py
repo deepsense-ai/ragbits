@@ -24,7 +24,7 @@ class Element(BaseModel, ABC):
         """
 
     @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs: dict) -> None:  # pylint: disable=unused-argument
+    def __pydantic_init_subclass__(cls) -> None:  # pylint: disable=unused-argument
         element_type_default = cls.model_fields["element_type"].default
 
         if element_type_default is None:

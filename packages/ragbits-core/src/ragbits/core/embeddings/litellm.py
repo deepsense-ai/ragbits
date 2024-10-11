@@ -1,4 +1,3 @@
-
 try:
     import litellm
 
@@ -7,11 +6,16 @@ except ImportError:
     HAS_LITELLM = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.embeddings.exceptions import EmbeddingConnectionError, EmbeddingResponseError, EmbeddingStatusError
+from ragbits.core.embeddings.exceptions import (
+    EmbeddingConnectionError,
+    EmbeddingResponseError,
+    EmbeddingStatusError,
+)
 
 
 class LiteLLMEmbeddings(Embeddings):
-    """Client for creating text embeddings using LiteLLM API.
+    """
+    Client for creating text embeddings using LiteLLM API.
     """
 
     def __init__(
@@ -22,7 +26,8 @@ class LiteLLMEmbeddings(Embeddings):
         api_key: str | None = None,
         api_version: str | None = None,
     ) -> None:
-        """Constructs the LiteLLMEmbeddingClient.
+        """
+        Constructs the LiteLLMEmbeddingClient.
 
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
@@ -48,7 +53,8 @@ class LiteLLMEmbeddings(Embeddings):
         self.api_version = api_version
 
     async def embed_text(self, data: list[str]) -> list[list[float]]:
-        """Creates embeddings for the given strings.
+        """
+        Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.

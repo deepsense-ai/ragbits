@@ -8,13 +8,15 @@ from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 
 
 class LLM(Generic[LLMClientOptions], ABC):
-    """Abstract class for interaction with Large Language Model.
+    """
+    Abstract class for interaction with Large Language Model.
     """
 
     _options_cls: type[LLMClientOptions]
 
     def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
-        """Constructs a new LLM instance.
+        """
+        Constructs a new LLM instance.
 
         Args:
             model_name: Name of the model to be used.
@@ -33,11 +35,13 @@ class LLM(Generic[LLMClientOptions], ABC):
     @cached_property
     @abstractmethod
     def client(self) -> LLMClient:
-        """Client for the LLM.
+        """
+        Client for the LLM.
         """
 
     def count_tokens(self, prompt: BasePrompt) -> int:
-        """Counts tokens in the prompt.
+        """
+        Counts tokens in the prompt.
 
         Args:
             prompt: Formatted prompt template with conversation and response parsing configuration.
@@ -53,7 +57,8 @@ class LLM(Generic[LLMClientOptions], ABC):
         *,
         options: LLMOptions | None = None,
     ) -> str:
-        """Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
+        """
+        Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
         Args:
             prompt: Formatted prompt template with conversation.
@@ -79,8 +84,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePromptWithParser[OutputT],
         *,
         options: LLMOptions | None = None,
-    ) -> OutputT:
-        ...
+    ) -> OutputT: ...
 
     @overload
     async def generate(
@@ -88,8 +92,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePrompt,
         *,
         options: LLMOptions | None = None,
-    ) -> OutputT:
-        ...
+    ) -> OutputT: ...
 
     async def generate(
         self,
@@ -97,7 +100,8 @@ class LLM(Generic[LLMClientOptions], ABC):
         *,
         options: LLMOptions | None = None,
     ) -> OutputT:
-        """Prepares and sends a prompt to the LLM and returns response parsed to the
+        """
+        Prepares and sends a prompt to the LLM and returns response parsed to the
         output type of the prompt (if available).
 
         Args:

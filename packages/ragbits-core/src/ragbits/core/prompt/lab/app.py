@@ -11,16 +11,21 @@ except ImportError:
 
 import jinja2
 from pydantic import BaseModel
+from rich.console import Console
+
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.clients import LiteLLMOptions
 from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.discovery.prompt_discovery import DEFAULT_FILE_PATTERN, PromptDiscovery
-from rich.console import Console
+from ragbits.core.prompt.discovery.prompt_discovery import (
+    DEFAULT_FILE_PATTERN,
+    PromptDiscovery,
+)
 
 
 @dataclass(frozen=True)
 class PromptState:
-    """Class to store the current state of the application.
+    """
+    Class to store the current state of the application.
 
     This class holds various data structures used throughout the application's lifecycle.
 
@@ -38,7 +43,8 @@ class PromptState:
 
 
 def render_prompt(index: int, system_prompt: str, user_prompt: str, state: PromptState, *args: Any) -> PromptState:
-    """Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
+    """
+    Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
 
     This function constructs a Prompt object using the prompt constructor and input constructor
     associated with the given key. It then updates the current prompt in the application state.
@@ -68,7 +74,8 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
 
 
 def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
-    """Returns a list of prompt choices based on the discovered prompts.
+    """
+    Returns a list of prompt choices based on the discovered prompts.
 
     This function generates a list of tuples containing the names of discovered prompts and their
     corresponding indices.
@@ -83,7 +90,8 @@ def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
 
 
 def send_prompt_to_llm(state: PromptState) -> str:
-    """Sends the current prompt to the LLM and returns the response.
+    """
+    Sends the current prompt to the LLM and returns the response.
 
     This function creates a LiteLLM client using the LLM model name and API key stored in the
     application state. It then calls the LLM client to generate a response based on the current prompt.
@@ -109,7 +117,8 @@ def send_prompt_to_llm(state: PromptState) -> str:
 
 
 def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
-    """Retrieves the field names and default values from the input type of a prompt.
+    """
+    Retrieves the field names and default values from the input type of a prompt.
 
     This function inspects the input type object associated with a prompt and extracts information
     about its fields, including their names and default values.
@@ -129,9 +138,12 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
 
 
 def lab_app(  # pylint: disable=missing-param-doc
-    file_pattern: str = DEFAULT_FILE_PATTERN, llm_model: str | None = None, llm_api_key: str | None = None
+    file_pattern: str = DEFAULT_FILE_PATTERN,
+    llm_model: str | None = None,
+    llm_api_key: str | None = None,
 ) -> None:
-    """Launches the interactive application for listing, rendering, and testing prompts
+    """
+    Launches the interactive application for listing, rendering, and testing prompts
     defined within the current project.
     """
     if not HAS_GRADIO:
@@ -162,7 +174,9 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
         )
 
         prompt_selection_dropdown = gr.Dropdown(
-            choices=list_prompt_choices(prompts_state.value), value=0, label="Select Prompt"
+            choices=list_prompt_choices(prompts_state.value),
+            value=0,
+            label="Select Prompt",
         )
 
         @gr.render(inputs=[prompt_selection_dropdown, prompts_state])
@@ -189,7 +203,9 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                         with gr.Row():
                             with gr.Column():
                                 prompt_details_system_prompt = gr.Textbox(
-                                    label="System Prompt", value=prompt.system_prompt, interactive=True
+                                    label="System Prompt",
+                                    value=prompt.system_prompt,
+                                    interactive=True,
                                 )
 
                             with gr.Column():
@@ -197,20 +213,28 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                                     state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
                                 )
                                 gr.Textbox(
-                                    label="Rendered System Prompt", value=rendered_system_prompt, interactive=False
+                                    label="Rendered System Prompt",
+                                    value=rendered_system_prompt,
+                                    interactive=False,
                                 )
 
                         with gr.Row():
                             with gr.Column():
                                 prompt_details_user_prompt = gr.Textbox(
-                                    label="User Prompt", value=prompt.user_prompt, interactive=True
+                                    label="User Prompt",
+                                    value=prompt.user_prompt,
+                                    interactive=True,
                                 )
 
                             with gr.Column():
                                 rendered_user_prompt = (
                                     state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
                                 )
-                                gr.Textbox(label="Rendered User Prompt", value=rendered_user_prompt, interactive=False)
+                                gr.Textbox(
+                                    label="Rendered User Prompt",
+                                    value=rendered_user_prompt,
+                                    interactive=False,
+                                )
 
             llm_enabled = state.llm_model_name is not None
             prompt_ready = state.rendered_prompt is not None
@@ -219,9 +243,13 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                 interactive=llm_enabled and prompt_ready,
             )
             gr.Markdown(
-                "To enable this button, select an LLM model when starting the app in CLI.", visible=not llm_enabled
+                "To enable this button, select an LLM model when starting the app in CLI.",
+                visible=not llm_enabled,
             )
-            gr.Markdown("To enable this button, render a prompt first.", visible=llm_enabled and not prompt_ready)
+            gr.Markdown(
+                "To enable this button, render a prompt first.",
+                visible=llm_enabled and not prompt_ready,
+            )
             llm_prompt_response = gr.Textbox(lines=10, label="LLM response")
 
             render_prompt_button.click(

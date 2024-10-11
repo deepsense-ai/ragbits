@@ -14,7 +14,8 @@ InputT = TypeVar("InputT", bound=BaseModel | None)
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
-    """Generic class for prompts. It contains the system and user prompts, and additional messages.
+    """
+    Generic class for prompts. It contains the system and user prompts, and additional messages.
 
     To create a new prompt, subclass this class and provide the system and user prompts,
     and optionally the input and output types. The system prompt is optional.
@@ -101,12 +102,10 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __init__(self: "Prompt[None, OutputT]") -> None:
-        ...
+    def __init__(self: "Prompt[None, OutputT]") -> None: ...
 
     @overload
-    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None:
-        ...
+    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None: ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")
@@ -125,7 +124,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     @property
     def chat(self) -> ChatFormat:
-        """Returns the conversation in the standard OpenAI chat format.
+        """
+        Returns the conversation in the standard OpenAI chat format.
 
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
@@ -143,7 +143,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return chat
 
     def add_few_shot(self, user_message: str, assistant_message: str) -> "Prompt[InputT, OutputT]":
-        """Add a few-shot example to the conversation.
+        """
+        Add a few-shot example to the conversation.
 
         Args:
             user_message (str): The message from the user.
@@ -157,7 +158,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return self
 
     def output_schema(self) -> dict | type[BaseModel] | None:
-        """Returns the schema of the desired output. Can be used to request structured output from the LLM API
+        """
+        Returns the schema of the desired output. Can be used to request structured output from the LLM API
         or to validate the output. Can return either a Pydantic model or a JSON schema.
 
         Returns:
@@ -167,7 +169,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     @property
     def json_mode(self) -> bool:
-        """Returns whether the prompt should be sent in JSON mode.
+        """
+        Returns whether the prompt should be sent in JSON mode.
 
         Returns:
             bool: Whether the prompt should be sent in JSON mode.
@@ -175,7 +178,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return issubclass(self.output_type, BaseModel)
 
     def parse_response(self, response: str) -> OutputT:
-        """Parse the response from the LLM to the desired output type.
+        """
+        Parse the response from the LLM to the desired output type.
 
         Args:
             response (str): The response from the LLM.
@@ -190,7 +194,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     @classmethod
     def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
-        """Generate a prompt in the promptfoo format from a promptfoo test configuration.
+        """
+        Generate a prompt in the promptfoo format from a promptfoo test configuration.
 
         Args:
             config: The promptfoo test configuration.

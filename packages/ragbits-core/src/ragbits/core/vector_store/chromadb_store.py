@@ -25,7 +25,8 @@ class ChromaDBStore(VectorStore):
         max_distance: float | None = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
     ):
-        """Initializes the ChromaDBStore with the given parameters.
+        """
+        Initializes the ChromaDBStore with the given parameters.
 
         Args:
             index_name: The name of the index.
@@ -46,7 +47,8 @@ class ChromaDBStore(VectorStore):
         self._collection = self._get_chroma_collection()
 
     def _get_chroma_collection(self) -> chromadb.Collection:
-        """Based on the selected embedding_function, chooses how to retrieve the ChromaDB collection.
+        """
+        Based on the selected embedding_function, chooses how to retrieve the ChromaDB collection.
         If the collection doesn't exist, it creates one.
 
         Returns:
@@ -62,7 +64,8 @@ class ChromaDBStore(VectorStore):
         )
 
     def _return_best_match(self, retrieved: dict) -> str | None:
-        """Based on the retrieved data, returns the best match or None if no match is found.
+        """
+        Based on the retrieved data, returns the best match or None if no match is found.
 
         Args:
             Retrieved data, with a column-first format
@@ -88,7 +91,8 @@ class ChromaDBStore(VectorStore):
 
     @property
     def embedding_function(self) -> Embeddings | chromadb.EmbeddingFunction:
-        """Returns the embedding function.
+        """
+        Returns the embedding function.
 
         Returns:
             The embedding function.
@@ -96,7 +100,8 @@ class ChromaDBStore(VectorStore):
         return self._embedding_function
 
     async def store(self, entries: list[VectorDBEntry]) -> None:
-        """Stores entries in the ChromaDB collection.
+        """
+        Stores entries in the ChromaDB collection.
 
         Args:
             entries: The entries to store.
@@ -107,7 +112,8 @@ class ChromaDBStore(VectorStore):
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
 
     async def retrieve(self, vector: list[float], k: int = 5) -> list[VectorDBEntry]:
-        """Retrieves entries from the ChromaDB collection.
+        """
+        Retrieves entries from the ChromaDB collection.
 
         Args:
             vector: The vector to query.
@@ -131,7 +137,8 @@ class ChromaDBStore(VectorStore):
         return db_entries
 
     def __repr__(self) -> str:
-        """Returns the string representation of the object.
+        """
+        Returns the string representation of the object.
 
         Returns:
             The string representation of the object.

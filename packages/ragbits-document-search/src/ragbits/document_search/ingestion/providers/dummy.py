@@ -1,4 +1,8 @@
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType, TextDocument
+from ragbits.document_search.documents.document import (
+    DocumentMeta,
+    DocumentType,
+    TextDocument,
+)
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 

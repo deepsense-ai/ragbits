@@ -16,6 +16,7 @@
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 import tomlkit
 import typer
@@ -26,7 +27,8 @@ PACKAGES_DIR = Path(__file__).parent.parent / "packages"
 
 
 class UpdateType(Enum):
-    """Enum representing the type of version update: major, minor, or patch.
+    """
+    Enum representing the type of version update: major, minor, or patch.
     """
 
     MAJOR = "major"
@@ -87,7 +89,10 @@ def _update_pkg_version(
             new_version = _get_updated_version(version, update_type=update_type)
         else:
             pprint(f"Current version of the [bold]{pkg_name}[/bold] package is: [bold]{version}[/bold]")
-            new_version = text("Enter the new version", default=_get_updated_version(version, UpdateType.PATCH))
+            new_version = text(
+                "Enter the new version",
+                default=_get_updated_version(version, UpdateType.PATCH),
+            )
 
     pkg_pyproject["project"]["version"] = new_version
     (PACKAGES_DIR / pkg_name / "pyproject.toml").write_text(tomlkit.dumps(pkg_pyproject))
@@ -98,8 +103,12 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
-    """Main entry point for the package version updater. Updates package versions based on user input.
+def run(
+    pkg_name: str | None = typer.Argument(None),
+    update_type: str | None = typer.Argument(None),
+) -> None:
+    """
+    Main entry point for the package version updater. Updates package versions based on user input.
 
     Based on the provided package name and update type, this function updates the version of a
     specific package. If the package is "ragbits-core", all other packages that depend on it
