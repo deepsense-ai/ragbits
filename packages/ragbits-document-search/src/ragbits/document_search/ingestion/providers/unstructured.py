@@ -53,10 +53,10 @@ class UnstructuredProvider(BaseProvider):
 
     def __init__(
         self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
+        partition_kwargs: dict | None = None,
+        chunking_kwargs: dict | None = None,
+        api_key: str | None = None,
+        api_server: str | None = None,
         use_api: bool = False,
     ) -> None:
         """Initialize the UnstructuredProvider.
@@ -142,7 +142,7 @@ def _to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) 
     )
 
 
-def _set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
+def _set_or_raise(name: str, value: str | None, env_var: str) -> str:
     if value is not None:
         return value
     if (env_value := os.getenv(env_var)) is None:

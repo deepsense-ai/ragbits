@@ -11,7 +11,7 @@ from .base import BasePromptWithParser, ChatFormat, OutputT
 from .parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
-FewShotExample = Tuple[str | InputT, str | OutputT]
+FewShotExample = tuple[str | InputT, str | OutputT]
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
