@@ -2,7 +2,8 @@ import abc
 
 
 class QueryRephraser(abc.ABC):
-    """Rephrases a query. Can provide multiple rephrased queries from one sentence / question.
+    """
+    Rephrases a query. Can provide multiple rephrased queries from one sentence / question.
     """
 
     @staticmethod

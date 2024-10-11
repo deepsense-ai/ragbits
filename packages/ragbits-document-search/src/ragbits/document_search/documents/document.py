@@ -32,7 +32,8 @@ class DocumentType(str, Enum):
 
 
 class DocumentMeta(BaseModel):
-    """An object representing a document metadata.
+    """
+    An object representing a document metadata.
     """
 
     document_type: DocumentType
@@ -92,8 +93,7 @@ class DocumentMeta(BaseModel):
 
 
 class Document(BaseModel):
-    """An object representing a document which is downloaded and stored locally.
-    """
+    """An object representing a document which is downloaded and stored locally."""
 
     local_path: Path
     metadata: DocumentMeta
@@ -116,8 +116,7 @@ class Document(BaseModel):
 
 
 class TextDocument(Document):
-    """An object representing a text document.
-    """
+    """An object representing a text document."""
 
     @property
     def content(self) -> str:

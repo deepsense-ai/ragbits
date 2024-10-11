@@ -3,7 +3,8 @@ from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
 
 
 class InMemoryVectorStore(VectorStore):
-    """A simple in-memory implementation of Vector Store, storing vectors in memory.
+    """
+    A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
     def __init__(self) -> None:

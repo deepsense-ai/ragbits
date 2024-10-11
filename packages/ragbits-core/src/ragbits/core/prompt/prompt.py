@@ -104,12 +104,10 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __init__(self: "Prompt[None, OutputT]") -> None:
-        ...
+    def __init__(self: "Prompt[None, OutputT]") -> None: ...
 
     @overload
-    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None:
-        ...
+    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None: ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")

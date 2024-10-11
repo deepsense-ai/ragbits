@@ -9,7 +9,8 @@ from ragbits.core.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):
-    """Input format for the LoremPrompt.
+    """
+    Input format for the LoremPrompt.
     """
 
     theme: str
@@ -17,14 +18,16 @@ class LoremPromptInput(BaseModel):
 
 
 class LoremPromptOutput(BaseModel):
-    """Output format for the LoremPrompt.
+    """
+    Output format for the LoremPrompt.
     """
 
     text: str
 
 
 class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
-    """A prompt that generates Lorem Ipsum text.
+    """
+    A prompt that generates Lorem Ipsum text.
     """
 
     system_prompt = """

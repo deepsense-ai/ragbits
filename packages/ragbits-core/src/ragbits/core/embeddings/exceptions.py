@@ -1,5 +1,6 @@
 class EmbeddingError(Exception):
-    """Base class for all exceptions raised by the EmbeddingClient.
+    """
+    Base class for all exceptions raised by the EmbeddingClient.
     """
 
     def __init__(self, message: str) -> None:
@@ -8,7 +9,8 @@ class EmbeddingError(Exception):
 
 
 class EmbeddingConnectionError(EmbeddingError):
-    """Raised when there is an error connecting to the embedding API.
+    """
+    Raised when there is an error connecting to the embedding API.
     """
 
     def __init__(self, message: str = "Connection error.") -> None:
@@ -16,7 +18,8 @@ class EmbeddingConnectionError(EmbeddingError):
 
 
 class EmbeddingStatusError(EmbeddingError):
-    """Raised when an API response has a status code of 4xx or 5xx.
+    """
+    Raised when an API response has a status code of 4xx or 5xx.
     """
 
     def __init__(self, message: str, status_code: int) -> None:
@@ -25,7 +28,8 @@ class EmbeddingStatusError(EmbeddingError):
 
 
 class EmbeddingResponseError(EmbeddingError):
-    """Raised when an API response has an invalid schema.
+    """
+    Raised when an API response has an invalid schema.
     """
 
     def __init__(self, message: str = "Data returned by API invalid for expected schema.") -> None:

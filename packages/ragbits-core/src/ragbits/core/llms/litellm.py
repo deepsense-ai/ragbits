@@ -14,7 +14,8 @@ from .clients.litellm import LiteLLMClient, LiteLLMOptions
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
-    """Class for interaction with any LLM supported by LiteLLM API.
+    """
+    Class for interaction with any LLM supported by LiteLLM API.
     """
 
     _options_cls = LiteLLMOptions
@@ -58,7 +59,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     @cached_property
     def client(self) -> LiteLLMClient:
-        """Client for the LLM.
+        """
+        Client for the LLM.
         """
         return LiteLLMClient(
             model_name=self.model_name,

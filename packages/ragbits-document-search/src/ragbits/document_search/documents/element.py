@@ -7,7 +7,8 @@ from ragbits.document_search.documents.document import DocumentMeta
 
 
 class Element(BaseModel, ABC):
-    """An object representing an element in a document.
+    """
+    An object representing an element in a document.
     """
 
     element_type: str
@@ -65,8 +66,7 @@ class Element(BaseModel, ABC):
 
 
 class TextElement(Element):
-    """An object representing a text element in a document.
-    """
+    """An object representing a text element in a document."""
 
     element_type: str = "text"
     content: str

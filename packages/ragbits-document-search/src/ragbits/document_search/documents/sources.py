@@ -17,7 +17,8 @@ LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR_ENV"
 
 
 class Source(BaseModel, ABC):
-    """An object representing a source.
+    """
+    An object representing a source.
     """
 
     @abstractmethod
@@ -38,7 +39,8 @@ class Source(BaseModel, ABC):
 
 
 class LocalFileSource(Source):
-    """An object representing a local file source.
+    """
+    An object representing a local file source.
     """
 
     source_type: Literal["local_file"] = "local_file"
@@ -62,7 +64,8 @@ class LocalFileSource(Source):
 
 
 class GCSSource(Source):
-    """An object representing a GCS file source.
+    """
+    An object representing a GCS file source.
     """
 
     source_type: Literal["gcs"] = "gcs"

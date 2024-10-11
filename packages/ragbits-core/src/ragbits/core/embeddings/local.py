@@ -13,7 +13,8 @@ from ragbits.core.embeddings import Embeddings
 
 
 class LocalEmbeddings(Embeddings):
-    """Class for interaction with any encoder available in HuggingFace.
+    """
+    Class for interaction with any encoder available in HuggingFace.
     """
 
     def __init__(

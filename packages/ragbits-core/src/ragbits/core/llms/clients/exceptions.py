@@ -1,5 +1,6 @@
 class LLMError(Exception):
-    """Base class for all exceptions raised by the LLMClient.
+    """
+    Base class for all exceptions raised by the LLMClient.
     """
 
     def __init__(self, message: str) -> None:
@@ -8,7 +9,8 @@ class LLMError(Exception):
 
 
 class LLMConnectionError(LLMError):
-    """Raised when there is an error connecting to the LLM API.
+    """
+    Raised when there is an error connecting to the LLM API.
     """
 
     def __init__(self, message: str = "Connection error.") -> None:
@@ -16,7 +18,8 @@ class LLMConnectionError(LLMError):
 
 
 class LLMStatusError(LLMError):
-    """Raised when an API response has a status code of 4xx or 5xx.
+    """
+    Raised when an API response has a status code of 4xx or 5xx.
     """
 
     def __init__(self, message: str, status_code: int) -> None:
@@ -25,7 +28,8 @@ class LLMStatusError(LLMError):
 
 
 class LLMResponseError(LLMError):
-    """Raised when an API response has an invalid schema.
+    """
+    Raised when an API response has an invalid schema.
     """
 
     def __init__(self, message: str = "Data returned by API invalid for expected schema.") -> None:

@@ -12,24 +12,21 @@ from ragbits.core.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):
-    """Input format for the LoremPrompt.
-    """
+    """Input format for the LoremPrompt."""
 
     theme: str
     pun_allowed: bool = False
 
 
 class LoremPromptOutput(BaseModel):
-    """Output format for the LoremPrompt.
-    """
+    """Output format for the LoremPrompt."""
 
     joke: str
     joke_category: str
 
 
 class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
-    """A prompt that generates jokes.
-    """
+    """A prompt that generates jokes."""
 
     system_prompt = """
     You are a joke generator. The jokes you generate should be funny and not offensive. {% if not pun_allowed %}Also, make sure
@@ -44,7 +41,8 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
 
 
 async def main():
-    """Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
+    """
+    Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
     """
     llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
     prompt = JokePrompt(LoremPromptInput(theme="software developers", pun_allowed=True))

@@ -14,7 +14,8 @@ from .clients.local import LocalLLMClient, LocalLLMOptions
 
 
 class LocalLLM(LLM[LocalLLMOptions]):
-    """Class for interaction with any LLM available in HuggingFace.
+    """
+    Class for interaction with any LLM available in HuggingFace.
     """
 
     _options_cls = LocalLLMOptions

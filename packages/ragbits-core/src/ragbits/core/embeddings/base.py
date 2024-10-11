@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 
 class Embeddings(ABC):
-    """Abstract client for communication with embedding models.
+    """
+    Abstract client for communication with embedding models.
     """
 
     @abstractmethod

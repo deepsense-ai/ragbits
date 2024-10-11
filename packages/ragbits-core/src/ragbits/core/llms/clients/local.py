@@ -35,7 +35,8 @@ class LocalLLMOptions(LLMOptions):
 
 
 class LocalLLMClient(LLMClient[LocalLLMOptions]):
-    """Client for the local LLM that supports Hugging Face models.
+    """
+    Client for the local LLM that supports Hugging Face models.
     """
 
     _options_cls = LocalLLMOptions
