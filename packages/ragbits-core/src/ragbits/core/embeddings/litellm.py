@@ -1,3 +1,5 @@
+from typing import Optional
+
 try:
     import litellm
 
@@ -5,7 +7,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings import Embeddings
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
     EmbeddingResponseError,
@@ -67,6 +69,7 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
+
         try:
             response = await litellm.aembedding(
                 input=data,

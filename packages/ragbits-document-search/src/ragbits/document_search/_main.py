@@ -2,8 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.vector_store.base import VectorStore
+from ragbits.core.embeddings import Embeddings
+from ragbits.core.vector_store import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter

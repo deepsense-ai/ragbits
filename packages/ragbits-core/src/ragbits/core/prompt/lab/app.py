@@ -13,13 +13,11 @@ import jinja2
 from pydantic import BaseModel
 from rich.console import Console
 
+from ragbits.core.config import core_config
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.clients import LiteLLMOptions
 from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.discovery.prompt_discovery import (
-    DEFAULT_FILE_PATTERN,
-    PromptDiscovery,
-)
+from ragbits.core.prompt.discovery import PromptDiscovery
 
 
 @dataclass(frozen=True)
@@ -138,9 +136,7 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
 
 
 def lab_app(  # pylint: disable=missing-param-doc
-    file_pattern: str = DEFAULT_FILE_PATTERN,
-    llm_model: str | None = None,
-    llm_api_key: str | None = None,
+    file_pattern: str = core_config.prompt_path_pattern, llm_model: str | None = None, llm_api_key: str | None = None
 ) -> None:
     """
     Launches the interactive application for listing, rendering, and testing prompts

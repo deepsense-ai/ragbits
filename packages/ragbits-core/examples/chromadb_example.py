@@ -2,13 +2,14 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits[litellm]",
+#     "ragbits-core[litellm]",
 # ]
 # ///
 import asyncio
 
 import chromadb
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+
+from ragbits.core.embeddings import LiteLLMEmbeddings
 from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -23,6 +24,7 @@ documents = [
 
 async def main():
     """Run the example."""
+
     chroma_client = chromadb.PersistentClient(path="chroma")
     embedding_client = LiteLLMEmbeddings()
 

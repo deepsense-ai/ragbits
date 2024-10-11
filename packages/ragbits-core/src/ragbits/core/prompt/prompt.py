@@ -11,6 +11,7 @@ from .base import BasePromptWithParser, ChatFormat, OutputT
 from .parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
+FewShotExample = Tuple[str | InputT, str | OutputT]
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
@@ -24,8 +25,9 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     system_prompt: str | None = None
     user_prompt: str
 
-    # Additional messages to be added to the conversation after the system prompt
-    few_shots: ChatFormat = []
+    # Additional messages to be added to the conversation after the system prompt,
+    # pairs of user message and assistant response
+    few_shots: list[FewShotExample[InputT, OutputT]] = []
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
@@ -102,10 +104,12 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __init__(self: "Prompt[None, OutputT]") -> None: ...
+    def __init__(self: "Prompt[None, OutputT]") -> None:
+        ...
 
     @overload
-    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None: ...
+    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None:
+        ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")
@@ -119,7 +123,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instace_few_shots: ChatFormat = []
+        self._instace_few_shots: list[FewShotExample[InputT, OutputT]] = []
         super().__init__()
 
     @property
@@ -136,26 +140,47 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 if self.rendered_system_prompt is not None
                 else []
             ),
-            *self.few_shots,
-            *self._instace_few_shots,
+            *self.list_few_shots(),
             {"role": "user", "content": self.rendered_user_prompt},
         ]
         return chat
 
-    def add_few_shot(self, user_message: str, assistant_message: str) -> "Prompt[InputT, OutputT]":
+    def add_few_shot(self, user_message: str | InputT, assistant_message: str | OutputT) -> "Prompt[InputT, OutputT]":
         """
         Add a few-shot example to the conversation.
 
         Args:
-            user_message (str): The message from the user.
-            assistant_message (str): The message from the assistant.
+            user_message (str | InputT): The raw user message or input data that will be rendered using the
+                user prompt template.
+            assistant_message (str | OutputT): The raw assistant response or output data that will be cast to a string
+                or in case of a Pydantic model, to JSON.
 
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
-        self._instace_few_shots.append({"role": "user", "content": user_message})
-        self._instace_few_shots.append({"role": "assistant", "content": assistant_message})
+        self._instace_few_shots.append((user_message, assistant_message))
         return self
+
+    def list_few_shots(self) -> ChatFormat:
+        """
+        Returns the few shot examples in the standard OpenAI chat format.
+
+        Returns:
+            ChatFormat: A list of dictionaries, each containing the role and content of a message.
+        """
+        result: ChatFormat = []
+        for user_message, assistant_message in self.few_shots + self._instace_few_shots:
+            if not isinstance(user_message, str):
+                user_message = self._render_template(self.user_prompt_template, user_message)
+
+            if isinstance(assistant_message, BaseModel):
+                assistant_message = assistant_message.model_dump_json()
+            else:
+                assistant_message = str(assistant_message)
+
+            result.append({"role": "user", "content": user_message})
+            result.append({"role": "assistant", "content": assistant_message})
+        return result
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """
