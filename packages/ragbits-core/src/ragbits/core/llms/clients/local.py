@@ -21,8 +21,8 @@ class LocalLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]
-    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation). # noqa: E501
-    """
+    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation).
+    """  # noqa: E501
 
     repetition_penalty: float | None | NotGiven = NOT_GIVEN
     do_sample: bool | None | NotGiven = NOT_GIVEN

@@ -57,7 +57,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     @classmethod
     def _parse_template(cls, template: str) -> Template:
-        env = Environment()  # nosec B701 - HTML autoescaping not needed for plain text #noqa: S701
+        env = Environment(autoescape=True)
         ast = env.parse(template)
         template_variables = meta.find_undeclared_variables(ast)
         input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()
@@ -169,15 +169,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         result: ChatFormat = []
         for user_message, assistant_message in self.few_shots + self._instace_few_shots:
             if not isinstance(user_message, str):
-                user_message = self._render_template(self.user_prompt_template, user_message)
+                user_content = self._render_template(self.user_prompt_template, user_message)
+            else:
+                user_content = user_message
 
             if isinstance(assistant_message, BaseModel):
-                assistant_message = assistant_message.model_dump_json()
+                assistant_content = assistant_message.model_dump_json()
             else:
-                assistant_message = str(assistant_message)
+                assistant_content = str(assistant_message)
 
-            result.append({"role": "user", "content": user_message})
-            result.append({"role": "assistant", "content": assistant_message})
+            result.append({"role": "user", "content": user_content})
+            result.append({"role": "assistant", "content": assistant_content})
         return result
 
     def output_schema(self) -> dict | type[BaseModel] | None:

@@ -30,7 +30,7 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return self.output_schema() is not None
 
-    def output_schema(self) -> dict | type[BaseModel] | None:
+    def output_schema(self) -> dict | type[BaseModel] | None:  # noqa: PLR6301
         """
         Returns the schema of the desired output. Can be used to request structured output from the LLM API
         or to validate the output. Can return either a Pydantic model or a JSON schema.

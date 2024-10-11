@@ -39,7 +39,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         Client for the LLM.
         """
 
-    def count_tokens(self, prompt: BasePrompt) -> int:
+    def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
         """
         Counts tokens in the prompt.
 
