@@ -7,6 +7,7 @@
 import asyncio
 
 from pydantic import BaseModel
+
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 

@@ -5,6 +5,7 @@
 # ]
 # ///
 from pydantic import BaseModel
+
 from ragbits.core.prompt import Prompt
 
 

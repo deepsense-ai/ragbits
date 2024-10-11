@@ -1,8 +1,9 @@
 import importlib.util
 import pkgutil
 
-import ragbits
 from typer import Typer
+
+import ragbits
 
 app = Typer(no_args_is_help=True)
 

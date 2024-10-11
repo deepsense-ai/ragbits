@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path
 
 from pydantic import BaseModel, Field
+
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 
 

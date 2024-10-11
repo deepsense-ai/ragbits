@@ -1,4 +1,5 @@
 import numpy as np
+
 from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
 
 

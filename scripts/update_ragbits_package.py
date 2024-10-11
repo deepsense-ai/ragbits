@@ -16,7 +16,6 @@
 from copy import deepcopy
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import tomlkit
 import typer

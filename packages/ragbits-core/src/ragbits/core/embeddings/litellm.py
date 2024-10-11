@@ -1,5 +1,3 @@
-from typing import Optional
-
 try:
     import litellm
 
@@ -69,7 +67,6 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-
         try:
             response = await litellm.aembedding(
                 input=data,
