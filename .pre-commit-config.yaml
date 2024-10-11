@@ -20,7 +20,7 @@ repos:
         - id: ruff
           types_or: [ python, pyi, jupyter ]
           exclude: (/test_|tests/|docs/|notebooks/)
-          args: [ --fix ]
+#          args: [ --fix ]
         # Formats Python, Pyi, and Jupyter files, excluding specified directories
         - id: ruff-format
           types_or: [ python, pyi, jupyter ]
