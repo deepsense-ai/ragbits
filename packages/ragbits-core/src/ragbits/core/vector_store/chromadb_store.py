@@ -14,7 +14,9 @@ from ragbits.core.vector_store import VectorDBEntry, VectorStore
 
 
 class ChromaDBStore(VectorStore):
-    """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
+    """
+    Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
+    """
 
     def __init__(
         self,

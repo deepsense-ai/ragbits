@@ -180,57 +180,55 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
             prompt = state.prompts[index]
             list_of_vars = []
             with gr.Row():
-                with gr.Column(scale=1):
-                    with gr.Tab("Inputs"):
-                        input_fields: list = get_input_type_fields(prompt.input_type)
-                        for entry in input_fields:
-                            with gr.Row():
-                                var = gr.Textbox(
-                                    label=entry["field_name"],
-                                    value=entry["field_default_value"],
-                                    interactive=True,
-                                )
-                                list_of_vars.append(var)
-
-                        render_prompt_button = gr.Button(value="Render prompts")
-
-                with gr.Column(scale=4):
-                    with gr.Tab("Prompt"):
+                with gr.Column(scale=1), gr.Tab("Inputs"):
+                    input_fields: list = get_input_type_fields(prompt.input_type)
+                    for entry in input_fields:
                         with gr.Row():
-                            with gr.Column():
-                                prompt_details_system_prompt = gr.Textbox(
-                                    label="System Prompt",
-                                    value=prompt.system_prompt,
-                                    interactive=True,
-                                )
+                            var = gr.Textbox(
+                                label=entry["field_name"],
+                                value=entry["field_default_value"],
+                                interactive=True,
+                            )
+                            list_of_vars.append(var)
 
-                            with gr.Column():
-                                rendered_system_prompt = (
-                                    state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
-                                )
-                                gr.Textbox(
-                                    label="Rendered System Prompt",
-                                    value=rendered_system_prompt,
-                                    interactive=False,
-                                )
+                    render_prompt_button = gr.Button(value="Render prompts")
 
-                        with gr.Row():
-                            with gr.Column():
-                                prompt_details_user_prompt = gr.Textbox(
-                                    label="User Prompt",
-                                    value=prompt.user_prompt,
-                                    interactive=True,
-                                )
+                with gr.Column(scale=4), gr.Tab("Prompt"):
+                    with gr.Row():
+                        with gr.Column():
+                            prompt_details_system_prompt = gr.Textbox(
+                                label="System Prompt",
+                                value=prompt.system_prompt,
+                                interactive=True,
+                            )
 
-                            with gr.Column():
-                                rendered_user_prompt = (
-                                    state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
-                                )
-                                gr.Textbox(
-                                    label="Rendered User Prompt",
-                                    value=rendered_user_prompt,
-                                    interactive=False,
-                                )
+                        with gr.Column():
+                            rendered_system_prompt = (
+                                state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
+                            )
+                            gr.Textbox(
+                                label="Rendered System Prompt",
+                                value=rendered_system_prompt,
+                                interactive=False,
+                            )
+
+                    with gr.Row():
+                        with gr.Column():
+                            prompt_details_user_prompt = gr.Textbox(
+                                label="User Prompt",
+                                value=prompt.user_prompt,
+                                interactive=True,
+                            )
+
+                        with gr.Column():
+                            rendered_user_prompt = (
+                                state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
+                            )
+                            gr.Textbox(
+                                label="Rendered User Prompt",
+                                value=rendered_user_prompt,
+                                interactive=False,
+                            )
 
             llm_enabled = state.llm_model_name is not None
             prompt_ready = state.rendered_prompt is not None

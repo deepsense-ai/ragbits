@@ -10,7 +10,7 @@ OutputT = TypeVar("OutputT", default=str)
 
 class BasePrompt(metaclass=ABCMeta):
     """
-    Base class for prompts
+    Base class for prompts.
     """
 
     @property

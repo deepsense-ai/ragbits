@@ -41,7 +41,7 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
 
-async def main():
+async def main() -> None:
     """
     Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
     """
