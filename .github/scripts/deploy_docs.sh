@@ -1,6 +1,8 @@
 #!/bin/bash
 
-uv sync --only-dev
+set -euxo pipefail
+
+uv sync
 
 echo $GCP_KEY | base64 -d >> gcp_creds.json
 gcloud auth activate-service-account --key-file gcp_creds.json
