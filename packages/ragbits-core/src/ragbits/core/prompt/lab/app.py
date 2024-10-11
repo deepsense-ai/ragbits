@@ -16,7 +16,10 @@ from rich.console import Console
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.clients import LiteLLMOptions
 from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.discovery.prompt_discovery import DEFAULT_FILE_PATTERN, PromptDiscovery
+from ragbits.core.prompt.discovery.prompt_discovery import (
+    DEFAULT_FILE_PATTERN,
+    PromptDiscovery,
+)
 
 
 @dataclass(frozen=True)
@@ -135,7 +138,9 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
 
 
 def lab_app(  # pylint: disable=missing-param-doc
-    file_pattern: str = DEFAULT_FILE_PATTERN, llm_model: str | None = None, llm_api_key: str | None = None
+    file_pattern: str = DEFAULT_FILE_PATTERN,
+    llm_model: str | None = None,
+    llm_api_key: str | None = None,
 ) -> None:
     """
     Launches the interactive application for listing, rendering, and testing prompts
@@ -169,7 +174,9 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
         )
 
         prompt_selection_dropdown = gr.Dropdown(
-            choices=list_prompt_choices(prompts_state.value), value=0, label="Select Prompt"
+            choices=list_prompt_choices(prompts_state.value),
+            value=0,
+            label="Select Prompt",
         )
 
         @gr.render(inputs=[prompt_selection_dropdown, prompts_state])
@@ -196,7 +203,9 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                         with gr.Row():
                             with gr.Column():
                                 prompt_details_system_prompt = gr.Textbox(
-                                    label="System Prompt", value=prompt.system_prompt, interactive=True
+                                    label="System Prompt",
+                                    value=prompt.system_prompt,
+                                    interactive=True,
                                 )
 
                             with gr.Column():
@@ -204,20 +213,28 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                                     state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
                                 )
                                 gr.Textbox(
-                                    label="Rendered System Prompt", value=rendered_system_prompt, interactive=False
+                                    label="Rendered System Prompt",
+                                    value=rendered_system_prompt,
+                                    interactive=False,
                                 )
 
                         with gr.Row():
                             with gr.Column():
                                 prompt_details_user_prompt = gr.Textbox(
-                                    label="User Prompt", value=prompt.user_prompt, interactive=True
+                                    label="User Prompt",
+                                    value=prompt.user_prompt,
+                                    interactive=True,
                                 )
 
                             with gr.Column():
                                 rendered_user_prompt = (
                                     state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
                                 )
-                                gr.Textbox(label="Rendered User Prompt", value=rendered_user_prompt, interactive=False)
+                                gr.Textbox(
+                                    label="Rendered User Prompt",
+                                    value=rendered_user_prompt,
+                                    interactive=False,
+                                )
 
             llm_enabled = state.llm_model_name is not None
             prompt_ready = state.rendered_prompt is not None
@@ -226,9 +243,13 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                 interactive=llm_enabled and prompt_ready,
             )
             gr.Markdown(
-                "To enable this button, select an LLM model when starting the app in CLI.", visible=not llm_enabled
+                "To enable this button, select an LLM model when starting the app in CLI.",
+                visible=not llm_enabled,
             )
-            gr.Markdown("To enable this button, render a prompt first.", visible=llm_enabled and not prompt_ready)
+            gr.Markdown(
+                "To enable this button, render a prompt first.",
+                visible=llm_enabled and not prompt_ready,
+            )
             llm_prompt_response = gr.Textbox(lines=10, label="LLM response")
 
             render_prompt_button.click(

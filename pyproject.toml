@@ -151,8 +151,6 @@ select = [
     # Default rules
     "E",    # pycodestyle errors
     "F",    # Pyflakes
-
-    # Extra rules, by Michał Kustosz
     "C4",   # flake8-comprehensions
     "C90",  # mccabe complex structure
     "D",    # pydocstyle
@@ -162,15 +160,12 @@ select = [
     "SIM",  # flake8-simplify
     "UP",   # pyupgrade
     "W",    # pycodestyle warnings
-
-    # Extra rules, by Jakub Cierocki
     "S",    # flake8-bandit
     "ANN",  # flake8-annotations
     "B",    # flake8-bugbear
     "NPY",  # NumPy-specific rules
 ]
 extend-select = [
-    # Extra, preview rules, by Jakub Cierocki
     "RUF022",   # unsorted-dunder-all
     "PLR6301",  # no-self-use
 ]
@@ -211,8 +206,6 @@ docstring-code-line-length = 120
 
 
 [tool.ruff.lint.isort]
-#multi-line-output = "3"  # Matches multi_line_output = 3 in isort
-#include_trailing_comma = true
 known-first-party = ["ragbits"]
 known-third-party = [
     "IPython", "PIL", "cv2", "dotenv", "editdistance", "fastapi", "fire", "hydra",

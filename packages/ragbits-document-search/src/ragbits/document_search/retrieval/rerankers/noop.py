@@ -1,4 +1,3 @@
-
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 

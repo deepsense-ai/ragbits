@@ -58,7 +58,11 @@ class LocalEmbeddings(Embeddings):
         embeddings = []
         for batch in self._batch(data, batch_size):
             batch_dict = self.tokenizer(
-                batch, max_length=self.tokenizer.model_max_length, padding=True, truncation=True, return_tensors="pt"
+                batch,
+                max_length=self.tokenizer.model_max_length,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
             ).to(self.device)
             with torch.no_grad():
                 outputs = self.model(**batch_dict)

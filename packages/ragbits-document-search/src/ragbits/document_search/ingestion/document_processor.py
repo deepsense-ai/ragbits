@@ -2,7 +2,9 @@ import copy
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import BaseProvider
-from ragbits.document_search.ingestion.providers.unstructured import UnstructuredProvider
+from ragbits.document_search.ingestion.providers.unstructured import (
+    UnstructuredProvider,
+)
 
 ProvidersConfig = dict[DocumentType, BaseProvider]
 

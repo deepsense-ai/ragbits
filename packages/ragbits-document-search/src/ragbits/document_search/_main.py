@@ -79,7 +79,9 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: DocumentMeta | Document, document_processor: BaseProvider | None = None
+        self,
+        document: DocumentMeta | Document,
+        document_processor: BaseProvider | None = None,
     ) -> None:
         """
         Ingest a document.

@@ -88,7 +88,10 @@ def _update_pkg_version(
             new_version = _get_updated_version(version, update_type=update_type)
         else:
             pprint(f"Current version of the [bold]{pkg_name}[/bold] package is: [bold]{version}[/bold]")
-            new_version = text("Enter the new version", default=_get_updated_version(version, UpdateType.PATCH))
+            new_version = text(
+                "Enter the new version",
+                default=_get_updated_version(version, UpdateType.PATCH),
+            )
 
     pkg_pyproject["project"]["version"] = new_version
     (PACKAGES_DIR / pkg_name / "pyproject.toml").write_text(tomlkit.dumps(pkg_pyproject))
@@ -99,7 +102,10 @@ def _update_pkg_version(
     return version, new_version
 
 
-def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
+def run(
+    pkg_name: str | None = typer.Argument(None),
+    update_type: str | None = typer.Argument(None),
+) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 

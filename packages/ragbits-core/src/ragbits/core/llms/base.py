@@ -84,8 +84,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePromptWithParser[OutputT],
         *,
         options: LLMOptions | None = None,
-    ) -> OutputT:
-        ...
+    ) -> OutputT: ...
 
     @overload
     async def generate(
@@ -93,8 +92,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePrompt,
         *,
         options: LLMOptions | None = None,
-    ) -> OutputT:
-        ...
+    ) -> OutputT: ...
 
     async def generate(
         self,

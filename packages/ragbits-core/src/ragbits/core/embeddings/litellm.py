@@ -1,4 +1,3 @@
-
 try:
     import litellm
 
@@ -7,7 +6,11 @@ except ImportError:
     HAS_LITELLM = False
 
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.embeddings.exceptions import EmbeddingConnectionError, EmbeddingResponseError, EmbeddingStatusError
+from ragbits.core.embeddings.exceptions import (
+    EmbeddingConnectionError,
+    EmbeddingResponseError,
+    EmbeddingStatusError,
+)
 
 
 class LiteLLMEmbeddings(Embeddings):
