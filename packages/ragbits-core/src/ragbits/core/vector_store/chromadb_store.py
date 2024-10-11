@@ -69,17 +69,18 @@ class ChromaDBStore(VectorStore):
         Based on the retrieved data, returns the best match or None if no match is found.
 
         Args:
-            Retrieved data, with a column-first format
+            retrieved: Retrieved data, with a column-first format.
 
         Returns:
-            The best match or None if no match is found
+            The best match or None if no match is found.
         """
         if self._max_distance is None or retrieved["distances"][0][0] <= self._max_distance:
             return retrieved["documents"][0][0]
 
         return None
 
-    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], dict]:
+    @staticmethod
+    def _process_db_entry(entry: VectorDBEntry) -> tuple[str, list[float], dict]:
         doc_id = sha256(entry.key.encode("utf-8")).hexdigest()
         embedding = entry.vector
 

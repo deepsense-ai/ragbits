@@ -49,7 +49,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 input_type = None if input_type is type(None) else input_type
                 output_type = args[1] if len(args) > 1 else str
 
-                assert input_type is None or issubclass(
+                assert input_type is None or issubclass(  # noqa: S101
                     input_type, BaseModel
                 ), "Input type must be a subclass of BaseModel"
                 return (input_type, output_type)
@@ -57,7 +57,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     @classmethod
     def _parse_template(cls, template: str) -> Template:
-        env = Environment()  # nosec B701 - HTML autoescaping not needed for plain text
+        env = Environment()  # nosec B701 - HTML autoescaping not needed for plain text #noqa: S701
         ast = env.parse(template)
         template_variables = meta.find_undeclared_variables(ast)
         input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()
@@ -90,7 +90,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         raise ValueError(f"Response parser not provided for output type {cls.output_type}")
 
     @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         if not hasattr(cls, "user_prompt") or cls.user_prompt is None:
             raise ValueError("User prompt must be provided")
 

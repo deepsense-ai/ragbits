@@ -18,9 +18,10 @@ from .base import LLMClient, LLMOptions
 
 @dataclass
 class LocalLLMOptions(LLMOptions):
-    """Dataclass that represents all available LLM call options for the local LLM client.
+    """
+    Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]
-    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation). # pylint: disable=line-too-long
+    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation). # noqa: E501
     """
 
     repetition_penalty: float | None | NotGiven = NOT_GIVEN

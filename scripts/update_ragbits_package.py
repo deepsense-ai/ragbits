@@ -41,7 +41,7 @@ def _update_type_to_enum(update_type: str | None = None) -> UpdateType | None:
     return None
 
 
-def _version_to_list(version_string):
+def _version_to_list(version_string: str) -> list[int]:
     return [int(part) for part in version_string.split(".")]
 
 
@@ -96,7 +96,8 @@ def _update_pkg_version(
     pkg_pyproject["project"]["version"] = new_version
     (PACKAGES_DIR / pkg_name / "pyproject.toml").write_text(tomlkit.dumps(pkg_pyproject))
 
-    assert isinstance(new_version, str)
+    if not isinstance(new_version, str):
+        raise TypeError("new_version must be a string")
     pprint(f"[green]The {pkg_name} package was successfully updated from {version} to {new_version}.[/green]")
 
     return version, new_version

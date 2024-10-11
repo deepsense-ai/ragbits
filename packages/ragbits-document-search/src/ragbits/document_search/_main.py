@@ -58,7 +58,7 @@ class DocumentSearch:
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
 
-    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
+    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -69,6 +69,8 @@ class DocumentSearch:
         Returns:
             A list of chunks.
         """
+        if not search_config:
+            search_config = SearchConfig()
         queries = self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:

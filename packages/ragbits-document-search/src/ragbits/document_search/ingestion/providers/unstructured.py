@@ -69,6 +69,7 @@ class UnstructuredProvider(BaseProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
+            use_api: Flag to determine whether to use the API or not. Defaults to False.
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
         self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS

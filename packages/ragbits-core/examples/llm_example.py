@@ -30,8 +30,9 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """A prompt that generates jokes."""
 
     system_prompt = """
-    You are a joke generator. The jokes you generate should be funny and not offensive. {% if not pun_allowed %}Also, make sure
-    that the jokes do not contain any puns.{% else %}You can use any type of joke, even if it contains puns.{% endif %}
+    You are a joke generator. The jokes you generate should be funny and not offensive.
+    {% if not pun_allowed %}Also, make sure that the jokes do not contain any puns.
+    {% else %}You can use any type of joke, even if it contains puns.{% endif %}
 
     Respond as json with two fields: joke and joke_category.
     """
