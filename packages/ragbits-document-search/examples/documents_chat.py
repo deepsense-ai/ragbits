@@ -81,10 +81,17 @@ class RAGSystemWithUI:
     DATABASE_LOADING_STATUS_PLACEHOLDER = "Click 'Load Database' to start..."
 
     def __init__(
-        self, database_path: str = "chroma", index_name: str = "documents", model_name: str = "gpt-4o-2024-08-06"
+        self,
+        database_path: str = "chroma",
+        index_name: str = "documents",
+        model_name: str = "gpt-4o-2024-08-06",
+        columns_ratios: tuple[int, int] = (1, 5),
+        chatbot_height_vh: int = 90,
     ) -> None:
         self._database_path = database_path
         self._index_name = index_name
+        self._columns_ratios = columns_ratios
+        self._chatbot_height_vh = chatbot_height_vh
         self._documents_ingested = False
         self._prepare_document_search(self._database_path, self._index_name)
         self._llm = LiteLLM(model_name, use_structured_output=True)
@@ -132,7 +139,7 @@ class RAGSystemWithUI:
         """
         with gr.Blocks(fill_height=True, fill_width=True) as app:
             with gr.Row():
-                with gr.Column(scale=1):
+                with gr.Column(scale=self._columns_ratios[0]):
                     with gr.Group():
                         documents_picker = gr.File(file_count="directory", label=self.DOCUMENT_PICKER_LABEL)
                         create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
@@ -153,8 +160,9 @@ class RAGSystemWithUI:
                     load_btn.click(fn=self._load_database, inputs=database_path, outputs=loading_status_display)
                     create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
 
-                with gr.Column(scale=5):
-                    gr.ChatInterface(self._handle_message)
+                with gr.Column(scale=self._columns_ratios[1]):
+                    chat_interface = gr.ChatInterface(self._handle_message)
+                    chat_interface.chatbot.height = f"{self._chatbot_height_vh}vh"
         return app
 
 
