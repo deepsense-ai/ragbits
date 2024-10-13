@@ -5,11 +5,11 @@ description = "Ragbits development workspace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "ragbits-cli",
     "ragbits-core[litellm,local,lab,chromadb]",
     "ragbits-document-search[gcs]",
-    "ragbits-cli"
+    "ragbits-evaluate",
 ]
-
 
 [tool.uv]
 dev-dependencies = [
@@ -29,15 +29,17 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
+ragbits-cli = { workspace = true }
 ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
-ragbits-cli = { workspace = true }
+ragbits-evaluate = {workspace = true}
 
 [tool.uv.workspace]
 members = [
+    "packages/ragbits-cli",
     "packages/ragbits-core",
     "packages/ragbits-document-search",
-    "packages/ragbits-cli"
+    "packages/ragbits-evaluate",
 ]
 
 [tool.isort]
@@ -125,9 +127,10 @@ check_untyped_defs = true
 no_implicit_optional = true
 explicit_package_bases = true
 mypy_path = [
-    'packages/ragbits-core/src',
-    'packages/ragbits-document-search/src',
-    'packages/ragbits-cli/src',
+    "packages/ragbits-cli/src",
+    "packages/ragbits-core/src",
+    "packages/ragbits-document-search/src",
+    "packages/ragbits-evaluate/src",
 ]
 
 [[tool.mypy.overrides]]
