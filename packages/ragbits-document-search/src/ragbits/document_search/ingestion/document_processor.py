@@ -2,6 +2,7 @@ import copy
 from typing import Optional
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.ingestion.providers import get_provider
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.providers.unstructured import UnstructuredProvider
 
@@ -39,6 +40,33 @@ class DocumentProcessorRouter:
     def __init__(self, providers: dict[DocumentType, BaseProvider]):
         self._providers = providers
 
+    @staticmethod
+    def from_dict_to_providers_config(dict_config: dict) -> ProvidersConfig:
+        """
+        Creates ProvidersConfig from dictionary config.
+        Example of the dictionary config:
+        {
+            "txt": {
+                {
+                    "type": "UnstructuredProvider"
+                }
+            }
+        }
+
+        Args:
+            dict_config: The dictionary with configuration.
+
+        Returns:
+            ProvidersConfig object.
+        """
+
+        providers_config = {}
+
+        for document_type, config in dict_config.items():
+            providers_config[DocumentType(document_type)] = get_provider(config)
+
+        return providers_config
+
     @classmethod
     def from_config(cls, providers_config: Optional[ProvidersConfig] = None) -> "DocumentProcessorRouter":
         """
@@ -58,6 +86,7 @@ class DocumentProcessorRouter:
         Returns:
             The DocumentProcessorRouter.
         """
+
         config = copy.deepcopy(DEFAULT_PROVIDERS_CONFIG)
         config.update(providers_config if providers_config is not None else {})
 
