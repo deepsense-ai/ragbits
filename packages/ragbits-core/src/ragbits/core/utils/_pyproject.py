@@ -5,19 +5,6 @@ import tomli
 from pydantic import BaseModel
 
 
-def _get_current_dir(current_dir: Path | None = None) -> Path:
-    """
-    Returns the current directory if `current_dir` is None.
-
-    Args:
-        current_dir (Path, optional): The directory to check. Defaults to None.
-
-    Returns:
-        Path: The current directory.
-    """
-    return current_dir or Path.cwd()
-
-
 def find_pyproject(current_dir: Path | None = None) -> Path:
     """
     Find the pyproject.toml file in the current directory or any of its parents.
@@ -32,7 +19,7 @@ def find_pyproject(current_dir: Path | None = None) -> Path:
     Raises:
         FileNotFoundError: If the pyproject.toml file is not found.
     """
-    current_dir = _get_current_dir(current_dir)
+    current_dir = current_dir or Path.cwd()
 
     possible_dirs = [current_dir, *current_dir.parents]
     for possible_dir in possible_dirs:
@@ -56,7 +43,7 @@ def get_ragbits_config(current_dir: Path | None = None) -> dict[str, Any]:
     Returns:
         dict: The ragbits configuration.
     """
-    current_dir = _get_current_dir(current_dir)
+    current_dir = current_dir or Path.cwd()
 
     try:
         pyproject = find_pyproject(current_dir)
@@ -89,7 +76,7 @@ def get_config_instance(
     Returns:
         ConfigModelT: The model instance loaded with the configuration
     """
-    current_dir = _get_current_dir(current_dir)
+    current_dir = current_dir or Path.cwd()
 
     config = get_ragbits_config(current_dir)
     print(config)

@@ -21,8 +21,7 @@ def generate_configs(
         root_path: The root path to search for Prompt objects. Defaults to the directory where the script is run.
         target_path: The path to save the promptfoo configuration files. Defaults to "promptfooconfigs".
     """
-    if not root_path:
-        root_path = Path.cwd()
+    root_path = root_path or Path.cwd()
 
     prompts = PromptDiscovery(file_pattern=file_pattern, root_path=root_path).discover()
     Console().print(
