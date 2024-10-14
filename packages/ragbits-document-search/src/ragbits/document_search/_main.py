@@ -6,6 +6,7 @@ from ragbits.core.embeddings import Embeddings
 from ragbits.core.vector_store import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
@@ -79,7 +80,7 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
+        self, document: Union[DocumentMeta, Document, Source], document_processor: Optional[BaseProvider] = None
     ) -> None:
         """
         Ingest a document.
@@ -89,7 +90,15 @@ class DocumentSearch:
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
-        document_meta = document if isinstance(document, DocumentMeta) else document.metadata
+
+        if isinstance(document, Source):
+            local_path = await document.fetch()
+            document_meta = DocumentMeta.from_local_path(local_path)
+        elif isinstance(document, DocumentMeta):
+            document_meta = document
+        else:
+            document_meta = document.metadata
+
         if document_processor is None:
             document_processor = self.document_processor_router.get_provider(document_meta)
 
