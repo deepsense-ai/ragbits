@@ -119,11 +119,11 @@ class RAGSystemWithUI:
         return self.DATABASE_LOADED_MESSAGE
 
     async def _handle_message(
-        self, message: str, history: list[list[str]]  # pylint: disable=unused-argument
+        self, message: str, history: list[dict]  # pylint: disable=unused-argument
     ) -> AsyncIterator[str]:
         if not self._documents_ingested:
             yield self.NO_DOCUMENTS_INGESTED_MESSAGE
-        results = await self.document_search.search(message)
+        results = await self.document_search.search(message[-1])
         prompt = RAGPrompt(
             QueryWithContext(query=message, context=[i.content for i in results if isinstance(i, TextElement)])
         )
@@ -141,7 +141,7 @@ class RAGSystemWithUI:
             with gr.Row():
                 with gr.Column(scale=self._columns_ratios[0]):
                     with gr.Group():
-                        documents_picker = gr.File(file_count="directory", label=self.DOCUMENT_PICKER_LABEL)
+                        documents_picker = gr.File(file_count="multiple", label=self.DOCUMENT_PICKER_LABEL)
                         create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
                         creating_status_display = gr.Textbox(
                             label=self.DATABASE_CREATION_STATUS_LABEL,
@@ -161,7 +161,7 @@ class RAGSystemWithUI:
                     create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
 
                 with gr.Column(scale=self._columns_ratios[1]):
-                    chat_interface = gr.ChatInterface(self._handle_message)
+                    chat_interface = gr.ChatInterface(self._handle_message, type="messages")
                     chat_interface.chatbot.height = f"{self._chatbot_height_vh}vh"
         return app
 
