@@ -1,5 +1,3 @@
-# Ragbits Development Kit
-
 ## Promptfoo Integration
 
 Ragbits' `Prompt` abstraction can be seamlessly integrated with the `promptfoo` tool. After installing `promptfoo` as

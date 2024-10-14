@@ -5,7 +5,7 @@ from .litellm import LiteLLMEmbeddings
 from .local import LocalEmbeddings
 from .noop import NoopEmbeddings
 
-__all__ = ["LiteLLMEmbeddings", "LocalEmbeddings", "NoopEmbeddings"]
+__all__ = ["Embeddings", "LiteLLMEmbeddings", "LocalEmbeddings", "NoopEmbeddings"]
 
 module = sys.modules[__name__]
 

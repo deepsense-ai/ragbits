@@ -2,10 +2,8 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.embeddings import get_embeddings
-from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.vector_store import get_vector_store
-from ragbits.core.vector_store.base import VectorStore
+from ragbits.core.embeddings import get_embeddings, Embeddings
+from ragbits.core.vector_store import get_vector_store, VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter

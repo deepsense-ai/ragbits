@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ragbits.dev_kit.prompt_lab.discovery.prompt_discovery import PromptDiscovery
+from ragbits.core.prompt.discovery.prompt_discovery import PromptDiscovery
 
 current_dir = Path(__file__).parent
 

@@ -4,12 +4,14 @@ from pathlib import Path
 import yaml
 from rich.console import Console
 
-from ragbits.dev_kit.prompt_lab.discovery import PromptDiscovery
-from ragbits.dev_kit.prompt_lab.discovery.prompt_discovery import DEFAULT_FILE_PATTERN
+from ragbits.core.config import core_config
+from ragbits.core.prompt.discovery import PromptDiscovery
 
 
 def generate_configs(
-    file_pattern: str = DEFAULT_FILE_PATTERN, root_path: Path = Path.cwd(), target_path: Path = Path("promptfooconfigs")
+    file_pattern: str = core_config.prompt_path_pattern,
+    root_path: Path = Path.cwd(),
+    target_path: Path = Path("promptfooconfigs"),
 ) -> None:
     """
     Generates promptfoo configuration files for all discovered prompts.

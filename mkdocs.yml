@@ -1,0 +1,110 @@
+site_name: ragbits docs
+site_description: Library for fast RAG application development
+site_url: https://ragbits.deepsense.ai
+repo_name: deepsense-ai/ragbits
+repo_url: https://github.com/deepsense-ai/ragbits
+copyright: Copyright &copy; 2024 deepsense.ai
+nav:
+  - rabgbits: index.md
+  - How-to Guides:
+      - integrations/promptfoo.md
+  - API Reference:
+      - Core:
+          - api_reference/core/prompt.md
+          - api_reference/core/llms.md
+          - api_reference/core/embeddings.md
+          - api_reference/core/vector_store.md
+      - Document Search:
+          - api_reference/document_search/index.md
+          - api_reference/document_search/documents.md
+          - api_reference/document_search/ingestion.md
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/lightbulb-auto
+        name: Switch to light mode
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: primary
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: primary
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to system preference
+  features:
+    - navigation.footer
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - content.code.annotate
+    - content.code.copy
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.snippets
+  - pymdownx.inlinehilite
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: "#"
+plugins:
+  - search
+  - autorefs:
+      enable: true
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            show_if_no_docstring: true
+            inherited_members: true
+            members_order: source
+            separate_signature: true
+            unwrap_annotated: true
+            filters:
+              - "!^_"
+            merge_init_into_class: true
+            docstring_section_style: spacy
+            signature_crossrefs: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_signature_annotations: true
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/deepsense-ai
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/deepsense_ai
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/company/deepsense-ai
+    - icon: fontawesome/brands/youtube
+      link: https://youtube.com/@deepsenseai
+    - icon: fontawesome/brands/medium
+      link: https://medium.com/deepsense-ai
+    - icon: fontawesome/solid/globe
+      link: https://deepsense.ai

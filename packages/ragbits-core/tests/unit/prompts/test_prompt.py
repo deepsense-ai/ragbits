@@ -150,8 +150,31 @@ def test_defining_few_shots():
         """
         user_prompt = "Theme for the song is {{ theme }}."
         few_shots = [
-            {"role": "user", "content": "Theme for the song is pop."},
-            {"role": "assistant", "content": "It's a really catchy tune."},
+            ("Theme for the song is pop.", "It's a really catchy tune."),
+        ]
+
+    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
+
+    assert prompt.chat == [
+        {"role": "system", "content": "You are a song generator for a child named John."},
+        {"role": "user", "content": "Theme for the song is pop."},
+        {"role": "assistant", "content": "It's a really catchy tune."},
+        {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
+def test_defining_few_shots_input():
+    """Test that few shots can be defined with input data for the prompt."""
+
+    class TestPrompt(Prompt[_PromptInput, str]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You are a song generator for a {% if age > 18 %}adult{% else %}child{% endif %} named {{ name }}.
+        """
+        user_prompt = "Theme for the song is {{ theme }}."
+        few_shots = [
+            (_PromptInput(name="Alice", age=30, theme="pop"), "It's a really catchy tune."),
         ]
 
     prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
@@ -186,6 +209,28 @@ def test_adding_few_shots():
     ]
 
 
+def test_adding_few_shots_input():
+    """Test that few shots can be added to the conversation with input data."""
+
+    class TestPrompt(Prompt[_PromptInput, str]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You are a song generator for a {% if age > 18 %}adult{% else %}child{% endif %} named {{ name }}.
+        """
+        user_prompt = "Theme for the song is {{ theme }}."
+
+    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
+    prompt.add_few_shot(_PromptInput(name="Alice", age=30, theme="pop"), "It's a really catchy tune.")
+
+    assert prompt.chat == [
+        {"role": "system", "content": "You are a song generator for a child named John."},
+        {"role": "user", "content": "Theme for the song is pop."},
+        {"role": "assistant", "content": "It's a really catchy tune."},
+        {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
 def test_defining_and_adding_few_shots():
     """Test that few shots can be defined and added to the conversation."""
 
@@ -197,12 +242,15 @@ def test_defining_and_adding_few_shots():
         """
         user_prompt = "Theme for the song is {{ theme }}."
         few_shots = [
-            {"role": "user", "content": "Theme for the song is pop."},
-            {"role": "assistant", "content": "It's a really catchy tune."},
+            ("Theme for the song is pop.", "It's a really catchy tune."),
         ]
 
-    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
-    prompt.add_few_shot("Theme for the song is experimental underground jazz.", "It's quite hard to dance to.")
+    input_model = _PromptInput(name="John", age=15, theme="rock")
+    prompt = TestPrompt(input_model)
+    prompt.add_few_shot(
+        input_model.model_copy(update={"theme": "experimental underground jazz"}),
+        "It's quite hard to dance to.",
+    )
 
     assert prompt.chat == [
         {"role": "system", "content": "You are a song generator for a child named John."},
@@ -211,6 +259,63 @@ def test_defining_and_adding_few_shots():
         {"role": "user", "content": "Theme for the song is experimental underground jazz."},
         {"role": "assistant", "content": "It's quite hard to dance to."},
         {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
+def test_few_shot_output_pydantic_model():
+    """Test that the few shot examples with output Pydantic models are rendered correctly."""
+
+    class TestPrompt(Prompt[_PromptInput, _PromptOutput]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You are a song generator for a {% if age > 18 %}adult{% else %}child{% endif %} named {{ name }}.
+        """
+        user_prompt = "Theme for the song is {{ theme }}."
+        few_shots = [
+            ("Theme for the song is pop.", _PromptOutput(song_title="Pop song", song_lyrics="La la la")),
+        ]
+
+    prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
+    prompt.add_few_shot("Theme for the song is disco.", _PromptOutput(song_title="Disco song", song_lyrics="Boogie!"))
+
+    assert prompt.chat == [
+        {"role": "system", "content": "You are a song generator for a child named John."},
+        {"role": "user", "content": "Theme for the song is pop."},
+        {"role": "assistant", "content": '{"song_title":"Pop song","song_lyrics":"La la la"}'},
+        {"role": "user", "content": "Theme for the song is disco."},
+        {"role": "assistant", "content": '{"song_title":"Disco song","song_lyrics":"Boogie!"}'},
+        {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
+def test_few_shot_int_output():
+    """Test that the few shot examples with boolean output are rendered correctly."""
+
+    class GoodNameDetectorPrompt(Prompt[_PromptInput, bool]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        system_prompt = """
+        You detect whether the name name is a good name for a song with the given theme, given the age limit.
+        """
+        user_prompt = "The name is {{ name }}, the theme is {{ theme }} and the age is {{ age }}."
+        few_shots = [
+            (_PromptInput(theme="pop", name="I love you more than my cat", age=15), True),
+        ]
+
+    prompt = GoodNameDetectorPrompt(_PromptInput(theme="country", name="My muddy boots", age=18))
+    prompt.add_few_shot(_PromptInput(theme="pop", name="The blood of a demon", age=75), False)
+
+    assert prompt.chat == [
+        {
+            "role": "system",
+            "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit.",
+        },
+        {"role": "user", "content": "The name is I love you more than my cat, the theme is pop and the age is 15."},
+        {"role": "assistant", "content": "True"},
+        {"role": "user", "content": "The name is The blood of a demon, the theme is pop and the age is 75."},
+        {"role": "assistant", "content": "False"},
+        {"role": "user", "content": "The name is My muddy boots, the theme is country and the age is 18."},
     ]
 
 

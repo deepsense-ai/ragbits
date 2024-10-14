@@ -9,10 +9,9 @@ try:
 except ImportError:
     HAS_CHROMADB = False
 
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings import Embeddings
 from ragbits.core.utils import get_cls_from_config
-from ragbits.core.vector_store.base import VectorStore
-from ragbits.core.vector_store.in_memory import VectorDBEntry
+from ragbits.core.vector_store import VectorStore, VectorDBEntry
 
 
 class ChromaDBStore(VectorStore):

@@ -1,0 +1,10 @@
+[project]
+name = "happy-project"
+
+[tool.ragbits]
+lorem = "ipsum"
+
+[tool.ragbits.happy-project]
+foo = "bar"
+is_happy = true
+happiness_level = 100
