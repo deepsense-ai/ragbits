@@ -3,16 +3,15 @@ import logging
 from pathlib import Path
 
 import hydra
-import neptune
 from hydra.core.hydra_config import HydraConfig
-from neptune.utils import stringify_unsupported
 from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.loaders import HuggingFaceDataLoader
-from ragbits.evaluate.metrics import MetricSet
-from ragbits.evaluate.pipelines import DocumentSearchEvaluationPipeline
-from ragbits.evaluate.utils import save
+from ragbits.evaluate.metrics import DocumentSearchPrecision, DocumentSearchRecall, MetricSet
+from ragbits.evaluate.metrics.document_search import DocumentSearchF1
+from ragbits.evaluate.pipelines import DocumentSearchPipeline
+from ragbits.evaluate.utils import log_to_file, log_to_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -29,10 +28,14 @@ async def bench(config: DictConfig) -> None:
     log.info("Starting evaluation: %s", config.setup.name)
 
     dataloader = HuggingFaceDataLoader(config)
-    pipeline = DocumentSearchEvaluationPipeline(config)
-    metrics = MetricSet()(config)
+    pipeline = DocumentSearchPipeline(config)
+    metrics = MetricSet(
+        DocumentSearchPrecision,
+        DocumentSearchRecall,
+        DocumentSearchF1,
+    )(config)
 
-    evaluator = Evaluator(task="document_search")
+    evaluator = Evaluator()
     results = await evaluator.compute(
         pipeline=pipeline,
         dataloader=dataloader,
@@ -42,22 +45,12 @@ async def bench(config: DictConfig) -> None:
     log.info("Evaluation finished. Saving results...")
 
     output_dir = Path(HydraConfig.get().runtime.output_dir)
-    metrics_file = output_dir / "metrics.json"
-    results_file = output_dir / "results.json"
-
-    save(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
-    save(results_file, results=results["results"])
-
-    log.info("Evaluation results saved under directory: %s", output_dir)
+    log_to_file(results, output_dir)
 
     if config.neptune.run:
-        run = neptune.init_run(project=config.neptune.project)
-        run["sys/tags"].add(config.setup.name)
-        run["config"] = stringify_unsupported(config)
-        run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
-        run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
-        run["evaluation/metrics.json"].upload(metrics_file.as_posix())
-        run["evaluation/results.json"].upload(results_file.as_posix())
+        log_to_neptune(config, results, output_dir)
+
+    log.info("Evaluation results saved under directory: %s", output_dir)
 
 
 @hydra.main(config_path="config", config_name="config", version_base="3.2")

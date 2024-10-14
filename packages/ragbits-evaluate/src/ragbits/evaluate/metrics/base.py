@@ -1,13 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Generic, Optional, TypeVar
 
 from omegaconf import DictConfig
 from typing_extensions import Self
 
 from ..pipelines import EvaluationResult
 
+ResultT = TypeVar("ResultT", bound=EvaluationResult)
 
-class Metric(ABC):
+
+class Metric(Generic[ResultT], ABC):
     """
     Base class for metrics.
     """
@@ -20,10 +22,10 @@ class Metric(ABC):
             config: The metric configuration.
         """
         super().__init__()
-        self.config = config or {}
+        self.config = config or DictConfig({})
 
     @abstractmethod
-    def compute(self, results: list[EvaluationResult]) -> dict[str, Any]:
+    def compute(self, results: list[ResultT]) -> dict[str, Any]:
         """
         Compute the metric.
 
@@ -35,12 +37,12 @@ class Metric(ABC):
         """
 
 
-class MetricSet:
+class MetricSet(Generic[ResultT]):
     """
     Represents a set of metrics.
     """
 
-    def __init__(self, *metrics: type[Metric]) -> None:
+    def __init__(self, *metrics: type[Metric[ResultT]]) -> None:
         """
         Initializes the metric set.
 
@@ -48,7 +50,7 @@ class MetricSet:
             metrics: The metrics.
         """
         self._metrics = metrics
-        self.metrics: list[Metric] = []
+        self.metrics: list[Metric[ResultT]] = []
 
     def __call__(self, config: Optional[DictConfig] = None) -> Self:
         """
@@ -63,7 +65,7 @@ class MetricSet:
         self.metrics = [metric(config) for metric in self._metrics]
         return self
 
-    def compute(self, results: list[EvaluationResult]) -> dict[str, Any]:
+    def compute(self, results: list[ResultT]) -> dict[str, Any]:
         """
         Compute the metrics.
 

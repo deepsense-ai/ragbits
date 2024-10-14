@@ -1,8 +1,9 @@
 from .evaluator import Evaluator
 from .loaders import DataLoader, HuggingFaceDataLoader
-from .metrics import Metric, MetricSet
-from .pipelines import DocumentSearchEvaluationPipeline
-from .utils import save
+from .metrics.base import Metric, MetricSet
+from .pipelines.base import EvaluationPipeline, EvaluationResult
+from .pipelines.document_search import DocumentSearchPipeline, DocumentSearchResult
+from .utils import log_to_file, log_to_neptune
 
 __all__ = [
     "Evaluator",
@@ -10,6 +11,10 @@ __all__ = [
     "HuggingFaceDataLoader",
     "MetricSet",
     "Metric",
-    "DocumentSearchEvaluationPipeline",
-    "save",
+    "EvaluationPipeline",
+    "DocumentSearchPipeline",
+    "EvaluationResult",
+    "DocumentSearchResult",
+    "log_to_file",
+    "log_to_neptune",
 ]

@@ -39,6 +39,6 @@ class HuggingFaceDataLoader(DataLoader[HFData]):
             The loaded data.
         """
         return load_dataset(
-            path=self.config.data.path,
-            split=self.config.data.split,
+            path=self.config.data.eval.path,
+            split=self.config.data.eval.split,
         )

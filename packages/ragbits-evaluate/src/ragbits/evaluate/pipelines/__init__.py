@@ -1,8 +1,9 @@
 from .base import EvaluationPipeline, EvaluationResult
-from .document_search import DocumentSearchEvaluationPipeline
+from .document_search import DocumentSearchPipeline, DocumentSearchResult
 
 __all__ = [
-    "DocumentSearchEvaluationPipeline",
+    "DocumentSearchPipeline",
+    "DocumentSearchResult",
     "EvaluationPipeline",
     "EvaluationResult",
 ]

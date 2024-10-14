@@ -1,2 +1,6 @@
-path: "m-ric/huggingface_doc_qa_eval"
-split: "train"
+ingest:
+  path: "micpst/hf-docs"
+  split: "train"
+eval:
+  path: "micpst/hf-docs-retrieval"
+  split: "train"

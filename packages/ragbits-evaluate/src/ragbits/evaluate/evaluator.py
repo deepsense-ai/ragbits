@@ -14,15 +14,6 @@ class Evaluator:
     Evaluator class.
     """
 
-    def __init__(self, task: str) -> None:
-        """
-        Constructs the evaluator.
-
-        Args:
-            task: The task for the evaluator.
-        """
-        self.task = task
-
     async def compute(
         self,
         pipeline: EvaluationPipeline,
@@ -41,6 +32,7 @@ class Evaluator:
             The evaluation results.
         """
         dataset = await dataloader.load()
+        await pipeline.prepare()
         results, perf_results = await self._call_pipeline(pipeline, dataset)
         computed_metrics = self._compute_metrics(metrics, results)
         processed_results = self._results_processor(results)

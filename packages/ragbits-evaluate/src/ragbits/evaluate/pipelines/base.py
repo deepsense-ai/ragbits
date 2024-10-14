@@ -6,7 +6,7 @@ from omegaconf import DictConfig
 
 
 @dataclass
-class EvaluationResult:
+class EvaluationResult(ABC):
     """
     Represents the result of a single evaluation.
     """
@@ -25,7 +25,12 @@ class EvaluationPipeline(ABC):
             config: The evaluation pipeline configuration.
         """
         super().__init__()
-        self.config = config or {}
+        self.config = config or DictConfig({})
+
+    async def prepare(self) -> None:
+        """
+        Prepares the document search evaluation pipeline.
+        """
 
     @abstractmethod
     async def __call__(self, data: dict[str, Any]) -> EvaluationResult:
