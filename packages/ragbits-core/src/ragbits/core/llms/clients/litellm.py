@@ -19,7 +19,8 @@ from .exceptions import LLMConnectionError, LLMResponseError, LLMStatusError
 
 @dataclass
 class LiteLLMOptions(LLMOptions):
-    """Dataclass that represents all available LLM call options for the LiteLLM client.
+    """
+    Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
     """
 
@@ -35,7 +36,8 @@ class LiteLLMOptions(LLMOptions):
 
 
 class LiteLLMClient(LLMClient[LiteLLMOptions]):
-    """Client for the LiteLLM that supports calls to 100+ LLMs APIs, including OpenAI, Anthropic, VertexAI,
+    """
+    Client for the LiteLLM that supports calls to 100+ LLMs APIs, including OpenAI, Anthropic, VertexAI,
     Hugging Face and others.
     """
 
@@ -50,7 +52,8 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
-        """Constructs a new LiteLLMClient instance.
+        """
+        Constructs a new LiteLLMClient instance.
 
         Args:
             model_name: Name of the model to use.
@@ -78,7 +81,8 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
-        """Calls the appropriate LLM endpoint with the given prompt and options.
+        """
+        Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.

@@ -5,7 +5,9 @@ from ragbits.document_search.documents.element import Element
 
 
 class DocumentTypeNotSupportedError(Exception):
-    """Raised when the document type is not supported by the provider."""
+    """
+    Raised when the document type is not supported by the provider.
+    """
 
     def __init__(self, provider_name: str, document_type: DocumentType) -> None:
         message = f"Document type {document_type} is not supported by the {provider_name}"
@@ -13,13 +15,16 @@ class DocumentTypeNotSupportedError(Exception):
 
 
 class BaseProvider(ABC):
-    """A base class for the document processing providers."""
+    """
+    A base class for the document processing providers.
+    """
 
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
 
     @abstractmethod
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """Process the document.
+        """
+        Process the document.
 
         Args:
             document_meta: The document to process.
@@ -29,7 +34,8 @@ class BaseProvider(ABC):
         """
 
     def validate_document_type(self, document_type: DocumentType) -> None:
-        """Check if the provider supports the document type.
+        """
+        Check if the provider supports the document type.
 
         Args:
             document_type: The document type.

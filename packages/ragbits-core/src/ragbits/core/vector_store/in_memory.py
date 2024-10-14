@@ -12,7 +12,8 @@ class InMemoryVectorStore(VectorStore):
         self._storage: dict[str, VectorDBEntry] = {}
 
     async def store(self, entries: list[VectorDBEntry]) -> None:
-        """Store entries in the vector store.
+        """
+        Store entries in the vector store.
 
         Args:
             entries: The entries to store.
@@ -21,7 +22,8 @@ class InMemoryVectorStore(VectorStore):
             self._storage[entry.key] = entry
 
     async def retrieve(self, vector: list[float], k: int = 5) -> list[VectorDBEntry]:
-        """Retrieve entries from the vector store.
+        """
+        Retrieve entries from the vector store.
 
         Args:
             vector: The vector to search for.

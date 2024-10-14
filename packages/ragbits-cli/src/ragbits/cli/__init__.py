@@ -9,7 +9,8 @@ app = Typer(no_args_is_help=True)
 
 
 def main() -> None:
-    """Main entry point for the CLI.
+    """
+    Main entry point for the CLI.
 
     This function registers all the CLI modules in the ragbits packages:
         - iterates over every package in the ragbits.* namespace

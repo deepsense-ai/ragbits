@@ -9,7 +9,8 @@ from ragbits.core.prompt import Prompt
 
 
 class PromptDiscovery:
-    """Discovers Prompt objects within Python modules.
+    """
+    Discovers Prompt objects within Python modules.
 
     Args:
         file_pattern (str): The file pattern to search for Prompt objects. Defaults to "**/prompt_*.py"
@@ -22,7 +23,8 @@ class PromptDiscovery:
 
     @staticmethod
     def is_prompt_subclass(obj: Any) -> bool:  # noqa: ANN401
-        """Checks if an object is a class that is a subclass of Prompt (but not Prompt itself).
+        """
+        Checks if an object is a class that is a subclass of Prompt (but not Prompt itself).
 
         Args:
             obj (any): The object to check.
@@ -35,7 +37,8 @@ class PromptDiscovery:
         return inspect.isclass(obj) and not get_origin(obj) and issubclass(obj, Prompt) and obj != Prompt
 
     def discover(self) -> set[type[Prompt]]:
-        """Discovers Prompt objects within the specified file paths.
+        """
+        Discovers Prompt objects within the specified file paths.
 
         Returns:
             set[Prompt]: The discovered Prompt objects.

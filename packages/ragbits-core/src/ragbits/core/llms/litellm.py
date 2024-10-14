@@ -30,7 +30,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
-        """Constructs a new LiteLLM instance.
+        """
+        Constructs a new LiteLLM instance.
 
         Args:
             model_name: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/providers) to be used.\
@@ -71,7 +72,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         )
 
     def count_tokens(self, prompt: BasePrompt) -> int:
-        """Counts tokens in the prompt.
+        """
+        Counts tokens in the prompt.
 
         Args:
             prompt: Formatted prompt template with conversation and response parsing configuration.

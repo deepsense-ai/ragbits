@@ -23,7 +23,8 @@ class Source(BaseModel, ABC):
 
     @abstractmethod
     def get_id(self) -> str:
-        """Get the source ID.
+        """
+        Get the source ID.
 
         Returns:
             The source ID.
@@ -31,7 +32,8 @@ class Source(BaseModel, ABC):
 
     @abstractmethod
     async def fetch(self) -> Path:
-        """Load the source.
+        """
+        Load the source.
 
         Returns:
             The path to the source.
@@ -47,7 +49,8 @@ class LocalFileSource(Source):
     path: Path
 
     def get_id(self) -> str:
-        """Get unique identifier of the object in the source.
+        """
+        Get unique identifier of the object in the source.
 
         Returns:
             Unique identifier.
@@ -55,7 +58,8 @@ class LocalFileSource(Source):
         return f"local_file:{self.path.absolute()}"
 
     async def fetch(self) -> Path:
-        """Fetch the source.
+        """
+        Fetch the source.
 
         Returns:
             The local path to the object fetched from the source.
@@ -74,7 +78,8 @@ class GCSSource(Source):
     object_name: str
 
     def get_id(self) -> str:
-        """Get unique identifier of the object in the source.
+        """
+        Get unique identifier of the object in the source.
 
         Returns:
             Unique identifier.
@@ -82,7 +87,8 @@ class GCSSource(Source):
         return f"gcs:gs://{self.bucket}/{self.object_name}"
 
     async def fetch(self) -> Path:
-        """Fetch the file from Google Cloud Storage and store it locally.
+        """
+        Fetch the file from Google Cloud Storage and store it locally.
 
         The file is downloaded to a local directory specified by `local_dir`. If the file already exists locally,
         it will not be downloaded again. If the file doesn't exist locally, it will be fetched from GCS.

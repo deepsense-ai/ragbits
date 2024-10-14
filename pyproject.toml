@@ -97,56 +97,6 @@ module = "ragbits.*"
 ignore_missing_imports = false
 disallow_untyped_defs = true
 
-[tool.pylint.basic]
-py-version=3.10
-good-names = "i,j,x,y,z,x1,y1,z1,x2,y2,z2,cv,df,dx,dy,dz,w,h,c,b,g,qa,q,a"
-max-args = 8
-
-[tool.pylint.main]
-load-plugins = ["pylint.extensions.docparams"]
-
-[tool.pylint.messages_control]
-disable = [
-    "suppressed-message",
-    # therefore we wouldn't have to install full dependency set in order to lint
-    "import-error",
-    # sometimes we create a dataclass or Pydantic module and just don't need public methods
-    "too-few-public-methods",
-    # below is handled by pycln
-    "unused-import",
-    # below is handled by isort
-    "wrong-import-order",
-    # too restrictive
-    "too-many-instance-attributes",
-    # not necessary nor useful in our projects
-    "missing-module-docstring",
-]
-
-[tool.pylint.format]
-max-line-length = 120
-
-[tool.pylint.miscellaneous]
-notes = ["XXX"]
-
-[tool.pylint.parameter_documentation]
-accept-no-param-doc = false
-accept-no-raise-doc = false
-accept-no-return-doc = false
-accept-no-yields-doc = false
-default-docstring-type = "google"
-
-[tool.pylint.design]
-max-locals = 20
-
-[tool.pylint.similarities]
-min-similarity-lines = 10
-
-[tool.bandit]
-exclude_dirs = ["venv"]
-# B101 disables errors for asserts in the code
-# remember to not use asserts for security and control flows
-skips = ["B101"]
-
 [tool.ruff]
 exclude = [".venv"]
 extend-include = ["*.ipynb"]

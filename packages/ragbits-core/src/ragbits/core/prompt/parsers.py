@@ -88,9 +88,7 @@ def bool_parser(value: str) -> bool:
     raise ResponseParsingError(f"Could not parse '{value}' as a boolean")
 
 
-def build_pydantic_parser(
-    model: type[PydanticModelT],
-) -> Callable[[str], PydanticModelT]:
+def build_pydantic_parser(model: type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
     """
     Builds a parser for a specific Pydantic model.
 

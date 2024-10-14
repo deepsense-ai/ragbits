@@ -7,7 +7,8 @@ prompts_app = typer.Typer(no_args_is_help=True)
 
 
 def register(app: typer.Typer) -> None:
-    """Register the CLI commands for the package.
+    """
+    Register the CLI commands for the package.
 
     Args:
         app: The Typer object to register the commands with.

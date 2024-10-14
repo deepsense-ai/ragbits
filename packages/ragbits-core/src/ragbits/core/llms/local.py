@@ -27,7 +27,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         *,
         api_key: str | None = None,
     ) -> None:
-        """Constructs a new local LLM instance.
+        """
+        Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use. This should be a model from the CausalLM class.
@@ -46,7 +47,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
     @cached_property
     def client(self) -> LocalLLMClient:
-        """Client for the LLM.
+        """
+        Client for the LLM.
 
         Returns:
             The client used to interact with the LLM.
@@ -54,7 +56,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         return LocalLLMClient(model_name=self.model_name, hf_api_key=self.api_key)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
-        """Counts tokens in the messages.
+        """
+        Counts tokens in the messages.
 
         Args:
             prompt: Messages to count tokens for.

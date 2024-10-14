@@ -48,7 +48,8 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         *,
         hf_api_key: str | None = None,
     ) -> None:
-        """Constructs a new local LLMClient instance.
+        """
+        Constructs a new local LLMClient instance.
 
         Args:
             model_name: Name of the model to use.
@@ -74,7 +75,8 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
-        """Makes a call to the local LLM with the provided prompt and options.
+        """
+        Makes a call to the local LLM with the provided prompt and options.
 
         Args:
             conversation: List of dicts with "role" and "content" keys, representing the chat history so far.

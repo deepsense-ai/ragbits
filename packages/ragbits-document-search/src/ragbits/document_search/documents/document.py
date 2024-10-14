@@ -8,7 +8,9 @@ from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
-    """Types of documents that can be stored."""
+    """
+    Types of documents that can be stored.
+    """
 
     MD = "md"
     TXT = "txt"
@@ -50,7 +52,8 @@ class DocumentMeta(BaseModel):
         return self.source.get_id()
 
     async def fetch(self) -> "Document":
-        """This method fetches the document from source (potentially remote) and creates an object to interface with it.
+        """
+        This method fetches the document from source (potentially remote) and creates an object to interface with it.
         Based on the document type, it will return a different object.
 
         Returns:
@@ -61,7 +64,8 @@ class DocumentMeta(BaseModel):
 
     @classmethod
     def create_text_document_from_literal(cls, content: str) -> "DocumentMeta":
-        """Create a text document from a literal content.
+        """
+        Create a text document from a literal content.
 
         Args:
             content: The content of the document.
@@ -79,7 +83,8 @@ class DocumentMeta(BaseModel):
 
     @classmethod
     def from_local_path(cls, local_path: Path) -> "DocumentMeta":
-        """Create a document metadata from a local path.
+        """
+        Create a document metadata from a local path.
 
         Args:
             local_path: The local path to the document.
@@ -94,14 +99,17 @@ class DocumentMeta(BaseModel):
 
 
 class Document(BaseModel):
-    """An object representing a document which is downloaded and stored locally."""
+    """
+    An object representing a document which is downloaded and stored locally.
+    """
 
     local_path: Path
     metadata: DocumentMeta
 
     @classmethod
     def from_document_meta(cls, document_meta: DocumentMeta, local_path: Path) -> "Document":
-        """Create a document from a document metadata.
+        """
+        Create a document from a document metadata.
         Based on the document type, it will return a different object.
 
         Args:
@@ -117,11 +125,14 @@ class Document(BaseModel):
 
 
 class TextDocument(Document):
-    """An object representing a text document."""
+    """
+    An object representing a text document.
+    """
 
     @property
     def content(self) -> str:
-        """Get the content of the document.
+        """
+        Get the content of the document.
 
         Returns:
             The content of the document.

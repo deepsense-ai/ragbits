@@ -13,21 +13,27 @@ from ragbits.core.prompt import Prompt
 
 
 class LoremPromptInput(BaseModel):
-    """Input format for the LoremPrompt."""
+    """
+    Input format for the LoremPrompt.
+    """
 
     theme: str
     pun_allowed: bool = False
 
 
 class LoremPromptOutput(BaseModel):
-    """Output format for the LoremPrompt."""
+    """
+    Output format for the LoremPrompt.
+    """
 
     joke: str
     joke_category: str
 
 
 class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
-    """A prompt that generates jokes."""
+    """
+    A prompt that generates jokes.
+    """
 
     system_prompt = """
     You are a joke generator. The jokes you generate should be funny and not offensive.

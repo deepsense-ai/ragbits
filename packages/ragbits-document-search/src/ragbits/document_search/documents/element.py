@@ -19,7 +19,8 @@ class Element(BaseModel, ABC):
 
     @abstractmethod
     def get_key(self) -> str:
-        """Get the key of the element which will be used to generate the vector.
+        """
+        Get the key of the element which will be used to generate the vector.
 
         Returns:
             The key.
@@ -36,7 +37,8 @@ class Element(BaseModel, ABC):
 
     @classmethod
     def from_vector_db_entry(cls, db_entry: VectorDBEntry) -> "Element":
-        """Create an element from a vector database entry.
+        """
+        Create an element from a vector database entry.
 
         Args:
             db_entry: The vector database entry.
@@ -51,7 +53,8 @@ class Element(BaseModel, ABC):
         return element_cls(**meta)
 
     def to_vector_db_entry(self, vector: list[float]) -> VectorDBEntry:
-        """Create a vector database entry from the element.
+        """
+        Create a vector database entry from the element.
 
         Args:
             vector: The vector.
@@ -67,13 +70,16 @@ class Element(BaseModel, ABC):
 
 
 class TextElement(Element):
-    """An object representing a text element in a document."""
+    """
+    An object representing a text element in a document.
+    """
 
     element_type: str = "text"
     content: str
 
     def get_key(self) -> str:
-        """Get the key of the element which will be used to generate the vector.
+        """
+        Get the key of the element which will be used to generate the vector.
 
         Returns:
             The key.

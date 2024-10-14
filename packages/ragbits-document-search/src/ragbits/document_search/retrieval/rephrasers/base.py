@@ -9,7 +9,8 @@ class QueryRephraser(abc.ABC):
     @staticmethod
     @abc.abstractmethod
     def rephrase(query: str) -> list[str]:
-        """Rephrase a query.
+        """
+        Rephrase a query.
 
         Args:
             query: The query to rephrase.

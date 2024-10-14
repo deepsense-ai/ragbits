@@ -59,7 +59,8 @@ class UnstructuredProvider(BaseProvider):
         api_server: str | None = None,
         use_api: bool = False,
     ) -> None:
-        """Initialize the UnstructuredProvider.
+        """
+        Initialize the UnstructuredProvider.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
@@ -80,7 +81,8 @@ class UnstructuredProvider(BaseProvider):
 
     @property
     def client(self) -> UnstructuredClient:
-        """Get the UnstructuredClient instance. If the client is not initialized, it will be created.
+        """
+        Get the UnstructuredClient instance. If the client is not initialized, it will be created.
 
         Returns:
             The UnstructuredClient instance.
@@ -97,7 +99,8 @@ class UnstructuredProvider(BaseProvider):
         return self._client
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """Process the document using the Unstructured API.
+        """
+        Process the document using the Unstructured API.
 
         Args:
             document_meta: The document to process.

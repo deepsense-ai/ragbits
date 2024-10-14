@@ -8,7 +8,8 @@ class Embeddings(ABC):
 
     @abstractmethod
     async def embed_text(self, data: list[str]) -> list[list[float]]:
-        """Creates embeddings for the given strings.
+        """
+        Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
