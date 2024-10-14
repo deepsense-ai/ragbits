@@ -1,6 +1,6 @@
 import sys
 
-from ..utils import get_cls_from_config
+from ..utils.config_handling import get_cls_from_config
 from .base import VectorDBEntry, VectorStore
 from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore

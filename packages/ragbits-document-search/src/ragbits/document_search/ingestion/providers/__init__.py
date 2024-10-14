@@ -1,6 +1,6 @@
 import sys
 
-from ragbits.core.utils import get_cls_from_config
+from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import BaseProvider
 from .dummy import DummyProvider

@@ -10,7 +10,7 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings import Embeddings
-from ragbits.core.utils import get_cls_from_config
+from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_store import VectorDBEntry, VectorStore
 
 
