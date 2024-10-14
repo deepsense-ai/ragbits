@@ -2,14 +2,16 @@ from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.embeddings import Embeddings
-from ragbits.core.vector_store import VectorStore
+from ragbits.core.embeddings import Embeddings, get_embeddings
+from ragbits.core.vector_store import VectorStore, get_vector_store
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
+from ragbits.document_search.retrieval.rerankers import get_reranker
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
@@ -57,6 +59,29 @@ class DocumentSearch:
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
+
+    @classmethod
+    def from_config(cls, config: dict) -> "DocumentSearch":
+        """
+        Creates and returns an instance of the DocumentSearch class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the DocumentSearch instance.
+
+        Returns:
+            DocumentSearch: An initialized instance of the DocumentSearch class.
+        """
+
+        embedder = get_embeddings(config["embedder"])
+        query_rephraser = get_rephraser(config.get("rephraser"))
+        reranker = get_reranker(config.get("reranker"))
+        vector_store = get_vector_store(config["vector_store"])
+
+        providers_config_dict: dict = config.get("providers", {})
+        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(providers_config_dict)
+        document_processor_router = DocumentProcessorRouter.from_config(providers_config)
+
+        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
     async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
         """
