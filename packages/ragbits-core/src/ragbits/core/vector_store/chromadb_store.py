@@ -11,7 +11,7 @@ except ImportError:
 
 from ragbits.core.embeddings import Embeddings
 from ragbits.core.utils import get_cls_from_config
-from ragbits.core.vector_store import VectorStore, VectorDBEntry
+from ragbits.core.vector_store import VectorDBEntry, VectorStore
 
 
 class ChromaDBStore(VectorStore):
