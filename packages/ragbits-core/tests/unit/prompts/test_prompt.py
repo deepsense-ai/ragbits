@@ -224,8 +224,7 @@ def test_adding_few_shots_input():
     prompt.add_few_shot(_PromptInput(name="Alice", age=30, theme="pop"), "It's a really catchy tune.")
 
     assert prompt.chat == [
-        {"role": "system",
-            "content": "You are a song generator for a child named John."},
+        {"role": "system", "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is pop."},
         {"role": "assistant", "content": "It's a really catchy tune."},
         {"role": "user", "content": "Theme for the song is rock."},
@@ -281,8 +280,7 @@ def test_few_shot_output_pydantic_model():
     prompt.add_few_shot("Theme for the song is disco.", _PromptOutput(song_title="Disco song", song_lyrics="Boogie!"))
 
     assert prompt.chat == [
-        {"role": "system",
-            "content": "You are a song generator for a child named John."},
+        {"role": "system", "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is pop."},
         {"role": "assistant", "content": '{"song_title":"Pop song","song_lyrics":"La la la"}'},
         {"role": "user", "content": "Theme for the song is disco."},
@@ -372,10 +370,7 @@ def test_to_promptfoo():
         user_prompt = "Theme for the song is {{ theme }}."
 
     assert TestPrompt.to_promptfoo(promptfoo_test_config) == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a adult named John.",
-        },
+        {"role": "system", "content": "You are a song generator for a adult named John."},
         {"role": "user", "content": "Theme for the song is pop."},
     ]
 
