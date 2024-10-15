@@ -97,6 +97,24 @@ class DocumentMeta(BaseModel):
             source=LocalFileSource(path=local_path),
         )
 
+    @classmethod
+    async def from_source(cls, source: Union[LocalFileSource, GCSSource]) -> "DocumentMeta":
+        """
+        Create a document metadata from a source.
+
+        Args:
+            source: The source from which the document is fetched.
+
+        Returns:
+            The document metadata.
+        """
+        path = await source.fetch()
+
+        return cls(
+            document_type=DocumentType(path.suffix[1:]),
+            source=source,
+        )
+
 
 class Document(BaseModel):
     """

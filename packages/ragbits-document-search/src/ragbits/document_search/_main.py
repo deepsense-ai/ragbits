@@ -6,7 +6,7 @@ from ragbits.core.embeddings import Embeddings
 from ragbits.core.vector_store import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
@@ -80,7 +80,9 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: Union[DocumentMeta, Document, Source], document_processor: Optional[BaseProvider] = None
+        self,
+        document: Union[DocumentMeta, Document, Union[LocalFileSource, GCSSource]],
+        document_processor: Optional[BaseProvider] = None,
     ) -> None:
         """
         Ingest a document.
@@ -92,8 +94,7 @@ class DocumentSearch:
         """
 
         if isinstance(document, Source):
-            local_path = await document.fetch()
-            document_meta = DocumentMeta.from_local_path(local_path)
+            document_meta = await DocumentMeta.from_source(document)
         elif isinstance(document, DocumentMeta):
             document_meta = document
         else:
