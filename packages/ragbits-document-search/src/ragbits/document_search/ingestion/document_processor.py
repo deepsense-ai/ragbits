@@ -50,7 +50,7 @@ class DocumentProcessorRouter:
         {
             DocumentType.TXT: YourCustomProviderClass(),
             DocumentType.PDF: UnstructuredProvider(),
-        }.
+        }
 
         Args:
             providers_config: The dictionary with the providers configuration, mapping the document types to the

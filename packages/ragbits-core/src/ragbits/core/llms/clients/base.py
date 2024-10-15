@@ -12,7 +12,7 @@ LLMClientOptions = TypeVar("LLMClientOptions", bound="LLMOptions")
 
 
 @dataclass
-class LLMOptions:
+class LLMOptions(ABC):
     """
     A dataclass that represents all available LLM call options.
     """
