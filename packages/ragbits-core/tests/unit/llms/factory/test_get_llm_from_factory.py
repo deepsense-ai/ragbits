@@ -16,7 +16,7 @@ def test_get_llm_from_factory():
     """
     Test the get_llm_from_factory function.
     """
-    llm = get_llm_from_factory("tests.unit.llms.factory.test_get_llm_from_factory.mock_llm_factory")
+    llm = get_llm_from_factory("factory.test_get_llm_from_factory.mock_llm_factory")
 
     assert isinstance(llm, LiteLLM)
     assert llm.model_name == "mock_model"
