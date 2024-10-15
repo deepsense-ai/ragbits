@@ -124,10 +124,7 @@ def test_prompt_with_input_type():
     assert prompt.rendered_system_prompt == "You are a song generator for a adult named Alice."
     assert prompt.rendered_user_prompt == "Theme for the song is rock."
     assert prompt.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a adult named Alice.",
-        },
+        {"role": "system", "content": "You are a song generator for a adult named Alice."},
         {"role": "user", "content": "Theme for the song is rock."},
     ]
 
@@ -183,10 +180,7 @@ def test_defining_few_shots_input():
     prompt = TestPrompt(_PromptInput(name="John", age=15, theme="rock"))
 
     assert prompt.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a child named John.",
-        },
+        {"role": "system", "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is pop."},
         {"role": "assistant", "content": "It's a really catchy tune."},
         {"role": "user", "content": "Theme for the song is rock."},
@@ -230,10 +224,8 @@ def test_adding_few_shots_input():
     prompt.add_few_shot(_PromptInput(name="Alice", age=30, theme="pop"), "It's a really catchy tune.")
 
     assert prompt.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a child named John.",
-        },
+        {"role": "system",
+            "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is pop."},
         {"role": "assistant", "content": "It's a really catchy tune."},
         {"role": "user", "content": "Theme for the song is rock."},
@@ -289,10 +281,8 @@ def test_few_shot_output_pydantic_model():
     prompt.add_few_shot("Theme for the song is disco.", _PromptOutput(song_title="Disco song", song_lyrics="Boogie!"))
 
     assert prompt.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a child named John.",
-        },
+        {"role": "system",
+            "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is pop."},
         {"role": "assistant", "content": '{"song_title":"Pop song","song_lyrics":"La la la"}'},
         {"role": "user", "content": "Theme for the song is disco."},
@@ -319,10 +309,7 @@ def test_few_shot_int_output():
     prompt.add_few_shot(_PromptInput(theme="pop", name="The blood of a demon", age=75), False)
 
     assert prompt.chat == [
-        {
-            "role": "system",
-            "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit.",
-        },
+        {"role": "system", "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit."},
         {"role": "user", "content": "The name is I love you more than my cat, the theme is pop and the age is 15."},
         {"role": "assistant", "content": "True"},
         {"role": "user", "content": "The name is The blood of a demon, the theme is pop and the age is 75."},
@@ -413,20 +400,14 @@ def test_two_instances_do_not_share_few_shots():
     prompt2.add_few_shot("Theme for the song is 90s pop.", "Why do I know all the words?")
 
     assert prompt1.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a child named John.",
-        },
+        {"role": "system", "content": "You are a song generator for a child named John."},
         {"role": "user", "content": "Theme for the song is 80s disco."},
         {"role": "assistant", "content": "I can't stop dancing."},
         {"role": "user", "content": "Theme for the song is pop."},
     ]
 
     assert prompt2.chat == [
-        {
-            "role": "system",
-            "content": "You are a song generator for a adult named Alice.",
-        },
+        {"role": "system", "content": "You are a song generator for a adult named Alice."},
         {"role": "user", "content": "Theme for the song is 90s pop."},
         {"role": "assistant", "content": "Why do I know all the words?"},
         {"role": "user", "content": "Theme for the song is rock."},
