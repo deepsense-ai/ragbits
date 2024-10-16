@@ -2,9 +2,9 @@ import tempfile
 from enum import Enum
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ragbits.document_search.documents.sources import LocalFileSource, Source
+from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
@@ -38,7 +38,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Source
+    source: LocalFileSource | GCSSource | HuggingFaceSource = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:
