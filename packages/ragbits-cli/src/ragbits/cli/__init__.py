@@ -24,9 +24,12 @@ def main() -> None:
 
     cli_enabled_modules = [
         module
-        for i, module in enumerate(pkgutil.iter_modules(ragbits.__path__))
-        if module.ispkg and module.name != "cli" and (Path(ragbits.__path__[i]) / module.name / "cli.py").exists()
+        for module in pkgutil.iter_modules(ragbits.__path__)
+        if module.ispkg
+        and module.name != "cli"
+        and (Path(module.module_finder.path) / module.name / "cli.py").exists()  # type: ignore
     ]
+
     for module in cli_enabled_modules:
         register_func = importlib.import_module(f"ragbits.{module.name}.cli").register
         register_func(app, help_only)
