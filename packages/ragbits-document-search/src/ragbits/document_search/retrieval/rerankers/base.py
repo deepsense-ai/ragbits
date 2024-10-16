@@ -1,4 +1,5 @@
 import abc
+from typing import Any
 
 from ragbits.document_search.documents.element import Element
 
@@ -10,7 +11,7 @@ class Reranker(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def rerank(chunks: list[Element]) -> list[Element]:
+    def rerank(chunks: list[Element], **kwargs: Any) -> list[Element]:
         """
         Rerank chunks.
 
