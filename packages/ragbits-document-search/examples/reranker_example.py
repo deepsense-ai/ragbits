@@ -39,20 +39,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
-# from litellm import rerank
-# import os
-
-# os.environ["COHERE_API_KEY"] = "sk-.."
-
-# query = "What is the capital of the United States?"
-# documents = [
-#     "Carson City is the capital city of the American state of Nevada.",
-#     "The Commonwealth of the Northern Mariana Islands is a group of islands in the Pacific Ocean. Its capital is Saipan.",
-#     "Washington, D.C. is the capital of the United States.",
-#     "Capital punishment has existed in the United States since before it was a country.",
-# ]
-
-
-# print(response)

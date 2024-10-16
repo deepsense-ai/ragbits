@@ -26,9 +26,10 @@ class LiteLLMReranker(Reranker):
             model="cohere/rerank-english-v3.0",
             query=kwargs.get("query"),
             documents=[chunk.content for chunk in chunks],
-            top_n=3,
+            top_n=kwargs.get("top_n"),
+            return_documents=False
         )
+        target_order = [result["index"] for result in response.results]
+        reranked_chunks = [chunks[i] for i in target_order]
 
-        print(response)
-
-        return chunks  
+        return reranked_chunks  
