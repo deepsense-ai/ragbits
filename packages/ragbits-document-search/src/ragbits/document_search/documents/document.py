@@ -1,11 +1,10 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
+from ragbits.document_search.documents.sources import LocalFileSource, Source
 
 
 class DocumentType(str, Enum):
@@ -39,7 +38,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
+    source: Source
 
     @property
     def id(self) -> str:
@@ -49,7 +48,7 @@ class DocumentMeta(BaseModel):
         Returns:
             The document ID.
         """
-        return self.source.get_id()
+        return self.source.id
 
     async def fetch(self) -> "Document":
         """

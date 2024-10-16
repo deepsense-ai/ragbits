@@ -34,12 +34,15 @@ dependencies = [
     "numpy~=1.24.0",
     "unstructured>=0.15.13",
     "unstructured-client>=0.26.0",
-    "ragbits-core==0.1.0"
+    "ragbits-core==0.1.0",
 ]
 
 [project.optional-dependencies]
 gcs = [
     "gcloud-aio-storage~=9.3.0"
+]
+huggingface = [
+    "datasets~=3.0.1",
 ]
 
 [tool.uv]

@@ -7,13 +7,14 @@ from typing import Literal
 from pydantic import BaseModel
 
 try:
+    from datasets import load_dataset
     from gcloud.aio.storage import Storage
-
-    HAS_GCLOUD_AIO = True
 except ImportError:
-    HAS_GCLOUD_AIO = False
+    pass
 
-LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR_ENV"
+from ragbits.core.utils.decorators import requires_dependencies
+
+LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
 
 class Source(BaseModel, ABC):
@@ -21,8 +22,9 @@ class Source(BaseModel, ABC):
     An object representing a source.
     """
 
+    @property
     @abstractmethod
-    def get_id(self) -> str:
+    def id(self) -> str:
         """
         Get the source ID.
 
@@ -48,7 +50,8 @@ class LocalFileSource(Source):
     source_type: Literal["local_file"] = "local_file"
     path: Path
 
-    def get_id(self) -> str:
+    @property
+    def id(self) -> str:
         """
         Get unique identifier of the object in the source.
 
@@ -73,11 +76,11 @@ class GCSSource(Source):
     """
 
     source_type: Literal["gcs"] = "gcs"
-
     bucket: str
     object_name: str
 
-    def get_id(self) -> str:
+    @property
+    def id(self) -> str:
         """
         Get unique identifier of the object in the source.
 
@@ -86,6 +89,7 @@ class GCSSource(Source):
         """
         return f"gcs:gs://{self.bucket}/{self.object_name}"
 
+    @requires_dependencies(["gcloud-aio-storage"], "gcs")
     async def fetch(self) -> Path:
         """
         Fetch the file from Google Cloud Storage and store it locally.
@@ -99,26 +103,80 @@ class GCSSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
-            ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
+            ImportError: If the required 'gcloud' package is not installed.
         """
-
-        if not HAS_GCLOUD_AIO:
-            raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
-
-        if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is None:
-            local_dir = Path(tempfile.gettempdir()) / "ragbits"
-        else:
-            local_dir = Path(local_dir_env)
-
+        local_dir = get_local_storage_dir()
         bucket_local_dir = local_dir / self.bucket
         bucket_local_dir.mkdir(parents=True, exist_ok=True)
         path = bucket_local_dir / self.object_name
 
         if not path.is_file():
-            async with Storage() as client:
+            async with Storage() as client:  # type: ignore
                 content = await client.download(self.bucket, self.object_name)
                 Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
                 with open(path, mode="wb+") as file_object:
                     file_object.write(content)
 
         return path
+
+
+class HuggingFaceSource(Source):
+    """
+    An object representing a Hugging Face model source.
+    """
+
+    source_type: Literal["huggingface"] = "huggingface"
+    hf_path: str
+
+    @property
+    def id(self) -> str:
+        """
+        Get unique identifier of the object in the source.
+
+        Returns:
+            Unique identifier.
+        """
+        return f"huggingface:{self.hf_path}"
+
+    @requires_dependencies(["datasets"], "huggingface")
+    async def fetch(self) -> Path:
+        """
+        Fetch the file from Hugging Face and store it locally.
+
+        Returns:
+            Path: The local path to the downloaded file.
+
+        Raises:
+            ImportError: If the required 'datasets' package is not installed.
+        """
+        hf_path, row = self.hf_path.split("?row=")
+        dataset = load_dataset(path=hf_path, split="train")  # type: ignore
+        data = dataset[int(row)]  # type: ignore
+
+        storage_dir = get_local_storage_dir()
+        source_dir = storage_dir / Path(data["source"]).parent  # type: ignore
+        source_dir.mkdir(parents=True, exist_ok=True)
+        path = storage_dir / data["source"]  # type: ignore
+
+        if not path.is_file():
+            with open(path, mode="w", encoding="utf-8") as file:
+                file.write(data["content"])  # type: ignore
+
+        return path
+
+
+def get_local_storage_dir() -> Path:
+    """
+    Get the local storage directory.
+
+    The local storage directory is determined by the environment variable `LOCAL_STORAGE_DIR_ENV`. If this environment
+    variable is not set, a temporary directory is used.
+
+    Returns:
+        The local storage directory.
+    """
+    return (
+        Path(local_dir_env)
+        if (local_dir_env := os.getenv(LOCAL_STORAGE_DIR_ENV)) is not None
+        else Path(tempfile.gettempdir()) / "ragbits"
+    )
