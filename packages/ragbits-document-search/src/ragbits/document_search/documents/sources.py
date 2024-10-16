@@ -96,7 +96,7 @@ class GCSSource(Source):
 
         The file is downloaded to a local directory specified by `local_dir`. If the file already exists locally,
         it will not be downloaded again. If the file doesn't exist locally, it will be fetched from GCS.
-        The local directory is determined by the environment variable `LOCAL_STORAGE_DIR_ENV`. If this environment
+        The local directory is determined by the environment variable `LOCAL_STORAGE_DIR`. If this environment
         variable is not set, a temporary directory is used.
 
         Returns:
@@ -122,7 +122,7 @@ class GCSSource(Source):
 
 class HuggingFaceSource(Source):
     """
-    An object representing a Hugging Face model source.
+    An object representing a Hugging Face dataset source.
     """
 
     source_type: Literal["huggingface"] = "huggingface"
@@ -169,7 +169,7 @@ def get_local_storage_dir() -> Path:
     """
     Get the local storage directory.
 
-    The local storage directory is determined by the environment variable `LOCAL_STORAGE_DIR_ENV`. If this environment
+    The local storage directory is determined by the environment variable `LOCAL_STORAGE_DIR`. If this environment
     variable is not set, a temporary directory is used.
 
     Returns:
