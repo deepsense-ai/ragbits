@@ -3,7 +3,7 @@ from typing import Any, List, overload
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 
-from litellm import rerank
+import litellm
 
 
 class LiteLLMReranker(Reranker):
@@ -22,10 +22,10 @@ class LiteLLMReranker(Reranker):
         Returns:
             The reranked chunks.
         """
-        response = rerank(
+        response = litellm.rerank(
             model="cohere/rerank-english-v3.0",
-            query=[kwargs.get("query")],
-            documents=chunks[0].content,
+            query=kwargs.get("query"),
+            documents=[chunk.content for chunk in chunks],
             top_n=3,
         )
 
