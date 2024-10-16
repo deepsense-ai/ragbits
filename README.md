@@ -1,21 +1,29 @@
-# Ragbits
+<div align="center">
 
-*A stack of ready-to-use libraries for building chatbots and other LLM-powered applications*
+<h1>Ragbits</h1>
+
+*Building blocks for rapid development of GenAI applications*
+
+[Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
 
 [![PyPI - License](https://img.shields.io/pypi/l/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Version](https://img.shields.io/pypi/v/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ragbits)](https://pypi.org/project/ragbits)
+
+</div>
+
+---
 
 ## What's Included?
 
 - [X] **[Core](packages/ragbits-core)** - Fundamental tools for working with prompts and LLMs.
 - [X] **[Document Search](packages/ragbits-document-search)** - Handles vector search to retrieve relevant documents.
 - [X] **[CLI](packages/ragbits-cli)** - The `ragbits` shell command, enabling tools such as GUI prompt management.
-- [ ] **Flow Controls** - Manages multi-stage chat flows for performing advanced actions (coming soon).
-- [ ] **Structured Querying** - Queries structured data sources in a predictable manner (coming soon).
-- [ ] **Caching** - Adds a caching layer to reduce costs and response times (coming soon).
-- [ ] **Observability & Audit** - Tracks user queries and events for easier troubleshooting (coming soon).
-- [ ] **Guardrails** - Ensures response safety and relevance (coming soon).
+- [ ] **Flow Controls** - Manages multi-stage chat flows for performing advanced actions *(coming soon)*.
+- [ ] **Structured Querying** - Queries structured data sources in a predictable manner *(coming soon)*.
+- [ ] **Caching** - Adds a caching layer to reduce costs and response times *(coming soon)*.
+- [ ] **Observability & Audit** - Tracks user queries and events for easier troubleshooting *(coming soon)*.
+- [ ] **Guardrails** - Ensures response safety and relevance *(coming soon)*.
 
 ## Installation
 
@@ -72,10 +80,6 @@ TODO:
 Add links to quickstart guides for individual packages, demonstrating how to extend this with their functionality.
 Add a link to the full tutorial.
 -->
-
-## Documentation
-
-Full documentation is available at [ragbits.deepsense.ai/](https://ragbits.deepsense.ai/).
 
 ## License
 
