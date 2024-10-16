@@ -60,7 +60,6 @@ class DocumentProcessorRouter:
         Returns:
             ProvidersConfig object.
         """
-
         providers_config = {}
 
         for document_type, config in dict_config.items():
@@ -87,7 +86,6 @@ class DocumentProcessorRouter:
         Returns:
             The DocumentProcessorRouter.
         """
-
         config = copy.deepcopy(DEFAULT_PROVIDERS_CONFIG)
         config.update(providers_config if providers_config is not None else {})
 

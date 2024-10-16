@@ -21,7 +21,6 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
         An instance of the specified VectorStore class, initialized with the provided config
         (if any) or default arguments.
     """
-
     vector_store_cls = get_cls_from_config(vector_store_config["type"], module)
     config = vector_store_config.get("config", {})
 

@@ -6,8 +6,8 @@
 #     "ragbits-core[chromadb, litellm]",
 # ]
 # ///
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
 import chromadb
 import gradio as gr
@@ -119,7 +119,9 @@ class RAGSystemWithUI:
         return self.DATABASE_LOADED_MESSAGE
 
     async def _handle_message(
-        self, message: str, history: list[dict]  # pylint: disable=unused-argument
+        self,
+        message: str,
+        history: list[dict],  # pylint: disable=unused-argument
     ) -> AsyncIterator[str]:
         if not self._documents_ingested:
             yield self.NO_DOCUMENTS_INGESTED_MESSAGE

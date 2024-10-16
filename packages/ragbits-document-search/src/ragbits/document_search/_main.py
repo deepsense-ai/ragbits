@@ -71,7 +71,6 @@ class DocumentSearch:
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-
         embedder = get_embeddings(config["embedder"])
         query_rephraser = get_rephraser(config.get("rephraser"))
         reranker = get_reranker(config.get("reranker"))

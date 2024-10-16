@@ -40,13 +40,6 @@ members = [
     "packages/ragbits-cli"
 ]
 
-[tool.isort]
-multi_line_output = 3
-line_length = 120
-include_trailing_comma = true
-
-skip_gitignore = true
-
 [tool.pytest]
 norecursedirs = [
     '.git',
@@ -128,12 +121,14 @@ extend-select = [
     "PLR6301",  # no-self-use
 ]
 ignore = [
+    "B024",
     "B028",     # no-explicit-stacklevel, TODO confirm this
     "C901",     # complex-structure, TODO confirm this
     "D100",
     "D104",
     "D105",
     "D107",
+    "D415",
     "D200",
     "D205",
     "D212",
@@ -158,6 +153,7 @@ convention = "google"
     "D103",
     "D107"
 ]
+# "/home/patryk/repositories/internal/ragnarok_1.0/packages/ragbits-core/tests/unit/prompts/test_prompt.py" = ["S101"]
 
 [tool.ruff.format]
 docstring-code-format = true

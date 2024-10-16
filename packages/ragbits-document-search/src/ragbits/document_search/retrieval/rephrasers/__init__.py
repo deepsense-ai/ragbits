@@ -1,5 +1,4 @@
 import sys
-from typing import Optional
 
 from ragbits.core.utils.config_handling import get_cls_from_config
 
@@ -11,7 +10,7 @@ __all__ = ["NoopQueryRephraser", "QueryRephraser"]
 module = sys.modules[__name__]
 
 
-def get_rephraser(rephraser_config: Optional[dict]) -> QueryRephraser:
+def get_rephraser(rephraser_config: dict | None) -> QueryRephraser:
     """
     Initializes and returns a QueryRephraser object based on the provided configuration.
 
@@ -22,7 +21,6 @@ def get_rephraser(rephraser_config: Optional[dict]) -> QueryRephraser:
         An instance of the specified QueryRephraser class, initialized with the provided config
         (if any) or default arguments.
     """
-
     if rephraser_config is None:
         return NoopQueryRephraser()
 
