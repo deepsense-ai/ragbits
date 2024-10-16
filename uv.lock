@@ -3119,6 +3119,9 @@ local = [
     { name = "torch" },
     { name = "transformers" },
 ]
+promptfoo = [
+    { name = "pyyaml" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -3137,6 +3140,7 @@ requires-dist = [
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.24.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
+    { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = "~=6.0.2" },
     { name = "tomli", specifier = "~=2.0.2" },
     { name = "torch", marker = "extra == 'local'", specifier = "~=2.2.1" },
     { name = "transformers", marker = "extra == 'local'", specifier = "~=4.44.2" },

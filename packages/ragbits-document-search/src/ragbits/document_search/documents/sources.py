@@ -66,6 +66,23 @@ class LocalFileSource(Source):
         """
         return self.path
 
+    @classmethod
+    def list_sources(cls, path: Path, file_pattern: str = "*") -> list["LocalFileSource"]:
+        """
+        List all sources in the given directory, matching the file pattern.
+
+        Args:
+            path: The path to the directory.
+            file_pattern: The file pattern to match.
+
+        Returns:
+            List of source objects.
+        """
+        sources = []
+        for file_path in path.glob(file_pattern):
+            sources.append(cls(path=file_path))
+        return sources
+
 
 class GCSSource(Source):
     """
@@ -122,3 +139,28 @@ class GCSSource(Source):
                     file_object.write(content)
 
         return path
+
+    @classmethod
+    async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
+        """
+        List all sources in the given GCS bucket, matching the prefix.
+
+        Args:
+            bucket: The GCS bucket.
+            prefix: The prefix to match.
+
+        Returns:
+            List of source objects.
+
+        Raises:
+            ImportError: If the required 'gcloud-aio-storage' package is not installed
+        """
+        if not HAS_GCLOUD_AIO:
+            raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
+
+        async with Storage() as client:
+            objects = await client.list_objects(bucket, params={"prefix": prefix})
+            sources = []
+            for obj in objects["items"]:
+                sources.append(cls(bucket=bucket, object_name=obj["name"]))
+            return sources

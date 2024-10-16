@@ -147,3 +147,17 @@ async def test_document_search_with_search_config():
 
     assert len(results) == 1
     assert results[0].content == "Name of Peppa's brother is George"
+
+
+async def test_document_search_insert_documents():
+    document_search = DocumentSearch.from_config(CONFIG)
+    examples_files = Path(__file__).parent / "example_files"
+
+    await document_search.ingest_documents(
+        LocalFileSource.list_sources(examples_files, file_pattern="*.md"),
+        document_processor=DummyProvider(),
+    )
+
+    results = await document_search.search("foo")
+    assert len(results) == 2
+    assert {result.content for result in results} == {"foo", "bar"}
