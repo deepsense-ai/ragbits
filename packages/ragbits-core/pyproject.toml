@@ -52,6 +52,9 @@ local = [
 lab = [
     "gradio~=4.44.0",
 ]
+promptfoo = [
+    "PyYAML~=6.0.2",
+]
 
 [tool.uv]
 dev-dependencies = [
