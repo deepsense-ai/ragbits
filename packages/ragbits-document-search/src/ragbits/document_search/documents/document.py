@@ -97,7 +97,7 @@ class DocumentMeta(BaseModel):
         )
 
     @classmethod
-    async def from_source(cls, source: Union[LocalFileSource, GCSSource]) -> "DocumentMeta":
+    async def from_source(cls, source: LocalFileSource | GCSSource | HuggingFaceSource) -> "DocumentMeta":
         """
         Create a document metadata from a source.
 
