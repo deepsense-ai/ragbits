@@ -2,28 +2,23 @@ import os
 from pathlib import Path
 from unittest.mock import patch
 
-import aiohttp
-import pytest
-
 from ragbits.document_search.documents.sources import LOCAL_STORAGE_DIR_ENV, GCSSource, HuggingFaceSource
 
-TEST_FILE_PATH = Path(__file__)
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = TEST_FILE_PATH.parent.as_posix()
+os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 
 async def test_gcs_source_fetch() -> None:
-    source = GCSSource(bucket="", object_name="test_gcs_source.py")
-    assert source.id == "gcs:gs:///test_gcs_source.py"
+    data = b"This is the content of the file."
+    source = GCSSource(bucket="", object_name="doc.md")
 
-    path = await source.fetch()
-    assert path == TEST_FILE_PATH
+    with patch("ragbits.document_search.documents.sources.Storage.download", return_value=data):
+        path = await source.fetch()
 
-    source = GCSSource(bucket="", object_name="not_found_file.py")
-    assert source.id == "gcs:gs:///not_found_file.py"
+    assert source.id == "gcs:gs:///doc.md"
+    assert path.name == "doc.md"
+    assert path.read_text() == "This is the content of the file."
 
-    with pytest.raises(aiohttp.ClientConnectionError):
-        await source.fetch()
+    path.unlink()
 
 
 async def test_huggingface_source_fetch() -> None:

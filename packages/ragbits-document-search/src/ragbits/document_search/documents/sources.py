@@ -89,7 +89,7 @@ class GCSSource(Source):
         """
         return f"gcs:gs://{self.bucket}/{self.object_name}"
 
-    @requires_dependencies(["gcloud-aio-storage"], "gcs")
+    @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def fetch(self) -> Path:
         """
         Fetch the file from Google Cloud Storage and store it locally.
