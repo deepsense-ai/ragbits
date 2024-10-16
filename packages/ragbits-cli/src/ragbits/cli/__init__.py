@@ -32,7 +32,3 @@ def main() -> None:
         register_func(app, help_only)
 
     app()
-
-
-if __name__ == "__main__":
-    main()
