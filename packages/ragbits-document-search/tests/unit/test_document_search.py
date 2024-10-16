@@ -51,7 +51,8 @@ async def test_document_search_from_config(document, expected):
     [
         DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
         Document.from_document_meta(
-            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"), Path("test.txt")
+            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+            Path("test.txt"),
         ),
     ],
 )

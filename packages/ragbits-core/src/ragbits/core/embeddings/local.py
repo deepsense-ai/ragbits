@@ -1,4 +1,4 @@
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 try:
     import torch
@@ -20,10 +20,9 @@ class LocalEmbeddings(Embeddings):
     def __init__(
         self,
         model_name: str,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
-        """
-        Constructs a new local LLM instance.
+        """Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
@@ -45,8 +44,7 @@ class LocalEmbeddings(Embeddings):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
     async def embed_text(self, data: list[str], batch_size: int = 1) -> list[list[float]]:
-        """
-        Calls the appropriate encoder endpoint with the given data and options.
+        """Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.
@@ -58,7 +56,11 @@ class LocalEmbeddings(Embeddings):
         embeddings = []
         for batch in self._batch(data, batch_size):
             batch_dict = self.tokenizer(
-                batch, max_length=self.tokenizer.model_max_length, padding=True, truncation=True, return_tensors="pt"
+                batch,
+                max_length=self.tokenizer.model_max_length,
+                padding=True,
+                truncation=True,
+                return_tensors="pt",
             ).to(self.device)
             with torch.no_grad():
                 outputs = self.model(**batch_dict)

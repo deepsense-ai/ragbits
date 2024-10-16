@@ -1,6 +1,6 @@
 import json
 from hashlib import sha256
-from typing import List, Literal, Optional, Union
+from typing import Literal
 
 try:
     import chromadb
@@ -15,14 +15,16 @@ from ragbits.core.vector_store import VectorDBEntry, VectorStore
 
 
 class ChromaDBStore(VectorStore):
-    """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
+    """
+    Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
+    """
 
     def __init__(
         self,
         index_name: str,
         chroma_client: chromadb.ClientAPI,
-        embedding_function: Union[Embeddings, chromadb.EmbeddingFunction],
-        max_distance: Optional[float] = None,
+        embedding_function: Embeddings | chromadb.EmbeddingFunction,
+        max_distance: float | None = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
     ):
         """
@@ -89,22 +91,23 @@ class ChromaDBStore(VectorStore):
             embedding_function=self._embedding_function,
         )
 
-    def _return_best_match(self, retrieved: dict) -> Optional[str]:
+    def _return_best_match(self, retrieved: dict) -> str | None:
         """
         Based on the retrieved data, returns the best match or None if no match is found.
 
         Args:
-            Retrieved data, with a column-first format
+            retrieved: Retrieved data, with a column-first format.
 
         Returns:
-            The best match or None if no match is found
+            The best match or None if no match is found.
         """
         if self._max_distance is None or retrieved["distances"][0][0] <= self._max_distance:
             return retrieved["documents"][0][0]
 
         return None
 
-    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], dict]:
+    @staticmethod
+    def _process_db_entry(entry: VectorDBEntry) -> tuple[str, list[float], dict]:
         doc_id = sha256(entry.key.encode("utf-8")).hexdigest()
         embedding = entry.vector
 
@@ -116,7 +119,7 @@ class ChromaDBStore(VectorStore):
         return doc_id, embedding, metadata
 
     @property
-    def embedding_function(self) -> Union[Embeddings, chromadb.EmbeddingFunction]:
+    def embedding_function(self) -> Embeddings | chromadb.EmbeddingFunction:
         """
         Returns the embedding function.
 
@@ -125,7 +128,7 @@ class ChromaDBStore(VectorStore):
         """
         return self._embedding_function
 
-    async def store(self, entries: List[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorDBEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
 
@@ -133,11 +136,11 @@ class ChromaDBStore(VectorStore):
             entries: The entries to store.
         """
         entries_processed = list(map(self._process_db_entry, entries))
-        ids, embeddings, metadatas = map(list, zip(*entries_processed))
+        ids, embeddings, metadatas = map(list, zip(*entries_processed, strict=False))
 
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
 
-    async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
+    async def retrieve(self, vector: list[float], k: int = 5) -> list[VectorDBEntry]:
         """
         Retrieves entries from the ChromaDB collection.
 

@@ -35,9 +35,8 @@ config = {
 }
 
 
-async def main():
+async def main() -> None:
     """Run the example."""
-
     document_search = DocumentSearch.from_config(config)
 
     for document in documents:

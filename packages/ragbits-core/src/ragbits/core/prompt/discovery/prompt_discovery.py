@@ -17,12 +17,12 @@ class PromptDiscovery:
         root_path (Path): The root path to search for Prompt objects. Defaults to the directory where the script is run.
     """
 
-    def __init__(self, file_pattern: str = core_config.prompt_path_pattern, root_path: Path = Path.cwd()):
+    def __init__(self, file_pattern: str = core_config.prompt_path_pattern, root_path: Path | None = None):
         self.file_pattern = file_pattern
-        self.root_path = root_path
+        self.root_path = root_path or Path.cwd()
 
     @staticmethod
-    def is_prompt_subclass(obj: Any) -> bool:
+    def is_prompt_subclass(obj: Any) -> bool:  # noqa: ANN401
         """
         Checks if an object is a class that is a subclass of Prompt (but not Prompt itself).
 
@@ -43,7 +43,6 @@ class PromptDiscovery:
         Returns:
             set[Prompt]: The discovered Prompt objects.
         """
-
         result_set: set[type[Prompt]] = set()
 
         for file_path in self.root_path.glob(self.file_pattern):
@@ -57,7 +56,7 @@ class PromptDiscovery:
 
             module = importlib.util.module_from_spec(spec)
 
-            assert spec.loader is not None
+            assert spec.loader is not None  # noqa: S101
 
             try:
                 spec.loader.exec_module(module)

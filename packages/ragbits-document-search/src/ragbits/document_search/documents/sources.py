@@ -101,7 +101,6 @@ class GCSSource(Source):
         Raises:
             ImportError: If the required 'gcloud' package is not installed for Google Cloud Storage source.
         """
-
         if not HAS_GCLOUD_AIO:
             raise ImportError("You need to install the 'gcloud-aio-storage' package to use Google Cloud Storage")
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -71,7 +71,6 @@ class DocumentSearch:
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-
         embedder = get_embeddings(config["embedder"])
         query_rephraser = get_rephraser(config.get("rephraser"))
         reranker = get_reranker(config.get("reranker"))
@@ -83,7 +82,7 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
+    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -94,6 +93,8 @@ class DocumentSearch:
         Returns:
             A list of chunks.
         """
+        if not search_config:
+            search_config = SearchConfig()
         queries = self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
@@ -104,7 +105,9 @@ class DocumentSearch:
         return self.reranker.rerank(elements)
 
     async def ingest_document(
-        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
+        self,
+        document: DocumentMeta | Document,
+        document_processor: BaseProvider | None = None,
     ) -> None:
         """
         Ingest a document.
@@ -129,5 +132,5 @@ class DocumentSearch:
             elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
         await self.vector_store.store(entries)

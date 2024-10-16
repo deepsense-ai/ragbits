@@ -9,7 +9,9 @@ from ragbits.document_search.ingestion.providers.unstructured import Unstructure
 
 
 @pytest.mark.parametrize("document_type", UnstructuredProvider.SUPPORTED_DOCUMENT_TYPES)
-def test_unsupported_provider_validates_supported_document_types_passes(document_type: DocumentType):
+def test_unsupported_provider_validates_supported_document_types_passes(
+    document_type: DocumentType,
+):
     UnstructuredProvider().validate_document_type(document_type)
 
 

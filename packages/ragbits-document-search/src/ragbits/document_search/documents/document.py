@@ -1,7 +1,6 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Union
 
 from pydantic import BaseModel, Field
 
@@ -9,7 +8,9 @@ from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
-    """Types of documents that can be stored."""
+    """
+    Types of documents that can be stored.
+    """
 
     MD = "md"
     TXT = "txt"
@@ -39,12 +40,11 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
+    source: LocalFileSource | GCSSource = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:
-        """
-        Get the document ID.
+        """Get the document ID.
 
         Returns:
             The document ID.

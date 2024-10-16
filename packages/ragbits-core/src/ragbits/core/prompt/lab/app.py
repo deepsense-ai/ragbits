@@ -38,7 +38,7 @@ class PromptState:
     llm: LLM | None = None
 
 
-def render_prompt(index: int, system_prompt: str, user_prompt: str, state: PromptState, *args: Any) -> PromptState:
+def render_prompt(index: int, system_prompt: str, user_prompt: str, state: PromptState, *args: Any) -> PromptState:  # noqa: ANN401
     """
     Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
 
@@ -61,7 +61,7 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
 
     input_type = prompt_class.input_type
     input_fields = get_input_type_fields(input_type)
-    variables = {field["field_name"]: value for field, value in zip(input_fields, args)}
+    variables = {field["field_name"]: value for field, value in zip(input_fields, args, strict=False)}
     input_data = input_type(**variables) if input_type is not None else None
     prompt_object = prompt_class(input_data=input_data)
     state = replace(state, rendered_prompt=prompt_object)
@@ -101,7 +101,7 @@ def send_prompt_to_llm(state: PromptState) -> str:
     Raises:
         ValueError: If the LLM model is not configured.
     """
-    assert state.rendered_prompt is not None, "Prompt has not been rendered yet."
+    assert state.rendered_prompt is not None, "Prompt has not been rendered yet."  # noqa: S101
 
     if state.llm is None:
         raise ValueError("LLM model is not configured.")
@@ -170,7 +170,9 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
         )
 
         prompt_selection_dropdown = gr.Dropdown(
-            choices=list_prompt_choices(prompts_state.value), value=0, label="Select Prompt"
+            choices=list_prompt_choices(prompts_state.value),
+            value=0,
+            label="Select Prompt",
         )
 
         @gr.render(inputs=[prompt_selection_dropdown, prompts_state])
@@ -178,47 +180,55 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
             prompt = state.prompts[index]
             list_of_vars = []
             with gr.Row():
-                with gr.Column(scale=1):
-                    with gr.Tab("Inputs"):
-                        input_fields: list = get_input_type_fields(prompt.input_type)
-                        for entry in input_fields:
-                            with gr.Row():
-                                var = gr.Textbox(
-                                    label=entry["field_name"],
-                                    value=entry["field_default_value"],
-                                    interactive=True,
-                                )
-                                list_of_vars.append(var)
-
-                        render_prompt_button = gr.Button(value="Render prompts")
-
-                with gr.Column(scale=4):
-                    with gr.Tab("Prompt"):
+                with gr.Column(scale=1), gr.Tab("Inputs"):
+                    input_fields: list = get_input_type_fields(prompt.input_type)
+                    for entry in input_fields:
                         with gr.Row():
-                            with gr.Column():
-                                prompt_details_system_prompt = gr.Textbox(
-                                    label="System Prompt", value=prompt.system_prompt, interactive=True
-                                )
+                            var = gr.Textbox(
+                                label=entry["field_name"],
+                                value=entry["field_default_value"],
+                                interactive=True,
+                            )
+                            list_of_vars.append(var)
 
-                            with gr.Column():
-                                rendered_system_prompt = (
-                                    state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
-                                )
-                                gr.Textbox(
-                                    label="Rendered System Prompt", value=rendered_system_prompt, interactive=False
-                                )
+                    render_prompt_button = gr.Button(value="Render prompts")
 
-                        with gr.Row():
-                            with gr.Column():
-                                prompt_details_user_prompt = gr.Textbox(
-                                    label="User Prompt", value=prompt.user_prompt, interactive=True
-                                )
+                with gr.Column(scale=4), gr.Tab("Prompt"):
+                    with gr.Row():
+                        with gr.Column():
+                            prompt_details_system_prompt = gr.Textbox(
+                                label="System Prompt",
+                                value=prompt.system_prompt,
+                                interactive=True,
+                            )
 
-                            with gr.Column():
-                                rendered_user_prompt = (
-                                    state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
-                                )
-                                gr.Textbox(label="Rendered User Prompt", value=rendered_user_prompt, interactive=False)
+                        with gr.Column():
+                            rendered_system_prompt = (
+                                state.rendered_prompt.rendered_system_prompt if state.rendered_prompt else ""
+                            )
+                            gr.Textbox(
+                                label="Rendered System Prompt",
+                                value=rendered_system_prompt,
+                                interactive=False,
+                            )
+
+                    with gr.Row():
+                        with gr.Column():
+                            prompt_details_user_prompt = gr.Textbox(
+                                label="User Prompt",
+                                value=prompt.user_prompt,
+                                interactive=True,
+                            )
+
+                        with gr.Column():
+                            rendered_user_prompt = (
+                                state.rendered_prompt.rendered_user_prompt if state.rendered_prompt else ""
+                            )
+                            gr.Textbox(
+                                label="Rendered User Prompt",
+                                value=rendered_user_prompt,
+                                interactive=False,
+                            )
 
             llm_enabled = state.llm is not None
             prompt_ready = state.rendered_prompt is not None
@@ -230,7 +240,10 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
                 "To enable this button set an LLM factory function in CLI options or your pyproject.toml",
                 visible=not llm_enabled,
             )
-            gr.Markdown("To enable this button, render a prompt first.", visible=llm_enabled and not prompt_ready)
+            gr.Markdown(
+                "To enable this button, render a prompt first.",
+                visible=llm_enabled and not prompt_ready,
+            )
             llm_prompt_response = gr.Textbox(lines=10, label="LLM response")
 
             render_prompt_button.click(

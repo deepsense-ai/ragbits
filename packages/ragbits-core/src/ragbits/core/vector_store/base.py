@@ -1,5 +1,4 @@
 import abc
-from typing import List
 
 from pydantic import BaseModel
 
@@ -20,7 +19,7 @@ class VectorStore(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def store(self, entries: List[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorDBEntry]) -> None:
         """
         Store entries in the vector store.
 
