@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources import LOCAL_STORAGE_DIR_ENV, HuggingFaceSource
 
 from ..helpers import env_vars_not_set
@@ -10,7 +11,7 @@ from ..helpers import env_vars_not_set
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 HF_TOKEN_ENV = "HF_TOKEN"  # nosec
-HF_DATASET_PATH = "micpst/hf-docs?row=0"
+HF_DATASET_PATH = "micpst/hf-docs"
 
 
 @pytest.mark.skipif(
@@ -18,7 +19,7 @@ HF_DATASET_PATH = "micpst/hf-docs?row=0"
     reason="Hugging Face environment variables not set",
 )
 async def test_huggingface_source_fetch() -> None:
-    source = HuggingFaceSource(hf_path=HF_DATASET_PATH)
+    source = HuggingFaceSource(path=HF_DATASET_PATH, row=0)
     path = await source.fetch()
 
     assert path.is_file()
@@ -29,3 +30,16 @@ async def test_huggingface_source_fetch() -> None:
     )
 
     path.unlink()
+
+
+@pytest.mark.skipif(
+    env_vars_not_set([HF_TOKEN_ENV]),
+    reason="Hugging Face environment variables not set",
+)
+async def test_huggingface_source_fetch_not_found() -> None:
+    source = HuggingFaceSource(path=HF_DATASET_PATH, row=1000)
+
+    with pytest.raises(SourceNotFoundError) as exc:
+        await source.fetch()
+
+    assert str(exc.value) == "Source with ID huggingface:micpst/hf-docs/train/1000 not found."

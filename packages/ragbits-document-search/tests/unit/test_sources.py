@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from ragbits.document_search.documents.sources import LOCAL_STORAGE_DIR_ENV, GCSSource, HuggingFaceSource
 
@@ -22,18 +22,16 @@ async def test_gcs_source_fetch() -> None:
 
 
 async def test_huggingface_source_fetch() -> None:
-    dataset = [
-        {"content": "This is the first document.", "source": "first_document.txt"},
-        {"content": "This is the second document.", "source": "second_document.txt"},
-        {"content": "This is the third document.", "source": "third_document.txt"},
-    ]
-    source = HuggingFaceSource(hf_path="org/docs?row=1")
+    take = MagicMock(return_value=[{"content": "This is the content of the file.", "source": "doc.md"}])
+    skip = MagicMock(return_value=MagicMock(take=take))
+    data = MagicMock(skip=skip)
+    source = HuggingFaceSource(path="org/docs", split="train", row=1)
 
-    with patch("ragbits.document_search.documents.sources.load_dataset", return_value=dataset):
+    with patch("ragbits.document_search.documents.sources.load_dataset", return_value=data):
         path = await source.fetch()
 
-    assert source.id == "huggingface:org/docs?row=1"
-    assert path.name == "second_document.txt"
-    assert path.read_text() == "This is the second document."
+    assert source.id == "huggingface:org/docs/train/1"
+    assert path.name == "doc.md"
+    assert path.read_text() == "This is the content of the file."
 
     path.unlink()

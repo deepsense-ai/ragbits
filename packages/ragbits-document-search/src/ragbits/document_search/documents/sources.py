@@ -8,11 +8,13 @@ from pydantic import BaseModel
 
 try:
     from datasets import load_dataset
+    from datasets.exceptions import DatasetNotFoundError
     from gcloud.aio.storage import Storage
 except ImportError:
     pass
 
 from ragbits.core.utils.decorators import requires_dependencies
+from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
@@ -66,7 +68,12 @@ class LocalFileSource(Source):
 
         Returns:
             The local path to the object fetched from the source.
+
+        Raises:
+            SourceNotFoundError: If the source document is not found.
         """
+        if not self.path.is_file():
+            raise SourceNotFoundError(source_id=self.id)
         return self.path
 
 
@@ -103,7 +110,7 @@ class GCSSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
-            ImportError: If the required 'gcloud' package is not installed.
+            ImportError: If the 'gcp' extra is not installed.
         """
         local_dir = get_local_storage_dir()
         bucket_local_dir = local_dir / self.bucket
@@ -112,6 +119,7 @@ class GCSSource(Source):
 
         if not path.is_file():
             async with Storage() as client:  # type: ignore
+                # TODO: Add error handling for download
                 content = await client.download(self.bucket, self.object_name)
                 Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
                 with open(path, mode="wb+") as file_object:
@@ -126,7 +134,9 @@ class HuggingFaceSource(Source):
     """
 
     source_type: Literal["huggingface"] = "huggingface"
-    hf_path: str
+    path: str
+    split: str = "train"
+    row: int
 
     @property
     def id(self) -> str:
@@ -136,7 +146,7 @@ class HuggingFaceSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"huggingface:{self.hf_path}"
+        return f"huggingface:{self.path}/{self.split}/{self.row}"
 
     @requires_dependencies(["datasets"], "huggingface")
     async def fetch(self) -> Path:
@@ -147,11 +157,21 @@ class HuggingFaceSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
-            ImportError: If the required 'datasets' package is not installed.
+            ImportError: If the 'huggingface' extra is not installed.
+            SourceConnectionError: If the source connection fails.
+            SourceNotFoundError: If the source document is not found.
         """
-        hf_path, row = self.hf_path.split("?row=")
-        dataset = load_dataset(path=hf_path, split="train")  # type: ignore
-        data = dataset[int(row)]  # type: ignore
+        try:
+            dataset = load_dataset(self.path, split=self.split, streaming=True)  # type: ignore
+        except ConnectionError as exc:
+            raise SourceConnectionError() from exc
+        except DatasetNotFoundError as exc:  # type: ignore
+            raise SourceNotFoundError(source_id=self.id) from exc
+
+        try:
+            data = next(iter(dataset.skip(self.row).take(1)))  # type: ignore
+        except StopIteration as exc:
+            raise SourceNotFoundError(source_id=self.id) from exc
 
         storage_dir = get_local_storage_dir()
         source_dir = storage_dir / Path(data["source"]).parent  # type: ignore
