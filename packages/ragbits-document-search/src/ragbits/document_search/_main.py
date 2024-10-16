@@ -104,7 +104,6 @@ class DocumentSearch:
         if self.reranker and query:
             return self.reranker.rerank(elements, query=query)
         return self.reranker.rerank(elements)
-        
 
     async def ingest_document(
         self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None

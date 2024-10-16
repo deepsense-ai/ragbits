@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker
@@ -10,12 +10,13 @@ class NoopReranker(Reranker):
     """
 
     @staticmethod
-    def rerank(chunks: List[Element]) -> List[Element]:
+    def rerank(chunks: List[Element], **kwargs: Any) -> List[Element]:
         """
         No reranking, returning the same chunks as in input.
 
         Args:
             chunks: The chunks to rerank.
+            kwargs: Additional arguments.
 
         Returns:
             The reranked chunks.

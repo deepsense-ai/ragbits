@@ -27,8 +27,9 @@ documents = [
 async def main():
     """Run the example."""
 
-
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore(), reranker=LiteLLMReranker())
+    document_search = DocumentSearch(
+        embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore(), reranker=LiteLLMReranker()
+    )
 
     for document in documents:
         await document_search.ingest_document(document)

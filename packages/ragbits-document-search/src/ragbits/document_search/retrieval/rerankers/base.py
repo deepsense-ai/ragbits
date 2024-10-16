@@ -17,6 +17,7 @@ class Reranker(abc.ABC):
 
         Args:
             chunks: The chunks to rerank.
+            kwargs: Additional arguments.
 
         Returns:
             The reranked chunks.
