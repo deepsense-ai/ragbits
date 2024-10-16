@@ -174,13 +174,13 @@ class HuggingFaceSource(Source):
             raise SourceNotFoundError(source_id=self.id) from exc
 
         storage_dir = get_local_storage_dir()
-        source_dir = storage_dir / Path(data["source"]).parent  # type: ignore
+        source_dir = storage_dir / Path(data["source"]).parent
         source_dir.mkdir(parents=True, exist_ok=True)
-        path = storage_dir / data["source"]  # type: ignore
+        path = storage_dir / data["source"]
 
         if not path.is_file():
             with open(path, mode="w", encoding="utf-8") as file:
-                file.write(data["content"])  # type: ignore
+                file.write(data["content"])
 
         return path
 
