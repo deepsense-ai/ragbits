@@ -26,7 +26,8 @@ repos:
         # Formats Python, Pyi, and Jupyter files, excluding specified directories
         - id: ruff-format
           types_or: [ python, pyi, jupyter ]
-          exclude: (docs/)
+          exclude: (docs/|/tests/)
+          args: [ --quiet ]
 
       # Used to have proper type annotations for library code.
     - repo: https://github.com/pre-commit/mirrors-mypy
