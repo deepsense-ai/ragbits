@@ -36,9 +36,6 @@ def run() -> None:
     src_dir.mkdir(exist_ok=True, parents=True)
     (src_dir / "__init__.py").touch()
 
-    examples_dir = package_dir / "examples"
-    examples_dir.mkdir(exist_ok=True)
-
     tests_dir = package_dir / "tests"
     tests_dir.mkdir(exist_ok=True)
 
