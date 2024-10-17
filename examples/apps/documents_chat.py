@@ -109,7 +109,7 @@ class RAGSystemWithUI:
 
     async def _create_database(self, document_paths: list[str]) -> str:
         for path in document_paths:
-            await self.document_search.ingest_document(DocumentMeta.from_local_path(Path(path)))
+            await self.document_search.ingest([DocumentMeta.from_local_path(Path(path))])
         self._documents_ingested = True
         return self.DATABASE_CREATED_MESSAGE + self._database_path
 
