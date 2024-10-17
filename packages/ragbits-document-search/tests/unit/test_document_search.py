@@ -40,7 +40,7 @@ CONFIG = {
 async def test_document_search_from_config(document, expected):
     document_search = DocumentSearch.from_config(CONFIG)
 
-    await document_search.ingest_document(document)
+    await document_search.ingest([document])
     results = await document_search.search("Peppa's brother")
 
     first_result = results[0]
@@ -49,7 +49,7 @@ async def test_document_search_from_config(document, expected):
     assert first_result.content == expected
 
 
-async def test_document_search_ingest_document_from_source():
+async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
@@ -66,7 +66,7 @@ async def test_document_search_ingest_document_from_source():
 
         source = LocalFileSource(path=Path(f.name))
 
-        await document_search.ingest_document(source)
+        await document_search.ingest([source])
 
         results = await document_search.search("Peppa's brother")
 
@@ -85,13 +85,13 @@ async def test_document_search_ingest_document_from_source():
         ),
     ],
 )
-async def test_document_search_ingest_document(document: Union[DocumentMeta, Document]):
+async def test_document_search_ingest(document: Union[DocumentMeta, Document]):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
     document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
 
-    await document_search.ingest_document(document, document_processor=DummyProvider())
+    await document_search.ingest([document], document_processor=DummyProvider())
 
     results = await document_search.search("Peppa's brother")
 
@@ -138,8 +138,8 @@ async def test_document_search_with_search_config():
 
     document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
 
-    await document_search.ingest_document(
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+    await document_search.ingest(
+        [DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")],
         document_processor=DummyProvider(),
     )
 
@@ -149,11 +149,11 @@ async def test_document_search_with_search_config():
     assert results[0].content == "Name of Peppa's brother is George"
 
 
-async def test_document_search_insert_documents():
+async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent / "example_files"
 
-    await document_search.ingest_documents(
+    await document_search.ingest(
         LocalFileSource.list_sources(examples_files, file_pattern="*.md"),
         document_processor=DummyProvider(),
     )

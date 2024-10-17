@@ -131,24 +131,7 @@ class DocumentSearch:
         document_processor = self.document_processor_router.get_provider(document_meta)
         return await document_processor.process(document_meta)
 
-    async def ingest_document(
-        self,
-        document: Union[DocumentMeta, Document, Union[LocalFileSource, GCSSource]],
-        document_processor: Optional[BaseProvider] = None,
-    ) -> None:
-        """
-        Ingest a document.
-
-        Args:
-            document: The document or metadata of the document to ingest.
-            document_processor: The document processor to use. If not provided, the document processor will be
-                determined based on the document metadata.
-        """
-
-        elements = await self._process_document(document, document_processor)
-        await self.insert_elements(elements)
-
-    async def ingest_documents(
+    async def ingest(
         self,
         documents: Sequence[DocumentMeta | Document | Union[LocalFileSource, GCSSource]],
         document_processor: Optional[BaseProvider] = None,
