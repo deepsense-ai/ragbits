@@ -4,9 +4,10 @@ from typing import Optional
 from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import QueryRephraser
+from .llm import LLMQueryRephraser
 from .noop import NoopQueryRephraser
 
-__all__ = ["NoopQueryRephraser", "QueryRephraser"]
+__all__ = ["NoopQueryRephraser", "QueryRephraser", "LLMQueryRephraser"]
 
 module = sys.modules[__name__]
 
@@ -29,4 +30,4 @@ def get_rephraser(rephraser_config: Optional[dict]) -> QueryRephraser:
     rephraser_cls = get_cls_from_config(rephraser_config["type"], module)
     config = rephraser_config.get("config", {})
 
-    return rephraser_cls(**config)
+    return rephraser_cls.from_config(config)
