@@ -10,7 +10,7 @@ class NoopReranker(Reranker):
     """
 
     @staticmethod
-    def rerank(chunks: List[Element], **kwargs: Any) -> List[Element]:
+    def rerank(chunks: List[Element], **kwargs: Any) -> List[Element]:  # pylint: disable=unused-argument
         """
         No reranking, returning the same chunks as in input.
 

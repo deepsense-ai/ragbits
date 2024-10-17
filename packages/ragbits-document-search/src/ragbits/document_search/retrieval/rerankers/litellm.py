@@ -22,6 +22,9 @@ class LiteLLMReranker(Reranker):
 
         Returns:
             The reranked chunks.
+
+        Raises:
+            ValueError: If chunks are not a list of TextElement objects.
         """
         if not all(isinstance(chunk, TextElement) for chunk in chunks):
             raise ValueError("All chunks must be TextElement instances")
