@@ -28,8 +28,7 @@ async def main():
 
     document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
 
-    for document in documents:
-        await document_search.ingest_document(document)
+    await document_search.ingest(documents)
 
     results = await document_search.search("I'm boiling my water and I need a joke")
     print(results)
