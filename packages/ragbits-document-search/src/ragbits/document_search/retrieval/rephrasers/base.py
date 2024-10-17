@@ -2,6 +2,7 @@ import abc
 from typing import Optional
 
 from ragbits.core.llms.base import LLMOptions
+from ragbits.core.prompt import Prompt
 
 
 class QueryRephraser(abc.ABC):
@@ -10,13 +11,16 @@ class QueryRephraser(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def rephrase(self, query: str, options: Optional[LLMOptions] = None) -> list[str]:
+    async def rephrase(
+        self, query: Optional[str] = None, prompt: Optional[Prompt] = None, options: Optional[LLMOptions] = None
+    ) -> list[str]:
         """
         Rephrase a query.
 
         Args:
             query: The query to rephrase.
-            options: OptionaL options to fine-tune the rephraser behavior.
+            options: Optional configuration of the the rephraser behavior.
+            prompt: Optional prompt.
 
         Returns:
             The rephrased queries.

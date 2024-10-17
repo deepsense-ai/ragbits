@@ -2,8 +2,7 @@ from typing import Optional
 
 from ragbits.core.llms import get_llm
 from ragbits.core.llms.base import LLM, LLMOptions
-from ragbits.core.utils.config_handling import get_cls_from_config
-from ragbits.document_search.retrieval import rephrasers
+from ragbits.core.prompt import Prompt
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.prompt_query_rephraser import QueryRephraserPrompt, _PromptInput
 
@@ -11,33 +10,44 @@ from ragbits.document_search.retrieval.rephrasers.prompt_query_rephraser import 
 class LLMQueryRephraser(QueryRephraser):
     """A rephraser class that uses a LLM to rephrase queries."""
 
-    def __init__(self, llm: LLM, prompt: Optional[QueryRephraserPrompt] = None):
+    def __init__(self, llm: LLM):
         """
-        Initialize the LLMQueryRephraser with a LLM and an optional prompt.
+        Initialize the LLMQueryRephraser with a LLM.
 
         Args:
             llm: A LLM instance to handle query rephrasing.
-            prompt: A prompt defining how the rephrasing should be done.
-                If not provided, the default `QueryRephraserPrompt` is used.
         """
 
-        self._prompt = prompt or QueryRephraserPrompt
         self._llm = llm
 
-    async def rephrase(self, query: str, options: Optional[LLMOptions] = None) -> list[str]:
+    async def rephrase(
+        self, query: Optional[str] = None, prompt: Optional[Prompt] = None, options: Optional[LLMOptions] = None
+    ) -> list[str]:
         """
         Rephrase a given query using the LLM.
 
         Args:
-            query: The query to be rephrased.
-            options: OptionaL LLM options to fine-tune the generation behavior.
+            query: The query to be rephrased. If not provided, a custom prompt must be given.
+            prompt: A prompt object defining how the rephrasing should be done.
+                    If not provided, the default `QueryRephraserPrompt` is used, along with the provided query.
+            options: Optional settings for the LLM to control generation behavior.
 
         Returns:
             A list containing the rephrased query.
+
+        Raises:
+            ValueError: If both `query` and `prompt` are None.
         """
 
-        prompt = QueryRephraserPrompt(_PromptInput(query=query))
-        response = await self._llm.generate(prompt, options=options)
+        if query is None and prompt is None:
+            raise ValueError("Either `query` or `prompt` must be provided.")
+
+        if prompt is not None:
+            response = await self._llm.generate(prompt, options=options)
+
+        else:
+            assert isinstance(query, str)
+            response = await self._llm.generate(QueryRephraserPrompt(_PromptInput(query=query)), options=options)
 
         return [response]
 
@@ -54,11 +64,5 @@ class LLMQueryRephraser(QueryRephraser):
         """
 
         llm = get_llm(config["llm"])
-
-        prompt_config = config.get("prompt")
-
-        if prompt_config:
-            prompt = get_cls_from_config(prompt_config["type"], rephrasers)
-            return cls(llm=llm, prompt=prompt)
 
         return cls(llm=llm)
