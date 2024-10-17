@@ -175,3 +175,6 @@ exclude_dirs = ["venv"]
 # B101 disables errors for asserts in the code
 # remember to not use asserts for security and control flows
 skips = ["B101"]
+
+[tool.semantic_release.branches.main]
+match = "ak/release_changelog"
