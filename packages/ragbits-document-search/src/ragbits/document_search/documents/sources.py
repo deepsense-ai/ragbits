@@ -78,10 +78,7 @@ class LocalFileSource(Source):
         Returns:
             List of source objects.
         """
-        sources = []
-        for file_path in path.glob(file_pattern):
-            sources.append(cls(path=file_path))
-        return sources
+        return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
 
 class GCSSource(Source):
