@@ -1,0 +1,11 @@
+defaults:
+  - data: hf-docs
+  - setup: baseline
+  - _self_
+
+task:
+  name: document-search
+
+neptune:
+  project: ragbits
+  run: False
