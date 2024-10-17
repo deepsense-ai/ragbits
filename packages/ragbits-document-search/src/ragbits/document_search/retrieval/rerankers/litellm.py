@@ -11,14 +11,19 @@ class LiteLLMReranker(Reranker):
     A LiteLLM reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    @staticmethod
-    def rerank(chunks: List[Element], **kwargs: Any) -> List[Element]:
+    model: str
+    top_n: int | None = None
+    return_documents: bool = True
+    rank_fields: list[str] | None = None
+    max_chunks_per_doc: int | None = None
+
+    def rerank(self, chunks: List[Element], query: str) -> List[Element]:
         """
         Reranking with LiteLLM API.
 
         Args:
             chunks: The chunks to rerank.
-            kwargs: Additional arguments for the LiteLLM API.
+            query: The query to rerank the chunks against.
 
         Returns:
             The reranked chunks.
@@ -32,11 +37,13 @@ class LiteLLMReranker(Reranker):
         documents = [chunk.content if isinstance(chunk, TextElement) else None for chunk in chunks]
 
         response = litellm.rerank(
-            model="cohere/rerank-english-v3.0",
-            query=kwargs.get("query"),
+            model=self.model,
+            query=query,
             documents=documents,
-            top_n=kwargs.get("top_n"),
-            return_documents=False,
+            top_n=self.top_n,
+            return_documents=self.return_documents,
+            rank_fields=self.rank_fields,
+            max_chunks_per_doc=self.max_chunks_per_doc,
         )
         target_order = [result["index"] for result in response.results]
         reranked_chunks = [chunks[i] for i in target_order]

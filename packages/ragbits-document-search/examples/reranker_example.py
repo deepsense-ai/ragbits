@@ -28,7 +28,9 @@ async def main():
     """Run the example."""
 
     document_search = DocumentSearch(
-        embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore(), reranker=LiteLLMReranker()
+        embedder=LiteLLMEmbeddings(),
+        vector_store=InMemoryVectorStore(),
+        reranker=LiteLLMReranker(model="cohere/rerank-english-v3.0"),
     )
 
     for document in documents:
