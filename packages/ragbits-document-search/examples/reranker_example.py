@@ -37,13 +37,6 @@ async def main():
     """Run the example."""
     document_search = DocumentSearch.from_config(config)
 
-
-    # document_search = DocumentSearch(
-    #     embedder=LiteLLMEmbeddings(),
-    #     vector_store=InMemoryVectorStore(),
-    #     reranker=LiteLLMReranker(model="cohere/rerank-english-v3.0"),
-    # )
-
     for document in documents:
         await document_search.ingest_document(document)
 
