@@ -7,11 +7,8 @@
 # ///
 import asyncio
 
-from ragbits.core.embeddings import LiteLLMEmbeddings
-from ragbits.core.vector_store import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
@@ -25,10 +22,11 @@ documents = [
 
 config = {
     "embedder": {"type": "LiteLLMEmbeddings"},
-    "vector_store": {
-        "type": "InMemoryVectorStore"
+    "vector_store": {"type": "InMemoryVectorStore"},
+    "reranker": {
+        "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+        "config": {"model": "cohere/rerank-english-v3.0"},
     },
-    "reranker": {"type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker", "config": {"model": "cohere/rerank-english-v3.0"}},
     "providers": {"txt": {"type": "DummyProvider"}},
 }
 

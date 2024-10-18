@@ -13,7 +13,7 @@ class LiteLLMReranker(Reranker):
 
     model: str
     top_n: int | None = None
-    return_documents: bool = True
+    return_documents: bool = False
     rank_fields: list[str] | None = None
     max_chunks_per_doc: int | None = None
 
