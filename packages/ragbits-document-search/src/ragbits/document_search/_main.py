@@ -102,7 +102,7 @@ class DocumentSearch:
             entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
-        return self.reranker.rerank(elements)
+        return self.reranker.rerank(elements, query=query)
 
     async def _process_document(
         self,
