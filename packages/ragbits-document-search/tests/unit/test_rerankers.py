@@ -1,5 +1,7 @@
 from pathlib import Path
+
 import pytest
+
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.documents.sources import LocalFileSource
@@ -36,7 +38,6 @@ def mock_document_meta():
 @pytest.fixture
 def mock_custom_element(mock_document_meta):
     class CustomElement(Element):
-
         def get_key(self):
             return "test_key"
 
@@ -44,7 +45,10 @@ def mock_custom_element(mock_document_meta):
 
 
 def test_rerank_success(reranker, mock_litellm_response, mock_document_meta):
-    chunks = [TextElement(content="chunk1", document_meta=mock_document_meta), TextElement(content="chunk2", document_meta=mock_document_meta)]
+    chunks = [
+        TextElement(content="chunk1", document_meta=mock_document_meta),
+        TextElement(content="chunk2", document_meta=mock_document_meta),
+    ]
     query = "test query"
 
     reranked_chunks = reranker.rerank(chunks, query)
