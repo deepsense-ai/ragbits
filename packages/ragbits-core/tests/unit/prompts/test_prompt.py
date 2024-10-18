@@ -307,7 +307,10 @@ def test_few_shot_int_output():
     prompt.add_few_shot(_PromptInput(theme="pop", name="The blood of a demon", age=75), False)
 
     assert prompt.chat == [
-        {"role": "system", "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit."},
+        {
+            "role": "system",
+            "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit.",
+        },
         {"role": "user", "content": "The name is I love you more than my cat, the theme is pop and the age is 15."},
         {"role": "assistant", "content": "True"},
         {"role": "user", "content": "The name is The blood of a demon, the theme is pop and the age is 75."},
