@@ -1,7 +1,6 @@
 from typing import Optional
 
 from ragbits.core.llms.base import LLMOptions
-from ragbits.core.prompt import Prompt
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 
 
@@ -12,8 +11,7 @@ class NoopQueryRephraser(QueryRephraser):
 
     async def rephrase(
         self,
-        query: Optional[str] = None,
-        prompt: Optional[Prompt] = None,  # pylint: disable=unused-argument
+        query: str,
         options: Optional[LLMOptions] = None,  # pylint: disable=unused-argument
     ) -> list[str]:
         """
@@ -22,7 +20,6 @@ class NoopQueryRephraser(QueryRephraser):
         Args:
             query: The query to rephrase.
             options: Optional configuration of the the rephraser behavior.
-            prompt: Optional prompt.
 
         Returns:
             The list with non-transformed query.
