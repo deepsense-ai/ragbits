@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Generic, List, Optional, Type
+from typing import Dict, Generic, Optional, Type
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar
 
-ChatFormat = List[Dict[str, str]]
+ChatFormat = list[dict[str, str]]
 OutputT = TypeVar("OutputT", default=str)
 
 

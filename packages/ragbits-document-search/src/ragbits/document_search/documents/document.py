@@ -28,6 +28,8 @@ class DocumentType(str, Enum):
     RTF = "rtf"
     TSV = "tsv"
     XML = "xml"
+    JPG = "jpg"
+    PNG = "png"
 
     UNKNOWN = "unknown"
 

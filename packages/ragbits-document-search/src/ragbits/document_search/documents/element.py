@@ -85,3 +85,23 @@ class TextElement(Element):
             The key.
         """
         return self.content
+
+
+class ImageElement(Element):
+    """
+    An object representing an image element in a document.
+    """
+
+    element_type: str = "image"
+    description: str
+    ocr_extracted_text: str
+    image_bytes: bytes
+
+    def get_key(self) -> str:
+        """
+        Get the key of the element which will be used to generate the vector.
+
+        Returns:
+            The key.
+        """
+        return self.description + " " + self.ocr_extracted_text

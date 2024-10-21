@@ -19,7 +19,6 @@ from ragbits.core.prompt import Prompt
 from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import TextElement
 
 
 class QueryWithContext(BaseModel):
@@ -124,9 +123,7 @@ class RAGSystemWithUI:
         if not self._documents_ingested:
             yield self.NO_DOCUMENTS_INGESTED_MESSAGE
         results = await self.document_search.search(message[-1])
-        prompt = RAGPrompt(
-            QueryWithContext(query=message, context=[i.content for i in results if isinstance(i, TextElement)])
-        )
+        prompt = RAGPrompt(QueryWithContext(query=message, context=[i.get_key() for i in results]))
         response = await self._llm.generate(prompt)
         yield response.answer
 

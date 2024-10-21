@@ -34,7 +34,8 @@ dependencies = [
     "numpy~=1.24.0",
     "unstructured>=0.15.13",
     "unstructured-client>=0.26.0",
-    "ragbits-core==0.1.0",
+    "pdf2image>=1.17.0",
+    "ragbits-core==0.1.0"
 ]
 
 [project.optional-dependencies]
