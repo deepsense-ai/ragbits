@@ -1,8 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-import pymupdf
-from PIL import Image
+from pdf2image import convert_from_path
 from unstructured.documents.coordinates import CoordinateSystem, Orientation
 from unstructured.documents.elements import Element as UnstructuredElement
 
@@ -67,13 +66,10 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
     ) -> ImageElement:
         image_coordinates = extract_image_coordinates(element)
-        page_number = element.metadata.page_number - 1  # 0-indexed in PyMuPDF
+        page_number = element.metadata.page_number
+        image = convert_from_path(document_path, first_page=page_number, last_page=page_number)[0]
 
-        pdf_document = pymupdf.open(document_path)
-        page = pdf_document.load_page(page_number)
-
-        pixel_map = page.get_pixmap(dpi=self.pdf_dpi)
-        new_system = CoordinateSystem(pixel_map.width, pixel_map.height)
+        new_system = CoordinateSystem(image.width, image.height)
         new_system.orientation = Orientation.SCREEN
         x0, y0 = element.metadata.coordinates.system.convert_coordinates_to_new_system(
             new_system, image_coordinates[0], image_coordinates[1]
@@ -82,7 +78,6 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
             new_system, image_coordinates[2], image_coordinates[3]
         )
 
-        image = Image.frombytes("RGB", [pixel_map.width, pixel_map.height], pixel_map.samples)
         img_bytes = crop_and_convert_to_bytes(image, x0, y0, x1, y1)
         image_description = await self.image_summarizer.get_image_description(img_bytes)
         return ImageElement(
