@@ -60,7 +60,11 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
     ) -> ImageElement:
         top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
-        image = Image.open(document_path).convert("RGB")
+        image = self._load_document_as_image(document_path)
+        top_x, top_y, bottom_x, bottom_y = self._convert_coordinates(
+            top_x, top_y, bottom_x, bottom_y, image.width, image.height, element
+        )
+
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
         image_description = await self.image_summarizer.get_image_description(img_bytes)
         return ImageElement(
@@ -69,3 +73,22 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             image_bytes=img_bytes,
             document_meta=document_meta,
         )
+
+    @staticmethod
+    def _load_document_as_image(
+        document_path: Path, page: Optional[int] = None  # pylint: disable=unused-argument
+    ) -> Image:
+        return Image.open(document_path).convert("RGB")
+
+    @staticmethod
+    def _convert_coordinates(
+        # pylint: disable=unused-argument
+        top_x: float,
+        top_y: float,
+        bottom_x: float,
+        bottom_y: float,
+        image_width: int,
+        image_height: int,
+        element: UnstructuredElement,
+    ) -> tuple[float, float, float, float]:
+        return top_x, top_y, bottom_x, bottom_y

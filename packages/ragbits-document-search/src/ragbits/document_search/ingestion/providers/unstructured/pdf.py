@@ -2,24 +2,15 @@ from pathlib import Path
 from typing import Optional
 
 from pdf2image import convert_from_path
+from PIL import Image
 from unstructured.documents.coordinates import CoordinateSystem, Orientation
 from unstructured.documents.elements import Element as UnstructuredElement
 
-from ragbits.core.llms.litellm import LiteLLMOptions
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import ImageElement
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
-from ragbits.document_search.ingestion.providers.unstructured.utils import (
-    ImageDescriber,
-    crop_and_convert_to_bytes,
-    extract_image_coordinates,
-)
-
-DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
-DEFAULT_LLM_OPTIONS = LiteLLMOptions()
+from ragbits.document_search.documents.document import DocumentType
+from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
 
 
-class UnstructuredPdfProvider(UnstructuredDefaultProvider):
+class UnstructuredPdfProvider(UnstructuredImageProvider):
     """
     A specialized provider that handles pdfs using the Unstructured
     """
@@ -28,51 +19,26 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
         DocumentType.PDF,
     }
 
-    def __init__(
-        self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
-        use_api: bool = False,
-        llm_model_name: Optional[str] = None,
-        llm_options: Optional[LiteLLMOptions] = None,
-    ) -> None:
-        """Initialize the UnstructuredPdfProvider.
+    @staticmethod
+    def _load_document_as_image(document_path: Path, page: Optional[int] = None) -> Image:
+        return convert_from_path(document_path, first_page=page, last_page=page)[0]
 
-        Args:
-            partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
-                for the available options: https://docs.unstructured.io/api-reference/api-services/api-parameters
-            chunking_kwargs: The additional arguments for the chunking.
-            api_key: The API key to use for the Unstructured API. If not specified, the UNSTRUCTURED_API_KEY environment
-                variable will be used.
-            api_server: The API server URL to use for the Unstructured API. If not specified, the
-                UNSTRUCTURED_SERVER_URL environment variable will be used.
-            llm_model_name: name of LLM model to be used.
-            llm_options: llm lite options to be used.
-        """
-        super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_summarizer = ImageDescriber(
-            llm_model_name or DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL, llm_options or DEFAULT_LLM_OPTIONS
-        )
-
-    async def _to_image_element(
-        self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
-    ) -> ImageElement:
-        top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
-        page_number = element.metadata.page_number
-        image = convert_from_path(document_path, first_page=page_number, last_page=page_number)[0]
-
-        new_system = CoordinateSystem(image.width, image.height)
+    @staticmethod
+    def _convert_coordinates(
+        top_x: float,
+        top_y: float,
+        bottom_x: float,
+        bottom_y: float,
+        image_width: int,
+        image_height: int,
+        element: UnstructuredElement,
+    ) -> tuple[float, float, float, float]:
+        new_system = CoordinateSystem(image_width, image_height)
         new_system.orientation = Orientation.SCREEN
-        x0, y0 = element.metadata.coordinates.system.convert_coordinates_to_new_system(new_system, top_x, top_y)
-        x1, y1 = element.metadata.coordinates.system.convert_coordinates_to_new_system(new_system, bottom_x, bottom_y)
-
-        img_bytes = crop_and_convert_to_bytes(image, x0, y0, x1, y1)
-        image_description = await self.image_summarizer.get_image_description(img_bytes)
-        return ImageElement(
-            description=image_description,
-            ocr_extracted_text=element.text,
-            image_bytes=img_bytes,
-            document_meta=document_meta,
+        new_top_x, new_top_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(
+            new_system, top_x, top_y
         )
+        new_bottom_x, new_bottom_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(
+            new_system, bottom_x, bottom_y
+        )
+        return new_top_x, new_top_y, new_bottom_x, new_bottom_y

@@ -121,4 +121,4 @@ class ImageDescriber:
                 ],
             }
         ]
-        return await self.llm.client.call(messages, self.llm_options)
+        return await self.llm.client.call(messages, self.llm_options)  # type: ignore
