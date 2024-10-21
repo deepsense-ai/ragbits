@@ -38,12 +38,6 @@ def register(app: typer.Typer) -> None:
     ) -> None:
         """
         Generates the configuration files for the PromptFoo prompts.
-
-        This function registers all the CLI modules in the ragbits packages:
-            - iterates over every package in the ragbits.* namespace
-            - it looks for `cli` package / module
-            - if found it imports the `register` function from the `cli` module and calls it with the `app` object
-            - register function should add the CLI commands to the `app` object
         """
         from ragbits.core.prompt.promptfoo import generate_configs
 
