@@ -8,7 +8,7 @@ dependencies = [
     "ragbits-cli",
     "ragbits-core[litellm,local,lab,chromadb]",
     "ragbits-document-search[gcs, huggingface]",
-    "ragbits-evaluate",
+    "ragbits-evaluate[relari]",
 ]
 
 [tool.uv]
