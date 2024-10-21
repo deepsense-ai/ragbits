@@ -1,5 +1,5 @@
-import os
 from io import BytesIO
+from pathlib import Path
 from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
@@ -9,8 +9,9 @@ from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element, TextElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.providers.unstructured.utils import set_or_raise, to_text_element
 
 DEFAULT_PARTITION_KWARGS: dict = {
     "strategy": "hi_res",
@@ -26,15 +27,14 @@ UNSTRUCTURED_API_KEY_ENV = "UNSTRUCTURED_API_KEY"
 UNSTRUCTURED_SERVER_URL_ENV = "UNSTRUCTURED_SERVER_URL"
 
 
-class UnstructuredProvider(BaseProvider):
+class UnstructuredDefaultProvider(BaseProvider):
     """
-    A provider that uses the Unstructured API to process the documents.
+    A provider that uses the Unstructured API or local SDK to process the documents.
     """
 
     SUPPORTED_DOCUMENT_TYPES = {
         DocumentType.TXT,
         DocumentType.MD,
-        DocumentType.PDF,
         DocumentType.DOCX,
         DocumentType.DOC,
         DocumentType.PPTX,
@@ -59,8 +59,9 @@ class UnstructuredProvider(BaseProvider):
         api_key: Optional[str] = None,
         api_server: Optional[str] = None,
         use_api: bool = False,
+        ignore_images: bool = False,
     ) -> None:
-        """Initialize the UnstructuredProvider.
+        """Initialize the UnstructuredDefaultProvider.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
@@ -70,6 +71,8 @@ class UnstructuredProvider(BaseProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
+            use_api: whether to use unstructured API
+            ignore_images: if True images will be skipped
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
         self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
@@ -77,6 +80,7 @@ class UnstructuredProvider(BaseProvider):
         self.api_server = api_server
         self.use_api = use_api
         self._client = None
+        self.ignore_images = ignore_images
 
     @property
     def client(self) -> UnstructuredClient:
@@ -91,8 +95,8 @@ class UnstructuredProvider(BaseProvider):
         """
         if self._client is not None:
             return self._client
-        api_key = _set_or_raise(name="api_key", value=self.api_key, env_var=UNSTRUCTURED_API_KEY_ENV)
-        api_server = _set_or_raise(name="api_server", value=self.api_server, env_var=UNSTRUCTURED_SERVER_URL_ENV)
+        api_key = set_or_raise(name="api_key", value=self.api_key, env_var=UNSTRUCTURED_API_KEY_ENV)
+        api_server = set_or_raise(name="api_server", value=self.api_server, env_var=UNSTRUCTURED_SERVER_URL_ENV)
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
@@ -120,6 +124,7 @@ class UnstructuredProvider(BaseProvider):
                             "content": document.local_path.read_bytes(),
                             "file_name": document.local_path.name,
                         },
+                        "coordinates": True,
                         **self.partition_kwargs,
                     }
                 }
@@ -132,20 +137,26 @@ class UnstructuredProvider(BaseProvider):
                 **self.partition_kwargs,
             )
 
-        elements = chunk_elements(elements, **self.chunking_kwargs)
-        return [_to_text_element(element, document_meta) for element in elements]
+        return await self._chunk_and_convert(elements, document_meta, document.local_path)
 
+    async def _chunk_and_convert(
+        self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
+    ) -> list[Element]:
+        if self.__class__ == UnstructuredDefaultProvider:
+            chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
+            return [to_text_element(element, document_meta) for element in chunked_elements]
+        image_elements = [e for e in elements if e.category == "Image"]
+        other_elements = [e for e in elements if e.category != "Image"]
+        chunked_other_elements = chunk_elements(other_elements, **self.chunking_kwargs)
 
-def _to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -> TextElement:
-    return TextElement(
-        document_meta=document_meta,
-        content=element.text,
-    )
+        text_elements: list[Element] = [to_text_element(element, document_meta) for element in chunked_other_elements]
+        if self.ignore_images:
+            return text_elements
+        return text_elements + [
+            await self._to_image_element(element, document_meta, document_path) for element in image_elements
+        ]
 
-
-def _set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
-    if value is not None:
-        return value
-    if (env_value := os.getenv(env_var)) is None:
-        raise ValueError(f"Either pass {name} argument or set the {env_var} environment variable")
-    return env_value
+    async def _to_image_element(
+        self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
+    ) -> Element:
+        raise NotImplementedError("UnstructuredDefaultProvider doesn't support image conversion")
