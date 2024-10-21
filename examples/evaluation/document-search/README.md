@@ -27,3 +27,9 @@ uv run evaluate.py +experiments=chunking-250
 ```sh
 uv run evaluate.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
 ```
+
+### Log to Neptune
+
+```sh
+uv run evaluate.py neptune.run=True
+```
