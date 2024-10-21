@@ -28,14 +28,14 @@ def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -
     )
 
 
-def set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
+def check_required_argument(value: Optional[str], arg_name: str, fallback_env: str) -> str:
     """
     Checks if given environment variable is set and returns it or raises an error
 
     Args:
-        name: name of the variable
+        arg_name: name of the variable
         value: optional default value
-        env_var: name of the environment variable to get
+        fallback_env: name of the environment variable to get
 
     Raises:
         ValueError: if environment variable is not set
@@ -45,8 +45,8 @@ def set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
     """
     if value is not None:
         return value
-    if (env_value := os.getenv(env_var)) is None:
-        raise ValueError(f"Either pass {name} argument or set the {env_var} environment variable")
+    if (env_value := os.getenv(fallback_env)) is None:
+        raise ValueError(f"Either pass {arg_name} argument or set the {fallback_env} environment variable")
     return env_value
 
 
@@ -87,10 +87,10 @@ class ImageDescriber:
 
     DEFAULT_PROMPT = "Describe the content of the image."
 
-    def __init__(self, model_name: str, model_options: LiteLLMOptions):
-        self.model_name = model_name
-        self.model: Optional[LiteLLM] = None
-        self.model_options = model_options
+    def __init__(self, llm_name: str, llm_options: LiteLLMOptions):
+        self.llm_name = llm_name
+        self.llm: Optional[LiteLLM] = None
+        self.llm_options = llm_options
 
     async def get_image_description(self, image_bytes: bytes, prompt: Optional[str] = DEFAULT_PROMPT) -> str:
         """
@@ -103,8 +103,8 @@ class ImageDescriber:
         Returns:
             summary of the image
         """
-        if not self.model:
-            self.model = LiteLLM(self.model_name)
+        if not self.llm:
+            self.llm = LiteLLM(self.llm_name)
 
         img_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
@@ -121,4 +121,4 @@ class ImageDescriber:
                 ],
             }
         ]
-        return await self.model.client.call(messages, self.model_options)
+        return await self.llm.client.call(messages, self.llm_options)

@@ -59,9 +59,9 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
     async def _to_image_element(
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
     ) -> ImageElement:
-        image_coordinates = extract_image_coordinates(element)
+        top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
         image = Image.open(document_path).convert("RGB")
-        img_bytes = crop_and_convert_to_bytes(image, *image_coordinates)
+        img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
         image_description = await self.image_summarizer.get_image_description(img_bytes)
         return ImageElement(
             description=image_description,

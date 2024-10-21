@@ -4,6 +4,7 @@ from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
+from unstructured.documents.elements import ElementType
 from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
@@ -11,7 +12,7 @@ from unstructured_client import UnstructuredClient
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.providers.base import BaseProvider
-from ragbits.document_search.ingestion.providers.unstructured.utils import set_or_raise, to_text_element
+from ragbits.document_search.ingestion.providers.unstructured.utils import check_required_argument, to_text_element
 
 DEFAULT_PARTITION_KWARGS: dict = {
     "strategy": "hi_res",
@@ -71,7 +72,7 @@ class UnstructuredDefaultProvider(BaseProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
-            use_api: whether to use unstructured API
+            use_api: whether to use Unstructured API, otherwise use local version of Unstructured library
             ignore_images: if True images will be skipped
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
@@ -95,8 +96,10 @@ class UnstructuredDefaultProvider(BaseProvider):
         """
         if self._client is not None:
             return self._client
-        api_key = set_or_raise(name="api_key", value=self.api_key, env_var=UNSTRUCTURED_API_KEY_ENV)
-        api_server = set_or_raise(name="api_server", value=self.api_server, env_var=UNSTRUCTURED_SERVER_URL_ENV)
+        api_key = check_required_argument(arg_name="api_key", value=self.api_key, fallback_env=UNSTRUCTURED_API_KEY_ENV)
+        api_server = check_required_argument(
+            arg_name="api_server", value=self.api_server, fallback_env=UNSTRUCTURED_SERVER_URL_ENV
+        )
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
@@ -145,8 +148,8 @@ class UnstructuredDefaultProvider(BaseProvider):
         if self.__class__ == UnstructuredDefaultProvider:
             chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
             return [to_text_element(element, document_meta) for element in chunked_elements]
-        image_elements = [e for e in elements if e.category == "Image"]
-        other_elements = [e for e in elements if e.category != "Image"]
+        image_elements = [e for e in elements if e.category == ElementType.IMAGE]
+        other_elements = [e for e in elements if e.category != ElementType.IMAGE]
         chunked_other_elements = chunk_elements(other_elements, **self.chunking_kwargs)
 
         text_elements: list[Element] = [to_text_element(element, document_meta) for element in chunked_other_elements]

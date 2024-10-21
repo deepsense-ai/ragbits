@@ -59,18 +59,14 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
     async def _to_image_element(
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
     ) -> ImageElement:
-        image_coordinates = extract_image_coordinates(element)
+        top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
         page_number = element.metadata.page_number
         image = convert_from_path(document_path, first_page=page_number, last_page=page_number)[0]
 
         new_system = CoordinateSystem(image.width, image.height)
         new_system.orientation = Orientation.SCREEN
-        x0, y0 = element.metadata.coordinates.system.convert_coordinates_to_new_system(
-            new_system, image_coordinates[0], image_coordinates[1]
-        )
-        x1, y1 = element.metadata.coordinates.system.convert_coordinates_to_new_system(
-            new_system, image_coordinates[2], image_coordinates[3]
-        )
+        x0, y0 = element.metadata.coordinates.system.convert_coordinates_to_new_system(new_system, top_x, top_y)
+        x1, y1 = element.metadata.coordinates.system.convert_coordinates_to_new_system(new_system, bottom_x, bottom_y)
 
         img_bytes = crop_and_convert_to_bytes(image, x0, y0, x1, y1)
         image_description = await self.image_summarizer.get_image_description(img_bytes)
