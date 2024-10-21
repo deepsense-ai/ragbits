@@ -32,6 +32,7 @@ config = {
     },
     "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
+    "rephraser": {"type": "LLMQueryRephraser", "config": {"llm": {"type": "LiteLLM"}}},
 }
 
 
