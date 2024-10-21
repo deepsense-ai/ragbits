@@ -1,3 +1,3 @@
 from ragbits.core.prompt.prompt import ChatFormat, Prompt
 
-__all__ = ["Prompt", "ChatFormat"]
+__all__ = ["ChatFormat", "Prompt"]

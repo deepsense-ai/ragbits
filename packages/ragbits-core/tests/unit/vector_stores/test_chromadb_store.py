@@ -55,7 +55,11 @@ def mock_vector_db_entry():
         vector=[0.1, 0.2, 0.3],
         metadata={
             "content": "test content",
-            "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"},
+            "document": {
+                "title": "test title",
+                "source": {"path": "/test/path"},
+                "document_type": "test_type",
+            },
         },
     )
 
@@ -63,7 +67,11 @@ def mock_vector_db_entry():
 def test_chromadbstore_init_import_error():
     with patch("ragbits.core.vector_store.chromadb_store.HAS_CHROMADB", False):
         with pytest.raises(ImportError):
-            ChromaDBStore(index_name="test_index", chroma_client=MagicMock(), embedding_function=MagicMock())
+            ChromaDBStore(
+                index_name="test_index",
+                chroma_client=MagicMock(),
+                embedding_function=MagicMock(),
+            )
 
 
 def test_get_chroma_collection(mock_chromadb_store):
@@ -79,7 +87,11 @@ async def test_stores_entries_correctly(mock_chromadb_store):
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",
-                "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"},
+                "document": {
+                    "title": "test title",
+                    "source": {"path": "/test/path"},
+                    "document_type": "test_type",
+                },
             },
         )
     ]

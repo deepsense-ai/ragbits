@@ -1,4 +1,5 @@
-from typing import Any, Callable, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
@@ -87,7 +88,7 @@ def bool_parser(value: str) -> bool:
     raise ResponseParsingError(f"Could not parse '{value}' as a boolean")
 
 
-def build_pydantic_parser(model: Type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
+def build_pydantic_parser(model: type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
     """
     Builds a parser for a specific Pydantic model.
 
@@ -122,7 +123,7 @@ def build_pydantic_parser(model: Type[PydanticModelT]) -> Callable[[str], Pydant
     return parser
 
 
-DEFAULT_PARSERS: dict[Type, Callable[[str], Any]] = {
+DEFAULT_PARSERS: dict[type, Callable[[str], Any]] = {
     int: int_parser,
     str: str_parser,
     float: float_parser,

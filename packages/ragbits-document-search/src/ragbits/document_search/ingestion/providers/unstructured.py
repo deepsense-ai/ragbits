@@ -1,6 +1,5 @@
 import os
 from io import BytesIO
-from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
@@ -54,13 +53,14 @@ class UnstructuredProvider(BaseProvider):
 
     def __init__(
         self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
+        partition_kwargs: dict | None = None,
+        chunking_kwargs: dict | None = None,
+        api_key: str | None = None,
+        api_server: str | None = None,
         use_api: bool = False,
     ) -> None:
-        """Initialize the UnstructuredProvider.
+        """
+        Initialize the UnstructuredProvider.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
@@ -70,6 +70,7 @@ class UnstructuredProvider(BaseProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
+            use_api: Flag to determine whether to use the API or not. Defaults to False.
         """
         self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
         self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
@@ -80,7 +81,8 @@ class UnstructuredProvider(BaseProvider):
 
     @property
     def client(self) -> UnstructuredClient:
-        """Get the UnstructuredClient instance. If the client is not initialized, it will be created.
+        """
+        Get the UnstructuredClient instance. If the client is not initialized, it will be created.
 
         Returns:
             The UnstructuredClient instance.
@@ -97,7 +99,8 @@ class UnstructuredProvider(BaseProvider):
         return self._client
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """Process the document using the Unstructured API.
+        """
+        Process the document using the Unstructured API.
 
         Args:
             document_meta: The document to process.
@@ -143,7 +146,7 @@ def _to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) 
     )
 
 
-def _set_or_raise(name: str, value: Optional[str], env_var: str) -> str:
+def _set_or_raise(name: str, value: str | None, env_var: str) -> str:
     if value is not None:
         return value
     if (env_value := os.getenv(env_var)) is None:

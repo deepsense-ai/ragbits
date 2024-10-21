@@ -22,7 +22,6 @@ def get_provider(provider_config: dict) -> BaseProvider:
         An instance of the specified Provider class, initialized with the provided config
         (if any) or default arguments.
     """
-
     provider_cls = get_cls_from_config(provider_config["type"], module)
     config = provider_config.get("config", {})
 

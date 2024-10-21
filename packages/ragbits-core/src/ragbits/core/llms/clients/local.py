@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type, Union
 
 from pydantic import BaseModel
 
@@ -22,18 +21,18 @@ class LocalLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]
-    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation). # pylint: disable=line-too-long
-    """
+    (https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation).
+    """  # noqa: E501
 
-    repetition_penalty: Union[Optional[float], NotGiven] = NOT_GIVEN
-    do_sample: Union[Optional[bool], NotGiven] = NOT_GIVEN
-    best_of: Union[Optional[int], NotGiven] = NOT_GIVEN
-    max_new_tokens: Union[Optional[int], NotGiven] = NOT_GIVEN
-    top_k: Union[Optional[int], NotGiven] = NOT_GIVEN
-    top_p: Union[Optional[float], NotGiven] = NOT_GIVEN
-    seed: Union[Optional[int], NotGiven] = NOT_GIVEN
-    stop_sequences: Union[Optional[List[str]], NotGiven] = NOT_GIVEN
-    temperature: Union[Optional[float], NotGiven] = NOT_GIVEN
+    repetition_penalty: float | None | NotGiven = NOT_GIVEN
+    do_sample: bool | None | NotGiven = NOT_GIVEN
+    best_of: int | None | NotGiven = NOT_GIVEN
+    max_new_tokens: int | None | NotGiven = NOT_GIVEN
+    top_k: int | None | NotGiven = NOT_GIVEN
+    top_p: float | None | NotGiven = NOT_GIVEN
+    seed: int | None | NotGiven = NOT_GIVEN
+    stop_sequences: list[str] | None | NotGiven = NOT_GIVEN
+    temperature: float | None | NotGiven = NOT_GIVEN
 
 
 class LocalLLMClient(LLMClient[LocalLLMOptions]):
@@ -47,7 +46,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         self,
         model_name: str,
         *,
-        hf_api_key: Optional[str] = None,
+        hf_api_key: str | None = None,
     ) -> None:
         """
         Constructs a new local LLMClient instance.
@@ -74,7 +73,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         conversation: ChatFormat,
         options: LocalLLMOptions,
         json_mode: bool = False,
-        output_schema: Optional[Type[BaseModel] | Dict] = None,
+        output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -88,7 +87,6 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         Returns:
             Response string from LLM.
         """
-
         input_ids = self.tokenizer.apply_chat_template(
             conversation, add_generation_prompt=True, return_tensors="pt"
         ).to(self.model.device)
