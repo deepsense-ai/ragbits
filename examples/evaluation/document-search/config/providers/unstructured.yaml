@@ -1,0 +1,25 @@
+txt:
+  type: UnstructuredProvider
+  config:
+    use_api: false
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters: 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0
+
+md:
+  type: UnstructuredProvider
+  config:
+    use_api: false
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters: 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0

@@ -1,0 +1,26 @@
+defaults:
+  - data: qa
+  - embedder: litellm
+  - providers: unstructured
+  - vector_store: chroma
+  - rephraser: noop
+  - reranker: noop
+  - _self_
+
+task:
+  name: default
+  type: document-search
+
+metrics:
+  DocumentSearchPrecisionRecallF1:
+    matching_strategy: RougeChunkMatch
+    options:
+      threshold: 0.5
+  DocumentSearchRankedRetrievalMetrics:
+    matching_strategy: RougeChunkMatch
+    options:
+      threshold: 0.5
+
+neptune:
+  project: ragbits
+  run: False

@@ -1,0 +1,9 @@
+type: ChromaDBStore
+config:
+  chroma_client:
+    type: PersistentClient
+    config:
+      path: chroma
+  embedding_function:
+    type: ragbits.core.embeddings.litellm:LiteLLMEmbeddings
+  index_name: default
