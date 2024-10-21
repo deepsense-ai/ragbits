@@ -1,7 +1,13 @@
 import os
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+
+    HAS_PYYAML = True
+except ImportError:
+    HAS_PYYAML = False
+
 from rich.console import Console
 
 from ragbits.core.config import core_config
@@ -22,6 +28,13 @@ def generate_configs(
         target_path: The path to save the promptfoo configuration files. Defaults to "promptfooconfigs".
     """
     root_path = root_path or Path.cwd()
+
+    if not HAS_PYYAML:
+        Console(stderr=True).print(
+            "To generate configs for promptfoo, you need the PyYAML library. Please install it using the following"
+            " command:\n[b]pip install ragbits-core\\[promptfoo][/b]"
+        )
+        return
 
     prompts = PromptDiscovery(file_pattern=file_pattern, root_path=root_path).discover()
     Console().print(

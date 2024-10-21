@@ -79,7 +79,6 @@ def get_config_instance(
     current_dir = current_dir or Path.cwd()
 
     config = get_ragbits_config(current_dir)
-    print(config)
     if subproject:
         config = config.get(subproject, {})
     return model(**config)

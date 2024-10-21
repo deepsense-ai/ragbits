@@ -2,11 +2,13 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits[litellm]",
+#     "ragbits-core[litellm]",
 # ]
 # ///
 import asyncio
 
+from ragbits.core.embeddings import LiteLLMEmbeddings
+from ragbits.core.vector_store import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -20,27 +22,14 @@ documents = [
     ),
 ]
 
-config = {
-    "embedder": {"type": "LiteLLMEmbeddings"},
-    "vector_store": {
-        "type": "ChromaDBStore",
-        "config": {
-            "chroma_client": {"type": "PersistentClient", "config": {"path": "chroma"}},
-            "embedding_function": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
-            "index_name": "jokes",
-        },
-    },
-    "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
-    "providers": {"txt": {"type": "DummyProvider"}},
-}
-
 
 async def main() -> None:
-    """Run the example."""
-    document_search = DocumentSearch.from_config(config)
+    """
+    Run the example.
+    """
+    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
 
-    for document in documents:
-        await document_search.ingest_document(document)
+    await document_search.ingest(documents)
 
     results = await document_search.search("I'm boiling my water and I need a joke")
     print(results)

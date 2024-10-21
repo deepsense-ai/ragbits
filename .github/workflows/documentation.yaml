@@ -34,9 +34,11 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install Dependencies
+        shell: bash
         run: source ./setup_dev_env.sh
 
       - name: Deploy docs
+        shell: bash
         run: ./.github/scripts/deploy_docs.sh
         env:
           GCP_KEY: ${{ secrets.GCP_KEY }}

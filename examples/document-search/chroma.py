@@ -7,16 +7,15 @@
 # ///
 import asyncio
 
+import chromadb
+
 from ragbits.core.embeddings import LiteLLMEmbeddings
-from ragbits.core.vector_store import InMemoryVectorStore
+from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
 documents = [
     DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
-    DocumentMeta.create_text_document_from_literal(
-        "Why doesn't James Bond fart in bed? Because it would blow his cover."
-    ),
     DocumentMeta.create_text_document_from_literal(
         "Why programmers don't like to swim? Because they're scared of the floating points."
     ),
@@ -27,10 +26,17 @@ async def main() -> None:
     """
     Run the example.
     """
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
+    chroma_client = chromadb.PersistentClient(path="chroma")
+    embedding_client = LiteLLMEmbeddings()
 
-    for document in documents:
-        await document_search.ingest_document(document)
+    vector_store = ChromaDBStore(
+        index_name="jokes",
+        chroma_client=chroma_client,
+        embedding_function=embedding_client,
+    )
+    document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+
+    await document_search.ingest(documents)
 
     results = await document_search.search("I'm boiling my water and I need a joke")
     print(results)

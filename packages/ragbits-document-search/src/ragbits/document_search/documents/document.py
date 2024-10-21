@@ -4,7 +4,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
+from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
@@ -40,16 +40,17 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: LocalFileSource | GCSSource = Field(..., discriminator="source_type")
+    source: LocalFileSource | GCSSource | HuggingFaceSource = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:
-        """Get the document ID.
+        """
+        Get the document ID.
 
         Returns:
             The document ID.
         """
-        return self.source.get_id()
+        return self.source.id
 
     async def fetch(self) -> "Document":
         """
@@ -95,6 +96,24 @@ class DocumentMeta(BaseModel):
         return cls(
             document_type=DocumentType(local_path.suffix[1:]),
             source=LocalFileSource(path=local_path),
+        )
+
+    @classmethod
+    async def from_source(cls, source: LocalFileSource | GCSSource | HuggingFaceSource) -> "DocumentMeta":
+        """
+        Create a document metadata from a source.
+
+        Args:
+            source: The source from which the document is fetched.
+
+        Returns:
+            The document metadata.
+        """
+        path = await source.fetch()
+
+        return cls(
+            document_type=DocumentType(path.suffix[1:]),
+            source=source,
         )
 
 
