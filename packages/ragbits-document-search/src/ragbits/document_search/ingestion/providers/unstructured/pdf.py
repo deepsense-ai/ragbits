@@ -16,7 +16,6 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
 )
 
 DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
-DEFAULT_PDF_DPI = 300
 DEFAULT_LLM_OPTIONS = LiteLLMOptions()
 
 
@@ -30,7 +29,6 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
     }
 
     def __init__(
-        # pylint: disable=too-many-arguments
         self,
         partition_kwargs: Optional[dict] = None,
         chunking_kwargs: Optional[dict] = None,
@@ -39,7 +37,6 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
         use_api: bool = False,
         llm_model_name: Optional[str] = None,
         llm_options: Optional[LiteLLMOptions] = None,
-        pdf_dpi: Optional[int] = None,
     ) -> None:
         """Initialize the UnstructuredPdfProvider.
 
@@ -53,14 +50,11 @@ class UnstructuredPdfProvider(UnstructuredDefaultProvider):
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
             llm_model_name: name of LLM model to be used.
             llm_options: llm lite options to be used.
-            pdf_dpi: How many dpi should be used when rendering pdf. The higher, the better quality but more tokes
-                would be used when creating a summary.
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
         self.image_summarizer = ImageDescriber(
             llm_model_name or DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL, llm_options or DEFAULT_LLM_OPTIONS
         )
-        self.pdf_dpi = pdf_dpi
 
     async def _to_image_element(
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
