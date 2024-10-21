@@ -55,7 +55,7 @@ def log_to_neptune(config: DictConfig, results: dict[str, Any], output_dir: Path
     run["sys/tags"].add(
         [
             config.task.name,
-            config.setup.name,
+            config.task.type,
         ]
     )
     run["config"] = stringify_unsupported(config)

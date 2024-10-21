@@ -32,7 +32,6 @@ class Evaluator:
             The evaluation results.
         """
         dataset = await dataloader.load()
-        await pipeline.prepare()
         results, perf_results = await self._call_pipeline(pipeline, dataset)
         computed_metrics = self._compute_metrics(metrics, results)
         processed_results = self._results_processor(results)

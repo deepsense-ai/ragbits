@@ -1,6 +1,0 @@
-ingest:
-  path: "micpst/hf-docs"
-  split: "train"
-eval:
-  path: "micpst/hf-docs-retrieval"
-  split: "train"

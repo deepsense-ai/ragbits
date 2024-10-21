@@ -27,11 +27,6 @@ class EvaluationPipeline(ABC):
         super().__init__()
         self.config = config or DictConfig({})
 
-    async def prepare(self) -> None:
-        """
-        Prepares the document search evaluation pipeline.
-        """
-
     @abstractmethod
     async def __call__(self, data: dict[str, Any]) -> EvaluationResult:
         """

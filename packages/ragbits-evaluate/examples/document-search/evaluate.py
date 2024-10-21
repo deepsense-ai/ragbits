@@ -8,8 +8,7 @@ from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.loaders import HuggingFaceDataLoader
-from ragbits.evaluate.metrics import DocumentSearchPrecision, DocumentSearchRecall, MetricSet
-from ragbits.evaluate.metrics.document_search import DocumentSearchF1
+from ragbits.evaluate.metrics import DocumentSearchPrecisionRecallF1, DocumentSearchRankedRetrievalMetrics, MetricSet
 from ragbits.evaluate.pipelines import DocumentSearchPipeline
 from ragbits.evaluate.utils import log_to_file, log_to_neptune
 
@@ -25,15 +24,14 @@ async def bench(config: DictConfig) -> None:
     Args:
         config: Hydra configuration.
     """
-    log.info("Starting evaluation: %s", config.setup.name)
+    log.info("Starting evaluation...")
 
-    dataloader = HuggingFaceDataLoader(config)
+    dataloader = HuggingFaceDataLoader(config.data)
     pipeline = DocumentSearchPipeline(config)
     metrics = MetricSet(
-        DocumentSearchPrecision,
-        DocumentSearchRecall,
-        DocumentSearchF1,
-    )(config)
+        DocumentSearchPrecisionRecallF1,
+        DocumentSearchRankedRetrievalMetrics,
+    )(config.metrics)
 
     evaluator = Evaluator()
     results = await evaluator.compute(
@@ -53,7 +51,7 @@ async def bench(config: DictConfig) -> None:
     log.info("Evaluation results saved under directory: %s", output_dir)
 
 
-@hydra.main(config_path="config", config_name="config", version_base="3.2")
+@hydra.main(config_path="config", config_name="retrieval", version_base="3.2")
 def main(config: DictConfig) -> None:
     """
     Function running evaluation for all datasets and evaluation tasks defined in hydra config.

@@ -22,7 +22,7 @@ class Metric(Generic[ResultT], ABC):
             config: The metric configuration.
         """
         super().__init__()
-        self.config = config or DictConfig({})
+        self.config = getattr(config, self.__class__.__name__, DictConfig({}))
 
     @abstractmethod
     def compute(self, results: list[ResultT]) -> dict[str, Any]:
