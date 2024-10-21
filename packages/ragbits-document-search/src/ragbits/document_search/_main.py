@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field
 
@@ -6,6 +6,7 @@ from ragbits.core.embeddings import Embeddings, get_embeddings
 from ragbits.core.vector_store import VectorStore, get_vector_store
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers import get_rephraser
@@ -103,22 +104,51 @@ class DocumentSearch:
 
         return self.reranker.rerank(elements)
 
-    async def ingest_document(
-        self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
-    ) -> None:
+    async def _process_document(
+        self,
+        document: Union[DocumentMeta, Document, Union[LocalFileSource, GCSSource]],
+        document_processor: Optional[BaseProvider] = None,
+    ) -> list[Element]:
         """
-        Ingest a document.
+        Process a document and return the elements.
 
         Args:
-            document: The document or metadata of the document to ingest.
-            document_processor: The document processor to use. If not provided, the document processor will be
-                determined based on the document metadata.
+            document: The document to process.
+
+        Returns:
+            The elements.
         """
-        document_meta = document if isinstance(document, DocumentMeta) else document.metadata
+        if isinstance(document, Source):
+            document_meta = await DocumentMeta.from_source(document)
+        elif isinstance(document, DocumentMeta):
+            document_meta = document
+        else:
+            document_meta = document.metadata
+
         if document_processor is None:
             document_processor = self.document_processor_router.get_provider(document_meta)
 
-        elements = await document_processor.process(document_meta)
+        document_processor = self.document_processor_router.get_provider(document_meta)
+        return await document_processor.process(document_meta)
+
+    async def ingest(
+        self,
+        documents: Sequence[DocumentMeta | Document | Union[LocalFileSource, GCSSource]],
+        document_processor: Optional[BaseProvider] = None,
+    ) -> None:
+        """
+        Ingest multiple documents.
+
+        Args:
+            documents: The documents or metadata of the documents to ingest.
+            document_processor: The document processor to use. If not provided, the document processor will be
+                determined based on the document metadata.
+        """
+
+        elements = []
+        # TODO: Parallelize
+        for document in documents:
+            elements.extend(await self._process_document(document, document_processor))
         await self.insert_elements(elements)
 
     async def insert_elements(self, elements: list[Element]) -> None:

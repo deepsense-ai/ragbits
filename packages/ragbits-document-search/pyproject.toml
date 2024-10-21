@@ -42,6 +42,9 @@ dependencies = [
 gcs = [
     "gcloud-aio-storage~=9.3.0"
 ]
+huggingface = [
+    "datasets~=3.0.1",
+]
 
 [tool.uv]
 dev-dependencies = [

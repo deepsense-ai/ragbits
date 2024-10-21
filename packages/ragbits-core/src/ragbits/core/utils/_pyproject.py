@@ -73,7 +73,6 @@ def get_config_instance(
         ConfigModelT: The model instance loaded with the configuration
     """
     config = get_ragbits_config(current_dir)
-    print(config)
     if subproject:
         config = config.get(subproject, {})
     return model(**config)
