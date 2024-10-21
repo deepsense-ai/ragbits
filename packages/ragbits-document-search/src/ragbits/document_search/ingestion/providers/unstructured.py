@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from io import BytesIO
 from typing import Optional
 
@@ -131,14 +132,16 @@ class UnstructuredProvider(BaseProvider):
                 metadata_filename=document.local_path.name,
                 **self.partition_kwargs,
             )
-
         elements = chunk_elements(elements, **self.chunking_kwargs)
         return [_to_text_element(element, document_meta) for element in elements]
 
 
 def _to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -> TextElement:
+    _document_meta = deepcopy(document_meta)
+    if element.metadata:
+        _document_meta.add_location_metadata(provider_metadata=element.metadata.to_dict())
     return TextElement(
-        document_meta=document_meta,
+        document_meta=_document_meta,
         content=element.text,
     )
 
