@@ -37,7 +37,7 @@ class LiteLLMReranker(BaseModel, Reranker):
 
         documents = [chunk.content if isinstance(chunk, TextElement) else None for chunk in chunks]
 
-        response = litellm.arerank(
+        response = await litellm.arerank(
             model=self.model,
             query=query,
             documents=documents,
