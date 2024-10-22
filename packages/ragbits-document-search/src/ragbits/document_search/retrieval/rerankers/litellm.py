@@ -1,12 +1,13 @@
 from typing import List
 
 import litellm
+from pydantic import BaseModel
 
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 
 
-class LiteLLMReranker(Reranker):
+class LiteLLMReranker(BaseModel, Reranker):
     """
     A LiteLLM reranker for providers such as Cohere, Together AI, Azure AI.
     """
@@ -17,7 +18,7 @@ class LiteLLMReranker(Reranker):
     rank_fields: list[str] | None = None
     max_chunks_per_doc: int | None = None
 
-    def rerank(self, chunks: List[Element], query: str) -> List[Element]:
+    async def rerank(self, chunks: List[Element], query: str) -> List[Element]:
         """
         Reranking with LiteLLM API.
 
@@ -36,7 +37,7 @@ class LiteLLMReranker(Reranker):
 
         documents = [chunk.content if isinstance(chunk, TextElement) else None for chunk in chunks]
 
-        response = litellm.rerank(
+        response = litellm.arerank(
             model=self.model,
             query=query,
             documents=documents,

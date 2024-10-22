@@ -24,7 +24,7 @@ config = {
     "embedder": {"type": "LiteLLMEmbeddings"},
     "vector_store": {"type": "InMemoryVectorStore"},
     "reranker": {
-        "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+        "type": "LiteLLMReranker",
         "config": {"model": "cohere/rerank-english-v3.0"},
     },
     "providers": {"txt": {"type": "DummyProvider"}},

@@ -9,7 +9,7 @@ class NoopReranker(Reranker):
     A no-op reranker that does not change the order of the chunks.
     """
 
-    def rerank(self, chunks: List[Element], query: str) -> List[Element]:  # pylint: disable=unused-argument
+    async def rerank(self, chunks: List[Element], query: str) -> List[Element]:  # pylint: disable=unused-argument
         """
         No reranking, returning the same chunks as in input.
 

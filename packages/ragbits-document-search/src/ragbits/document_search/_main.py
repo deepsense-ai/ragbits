@@ -101,7 +101,7 @@ class DocumentSearch:
             entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
-        return self.reranker.rerank(elements, query=query)
+        return await self.reranker.rerank(elements, query=query)
 
     async def ingest_document(
         self, document: Union[DocumentMeta, Document], document_processor: Optional[BaseProvider] = None
