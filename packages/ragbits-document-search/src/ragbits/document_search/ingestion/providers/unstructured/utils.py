@@ -6,7 +6,7 @@ from typing import Optional
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement
 
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.core.llms.base import LLM
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 
@@ -87,10 +87,8 @@ class ImageDescriber:
 
     DEFAULT_PROMPT = "Describe the content of the image."
 
-    def __init__(self, llm_name: str, llm_options: LiteLLMOptions):
-        self.llm_name = llm_name
-        self.llm: Optional[LiteLLM] = None
-        self.llm_options = llm_options
+    def __init__(self, llm: LLM):
+        self.llm = llm
 
     async def get_image_description(self, image_bytes: bytes, prompt: Optional[str] = DEFAULT_PROMPT) -> str:
         """
@@ -103,9 +101,6 @@ class ImageDescriber:
         Returns:
             summary of the image
         """
-        if not self.llm:
-            self.llm = LiteLLM(self.llm_name)
-
         img_base64 = base64.b64encode(image_bytes).decode("utf-8")
 
         # TODO make this use prompt structure from ragbits core once there is a support for images
@@ -121,4 +116,4 @@ class ImageDescriber:
                 ],
             }
         ]
-        return await self.llm.client.call(messages, self.llm_options)  # type: ignore
+        return await self.llm.client.call(messages, self.llm.default_options)  # type: ignore

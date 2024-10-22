@@ -6,7 +6,8 @@ from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.llms.litellm import LiteLLMOptions
+from ragbits.core.llms.base import LLM
+from ragbits.core.llms.litellm import LiteLLM
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -18,7 +19,6 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
 )
 
 DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
-DEFAULT_LLM_OPTIONS = LiteLLMOptions()
 
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
@@ -38,8 +38,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         api_key: Optional[str] = None,
         api_server: Optional[str] = None,
         use_api: bool = False,
-        llm_model_name: Optional[str] = None,
-        llm_options: Optional[LiteLLMOptions] = None,
+        llm: Optional[LLM] = None,
     ) -> None:
         """Initialize the UnstructuredPdfProvider.
 
@@ -51,13 +50,10 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
-            llm_model_name: name of LLM model to be used.
-            llm_options: llm lite options to be used.
+            llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_summarizer = ImageDescriber(
-            llm_model_name or DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL, llm_options or DEFAULT_LLM_OPTIONS
-        )
+        self.image_summarizer = ImageDescriber(llm or LiteLLM(DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL))
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
