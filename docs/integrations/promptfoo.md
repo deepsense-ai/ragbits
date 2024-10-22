@@ -20,5 +20,7 @@ You can then edit the generated file to add your custom `promptfoo` configuratio
 file is ready, you can run `promptfoo` with the following command:
 
 ```bash
-promptfoo -c /path/to/generated/promptfoo-config.yaml eval
+promptfoo eval -c /path/to/generated/promptfoo-config.yaml
 ```
+
+**Important: To ensure compatibility, make sure Node.js version 20 is installed.**
