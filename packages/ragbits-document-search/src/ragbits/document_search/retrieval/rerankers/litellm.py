@@ -10,6 +10,17 @@ from ragbits.document_search.retrieval.rerankers.base import Reranker
 class LiteLLMReranker(BaseModel, Reranker):
     """
     A LiteLLM reranker for providers such as Cohere, Together AI, Azure AI.
+    For more details and parameters see https://docs.litellm.ai/docs/rerank
+
+    Args:
+        model: The model to use.
+        top_n: The number of most relevant documents or indices to return.
+        return_documents: Whether to return the documents or just indices and relevalnce scores.
+        rank_fields: The fields to rank on.
+        max_chunks_per_doc: The maximum number of chunks per document to consider.
+
+    Returns:
+        The reranked chunks.
     """
 
     model: str
