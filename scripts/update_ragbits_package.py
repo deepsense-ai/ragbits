@@ -14,6 +14,7 @@
 #
 
 from copy import deepcopy
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -99,6 +100,14 @@ def _update_pkg_version(
     if pkg_name != "ragbits":
         _sync_ragbits_deps(pkg_name, version, new_version, sync_ragbits_version)
 
+    changelog_path = PACKAGES_DIR / pkg_name / "CHANGELOG.md"
+    changelog_content = changelog_path.read_text()
+    changelog_content = changelog_content.replace(
+        "## Unreleased", f"## Unreleased\n\n## {new_version} ({datetime.today().strftime('%Y-%m-%d')})"
+    )
+    changelog_path.write_text(changelog_content)
+
+
     return version, new_version
 
 
@@ -123,7 +132,16 @@ def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, up
                 f"from {ragbits_old_version} to {ragbits_new_version}.[/green]"
             )
 
+            changelog_path = PACKAGES_DIR / "ragbits" / "CHANGELOG.md"
+            changelog_content = changelog_path.read_text()
+            changelog_content = changelog_content.replace(
+                "## Unreleased",
+                f"## Unreleased\n\n## {ragbits_new_version} ({datetime.today().strftime('%Y-%m-%d')})"
+                f"\n\n### Changed\n\n- {pkg_name} updated to version {pkg_new_version}",
+            )
+            changelog_path.write_text(changelog_content)
         (PACKAGES_DIR / "ragbits" / "pyproject.toml").write_text(tomlkit.dumps(ragbits_pkg_project))
+
 
 
 def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[str] = typer.Argument(None)) -> None:

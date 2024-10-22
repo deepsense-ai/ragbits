@@ -212,3 +212,14 @@ jobs:
           # A custom title that can be added to the code
           # coverage summary in the PR comment.
           coverage-summary-title: "Code Coverage Summary"
+
+  pull_requests_title_check:
+    name: Check PR title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+    - name : Print Title of PR
+      env:
+          TITLE: ${{ github.event.pull_request.title }}
+      run: echo The Title of your PR is $TITLE
