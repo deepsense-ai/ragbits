@@ -4,7 +4,6 @@ from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
-from unstructured.documents.elements import ElementType
 from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
@@ -143,23 +142,11 @@ class UnstructuredDefaultProvider(BaseProvider):
         return await self._chunk_and_convert(elements, document_meta, document.local_path)
 
     async def _chunk_and_convert(
-        self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
+        # pylint: disable=unused-argument
+        self,
+        elements: list[UnstructuredElement],
+        document_meta: DocumentMeta,
+        document_path: Path,
     ) -> list[Element]:
-        if self.__class__ == UnstructuredDefaultProvider:
-            chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
-            return [to_text_element(element, document_meta) for element in chunked_elements]
-        image_elements = [e for e in elements if e.category == ElementType.IMAGE]
-        other_elements = [e for e in elements if e.category != ElementType.IMAGE]
-        chunked_other_elements = chunk_elements(other_elements, **self.chunking_kwargs)
-
-        text_elements: list[Element] = [to_text_element(element, document_meta) for element in chunked_other_elements]
-        if self.ignore_images:
-            return text_elements
-        return text_elements + [
-            await self._to_image_element(element, document_meta, document_path) for element in image_elements
-        ]
-
-    async def _to_image_element(
-        self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
-    ) -> Element:
-        raise NotImplementedError("UnstructuredDefaultProvider doesn't support image conversion")
+        chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
+        return [to_text_element(element, document_meta) for element in chunked_elements]
