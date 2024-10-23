@@ -4,10 +4,7 @@ from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
-from ragbits.document_search.retrieval.rephrasers.prompt_query_rephraser import (
-    QueryRephraserInput,
-    QueryRephraserPrompt,
-)
+from ragbits.document_search.retrieval.rephrasers.prompts import QueryRephraserInput, QueryRephraserPrompt
 
 __all__ = [
     "get_rephraser",

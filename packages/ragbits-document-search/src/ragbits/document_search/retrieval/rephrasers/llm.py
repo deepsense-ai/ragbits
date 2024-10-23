@@ -4,7 +4,7 @@ from ragbits.core.llms import get_llm
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
-from ragbits.document_search.retrieval.rephrasers.prompt_query_rephraser import (
+from ragbits.document_search.retrieval.rephrasers.prompts import (
     QueryRephraserInput,
     QueryRephraserPrompt,
     get_rephraser_prompt,
