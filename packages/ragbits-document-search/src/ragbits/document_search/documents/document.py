@@ -1,11 +1,10 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Union
 
 from pydantic import BaseModel, Field
 
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
+from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource, LocalFileSource
 
 
 class DocumentType(str, Enum):
@@ -29,6 +28,8 @@ class DocumentType(str, Enum):
     RTF = "rtf"
     TSV = "tsv"
     XML = "xml"
+    JPG = "jpg"
+    PNG = "png"
 
     UNKNOWN = "unknown"
 
@@ -39,7 +40,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
+    source: LocalFileSource | GCSSource | HuggingFaceSource = Field(..., discriminator="source_type")
 
     @property
     def id(self) -> str:
@@ -49,7 +50,7 @@ class DocumentMeta(BaseModel):
         Returns:
             The document ID.
         """
-        return self.source.get_id()
+        return self.source.id
 
     async def fetch(self) -> "Document":
         """
@@ -98,7 +99,7 @@ class DocumentMeta(BaseModel):
         )
 
     @classmethod
-    async def from_source(cls, source: Union[LocalFileSource, GCSSource]) -> "DocumentMeta":
+    async def from_source(cls, source: LocalFileSource | GCSSource | HuggingFaceSource) -> "DocumentMeta":
         """
         Create a document metadata from a source.
 

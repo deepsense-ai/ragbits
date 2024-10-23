@@ -152,13 +152,14 @@ class ChromaDBStore(VectorStore):
 
         db_entries = []
         for meta in query_result.get("metadatas"):
-            db_entry = VectorDBEntry(
-                key=meta[0]["__key"],
-                vector=vector,
-                metadata=json.loads(meta[0]["__metadata"]),
-            )
+            for result in meta:
+                db_entry = VectorDBEntry(
+                    key=result["__key"],
+                    vector=vector,
+                    metadata=json.loads(result["__metadata"]),
+                )
 
-            db_entries.append(db_entry)
+                db_entries.append(db_entry)
 
         return db_entries
 

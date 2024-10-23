@@ -4,16 +4,24 @@ from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import BaseProvider
 from .dummy import DummyProvider
-from .unstructured import UnstructuredProvider
+from .unstructured.default import UnstructuredDefaultProvider
+from .unstructured.images import UnstructuredImageProvider
+from .unstructured.pdf import UnstructuredPdfProvider
 
-__all__ = ["BaseProvider", "DummyProvider", "UnstructuredProvider"]
+__all__ = [
+    "BaseProvider",
+    "DummyProvider",
+    "UnstructuredDefaultProvider",
+    "UnstructuredPdfProvider",
+    "UnstructuredImageProvider",
+]
 
 module = sys.modules[__name__]
 
 
 def get_provider(provider_config: dict) -> BaseProvider:
     """
-    Initializes and returns an Provider object based on the provided configuration.
+    Initializes and returns a Provider object based on the provided configuration.
 
     Args:
         provider_config : A dictionary containing configuration details for the provider.
