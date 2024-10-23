@@ -12,7 +12,7 @@ import hydra
 from omegaconf import DictConfig
 from tqdm.asyncio import tqdm
 
-from ragbits.document_search._main import DocumentSearch
+from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.sources import HuggingFaceSource
 
