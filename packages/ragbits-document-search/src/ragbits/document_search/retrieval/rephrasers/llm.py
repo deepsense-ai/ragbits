@@ -60,7 +60,7 @@ class LLMQueryRephraser(QueryRephraser):
 
         Raises:
            KeyError: If the configuration dictionary does not contain the required keys.
-           ValueError: If the prompt strategy class is not a subclass of `Prompt`.
+           ValueError: If the prompt class is not a subclass of `Prompt` or the LLM class is not a subclass of `LLM`.
         """
         llm = get_llm(config["llm"])
         prompt_cls = get_rephraser_prompt(prompt) if (prompt := config.get("prompt")) else None
