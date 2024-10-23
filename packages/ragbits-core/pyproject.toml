@@ -47,7 +47,7 @@ litellm = [
 local = [
     "torch~=2.2.1",
     "transformers~=4.44.2",
-    "numpy~=1.24.0"
+    "numpy~=1.26.0"
 ]
 lab = [
     "gradio~=4.44.0",
