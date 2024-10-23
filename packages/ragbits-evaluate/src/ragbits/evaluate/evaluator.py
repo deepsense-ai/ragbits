@@ -4,9 +4,9 @@ from typing import Any, Iterable
 
 from tqdm.asyncio import tqdm
 
-from .loaders import DataLoader
-from .metrics.base import MetricSet
-from .pipelines.base import EvaluationPipeline, EvaluationResult
+from ragbits.evaluate.loaders.base import DataLoader
+from ragbits.evaluate.metrics.base import MetricSet
+from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
 class Evaluator:

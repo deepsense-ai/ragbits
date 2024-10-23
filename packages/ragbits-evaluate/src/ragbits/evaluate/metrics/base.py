@@ -4,7 +4,7 @@ from typing import Any, Generic, Optional, TypeVar
 from omegaconf import DictConfig
 from typing_extensions import Self
 
-from ..pipelines import EvaluationResult
+from ragbits.evaluate.pipelines.base import EvaluationResult
 
 ResultT = TypeVar("ResultT", bound=EvaluationResult)
 

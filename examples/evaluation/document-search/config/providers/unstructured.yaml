@@ -1,5 +1,5 @@
 txt:
-  type: UnstructuredProvider
+  type: UnstructuredDefaultProvider
   config:
     use_api: false
     partition_kwargs:
@@ -12,7 +12,7 @@ txt:
       overlap_all: 0
 
 md:
-  type: UnstructuredProvider
+  type: UnstructuredDefaultProvider
   config:
     use_api: false
     partition_kwargs:

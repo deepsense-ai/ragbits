@@ -1,16 +1,18 @@
 import importlib
+from abc import ABC
 from typing import Any, Optional
 
 from continuous_eval.metrics.retrieval import PrecisionRecallF1, RankedRetrievalMetrics
 from omegaconf import DictConfig
 
-from ragbits.evaluate.metrics.base import Metric
+from ragbits.evaluate.metrics.base import Metric, MetricSet
 from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
 
 
-class DocumentSearchMetric(Metric[DocumentSearchResult]):
+class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
     """
-    Base class for metrics used in document search evaluation.
+    Metric for document search evaluation based on Relari backend.
+    More details can be found [here](https://docs.relari.ai/category/retrieval-rag).
     """
 
     metric_cls: type[PrecisionRecallF1 | RankedRetrievalMetrics]
@@ -47,7 +49,8 @@ class DocumentSearchMetric(Metric[DocumentSearchResult]):
 
 class DocumentSearchPrecisionRecallF1(DocumentSearchMetric):
     """
-    Precision measures the accuracy of the retrieved documents. It is the ratio of the number of relevant documents
+    Precision, recall, and F1 score for context retrieval.
+    More details can be found [here](https://docs.relari.ai/metrics/Retrieval/Deterministic/precision_recall).
     """
 
     metric_cls = PrecisionRecallF1
@@ -55,7 +58,11 @@ class DocumentSearchPrecisionRecallF1(DocumentSearchMetric):
 
 class DocumentSearchRankedRetrievalMetrics(DocumentSearchMetric):
     """
-    Precision measures the accuracy of the retrieved documents. It is the ratio of the number of relevant documents
+    Rank-aware metrics takes into account the order in which the contexts are retrieved.
+    More details can be found [here](https://docs.relari.ai/metrics/Retrieval/Deterministic/rank_aware_metrics).
     """
 
     metric_cls = RankedRetrievalMetrics
+
+
+document_search_metrics = MetricSet(DocumentSearchPrecisionRecallF1, DocumentSearchRankedRetrievalMetrics)

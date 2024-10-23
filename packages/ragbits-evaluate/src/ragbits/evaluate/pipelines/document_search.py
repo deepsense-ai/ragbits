@@ -1,16 +1,9 @@
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Any
 
-try:
-    from ragbits.document_search import DocumentSearch
-    from ragbits.document_search.documents.element import TextElement
-except ImportError:
-    HAS_RAGBITS_DOCUMENT_SEARCH = False
-else:
-    HAS_RAGBITS_DOCUMENT_SEARCH = True
-
-from .base import EvaluationPipeline, EvaluationResult
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.element import TextElement
+from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
 @dataclass
@@ -39,7 +32,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
         """
         return DocumentSearch.from_config(self.config)  # type: ignore
 
-    async def __call__(self, data: dict[str, Any]) -> DocumentSearchResult:
+    async def __call__(self, data: dict) -> DocumentSearchResult:
         """
         Runs the document search evaluation pipeline.
 
@@ -50,11 +43,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
             The evaluation result.
         """
         elements = await self.document_search.search(data["question"])
-        predicted_passages = [
-            element.content  # type: ignore
-            for element in elements
-            if isinstance(element, TextElement)  # type: ignore
-        ]
+        predicted_passages = [element.content for element in elements if isinstance(element, TextElement)]
         return DocumentSearchResult(
             question=data["question"],
             reference_passages=data["passages"],

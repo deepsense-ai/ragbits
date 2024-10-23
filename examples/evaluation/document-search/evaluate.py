@@ -1,16 +1,22 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-document-search",
+#     "ragbits-evaluate[relari]",
+#     "ragbits[litellm,chromadb]",
+# ]
+# ///
 import asyncio
 import logging
-from pathlib import Path
 
 import hydra
-from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.loaders import HuggingFaceDataLoader
-from ragbits.evaluate.metrics import DocumentSearchPrecisionRecallF1, DocumentSearchRankedRetrievalMetrics, MetricSet
-from ragbits.evaluate.pipelines import DocumentSearchPipeline
-from ragbits.evaluate.utils import log_to_file, log_to_neptune
+from ragbits.evaluate.loaders.hf import HFDataLoader
+from ragbits.evaluate.metrics.document_search import document_search_metrics
+from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
+from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -24,14 +30,13 @@ async def bench(config: DictConfig) -> None:
     Args:
         config: Hydra configuration.
     """
+    run = setup_neptune(config)
+
     log.info("Starting evaluation...")
 
-    dataloader = HuggingFaceDataLoader(config.data)
+    dataloader = HFDataLoader(config.data)
     pipeline = DocumentSearchPipeline(config)
-    metrics = MetricSet(
-        DocumentSearchPrecisionRecallF1,
-        DocumentSearchRankedRetrievalMetrics,
-    )(config.metrics)
+    metrics = document_search_metrics(config.metrics)
 
     evaluator = Evaluator()
     results = await evaluator.compute(
@@ -40,13 +45,9 @@ async def bench(config: DictConfig) -> None:
         metrics=metrics,
     )
 
-    log.info("Evaluation finished. Saving results...")
-
-    output_dir = Path(HydraConfig.get().runtime.output_dir)
-    log_to_file(results, output_dir)
-
-    if config.neptune.run:
-        log_to_neptune(config, results, output_dir)
+    output_dir = log_to_file(results)
+    if run:
+        log_to_neptune(run, results, output_dir)
 
     log.info("Evaluation results saved under directory: %s", output_dir)
 
