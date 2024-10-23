@@ -1,22 +1,18 @@
-import abc
-from typing import Optional
-
-from ragbits.core.llms.base import LLMOptions
+from abc import ABC, abstractmethod
 
 
-class QueryRephraser(abc.ABC):
+class QueryRephraser(ABC):
     """
     Rephrases a query. Can provide multiple rephrased queries from one sentence / question.
     """
 
-    @abc.abstractmethod
-    async def rephrase(self, query: str, options: Optional[LLMOptions] = None) -> list[str]:
+    @abstractmethod
+    async def rephrase(self, query: str) -> list[str]:
         """
         Rephrase a query.
 
         Args:
             query: The query to rephrase.
-            options: Optional configuration of the the rephraser behavior.
 
         Returns:
             The rephrased queries.
@@ -33,5 +29,4 @@ class QueryRephraser(abc.ABC):
         Returns:
             An instance of the rephraser class initialized with the provided configuration.
         """
-
         return cls(**config)
