@@ -41,6 +41,12 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Create release branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b release/${{ github.event.inputs.packageName }}-$(date +%Y-%m-%d)
+
       - name: Update packages
         id: packages_update
         run: |
@@ -48,7 +54,13 @@ jobs:
           uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }}
           echo new_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
 
-      - name: Commit updated packages
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: Update ${{ github.event.inputs.packageName }} version from ${{ steps.packages_update.outputs.old_version }} to ${{ steps.packages_update.outputs.new_version }}
+      - name: Create PR with updated packages
+        run: |
+          COMMIT_MESSAGE="release(${{ github.event.inputs.packageName }}): update to v${{ steps.packages_update.outputs.new_version }}"
+          git add .
+          git commit -m "$COMMIT_MESSAGE"
+          git push -u origin HEAD
+          gh pr create -B main --title "$COMMIT_MESSAGE" \
+          --body 'Update ${{ github.event.inputs.packageName }} version from ${{ steps.packages_update.outputs.old_version }} to ${{ steps.packages_update.outputs.new_version }}'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
