@@ -11,7 +11,7 @@ except ImportError:
 
 from ragbits.core.embeddings import Embeddings
 from ragbits.core.utils.config_handling import get_cls_from_config
-from ragbits.core.vector_store import VectorDBEntry, VectorStore
+from ragbits.core.vector_store import VectorDBEntry, VectorStore, WhereQuery
 
 
 class ChromaDBStore(VectorStore):
@@ -148,18 +148,56 @@ class ChromaDBStore(VectorStore):
         Returns:
             The retrieved entries.
         """
-        query_result = self._collection.query(query_embeddings=[vector], n_results=k)
+        query_result = self._collection.query(query_embeddings=vector, n_results=k, include=["metadatas", "embeddings"])
+        metadatas = query_result.get("metadatas") or []
+        embeddings = query_result.get("embeddings") or []
 
         db_entries = []
-        for meta in query_result.get("metadatas"):
-            for result in meta:
+        for meta_list, embeddings_list in zip(metadatas, embeddings):
+            for meta, embedding in zip(meta_list, embeddings_list):
                 db_entry = VectorDBEntry(
-                    key=result["__key"],
-                    vector=vector,
-                    metadata=json.loads(result["__metadata"]),
+                    key=str(meta["__key"]),
+                    vector=list(embedding),
+                    metadata=json.loads(str(meta["__metadata"])),
                 )
 
                 db_entries.append(db_entry)
+
+        return db_entries
+
+    async def list(
+        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
+    ) -> list[VectorDBEntry]:
+        """
+        List entries from the vector store. The entries can be filtered, limited and offset.
+
+        Args:
+            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+                Not specifying the key means no filtering.
+            limit: The maximum number of entries to return.
+            offset: The number of entries to skip.
+
+        Returns:
+            The entries.
+        """
+        # Cast `where` to chromadb's Where type
+        where_chroma: chromadb.Where | None = dict(where) if where else None
+
+        get_results = self._collection.get(
+            where=where_chroma, limit=limit, offset=offset, include=["metadatas", "embeddings"]
+        )
+        metadatas = get_results.get("metadatas") or []
+        embeddings = get_results.get("embeddings") or []
+
+        db_entries = []
+        for meta, embedding in zip(metadatas, embeddings):
+            db_entry = VectorDBEntry(
+                key=str(meta["__key"]),
+                vector=list(embedding),
+                metadata=json.loads(str(meta["__metadata"])),
+            )
+
+            db_entries.append(db_entry)
 
         return db_entries
 
