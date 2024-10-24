@@ -33,7 +33,7 @@ $ uv run mypy .
 
 ## Install pre-commit
 
-We also have some check run via pre-commit hook. Setup it by:
+We also run some checks through a pre-commit hook. To set it up, follow these steps:
 
 ```
 pre-commit install
