@@ -13,16 +13,16 @@ def mock_litellm_response(monkeypatch):
     class MockResponse:
         results = [{"index": 1}, {"index": 0}]
 
-    def mock_rerank(*args, **kwargs):
+    async def mock_rerank(*args, **kwargs):
         return MockResponse()
 
-    monkeypatch.setattr("litellm.rerank", mock_rerank)
+    monkeypatch.setattr("ragbits.document_search.retrieval.rerankers.litellm.litellm.arerank", mock_rerank)
 
 
 @pytest.fixture
 def reranker():
     return LiteLLMReranker(
-        model="test_model",
+        model="test_provder/test_model",
         top_n=2,
         return_documents=True,
         rank_fields=["content"],
@@ -44,22 +44,22 @@ def mock_custom_element(mock_document_meta):
     return CustomElement(element_type="test_type", document_meta=mock_document_meta)
 
 
-def test_rerank_success(reranker, mock_litellm_response, mock_document_meta):
+async def test_rerank_success(reranker, mock_litellm_response, mock_document_meta):
     chunks = [
         TextElement(content="chunk1", document_meta=mock_document_meta),
         TextElement(content="chunk2", document_meta=mock_document_meta),
     ]
     query = "test query"
 
-    reranked_chunks = reranker.rerank(chunks, query)
+    reranked_chunks = await reranker.rerank(chunks, query)
 
     assert reranked_chunks[0].content == "chunk2"
     assert reranked_chunks[1].content == "chunk1"
 
 
-def test_rerank_invalid_chunks(reranker, mock_custom_element):
+async def test_rerank_invalid_chunks(reranker, mock_custom_element):
     chunks = [mock_custom_element]
     query = "test query"
 
     with pytest.raises(ValueError, match="All chunks must be TextElement instances"):
-        reranker.rerank(chunks, query)
+        await reranker.rerank(chunks, query)
