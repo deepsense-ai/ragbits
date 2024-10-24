@@ -66,12 +66,6 @@ def test_chromadbstore_init_import_error():
             ChromaDBStore(index_name="test_index", chroma_client=MagicMock(), embedding_function=MagicMock())
 
 
-def test_get_chroma_collection(mock_chromadb_store):
-    _ = mock_chromadb_store._get_chroma_collection()
-
-    assert mock_chromadb_store._chroma_client.get_or_create_collection.called
-
-
 async def test_stores_entries_correctly(mock_chromadb_store):
     data = [
         VectorDBEntry(
@@ -90,15 +84,15 @@ async def test_stores_entries_correctly(mock_chromadb_store):
 
 
 def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
-    id, embedding, metadata = mock_chromadb_store._process_db_entry(mock_vector_db_entry)
+    id, embedding, key, metadata = mock_chromadb_store._process_db_entry(mock_vector_db_entry)
 
     assert id == sha256(b"test_key").hexdigest()
     assert embedding == [0.1, 0.2, 0.3]
-    assert (
-        metadata["__metadata"]
-        == '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}'
-    )
-    assert metadata["__key"] == "test_key"
+    assert metadata == {
+        "content": "test content",
+        "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"},
+    }
+    assert key == "test_key"
 
 
 async def test_store(mock_chromadb_store, mock_vector_db_entry):
@@ -109,14 +103,13 @@ async def test_store(mock_chromadb_store, mock_vector_db_entry):
 
 async def test_retrieves_entries_correctly(mock_chromadb_store):
     vector = [0.1, 0.2, 0.3]
-    mock_collection = mock_chromadb_store._get_chroma_collection()
+    mock_collection = await mock_chromadb_store._get_chroma_collection()
     mock_collection.query.return_value = {
         "documents": [["test content"]],
         "metadatas": [
             [
                 {
-                    "__key": "test_key",
-                    "__metadata": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                    "__key": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}'
                 }
             ]
         ],
@@ -131,7 +124,7 @@ async def test_retrieves_entries_correctly(mock_chromadb_store):
 
 async def test_handles_empty_retrieve(mock_chromadb_store):
     vector = [0.1, 0.2, 0.3]
-    mock_collection = mock_chromadb_store._get_chroma_collection()
+    mock_collection = await mock_chromadb_store._get_chroma_collection()
     mock_collection.query.return_value = {"documents": [], "metadatas": []}
 
     entries = await mock_chromadb_store.retrieve(vector)

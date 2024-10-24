@@ -10,12 +10,20 @@ except ImportError:
     HAS_CHROMADB = False
 
 from ragbits.core.embeddings import Embeddings
+from ragbits.core.metadata_store.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_store import VectorDBEntry, VectorStore
 
 
 class ChromaDBStore(VectorStore):
     """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
+
+    CHROMA_IDS_KEY = "ids"
+    CHROMA_DOCUMENTS_KEY = "documents"
+    CHROMA_DISTANCES_KEY = "distances"
+    CHROMA_metadata_KEY = "metadatas"
+    DEFAULT_DISTANCE_METHOD = "l2"
+    METADATA_INNER_KEY = "__key"
 
     def __init__(
         self,
@@ -24,6 +32,7 @@ class ChromaDBStore(VectorStore):
         embedding_function: Union[Embeddings, "chromadb.EmbeddingFunction"],
         max_distance: Optional[float] = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
+        metadata_store: Optional[MetadataStore] = None,
     ):
         """
         Initializes the ChromaDBStore with the given parameters.
@@ -38,13 +47,13 @@ class ChromaDBStore(VectorStore):
         if not HAS_CHROMADB:
             raise ImportError("Install the 'ragbits-document-search[chromadb]' extra to use LiteLLM embeddings models")
 
-        super().__init__()
+        super().__init__(metadata_store)
         self._index_name = index_name
         self._chroma_client = chroma_client
         self._embedding_function = embedding_function
         self._max_distance = max_distance
         self._metadata = {"hnsw:space": distance_method}
-        self._collection = self._get_chroma_collection()
+        self._collection = None
 
     @classmethod
     def from_config(cls, config: dict) -> "ChromaDBStore":
@@ -69,10 +78,10 @@ class ChromaDBStore(VectorStore):
             chroma_client,
             embedding_function,
             max_distance=config.get("max_distance"),
-            distance_method=config.get("distance_method", "l2"),
+            distance_method=config.get("distance_method", cls.DEFAULT_DISTANCE_METHOD),
         )
 
-    def _get_chroma_collection(self) -> "chromadb.Collection":
+    async def _get_chroma_collection(self) -> "chromadb.Collection":
         """
         Based on the selected embedding_function, chooses how to retrieve the ChromaDB collection.
         If the collection doesn't exist, it creates one.
@@ -80,14 +89,23 @@ class ChromaDBStore(VectorStore):
         Returns:
             Retrieved collection
         """
-        if isinstance(self._embedding_function, Embeddings):
-            return self._chroma_client.get_or_create_collection(name=self._index_name, metadata=self._metadata)
+        if self._collection is not None:
+            return self._collection
 
-        return self._chroma_client.get_or_create_collection(
+        if self.metadata_store is not None:
+            await self.metadata_store.store_global(self._metadata)
+            metadata_to_store = None
+        else:
+            metadata_to_store = self._metadata
+        if isinstance(self._embedding_function, Embeddings):
+            return self._chroma_client.get_or_create_collection(name=self._index_name, metadata=metadata_to_store)
+
+        self._collection = self._chroma_client.get_or_create_collection(
             name=self._index_name,
-            metadata=self._metadata,
+            metadata=metadata_to_store,
             embedding_function=self._embedding_function,
         )
+        return self._collection
 
     def _return_best_match(self, retrieved: dict) -> Optional[str]:
         """
@@ -99,21 +117,17 @@ class ChromaDBStore(VectorStore):
         Returns:
             The best match or None if no match is found
         """
-        if self._max_distance is None or retrieved["distances"][0][0] <= self._max_distance:
-            return retrieved["documents"][0][0]
+        if self._max_distance is None or retrieved[self.CHROMA_DISTANCES_KEY][0][0] <= self._max_distance:
+            return retrieved[self.CHROMA_DOCUMENTS_KEY][0][0]
 
         return None
 
-    def _process_db_entry(self, entry: VectorDBEntry) -> tuple[str, list[float], dict]:
+    @staticmethod
+    def _process_db_entry(entry: VectorDBEntry) -> tuple[str, list[float], str, dict]:
         doc_id = sha256(entry.key.encode("utf-8")).hexdigest()
         embedding = entry.vector
 
-        metadata = {
-            "__key": entry.key,
-            "__metadata": json.dumps(entry.metadata, default=str),
-        }
-
-        return doc_id, embedding, metadata
+        return doc_id, embedding, entry.key, entry.metadata
 
     @property
     def embedding_function(self) -> Union[Embeddings, "chromadb.EmbeddingFunction"]:
@@ -133,9 +147,17 @@ class ChromaDBStore(VectorStore):
             entries: The entries to store.
         """
         entries_processed = list(map(self._process_db_entry, entries))
-        ids, embeddings, metadatas = map(list, zip(*entries_processed))
+        ids, embeddings, contents, metadatas = map(list, zip(*entries_processed))
 
-        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)
+        if self.metadata_store is not None:
+            for key, meta in zip(ids, metadatas):
+                await self.metadata_store.store(key, meta)
+            metadata_to_store = None
+        else:
+            metadata_to_store = [{self.METADATA_INNER_KEY: json.dumps(m, default=str)} for m in metadatas]
+
+        collection = await self._get_chroma_collection()
+        collection.add(ids=ids, embeddings=embeddings, metadatas=metadata_to_store, documents=contents)
 
     async def retrieve(self, vector: List[float], k: int = 5) -> List[VectorDBEntry]:
         """
@@ -148,18 +170,24 @@ class ChromaDBStore(VectorStore):
         Returns:
             The retrieved entries.
         """
-        query_result = self._collection.query(query_embeddings=[vector], n_results=k)
+        collection = await self._get_chroma_collection()
+        query_result = collection.query(query_embeddings=[vector], n_results=k)
+        db_entries: list[VectorDBEntry] = []
 
-        db_entries = []
-        for meta in query_result.get("metadatas"):
-            for result in meta:
-                db_entry = VectorDBEntry(
-                    key=result["__key"],
-                    vector=vector,
-                    metadata=json.loads(result["__metadata"]),
-                )
-
-                db_entries.append(db_entry)
+        if len(query_result[self.CHROMA_DOCUMENTS_KEY]) < 1:
+            return db_entries
+        for i in range(len(query_result[self.CHROMA_DOCUMENTS_KEY][0])):
+            key = query_result[self.CHROMA_DOCUMENTS_KEY][0][i]
+            if self.metadata_store is not None:
+                metadata = await self.metadata_store.get(query_result[self.CHROMA_IDS_KEY][0][i])
+            else:
+                metadata = json.loads(query_result[self.CHROMA_metadata_KEY][0][i][self.METADATA_INNER_KEY])
+            db_entry = VectorDBEntry(
+                key=key,
+                vector=vector,
+                metadata=metadata,
+            )
+            db_entries.append(db_entry)
 
         return db_entries
 

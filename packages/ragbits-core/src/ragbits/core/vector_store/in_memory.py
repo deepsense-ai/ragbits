@@ -1,5 +1,8 @@
+from typing import Optional
+
 import numpy as np
 
+from ragbits.core.metadata_store.base import MetadataStore
 from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
 
 
@@ -8,7 +11,8 @@ class InMemoryVectorStore(VectorStore):
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, metadata_store: Optional[MetadataStore] = None) -> None:
+        super().__init__(metadata_store)
         self._storage: dict[str, VectorDBEntry] = {}
 
     async def store(self, entries: list[VectorDBEntry]) -> None:
