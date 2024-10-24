@@ -1,6 +1,9 @@
 import abc
+from typing import Optional
 
 from pydantic import BaseModel
+
+from ragbits.core.metadata_store.base import MetadataStore
 
 
 class VectorDBEntry(BaseModel):
@@ -20,6 +23,11 @@ class VectorStore(abc.ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
+
+    metadata_store: Optional[MetadataStore]
+
+    def __init__(self, metadata_store: Optional[MetadataStore] = None):
+        self.metadata_store = metadata_store
 
     @abc.abstractmethod
     async def store(self, entries: list[VectorDBEntry]) -> None:
