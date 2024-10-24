@@ -83,7 +83,7 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
+    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -94,9 +94,7 @@ class DocumentSearch:
         Returns:
             A list of chunks.
         """
-        if not search_config:
-            search_config = SearchConfig()
-        queries = self.query_rephraser.rephrase(query)
+        queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])

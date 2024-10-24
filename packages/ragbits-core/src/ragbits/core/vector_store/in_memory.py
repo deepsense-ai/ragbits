@@ -1,6 +1,8 @@
+from itertools import islice
+
 import numpy as np
 
-from ragbits.core.vector_store.base import VectorDBEntry, VectorStore
+from ragbits.core.vector_store.base import VectorDBEntry, VectorStore, WhereQuery
 
 
 class InMemoryVectorStore(VectorStore):
@@ -45,3 +47,33 @@ class InMemoryVectorStore(VectorStore):
     @staticmethod
     def _calculate_squared_euclidean(vector_x: list[float], vector_b: list[float]) -> float:
         return np.linalg.norm(np.array(vector_x) - np.array(vector_b))
+
+    async def list(
+        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
+    ) -> list[VectorDBEntry]:
+        """
+        List entries from the vector store. The entries can be filtered, limited and offset.
+
+        Args:
+            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+                Not specifying the key means no filtering.
+            limit: The maximum number of entries to return.
+            offset: The number of entries to skip.
+
+        Returns:
+            The entries.
+        """
+        entries = iter(self._storage.values())
+
+        if where:
+            entries = (
+                entry for entry in entries if all(entry.metadata.get(key) == value for key, value in where.items())
+            )
+
+        if offset:
+            entries = islice(entries, offset, None)
+
+        if limit:
+            entries = islice(entries, limit)
+
+        return list(entries)

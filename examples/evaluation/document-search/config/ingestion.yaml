@@ -1,0 +1,6 @@
+defaults:
+  - data: corpus
+  - embedder: litellm
+  - providers: unstructured
+  - vector_store: chroma
+  - _self_

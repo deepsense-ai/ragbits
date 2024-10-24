@@ -1,0 +1,67 @@
+name: Semantic Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      updateType:
+        description: "version update type"
+        required: true
+        type: choice
+        default: "patch"
+        options:
+          - "major"
+          - "minor"
+          - "patch"
+      packageName:
+        description: "name of the package to update"
+        required: true
+        type: choice
+        options:
+          - "ragbits"
+          - "ragbits-cli"
+          - "ragbits-core"
+          - "ragbits-document-search"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: "0.4.10"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Create release branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b release/${{ github.event.inputs.packageName }}-$(date +%Y-%m-%d)
+
+      - name: Update packages
+        id: packages_update
+        run: |
+          echo old_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
+          uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }}
+          echo new_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
+          uv sync
+
+      - name: Create PR with updated packages
+        run: |
+          COMMIT_MESSAGE="release(${{ github.event.inputs.packageName }}): update to v${{ steps.packages_update.outputs.new_version }}"
+          git add .
+          git commit -m "$COMMIT_MESSAGE"
+          git push -u origin HEAD
+          gh pr create -B main --title "$COMMIT_MESSAGE" \
+          --body 'Update ${{ github.event.inputs.packageName }} version from ${{ steps.packages_update.outputs.old_version }} to ${{ steps.packages_update.outputs.new_version }}'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

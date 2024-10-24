@@ -72,7 +72,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         # because of mypy issue: https://github.com/python/mypy/issues/12622
         context = {}
         if isinstance(input_data, BaseModel):
-            context = input_data.model_dump()
+            context = input_data.model_dump(serialize_as_any=True)
         return template.render(**context)
 
     @classmethod

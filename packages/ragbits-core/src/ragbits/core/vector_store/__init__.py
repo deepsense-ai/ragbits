@@ -1,11 +1,11 @@
 import sys
 
 from ..utils.config_handling import get_cls_from_config
-from .base import VectorDBEntry, VectorStore
+from .base import VectorDBEntry, VectorStore, WhereQuery
 from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
-__all__ = ["ChromaDBStore", "InMemoryVectorStore", "VectorDBEntry", "VectorStore"]
+__all__ = ["InMemoryVectorStore", "VectorDBEntry", "VectorStore", "ChromaDBStore", "WhereQuery"]
 
 module = sys.modules[__name__]
 

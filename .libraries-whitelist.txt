@@ -2,3 +2,4 @@ pkg_resources
 tiktoken
 chardet
 chroma-hnswlib
+rouge
