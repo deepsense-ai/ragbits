@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -16,6 +16,9 @@ class VectorDBEntry(BaseModel):
     metadata: dict
 
 
+WhereQuery = dict[str, str | int | float | bool]
+
+
 class VectorStore(abc.ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
@@ -27,7 +30,7 @@ class VectorStore(abc.ABC):
         self.metadata_store = metadata_store
 
     @abc.abstractmethod
-    async def store(self, entries: List[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorDBEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -43,6 +46,23 @@ class VectorStore(abc.ABC):
         Args:
             vector: The vector to search for.
             k: The number of entries to retrieve.
+
+        Returns:
+            The entries.
+        """
+
+    @abc.abstractmethod
+    async def list(
+        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
+    ) -> list[VectorDBEntry]:
+        """
+        List entries from the vector store. The entries can be filtered, limited and offset.
+
+        Args:
+            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+                Not specifying the key means no filtering.
+            limit: The maximum number of entries to return.
+            offset: The number of entries to skip.
 
         Returns:
             The entries.

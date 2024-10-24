@@ -12,7 +12,7 @@ except ImportError:
 from ragbits.core.embeddings import Embeddings
 from ragbits.core.metadata_store.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
-from ragbits.core.vector_store import VectorDBEntry, VectorStore
+from ragbits.core.vector_store import VectorDBEntry, VectorStore, WhereQuery
 
 
 class ChromaDBStore(VectorStore):
@@ -21,9 +21,11 @@ class ChromaDBStore(VectorStore):
     CHROMA_IDS_KEY = "ids"
     CHROMA_DOCUMENTS_KEY = "documents"
     CHROMA_DISTANCES_KEY = "distances"
-    CHROMA_metadata_KEY = "metadatas"
+    CHROMA_METADATA_KEY = "metadatas"
+    CHROMA_EMBEDDINGS_KEY = "embeddings"
+    CHROMA_INCLUDE_KEYS = [CHROMA_DOCUMENTS_KEY, CHROMA_DISTANCES_KEY, CHROMA_METADATA_KEY, CHROMA_EMBEDDINGS_KEY]
     DEFAULT_DISTANCE_METHOD = "l2"
-    METADATA_INNER_KEY = "__key"
+    METADATA_INNER_KEY = "__metadata"
 
     def __init__(
         self,
@@ -171,20 +173,45 @@ class ChromaDBStore(VectorStore):
             The retrieved entries.
         """
         collection = await self._get_chroma_collection()
-        query_result = collection.query(query_embeddings=[vector], n_results=k)
+        query_result = collection.query(query_embeddings=[vector], n_results=k, include=self.CHROMA_INCLUDE_KEYS)
+        return await self._extract_entries_from_query(query_result)
+
+    async def list(
+        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
+    ) -> list[VectorDBEntry]:
+        """
+        List entries from the vector store. The entries can be filtered, limited and offset.
+
+        Args:
+            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+                Not specifying the key means no filtering.
+            limit: The maximum number of entries to return.
+            offset: The number of entries to skip.
+
+        Returns:
+            The entries.
+        """
+        # Cast `where` to chromadb's Where type
+        where_chroma: chromadb.Where | None = dict(where) if where else None
+
+        collection = await self._get_chroma_collection()
+        get_results = collection.get(where=where_chroma, limit=limit, offset=offset, include=self.CHROMA_INCLUDE_KEYS)
+        return await self._extract_entries_from_query(get_results)
+
+    async def _extract_entries_from_query(self, query_results: "chromadb.api.types.QueryResult") -> List[VectorDBEntry]:
         db_entries: list[VectorDBEntry] = []
 
-        if len(query_result[self.CHROMA_DOCUMENTS_KEY]) < 1:
+        if len(query_results[self.CHROMA_DOCUMENTS_KEY]) < 1:
             return db_entries
-        for i in range(len(query_result[self.CHROMA_DOCUMENTS_KEY][0])):
-            key = query_result[self.CHROMA_DOCUMENTS_KEY][0][i]
+        for i in range(len(query_results[self.CHROMA_DOCUMENTS_KEY][0])):
+            key = query_results[self.CHROMA_DOCUMENTS_KEY][0][i]
             if self.metadata_store is not None:
-                metadata = await self.metadata_store.get(query_result[self.CHROMA_IDS_KEY][0][i])
+                metadata = await self.metadata_store.get(query_results[self.CHROMA_IDS_KEY][0][i])
             else:
-                metadata = json.loads(query_result[self.CHROMA_metadata_KEY][0][i][self.METADATA_INNER_KEY])
+                metadata = json.loads(query_results[self.CHROMA_METADATA_KEY][0][i][self.METADATA_INNER_KEY])
             db_entry = VectorDBEntry(
                 key=key,
-                vector=vector,
+                vector=query_results[self.CHROMA_EMBEDDINGS_KEY][0][i],
                 metadata=metadata,
             )
             db_entries.append(db_entry)

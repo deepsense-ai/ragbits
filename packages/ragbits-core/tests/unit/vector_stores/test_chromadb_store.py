@@ -109,10 +109,11 @@ async def test_retrieves_entries_correctly(mock_chromadb_store):
         "metadatas": [
             [
                 {
-                    "__key": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}'
+                    "__metadata": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}'
                 }
             ]
         ],
+        "embeddings": [[[0.12, 0.25, 0.29]]],
     }
 
     entries = await mock_chromadb_store.retrieve(vector)
@@ -120,6 +121,35 @@ async def test_retrieves_entries_correctly(mock_chromadb_store):
     assert len(entries) == 1
     assert entries[0].metadata["content"] == "test content"
     assert entries[0].metadata["document"]["title"] == "test title"
+    assert entries[0].vector == [0.12, 0.25, 0.29]
+
+
+async def test_lists_entries_correctly(mock_chromadb_store):
+    mock_collection = await mock_chromadb_store._get_chroma_collection()
+    mock_collection.get.return_value = {
+        "documents": [["test content", "test content 2"]],
+        "metadatas": [
+            [
+                {
+                    "__metadata": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                },
+                {
+                    "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                },
+            ]
+        ],
+        "embeddings": [[[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]]],
+    }
+
+    entries = await mock_chromadb_store.list()
+
+    assert len(entries) == 2
+    assert entries[0].metadata["content"] == "test content"
+    assert entries[0].metadata["document"]["title"] == "test title"
+    assert entries[0].vector == [0.12, 0.25, 0.29]
+    assert entries[1].metadata["content"] == "test content 2"
+    assert entries[1].metadata["document"]["title"] == "test title 2"
+    assert entries[1].vector == [0.13, 0.26, 0.30]
 
 
 async def test_handles_empty_retrieve(mock_chromadb_store):

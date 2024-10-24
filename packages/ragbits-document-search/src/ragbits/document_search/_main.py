@@ -95,7 +95,7 @@ class DocumentSearch:
         Returns:
             A list of chunks.
         """
-        queries = self.query_rephraser.rephrase(query)
+        queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])

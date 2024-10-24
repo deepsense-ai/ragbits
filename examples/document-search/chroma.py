@@ -11,7 +11,7 @@ import chromadb
 
 from ragbits.core.embeddings import LiteLLMEmbeddings
 from ragbits.core.vector_store.chromadb_store import ChromaDBStore
-from ragbits.document_search import DocumentSearch
+from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
 documents = [
@@ -19,6 +19,7 @@ documents = [
     DocumentMeta.create_text_document_from_literal(
         "Why programmers don't like to swim? Because they're scared of the floating points."
     ),
+    DocumentMeta.create_text_document_from_literal("This one is completely unrelated."),
 ]
 
 
@@ -37,8 +38,16 @@ async def main():
 
     await document_search.ingest(documents)
 
-    results = await document_search.search("I'm boiling my water and I need a joke")
-    print(results)
+    print()
+    print("All documents:")
+    all_documents = await vector_store.list()
+    print([doc.metadata["content"] for doc in all_documents])
+
+    query = "I'm boiling my water and I need a joke"
+    print()
+    print(f"Documents similar to: {query}")
+    results = await document_search.search(query, search_config=SearchConfig(vector_store_kwargs={"k": 2}))
+    print([element.get_key() for element in results])
 
 
 if __name__ == "__main__":
