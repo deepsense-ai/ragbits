@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pydantic
 import pytest
 
@@ -94,6 +96,22 @@ def test_raises_when_no_input_data():
 
     with pytest.raises(ValueError):
         TestPrompt()
+
+
+def test_image_prompt():
+    "Tests the prompt creation of images"
+    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
+        image_bytes = f.read()
+    image_list = [image_bytes]
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        images = image_list
+
+    prompt = ImagePrompt()
+    assert len(prompt.chat) == 1
+    assert len(prompt.chat[0]["content"]) == 2
+    assert len(prompt.list_images()) == 1
 
 
 def test_prompt_with_no_input_type():

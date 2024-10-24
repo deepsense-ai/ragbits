@@ -58,6 +58,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.api_key = api_key
         self.api_version = api_version
         self.use_structured_output = use_structured_output
+        self.has_vision = litellm.supports_vision(self.model_name)
 
     @cached_property
     def client(self) -> LiteLLMClient:

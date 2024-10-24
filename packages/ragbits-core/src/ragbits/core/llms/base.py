@@ -26,6 +26,7 @@ class LLM(Generic[LLMClientOptions], ABC):
             TypeError: If the subclass is missing the '_options_cls' attribute.
         """
         self.model_name = model_name
+        self.has_vision = False
         self.default_options = default_options or self._options_cls()
 
     def __init_subclass__(cls) -> None:
@@ -66,8 +67,12 @@ class LLM(Generic[LLMClientOptions], ABC):
 
         Returns:
             Raw text response from LLM.
+        Raises:
+            ValueError: prompt containing images and model does not support vision
         """
         options = (self.default_options | options) if options else self.default_options
+        if prompt.list_images() and not self.has_vision:
+            raise ValueError(f"Model {self.model_name} does not support vision input")
 
         response = await self.client.call(
             conversation=prompt.chat,

@@ -1,6 +1,7 @@
+import base64
 import textwrap
 from abc import ABCMeta
-from typing import Any, Callable, Dict, Generic, Optional, Tuple, Type, cast, get_args, get_origin, overload
+from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, Type, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
@@ -23,6 +24,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     system_prompt: Optional[str] = None
     user_prompt: str
+    images: Optional[List[bytes]] = None
 
     # Additional messages to be added to the conversation after the system prompt,
     # pairs of user message and assistant response
@@ -140,7 +142,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": self.rendered_user_prompt},
+            *self.get_user_message(),
         ]
         return chat
 
@@ -180,6 +182,44 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "user", "content": user_message})
             result.append({"role": "assistant", "content": assistant_message})
         return result
+
+    def list_images(self) -> list[dict]:
+        """
+        Returns the schema of the list of images compatible with llm apis
+        Returns:
+            list of dictionaries
+        """
+        image_prompt_list = (
+            [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64 {base64.b64encode(image).decode('utf-8')}"},
+                }
+                for image in self.images
+            ]
+            if self.images
+            else []
+        )
+        return image_prompt_list
+
+    def get_user_message(self) -> ChatFormat:
+        """
+        Parses the rendered user prompt and combines it with images if they exist
+        Returns:
+            ChatFormat user_message
+        """
+        images = self.list_images()
+        if not images:
+            user_message = {
+                "role": "user",
+                "content": self.rendered_user_prompt,
+            }
+        else:
+            user_message = {
+                "role": "user",
+                "content": [{"type": "text", "text": self.rendered_user_prompt}, *images],  # type: ignore
+            }  # type: ignore
+        return [user_message]
 
     def output_schema(self) -> Optional[Dict | Type[BaseModel]]:
         """
