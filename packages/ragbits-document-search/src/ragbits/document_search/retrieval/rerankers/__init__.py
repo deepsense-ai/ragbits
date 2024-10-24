@@ -4,9 +4,10 @@ from typing import Optional
 from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import Reranker
+from .litellm import LiteLLMReranker
 from .noop import NoopReranker
 
-__all__ = ["NoopReranker", "Reranker"]
+__all__ = ["LiteLLMReranker", "NoopReranker", "Reranker"]
 
 module = sys.modules[__name__]
 

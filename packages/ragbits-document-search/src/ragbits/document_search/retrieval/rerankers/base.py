@@ -8,14 +8,14 @@ class Reranker(abc.ABC):
     Reranks chunks retrieved from vector store.
     """
 
-    @staticmethod
     @abc.abstractmethod
-    def rerank(chunks: list[Element]) -> list[Element]:
+    async def rerank(self, chunks: list[Element], query: str) -> list[Element]:
         """
         Rerank chunks.
 
         Args:
             chunks: The chunks to rerank.
+            query: The query to rerank the chunks against.
 
         Returns:
             The reranked chunks.
