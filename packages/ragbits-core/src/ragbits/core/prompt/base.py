@@ -1,10 +1,10 @@
 from abc import ABCMeta, abstractmethod
-from typing import Generic
+from typing import Any, Dict, Generic, Optional, Type
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar
 
-ChatFormat = list[dict[str, str]]
+ChatFormat = list[dict[str, Any]]
 OutputT = TypeVar("OutputT", default=str)
 
 
@@ -36,6 +36,15 @@ class BasePrompt(metaclass=ABCMeta):
         or to validate the output. Can return either a Pydantic model or a JSON schema.
         """
         return None
+
+    def list_images(self) -> list[bytes]:
+        """
+        Returns the schema of the list of images compatible with llm apis
+        Returns:
+            list of dictionaries
+        """
+
+        return []
 
 
 class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):

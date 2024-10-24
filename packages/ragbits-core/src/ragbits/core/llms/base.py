@@ -1,9 +1,10 @@
+import warnings as wrngs
 import enum
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Generic, cast, overload
 
-from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, OutputT
+from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 
@@ -81,7 +82,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         options = (self.default_options | options) if options else self.default_options
 
         response = await self.client.call(
-            conversation=prompt.chat,
+            conversation=self._format_chat_for_llm(prompt),
             options=options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -128,3 +129,8 @@ class LLM(Generic[LLMClientOptions], ABC):
             return prompt.parse_response(response)
 
         return cast(OutputT, response)
+
+    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
+        if prompt.list_images():
+            wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
+        return prompt.chat

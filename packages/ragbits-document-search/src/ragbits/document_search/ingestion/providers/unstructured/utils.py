@@ -1,11 +1,13 @@
-import base64
 import io
 import os
+import warnings as wrngs
+from typing import Optional
 
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement
 
 from ragbits.core.llms.base import LLM
+from ragbits.core.prompt.base import BasePrompt
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 
@@ -84,35 +86,18 @@ class ImageDescriber:
     Describes images content using an LLM
     """
 
-    DEFAULT_PROMPT = "Describe the content of the image."
-
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    async def get_image_description(self, image_bytes: bytes, prompt: str | None = DEFAULT_PROMPT) -> str:
+    async def get_image_description(self, prompt: BasePrompt) -> str:
         """
-        Provides summary of the image (passed as bytes)
+        Provides summary of the image passed with prompt
 
         Args:
-            image_bytes: bytes of the image
-            prompt: prompt to be used
-
+            prompt: BasePrompt an instance of a prompt
         Returns:
             summary of the image
         """
-        img_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
-        # TODO make this use prompt structure from ragbits core once there is a support for images
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": f"{prompt}"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
-                    },
-                ],
-            }
-        ]
-        return await self.llm.client.call(messages, self.llm.default_options)  # type: ignore
+        if not prompt.list_images():
+            wrngs.warn(message="Image data not provided", category=UserWarning)
+        return await self.llm.generate(prompt=prompt)
