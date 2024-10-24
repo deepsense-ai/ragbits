@@ -16,7 +16,7 @@ from ragbits.core.prompt.discovery import PromptDiscovery
 
 def generate_configs(
     file_pattern: str = core_config.prompt_path_pattern,
-    root_path: Path = Path.cwd(),
+    root_path: Path | None = None,
     target_path: Path = Path("promptfooconfigs"),
 ) -> None:
     """
@@ -27,6 +27,8 @@ def generate_configs(
         root_path: The root path to search for Prompt objects. Defaults to the directory where the script is run.
         target_path: The path to save the promptfoo configuration files. Defaults to "promptfooconfigs".
     """
+    root_path = root_path or Path.cwd()
+
     if not HAS_PYYAML:
         Console(stderr=True).print(
             "To generate configs for promptfoo, you need the PyYAML library. Please install it using the following"

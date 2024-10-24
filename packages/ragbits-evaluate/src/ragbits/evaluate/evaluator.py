@@ -1,6 +1,7 @@
 import time
+from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Any, Iterable
+from typing import Any
 
 from tqdm.asyncio import tqdm
 
@@ -52,7 +53,7 @@ class Evaluator:
 
         Args:
             pipeline: The pipeline to be called.
-            data: The evaluation data.
+            dataset: The dataset to be processed.
 
         Returns:
             The evaluation results and performance metrics.
@@ -62,7 +63,8 @@ class Evaluator:
         end_time = time.perf_counter()
         return pipe_outputs, self._compute_time_perf(start_time, end_time, len(pipe_outputs))
 
-    def _results_processor(self, results: list[EvaluationResult]) -> dict[str, Any]:
+    @staticmethod
+    def _results_processor(results: list[EvaluationResult]) -> dict[str, Any]:
         """
         Process the results.
 
@@ -74,7 +76,8 @@ class Evaluator:
         """
         return {"results": [asdict(result) for result in results]}
 
-    def _compute_metrics(self, metrics: MetricSet, results: list[EvaluationResult]) -> dict[str, Any]:
+    @staticmethod
+    def _compute_metrics(metrics: MetricSet, results: list[EvaluationResult]) -> dict[str, Any]:
         """
         Compute a metric using the given inputs.
 
@@ -87,7 +90,8 @@ class Evaluator:
         """
         return {"metrics": metrics.compute(results)}
 
-    def _compute_time_perf(self, start_time: float, end_time: float, num_samples: int) -> dict[str, Any]:
+    @staticmethod
+    def _compute_time_perf(start_time: float, end_time: float, num_samples: int) -> dict[str, Any]:
         """
         Compute the performance metrics.
 

@@ -1,6 +1,5 @@
 from io import BytesIO
 from pathlib import Path
-from typing import Optional
 
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
@@ -54,10 +53,10 @@ class UnstructuredDefaultProvider(BaseProvider):
 
     def __init__(
         self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
+        partition_kwargs: dict | None = None,
+        chunking_kwargs: dict | None = None,
+        api_key: str | None = None,
+        api_server: str | None = None,
         use_api: bool = False,
         ignore_images: bool = False,
     ) -> None:
@@ -79,12 +78,13 @@ class UnstructuredDefaultProvider(BaseProvider):
         self.api_key = api_key
         self.api_server = api_server
         self.use_api = use_api
-        self._client = None
+        self._client: UnstructuredClient | None = None
         self.ignore_images = ignore_images
 
     @property
     def client(self) -> UnstructuredClient:
-        """Get the UnstructuredClient instance. If the client is not initialized, it will be created.
+        """
+        Get the UnstructuredClient instance. If the client is not initialized, it will be created.
 
         Returns:
             The UnstructuredClient instance.
@@ -103,7 +103,8 @@ class UnstructuredDefaultProvider(BaseProvider):
         return self._client
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
-        """Process the document using the Unstructured API.
+        """
+        Process the document using the Unstructured API.
 
         Args:
             document_meta: The document to process.
@@ -131,7 +132,7 @@ class UnstructuredDefaultProvider(BaseProvider):
                     }
                 }
             )
-            elements = elements_from_dicts(res.elements)
+            elements = elements_from_dicts(res.elements)  # type: ignore
         else:
             elements = partition(
                 file=BytesIO(document.local_path.read_bytes()),

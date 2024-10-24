@@ -1,6 +1,6 @@
 import importlib
 from abc import ABC
-from typing import Any, Optional
+from typing import Any
 
 from continuous_eval.metrics.retrieval import PrecisionRecallF1, RankedRetrievalMetrics
 from omegaconf import DictConfig
@@ -17,7 +17,7 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
 
     metric_cls: type[PrecisionRecallF1 | RankedRetrievalMetrics]
 
-    def __init__(self, config: Optional[DictConfig] = None) -> None:
+    def __init__(self, config: DictConfig | None = None) -> None:
         """
         Initializes the metric.
 

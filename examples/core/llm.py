@@ -36,8 +36,9 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
     system_prompt = """
-    You are a joke generator. The jokes you generate should be funny and not offensive. {% if not pun_allowed %}Also, make sure
-    that the jokes do not contain any puns.{% else %}You can use any type of joke, even if it contains puns.{% endif %}
+    You are a joke generator. The jokes you generate should be funny and not offensive.
+    {% if not pun_allowed %}Also, make sure that the jokes do not contain any puns.
+    {% else %}You can use any type of joke, even if it contains puns.{% endif %}
 
     Respond as json with two fields: joke and joke_category.
     """
@@ -47,7 +48,7 @@ class JokePrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
 
-async def main():
+async def main() -> None:
     """
     Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
     """

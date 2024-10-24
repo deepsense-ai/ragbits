@@ -46,7 +46,7 @@ class InMemoryVectorStore(VectorStore):
 
     @staticmethod
     def _calculate_squared_euclidean(vector_x: list[float], vector_b: list[float]) -> float:
-        return np.linalg.norm(np.array(vector_x) - np.array(vector_b))
+        return float(np.linalg.norm(np.array(vector_x) - np.array(vector_b)))
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0

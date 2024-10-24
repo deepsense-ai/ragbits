@@ -8,7 +8,9 @@ from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSour
 
 
 class DocumentType(str, Enum):
-    """Types of documents that can be stored."""
+    """
+    Types of documents that can be stored.
+    """
 
     MD = "md"
     TXT = "txt"

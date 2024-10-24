@@ -1,7 +1,11 @@
 import tempfile
 from pathlib import Path
 
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType, TextDocument
+from ragbits.document_search.documents.document import (
+    DocumentMeta,
+    DocumentType,
+    TextDocument,
+)
 from ragbits.document_search.documents.sources import LocalFileSource
 
 

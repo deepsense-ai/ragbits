@@ -3,7 +3,7 @@ from types import ModuleType
 from typing import Any
 
 
-def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:
+def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:  # noqa: ANN401
     """
     Retrieves and returns a class based on the given type string. The class can be either in the
     default module or a specified module if provided in the type string.

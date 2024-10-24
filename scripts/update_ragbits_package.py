@@ -17,9 +17,8 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
-import tomlkit
+import tomlkit  # type: ignore
 import typer
 from inquirer.shortcuts import confirm, list_input, text
 from rich import print as pprint
@@ -37,13 +36,13 @@ class UpdateType(Enum):
     PATCH = "patch"
 
 
-def _update_type_to_enum(update_type: Optional[str] = None) -> Optional[UpdateType]:
+def _update_type_to_enum(update_type: str | None = None) -> UpdateType | None:
     if update_type is not None:
         return UpdateType(update_type)
     return None
 
 
-def _version_to_list(version_string):
+def _version_to_list(version_string: str) -> list[int]:
     return [int(part) for part in version_string.split(".")]
 
 
@@ -74,9 +73,9 @@ def _get_updated_version(version: str, update_type: UpdateType) -> str:
 
 def _update_pkg_version(
     pkg_name: str,
-    pkg_pyproject: Optional[tomlkit.TOMLDocument] = None,
-    new_version: Optional[str] = None,
-    update_type: Optional[UpdateType] = None,
+    pkg_pyproject: tomlkit.TOMLDocument | None = None,
+    new_version: str | None = None,
+    update_type: UpdateType | None = None,
     sync_ragbits_version: bool = False,
 ) -> tuple[str, str]:
     if not pkg_pyproject:
@@ -89,12 +88,16 @@ def _update_pkg_version(
             new_version = _get_updated_version(version, update_type=update_type)
         else:
             pprint(f"Current version of the [bold]{pkg_name}[/bold] package is: [bold]{version}[/bold]")
-            new_version = text("Enter the new version", default=_get_updated_version(version, UpdateType.PATCH))
+            new_version = text(
+                "Enter the new version",
+                default=_get_updated_version(version, UpdateType.PATCH),
+            )
 
     pkg_pyproject["project"]["version"] = new_version
     (PACKAGES_DIR / pkg_name / "pyproject.toml").write_text(tomlkit.dumps(pkg_pyproject))
 
-    assert isinstance(new_version, str)
+    if not isinstance(new_version, str):
+        raise TypeError("new_version must be a string")
     pprint(f"[green]The {pkg_name} package was successfully updated from {version} to {new_version}.[/green]")
 
     if pkg_name != "ragbits":
@@ -105,7 +108,7 @@ def _update_pkg_version(
     return version, new_version
 
 
-def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, update_version: bool = True):
+def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, update_version: bool = True) -> None:
     ragbits_pkg_project = tomlkit.parse((PACKAGES_DIR / "ragbits" / "pyproject.toml").read_text())
     ragbits_deps: list[str] = [dep.split("==")[0] for dep in ragbits_pkg_project["project"]["dependencies"]]
 
@@ -178,7 +181,7 @@ def _create_changelog_release(pkg_name: str, new_version: str) -> None:
     changelog_path.write_text(changelog_content)
 
 
-def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[str] = typer.Argument(None)) -> None:
+def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 
@@ -198,7 +201,6 @@ def run(pkg_name: Optional[str] = typer.Argument(None), update_type: Optional[st
     Raises:
         ValueError: If the provided `pkg_name` is not found in the available packages.
     """
-
     packages: list[str] = [obj.name for obj in PACKAGES_DIR.iterdir() if obj.is_dir()]
 
     if pkg_name is not None:

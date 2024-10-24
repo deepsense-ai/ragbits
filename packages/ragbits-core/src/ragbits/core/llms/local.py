@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 try:
     from transformers import AutoTokenizer
@@ -24,9 +23,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
     def __init__(
         self,
         model_name: str,
-        default_options: Optional[LocalLLMOptions] = None,
+        default_options: LocalLLMOptions | None = None,
         *,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ) -> None:
         """
         Constructs a new local LLM instance.
@@ -66,6 +65,5 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Number of tokens in the messages.
         """
-
         input_ids = self.tokenizer.apply_chat_template(prompt.chat)
         return len(input_ids)
