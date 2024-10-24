@@ -71,7 +71,7 @@ def register(app: typer.Typer) -> None:
         pprint("[orange3]RENDERED PROMPT:")
         pprint(prompt.chat)
 
-    @prompts_app.command()
+    @prompts_app.command(name="exec")
     def execute(
         prompt_path: str, payload: str | None = None, llm_factory: str | None = core_config.default_llm_factory
     ) -> None:
