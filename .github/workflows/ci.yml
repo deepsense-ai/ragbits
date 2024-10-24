@@ -62,7 +62,6 @@ jobs:
           format: "table"
           output: "trivy-scanning-results.txt"
 
-
       - name: Format trivy message
         run: |
           echo "Trivy scanning results." >> trivy.txt
