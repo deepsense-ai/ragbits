@@ -24,8 +24,8 @@ class ChromaDBStore(VectorStore):
     def __init__(
         self,
         index_name: str,
-        chroma_client: "chromadb.ClientAPI",
-        embedding_function: Embeddings | "chromadb.EmbeddingFunction",
+        chroma_client: chromadb.ClientAPI,
+        embedding_function: Embeddings | chromadb.EmbeddingFunction,
         max_distance: float | None = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
     ):
@@ -51,7 +51,7 @@ class ChromaDBStore(VectorStore):
         self._collection = self._get_chroma_collection()
 
     @classmethod
-    def from_config(cls, config: dict) -> "ChromaDBStore":
+    def from_config(cls, config: dict) -> ChromaDBStore:
         """
         Creates and returns an instance of the ChromaDBStore class from the given configuration.
 
@@ -76,7 +76,7 @@ class ChromaDBStore(VectorStore):
             distance_method=config.get("distance_method", "l2"),
         )
 
-    def _get_chroma_collection(self) -> "chromadb.Collection":
+    def _get_chroma_collection(self) -> chromadb.Collection:
         """
         Based on the selected embedding_function, chooses how to retrieve the ChromaDB collection.
         If the collection doesn't exist, it creates one.
@@ -121,7 +121,7 @@ class ChromaDBStore(VectorStore):
         return doc_id, embedding, metadata
 
     @property
-    def embedding_function(self) -> Embeddings | "chromadb.EmbeddingFunction":
+    def embedding_function(self) -> Embeddings | chromadb.EmbeddingFunction:
         """
         Returns the embedding function.
 
