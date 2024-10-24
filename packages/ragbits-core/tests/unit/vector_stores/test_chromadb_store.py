@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from ragbits.core.embeddings import Embeddings
-from ragbits.core.vector_store import ChromaDBStore, VectorDBEntry
+from ragbits.core.vector_store import VectorDBEntry
+from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 
 
 @pytest.fixture
