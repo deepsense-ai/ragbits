@@ -6,4 +6,4 @@
 
 ::: ragbits.core.vector_store.InMemoryVectorStore
 
-::: ragbits.core.vector_store.ChromaDBStore
+::: ragbits.core.vector_store.chromadb_store.ChromaDBStore

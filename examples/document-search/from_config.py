@@ -21,9 +21,9 @@ documents = [
 ]
 
 config = {
-    "embedder": {"type": "LiteLLMEmbeddings"},
+    "embedder": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
     "vector_store": {
-        "type": "ChromaDBStore",
+        "type": "ragbits.core.vector_store.chromadb_store:ChromaDBStore",
         "config": {
             "chroma_client": {"type": "PersistentClient", "config": {"path": "chroma"}},
             "embedding_function": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
@@ -36,7 +36,7 @@ config = {
         "type": "LLMQueryRephraser",
         "config": {
             "llm": {
-                "type": "LiteLLM",
+                "type": "ragbits.core.llms.litellm:LiteLLM",
                 "config": {
                     "model_name": "gpt-4-turbo",
                 },

@@ -2,6 +2,6 @@
 
 ::: ragbits.core.llms.LLM
 
-::: ragbits.core.llms.LocalLLM
+::: ragbits.core.llms.local.LocalLLM
 
-::: ragbits.core.llms.LiteLLM
+::: ragbits.core.llms.litellm.LiteLLM
