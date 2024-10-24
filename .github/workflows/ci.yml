@@ -52,6 +52,8 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
         with:
           scan-type: "fs"
           ignore-unfixed: true
@@ -59,6 +61,7 @@ jobs:
           severity: "CRITICAL,HIGH,MEDIUM"
           format: "table"
           output: "trivy-scanning-results.txt"
+
 
       - name: Format trivy message
         run: |
