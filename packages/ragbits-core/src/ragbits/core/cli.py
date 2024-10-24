@@ -38,7 +38,7 @@ def register(app: typer.Typer) -> None:
     @prompts_app.command()
     def lab(
         file_pattern: str = core_config.prompt_path_pattern,
-        llm_factory: str = core_config.default_llm_factory,
+        llm_factory: str | None = core_config.default_llm_factory,
     ) -> None:
         """
         Launches the interactive application for listing, rendering, and testing prompts
@@ -73,15 +73,21 @@ def register(app: typer.Typer) -> None:
 
     @prompts_app.command()
     def execute(
-        prompt_path: str, payload: str | None = None, llm_factory: str = core_config.default_llm_factory
+        prompt_path: str, payload: str | None = None, llm_factory: str | None = core_config.default_llm_factory
     ) -> None:
         """
         Executes a prompt using the specified prompt class and LLM factory.
+
+        Raises:
+            ValueError: If `llm_factory` is not provided.
         """
 
         from ragbits.core.llms.factory import get_llm_from_factory
 
         prompt = _render(prompt_path=prompt_path, payload=payload)
+
+        if llm_factory is None:
+            raise ValueError("`llm_factory` must be provided")
         llm = get_llm_from_factory(llm_factory)
 
         response = asyncio.run(llm.generate(prompt))
