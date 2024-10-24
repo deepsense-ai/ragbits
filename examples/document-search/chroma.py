@@ -35,7 +35,7 @@ async def main() -> None:
         chroma_client=chroma_client,
         embedding_function=embedding_client,
     )
-    document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+    document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
 
     await document_search.ingest(documents)
 

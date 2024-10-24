@@ -1,6 +1,5 @@
 import tempfile
 from pathlib import Path
-from typing import Union
 from unittest.mock import AsyncMock
 
 import pytest
@@ -12,6 +11,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta, D
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
@@ -23,7 +23,7 @@ CONFIG = {
 
 
 @pytest.mark.parametrize(
-    "document, expected",
+    ("document", "expected"),
     [
         (
             DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
@@ -37,7 +37,7 @@ CONFIG = {
         ),
     ],
 )
-async def test_document_search_from_config(document, expected):
+async def test_document_search_from_config(document: DocumentMeta, expected: str):
     document_search = DocumentSearch.from_config(CONFIG)
 
     await document_search.ingest([document])
@@ -46,14 +46,14 @@ async def test_document_search_from_config(document, expected):
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == expected
+    assert first_result.content == expected  # type: ignore
 
 
 async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    providers = {DocumentType.TXT: DummyProvider()}
+    providers: dict[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
     router = DocumentProcessorRouter.from_config(providers)
 
     document_search = DocumentSearch(
@@ -73,7 +73,7 @@ async def test_document_search_ingest_from_source():
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -86,7 +86,7 @@ async def test_document_search_ingest_from_source():
         ),
     ],
 )
-async def test_document_search_ingest(document: Union[DocumentMeta, Document]):
+async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
@@ -99,7 +99,7 @@ async def test_document_search_ingest(document: Union[DocumentMeta, Document]):
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
 
 
 async def test_document_search_insert_elements():
@@ -122,7 +122,7 @@ async def test_document_search_insert_elements():
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
 
 
 async def test_document_search_with_no_results():
@@ -147,7 +147,7 @@ async def test_document_search_with_search_config():
     results = await document_search.search("Peppa's brother", search_config=SearchConfig(vector_store_kwargs={"k": 1}))
 
     assert len(results) == 1
-    assert results[0].content == "Name of Peppa's brother is George"
+    assert results[0].content == "Name of Peppa's brother is George"  # type: ignore
 
 
 async def test_document_search_ingest_multiple_from_sources():
@@ -160,5 +160,6 @@ async def test_document_search_ingest_multiple_from_sources():
     )
 
     results = await document_search.search("foo")
+
     assert len(results) == 2
-    assert {result.content for result in results} == {"foo", "bar"}
+    assert {result.content for result in results} == {"foo", "bar"}  # type: ignore

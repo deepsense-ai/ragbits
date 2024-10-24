@@ -12,8 +12,8 @@ __all__ = [
     "BaseProvider",
     "DummyProvider",
     "UnstructuredDefaultProvider",
-    "UnstructuredPdfProvider",
     "UnstructuredImageProvider",
+    "UnstructuredPdfProvider",
 ]
 
 module = sys.modules[__name__]

@@ -104,7 +104,7 @@ class RAGSystemWithUI:
             chroma_client=chroma_client,
             embedding_function=embedding_client,
         )
-        self.document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+        self.document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
 
     async def _create_database(self, document_paths: list[str]) -> str:
         for path in document_paths:

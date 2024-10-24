@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
 from omegaconf import DictConfig
 from typing_extensions import Self
@@ -14,7 +14,7 @@ class Metric(Generic[ResultT], ABC):
     Base class for metrics.
     """
 
-    def __init__(self, config: Optional[DictConfig] = None) -> None:
+    def __init__(self, config: DictConfig | None = None) -> None:
         """
         Initializes the metric.
 
@@ -52,7 +52,7 @@ class MetricSet(Generic[ResultT]):
         self._metrics = metrics
         self.metrics: list[Metric[ResultT]] = []
 
-    def __call__(self, config: Optional[DictConfig] = None) -> Self:
+    def __call__(self, config: DictConfig | None = None) -> Self:
         """
         Initializes the metrics.
 

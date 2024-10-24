@@ -78,7 +78,7 @@ class UnstructuredDefaultProvider(BaseProvider):
         self.api_key = api_key
         self.api_server = api_server
         self.use_api = use_api
-        self._client = None
+        self._client: UnstructuredClient | None = None
         self.ignore_images = ignore_images
 
     @property
@@ -132,7 +132,7 @@ class UnstructuredDefaultProvider(BaseProvider):
                     }
                 }
             )
-            elements = elements_from_dicts(res.elements)
+            elements = elements_from_dicts(res.elements)  # type: ignore
         else:
             elements = partition(
                 file=BytesIO(document.local_path.read_bytes()),

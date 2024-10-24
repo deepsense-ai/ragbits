@@ -7,12 +7,12 @@ from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rephrasers.prompts import QueryRephraserInput, QueryRephraserPrompt
 
 __all__ = [
-    "get_rephraser",
-    "QueryRephraser",
-    "NoopQueryRephraser",
     "LLMQueryRephraser",
-    "QueryRephraserPrompt",
+    "NoopQueryRephraser",
+    "QueryRephraser",
     "QueryRephraserInput",
+    "QueryRephraserPrompt",
+    "get_rephraser",
 ]
 
 module = sys.modules[__name__]

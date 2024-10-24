@@ -11,9 +11,29 @@ To build and run Ragbits from the source code:
 $ source ./setup_dev_env.sh
 ```
 
+## Linting and formatting
+We use `ruff` for linting and formatting our code. To format your code, run:
+
+```bash
+$ uvx ruff format
+```
+
+To lint the code, run:
+```bash
+$ uvx ruff check --fix
+```
+
+## Type checking
+We use `mypy` for type checking. To perform type checking, simply run:
+
+```bash
+$ uv run mypy .
+```
+
+
 ## Install pre-commit
 
-To ensure code quality we use pre-commit hook with several checks. Setup it by:
+We also have some check run via pre-commit hook. Setup it by:
 
 ```
 pre-commit install

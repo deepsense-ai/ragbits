@@ -33,7 +33,7 @@ def register(app: typer.Typer) -> None:
     @prompts_app.command()
     def generate_promptfoo_configs(
         file_pattern: str = core_config.prompt_path_pattern,
-        root_path: Path = Path.cwd(),
+        root_path: Path = Path.cwd(),  # noqa: B008
         target_path: Path = Path("promptfooconfigs"),
     ) -> None:
         """

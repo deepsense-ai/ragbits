@@ -38,8 +38,16 @@ jobs:
 
       - name: Run pre-commit checks
         run: |
-          source .venv/bin/activate
           pre-commit run --all-files --show-diff-on-failure --color always
+
+      - name: Run ruff formatter
+        run: uvx ruff format --check
+
+      - name: Run ruff linter
+        run: uvx ruff check
+
+      - name: Run mypy
+        run: uv run mypy .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master

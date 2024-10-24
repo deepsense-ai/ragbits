@@ -309,7 +309,8 @@ def test_few_shot_int_output():
     assert prompt.chat == [
         {
             "role": "system",
-            "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit.",
+            "content": "You detect whether the name name is a good name for a song with the given theme, given the age"
+            " limit.",
         },
         {"role": "user", "content": "The name is I love you more than my cat, the theme is pop and the age is 15."},
         {"role": "assistant", "content": "True"},

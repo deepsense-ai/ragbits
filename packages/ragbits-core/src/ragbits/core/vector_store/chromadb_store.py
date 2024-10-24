@@ -156,8 +156,8 @@ class ChromaDBStore(VectorStore):
         embeddings = query_result.get("embeddings") or []
 
         db_entries = []
-        for meta_list, embeddings_list in zip(metadatas, embeddings):
-            for meta, embedding in zip(meta_list, embeddings_list):
+        for meta_list, embeddings_list in zip(metadatas, embeddings, strict=False):
+            for meta, embedding in zip(meta_list, embeddings_list, strict=False):
                 db_entry = VectorDBEntry(
                     key=str(meta["__key"]),
                     vector=list(embedding),
@@ -193,7 +193,7 @@ class ChromaDBStore(VectorStore):
         embeddings = get_results.get("embeddings") or []
 
         db_entries = []
-        for meta, embedding in zip(metadatas, embeddings):
+        for meta, embedding in zip(metadatas, embeddings, strict=False):
             db_entry = VectorDBEntry(
                 key=str(meta["__key"]),
                 vector=list(embedding),

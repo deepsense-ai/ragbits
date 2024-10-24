@@ -18,7 +18,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
-import tomlkit
+import tomlkit  # type: ignore
 import typer
 from inquirer.shortcuts import confirm, list_input, text
 from rich import print as pprint
@@ -108,7 +108,7 @@ def _update_pkg_version(
     return version, new_version
 
 
-def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, update_version: bool = True):
+def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, update_version: bool = True) -> None:
     ragbits_pkg_project = tomlkit.parse((PACKAGES_DIR / "ragbits" / "pyproject.toml").read_text())
     ragbits_deps: list[str] = [dep.split("==")[0] for dep in ragbits_pkg_project["project"]["dependencies"]]
 

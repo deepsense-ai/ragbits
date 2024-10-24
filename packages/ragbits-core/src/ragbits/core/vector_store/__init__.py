@@ -5,7 +5,7 @@ from .base import VectorDBEntry, VectorStore, WhereQuery
 from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
-__all__ = ["InMemoryVectorStore", "VectorDBEntry", "VectorStore", "ChromaDBStore", "WhereQuery"]
+__all__ = ["ChromaDBStore", "InMemoryVectorStore", "VectorDBEntry", "VectorStore", "WhereQuery"]
 
 module = sys.modules[__name__]
 
