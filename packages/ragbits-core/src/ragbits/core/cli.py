@@ -81,7 +81,6 @@ def register(app: typer.Typer) -> None:
         Raises:
             ValueError: If `llm_factory` is not provided.
         """
-
         from ragbits.core.llms.factory import get_llm_from_factory
 
         prompt = _render(prompt_path=prompt_path, payload=payload)
