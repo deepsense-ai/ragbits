@@ -10,7 +10,7 @@ class NoopEmbeddings(Embeddings):
     or as a placeholder when an actual embedding model is not required.
     """
 
-    async def embed_text(self, data: list[str]) -> list[list[float]]:
+    async def embed_text(self, data: list[str]) -> list[list[float]]:  # noqa: PLR6301
         """
         Embeds a list of strings into a list of vectors.
 
@@ -21,5 +21,4 @@ class NoopEmbeddings(Embeddings):
             A list of embedding vectors, where each vector
             is a fixed value of [0.1, 0.1] for each input string.
         """
-
         return [[0.1, 0.1]] * len(data)

@@ -1,7 +1,6 @@
 import base64
 import io
 import os
-from typing import Optional
 
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement
@@ -28,7 +27,7 @@ def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -
     )
 
 
-def check_required_argument(value: Optional[str], arg_name: str, fallback_env: str) -> str:
+def check_required_argument(value: str | None, arg_name: str, fallback_env: str) -> str:
     """
     Checks if given environment variable is set and returns it or raises an error
 
@@ -58,11 +57,11 @@ def extract_image_coordinates(element: UnstructuredElement) -> tuple[float, floa
     Returns:
         x of top left corner, y of top left corner, x of bottom right corner, y of bottom right corner
     """
-    p1, p2, p3, p4 = element.metadata.coordinates.points
+    p1, p2, p3, p4 = element.metadata.coordinates.points  # type: ignore
     return min(p1[0], p2[0]), min(p1[1], p4[1]), max(p3[0], p4[0]), max(p2[1], p3[1])
 
 
-def crop_and_convert_to_bytes(image: Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
+def crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
     """
     Crops the image and converts to bytes
     Args:
@@ -90,7 +89,7 @@ class ImageDescriber:
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    async def get_image_description(self, image_bytes: bytes, prompt: Optional[str] = DEFAULT_PROMPT) -> str:
+    async def get_image_description(self, image_bytes: bytes, prompt: str | None = DEFAULT_PROMPT) -> str:
         """
         Provides summary of the image (passed as bytes)
 

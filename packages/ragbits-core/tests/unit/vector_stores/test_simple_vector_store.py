@@ -51,7 +51,7 @@ async def store_fixture():
     return store
 
 
-async def test_simple_vector_store(store):
+async def test_simple_vector_store(store: InMemoryVectorStore):
     search_vector = [0.4, 0.4]
 
     results = await store.retrieve(search_vector, 2)
@@ -61,7 +61,7 @@ async def test_simple_vector_store(store):
     assert results[1].metadata["name"] == "fluffy"
 
 
-async def test_list_all(store):
+async def test_list_all(store: InMemoryVectorStore):
     results = await store.list()
 
     assert len(results) == 6
@@ -69,7 +69,7 @@ async def test_list_all(store):
     assert names == ["spikey", "fluffy", "slimy", "scaly", "hairy", "spotty"]
 
 
-async def test_list_limit(store):
+async def test_list_limit(store: InMemoryVectorStore):
     results = await store.list(limit=3)
 
     assert len(results) == 3
@@ -77,7 +77,7 @@ async def test_list_limit(store):
     assert names == {"spikey", "fluffy", "slimy"}
 
 
-async def test_list_offset(store):
+async def test_list_offset(store: InMemoryVectorStore):
     results = await store.list(offset=3)
 
     assert len(results) == 3
@@ -85,7 +85,7 @@ async def test_list_offset(store):
     assert names == {"scaly", "hairy", "spotty"}
 
 
-async def test_limit_with_offset(store):
+async def test_limit_with_offset(store: InMemoryVectorStore):
     results = await store.list(limit=2, offset=3)
 
     assert len(results) == 2
@@ -93,7 +93,7 @@ async def test_limit_with_offset(store):
     assert names == {"scaly", "hairy"}
 
 
-async def test_where(store):
+async def test_where(store: InMemoryVectorStore):
     results = await store.list(where={"type": "insect"})
 
     assert len(results) == 2
@@ -101,14 +101,14 @@ async def test_where(store):
     assert names == {"hairy", "spotty"}
 
 
-async def test_multiple_where(store):
+async def test_multiple_where(store: InMemoryVectorStore):
     results = await store.list(where={"type": "insect", "age": 1})
 
     assert len(results) == 1
     assert results[0].metadata["name"] == "spotty"
 
 
-async def test_empty_where(store):
+async def test_empty_where(store: InMemoryVectorStore):
     results = await store.list(where={})
 
     assert len(results) == 6
@@ -116,19 +116,19 @@ async def test_empty_where(store):
     assert names == {"spikey", "fluffy", "slimy", "scaly", "hairy", "spotty"}
 
 
-async def test_empty_results(store):
+async def test_empty_results(store: InMemoryVectorStore):
     results = await store.list(where={"type": "bird"})
 
     assert len(results) == 0
 
 
-async def test_empty_results_with_limit(store):
+async def test_empty_results_with_limit(store: InMemoryVectorStore):
     results = await store.list(where={"type": "bird"}, limit=2)
 
     assert len(results) == 0
 
 
-async def test_where_limit(store):
+async def test_where_limit(store: InMemoryVectorStore):
     results = await store.list(where={"type": "insect"}, limit=1)
 
     assert len(results) == 1

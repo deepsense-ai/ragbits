@@ -1,4 +1,5 @@
-from typing import Any, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -72,7 +73,6 @@ class DocumentSearch:
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-
         embedder = get_embeddings(config["embedder"])
         query_rephraser = get_rephraser(config.get("rephraser"))
         reranker = get_reranker(config.get("reranker"))
@@ -84,7 +84,7 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
+    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -95,6 +95,7 @@ class DocumentSearch:
         Returns:
             A list of chunks.
         """
+        search_config = search_config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
@@ -106,14 +107,16 @@ class DocumentSearch:
 
     async def _process_document(
         self,
-        document: Union[DocumentMeta, Document, Union[LocalFileSource, GCSSource]],
-        document_processor: Optional[BaseProvider] = None,
+        document: DocumentMeta | Document | LocalFileSource | GCSSource,
+        document_processor: BaseProvider | None = None,
     ) -> list[Element]:
         """
         Process a document and return the elements.
 
         Args:
             document: The document to process.
+            document_processor: The document processor to use. If not provided, the document processor will be
+                determined based on the document metadata.
 
         Returns:
             The elements.
@@ -133,8 +136,8 @@ class DocumentSearch:
 
     async def ingest(
         self,
-        documents: Sequence[DocumentMeta | Document | Union[LocalFileSource, GCSSource]],
-        document_processor: Optional[BaseProvider] = None,
+        documents: Sequence[DocumentMeta | Document | LocalFileSource | GCSSource],
+        document_processor: BaseProvider | None = None,
     ) -> None:
         """
         Ingest multiple documents.
@@ -144,7 +147,6 @@ class DocumentSearch:
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
-
         elements = []
         # TODO: Parallelize
         for document in documents:
@@ -159,5 +161,5 @@ class DocumentSearch:
             elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
         await self.vector_store.store(entries)

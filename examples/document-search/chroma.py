@@ -23,9 +23,10 @@ documents = [
 ]
 
 
-async def main():
-    """Run the example."""
-
+async def main() -> None:
+    """
+    Run the example.
+    """
     chroma_client = chromadb.PersistentClient(path="chroma")
     embedding_client = LiteLLMEmbeddings()
 
@@ -34,7 +35,7 @@ async def main():
         chroma_client=chroma_client,
         embedding_function=embedding_client,
     )
-    document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+    document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
 
     await document_search.ingest(documents)
 

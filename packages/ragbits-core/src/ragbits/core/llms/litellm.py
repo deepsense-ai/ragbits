@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Optional
 
 try:
     import litellm
@@ -24,11 +23,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
     def __init__(
         self,
         model_name: str = "gpt-3.5-turbo",
-        default_options: Optional[LiteLLMOptions] = None,
+        default_options: LiteLLMOptions | None = None,
         *,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
         """

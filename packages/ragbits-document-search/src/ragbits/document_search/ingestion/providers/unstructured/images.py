@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from PIL import Image
 from unstructured.chunking.basic import chunk_elements
@@ -33,12 +32,12 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
     def __init__(
         self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
+        partition_kwargs: dict | None = None,
+        chunking_kwargs: dict | None = None,
+        api_key: str | None = None,
+        api_server: str | None = None,
         use_api: bool = False,
-        llm: Optional[LLM] = None,
+        llm: LLM | None = None,
     ) -> None:
         """Initialize the UnstructuredPdfProvider.
 
@@ -50,6 +49,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
+            use_api: Whether to use the Unstructured API. If False, the provider will only use the local processing.
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
@@ -89,8 +89,9 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
     @staticmethod
     def _load_document_as_image(
-        document_path: Path, page: Optional[int] = None  # pylint: disable=unused-argument
-    ) -> Image:
+        document_path: Path,
+        page: int | None = None,  # pylint: disable=unused-argument
+    ) -> Image.Image:
         return Image.open(document_path).convert("RGB")
 
     @staticmethod

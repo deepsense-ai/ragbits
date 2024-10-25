@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 from hashlib import sha256
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional
 
 try:
     import chromadb
@@ -16,7 +18,9 @@ from ragbits.core.vector_store import VectorDBEntry, VectorStore, WhereQuery
 
 
 class ChromaDBStore(VectorStore):
-    """Class that stores text embeddings using [Chroma](https://docs.trychroma.com/)"""
+    """
+    Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
+    """
 
     CHROMA_IDS_KEY = "ids"
     CHROMA_DOCUMENTS_KEY = "documents"
@@ -30,9 +34,9 @@ class ChromaDBStore(VectorStore):
     def __init__(
         self,
         index_name: str,
-        chroma_client: "chromadb.ClientAPI",
-        embedding_function: Union[Embeddings, "chromadb.EmbeddingFunction"],
-        max_distance: Optional[float] = None,
+        chroma_client: chromadb.ClientAPI,
+        embedding_function: Embeddings | chromadb.EmbeddingFunction,
+        max_distance: float | None = None,
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
         metadata_store: Optional[MetadataStore] = None,
     ):
@@ -58,7 +62,7 @@ class ChromaDBStore(VectorStore):
         self._collection = None
 
     @classmethod
-    def from_config(cls, config: dict) -> "ChromaDBStore":
+    def from_config(cls, config: dict) -> ChromaDBStore:
         """
         Creates and returns an instance of the ChromaDBStore class from the given configuration.
 
@@ -83,7 +87,7 @@ class ChromaDBStore(VectorStore):
             distance_method=config.get("distance_method", cls.DEFAULT_DISTANCE_METHOD),
         )
 
-    async def _get_chroma_collection(self) -> "chromadb.Collection":
+    async def _get_chroma_collection(self) -> chromadb.Collection:
         """
         Based on the selected embedding_function, chooses how to retrieve the ChromaDB collection.
         If the collection doesn't exist, it creates one.
@@ -109,15 +113,15 @@ class ChromaDBStore(VectorStore):
         )
         return self._collection
 
-    def _return_best_match(self, retrieved: dict) -> Optional[str]:
+    def _return_best_match(self, retrieved: dict) -> str | None:
         """
         Based on the retrieved data, returns the best match or None if no match is found.
 
         Args:
-            Retrieved data, with a column-first format
+            retrieved: Retrieved data, with a column-first format.
 
         Returns:
-            The best match or None if no match is found
+            The best match or None if no match is found.
         """
         if self._max_distance is None or retrieved[self.CHROMA_DISTANCES_KEY][0][0] <= self._max_distance:
             return retrieved[self.CHROMA_DOCUMENTS_KEY][0][0]
@@ -132,7 +136,7 @@ class ChromaDBStore(VectorStore):
         return doc_id, embedding, entry.key, entry.metadata
 
     @property
-    def embedding_function(self) -> Union[Embeddings, "chromadb.EmbeddingFunction"]:
+    def embedding_function(self) -> Embeddings | chromadb.EmbeddingFunction:
         """
         Returns the embedding function.
 
@@ -141,7 +145,7 @@ class ChromaDBStore(VectorStore):
         """
         return self._embedding_function
 
-    async def store(self, entries: List[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorDBEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
 
@@ -149,7 +153,7 @@ class ChromaDBStore(VectorStore):
             entries: The entries to store.
         """
         entries_processed = list(map(self._process_db_entry, entries))
-        ids, embeddings, contents, metadatas = map(list, zip(*entries_processed))
+        ids, embeddings, contents, metadatas = map(list, zip(*entries_processed, strict=False))
 
         if self.metadata_store is not None:
             for key, meta in zip(ids, metadatas):
@@ -198,7 +202,7 @@ class ChromaDBStore(VectorStore):
         get_results = collection.get(where=where_chroma, limit=limit, offset=offset, include=self.CHROMA_INCLUDE_KEYS)
         return await self._extract_entries_from_query(get_results)
 
-    async def _extract_entries_from_query(self, query_results: "chromadb.api.types.QueryResult") -> List[VectorDBEntry]:
+    async def _extract_entries_from_query(self, query_results: chromadb.api.types.QueryResult | chromadb.api.types.GetResult) -> List[VectorDBEntry]:
         db_entries: list[VectorDBEntry] = []
 
         if len(query_results[self.CHROMA_DOCUMENTS_KEY]) < 1:
@@ -209,6 +213,7 @@ class ChromaDBStore(VectorStore):
                 metadata = await self.metadata_store.get(query_results[self.CHROMA_IDS_KEY][0][i])
             else:
                 metadata = json.loads(query_results[self.CHROMA_METADATA_KEY][0][i][self.METADATA_INNER_KEY])
+
             db_entry = VectorDBEntry(
                 key=key,
                 vector=query_results[self.CHROMA_EMBEDDINGS_KEY][0][i],

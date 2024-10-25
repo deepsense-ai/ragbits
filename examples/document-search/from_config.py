@@ -47,9 +47,8 @@ config = {
 }
 
 
-async def main():
+async def main() -> None:
     """Run the example."""
-
     document_search = DocumentSearch.from_config(config)
 
     await document_search.ingest(documents)
