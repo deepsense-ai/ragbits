@@ -75,6 +75,7 @@ def test_chromadbstore_init_import_error():
             embedding_function=MagicMock(),
         )
 
+
 async def test_stores_entries_correctly(mock_chromadb_store: ChromaDBStore):
     data = [
         VectorDBEntry(
@@ -96,7 +97,7 @@ async def test_stores_entries_correctly(mock_chromadb_store: ChromaDBStore):
     mock_chromadb_store._chroma_client.get_or_create_collection().add.assert_called_once()  # type: ignore
 
 
-def test_process_db_entry(mock_chromadb_store, mock_vector_db_entry):
+def test_process_db_entry(mock_chromadb_store: ChromaDBStore, mock_vector_db_entry: VectorDBEntry):
     id, embedding, key, metadata = mock_chromadb_store._process_db_entry(mock_vector_db_entry)
 
     assert id == sha256(b"test_key").hexdigest()
@@ -122,7 +123,8 @@ async def test_retrieves_entries_correctly(mock_chromadb_store: ChromaDBStore):
         "metadatas": [
             [
                 {
-                    "__metadata": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}'
+                    "__metadata": '{"content": "test content", "document": {"title": "test title", '
+                    '"source": {"path": "/test/path"}, "document_type": "test_type"}}'
                 }
             ]
         ],
@@ -137,17 +139,19 @@ async def test_retrieves_entries_correctly(mock_chromadb_store: ChromaDBStore):
     assert entries[0].vector == [0.12, 0.25, 0.29]
 
 
-async def test_lists_entries_correctly(mock_chromadb_store):
+async def test_lists_entries_correctly(mock_chromadb_store: ChromaDBStore):
     mock_collection = await mock_chromadb_store._get_chroma_collection()
-    mock_collection.get.return_value = {
+    mock_collection.get.return_value = {  # type: ignore
         "documents": [["test content", "test content 2"]],
         "metadatas": [
             [
                 {
-                    "__metadata": '{"content": "test content", "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                    "__metadata": '{"content": "test content", "document": {"title": "test title", '
+                    '"source": {"path": "/test/path"}, "document_type": "test_type"}}',
                 },
                 {
-                    "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                    "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", '
+                    '"source": {"path": "/test/path"}, "document_type": "test_type"}}',
                 },
             ]
         ],

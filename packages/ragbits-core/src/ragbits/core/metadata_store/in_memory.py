@@ -23,7 +23,7 @@ class InMemoryMetadataStore(MetadataStore):
         """
         self._storage[key] = metadata
 
-    async def query(self, metadata_field_name: str, value: Any) -> dict:
+    async def query(self, metadata_field_name: str, value: Any) -> dict:  # noqa
         """
         Queries metastore and returns dicts with key: metadata format that match
 

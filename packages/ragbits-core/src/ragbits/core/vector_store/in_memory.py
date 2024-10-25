@@ -1,5 +1,4 @@
 from itertools import islice
-from typing import Optional
 
 import numpy as np
 
@@ -12,7 +11,7 @@ class InMemoryVectorStore(VectorStore):
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
-    def __init__(self, metadata_store: Optional[MetadataStore] = None) -> None:
+    def __init__(self, metadata_store: MetadataStore | None = None) -> None:
         super().__init__(metadata_store)
         self._storage: dict[str, VectorDBEntry] = {}
 

@@ -1,5 +1,4 @@
 import abc
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -24,9 +23,9 @@ class VectorStore(abc.ABC):
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    metadata_store: Optional[MetadataStore]
+    metadata_store: MetadataStore | None
 
-    def __init__(self, metadata_store: Optional[MetadataStore] = None):
+    def __init__(self, metadata_store: MetadataStore | None = None):
         self.metadata_store = metadata_store
 
     @abc.abstractmethod

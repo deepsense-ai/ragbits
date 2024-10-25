@@ -19,7 +19,7 @@ class MetadataStore(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def query(self, metadata_field_name: str, value: Any) -> dict:
+    async def query(self, metadata_field_name: str, value: Any) -> dict:  # noqa
         """
         Queries metastore and returns dicts with key: metadata format that match
 
@@ -66,6 +66,6 @@ class MetadataStore(abc.ABC):
         """
         Get key value pairs of metadata that is shared across entries
 
-        Returns
+        Returns:
             metadata for the whole collection
         """
