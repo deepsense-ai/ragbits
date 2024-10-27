@@ -25,9 +25,18 @@ config = {
     "vector_store": {
         "type": "ChromaDBStore",
         "config": {
-            "chroma_client": {"type": "PersistentClient", "config": {"path": "chroma"}},
-            "embedding_function": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
+            "client": {
+                "type": "PersistentClient",
+                "config": {
+                    "path": "chroma",
+                },
+            },
             "index_name": "jokes",
+            "distance_method": "l2",
+            "default_options": {
+                "k": 3,
+                "max_distance": 1.15,
+            },
         },
     },
     "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},

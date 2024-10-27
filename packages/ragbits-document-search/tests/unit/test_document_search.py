@@ -144,7 +144,7 @@ async def test_document_search_with_search_config():
         document_processor=DummyProvider(),
     )
 
-    results = await document_search.search("Peppa's brother", search_config=SearchConfig(vector_store_kwargs={"k": 1}))
+    results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
 
     assert len(results) == 1
     assert results[0].content == "Name of Peppa's brother is George"  # type: ignore

@@ -42,9 +42,7 @@ class DocumentSearch:
     """
 
     embedder: Embeddings
-
     vector_store: VectorStore
-
     query_rephraser: QueryRephraser
     reranker: Reranker
 
@@ -84,23 +82,23 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
+    async def search(self, query: str, config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
-            search_config: The search configuration.
+            config: The search configuration.
 
         Returns:
             A list of chunks.
         """
-        search_config = search_config or SearchConfig()
+        config = config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
+            entries = await self.vector_store.retrieve(search_vector[0])
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(elements)
