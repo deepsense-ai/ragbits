@@ -4,7 +4,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.embeddings import Embeddings, get_embeddings
-from ragbits.core.vector_store import VectorStore, get_vector_store
+from ragbits.core.vector_stores import VectorStore, get_vector_store
+from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
@@ -42,9 +43,7 @@ class DocumentSearch:
     """
 
     embedder: Embeddings
-
     vector_store: VectorStore
-
     query_rephraser: QueryRephraser
     reranker: Reranker
 
@@ -84,23 +83,26 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig | None = None) -> list[Element]:
+    async def search(self, query: str, config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
-            search_config: The search configuration.
+            config: The search configuration.
 
         Returns:
             A list of chunks.
         """
-        search_config = search_config or SearchConfig()
+        config = config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
+            entries = await self.vector_store.retrieve(
+                vector=search_vector[0],
+                options=VectorStoreOptions(**config.vector_store_kwargs),
+            )
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(elements)

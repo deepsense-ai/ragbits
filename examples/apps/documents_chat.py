@@ -3,20 +3,20 @@
 # dependencies = [
 #     "gradio",
 #     "ragbits-document-search",
-#     "ragbits-core[chromadb, litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 from collections.abc import AsyncIterator
 from pathlib import Path
 
-import chromadb
 import gradio as gr
+from chromadb import PersistentClient
 from pydantic import BaseModel
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -96,15 +96,15 @@ class RAGSystemWithUI:
         self._llm = LiteLLM(model_name, use_structured_output=True)
 
     def _prepare_document_search(self, database_path: str, index_name: str) -> None:
-        chroma_client = chromadb.PersistentClient(path=database_path)
-        embedding_client = LiteLLMEmbeddings()
-
-        vector_store = ChromaDBStore(
+        embedder = LiteLLMEmbeddings()
+        vector_store = ChromaVectorStore(
+            client=PersistentClient(database_path),
             index_name=index_name,
-            chroma_client=chroma_client,
-            embedding_function=embedding_client,
         )
-        self.document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
+        self.document_search = DocumentSearch(
+            embedder=embedder,
+            vector_store=vector_store,
+        )
 
     async def _create_database(self, document_paths: list[str]) -> str:
         for path in document_paths:

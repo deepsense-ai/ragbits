@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ragbits.core.vector_store.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
@@ -16,7 +16,7 @@ from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
     "embedder": {"type": "NoopEmbeddings"},
-    "vector_store": {"type": "ragbits.core.vector_store.in_memory:InMemoryVectorStore"},
+    "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
 }
@@ -144,7 +144,7 @@ async def test_document_search_with_search_config():
         document_processor=DummyProvider(),
     )
 
-    results = await document_search.search("Peppa's brother", search_config=SearchConfig(vector_store_kwargs={"k": 1}))
+    results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
 
     assert len(results) == 1
     assert results[0].content == "Name of Peppa's brother is George"  # type: ignore

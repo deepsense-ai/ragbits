@@ -1,9 +1,11 @@
-type: ChromaDBStore
+type: ragbits.core.vector_stores.chroma:ChromaVectorStore
 config:
-  chroma_client:
+  client:
     type: PersistentClient
     config:
       path: chroma
-  embedding_function:
-    type: ragbits.core.embeddings.litellm:LiteLLMEmbeddings
   index_name: default
+  distance_method: l2
+  default_options:
+    k: 3
+    max_distance: 1.2

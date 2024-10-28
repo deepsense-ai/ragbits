@@ -1,9 +1,11 @@
-import abc
+from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
+WhereQuery = dict[str, str | int | float | bool]
 
-class VectorDBEntry(BaseModel):
+
+class VectorStoreEntry(BaseModel):
     """
     An object representing a vector database entry.
     """
@@ -13,16 +15,26 @@ class VectorDBEntry(BaseModel):
     metadata: dict
 
 
-WhereQuery = dict[str, str | int | float | bool]
+class VectorStoreOptions(BaseModel, ABC):
+    """
+    An object representing the options for the vector store.
+    """
+
+    k: int = 5
+    max_distance: float | None = None
 
 
-class VectorStore(abc.ABC):
+class VectorStore(ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    @abc.abstractmethod
-    async def store(self, entries: list[VectorDBEntry]) -> None:
+    def __init__(self, default_options: VectorStoreOptions | None = None) -> None:
+        super().__init__()
+        self._default_options = default_options or VectorStoreOptions()
+
+    @abstractmethod
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -30,23 +42,23 @@ class VectorStore(abc.ABC):
             entries: The entries to store.
         """
 
-    @abc.abstractmethod
-    async def retrieve(self, vector: list[float], k: int = 5) -> list[VectorDBEntry]:
+    @abstractmethod
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
 
         Args:
             vector: The vector to search for.
-            k: The number of entries to retrieve.
+            options: The options for querying the vector store.
 
         Returns:
             The entries.
         """
 
-    @abc.abstractmethod
+    @abstractmethod
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    ) -> list[VectorDBEntry]:
+    ) -> list[VectorStoreEntry]:
         """
         List entries from the vector store. The entries can be filtered, limited and offset.
 

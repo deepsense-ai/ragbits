@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits[litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 import asyncio
@@ -23,11 +23,20 @@ documents = [
 config = {
     "embedder": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
     "vector_store": {
-        "type": "ragbits.core.vector_store.chromadb_store:ChromaDBStore",
+        "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
         "config": {
-            "chroma_client": {"type": "PersistentClient", "config": {"path": "chroma"}},
-            "embedding_function": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
+            "client": {
+                "type": "PersistentClient",
+                "config": {
+                    "path": "chroma",
+                },
+            },
             "index_name": "jokes",
+            "distance_method": "l2",
+            "default_options": {
+                "k": 3,
+                "max_distance": 1.2,
+            },
         },
     },
     "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
@@ -48,7 +57,9 @@ config = {
 
 
 async def main() -> None:
-    """Run the example."""
+    """
+    Run the example.
+    """
     document_search = DocumentSearch.from_config(config)
 
     await document_search.ingest(documents)

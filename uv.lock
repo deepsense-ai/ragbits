@@ -3580,7 +3580,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-chromadb = [
+chroma = [
     { name = "chromadb" },
 ]
 lab = [
@@ -3609,7 +3609,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "chromadb", marker = "extra == 'chromadb'", specifier = "~=0.4.24" },
+    { name = "chromadb", marker = "extra == 'chroma'", specifier = "~=0.4.24" },
     { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0" },
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
@@ -3727,7 +3727,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ragbits-cli" },
-    { name = "ragbits-core", extra = ["chromadb", "lab", "litellm", "local"] },
+    { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local"] },
     { name = "ragbits-document-search", extra = ["gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
 ]
@@ -3754,7 +3754,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chromadb"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chroma"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
 ]
