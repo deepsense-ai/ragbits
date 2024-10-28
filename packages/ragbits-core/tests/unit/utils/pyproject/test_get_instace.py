@@ -1,7 +1,10 @@
 from pathlib import Path
 
+import pytest
 from pydantic import BaseModel
 
+from ragbits.core.config import CoreConfig
+from ragbits.core.llms.base import LLMType
 from ragbits.core.utils._pyproject import get_config_instance
 
 projects_dir = Path(__file__).parent / "testprojects"
@@ -66,3 +69,30 @@ def test_get_config_instance_no_file():
     )
 
     assert config == OptionalHappyProjectConfig()
+
+
+def test_get_config_instance_factories():
+    """Test that default LLMs are loaded correctly"""
+    config = get_config_instance(
+        CoreConfig,
+        subproject="core",
+        current_dir=projects_dir / "factory_project",
+    )
+
+    assert config.default_llm_factories == {
+        LLMType.TEXT: "ragbits.core.llms.factory.simple_litellm_factory",
+        LLMType.VISION: "ragbits.core.llms.factory.simple_litellm_vision_factory",
+        LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory.simple_litellm_vision_factory",
+    }
+
+
+def test_get_config_instance_bad_factories():
+    """Test that non-existing LLM defined in pyproject raises error"""
+    with pytest.raises(ValueError) as err:
+        get_config_instance(
+            CoreConfig,
+            subproject="core",
+            current_dir=projects_dir / "bad_factory_project",
+        )
+
+    assert "Unsupported LLMType provided in default_llm_factories in pyproject.yaml" in str(err.value)

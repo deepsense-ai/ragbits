@@ -1,0 +1,7 @@
+[project]
+name = "factory_project"
+
+[tool.ragbits.core.default_llm_factories]
+"ragbits.core.llms.base.LLMType.TEXT" = "ragbits.core.llms.factory.simple_litellm_factory"
+"ragbits.core.llms.base.LLMType.VISION" = "ragbits.core.llms.factory.simple_litellm_vision_factory"
+"ragbits.core.llms.base.LLMType.STRUCTURED_OUTPUT" = "ragbits.core.llms.factory.simple_litellm_vision_factory"
