@@ -9,7 +9,7 @@ import asyncio
 
 import chromadb
 
-from ragbits.core.embeddings import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_store.chromadb_store import ChromaDBStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
