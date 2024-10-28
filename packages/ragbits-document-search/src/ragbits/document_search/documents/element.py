@@ -3,7 +3,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel
 
-from ragbits.core.vector_store.base import VectorDBEntry
+from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
 
@@ -36,7 +36,7 @@ class Element(BaseModel, ABC):
         Element._elements_registry[element_type_default] = cls
 
     @classmethod
-    def from_vector_db_entry(cls, db_entry: VectorDBEntry) -> "Element":
+    def from_vector_db_entry(cls, db_entry: VectorStoreEntry) -> "Element":
         """
         Create an element from a vector database entry.
 
@@ -52,7 +52,7 @@ class Element(BaseModel, ABC):
 
         return element_cls(**meta)
 
-    def to_vector_db_entry(self, vector: list[float]) -> VectorDBEntry:
+    def to_vector_db_entry(self, vector: list[float]) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 
@@ -62,7 +62,7 @@ class Element(BaseModel, ABC):
         Returns:
             The vector database entry
         """
-        return VectorDBEntry(
+        return VectorStoreEntry(
             key=self.get_key(),
             vector=vector,
             metadata=self.model_dump(),

@@ -8,7 +8,7 @@
 import asyncio
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
-from ragbits.core.vector_store import InMemoryVectorStore
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 

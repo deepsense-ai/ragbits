@@ -1,4 +1,4 @@
-from ragbits.core.vector_store.base import VectorDBEntry
+from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.documents.element import Element
 
@@ -12,7 +12,7 @@ def test_resolving_element_type():
             return self.foo + self.foo
 
     element = Element.from_vector_db_entry(
-        db_entry=VectorDBEntry(
+        db_entry=VectorStoreEntry(
             key="key",
             vector=[0.1, 0.2],
             metadata={

@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits[litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 import asyncio
@@ -23,7 +23,7 @@ documents = [
 config = {
     "embedder": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
     "vector_store": {
-        "type": "ragbits.core.vector_store.chromadb_store:ChromaDBStore",
+        "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
         "config": {
             "client": {
                 "type": "PersistentClient",

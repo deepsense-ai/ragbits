@@ -5,7 +5,7 @@ from pydantic import BaseModel
 WhereQuery = dict[str, str | int | float | bool]
 
 
-class VectorDBEntry(BaseModel):
+class VectorStoreEntry(BaseModel):
     """
     An object representing a vector database entry.
     """
@@ -34,7 +34,7 @@ class VectorStore(ABC):
         self._default_options = default_options or VectorStoreOptions()
 
     @abstractmethod
-    async def store(self, entries: list[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -43,7 +43,7 @@ class VectorStore(ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorDBEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
 
@@ -58,7 +58,7 @@ class VectorStore(ABC):
     @abstractmethod
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    ) -> list[VectorDBEntry]:
+    ) -> list[VectorStoreEntry]:
         """
         List entries from the vector store. The entries can be filtered, limited and offset.
 

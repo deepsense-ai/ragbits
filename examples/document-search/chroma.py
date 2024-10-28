@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 import asyncio
@@ -10,7 +10,7 @@ import asyncio
 from chromadb import PersistentClient
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -27,7 +27,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    vector_store = ChromaDBStore(
+    vector_store = ChromaVectorStore(
         client=PersistentClient("./chroma"),
         index_name="jokes",
     )

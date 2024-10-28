@@ -4,8 +4,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.embeddings import Embeddings, get_embeddings
-from ragbits.core.vector_store import VectorStore, get_vector_store
-from ragbits.core.vector_store.base import VectorStoreOptions
+from ragbits.core.vector_stores import VectorStore, get_vector_store
+from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source

@@ -2,7 +2,7 @@ from itertools import islice
 
 import numpy as np
 
-from ragbits.core.vector_store.base import VectorDBEntry, VectorStore, VectorStoreOptions, WhereQuery
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
 class InMemoryVectorStore(VectorStore):
@@ -12,9 +12,9 @@ class InMemoryVectorStore(VectorStore):
 
     def __init__(self, default_options: VectorStoreOptions | None = None) -> None:
         super().__init__(default_options)
-        self._storage: dict[str, VectorDBEntry] = {}
+        self._storage: dict[str, VectorStoreEntry] = {}
 
-    async def store(self, entries: list[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -24,7 +24,7 @@ class InMemoryVectorStore(VectorStore):
         for entry in entries:
             self._storage[entry.key] = entry
 
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorDBEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
 
@@ -51,7 +51,7 @@ class InMemoryVectorStore(VectorStore):
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    ) -> list[VectorDBEntry]:
+    ) -> list[VectorStoreEntry]:
         """
         List entries from the vector store. The entries can be filtered, limited and offset.
 

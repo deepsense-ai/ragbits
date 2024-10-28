@@ -4,20 +4,15 @@ import json
 from hashlib import sha256
 from typing import Literal
 
-try:
-    import chromadb
-    from chromadb import Collection
-    from chromadb.api import ClientAPI
-except ImportError:
-    HAS_CHROMADB = False
-else:
-    HAS_CHROMADB = True
+import chromadb
+from chromadb import Collection
+from chromadb.api import ClientAPI
 
 from ragbits.core.utils.config_handling import get_cls_from_config
-from ragbits.core.vector_store.base import VectorDBEntry, VectorStore, VectorStoreOptions, WhereQuery
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
-class ChromaDBStore(VectorStore):
+class ChromaVectorStore(VectorStore):
     """
     Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
     """
@@ -30,7 +25,7 @@ class ChromaDBStore(VectorStore):
         default_options: VectorStoreOptions | None = None,
     ):
         """
-        Initializes the ChromaDBStore with the given parameters.
+        Initializes the ChromaVectorStore with the given parameters.
 
         Args:
             client: The ChromaDB client.
@@ -38,9 +33,6 @@ class ChromaDBStore(VectorStore):
             distance_method: The distance method to use.
             default_options: The default options for querying the vector store.
         """
-        if not HAS_CHROMADB:
-            raise ImportError("Install the 'ragbits-document-search[chromadb]' extra to use LiteLLM embeddings models")
-
         super().__init__(default_options)
         self._client = client
         self._index_name = index_name
@@ -60,15 +52,15 @@ class ChromaDBStore(VectorStore):
         )
 
     @classmethod
-    def from_config(cls, config: dict) -> ChromaDBStore:
+    def from_config(cls, config: dict) -> ChromaVectorStore:
         """
-        Creates and returns an instance of the ChromaDBStore class from the given configuration.
+        Creates and returns an instance of the ChromaVectorStore class from the given configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the ChromaDBStore instance.
+            config: A dictionary containing the configuration for initializing the ChromaVectorStore instance.
 
         Returns:
-            An initialized instance of the ChromaDBStore class.
+            An initialized instance of the ChromaVectorStore class.
         """
         client = get_cls_from_config(config["client"]["type"], chromadb)  # type: ignore
         return cls(
@@ -78,7 +70,7 @@ class ChromaDBStore(VectorStore):
             default_options=VectorStoreOptions(**config.get("default_options", {})),
         )
 
-    async def store(self, entries: list[VectorDBEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
 
@@ -97,7 +89,7 @@ class ChromaDBStore(VectorStore):
         ]
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas)  # type: ignore
 
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorDBEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieves entries from the ChromaDB collection.
 
@@ -119,8 +111,10 @@ class ChromaDBStore(VectorStore):
         distances = results.get("distances") or []
 
         return [
-            VectorDBEntry(
-                key=str(metadata["__key"]), vector=list(embeddings), metadata=json.loads(str(metadata["__metadata"]))
+            VectorStoreEntry(
+                key=str(metadata["__key"]),
+                vector=list(embeddings),
+                metadata=json.loads(str(metadata["__metadata"])),
             )
             for batch in zip(metadatas, embeddings, distances, strict=False)
             for metadata, embeddings, distance in zip(*batch, strict=False)
@@ -129,7 +123,7 @@ class ChromaDBStore(VectorStore):
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    ) -> list[VectorDBEntry]:
+    ) -> list[VectorStoreEntry]:
         """
         List entries from the vector store. The entries can be filtered, limited and offset.
 
@@ -155,7 +149,7 @@ class ChromaDBStore(VectorStore):
         embeddings = get_results.get("embeddings") or []
 
         return [
-            VectorDBEntry(
+            VectorStoreEntry(
                 key=str(metadata["__key"]),
                 vector=list(embedding),
                 metadata=json.loads(str(metadata["__metadata"])),

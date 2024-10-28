@@ -3,7 +3,7 @@
 # dependencies = [
 #     "gradio",
 #     "ragbits-document-search",
-#     "ragbits-core[chromadb, litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 from collections.abc import AsyncIterator
@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -97,7 +97,7 @@ class RAGSystemWithUI:
 
     def _prepare_document_search(self, database_path: str, index_name: str) -> None:
         chroma_client = chromadb.PersistentClient(path=database_path)
-        vector_store = ChromaDBStore(
+        vector_store = ChromaVectorStore(
             client=chroma_client,
             index_name=index_name,
         )

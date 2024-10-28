@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from ragbits.core.vector_store.base import VectorStoreOptions
-from ragbits.core.vector_store.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import LocalFileSource

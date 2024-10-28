@@ -1,35 +1,27 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from ragbits.core.vector_store.base import VectorDBEntry, VectorStoreOptions
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 
 
 @pytest.fixture
-def mock_chromadb_store() -> ChromaDBStore:
-    return ChromaDBStore(
+def mock_chromadb_store() -> ChromaVectorStore:
+    return ChromaVectorStore(
         client=MagicMock(),
         index_name="test_index",
     )
 
 
-def test_init_import_error() -> None:
-    with patch("ragbits.core.vector_store.chromadb_store.HAS_CHROMADB", False), pytest.raises(ImportError):
-        ChromaDBStore(
-            client=MagicMock(),
-            index_name="test_index",
-        )
-
-
-def test_get_chroma_collection(mock_chromadb_store: ChromaDBStore) -> None:
+def test_get_chroma_collection(mock_chromadb_store: ChromaVectorStore) -> None:
     _ = mock_chromadb_store._get_chroma_collection()
     assert mock_chromadb_store._client.get_or_create_collection.call_count == 2  # type: ignore
 
 
-async def test_store(mock_chromadb_store: ChromaDBStore) -> None:
+async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
     data = [
-        VectorDBEntry(
+        VectorStoreEntry(
             key="test_key",
             vector=[0.1, 0.2, 0.3],
             metadata={
@@ -73,7 +65,9 @@ async def test_store(mock_chromadb_store: ChromaDBStore) -> None:
         (0.09, []),
     ],
 )
-async def test_retrieve(mock_chromadb_store: ChromaDBStore, max_distance: float | None, results: list[dict]) -> None:
+async def test_retrieve(
+    mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
+) -> None:
     vector = [0.1, 0.2, 0.3]
     mock_collection = mock_chromadb_store._get_chroma_collection()
     mock_collection.query.return_value = {  # type: ignore
@@ -104,7 +98,7 @@ async def test_retrieve(mock_chromadb_store: ChromaDBStore, max_distance: float 
         assert entry.vector == result["vector"]
 
 
-async def test_list(mock_chromadb_store: ChromaDBStore) -> None:
+async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     mock_collection = mock_chromadb_store._get_chroma_collection()
     mock_collection.get.return_value = {  # type: ignore
         "metadatas": [
