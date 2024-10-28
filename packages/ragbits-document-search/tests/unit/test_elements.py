@@ -20,7 +20,7 @@ def test_resolving_element_type():
                 "foo": "bar",
                 "document_meta": {
                     "document_type": "txt",
-                    "source": {"source_type": "local_file", "path": "/example/path"},
+                    "source": {"source_type": "local_file_source", "path": "/example/path"},
                 },
             },
         )
@@ -30,4 +30,4 @@ def test_resolving_element_type():
     assert element.foo == "bar"
     assert element.get_key() == "barbar"
     assert element.document_meta.document_type == DocumentType.TXT
-    assert element.document_meta.source.source_type == "local_file"
+    assert element.document_meta.source.source_type == "local_file_source"
