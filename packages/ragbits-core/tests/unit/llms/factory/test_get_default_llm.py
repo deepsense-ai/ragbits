@@ -9,7 +9,9 @@ def test_get_default_llm(monkeypatch: pytest.MonkeyPatch) -> None:
     """
     Test the get_llm_from_factory function.
     """
-    monkeypatch.setattr(core_config, "default_llm_factory", "factory.test_get_llm_from_factory.mock_llm_factory")
+    monkeypatch.setattr(
+        core_config, "default_llm_factories", {"text": "factory.test_get_llm_from_factory.mock_llm_factory"}
+    )
 
     llm = get_default_llm()
     assert isinstance(llm, LiteLLM)

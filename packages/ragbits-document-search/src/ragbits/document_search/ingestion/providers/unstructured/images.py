@@ -5,8 +5,8 @@ from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.llms.base import LLM
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms.base import LLM, LLMType
+from ragbits.core.llms.factory import get_default_llm
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -16,8 +16,6 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
     extract_image_coordinates,
     to_text_element,
 )
-
-DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
 
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
@@ -53,7 +51,8 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_summarizer = ImageDescriber(llm or LiteLLM(DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL))
+        self.image_describer: ImageDescriber | None = None
+        self._llm = llm
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
@@ -79,7 +78,10 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         )
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-        image_description = await self.image_summarizer.get_image_description(img_bytes)
+        if self.image_describer is None:
+            llm_to_use = self._llm if self._llm is not None else get_default_llm(LLMType.VISION)
+            self.image_describer = ImageDescriber(llm_to_use)
+        image_description = await self.image_describer.get_image_description(img_bytes)
         return ImageElement(
             description=image_description,
             ocr_extracted_text=element.text,

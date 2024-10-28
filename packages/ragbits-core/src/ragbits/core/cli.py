@@ -9,6 +9,7 @@ import typer
 from rich import print as pprint
 
 from ragbits.core.config import core_config
+from ragbits.core.llms.base import LLMType
 from ragbits.core.prompt.prompt import Prompt
 
 
@@ -38,7 +39,7 @@ def register(app: typer.Typer) -> None:
     @prompts_app.command()
     def lab(
         file_pattern: str = core_config.prompt_path_pattern,
-        llm_factory: str | None = core_config.default_llm_factory,
+        llm_factory: str | None = core_config.default_llm_factories[LLMType.TEXT],
     ) -> None:
         """
         Launches the interactive application for listing, rendering, and testing prompts
@@ -73,7 +74,9 @@ def register(app: typer.Typer) -> None:
 
     @prompts_app.command(name="exec")
     def execute(
-        prompt_path: str, payload: str | None = None, llm_factory: str | None = core_config.default_llm_factory
+        prompt_path: str,
+        payload: str | None = None,
+        llm_factory: str | None = core_config.default_llm_factories[LLMType.TEXT],
     ) -> None:
         """
         Executes a prompt using the specified prompt class and LLM factory.
@@ -81,7 +84,6 @@ def register(app: typer.Typer) -> None:
         Raises:
             ValueError: If `llm_factory` is not provided.
         """
-
         from ragbits.core.llms.factory import get_llm_from_factory
 
         prompt = _render(prompt_path=prompt_path, payload=payload)

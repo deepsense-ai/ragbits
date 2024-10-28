@@ -1,3 +1,5 @@
+import enum
+import importlib
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -64,7 +66,7 @@ def get_config_instance(
     model: type[ConfigModelT], subproject: str | None = None, current_dir: Path | None = None
 ) -> ConfigModelT:
     """
-    Creates an instace of pydantic model loaded with the configuration from pyproject.toml.
+    Creates an instance of pydantic model loaded with the configuration from pyproject.toml.
 
     Args:
         model (Type[BaseModel]): The pydantic model to instantiate.
@@ -81,4 +83,15 @@ def get_config_instance(
     config = get_ragbits_config(current_dir)
     if subproject:
         config = config.get(subproject, {})
+    config["default_llm_factories"] = {_resolve_enum_member(k): v for k, v in config["default_llm_factories"].items()}
     return model(**config)
+
+
+def _resolve_enum_member(enum_string: str) -> enum.Enum:
+    module_name, class_name, member_name = enum_string.rsplit(".", 2)
+    module = importlib.import_module(module_name)
+    enum_class = getattr(module, class_name)
+    try:
+        return getattr(enum_class, member_name)
+    except AttributeError as err:
+        raise ValueError("Unsupported LLMType provided in default_llm_factories in pyproject.yaml") from err
