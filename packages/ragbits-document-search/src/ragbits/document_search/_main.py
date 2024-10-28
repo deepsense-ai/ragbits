@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from ragbits.core.embeddings import Embeddings, get_embeddings
 from ragbits.core.vector_store import VectorStore, get_vector_store
+from ragbits.core.vector_store.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
@@ -98,7 +99,10 @@ class DocumentSearch:
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(search_vector[0])
+            entries = await self.vector_store.retrieve(
+                vector=search_vector[0],
+                options=VectorStoreOptions(**config.vector_store_kwargs),
+            )
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(elements)
