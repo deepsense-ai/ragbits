@@ -15,6 +15,7 @@ from rich.console import Console
 
 from ragbits.core.config import core_config
 from ragbits.core.llms import LLM
+from ragbits.core.llms.base import LLMType
 from ragbits.core.llms.factory import get_llm_from_factory
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.discovery import PromptDiscovery
@@ -137,7 +138,7 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
 
 def lab_app(  # pylint: disable=missing-param-doc
     file_pattern: str = core_config.prompt_path_pattern,
-    llm_factory: str | None = core_config.default_llm_factory,
+    llm_factory: str | None = core_config.default_llm_factories[LLMType.TEXT],
 ) -> None:
     """
     Launches the interactive application for listing, rendering, and testing prompts

@@ -1,3 +1,4 @@
+import enum
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Generic, cast, overload
@@ -5,6 +6,16 @@ from typing import Generic, cast, overload
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, OutputT
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
+
+
+class LLMType(enum.Enum):
+    """
+    Types of LLMs based on supported features
+    """
+
+    TEXT = "text"
+    VISION = "vision"
+    STRUCTURED_OUTPUT = "structured_output"
 
 
 class LLM(Generic[LLMClientOptions], ABC):
