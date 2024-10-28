@@ -27,16 +27,16 @@ async def main() -> None:
     """
     Run the example.
     """
+    embedder = LiteLLMEmbeddings("text-embedding-3-small")
     vector_store = ChromaVectorStore(
         client=PersistentClient("./chroma"),
         index_name="jokes",
     )
-    embedder = LiteLLMEmbeddings("text-embedding-3-small")
-
     document_search = DocumentSearch(
         embedder=embedder,
         vector_store=vector_store,
     )
+
     await document_search.ingest(documents)
 
     all_documents = await vector_store.list()
