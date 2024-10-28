@@ -83,7 +83,10 @@ def get_config_instance(
     config = get_ragbits_config(current_dir)
     if subproject:
         config = config.get(subproject, {})
-    config["default_llm_factories"] = {_resolve_enum_member(k): v for k, v in config["default_llm_factories"].items()}
+    if "default_llm_factories" in config:
+        config["default_llm_factories"] = {
+            _resolve_enum_member(k): v for k, v in config["default_llm_factories"].items()
+        }
     return model(**config)
 
 
