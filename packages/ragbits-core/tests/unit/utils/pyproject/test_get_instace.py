@@ -95,4 +95,4 @@ def test_get_config_instance_bad_factories():
             current_dir=projects_dir / "bad_factory_project",
         )
 
-    assert "Unsupported LLMType provided in default_llm_factories in pyproject.yaml" in str(err.value)
+    assert "Unsupported LLMType value provided in default_llm_factories in pyproject.toml" in str(err.value)

@@ -2,6 +2,6 @@
 name = "bad_factory_project"
 
 [tool.ragbits.core.default_llm_factories]
-"ragbits.core.llms.base.LLMType.NON_EXISTING" = "ragbits.core.llms.factory.simple_litellm_factory"
-"ragbits.core.llms.base.LLMType.VISION" = "ragbits.core.llms.factory.simple_litellm_vision_factory"
-"ragbits.core.llms.base.LLMType.STRUCTURED_OUTPUT" = "ragbits.core.llms.factory.simple_litellm_vision_factory"
+non_existing = "ragbits.core.llms.factory.simple_litellm_factory"
+vision = "ragbits.core.llms.factory.simple_litellm_vision_factory"
+structured_output = "ragbits.core.llms.factory.simple_litellm_vision_factory"

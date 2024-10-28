@@ -1,10 +1,11 @@
 import enum
-import importlib
 from pathlib import Path
 from typing import Any, TypeVar
 
 import tomli
 from pydantic import BaseModel
+
+from ragbits.core.llms.base import LLMType
 
 
 def find_pyproject(current_dir: Path | None = None) -> Path:
@@ -91,10 +92,7 @@ def get_config_instance(
 
 
 def _resolve_enum_member(enum_string: str) -> enum.Enum:
-    module_name, class_name, member_name = enum_string.rsplit(".", 2)
-    module = importlib.import_module(module_name)
-    enum_class = getattr(module, class_name)
     try:
-        return getattr(enum_class, member_name)
-    except AttributeError as err:
-        raise ValueError("Unsupported LLMType provided in default_llm_factories in pyproject.yaml") from err
+        return LLMType(enum_string)
+    except ValueError as err:
+        raise ValueError("Unsupported LLMType value provided in default_llm_factories in pyproject.toml") from err
