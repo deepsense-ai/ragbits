@@ -96,7 +96,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
         prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
-        image_description = await self.image_summarizer.get_image_description(prompt=prompt)
+        image_description = await self.image_describer.get_image_description(prompt=prompt)
         return ImageElement(
             description=image_description,
             ocr_extracted_text=element.text,

@@ -38,7 +38,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     output_type: type[OutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
-    image_input_fields: Optional[list[str]] = None
+    image_input_fields: list[str] | None = None
 
     @classmethod
     def _get_io_types(cls) -> tuple:
@@ -77,7 +77,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: Optional[InputT]) -> list[bytes]:
+    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes]:
         images = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
