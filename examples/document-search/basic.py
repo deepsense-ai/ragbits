@@ -27,7 +27,14 @@ async def main() -> None:
     """
     Run the example.
     """
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
+    embedder = LiteLLMEmbeddings(
+        model="text-embedding-3-small",
+    )
+    vector_store = InMemoryVectorStore()
+    document_search = DocumentSearch(
+        embedder=embedder,
+        vector_store=vector_store,
+    )
 
     await document_search.ingest(documents)
 

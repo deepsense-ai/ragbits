@@ -27,7 +27,9 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbeddings("text-embedding-3-small")
+    embedder = LiteLLMEmbeddings(
+        model="text-embedding-3-small",
+    )
     vector_store = ChromaVectorStore(
         client=PersistentClient("./chroma"),
         index_name="jokes",
