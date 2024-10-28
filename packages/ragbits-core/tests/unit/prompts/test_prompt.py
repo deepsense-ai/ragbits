@@ -107,7 +107,7 @@ def test_raises_when_no_input_data():
 
 
 def test_image_prompt():
-    "Tests the prompt creation of images"
+    """Tests the prompt creation of images"""
     with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
         image_bytes = f.read()
     image_list = [image_bytes]

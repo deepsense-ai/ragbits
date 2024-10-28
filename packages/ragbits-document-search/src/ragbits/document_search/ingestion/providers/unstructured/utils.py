@@ -1,7 +1,6 @@
 import io
 import os
 import warnings as wrngs
-from typing import Optional
 
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement

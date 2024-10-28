@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 from PIL import Image
@@ -7,9 +6,7 @@ from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.llms.base import LLM, LLMType
-from ragbits.core.llms.factory import get_default_llm, has_default_llm
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement

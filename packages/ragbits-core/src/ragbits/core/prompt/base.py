@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, Generic, Optional, Type
+from typing import Any, Generic
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar
@@ -37,13 +37,13 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return None
 
+    # ruff: noqa
     def list_images(self) -> list[bytes]:
         """
         Returns the schema of the list of images compatible with llm apis
         Returns:
             list of dictionaries
         """
-
         return []
 
 

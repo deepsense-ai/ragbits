@@ -1,5 +1,5 @@
-import warnings as wrngs
 import enum
+import warnings as wrngs
 from abc import ABC, abstractmethod
 from functools import cached_property
 from typing import Generic, cast, overload
