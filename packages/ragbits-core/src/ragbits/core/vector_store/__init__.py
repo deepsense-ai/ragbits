@@ -2,10 +2,9 @@ import sys
 
 from ..utils.config_handling import get_cls_from_config
 from .base import VectorDBEntry, VectorStore, VectorStoreOptions, WhereQuery
-from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
-__all__ = ["ChromaDBStore", "InMemoryVectorStore", "VectorDBEntry", "VectorStore", "WhereQuery"]
+__all__ = ["InMemoryVectorStore", "VectorDBEntry", "VectorStore", "WhereQuery"]
 
 module = sys.modules[__name__]
 
@@ -24,7 +23,7 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     vector_store_cls = get_cls_from_config(vector_store_config["type"], module)
     config = vector_store_config.get("config", {})
 
-    if vector_store_config["type"] == "ChromaDBStore":
+    if vector_store_config["type"].endswith("ChromaDBStore"):
         return vector_store_cls.from_config(config)
 
     return vector_store_cls(default_options=VectorStoreOptions(**config.get("default_options", {})))

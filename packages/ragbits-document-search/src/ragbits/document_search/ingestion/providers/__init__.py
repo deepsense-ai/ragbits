@@ -4,17 +4,8 @@ from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import BaseProvider
 from .dummy import DummyProvider
-from .unstructured.default import UnstructuredDefaultProvider
-from .unstructured.images import UnstructuredImageProvider
-from .unstructured.pdf import UnstructuredPdfProvider
 
-__all__ = [
-    "BaseProvider",
-    "DummyProvider",
-    "UnstructuredDefaultProvider",
-    "UnstructuredImageProvider",
-    "UnstructuredPdfProvider",
-]
+__all__ = ["BaseProvider", "DummyProvider", "get_provider"]
 
 module = sys.modules[__name__]
 
