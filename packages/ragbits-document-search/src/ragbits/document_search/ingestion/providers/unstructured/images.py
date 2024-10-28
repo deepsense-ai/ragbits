@@ -29,6 +29,8 @@ class _ImagePrompt(Prompt):
 
 class _ImagePromptInput(BaseModel):
     images: list[bytes]
+
+
 DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
