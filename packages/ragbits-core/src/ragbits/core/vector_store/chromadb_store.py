@@ -75,7 +75,7 @@ class ChromaDBStore(VectorStore):
             client=client(**config["client"].get("config", {})),
             index_name=config["index_name"],
             distance_method=config.get("distance_method", "l2"),
-            default_options=VectorStoreOptions(**config.get("options", {})),
+            default_options=VectorStoreOptions(**config.get("default_options", {})),
         )
 
     async def store(self, entries: list[VectorDBEntry]) -> None:

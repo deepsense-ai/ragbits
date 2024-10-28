@@ -97,14 +97,15 @@ class RAGSystemWithUI:
 
     def _prepare_document_search(self, database_path: str, index_name: str) -> None:
         chroma_client = chromadb.PersistentClient(path=database_path)
-        embedding_client = LiteLLMEmbeddings()
-
         vector_store = ChromaDBStore(
+            client=chroma_client,
             index_name=index_name,
-            chroma_client=chroma_client,
-            embedding_function=embedding_client,
         )
-        self.document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
+        embedder = LiteLLMEmbeddings()
+        self.document_search = DocumentSearch(
+            embedder=embedder,
+            vector_store=vector_store,
+        )
 
     async def _create_database(self, document_paths: list[str]) -> str:
         for path in document_paths:

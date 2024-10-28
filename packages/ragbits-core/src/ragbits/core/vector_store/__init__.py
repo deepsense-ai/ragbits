@@ -1,7 +1,7 @@
 import sys
 
 from ..utils.config_handling import get_cls_from_config
-from .base import VectorDBEntry, VectorStore, WhereQuery
+from .base import VectorDBEntry, VectorStore, VectorStoreOptions, WhereQuery
 from .chromadb_store import ChromaDBStore
 from .in_memory import InMemoryVectorStore
 
@@ -27,4 +27,4 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     if vector_store_config["type"] == "ChromaDBStore":
         return vector_store_cls.from_config(config)
 
-    return vector_store_cls(**config)
+    return vector_store_cls(default_options=VectorStoreOptions(**config.get("default_options", {})))

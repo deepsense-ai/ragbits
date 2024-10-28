@@ -35,7 +35,7 @@ config = {
             "distance_method": "l2",
             "default_options": {
                 "k": 3,
-                "max_distance": 1.15,
+                "max_distance": 1.2,
             },
         },
     },
