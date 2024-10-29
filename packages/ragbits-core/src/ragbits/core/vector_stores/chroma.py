@@ -82,7 +82,7 @@ class ChromaVectorStore(VectorStore):
             index_name=config["index_name"],
             distance_method=config.get("distance_method", "l2"),
             default_options=VectorStoreOptions(**config.get("default_options", {})),
-            metadata_store=get_metadata_store(config.get("metadata_store_config", {})),
+            metadata_store=get_metadata_store(config.get("metadata_store")),
         )
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:

@@ -27,7 +27,7 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     if vector_store_config["type"].endswith("ChromaVectorStore"):
         return vector_store_cls.from_config(config)
 
-    metadata_store_config = vector_store_config.get("metadata_store_config", {})
+    metadata_store_config = vector_store_config.get("metadata_store_config")
     return vector_store_cls(
         default_options=VectorStoreOptions(**config.get("default_options", {})),
         metadata_store=get_metadata_store(metadata_store_config),
