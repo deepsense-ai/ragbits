@@ -2,15 +2,15 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
 import asyncio
 
-import chromadb
+from chromadb import PersistentClient
 
-from ragbits.core.embeddings import LiteLLMEmbeddings
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -27,27 +27,38 @@ async def main() -> None:
     """
     Run the example.
     """
-    chroma_client = chromadb.PersistentClient(path="chroma")
-    embedding_client = LiteLLMEmbeddings()
-
-    vector_store = ChromaDBStore(
-        index_name="jokes",
-        chroma_client=chroma_client,
-        embedding_function=embedding_client,
+    embedder = LiteLLMEmbeddings(
+        model="text-embedding-3-small",
     )
-    document_search = DocumentSearch(embedder=embedding_client, vector_store=vector_store)
+    vector_store = ChromaVectorStore(
+        client=PersistentClient("./chroma"),
+        index_name="jokes",
+    )
+    document_search = DocumentSearch(
+        embedder=embedder,
+        vector_store=vector_store,
+    )
 
     await document_search.ingest(documents)
 
+    all_documents = await vector_store.list()
+
     print()
     print("All documents:")
-    all_documents = await vector_store.list()
     print([doc.metadata["content"] for doc in all_documents])
 
     query = "I'm boiling my water and I need a joke"
+    vector_store_kwargs = {
+        "k": 2,
+        "max_distance": None,
+    }
+    results = await document_search.search(
+        query,
+        config=SearchConfig(vector_store_kwargs=vector_store_kwargs),
+    )
+
     print()
     print(f"Documents similar to: {query}")
-    results = await document_search.search(query, search_config=SearchConfig(vector_store_kwargs={"k": 2}))
     print([element.get_key() for element in results])
 
 

@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-chromadb = [
+chroma = [
     "chromadb~=0.4.24",
 ]
 litellm = [
