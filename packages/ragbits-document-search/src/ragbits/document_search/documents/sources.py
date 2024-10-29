@@ -69,7 +69,6 @@ class Source(BaseModel, ABC):
         super().__init_subclass__(**kwargs)
 
 
-@dataclass
 class SourceDiscriminator:
     """
     Pydantic type annotation that automatically creates the correct subclass of Source based on the source_type field.
