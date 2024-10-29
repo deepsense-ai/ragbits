@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from PIL import Image
+from pydantic import BaseModel
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
 from ragbits.core.llms.base import LLM
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -18,6 +19,19 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
 )
 
 DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
+DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
+
+
+class _ImagePrompt(Prompt):
+    user_prompt: str = DEFAULT_IMAGE_QUESTION_PROMPT
+    image_input_fields: list[str] = ["images"]
+
+
+class _ImagePromptInput(BaseModel):
+    images: list[bytes]
+
+
+DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
@@ -53,7 +67,8 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_summarizer = ImageDescriber(llm or LiteLLM(DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL))
+        self.image_describer: ImageDescriber | None = None
+        self._llm = llm
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
@@ -79,7 +94,13 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         )
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-        image_description = await self.image_summarizer.get_image_description(img_bytes)
+        prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
+        if self._llm:
+            image_description = await self._llm.generate(prompt=prompt)
+        elif self.image_describer:
+            image_description = await self.image_describer.get_image_description(prompt=prompt)
+        else:
+            image_description = ""
         return ImageElement(
             description=image_description,
             ocr_extracted_text=element.text,

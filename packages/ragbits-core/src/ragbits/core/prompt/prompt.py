@@ -38,6 +38,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     output_type: type[OutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
+    image_input_fields: list[str] | None = None
 
     @classmethod
     def _get_io_types(cls) -> tuple:
@@ -74,6 +75,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         if isinstance(input_data, BaseModel):
             context = input_data.model_dump(serialize_as_any=True)
         return template.render(**context)
+
+    @classmethod
+    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes]:
+        images = []
+        if isinstance(input_data, BaseModel):
+            image_input_fields = cls.image_input_fields or []
+            for field in image_input_fields:
+                images_for_field = getattr(input_data, field)
+                if images_for_field:
+                    images.extend(images_for_field)
+        return images
 
     @classmethod
     def _format_message(cls, message: str) -> str:
@@ -118,6 +130,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )
         self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
+        self.images = self._get_images_from_input_data(input_data)
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
@@ -181,6 +194,14 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "user", "content": user_content})
             result.append({"role": "assistant", "content": assistant_content})
         return result
+
+    def list_images(self) -> list[bytes]:
+        """
+        Returns the schema of the list of images compatible with llm apis
+        Returns:
+            list of dictionaries
+        """
+        return self.images
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """
