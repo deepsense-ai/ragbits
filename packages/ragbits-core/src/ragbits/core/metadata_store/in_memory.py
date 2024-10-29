@@ -11,7 +11,6 @@ class InMemoryMetadataStore(MetadataStore):
 
     def __init__(self) -> None:
         self._storage: dict[str | UUID, Any] = {}
-        self._global_storage: dict[str | UUID, Any] = {}
 
     async def store(self, key: str | UUID, metadata: dict) -> None:
         """
@@ -49,30 +48,3 @@ class InMemoryMetadataStore(MetadataStore):
             metadata dict associated with a given key
         """
         return self._storage.get(key, {})
-
-    async def get_all(self) -> dict:
-        """
-        Returns all keys with associated metadata
-
-        Returns:
-            metadata dict for all entries
-        """
-        return self._storage
-
-    async def store_global(self, metadata: dict) -> None:
-        """
-        Store key value pairs of metadata that is shared across entries
-
-        Args:
-            metadata: common key value pairs for the whole collection
-        """
-        self._global_storage.update(metadata)
-
-    async def get_global(self) -> dict:
-        """
-        Get key value pairs of metadata that is shared across entries
-
-        Returns:
-            metadata for the whole collection
-        """
-        return self._global_storage

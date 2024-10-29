@@ -42,30 +42,3 @@ class MetadataStore(abc.ABC):
         Returns:
             metadata dict associated with a given key
         """
-
-    @abc.abstractmethod
-    async def get_all(self) -> dict:
-        """
-        Returns all keys with associated metadata
-
-        Returns:
-            metadata dict for all entries
-        """
-
-    @abc.abstractmethod
-    async def store_global(self, metadata: dict) -> None:
-        """
-        Store key value pairs of metadata that is shared across entries
-
-        Args:
-            metadata: common key value pairs for the whole collection
-        """
-
-    @abc.abstractmethod
-    async def get_global(self) -> dict:
-        """
-        Get key value pairs of metadata that is shared across entries
-
-        Returns:
-            metadata for the whole collection
-        """

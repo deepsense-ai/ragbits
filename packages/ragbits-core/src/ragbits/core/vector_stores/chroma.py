@@ -62,16 +62,9 @@ class ChromaVectorStore(VectorStore):
         if self._collection is not None:
             return self._collection
 
-        global_metadata = {"hnsw:space": self._distance_method}
-        if self.metadata_store is not None:
-            await self.metadata_store.store_global(global_metadata)
-            metadata_to_store = None
-        else:
-            metadata_to_store = global_metadata
-
         self._collection = self._client.get_or_create_collection(
             name=self._index_name,
-            metadata=metadata_to_store,
+            metadata={"hnsw:space": self._distance_method},
         )
         return self._collection
 
