@@ -190,5 +190,5 @@ class ChromaVectorStore(VectorStore):
                 vector=list(embedding),
                 metadata=await self._load_sample_metadata(metadata, sample_id),
             )
-            for metadata, embedding, sample_id, document in zip(metadatas, embeddings, ids, documents, strict=False) # type: ignore
+            for metadata, embedding, sample_id, document in zip(metadatas, embeddings, ids, documents, strict=False)  # type: ignore
         ]
