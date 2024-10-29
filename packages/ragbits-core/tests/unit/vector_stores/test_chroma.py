@@ -15,8 +15,8 @@ def mock_chromadb_store() -> ChromaVectorStore:
 
 
 async def test_get_chroma_collection(mock_chromadb_store: ChromaVectorStore) -> None:
-    _ = await mock_chromadb_store._get_chroma_collection()
-    assert mock_chromadb_store._client.get_or_create_collection.call_count == 1  # type: ignore
+    _ = mock_chromadb_store._get_chroma_collection()
+    assert mock_chromadb_store._client.get_or_create_collection.call_count == 2  # type: ignore
 
 
 async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
@@ -69,7 +69,7 @@ async def test_retrieve(
     mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
 ) -> None:
     vector = [0.1, 0.2, 0.3]
-    mock_collection = await mock_chromadb_store._get_chroma_collection()
+    mock_collection = mock_chromadb_store._get_chroma_collection()
     mock_collection.query.return_value = {  # type: ignore
         "metadatas": [
             [
@@ -99,7 +99,7 @@ async def test_retrieve(
 
 
 async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
-    mock_collection = await mock_chromadb_store._get_chroma_collection()
+    mock_collection = mock_chromadb_store._get_chroma_collection()
     mock_collection.get.return_value = {  # type: ignore
         "metadatas": [
             {

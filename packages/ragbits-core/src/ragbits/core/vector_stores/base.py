@@ -31,12 +31,10 @@ class VectorStore(ABC):
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    metadata_store: MetadataStore | None
-
     def __init__(self, default_options: VectorStoreOptions | None = None, metadata_store: MetadataStore | None = None):
         super().__init__()
         self._default_options = default_options or VectorStoreOptions()
-        self.metadata_store = metadata_store
+        self._metadata_store = metadata_store
 
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:

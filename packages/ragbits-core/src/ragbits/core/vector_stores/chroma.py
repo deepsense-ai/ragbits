@@ -50,23 +50,19 @@ class ChromaVectorStore(VectorStore):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        self._collection: Collection | None = None
+        self._collection = self._get_chroma_collection()
 
-    async def _get_chroma_collection(self) -> Collection:
+    def _get_chroma_collection(self) -> Collection:
         """
         Gets or creates a collection with the given name and metadata.
 
         Returns:
             The collection.
         """
-        if self._collection is not None:
-            return self._collection
-
-        self._collection = self._client.get_or_create_collection(
+        return self._client.get_or_create_collection(
             name=self._index_name,
             metadata={"hnsw:space": self._distance_method},
         )
-        return self._collection
 
     @classmethod
     def from_config(cls, config: dict) -> ChromaVectorStore:
@@ -98,9 +94,9 @@ class ChromaVectorStore(VectorStore):
         ids = [sha256(entry.key.encode("utf-8")).hexdigest() for entry in entries]
         embeddings = [entry.vector for entry in entries]
 
-        if self.metadata_store is not None:
+        if self._metadata_store is not None:
             for key, meta in zip(ids, [entry.metadata for entry in entries], strict=False):
-                await self.metadata_store.store(key, meta)
+                await self._metadata_store.store(key, meta)
             metadata_to_store = None
         else:
             metadata_to_store = [
@@ -108,9 +104,7 @@ class ChromaVectorStore(VectorStore):
             ]
 
         contents = [entry.key for entry in entries]
-
-        collection = await self._get_chroma_collection()
-        collection.add(ids=ids, embeddings=embeddings, metadatas=metadata_to_store, documents=contents)  # type: ignore
+        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadata_to_store, documents=contents)  # type: ignore
 
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
@@ -124,8 +118,11 @@ class ChromaVectorStore(VectorStore):
             The retrieved entries.
         """
         options = self._default_options if options is None else options
-        collection = await self._get_chroma_collection()
-        results = collection.query(query_embeddings=vector, n_results=options.k, include=CHROMA_QUERY_INCLUDE_KEYS)  # type: ignore
+        results = self._collection.query(
+            query_embeddings=vector,
+            n_results=options.k,
+            include=CHROMA_QUERY_INCLUDE_KEYS,  # type: ignore
+        )
         metadatas = results.get(CHROMA_METADATA_KEY) or []
         embeddings = results.get(CHROMA_EMBEDDINGS_KEY) or []
         distances = results.get(CHROMA_DISTANCES_KEY) or []
@@ -144,8 +141,8 @@ class ChromaVectorStore(VectorStore):
         ]
 
     async def _load_sample_metadata(self, metadata: dict, sample_id: str) -> dict:
-        if self.metadata_store is not None:
-            metadata = await self.metadata_store.get(sample_id)
+        if self._metadata_store is not None:
+            metadata = await self._metadata_store.get(sample_id)
         else:
             metadata = json.loads(metadata[self.METADATA_INNER_KEY])
 
@@ -169,9 +166,12 @@ class ChromaVectorStore(VectorStore):
         # Cast `where` to chromadb's Where type
         where_chroma: chromadb.Where | None = dict(where) if where else None
 
-        collection = await self._get_chroma_collection()
-        get_results = collection.get(where=where_chroma, limit=limit, offset=offset, include=CHROMA_LIST_INCLUDE_KEYS)  # type: ignore
-
+        get_results = self._collection.get(
+            where=where_chroma,
+            limit=limit,
+            offset=offset,
+            include=CHROMA_LIST_INCLUDE_KEYS,  # type: ignore
+        )
         metadatas = get_results.get(CHROMA_METADATA_KEY) or []
         embeddings = get_results.get(CHROMA_EMBEDDINGS_KEY) or []
         documents = get_results.get(CHROMA_DOCUMENTS_KEY) or []
