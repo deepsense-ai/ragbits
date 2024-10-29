@@ -8,6 +8,7 @@ import chromadb
 from chromadb import Collection
 from chromadb.api import ClientAPI
 
+from ragbits.core.metadata_store import get_metadata_store
 from ragbits.core.metadata_store.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
@@ -81,6 +82,7 @@ class ChromaVectorStore(VectorStore):
             index_name=config["index_name"],
             distance_method=config.get("distance_method", "l2"),
             default_options=VectorStoreOptions(**config.get("default_options", {})),
+            metadata_store=get_metadata_store(config.get("metadata_store_config", {})),
         )
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
