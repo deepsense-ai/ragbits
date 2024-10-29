@@ -8,7 +8,7 @@ from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
+from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers import get_rephraser
@@ -109,7 +109,7 @@ class DocumentSearch:
 
     async def _process_document(
         self,
-        document: DocumentMeta | Document | LocalFileSource | GCSSource,
+        document: DocumentMeta | Document | Source,
         document_processor: BaseProvider | None = None,
     ) -> list[Element]:
         """
@@ -138,7 +138,7 @@ class DocumentSearch:
 
     async def ingest(
         self,
-        documents: Sequence[DocumentMeta | Document | LocalFileSource | GCSSource],
+        documents: Sequence[DocumentMeta | Document | Source],
         document_processor: BaseProvider | None = None,
     ) -> None:
         """

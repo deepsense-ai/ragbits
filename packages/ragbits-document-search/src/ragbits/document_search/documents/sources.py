@@ -2,9 +2,11 @@ import os
 import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Literal
+from typing import Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
+from pydantic.alias_generators import to_snake
+from pydantic_core import CoreSchema, core_schema
 
 try:
     from datasets import load_dataset
@@ -23,6 +25,23 @@ class Source(BaseModel, ABC):
     """
     An object representing a source.
     """
+
+    # Registry of all subclasses by their unique identifier
+    _registry: ClassVar[dict[str, type["Source"]]] = {}
+
+    @classmethod
+    def class_identifier(cls) -> str:
+        """
+        Get an identifier for the source type.
+        """
+        return to_snake(cls.__name__)
+
+    @computed_field
+    def source_type(self) -> str:
+        """
+        Pydantic field based on the class identifier.
+        """
+        return self.class_identifier()
 
     @property
     @abstractmethod
@@ -43,13 +62,47 @@ class Source(BaseModel, ABC):
             The path to the source.
         """
 
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+        Source._registry[cls.class_identifier()] = cls
+        super().__init_subclass__(**kwargs)
+
+
+class SourceDiscriminator:
+    """
+    Pydantic type annotation that automatically creates the correct subclass of Source based on the source_type field.
+    """
+
+    @staticmethod
+    def _create_instance(fields: dict[str, Any]) -> Source:
+        source_type = fields.get("source_type")
+        if source_type is None:
+            raise ValueError("source_type is required to create a Source instance")
+
+        source_subclass = Source._registry.get(source_type)
+        if source_subclass is None:
+            raise ValueError(f"Unknown source type: {source_type}")
+        return source_subclass(**fields)
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:  # noqa: ANN401
+        create_instance_validator = core_schema.no_info_plain_validator_function(self._create_instance)
+
+        return core_schema.json_or_python_schema(
+            json_schema=create_instance_validator,
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(Source),
+                    create_instance_validator,
+                ]
+            ),
+        )
+
 
 class LocalFileSource(Source):
     """
     An object representing a local file source.
     """
 
-    source_type: Literal["local_file"] = "local_file"
     path: Path
 
     @property
@@ -96,7 +149,6 @@ class GCSSource(Source):
     An object representing a GCS file source.
     """
 
-    source_type: Literal["gcs"] = "gcs"
     bucket: str
     object_name: str
 
@@ -170,7 +222,6 @@ class HuggingFaceSource(Source):
     An object representing a Hugging Face dataset source.
     """
 
-    source_type: Literal["huggingface"] = "huggingface"
     path: str
     split: str = "train"
     row: int

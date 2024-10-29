@@ -1,10 +1,11 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource, LocalFileSource
+from ragbits.document_search.documents.sources import LocalFileSource, Source, SourceDiscriminator
 
 
 class DocumentType(str, Enum):
@@ -42,7 +43,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: LocalFileSource | GCSSource | HuggingFaceSource = Field(..., discriminator="source_type")
+    source: Annotated[Source, SourceDiscriminator()]
 
     @property
     def id(self) -> str:
@@ -101,7 +102,7 @@ class DocumentMeta(BaseModel):
         )
 
     @classmethod
-    async def from_source(cls, source: LocalFileSource | GCSSource | HuggingFaceSource) -> "DocumentMeta":
+    async def from_source(cls, source: Source) -> "DocumentMeta":
         """
         Create a document metadata from a source.
 
