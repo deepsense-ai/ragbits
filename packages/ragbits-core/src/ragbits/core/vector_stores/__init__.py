@@ -1,5 +1,6 @@
 import sys
 
+from ..metadata_stores import get_metadata_store
 from ..utils.config_handling import get_cls_from_config
 from .base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 from .in_memory import InMemoryVectorStore
@@ -26,4 +27,8 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     if vector_store_config["type"].endswith("ChromaVectorStore"):
         return vector_store_cls.from_config(config)
 
-    return vector_store_cls(default_options=VectorStoreOptions(**config.get("default_options", {})))
+    metadata_store_config = vector_store_config.get("metadata_store_config")
+    return vector_store_cls(
+        default_options=VectorStoreOptions(**config.get("default_options", {})),
+        metadata_store=get_metadata_store(metadata_store_config),
+    )

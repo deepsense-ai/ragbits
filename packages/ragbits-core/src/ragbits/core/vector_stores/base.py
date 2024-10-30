@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
+from ragbits.core.metadata_stores.base import MetadataStore
+
 WhereQuery = dict[str, str | int | float | bool]
 
 
@@ -29,9 +31,21 @@ class VectorStore(ABC):
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    def __init__(self, default_options: VectorStoreOptions | None = None) -> None:
+    def __init__(
+        self,
+        default_options: VectorStoreOptions | None = None,
+        metadata_store: MetadataStore | None = None,
+    ) -> None:
+        """
+        Constructs a new VectorStore instance.
+
+        Args:
+            default_options: The default options for querying the vector store.
+            metadata_store: The metadata store to use.
+        """
         super().__init__()
         self._default_options = default_options or VectorStoreOptions()
+        self._metadata_store = metadata_store
 
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:

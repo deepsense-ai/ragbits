@@ -14,7 +14,7 @@ def mock_chromadb_store() -> ChromaVectorStore:
     )
 
 
-def test_get_chroma_collection(mock_chromadb_store: ChromaVectorStore) -> None:
+async def test_get_chroma_collection(mock_chromadb_store: ChromaVectorStore) -> None:
     _ = mock_chromadb_store._get_chroma_collection()
     assert mock_chromadb_store._client.get_or_create_collection.call_count == 2  # type: ignore
 
@@ -43,11 +43,11 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
         embeddings=[[0.1, 0.2, 0.3]],
         metadatas=[
             {
-                "__key": "test_key",
                 "__metadata": '{"content": "test content", "document": {"title": "test title", "source":'
                 ' {"path": "/test/path"}, "document_type": "test_type"}}',
             }
         ],
+        documents=["test_key"],
     )
 
 
@@ -74,12 +74,10 @@ async def test_retrieve(
         "metadatas": [
             [
                 {
-                    "__key": "test_key_1",
                     "__metadata": '{"content": "test content 1", "document": {"title": "test title 1", "source":'
                     ' {"path": "/test/path-1"}, "document_type": "txt"}}',
                 },
                 {
-                    "__key": "test_key_2",
                     "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source":'
                     ' {"path": "/test/path-2"}, "document_type": "txt"}}',
                 },
@@ -87,6 +85,8 @@ async def test_retrieve(
         ],
         "embeddings": [[[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]]],
         "distances": [[0.1, 0.2]],
+        "documents": [["test_key_1", "test_key_2"]],
+        "ids": [["test_id_1", "test_id_2"]],
     }
 
     entries = await mock_chromadb_store.retrieve(vector, options=VectorStoreOptions(max_distance=max_distance))
@@ -103,17 +103,17 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     mock_collection.get.return_value = {  # type: ignore
         "metadatas": [
             {
-                "__key": "test_key",
                 "__metadata": '{"content": "test content", "document": {"title": "test title", "source":'
                 ' {"path": "/test/path"}, "document_type": "test_type"}}',
             },
             {
-                "__key": "test_key_2",
                 "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source":'
                 ' {"path": "/test/path"}, "document_type": "test_type"}}',
             },
         ],
         "embeddings": [[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]],
+        "documents": ["test_key", "test_key_2"],
+        "ids": ["test_id_1", "test_id_2"],
     }
 
     entries = await mock_chromadb_store.list()

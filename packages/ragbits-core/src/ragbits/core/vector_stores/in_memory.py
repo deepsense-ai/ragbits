@@ -2,6 +2,7 @@ from itertools import islice
 
 import numpy as np
 
+from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
@@ -10,8 +11,19 @@ class InMemoryVectorStore(VectorStore):
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
-    def __init__(self, default_options: VectorStoreOptions | None = None) -> None:
-        super().__init__(default_options)
+    def __init__(
+        self,
+        default_options: VectorStoreOptions | None = None,
+        metadata_store: MetadataStore | None = None,
+    ) -> None:
+        """
+        Constructs a new InMemoryVectorStore instance.
+
+        Args:
+            default_options: The default options for querying the vector store.
+            metadata_store: The metadata store to use.
+        """
+        super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._storage: dict[str, VectorStoreEntry] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:

@@ -37,6 +37,9 @@ config = {
                 "k": 3,
                 "max_distance": 1.2,
             },
+            "metadata_store": {
+                "type": "InMemoryMetadataStore",
+            },
         },
     },
     "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
