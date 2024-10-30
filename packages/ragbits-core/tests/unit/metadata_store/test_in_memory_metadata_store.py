@@ -1,16 +1,31 @@
+import pytest
+
+from ragbits.core.metadata_store.exceptions import MetadataNotFoundError
 from ragbits.core.metadata_store.in_memory import InMemoryMetadataStore
 
 
-async def test_in_memory_vector_store():
-    store = InMemoryMetadataStore()
+@pytest.fixture
+def metadata_store() -> InMemoryMetadataStore:
+    return InMemoryMetadataStore()
 
-    metadata_key_1_values = {"test1": "test1", "test2": 2}
-    metadata_key_2_values = {"test1": "test1", "test2": 4}
-    await store.store("key1", metadata_key_1_values)
-    await store.store("key2", metadata_key_2_values)
 
-    assert await store.get("key1") == metadata_key_1_values
-    assert await store.get("key2") == metadata_key_2_values
+async def test_store(metadata_store: InMemoryMetadataStore) -> None:
+    ids = ["id1", "id2"]
+    metadatas = [{"key1": "value1"}, {"key2": "value2"}]
+    await metadata_store.store(ids, metadatas)
+    assert metadata_store._storage["id1"] == {"key1": "value1"}
+    assert metadata_store._storage["id2"] == {"key2": "value2"}
 
-    assert await store.query("test2", 2) == {"key1": metadata_key_1_values}
-    assert await store.query("test1", "test1") == {"key1": metadata_key_1_values, "key2": metadata_key_2_values}
+
+async def test_get(metadata_store: InMemoryMetadataStore) -> None:
+    ids = ["id1", "id2"]
+    metadatas = [{"key1": "value1"}, {"key2": "value2"}]
+    await metadata_store.store(ids, metadatas)
+    result = await metadata_store.get(ids)
+    assert result == [{"key1": "value1"}, {"key2": "value2"}]
+
+
+async def test_get_metadata_not_found(metadata_store: InMemoryMetadataStore) -> None:
+    ids = ["id1"]
+    with pytest.raises(MetadataNotFoundError):
+        await metadata_store.get(ids)

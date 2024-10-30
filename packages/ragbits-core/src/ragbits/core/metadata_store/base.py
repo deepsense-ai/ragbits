@@ -1,44 +1,32 @@
-import abc
-from typing import Any
-from uuid import UUID
+from abc import ABC, abstractmethod
 
 
-class MetadataStore(abc.ABC):
+class MetadataStore(ABC):
     """
-    An abstract class for metadata storage. Allows to store, query and retrieve metadata in form of key value pairs
+    An abstract class for metadata storage. Allows to store, query and retrieve metadata in form of key value pairs.
     """
 
-    @abc.abstractmethod
-    async def store(self, key: str | UUID, metadata: dict) -> None:
+    @abstractmethod
+    async def store(self, ids: list[str], metadatas: list[dict]) -> None:
         """
-        Store metadata under key in metadata store
+        Store metadatas under ids in metadata store.
 
         Args:
-            key: unique key of the entry
-            metadata: dict with metadata
+            ids: list of unique ids of the entries
+            metadatas: list of dicts with metadata.
         """
 
-    @abc.abstractmethod
-    async def query(self, metadata_field_name: str, value: Any) -> dict:  # noqa
+    @abstractmethod
+    async def get(self, ids: list[str]) -> list[dict]:
         """
-        Queries metastore and returns dicts with key: metadata format that match
+        Returns metadatas associated with a given ids.
 
         Args:
-            metadata_field_name: name of metadata field
-            value: value to match against
+            ids: list of ids to use.
 
         Returns:
-            dict with key: metadata entries that match query
-        """
+            List of metadata dicts associated with a given ids.
 
-    @abc.abstractmethod
-    async def get(self, key: str | UUID) -> dict:
-        """
-        Returns metadata associated with a given key
-
-        Args:
-            key: key to use
-
-        Returns:
-            metadata dict associated with a given key
+        Raises:
+            MetadataNotFoundError: If the metadata is not found.
         """

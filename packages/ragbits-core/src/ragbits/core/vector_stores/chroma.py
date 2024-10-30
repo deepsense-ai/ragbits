@@ -13,21 +13,11 @@ from ragbits.core.metadata_store.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
-CHROMA_IDS_KEY = "ids"
-CHROMA_DOCUMENTS_KEY = "documents"
-CHROMA_DISTANCES_KEY = "distances"
-CHROMA_METADATA_KEY = "metadatas"
-CHROMA_EMBEDDINGS_KEY = "embeddings"
-CHROMA_LIST_INCLUDE_KEYS = [CHROMA_DOCUMENTS_KEY, CHROMA_METADATA_KEY, CHROMA_EMBEDDINGS_KEY]
-CHROMA_QUERY_INCLUDE_KEYS = CHROMA_LIST_INCLUDE_KEYS + [CHROMA_DISTANCES_KEY]
-
 
 class ChromaVectorStore(VectorStore):
     """
     Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
     """
-
-    METADATA_INNER_KEY = "__metadata"
 
     def __init__(
         self,
@@ -36,18 +26,18 @@ class ChromaVectorStore(VectorStore):
         distance_method: Literal["l2", "ip", "cosine"] = "l2",
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
-    ):
+    ) -> None:
         """
-        Initializes the ChromaVectorStore with the given parameters.
+        Constructs a new ChromaVectorStore instance.
 
         Args:
             client: The ChromaDB client.
             index_name: The name of the index.
             distance_method: The distance method to use.
             default_options: The default options for querying the vector store.
-            metadata_store: The metadata store to use.
+            metadata_store: The metadata store to use. If None, the metadata will be stored in ChromaDB.
         """
-        super().__init__(default_options, metadata_store)
+        super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
@@ -76,9 +66,9 @@ class ChromaVectorStore(VectorStore):
         Returns:
             An initialized instance of the ChromaVectorStore class.
         """
-        client = get_cls_from_config(config["client"]["type"], chromadb)  # type: ignore
+        client_cls = get_cls_from_config(config["client"]["type"], chromadb)
         return cls(
-            client=client(**config["client"].get("config", {})),
+            client=client_cls(**config["client"].get("config", {})),
             index_name=config["index_name"],
             distance_method=config.get("distance_method", "l2"),
             default_options=VectorStoreOptions(**config.get("default_options", {})),
@@ -92,21 +82,17 @@ class ChromaVectorStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        # TODO: Think about better id components for hashing
+        # TODO: Think about better id components for hashing and move hash computing to VectorStoreEntry
         ids = [sha256(entry.key.encode("utf-8")).hexdigest() for entry in entries]
+        documents = [entry.key for entry in entries]
         embeddings = [entry.vector for entry in entries]
-
-        if self._metadata_store is not None:
-            for key, meta in zip(ids, [entry.metadata for entry in entries], strict=False):
-                await self._metadata_store.store(key, meta)
-            metadata_to_store = None
-        else:
-            metadata_to_store = [
-                {self.METADATA_INNER_KEY: json.dumps(entry.metadata, default=str)} for entry in entries
-            ]
-
-        contents = [entry.key for entry in entries]
-        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadata_to_store, documents=contents)  # type: ignore
+        metadatas = [entry.metadata for entry in entries]
+        metadatas = (
+            [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
+            if self._metadata_store is None
+            else await self._metadata_store.store(ids, metadatas)  # type: ignore
+        )
+        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
 
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
@@ -118,37 +104,39 @@ class ChromaVectorStore(VectorStore):
 
         Returns:
             The retrieved entries.
+
+        Raises:
+            MetadataNotFoundError: If the metadata is not found.
         """
         options = self._default_options if options is None else options
+
         results = self._collection.query(
             query_embeddings=vector,
             n_results=options.k,
-            include=CHROMA_QUERY_INCLUDE_KEYS,  # type: ignore
+            include=["metadatas", "embeddings", "distances", "documents"],
         )
-        metadatas = results.get(CHROMA_METADATA_KEY) or []
-        embeddings = results.get(CHROMA_EMBEDDINGS_KEY) or []
-        distances = results.get(CHROMA_DISTANCES_KEY) or []
-        ids = results.get(CHROMA_IDS_KEY) or []
-        documents = results.get(CHROMA_DOCUMENTS_KEY) or []
+        ids = results.get("ids") or []
+        metadatas = results.get("metadatas") or []
+        embeddings = results.get("embeddings") or []
+        distances = results.get("distances") or []
+        documents = results.get("documents") or []
+
+        metadatas = [
+            [json.loads(metadata["__metadata"]) for batch in metadatas for metadata in batch]  # type: ignore
+            if self._metadata_store is None
+            else await self._metadata_store.get(*ids)
+        ]
 
         return [
             VectorStoreEntry(
                 key=document,
                 vector=list(embeddings),
-                metadata=await self._load_sample_metadata(metadata, sample_id),
+                metadata=metadata,  # type: ignore
             )
-            for batch in zip(metadatas, embeddings, distances, ids, documents, strict=False)  # type: ignore
-            for metadata, embeddings, distance, sample_id, document in zip(*batch, strict=False)
+            for batch in zip(metadatas, embeddings, distances, documents, strict=False)
+            for metadata, embeddings, distance, document in zip(*batch, strict=False)
             if options.max_distance is None or distance <= options.max_distance
         ]
-
-    async def _load_sample_metadata(self, metadata: dict, sample_id: str) -> dict:
-        if self._metadata_store is not None:
-            metadata = await self._metadata_store.get(sample_id)
-        else:
-            metadata = json.loads(metadata[self.METADATA_INNER_KEY])
-
-        return metadata
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
@@ -164,6 +152,9 @@ class ChromaVectorStore(VectorStore):
 
         Returns:
             The entries.
+
+        Raises:
+            MetadataNotFoundError: If the metadata is not found.
         """
         # Cast `where` to chromadb's Where type
         where_chroma: chromadb.Where | None = dict(where) if where else None
@@ -172,18 +163,24 @@ class ChromaVectorStore(VectorStore):
             where=where_chroma,
             limit=limit,
             offset=offset,
-            include=CHROMA_LIST_INCLUDE_KEYS,  # type: ignore
+            include=["metadatas", "embeddings", "documents"],
         )
-        metadatas = get_results.get(CHROMA_METADATA_KEY) or []
-        embeddings = get_results.get(CHROMA_EMBEDDINGS_KEY) or []
-        documents = get_results.get(CHROMA_DOCUMENTS_KEY) or []
-        ids = get_results.get(CHROMA_IDS_KEY) or []
+        ids = get_results.get("ids") or []
+        metadatas = get_results.get("metadatas") or []
+        embeddings = get_results.get("embeddings") or []
+        documents = get_results.get("documents") or []
+
+        metadatas = (
+            [json.loads(metadata["__metadata"]) for metadata in metadatas]  # type: ignore
+            if self._metadata_store is None
+            else await self._metadata_store.get(ids)
+        )
 
         return [
             VectorStoreEntry(
                 key=document,
                 vector=list(embedding),
-                metadata=await self._load_sample_metadata(metadata, sample_id),
+                metadata=metadata,  # type: ignore
             )
-            for metadata, embedding, sample_id, document in zip(metadatas, embeddings, ids, documents, strict=False)  # type: ignore
+            for metadata, embedding, document in zip(metadatas, embeddings, documents, strict=False)
         ]

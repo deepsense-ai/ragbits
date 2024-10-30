@@ -12,9 +12,18 @@ class InMemoryVectorStore(VectorStore):
     """
 
     def __init__(
-        self, default_options: VectorStoreOptions | None = None, metadata_store: MetadataStore | None = None
+        self,
+        default_options: VectorStoreOptions | None = None,
+        metadata_store: MetadataStore | None = None,
     ) -> None:
-        super().__init__(default_options, metadata_store)
+        """
+        Constructs a new InMemoryVectorStore instance.
+
+        Args:
+            default_options: The default options for querying the vector store.
+            metadata_store: The metadata store to use.
+        """
+        super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._storage: dict[str, VectorStoreEntry] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:

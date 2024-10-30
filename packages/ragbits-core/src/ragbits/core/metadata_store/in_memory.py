@@ -1,7 +1,5 @@
-from typing import Any
-from uuid import UUID
-
 from ragbits.core.metadata_store.base import MetadataStore
+from ragbits.core.metadata_store.exceptions import MetadataNotFoundError
 
 
 class InMemoryMetadataStore(MetadataStore):
@@ -10,41 +8,36 @@ class InMemoryMetadataStore(MetadataStore):
     """
 
     def __init__(self) -> None:
-        self._storage: dict[str | UUID, Any] = {}
-
-    async def store(self, key: str | UUID, metadata: dict) -> None:
         """
-        Store metadata under key in metadata store
+        Constructs a new InMemoryMetadataStore instance.
+        """
+        self._storage: dict[str, dict] = {}
+
+    async def store(self, ids: list[str], metadatas: list[dict]) -> None:
+        """
+        Store metadatas under ids in metadata store.
 
         Args:
-            key: unique key of the entry
-            metadata: dict with metadata
+            ids: list of unique ids of the entries
+            metadatas: list of dicts with metadata.
         """
-        self._storage[key] = metadata
+        for _id, metadata in zip(ids, metadatas, strict=False):
+            self._storage[_id] = metadata
 
-    async def query(self, metadata_field_name: str, value: Any) -> dict:  # noqa
+    async def get(self, ids: list[str]) -> list[dict]:
         """
-        Queries metastore and returns dicts with key: metadata format that match
+        Returns metadatas associated with a given ids.
 
         Args:
-            metadata_field_name: name of metadata field
-            value: value to match against
+            ids: list of ids to use.
 
         Returns:
-            dict with key: metadata entries that match query
-        """
-        return {
-            key: metadata for key, metadata in self._storage.items() if metadata.get(metadata_field_name, None) == value
-        }
+            List of metadata dicts associated with a given ids.
 
-    async def get(self, key: str | UUID) -> dict:
+        Raises:
+            MetadataNotFoundError: If the metadata is not found.
         """
-        Returns metadata associated with a given key
-
-        Args:
-            key: key to use
-
-        Returns:
-            metadata dict associated with a given key
-        """
-        return self._storage.get(key, {})
+        try:
+            return [self._storage[_id] for _id in ids]
+        except KeyError as exc:
+            raise MetadataNotFoundError(*exc.args) from exc
