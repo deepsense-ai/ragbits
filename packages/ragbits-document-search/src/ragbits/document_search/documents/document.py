@@ -37,14 +37,6 @@ class DocumentType(str, Enum):
     UNKNOWN = "unknown"
 
 
-class DocumentLocation(BaseModel):
-    """
-    An object representing position of chunk within document
-    """
-
-    page_number: int | None = None
-    coordinates: dict | None = None
-
 
 class DocumentMeta(BaseModel):
     """
@@ -53,7 +45,6 @@ class DocumentMeta(BaseModel):
 
     document_type: DocumentType
     source: Annotated[Source, SourceDiscriminator()]
-    location: DocumentLocation | None = None
 
     @property
     def id(self) -> str:
@@ -64,18 +55,6 @@ class DocumentMeta(BaseModel):
             The document ID.
         """
         return self.source.id
-
-    def add_location_metadata(self, provider_metadata: dict) -> None:
-        """
-        Add metadata retrived by provider to document metadata.
-
-        Args:
-            provider_metadata: metadata retrived by provider or null.
-
-        """
-        page_number = provider_metadata.get("page_number")
-        coordinates = provider_metadata.get("coordinates")
-        self.location = DocumentLocation(page_number=page_number, coordinates=coordinates)
 
     async def fetch(self) -> "Document":
         """
