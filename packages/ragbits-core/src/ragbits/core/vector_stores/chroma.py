@@ -8,8 +8,8 @@ import chromadb
 from chromadb import Collection
 from chromadb.api import ClientAPI
 
-from ragbits.core.metadata_store import get_metadata_store
-from ragbits.core.metadata_store.base import MetadataStore
+from ragbits.core.metadata_stores import get_metadata_store
+from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 

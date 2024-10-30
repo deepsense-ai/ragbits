@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
-from ragbits.core.metadata_store.base import MetadataStore
+from ragbits.core.metadata_stores.base import MetadataStore
 
 WhereQuery = dict[str, str | int | float | bool]
 

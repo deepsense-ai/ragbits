@@ -1,7 +1,7 @@
 import pytest
 
-from ragbits.core.metadata_store.exceptions import MetadataNotFoundError
-from ragbits.core.metadata_store.in_memory import InMemoryMetadataStore
+from ragbits.core.metadata_stores.exceptions import MetadataNotFoundError
+from ragbits.core.metadata_stores.in_memory import InMemoryMetadataStore
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
 import sys
 
-from ..metadata_store import get_metadata_store
+from ..metadata_stores import get_metadata_store
 from ..utils.config_handling import get_cls_from_config
 from .base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 from .in_memory import InMemoryVectorStore

@@ -1,5 +1,5 @@
-from ragbits.core.metadata_store.base import MetadataStore
-from ragbits.core.metadata_store.exceptions import MetadataNotFoundError
+from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.metadata_stores.exceptions import MetadataNotFoundError
 
 
 class InMemoryMetadataStore(MetadataStore):

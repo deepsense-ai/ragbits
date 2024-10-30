@@ -2,7 +2,7 @@ from itertools import islice
 
 import numpy as np
 
-from ragbits.core.metadata_store.base import MetadataStore
+from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
