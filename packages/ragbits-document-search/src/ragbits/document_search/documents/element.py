@@ -62,7 +62,7 @@ class Element(BaseModel, ABC):
 
         return element_cls(**meta)
 
-    def add_location_metadata(self, provider_metadata: dict) -> None:
+    def add_location_metadata(self, provider_metadata: dict) -> "Element":
         """
         Add metadata retrived by provider to document metadata.
 
@@ -73,6 +73,7 @@ class Element(BaseModel, ABC):
         page_number = provider_metadata.get("page_number")
         coordinates = provider_metadata.get("coordinates")
         self.location = DocumentLocation(page_number=page_number, coordinates=coordinates)
+        return self
 
     def to_vector_db_entry(self, vector: list[float]) -> VectorStoreEntry:
         """

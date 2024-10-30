@@ -22,13 +22,10 @@ def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -
     Returns:
         text element
     """
-    text_element = TextElement(
+    return TextElement(
         document_meta=document_meta,
         content=element.text,
-    )
-    if element.metadata:
-        text_element.add_location_metadata(provider_metadata=element.metadata.to_dict())
-    return text_element
+    ).add_location_metadata(provider_metadata=element.metadata.to_dict())
 
 
 def check_required_argument(value: str | None, arg_name: str, fallback_env: str) -> str:
