@@ -1,6 +1,4 @@
 from io import BytesIO
-import os
-from copy import deepcopy
 from pathlib import Path
 
 from unstructured.chunking.basic import chunk_elements

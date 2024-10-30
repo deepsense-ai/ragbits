@@ -65,7 +65,7 @@ class DocumentMeta(BaseModel):
         """
         return self.source.id
 
-    def add_location_metadata(self, provider_metadata: dict | None) -> None:
+    def add_location_metadata(self, provider_metadata: dict) -> None:
         """
         Add metadata retrived by provider to document metadata.
 
@@ -73,10 +73,9 @@ class DocumentMeta(BaseModel):
             provider_metadata: metadata retrived by provider or null.
 
         """
-        if provider_metadata:
-            page_number = provider_metadata.get("page_number", None)
-            coordinates = provider_metadata.get("coordinates", None)
-            self.location = DocumentLocation(page_number=page_number, coordinates=coordinates)
+        page_number = provider_metadata.get("page_number")
+        coordinates = provider_metadata.get("coordinates")
+        self.location = DocumentLocation(page_number=page_number, coordinates=coordinates)
 
     async def fetch(self) -> "Document":
         """
