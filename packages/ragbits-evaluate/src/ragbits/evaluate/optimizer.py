@@ -1,11 +1,10 @@
 import asyncio
 import optuna
 from omegaconf import DictConfig, OmegaConf
-from hydra.utils import instantiate
 
 from typing import Type
 
-from scipy.special import kwargs
+from sympy.ntheory.factor_ import trial_msg
 
 from .evaluator import Evaluator
 from .pipelines.base import EvaluationPipeline
@@ -14,37 +13,60 @@ from .loaders.base import DataLoader
 from .metrics.base import MetricSet
 
 
-
 class Optimizer:
     """
     Class for optimization
     """
 
-    def optimize(self, config_with_params: DictConfig, dataloader: DataLoader, metrics: MetricSet, **kwargs):
-        objective = lambda trial: self._objective(trial=trial, config_with_params=config_with_params, dataloader=dataloader, metrics=metrics)
+    def optimize(
+        self,
+        pipeline_class: Type[EvaluationPipeline],
+        config_with_params: DictConfig,
+        dataloader: DataLoader,
+        metrics: MetricSet,
+        **kwargs,
+    ) -> list[tuple[DictConfig, float, dict[str, float]]]:
+        objective = lambda trial: self._objective(
+            trial=trial,
+            pipeline_class=pipeline_class,
+            config_with_params=config_with_params,
+            dataloader=dataloader,
+            metrics=metrics,
+        )
         study = optuna.create_study(direction=kwargs.get("direction", "maximize"))
         study.optimize(objective, n_trials=kwargs.get("n_trials", 1))
+        configs_with_scores = [(trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"]) for trial in study.get_trials()]
+        return configs_with_scores
 
-    def _objective(self, pipeline_class: Type[EvaluationPipeline], trial: optuna.Trial, config_with_params: DictConfig, dataloader: DataLoader, metrics: MetricSet):
-        updates = self._get_values_from_marked_params(cfg=config_with_params, trial=trial)
+    def _objective(
+        self,
+        pipeline_class: Type[EvaluationPipeline],
+        trial: optuna.Trial,
+        config_with_params: DictConfig,
+        dataloader: DataLoader,
+        metrics: MetricSet,
+    ) -> float:
+        updates = self._get_pipeline_config_from_parametrized(cfg=config_with_params, trial=trial)
         config_for_trial = OmegaConf.merge(config_with_params, updates)
         pipeline = pipeline_class(config_for_trial)
-        return self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
-
-    def _score(self, pipeline: EvaluationPipeline, dataloader: DataLoader, metrics: MetricSet) -> float:
-        if not isinstance(pipeline, EvaluationPipeline):
-            raise ValueError("Defined class of pipeline should inherit from Evaluation Pipeline")
-        evaluator = Evaluator()
-        results = asyncio.run(evaluator.compute(
-            pipeline=pipeline,
-            dataloader=dataloader,
-            metrics=metrics)
-        )
-        score = sum(results["metrics"]["metrics"].values())
+        metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
+        score = sum(metrics_values.values())
+        trial.set_user_attr("score", score)
+        trial.set_user_attr("cfg", config_for_trial)
+        trial.set_user_attr("all_metrics", metrics_values)
         return score
 
+    def _score(self, pipeline: EvaluationPipeline, dataloader: DataLoader, metrics: MetricSet) -> dict[str, float]:
+        evaluator = Evaluator()
+        event_loop = asyncio.new_event_loop()
+        # AFAIR optuna does not support async objective functions
+        results = event_loop.run_until_complete(evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics))
+        return results["metrics"]
+
     @staticmethod
-    def _get_values_from_marked_params(cfg: DictConfig, trial: optuna.Trial, result: dict | None = None) -> DictConfig | str | float | int:
+    def _get_pipeline_config_from_parametrized(
+        cfg: DictConfig, trial: optuna.Trial, result: dict | None = None
+    ) -> DictConfig | str | float | int:
         """
         Returns a new dictionary with the keys that contain 'opt_params_range' replaced
         by random numbers between the specified range [A, B].
@@ -52,7 +74,7 @@ class Optimizer:
         result = {}
         for key, value in cfg.items():
             if isinstance(value, DictConfig):
-                nested_result = Optimizer._get_values_from_marked_params(value, trial, result)
+                nested_result = Optimizer._get_pipeline_config_from_parametrized(value, trial, result)
                 if nested_result:  # Only add if nested_result is not empty
                     result[key] = nested_result
             elif key == "opt_params_range":
@@ -67,4 +89,3 @@ class Optimizer:
                 res = trial.suggest_categorical(name=key, choices=value)
                 return res  # Return single random value if opt_params_range is found
         return OmegaConf.create(result)
-

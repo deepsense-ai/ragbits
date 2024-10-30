@@ -1,0 +1,28 @@
+txt:
+  type: ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider
+  config:
+    use_api: false
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters:
+        opt_params_range:
+          - 500
+          - 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0
+
+md:
+  type: ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider
+  config:
+    use_api: false
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters: 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0

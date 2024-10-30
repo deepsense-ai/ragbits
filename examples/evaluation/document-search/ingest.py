@@ -30,7 +30,7 @@ async def ingest(config: DictConfig) -> None:
     """
     log.info("Ingesting documents...")
 
-    document_search = DocumentSearch.from_config(config)  # type: ignore
+    document_search = DocumentSearch.from_config(config.pipeline)  # type: ignore
 
     documents = await tqdm.gather(
         *[

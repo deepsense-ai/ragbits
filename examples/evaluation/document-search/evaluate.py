@@ -13,8 +13,8 @@ import hydra
 from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.loaders.hf import HFDataLoader
-from ragbits.evaluate.metrics.document_search import document_search_metrics
+from ragbits.evaluate.metrics import metric_set_factory
+from ragbits.evaluate.loaders import dataloader_factory
 from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
 
@@ -34,9 +34,9 @@ async def bench(config: DictConfig) -> None:
 
     log.info("Starting evaluation...")
 
-    dataloader = HFDataLoader(config.data)
-    pipeline = DocumentSearchPipeline(config)
-    metrics = document_search_metrics(config.metrics)
+    dataloader = dataloader_factory(config.data)
+    pipeline = DocumentSearchPipeline(config.pipeline)
+    metrics = metric_set_factory(config.metrics)
 
     evaluator = Evaluator()
     results = await evaluator.compute(

@@ -37,7 +37,6 @@ class DocumentType(str, Enum):
     UNKNOWN = "unknown"
 
 
-
 class DocumentMeta(BaseModel):
     """
     An object representing a document metadata.
