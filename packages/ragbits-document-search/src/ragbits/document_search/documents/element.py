@@ -64,11 +64,12 @@ class Element(BaseModel, ABC):
 
     def add_location_metadata(self, provider_metadata: dict) -> "Element":
         """
-        Add metadata retrived by provider to document metadata.
+        Add metadata retrived by provider to element.
 
         Args:
             provider_metadata: metadata retrived by provider or null.
-
+        Returns:
+            an instance of updated Element
         """
         page_number = provider_metadata.get("page_number")
         coordinates = provider_metadata.get("coordinates")
