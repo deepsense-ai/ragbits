@@ -8,7 +8,7 @@ from unstructured.documents.elements import Element as UnstructuredElement
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.documents.element import ElementLocation, TextElement
 
 
 def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -> TextElement:
@@ -22,10 +22,31 @@ def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -
     Returns:
         text element
     """
+    location = to_element_location(element)
     return TextElement(
         document_meta=document_meta,
         content=element.text,
-    ).add_location_metadata(provider_metadata=element.metadata.to_dict())
+        location=location,
+    )
+
+
+def to_element_location(element: UnstructuredElement) -> ElementLocation:
+    """
+    Converts unstructured element to element location.
+
+    Args:
+        element: element from unstructured
+
+    Returns:
+        element location
+    """
+    metadata = element.metadata.to_dict()
+    page_number = metadata.get("page_number")
+    coordinates = metadata.get("coordinates")
+    return ElementLocation(
+        page_number=page_number,
+        coordinates=coordinates,
+    )
 
 
 def check_required_argument(value: str | None, arg_name: str, fallback_env: str) -> str:
