@@ -7,6 +7,15 @@ from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
 
+class ElementLocation(BaseModel):
+    """
+    An object representing position of chunk within document.
+    """
+
+    page_number: int | None = None
+    coordinates: dict | None = None
+
+
 class Element(BaseModel, ABC):
     """
     An object representing an element in a document.
@@ -14,6 +23,7 @@ class Element(BaseModel, ABC):
 
     element_type: str
     document_meta: DocumentMeta
+    location: ElementLocation | None = None
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
