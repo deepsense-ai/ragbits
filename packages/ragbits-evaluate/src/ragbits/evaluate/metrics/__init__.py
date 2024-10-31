@@ -1,8 +1,10 @@
 import sys
-from omegaconf import DictConfig
-from ragbits.core.utils.config_handling import get_cls_from_config
-from .base import MetricSet
 
+from omegaconf import DictConfig
+
+from ragbits.core.utils.config_handling import get_cls_from_config
+
+from .base import MetricSet
 
 __all__ = [MetricSet]
 

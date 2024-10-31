@@ -1,13 +1,13 @@
 import sys
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
+from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.evaluate.loaders import dataloader_factory
 from ragbits.evaluate.metrics import metric_set_factory
 from ragbits.evaluate.optimizer import Optimizer
-from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.evaluate.utils import log_optimization_to_file
-
 
 module = sys.modules[__name__]
 

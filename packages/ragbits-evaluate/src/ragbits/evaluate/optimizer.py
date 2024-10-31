@@ -1,16 +1,15 @@
 import asyncio
-import optuna
 import json
-from omegaconf import DictConfig, ListConfig, OmegaConf
 from copy import deepcopy
+from typing import Any
 
-from typing import Any, Type
+import optuna
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from .evaluator import Evaluator
-from .pipelines.base import EvaluationPipeline
-
 from .loaders.base import DataLoader
 from .metrics.base import MetricSet
+from .pipelines.base import EvaluationPipeline
 
 
 def _is_json_string(string: str) -> bool:
@@ -31,7 +30,7 @@ class Optimizer:
 
     def optimize(
         self,
-        pipeline_class: Type[EvaluationPipeline],
+        pipeline_class: type[EvaluationPipeline],
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
@@ -50,7 +49,7 @@ class Optimizer:
 
     def _objective(
         self,
-        pipeline_class: Type[EvaluationPipeline],
+        pipeline_class: type[EvaluationPipeline],
         trial: optuna.Trial,
         config_with_params: DictConfig,
         dataloader: DataLoader,
@@ -73,7 +72,8 @@ class Optimizer:
         results = event_loop.run_until_complete(evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics))
         return results["metrics"]
 
-    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:
+    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial,
+                                         ancestors: list[str], choice_idx: int | None = None) -> None:
         """
         Modifies the original dictionary in place, replacing values for keys that contain
         'opt_params_range' with random numbers between the specified range [A, B] or for
@@ -82,31 +82,33 @@ class Optimizer:
         for key, value in cfg.items():
             if isinstance(value, DictConfig):
                 if value.get("optimize"):
-                    param_id = f"{'.'.join(ancestors)}.{key}"
-                    choices = self._choices_cache.get(param_id) or value.get("choices")
-                    range = value.get("range")
-                    assert not (choices and range), "Choices and range cannot be defined in couple"
-                    if range:
-                        if isinstance(range[0], float) and isinstance(range[1], float):
-                            cfg[key] = trial.suggest_float(name=param_id, low=range[0], high=range[1])
-                        elif isinstance(range[0], int) and isinstance(range[1], int):
-                            cfg[key] = trial.suggest_int(name=param_id, low=range[0], high=range[1])
+                    param_id = f"{'.'.join(ancestors)}.{key}.{str(choice_idx)}"
+                    choices = value.get("choices")
+                    values_range = value.get("range")
+                    assert not (choices and values_range), "Choices and range cannot be defined in couple"
+                    choices_index = self._choices_cache.get(param_id)
+                    if choices and not choices_index:
+                        choices_index = list(range(len(choices)))
+                        self._choices_cache[param_id] = choices_index
+                    if values_range:
+                        if isinstance(values_range[0], float) and isinstance(values_range[1], float):
+                            cfg[key] = trial.suggest_float(name=param_id, low=values_range[0], high=values_range[1])
+                        elif isinstance(values_range[0], int) and isinstance(values_range[1], int):
+                            cfg[key] = trial.suggest_int(name=param_id, low=values_range[0], high=values_range[1])
                     else:
                         assert choices, "Either choices or range must be specified"
-                        if isinstance(choices[0], DictConfig):
-                            choices = [json.dumps(OmegaConf.to_container(ch)) for ch in choices]
-                        self._choices_cache[param_id] = choices
-                        choice = trial.suggest_categorical(name=param_id, choices=choices)
-                        choice = OmegaConf.create(json.loads(choice)) if _is_json_string(choice) else choice
+                        choice_idx = trial.suggest_categorical(name=param_id, choices=choices_index)
+                        choice = choices[choice_idx]
                         if isinstance(choice, DictConfig):
-                            self._set_values_for_optimized_params(choice, trial, ancestors + [key])
+                            self._set_values_for_optimized_params(choice, trial, ancestors + [key], choice_idx)
                         cfg[key] = choice
+                        choice_idx = None
                 else:
-                    self._set_values_for_optimized_params(value, trial, ancestors + [key])
+                    self._set_values_for_optimized_params(value, trial, ancestors + [key], choice_idx)
             elif isinstance(value, ListConfig):
                 for param in value:
                     if isinstance(param, DictConfig):
-                        self._set_values_for_optimized_params(param, trial, ancestors + [key])
+                        self._set_values_for_optimized_params(param, trial, ancestors + [key], choice_idx)
 
 
 

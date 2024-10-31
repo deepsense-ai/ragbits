@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
 from omegaconf import DictConfig
-from typing_extensions import Self
 
 from ragbits.evaluate.pipelines.base import EvaluationResult
 
