@@ -1,12 +1,14 @@
-from typing import Any, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from ragbits.core.embeddings import Embeddings, get_embeddings
-from ragbits.core.vector_store import VectorStore, get_vector_store
+from ragbits.core.vector_stores import VectorStore, get_vector_store
+from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource, Source
+from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers import get_rephraser
@@ -41,9 +43,7 @@ class DocumentSearch:
     """
 
     embedder: Embeddings
-
     vector_store: VectorStore
-
     query_rephraser: QueryRephraser
     reranker: Reranker
 
@@ -72,7 +72,6 @@ class DocumentSearch:
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-
         embedder = get_embeddings(config["embedder"])
         query_rephraser = get_rephraser(config.get("rephraser"))
         reranker = get_reranker(config.get("reranker"))
@@ -84,36 +83,42 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, search_config: SearchConfig = SearchConfig()) -> list[Element]:
+    async def search(self, query: str, config: SearchConfig | None = None) -> list[Element]:
         """
         Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
-            search_config: The search configuration.
+            config: The search configuration.
 
         Returns:
             A list of chunks.
         """
+        config = config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
             search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(search_vector[0], **search_config.vector_store_kwargs)
+            entries = await self.vector_store.retrieve(
+                vector=search_vector[0],
+                options=VectorStoreOptions(**config.vector_store_kwargs),
+            )
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
         return self.reranker.rerank(elements)
 
     async def _process_document(
         self,
-        document: Union[DocumentMeta, Document, Union[LocalFileSource, GCSSource]],
-        document_processor: Optional[BaseProvider] = None,
+        document: DocumentMeta | Document | Source,
+        document_processor: BaseProvider | None = None,
     ) -> list[Element]:
         """
         Process a document and return the elements.
 
         Args:
             document: The document to process.
+            document_processor: The document processor to use. If not provided, the document processor will be
+                determined based on the document metadata.
 
         Returns:
             The elements.
@@ -133,8 +138,8 @@ class DocumentSearch:
 
     async def ingest(
         self,
-        documents: Sequence[DocumentMeta | Document | Union[LocalFileSource, GCSSource]],
-        document_processor: Optional[BaseProvider] = None,
+        documents: Sequence[DocumentMeta | Document | Source],
+        document_processor: BaseProvider | None = None,
     ) -> None:
         """
         Ingest multiple documents.
@@ -144,7 +149,6 @@ class DocumentSearch:
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
-
         elements = []
         # TODO: Parallelize
         for document in documents:
@@ -159,5 +163,5 @@ class DocumentSearch:
             elements: The list of Elements to insert.
         """
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
         await self.vector_store.store(entries)

@@ -2,6 +2,6 @@
 
 ::: ragbits.core.embeddings.Embeddings
 
-::: ragbits.core.embeddings.LocalEmbeddings
+::: ragbits.core.embeddings.local.LocalEmbeddings
 
-::: ragbits.core.embeddings.LiteLLMEmbeddings
+::: ragbits.core.embeddings.litellm.LiteLLMEmbeddings

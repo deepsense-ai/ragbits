@@ -1,11 +1,10 @@
 import sys
 
+from ragbits.core.utils.config_handling import get_cls_from_config
+
 from .base import LLM
-from .litellm import LiteLLM
-from .local import LocalLLM
 
-__all__ = ["LLM", "LiteLLM", "LocalLLM"]
-
+__all__ = ["LLM"]
 
 module = sys.modules[__name__]
 
@@ -28,8 +27,7 @@ def get_llm(config: dict) -> LLM:
     llm_type = config["type"]
     llm_config = config.get("config", {})
     default_options = llm_config.pop("default_options", None)
-
-    llm_cls = getattr(module, llm_type)
+    llm_cls = get_cls_from_config(llm_type, module)
 
     if not issubclass(llm_cls, LLM):
         raise ValueError(f"Invalid LLM class: {llm_cls}")

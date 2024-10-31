@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from omegaconf import DictConfig
 
@@ -17,7 +17,7 @@ class EvaluationPipeline(ABC):
     Collection evaluation pipeline.
     """
 
-    def __init__(self, config: Optional[DictConfig] = None) -> None:
+    def __init__(self, config: DictConfig | None = None) -> None:
         """
         Initializes the evaluation pipeline.
 

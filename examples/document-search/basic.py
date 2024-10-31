@@ -7,8 +7,8 @@
 # ///
 import asyncio
 
-from ragbits.core.embeddings import LiteLLMEmbeddings
-from ragbits.core.vector_store import InMemoryVectorStore
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -23,10 +23,18 @@ documents = [
 ]
 
 
-async def main():
-    """Run the example."""
-
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
+async def main() -> None:
+    """
+    Run the example.
+    """
+    embedder = LiteLLMEmbeddings(
+        model="text-embedding-3-small",
+    )
+    vector_store = InMemoryVectorStore()
+    document_search = DocumentSearch(
+        embedder=embedder,
+        vector_store=vector_store,
+    )
 
     await document_search.ingest(documents)
 

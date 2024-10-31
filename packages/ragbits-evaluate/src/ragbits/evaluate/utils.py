@@ -10,7 +10,7 @@ from neptune.utils import stringify_unsupported
 from omegaconf import DictConfig
 
 
-def _save(file_path: Path, **data: Any) -> None:
+def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
     """
     Save the data to a file. Add the current timestamp and Python version to the data.
 

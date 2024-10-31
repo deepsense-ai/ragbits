@@ -1,14 +1,14 @@
-import base64
 import io
 import os
-from typing import Optional
+import warnings as wrngs
 
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement
 
 from ragbits.core.llms.base import LLM
+from ragbits.core.prompt.base import BasePrompt
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.documents.element import ElementLocation, TextElement
 
 
 def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -> TextElement:
@@ -22,13 +22,34 @@ def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -
     Returns:
         text element
     """
+    location = to_element_location(element)
     return TextElement(
         document_meta=document_meta,
         content=element.text,
+        location=location,
     )
 
 
-def check_required_argument(value: Optional[str], arg_name: str, fallback_env: str) -> str:
+def to_element_location(element: UnstructuredElement) -> ElementLocation:
+    """
+    Converts unstructured element to element location.
+
+    Args:
+        element: element from unstructured
+
+    Returns:
+        element location
+    """
+    metadata = element.metadata.to_dict()
+    page_number = metadata.get("page_number")
+    coordinates = metadata.get("coordinates")
+    return ElementLocation(
+        page_number=page_number,
+        coordinates=coordinates,
+    )
+
+
+def check_required_argument(value: str | None, arg_name: str, fallback_env: str) -> str:
     """
     Checks if given environment variable is set and returns it or raises an error
 
@@ -58,11 +79,11 @@ def extract_image_coordinates(element: UnstructuredElement) -> tuple[float, floa
     Returns:
         x of top left corner, y of top left corner, x of bottom right corner, y of bottom right corner
     """
-    p1, p2, p3, p4 = element.metadata.coordinates.points
+    p1, p2, p3, p4 = element.metadata.coordinates.points  # type: ignore
     return min(p1[0], p2[0]), min(p1[1], p4[1]), max(p3[0], p4[0]), max(p2[1], p3[1])
 
 
-def crop_and_convert_to_bytes(image: Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
+def crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
     """
     Crops the image and converts to bytes
     Args:
@@ -85,35 +106,18 @@ class ImageDescriber:
     Describes images content using an LLM
     """
 
-    DEFAULT_PROMPT = "Describe the content of the image."
-
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    async def get_image_description(self, image_bytes: bytes, prompt: Optional[str] = DEFAULT_PROMPT) -> str:
+    async def get_image_description(self, prompt: BasePrompt) -> str:
         """
-        Provides summary of the image (passed as bytes)
+        Provides summary of the image passed with prompt
 
         Args:
-            image_bytes: bytes of the image
-            prompt: prompt to be used
-
+            prompt: BasePrompt an instance of a prompt
         Returns:
             summary of the image
         """
-        img_base64 = base64.b64encode(image_bytes).decode("utf-8")
-
-        # TODO make this use prompt structure from ragbits core once there is a support for images
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": f"{prompt}"},
-                    {
-                        "type": "image_url",
-                        "image_url": {"url": f"data:image/jpeg;base64,{img_base64}"},
-                    },
-                ],
-            }
-        ]
-        return await self.llm.client.call(messages, self.llm.default_options)  # type: ignore
+        if not prompt.list_images():
+            wrngs.warn(message="Image data not provided", category=UserWarning)
+        return await self.llm.generate(prompt=prompt)

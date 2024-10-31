@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pdf2image import convert_from_path
 from PIL import Image
@@ -20,8 +19,8 @@ class UnstructuredPdfProvider(UnstructuredImageProvider):
     }
 
     @staticmethod
-    def _load_document_as_image(document_path: Path, page: Optional[int] = None) -> Image:
-        return convert_from_path(document_path, first_page=page, last_page=page)[0]
+    def _load_document_as_image(document_path: Path, page: int | None = None) -> Image.Image:
+        return convert_from_path(document_path, first_page=page, last_page=page)[0]  # type: ignore
 
     @staticmethod
     def _convert_coordinates(
@@ -35,10 +34,10 @@ class UnstructuredPdfProvider(UnstructuredImageProvider):
     ) -> tuple[float, float, float, float]:
         new_system = CoordinateSystem(image_width, image_height)
         new_system.orientation = Orientation.SCREEN
-        new_top_x, new_top_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(
+        new_top_x, new_top_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(  # type: ignore
             new_system, top_x, top_y
         )
-        new_bottom_x, new_bottom_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(
+        new_bottom_x, new_bottom_y = element.metadata.coordinates.system.convert_coordinates_to_new_system(  # type: ignore
             new_system, bottom_x, bottom_y
         )
         return new_top_x, new_top_y, new_bottom_x, new_bottom_y

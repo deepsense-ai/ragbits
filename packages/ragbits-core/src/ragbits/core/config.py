@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from ragbits.core.llms.base import LLMType
 from ragbits.core.utils._pyproject import get_config_instance
 
 
@@ -11,8 +12,12 @@ class CoreConfig(BaseModel):
     # Pattern used to search for prompt files
     prompt_path_pattern: str = "**/prompt_*.py"
 
-    # Path to a function that returns an LLM object, e.g. "my_project.llms.get_llm"
-    default_llm_factory: str | None = None
+    # Path to a functions that returns LLM objects, e.g. "my_project.llms.get_llm"
+    default_llm_factories: dict[LLMType, str | None] = {
+        LLMType.TEXT: None,
+        LLMType.VISION: None,
+        LLMType.STRUCTURED_OUTPUT: None,
+    }
 
 
 core_config = get_config_instance(CoreConfig, subproject="core")

@@ -6,7 +6,7 @@ class NoopQueryRephraser(QueryRephraser):
     A no-op query paraphraser that does not change the query.
     """
 
-    async def rephrase(self, query: str) -> list[str]:
+    async def rephrase(self, query: str) -> list[str]:  # noqa: PLR6301
         """
         Mock implementation which outputs the same query as in input.
 

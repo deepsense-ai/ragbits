@@ -13,7 +13,7 @@ nav:
           - api_reference/core/prompt.md
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
-          - api_reference/core/vector_store.md
+          - api_reference/core/vector-stores.md
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md

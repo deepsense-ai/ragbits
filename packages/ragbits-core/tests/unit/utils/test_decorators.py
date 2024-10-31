@@ -20,8 +20,8 @@ def test_single_dependency_missing() -> None:
         some_function()
 
     assert (
-        str(exc.value)
-        == "Following dependencies are missing: nonexistent_dependency. Please install them using `pip install nonexistent_dependency`."
+        str(exc.value) == "Following dependencies are missing: nonexistent_dependency."
+        " Please install them using `pip install nonexistent_dependency`."
     )
 
 
@@ -42,6 +42,6 @@ def test_multiple_dependencies_some_missing() -> None:
         some_function()
 
     assert (
-        str(exc.value)
-        == "Following dependencies are missing: nonexistent_dependency. Please install them using `pip install nonexistent_dependency`."
+        str(exc.value) == "Following dependencies are missing: nonexistent_dependency."
+        " Please install them using `pip install nonexistent_dependency`."
     )

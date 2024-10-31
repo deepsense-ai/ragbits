@@ -10,12 +10,12 @@ from ..helpers import env_vars_not_set
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
-HF_TOKEN_ENV = "HF_TOKEN"  # nosec
+HF_TOKEN_ENV = "HF_TOKEN"  # noqa: S105
 HF_DATASET_PATH = "micpst/hf-docs"
 
 
 @pytest.mark.skipif(
-    env_vars_not_set([HF_TOKEN_ENV]),
+    env_vars_not_set([HF_TOKEN_ENV]),  # noqa: S105
     reason="Hugging Face environment variables not set",
 )
 async def test_huggingface_source_fetch() -> None:

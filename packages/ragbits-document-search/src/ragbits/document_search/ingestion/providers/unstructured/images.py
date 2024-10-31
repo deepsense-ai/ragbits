@@ -1,13 +1,16 @@
+import warnings
 from pathlib import Path
-from typing import Optional
 
 from PIL import Image
+from pydantic import BaseModel
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMType
+from ragbits.core.llms.factory import get_default_llm, has_default_llm
 from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -19,6 +22,19 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
 )
 
 DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
+DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
+
+
+class _ImagePrompt(Prompt):
+    user_prompt: str = DEFAULT_IMAGE_QUESTION_PROMPT
+    image_input_fields: list[str] = ["images"]
+
+
+class _ImagePromptInput(BaseModel):
+    images: list[bytes]
+
+
+DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
@@ -33,12 +49,12 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
     def __init__(
         self,
-        partition_kwargs: Optional[dict] = None,
-        chunking_kwargs: Optional[dict] = None,
-        api_key: Optional[str] = None,
-        api_server: Optional[str] = None,
+        partition_kwargs: dict | None = None,
+        chunking_kwargs: dict | None = None,
+        api_key: str | None = None,
+        api_server: str | None = None,
         use_api: bool = False,
-        llm: Optional[LLM] = None,
+        llm: LLM | None = None,
     ) -> None:
         """Initialize the UnstructuredPdfProvider.
 
@@ -50,10 +66,12 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
                 variable will be used.
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
+            use_api: Whether to use the Unstructured API. If False, the provider will only use the local processing.
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_summarizer = ImageDescriber(llm or LiteLLM(DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL))
+        self.image_describer: ImageDescriber | None = None
+        self._llm = llm
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
@@ -79,7 +97,19 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         )
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-        image_description = await self.image_summarizer.get_image_description(img_bytes)
+        prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
+        if self.image_describer is None:
+            if self._llm is not None:
+                llm_to_use = self._llm
+            elif has_default_llm(LLMType.VISION):
+                llm_to_use = get_default_llm(LLMType.VISION)
+            else:
+                warnings.warn(
+                    f"Vision LLM was not provided, setting default option to {DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL}"
+                )
+                llm_to_use = LiteLLM(DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL)
+            self.image_describer = ImageDescriber(llm_to_use)
+        image_description = await self.image_describer.get_image_description(prompt=prompt)
         return ImageElement(
             description=image_description,
             ocr_extracted_text=element.text,
@@ -89,8 +119,9 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
     @staticmethod
     def _load_document_as_image(
-        document_path: Path, page: Optional[int] = None  # pylint: disable=unused-argument
-    ) -> Image:
+        document_path: Path,
+        page: int | None = None,  # pylint: disable=unused-argument
+    ) -> Image.Image:
         return Image.open(document_path).convert("RGB")
 
     @staticmethod

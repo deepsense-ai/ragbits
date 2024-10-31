@@ -1,9 +1,10 @@
 # pylint: disable=missing-function-docstring,missing-return-doc
 
 import asyncio
+from collections.abc import Callable
 from functools import wraps
 from importlib.util import find_spec
-from typing import Callable, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")

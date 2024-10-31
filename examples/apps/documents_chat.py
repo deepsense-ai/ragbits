@@ -3,20 +3,20 @@
 # dependencies = [
 #     "gradio",
 #     "ragbits-document-search",
-#     "ragbits-core[chromadb, litellm]",
+#     "ragbits-core[chroma,litellm]",
 # ]
 # ///
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import AsyncIterator
 
-import chromadb
 import gradio as gr
+from chromadb import PersistentClient
 from pydantic import BaseModel
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.vector_store.chromadb_store import ChromaDBStore
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -96,15 +96,15 @@ class RAGSystemWithUI:
         self._llm = LiteLLM(model_name, use_structured_output=True)
 
     def _prepare_document_search(self, database_path: str, index_name: str) -> None:
-        chroma_client = chromadb.PersistentClient(path=database_path)
-        embedding_client = LiteLLMEmbeddings()
-
-        vector_store = ChromaDBStore(
+        embedder = LiteLLMEmbeddings()
+        vector_store = ChromaVectorStore(
+            client=PersistentClient(database_path),
             index_name=index_name,
-            chroma_client=chroma_client,
-            embedding_function=embedding_client,
         )
-        self.document_search = DocumentSearch(embedder=vector_store.embedding_function, vector_store=vector_store)
+        self.document_search = DocumentSearch(
+            embedder=embedder,
+            vector_store=vector_store,
+        )
 
     async def _create_database(self, document_paths: list[str]) -> str:
         for path in document_paths:
@@ -118,7 +118,9 @@ class RAGSystemWithUI:
         return self.DATABASE_LOADED_MESSAGE
 
     async def _handle_message(
-        self, message: str, history: list[dict]  # pylint: disable=unused-argument
+        self,
+        message: str,
+        history: list[dict],  # pylint: disable=unused-argument
     ) -> AsyncIterator[str]:
         if not self._documents_ingested:
             yield self.NO_DOCUMENTS_INGESTED_MESSAGE
@@ -134,32 +136,31 @@ class RAGSystemWithUI:
         Returns:
             gradio layout
         """
-        with gr.Blocks(fill_height=True, fill_width=True) as app:
-            with gr.Row():
-                with gr.Column(scale=self._columns_ratios[0]):
-                    with gr.Group():
-                        documents_picker = gr.File(file_count="multiple", label=self.DOCUMENT_PICKER_LABEL)
-                        create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
-                        creating_status_display = gr.Textbox(
-                            label=self.DATABASE_CREATION_STATUS_LABEL,
-                            interactive=False,
-                            placeholder=self.DATABASE_CREATION_STATUS_PLACEHOLDER,
-                        )
+        with gr.Blocks(fill_height=True, fill_width=True) as app, gr.Row():
+            with gr.Column(scale=self._columns_ratios[0]):
+                with gr.Group():
+                    documents_picker = gr.File(file_count="multiple", label=self.DOCUMENT_PICKER_LABEL)
+                    create_btn = gr.Button(self.DATABASE_CREATE_BUTTON_LABEL)
+                    creating_status_display = gr.Textbox(
+                        label=self.DATABASE_CREATION_STATUS_LABEL,
+                        interactive=False,
+                        placeholder=self.DATABASE_CREATION_STATUS_PLACEHOLDER,
+                    )
 
-                    with gr.Group():
-                        database_path = gr.Textbox(label=self.DATABASE_TEXT_BOX_LABEL)
-                        load_btn = gr.Button(self.DATABASE_LOAD_BUTTON_LABEL)
-                        loading_status_display = gr.Textbox(
-                            label=self.DATABASE_LOADING_STATUS_LABEL,
-                            interactive=False,
-                            placeholder=self.DATABASE_LOADING_STATUS_PLACEHOLDER,
-                        )
-                    load_btn.click(fn=self._load_database, inputs=database_path, outputs=loading_status_display)
-                    create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
+                with gr.Group():
+                    database_path = gr.Textbox(label=self.DATABASE_TEXT_BOX_LABEL)
+                    load_btn = gr.Button(self.DATABASE_LOAD_BUTTON_LABEL)
+                    loading_status_display = gr.Textbox(
+                        label=self.DATABASE_LOADING_STATUS_LABEL,
+                        interactive=False,
+                        placeholder=self.DATABASE_LOADING_STATUS_PLACEHOLDER,
+                    )
+                load_btn.click(fn=self._load_database, inputs=database_path, outputs=loading_status_display)
+                create_btn.click(fn=self._create_database, inputs=documents_picker, outputs=creating_status_display)
 
-                with gr.Column(scale=self._columns_ratios[1]):
-                    chat_interface = gr.ChatInterface(self._handle_message, type="messages")
-                    chat_interface.chatbot.height = f"{self._chatbot_height_vh}vh"
+            with gr.Column(scale=self._columns_ratios[1]):
+                chat_interface = gr.ChatInterface(self._handle_message, type="messages")
+                chat_interface.chatbot.height = f"{self._chatbot_height_vh}vh"
         return app
 
 

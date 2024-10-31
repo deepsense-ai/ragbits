@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pydantic
 import pytest
 
@@ -12,6 +14,14 @@ class _PromptInput(pydantic.BaseModel):
     theme: str
     name: str
     age: int
+
+
+class _ImagePromptInput(pydantic.BaseModel):
+    """
+    Input format for the TestImagePrompt
+    """
+
+    images: list[bytes]
 
 
 class _PromptOutput(pydantic.BaseModel):
@@ -94,6 +104,20 @@ def test_raises_when_no_input_data():
 
     with pytest.raises(ValueError):
         TestPrompt()
+
+
+def test_image_prompt():
+    """Tests the prompt creation of images"""
+    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
+        image_bytes = f.read()
+    image_list = [image_bytes]
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["images"]
+
+    prompt = ImagePrompt(_ImagePromptInput(images=image_list))
+    assert len(prompt.list_images()) == 1
 
 
 def test_prompt_with_no_input_type():
@@ -309,7 +333,8 @@ def test_few_shot_int_output():
     assert prompt.chat == [
         {
             "role": "system",
-            "content": "You detect whether the name name is a good name for a song with the given theme, given the age limit.",
+            "content": "You detect whether the name name is a good name for a song with the given theme, given the age"
+            " limit.",
         },
         {"role": "user", "content": "The name is I love you more than my cat, the theme is pop and the age is 15."},
         {"role": "assistant", "content": "True"},

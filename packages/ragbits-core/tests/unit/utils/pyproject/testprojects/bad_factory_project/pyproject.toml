@@ -1,0 +1,7 @@
+[project]
+name = "bad_factory_project"
+
+[tool.ragbits.core.default_llm_factories]
+non_existing = "ragbits.core.llms.factory.simple_litellm_factory"
+vision = "ragbits.core.llms.factory.simple_litellm_vision_factory"
+structured_output = "ragbits.core.llms.factory.simple_litellm_vision_factory"
