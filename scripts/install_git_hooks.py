@@ -17,7 +17,7 @@ from rich import print as pprint
 HOOK_BODY = """
 #!/usr/bin/env bash
 
-echo "🧹 Running formatting..."
+echo "🧹 Running formatting...\n"
 uv run ruff format --check
 
 if [ $? -ne 0 ]
@@ -28,7 +28,7 @@ then
 fi
 
 echo "✅ Formatting passed!"
-echo "📜 Running linting..."
+echo "\n📜 Running linting...\n"
 
 uv run ruff check
 
@@ -38,8 +38,8 @@ then
     exit 1
 fi
 
-echo "✅ Formatting passed!"
-echo "🔎 Running type checking..."
+echo "✅ Linting passed!"
+echo "\n🔎 Running type checking...\n"
 
 uv run mypy .
 
