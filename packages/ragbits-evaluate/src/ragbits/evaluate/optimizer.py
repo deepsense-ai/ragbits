@@ -34,6 +34,7 @@ class Optimizer:
     ) -> list[tuple[DictConfig, float, dict[str, float]]]:
         if not getattr(self.config, "neptune_project") and log_to_neptune:
             raise ValueError("To log results to neptune pass project name to optimizer config")
+        # TODO check details on how to parametrize optuna
         optimization_kwargs = {"n_trials": self.config.n_trials}
         neptune_run = None
         if log_to_neptune:

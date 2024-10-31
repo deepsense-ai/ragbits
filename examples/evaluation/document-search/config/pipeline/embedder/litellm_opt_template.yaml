@@ -7,8 +7,8 @@ config:
         dimensions:
           optimize: true
           range:
-            - 768
-            - 1536
+            - 32
+            - 512
         encoding_format: float
     - model: "text-embedding-3-large"
       options:
