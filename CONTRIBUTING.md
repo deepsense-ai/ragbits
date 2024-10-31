@@ -31,18 +31,12 @@ $ uv run mypy .
 ```
 
 
-## Install pre-commit
+## Install pre-commit or pre-push hooks
 
-We also run some checks through a pre-commit hook. To set it up, follow these steps:
+We also recommend to run checkers on pre-commit/push hook. To set it up, follow these steps:
 
+```bash
+$ uv run scripts/install_git_hooks.py
 ```
-pre-commit install
-```
 
-All updated files will be reformatted and linted before the commit.
-
-To reformat and lint all files in the project, use:
-
-`pre-commit run --all-files`
-
-The used linters are configured in `.pre-commit-config.yaml`. You can use `pre-commit autoupdate` to bump tools to the latest versions.
+Then decide whether you want to run the checks before each commit or before each push.
