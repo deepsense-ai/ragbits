@@ -1,0 +1,22 @@
+type: ragbits.core.embeddings.litellm:LiteLLMEmbeddings
+config:
+  optimize: true
+  choices:
+    - model: "text-embedding-3-small"
+      options:
+        dimensions:
+          optimize: true
+          range:
+            - 768
+            - 768
+        encoding_format: float
+    - model: "text-embedding-3-large"
+      options:
+        dimensions:
+          768
+        encoding_format: float
+    - model: "text-embedding-ada-002"
+      options:
+        dimensions:
+          768
+        encoding_format: float
