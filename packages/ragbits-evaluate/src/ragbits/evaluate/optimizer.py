@@ -19,6 +19,7 @@ class Optimizer:
     def __init__(self, cfg: DictConfig):
         self.config = cfg
         # workaround for optuna not allowing different choices for different trials
+        # TODO check how optuna handles parallelism. discuss if we want to have parallel studies
         self._choices_cache: dict[str, list[Any]] = {}
 
     def optimize(
@@ -92,7 +93,6 @@ class Optimizer:
                         if isinstance(choice, DictConfig):
                             self._set_values_for_optimized_params(choice, trial, ancestors + [key, str(choice_idx)])
                         cfg[key] = choice
-                        choice_idx = None
                 else:
                     self._set_values_for_optimized_params(value, trial, ancestors + [key])
             elif isinstance(value, ListConfig):
