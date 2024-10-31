@@ -24,7 +24,7 @@ def get_vector_store(vector_store_config: dict) -> VectorStore:
     vector_store_cls = get_cls_from_config(vector_store_config["type"], module)
     config = vector_store_config.get("config", {})
 
-    if vector_store_config["type"].endswith("ChromaVectorStore"):
+    if vector_store_config["type"].endswith(("ChromaVectorStore", "QdrantVectorStore")):
         return vector_store_cls.from_config(config)
 
     metadata_store_config = vector_store_config.get("metadata_store_config")

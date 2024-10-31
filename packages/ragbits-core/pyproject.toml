@@ -56,6 +56,9 @@ lab = [
 promptfoo = [
     "PyYAML~=6.0.2",
 ]
+qdrant = [
+    "qdrant-client~=1.12.1",
+]
 
 [tool.uv]
 dev-dependencies = [

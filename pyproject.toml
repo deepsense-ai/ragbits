@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[litellm,local,lab,chroma]",
+    "ragbits-core[litellm,local,lab,chroma,qdrant]",
     "ragbits-document-search[gcs, huggingface]",
     "ragbits-evaluate[relari]",
 ]
