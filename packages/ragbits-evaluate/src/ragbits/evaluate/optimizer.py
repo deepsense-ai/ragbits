@@ -12,13 +12,6 @@ from .metrics.base import MetricSet
 from .pipelines.base import EvaluationPipeline
 
 
-def _is_json_string(string: str) -> bool:
-    try:
-        _ = json.loads(string)
-        return True
-    except json.decoder.JSONDecodeError:
-        return False
-
 class Optimizer:
     """
     Class for optimization
@@ -74,9 +67,7 @@ class Optimizer:
 
     def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:
         """
-        Modifies the original dictionary in place, replacing values for keys that contain
-        'opt_params_range' with random numbers between the specified range [A, B] or for
-        'opt_params_values' with a choice from a provided list of values.
+        add docstring
         """
         for key, value in cfg.items():
             if isinstance(value, DictConfig):
