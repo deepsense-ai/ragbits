@@ -74,8 +74,6 @@ class QdrantVectorStore(VectorStore):
             ValueError: If entries list is empty
             QdrantException: If upload to collection fails
         """
-        # Generate deterministic UUIDs for consistent addressing
-
         if not entries:
             raise ValueError("Empty list of entries are not allowed.")
 
@@ -84,6 +82,8 @@ class QdrantVectorStore(VectorStore):
                 collection_name=self._collection_name,
                 vectors_config=models.VectorParams(size=len(entries[0].vector), distance=self._distance),
             )
+
+        # Generate deterministic UUIDs for consistent addressing
         ids = [str(uuid.uuid5(uuid.NAMESPACE_DNS, str(entry))) for entry in entries]
 
         documents, embeddings, metadatas = zip(
