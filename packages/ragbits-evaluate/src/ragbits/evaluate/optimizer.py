@@ -99,7 +99,7 @@ class Optimizer:
                         choice_idx = trial.suggest_categorical(name=param_id, choices=choices_index)
                         choice = choices[choice_idx]
                         if isinstance(choice, DictConfig):
-                            self._set_values_for_optimized_params(choice, trial, ancestors + [key, choice_idx])
+                            self._set_values_for_optimized_params(choice, trial, ancestors + [key, str(choice_idx)])
                         cfg[key] = choice
                         choice_idx = None
                 else:
