@@ -67,7 +67,7 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
 
     async def __call__(self, data: dict) -> DocumentSearchResult:
         async with self._lock:
-            if not self._ingested:  # Double-check inside lock
+            if not self._ingested:
                 await self._ingest_documents()
                 self._ingested = True
         return await super().__call__(data)
