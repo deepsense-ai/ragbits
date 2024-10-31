@@ -34,3 +34,12 @@ class EmbeddingResponseError(EmbeddingError):
 
     def __init__(self, message: str = "Data returned by API invalid for expected schema.") -> None:
         super().__init__(message)
+
+
+class EmbeddingEmptyResponseError(EmbeddingError):
+    """
+    Raised when an API response has an empty response.
+    """
+
+    def __init__(self, message: str = "Empty response returned by API.") -> None:
+        super().__init__(message)
