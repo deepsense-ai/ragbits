@@ -15,8 +15,3 @@ config:
         dimensions:
           768
         encoding_format: float
-    - model: "text-embedding-ada-002"
-      options:
-        dimensions:
-          768
-        encoding_format: float
