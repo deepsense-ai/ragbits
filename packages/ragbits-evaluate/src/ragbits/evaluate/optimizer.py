@@ -3,6 +3,8 @@ import json
 from copy import deepcopy
 from typing import Any
 
+import neptune
+import neptune.integrations.optuna as npt_utils
 import optuna
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
@@ -28,16 +30,27 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
+        log_to_neptune: bool = False
     ) -> list[tuple[DictConfig, float, dict[str, float]]]:
+        if not getattr(self.config, "neptune_project") and log_to_neptune:
+            raise ValueError("To log results to neptune pass project name to optimizer config")
+        optimization_kwargs = {"n_trials": self.config.n_trials}
+        neptune_run = None
+        if log_to_neptune:
+            neptune_run = neptune.init_run(project=self.config.neptune_project)
+            neptune_callback = npt_utils.NeptuneCallback(neptune_run)
+            optimization_kwargs["callbacks"] = [neptune_callback]
         objective = lambda trial: self._objective(
             trial=trial,
             pipeline_class=pipeline_class,
             config_with_params=config_with_params,
             dataloader=dataloader,
             metrics=metrics,
+            neptune_run=neptune_run
         )
         study = optuna.create_study(direction=self.config.direction)
-        study.optimize(objective, n_trials=self.config.n_trials)
+
+        study.optimize(objective, **optimization_kwargs)
         configs_with_scores = [(trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"]) for trial in study.get_trials()]
         return configs_with_scores
 
@@ -48,6 +61,7 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
+        neptune_run: neptune.Run | None = None
     ) -> float:
         config_for_trial = deepcopy(config_with_params)
         self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
