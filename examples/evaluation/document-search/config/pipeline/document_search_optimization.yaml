@@ -4,11 +4,7 @@ defaults:
   - vector_store: chroma
   - rephraser: noop
   - reranker: noop
+  - answer_data_source: corpus
   - _self_
 
 type: ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline
-ingestion_data:
-  name: "hf-docs"
-  path: "micpst/hf-docs"
-  split: "train"
-  num_docs: 5

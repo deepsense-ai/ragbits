@@ -77,12 +77,12 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
             *[
                 DocumentMeta.from_source(
                     HuggingFaceSource(
-                        path=self.config.ingestion_data.path,
-                        split=self.config.ingestion_data.split,
+                        path=self.config.answer_data_source.path,
+                        split=self.config.answer_data_source.split,
                         row=i,
                     )
                 )
-                for i in range(self.config.ingestion_data.num_docs)
+                for i in range(self.config.answer_data_source.num_docs)
             ],
             desc="Download",
         )
