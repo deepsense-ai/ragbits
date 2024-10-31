@@ -24,7 +24,7 @@ def main(config: DictConfig) -> None:
     pipeline_class = get_cls_from_config(config.pipeline.type, module)
     metrics = metric_set_factory(config.metrics)
 
-    optimization_cfg = OmegaConf.create({"direction": "maximize", "n_trials": 3})
+    optimization_cfg = OmegaConf.create({"direction": "maximize", "n_trials": 10})
     optimizer = Optimizer(cfg=optimization_cfg)
     configs_with_scores = optimizer.optimize(
         pipeline_class=pipeline_class,

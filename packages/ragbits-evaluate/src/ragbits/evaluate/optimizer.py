@@ -57,7 +57,7 @@ class Optimizer:
         metrics: MetricSet,
     ) -> float:
         config_for_trial = deepcopy(config_with_params)
-        self._get_pipeline_config_from_parametrized(cfg=config_for_trial, trial=trial, ancestors=[])
+        self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
         pipeline = pipeline_class(config_for_trial)
         metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
         score = sum(metrics_values.values())
@@ -73,7 +73,7 @@ class Optimizer:
         results = event_loop.run_until_complete(evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics))
         return results["metrics"]
 
-    def _get_pipeline_config_from_parametrized(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:
+    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:
         """
         Modifies the original dictionary in place, replacing values for keys that contain
         'opt_params_range' with random numbers between the specified range [A, B] or for
@@ -99,14 +99,14 @@ class Optimizer:
                         choice = trial.suggest_categorical(name=param_id, choices=choices)
                         choice = OmegaConf.create(json.loads(choice)) if _is_json_string(choice) else choice
                         if isinstance(choice, DictConfig):
-                            self._get_pipeline_config_from_parametrized(choice, trial, ancestors + [key])
+                            self._set_values_for_optimized_params(choice, trial, ancestors + [key])
                         cfg[key] = choice
                 else:
-                    self._get_pipeline_config_from_parametrized(value, trial, ancestors + [key])
+                    self._set_values_for_optimized_params(value, trial, ancestors + [key])
             elif isinstance(value, ListConfig):
                 for param in value:
                     if isinstance(param, DictConfig):
-                        self._get_pipeline_config_from_parametrized(param, trial, ancestors + [key])
+                        self._set_values_for_optimized_params(param, trial, ancestors + [key])
 
 
 
