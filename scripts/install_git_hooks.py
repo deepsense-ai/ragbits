@@ -17,30 +17,39 @@ from rich import print as pprint
 HOOK_BODY = """
 #!/usr/bin/env bash
 
+echo "🧹 Running formatting..."
 uv run ruff format --check
 
 if [ $? -ne 0 ]
 then
-    echo "Formatting failed. Running autofix & aborting..."
+    echo "⚠ Formatting failed. Running autofix & aborting..."
     uv run ruff format
     exit 1
 fi
+
+echo "✅ Formatting passed!"
+echo "📜 Running linting..."
 
 uv run ruff check
 
 if [ $? -ne 0 ]
 then
-    echo "Linting failed. Aborting..."
+    echo "⚠ Linting failed. Aborting..."
     exit 1
 fi
+
+echo "✅ Formatting passed!"
+echo "🔎 Running type checking..."
 
 uv run mypy .
 
 if [ $? -ne 0 ]
 then
-    echo "Type checking failed. Aborting..."
+    echo "⚠ Type checking failed. Aborting..."
     exit 1
 fi
+
+echo "✅ Type checking passed!"
 """
 
 
