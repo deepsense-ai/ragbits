@@ -7,7 +7,7 @@ from typing import Any
 from hydra.core.hydra_config import HydraConfig
 from neptune import Run
 from neptune.utils import stringify_unsupported
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
@@ -46,6 +46,28 @@ def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path
     _save(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
     _save(results_file, results=results["results"])
 
+    return output_dir
+
+
+def log_optimization_to_file(results: list[tuple[DictConfig, float]], output_dir: Path | None = None) -> Path:
+    """
+    Log the evaluation results locally.
+
+    Args:
+        results: The evaluation results.
+        output_dir: The output directory.
+
+    Returns:
+        The output directory.
+    """
+    output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
+    scores = {}
+    for idx, (cfg, score, all_metrics) in enumerate(results):
+        trial_name = f"trial_{idx}"
+        OmegaConf.save(cfg, output_dir / f"{trial_name}.yaml")
+        scores[trial_name] = {"score": score, "all_metrics": all_metrics}
+    scores_file = output_dir / "scores.json"
+    _save(scores_file, scores=scores)
     return output_dir
 
 

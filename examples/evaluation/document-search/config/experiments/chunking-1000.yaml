@@ -3,18 +3,19 @@
 task:
   name: chunking-1000
 
+pipeline:
 # used only for ingestion
-providers:
-  txt:
-    config:
-      chunking_kwargs:
-        max_characters: 1000
-  md:
-    config:
-      chunking_kwargs:
-        max_characters: 1000
+  providers:
+    txt:
+      config:
+        chunking_kwargs:
+          max_characters: 1000
+    md:
+      config:
+        chunking_kwargs:
+          max_characters: 1000
 
-# used for both ingestion and evaluation
-vector_store:
-  config:
-    index_name: chunk-1000
+  # used for both ingestion and evaluation
+  vector_store:
+    config:
+      index_name: chunk-1000

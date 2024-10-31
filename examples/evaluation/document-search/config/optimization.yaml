@@ -1,6 +1,7 @@
 defaults:
+  - pipeline: document_search_optimization
   - data: qa
-  - pipeline: document_search
+  - _self_
 
 task:
   name: default
@@ -15,6 +16,7 @@ metrics:
     matching_strategy: RougeChunkMatch
     options:
       threshold: 0.5
+
 
 neptune:
   project: ragbits
