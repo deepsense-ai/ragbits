@@ -21,8 +21,8 @@ class Metric(Generic[ResultT], ABC):
             config: The metric configuration.
         """
         super().__init__()
-        self.config  = config
-        # self.config = getattr(config, self.__class__.__name__, DictConfig({}))
+        self.config = config
+        self.weight : float = getattr(self.config, "weight", 1.)
 
     @abstractmethod
     def compute(self, results: list[ResultT]) -> dict[str, Any]:
@@ -35,8 +35,6 @@ class Metric(Generic[ResultT], ABC):
         Returns:
             The computed metric.
         """
-
-
 
 # class MetricSet(Generic[ResultT]):
 #     """
@@ -103,7 +101,4 @@ class MetricSet(Generic[ResultT]):
         Returns:
             The computed metrics.
         """
-        return {name: value for metric in self.metrics for name, value in metric.compute(results).items()}
-
-
-
+        return {name: metric.weight * value for metric in self.metrics for name, value in metric.compute(results).items()}

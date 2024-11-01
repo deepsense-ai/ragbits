@@ -1,12 +1,11 @@
 import asyncio
-import json
 from copy import deepcopy
 from typing import Any
 
 import neptune
 import neptune.integrations.optuna as npt_utils
 import optuna
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig
 
 from .evaluator import Evaluator
 from .loaders.base import DataLoader
@@ -18,6 +17,7 @@ class Optimizer:
     """
     Class for optimization
     """
+
     def __init__(self, cfg: DictConfig):
         self.config = cfg
         # workaround for optuna not allowing different choices for different trials
@@ -30,9 +30,9 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
-        log_to_neptune: bool = False
+        log_to_neptune: bool = False,
     ) -> list[tuple[DictConfig, float, dict[str, float]]]:
-        if not getattr(self.config, "neptune_project") and log_to_neptune:
+        if not self.config.neptune_project and log_to_neptune:
             raise ValueError("To log results to neptune pass project name to optimizer config")
         # TODO check details on how to parametrize optuna
         optimization_kwargs = {"n_trials": self.config.n_trials}
@@ -47,12 +47,15 @@ class Optimizer:
             config_with_params=config_with_params,
             dataloader=dataloader,
             metrics=metrics,
-            neptune_run=neptune_run
+            neptune_run=neptune_run,
         )
         study = optuna.create_study(direction=self.config.direction)
 
         study.optimize(objective, **optimization_kwargs)
-        configs_with_scores = [(trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"]) for trial in study.get_trials()]
+        configs_with_scores = [
+            (trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"])
+            for trial in study.get_trials()
+        ]
         return configs_with_scores
 
     def _objective(
@@ -62,7 +65,7 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
-        neptune_run: neptune.Run | None = None
+        neptune_run: neptune.Run | None = None,
     ) -> float:
         config_for_trial = deepcopy(config_with_params)
         self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
@@ -77,8 +80,9 @@ class Optimizer:
     def _score(self, pipeline: EvaluationPipeline, dataloader: DataLoader, metrics: MetricSet) -> dict[str, float]:
         evaluator = Evaluator()
         event_loop = asyncio.get_event_loop()
-        # AFAIR optuna does not support async objective functions
-        results = event_loop.run_until_complete(evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics))
+        results = event_loop.run_until_complete(
+            evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
+        )
         return results["metrics"]
 
     def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:
@@ -114,6 +118,3 @@ class Optimizer:
                 for param in value:
                     if isinstance(param, DictConfig):
                         self._set_values_for_optimized_params(param, trial, ancestors + [key])
-
-
-

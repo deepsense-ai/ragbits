@@ -24,14 +24,16 @@ def main(config: DictConfig) -> None:
     pipeline_class = get_cls_from_config(config.pipeline.type, module)
     metrics = metric_set_factory(config.metrics)
 
-    optimization_cfg = OmegaConf.create({"direction": "maximize", "n_trials": 10, "neptune_project": config.neptune.project})
+    optimization_cfg = OmegaConf.create(
+        {"direction": "maximize", "n_trials": 10, "neptune_project": config.neptune.project}
+    )
     optimizer = Optimizer(cfg=optimization_cfg)
     configs_with_scores = optimizer.optimize(
         pipeline_class=pipeline_class,
         config_with_params=config.pipeline,
         metrics=metrics,
         dataloader=dataloader,
-        log_to_neptune=config.neptune.run
+        log_to_neptune=config.neptune.run,
     )
     log_optimization_to_file(configs_with_scores)
 
