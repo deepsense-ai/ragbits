@@ -10,11 +10,12 @@ except ImportError:
     HAS_LITELLM = False
 
 
+from ragbits.core.audit import trace
 from ragbits.core.prompt import ChatFormat
 
 from ..types import NOT_GIVEN, NotGiven
 from .base import LLMClient, LLMOptions
-from .exceptions import LLMConnectionError, LLMResponseError, LLMStatusError
+from .exceptions import LLMConnectionError, LLMEmptyResponseError, LLMResponseError, LLMStatusError
 
 
 @dataclass
@@ -108,21 +109,38 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             elif json_mode:
                 response_format = {"type": "json_object"}
 
-        try:
-            response = await litellm.acompletion(
-                messages=conversation,
-                model=self.model_name,
-                base_url=self.base_url,
-                api_key=self.api_key,
-                api_version=self.api_version,
-                response_format=response_format,
-                **options.dict(),
-            )
-        except litellm.openai.APIConnectionError as exc:
-            raise LLMConnectionError() from exc
-        except litellm.openai.APIStatusError as exc:
-            raise LLMStatusError(exc.message, exc.status_code) from exc
-        except litellm.openai.APIResponseValidationError as exc:
-            raise LLMResponseError() from exc
+        with trace(
+            messages=conversation,
+            model=self.model_name,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            response_format=response_format,
+            options=options.dict(),
+        ) as outputs:
+            try:
+                response = await litellm.acompletion(
+                    messages=conversation,
+                    model=self.model_name,
+                    base_url=self.base_url,
+                    api_key=self.api_key,
+                    api_version=self.api_version,
+                    response_format=response_format,
+                    **options.dict(),
+                )
+            except litellm.openai.APIConnectionError as exc:
+                raise LLMConnectionError() from exc
+            except litellm.openai.APIStatusError as exc:
+                raise LLMStatusError(exc.message, exc.status_code) from exc
+            except litellm.openai.APIResponseValidationError as exc:
+                raise LLMResponseError() from exc
 
-        return response.choices[0].message.content
+            if not response.choices:  # type: ignore
+                raise LLMEmptyResponseError()
+
+            outputs.response = response.choices[0].message.content  # type: ignore
+            if response.usage:  # type: ignore
+                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
+                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
+                outputs.total_tokens = response.usage.total_tokens  # type: ignore
+
+        return outputs.response  # type: ignore

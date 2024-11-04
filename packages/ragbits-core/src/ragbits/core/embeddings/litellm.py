@@ -70,7 +70,13 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-        async with trace(texts=data) as outputs:
+        with trace(
+            data=data,
+            model=self.model,
+            api_base=self.api_base,
+            api_version=self.api_version,
+            options=self.options,
+        ) as outputs:
             try:
                 response = await litellm.aembedding(
                     input=data,

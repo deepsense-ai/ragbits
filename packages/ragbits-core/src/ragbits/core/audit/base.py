@@ -1,34 +1,45 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from contextvars import ContextVar
+from typing import Generic, TypeVar
+
+SpanT = TypeVar("SpanT")
 
 
-class TraceHandler(ABC):
+class TraceHandler(Generic[SpanT], ABC):
     """
     Base class for all trace handlers.
     """
 
-    @abstractmethod
-    async def on_start(self, **inputs: Any) -> None:
+    def __init__(self) -> None:
         """
-        Log input data at the start of the event.
+        Constructs a new TraceHandler instance.
+        """
+        super().__init__()
+        self._spans = ContextVar[list[SpanT]]("_spans", default=[])
+
+    @abstractmethod
+    def start(self, name: str, inputs: dict) -> None:
+        """
+        Log input data at the start of the trace.
 
         Args:
+            name: The name of the trace.
             inputs: The input data.
         """
 
     @abstractmethod
-    async def on_end(self, **outputs: Any) -> None:
+    def end(self, outputs: dict) -> None:
         """
-        Log output data at the end of the event.
+        Log output data at the end of the trace.
 
         Args:
             outputs: The output data.
         """
 
     @abstractmethod
-    async def on_error(self, error: Exception) -> None:
+    def error(self, error: Exception) -> None:
         """
-        Log error during the event.
+        Log error during the trace.
 
         Args:
             error: The error that occurred.
