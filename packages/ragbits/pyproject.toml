@@ -2,7 +2,7 @@
 name = "ragbits"
 version = "0.2.0"
 description = "Building blocks for rapid development of GenAI applications"
-readme = "README.md"
+dynamic = ["readme"]
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
@@ -39,11 +39,17 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "../../README.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragbits"]
