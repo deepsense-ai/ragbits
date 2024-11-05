@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.element import TextElement
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 

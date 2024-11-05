@@ -29,6 +29,15 @@ class AnimalElement(Element):
         """
         return self.name
 
+    def get_text_representation(self) -> str:
+        """
+        Get the text representation of the element.
+
+        Returns:
+            The key.
+        """
+        return self.name
+
 
 @pytest.fixture(name="store")
 async def store_fixture() -> InMemoryVectorStore:
