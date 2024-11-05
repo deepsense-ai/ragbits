@@ -11,6 +11,9 @@ def test_resolving_element_type():
         def get_key(self) -> str:
             return self.foo + self.foo
 
+        def get_text_representation(self) -> str:
+            return self.foo + self.foo
+
     element = Element.from_vector_db_entry(
         db_entry=VectorStoreEntry(
             key="key",
