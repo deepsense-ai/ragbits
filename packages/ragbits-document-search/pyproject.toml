@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-document-search"
-version = "0.1.0"
+version = "0.2.0"
 description = "Document Search module for Ragbits"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,19 +27,18 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "numpy~=1.24.0",
-    "unstructured>=0.15.13",
-    "unstructured-client>=0.26.0",
-    "ragbits-core==0.1.0"
-]
+dependencies = ["unstructured>=0.15.13", "unstructured-client>=0.26.0", "pdf2image>=1.17.0", "ragbits-core==0.2.0"]
 
 [project.optional-dependencies]
 gcs = [
     "gcloud-aio-storage~=9.3.0"
+]
+huggingface = [
+    "datasets~=3.0.1",
 ]
 
 [tool.uv]

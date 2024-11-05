@@ -55,7 +55,8 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         """
         return [{"content": self.message, "role": "user"}]
 
-    def parse_response(self, response: str) -> int:
+    @staticmethod
+    def parse_response(response: str) -> int:
         """
         Parser for the prompt.
 

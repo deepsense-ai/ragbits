@@ -3,7 +3,13 @@ from types import ModuleType
 from typing import Any
 
 
-def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:
+class InvalidConfigError(Exception):
+    """
+    An exception to be raised when an invalid configuration is provided.
+    """
+
+
+def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:  # noqa: ANN401
     """
     Retrieves and returns a class based on the given type string. The class can be either in the
     default module or a specified module if provided in the type string.
@@ -19,8 +25,14 @@ def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:
         Any: The object retrieved from the specified or default module.
     """
     if ":" in cls_path:
-        module_stringified, object_stringified = cls_path.split(":")
-        module = import_module(module_stringified)
-        return getattr(module, object_stringified)
+        try:
+            module_stringified, object_stringified = cls_path.split(":")
+            module = import_module(module_stringified)
+            return getattr(module, object_stringified)
+        except AttributeError as err:
+            raise InvalidConfigError(f"Class {object_stringified} not found in module {module_stringified}") from err
 
-    return getattr(default_module, cls_path)
+    try:
+        return getattr(default_module, cls_path)
+    except AttributeError as err:
+        raise InvalidConfigError(f"Class {cls_path} not found in module {default_module}") from err

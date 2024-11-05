@@ -1,5 +1,6 @@
+import base64
+import warnings
 from functools import cached_property
-from typing import Optional
 
 try:
     import litellm
@@ -8,7 +9,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragbits.core.prompt.base import BasePrompt
+from ragbits.core.prompt.base import BasePrompt, ChatFormat
 
 from .base import LLM
 from .clients.litellm import LiteLLMClient, LiteLLMOptions
@@ -24,11 +25,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
     def __init__(
         self,
         model_name: str = "gpt-3.5-turbo",
-        default_options: Optional[LiteLLMOptions] = None,
+        default_options: LiteLLMOptions | None = None,
         *,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_version: Optional[str] = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        api_version: str | None = None,
         use_structured_output: bool = False,
     ) -> None:
         """
@@ -83,3 +84,27 @@ class LiteLLM(LLM[LiteLLMOptions]):
             Number of tokens in the prompt.
         """
         return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
+
+    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
+        images = prompt.list_images()
+        chat = prompt.chat
+        if images:
+            if not litellm.supports_vision(self.model_name):
+                warnings.warn(
+                    message=f"Model {self.model_name} does not support vision. Image input would be ignored",
+                    category=UserWarning,
+                )
+                return chat
+            user_message_content = [
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"},
+                }
+                for im in images
+            ]
+            last_message = chat[-1]
+            if last_message["role"] == "user":
+                user_message_content = [{"type": "text", "text": last_message["content"]}] + user_message_content
+                chat = chat[:-1]
+            chat.append({"role": "user", "content": user_message_content})
+        return chat

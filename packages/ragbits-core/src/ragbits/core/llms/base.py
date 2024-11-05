@@ -1,10 +1,22 @@
+import enum
+import warnings as wrngs
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Generic, Optional, Type, cast, overload
+from typing import Generic, cast, overload
 
-from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, OutputT
+from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
+
+
+class LLMType(enum.Enum):
+    """
+    Types of LLMs based on supported features
+    """
+
+    TEXT = "text"
+    VISION = "vision"
+    STRUCTURED_OUTPUT = "structured_output"
 
 
 class LLM(Generic[LLMClientOptions], ABC):
@@ -12,9 +24,9 @@ class LLM(Generic[LLMClientOptions], ABC):
     Abstract class for interaction with Large Language Model.
     """
 
-    _options_cls: Type[LLMClientOptions]
+    _options_cls: type[LLMClientOptions]
 
-    def __init__(self, model_name: str, default_options: Optional[LLMOptions] = None) -> None:
+    def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
         """
         Constructs a new LLM instance.
 
@@ -39,7 +51,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         Client for the LLM.
         """
 
-    def count_tokens(self, prompt: BasePrompt) -> int:
+    def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
         """
         Counts tokens in the prompt.
 
@@ -55,7 +67,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -70,7 +82,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         options = (self.default_options | options) if options else self.default_options
 
         response = await self.client.call(
-            conversation=prompt.chat,
+            conversation=self._format_chat_for_llm(prompt),
             options=options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -83,24 +95,22 @@ class LLM(Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePromptWithParser[OutputT],
         *,
-        options: Optional[LLMOptions] = None,
-    ) -> OutputT:
-        ...
+        options: LLMOptions | None = None,
+    ) -> OutputT: ...
 
     @overload
     async def generate(
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
-    ) -> OutputT:
-        ...
+        options: LLMOptions | None = None,
+    ) -> OutputT: ...
 
     async def generate(
         self,
         prompt: BasePrompt,
         *,
-        options: Optional[LLMOptions] = None,
+        options: LLMOptions | None = None,
     ) -> OutputT:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
@@ -119,3 +129,8 @@ class LLM(Generic[LLMClientOptions], ABC):
             return prompt.parse_response(response)
 
         return cast(OutputT, response)
+
+    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
+        if prompt.list_images():
+            wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
+        return prompt.chat

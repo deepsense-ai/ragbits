@@ -1,5 +1,3 @@
-from typing import List
-
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker
 
@@ -9,7 +7,7 @@ class NoopReranker(Reranker):
     A no-op reranker that does not change the order of the chunks.
     """
 
-    async def rerank(self, chunks: List[Element], query: str) -> List[Element]:  # pylint: disable=unused-argument
+    async def rerank(self, chunks: list[Element], query: str) -> list[Element]:  # pylint: disable=unused-argument
         """
         No reranking, returning the same chunks as in input.
 

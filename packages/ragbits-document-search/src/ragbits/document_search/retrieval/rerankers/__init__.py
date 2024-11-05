@@ -1,5 +1,4 @@
 import sys
-from typing import Optional
 
 from ragbits.core.utils.config_handling import get_cls_from_config
 
@@ -12,7 +11,7 @@ __all__ = ["LiteLLMReranker", "NoopReranker", "Reranker"]
 module = sys.modules[__name__]
 
 
-def get_reranker(reranker_config: Optional[dict]) -> Reranker:
+def get_reranker(reranker_config: dict | None) -> Reranker:
     """
     Initializes and returns a Reranker object based on the provided configuration.
 
@@ -23,7 +22,6 @@ def get_reranker(reranker_config: Optional[dict]) -> Reranker:
         An instance of the specified Reranker class, initialized with the provided config
         (if any) or default arguments.
     """
-
     if reranker_config is None:
         return NoopReranker()
 

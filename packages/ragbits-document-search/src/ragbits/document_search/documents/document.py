@@ -1,15 +1,17 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Union
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
+from ragbits.document_search.documents.sources import LocalFileSource, Source, SourceDiscriminator
 
 
 class DocumentType(str, Enum):
-    """Types of documents that can be stored."""
+    """
+    Types of documents that can be stored.
+    """
 
     MD = "md"
     TXT = "txt"
@@ -29,6 +31,8 @@ class DocumentType(str, Enum):
     RTF = "rtf"
     TSV = "tsv"
     XML = "xml"
+    JPG = "jpg"
+    PNG = "png"
 
     UNKNOWN = "unknown"
 
@@ -39,7 +43,7 @@ class DocumentMeta(BaseModel):
     """
 
     document_type: DocumentType
-    source: Union[LocalFileSource, GCSSource] = Field(..., discriminator="source_type")
+    source: Annotated[Source, SourceDiscriminator()]
 
     @property
     def id(self) -> str:
@@ -49,7 +53,7 @@ class DocumentMeta(BaseModel):
         Returns:
             The document ID.
         """
-        return self.source.get_id()
+        return self.source.id
 
     async def fetch(self) -> "Document":
         """
@@ -95,6 +99,24 @@ class DocumentMeta(BaseModel):
         return cls(
             document_type=DocumentType(local_path.suffix[1:]),
             source=LocalFileSource(path=local_path),
+        )
+
+    @classmethod
+    async def from_source(cls, source: Source) -> "DocumentMeta":
+        """
+        Create a document metadata from a source.
+
+        Args:
+            source: The source from which the document is fetched.
+
+        Returns:
+            The document metadata.
+        """
+        path = await source.fetch()
+
+        return cls(
+            document_type=DocumentType(path.suffix[1:]),
+            source=source,
         )
 
 

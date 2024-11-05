@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,6 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -38,7 +39,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-chromadb = [
+chroma = [
     "chromadb~=0.4.24",
 ]
 litellm = [
@@ -47,10 +48,13 @@ litellm = [
 local = [
     "torch~=2.2.1",
     "transformers~=4.44.2",
-    "numpy~=1.24.0"
+    "numpy~=1.26.0"
 ]
 lab = [
     "gradio~=4.44.0",
+]
+promptfoo = [
+    "PyYAML~=6.0.2",
 ]
 
 [tool.uv]

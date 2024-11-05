@@ -1,3 +1,3 @@
-from ._main import DocumentSearch
+from ._main import DocumentSearch, SearchConfig
 
-__all__ = ["DocumentSearch"]
+__all__ = ["DocumentSearch", "SearchConfig"]

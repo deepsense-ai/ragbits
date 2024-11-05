@@ -1,8 +1,8 @@
 [project]
 name = "ragbits"
-version = "0.1.0"
+version = "0.2.0"
 description = "Building blocks for rapid development of GenAI applications"
-readme = "README.md"
+dynamic = ["readme"]
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
@@ -27,21 +27,29 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "ragbits-document-search==0.1.0",
-    "ragbits-cli==0.1.0",
-    "ragbits-core==0.1.0"
+    "ragbits-document-search==0.2.0",
+    "ragbits-cli==0.2.0",
+    "ragbits-evaluate==0.2.0",
+    "ragbits-core==0.2.0"
 ]
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "../../README.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragbits"]
