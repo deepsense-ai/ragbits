@@ -8,8 +8,8 @@
 import asyncio
 from argparse import ArgumentParser
 
-from ragbits.core.guardrails.base import GuardrailManager
-from ragbits.core.guardrails.openai_moderation import OpenAIModerationGuardrail
+from ragbits.guardrails.base import GuardrailManager
+from ragbits.guardrails.openai_moderation import OpenAIModerationGuardrail
 
 
 async def guardrail_run(message: str) -> None:

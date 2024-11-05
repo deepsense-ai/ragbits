@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, patch
 
 from pydantic import BaseModel
 
-from ragbits.core.guardrails.base import GuardrailManager, GuardrailVerificationResult
-from ragbits.core.guardrails.openai_moderation import OpenAIModerationGuardrail
+from ragbits.guardrails.base import GuardrailManager, GuardrailVerificationResult
+from ragbits.guardrails.openai_moderation import OpenAIModerationGuardrail
 
 
 class MockedModeration(BaseModel):

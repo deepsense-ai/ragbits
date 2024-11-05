@@ -2,8 +2,8 @@ import base64
 
 from openai import AsyncOpenAI
 
-from ragbits.core.guardrails.base import Guardrail, GuardrailVerificationResult
 from ragbits.core.prompt import Prompt
+from ragbits.guardrails.base import Guardrail, GuardrailVerificationResult
 
 
 class OpenAIModerationGuardrail(Guardrail):
