@@ -36,6 +36,15 @@ class Element(BaseModel, ABC):
             The key.
         """
 
+    @abstractmethod
+    def get_text_representation(self) -> str:
+        """
+        Get the text representation of the element.
+
+        Returns:
+            The text representation.
+        """
+
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:  # pylint: disable=unused-argument #noqa: ANN401
         element_type_default = cls.model_fields["element_type"].default
@@ -96,6 +105,15 @@ class TextElement(Element):
         """
         return self.content
 
+    def get_text_representation(self) -> str:
+        """
+        Get the text representation of the element.
+
+        Returns:
+            The text representation.
+        """
+        return self.content
+
 
 class ImageElement(Element):
     """
@@ -115,3 +133,12 @@ class ImageElement(Element):
             The key.
         """
         return self.description + " " + self.ocr_extracted_text
+
+    def get_text_representation(self) -> str:
+        """
+        Get the text representation of the element.
+
+        Returns:
+            The text representation.
+        """
+        return f"Description: {self.description}\nExtracted text: {self.ocr_extracted_text}"
