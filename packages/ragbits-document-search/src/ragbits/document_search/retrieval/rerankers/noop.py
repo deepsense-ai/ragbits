@@ -1,21 +1,42 @@
+from collections.abc import Sequence
+
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.retrieval.rerankers.base import Reranker
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
 class NoopReranker(Reranker):
     """
-    A no-op reranker that does not change the order of the chunks.
+    A no-op reranker that does not change the order of the elements.
     """
 
-    @staticmethod
-    def rerank(chunks: list[Element]) -> list[Element]:
+    @classmethod
+    def from_config(cls, config: dict) -> "NoopReranker":
         """
-        No reranking, returning the same chunks as in input.
+        Creates and returns an instance of the NoopReranker class from the given configuration.
 
         Args:
-            chunks: The chunks to rerank.
+            config: A dictionary containing the configuration for initializing the NoopReranker instance.
 
         Returns:
-            The reranked chunks.
+            An initialized instance of the NoopReranker class.
         """
-        return chunks
+        return cls(default_options=RerankerOptions(**config.get("default_options", {})))
+
+    async def rerank(  # noqa: PLR6301
+        self,
+        elements: Sequence[Element],
+        query: str,
+        options: RerankerOptions | None = None,
+    ) -> Sequence[Element]:
+        """
+        No reranking, returning the elements in the same order.
+
+        Args:
+            elements: The elements to rerank.
+            query: The query to rerank the elements against.
+            options: The options for reranking.
+
+        Returns:
+            The reranked elements.
+        """
+        return elements

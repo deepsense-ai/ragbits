@@ -15,7 +15,7 @@ from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers import get_reranker
-from ragbits.document_search.retrieval.rerankers.base import Reranker
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
@@ -83,7 +83,7 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
-    async def search(self, query: str, config: SearchConfig | None = None) -> list[Element]:
+    async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -105,7 +105,11 @@ class DocumentSearch:
             )
             elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
 
-        return self.reranker.rerank(elements)
+        return await self.reranker.rerank(
+            elements=elements,
+            query=query,
+            options=RerankerOptions(**config.reranker_kwargs),
+        )
 
     async def _process_document(
         self,
