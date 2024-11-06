@@ -1,9 +1,9 @@
 """
-Ragbits Document Search Example: Chroma
+Ragbits Document Search Example: Chroma x OpenTelemetry
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
 We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
-the embeddings.
+the embeddings, and the OpenTelemetry SDK to trace the operations.
 
 The script performs the following steps:
 
@@ -19,26 +19,56 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/document-search/chroma.py
+    uv run examples/document-search/chroma_otel.py
     ```
+
+The script exports traces to the local OTLP collector running on `http://localhost:4317`. To visualize the traces,
+you can use Jeager. The recommended way to run it is using the official Docker image:
+
+    1. Run Jaeger Docker container:
+
+        ```bash
+        docker run -d --rm --name jaeger \
+            -p 16686:16686 \
+            -p 4317:4317 \
+            jaegertracing/all-in-one:1.62.0
+        ```
+
+    2. Open the Jaeger UI in your browser:
+
+        ```
+        http://localhost:16686
+        ```
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[chroma,litellm]",
+#     "ragbits-core[chroma,litellm,otel]",
 # ]
 # ///
 
 import asyncio
 
 from chromadb import PersistentClient
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
+
+provider = TracerProvider(resource=Resource({SERVICE_NAME: "ragbits"}))
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter("http://localhost:4317", insecure=True)))
+trace.set_tracer_provider(provider)
+
+audit.set_trace_handlers("otel")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(

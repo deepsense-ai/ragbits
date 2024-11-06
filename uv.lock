@@ -1,18 +1,11 @@
 version = 1
 requires-python = ">=3.10"
 resolution-markers = [
-    "python_full_version < '3.11' and platform_system == 'Darwin'",
-    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version < '3.11' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version < '3.11' and platform_system != 'Darwin' and platform_system != 'Linux')",
-    "python_full_version == '3.11.*' and platform_system == 'Darwin'",
-    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version == '3.11.*' and platform_system != 'Darwin' and platform_system != 'Linux')",
-    "python_full_version == '3.12.*' and platform_system == 'Darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version == '3.12.*' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version == '3.12.*' and platform_system != 'Darwin' and platform_system != 'Linux')",
-    "python_full_version >= '3.13' and platform_system == 'Darwin'",
-    "python_full_version >= '3.13' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version >= '3.13' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version >= '3.13' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "python_full_version < '3.11'",
+    "python_full_version == '3.11.*'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13'",
+    "python_full_version >= '3.13'",
 ]
 
 [manifest]
@@ -21,6 +14,7 @@ members = [
     "ragbits-core",
     "ragbits-document-search",
     "ragbits-evaluate",
+    "ragbits-guardrails",
     "ragbits-workspace",
 ]
 
@@ -3602,6 +3596,9 @@ local = [
     { name = "torch" },
     { name = "transformers" },
 ]
+otel = [
+    { name = "opentelemetry-api" },
+]
 promptfoo = [
     { name = "pyyaml" },
 ]
@@ -3622,6 +3619,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.26.0" },
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = "~=1.27.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = "~=6.0.2" },
     { name = "tomli", specifier = "~=2.0.2" },
@@ -3730,14 +3728,52 @@ dev = [
 ]
 
 [[package]]
+name = "ragbits-guardrails"
+version = "0.2.0"
+source = { editable = "packages/ragbits-guardrails" }
+dependencies = [
+    { name = "ragbits-core" },
+]
+
+[package.optional-dependencies]
+openai = [
+    { name = "openai" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "openai", marker = "extra == 'openai'", specifier = "~=1.51.0" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
+[[package]]
 name = "ragbits-workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ragbits-cli" },
-    { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local"] },
+    { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local", "otel"] },
     { name = "ragbits-document-search", extra = ["gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
+    { name = "ragbits-guardrails", extra = ["openai"] },
 ]
 
 [package.dev-dependencies]
@@ -3762,9 +3798,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chroma"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma", "lab", "litellm", "local", "otel"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
 
 [package.metadata.requires-dev]

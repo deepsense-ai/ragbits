@@ -2,6 +2,7 @@ from itertools import islice
 
 import numpy as np
 
+from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
@@ -26,6 +27,7 @@ class InMemoryVectorStore(VectorStore):
         super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._storage: list[VectorStoreEntry] = []
 
+    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
@@ -35,6 +37,7 @@ class InMemoryVectorStore(VectorStore):
         """
         self._storage.extend(entries)
 
+    @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
@@ -57,6 +60,7 @@ class InMemoryVectorStore(VectorStore):
             if options.max_distance is None or distance <= options.max_distance
         ]
 
+    @traceable
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:

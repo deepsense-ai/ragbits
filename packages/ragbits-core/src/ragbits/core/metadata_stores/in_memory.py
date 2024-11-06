@@ -1,3 +1,4 @@
+from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.metadata_stores.exceptions import MetadataNotFoundError
 
@@ -13,6 +14,7 @@ class InMemoryMetadataStore(MetadataStore):
         """
         self._storage: dict[str, dict] = {}
 
+    @traceable
     async def store(self, ids: list[str], metadatas: list[dict]) -> None:
         """
         Store metadatas under ids in metadata store.
@@ -24,6 +26,7 @@ class InMemoryMetadataStore(MetadataStore):
         for _id, metadata in zip(ids, metadatas, strict=False):
             self._storage[_id] = metadata
 
+    @traceable
     async def get(self, ids: list[str]) -> list[dict]:
         """
         Returns metadatas associated with a given ids.

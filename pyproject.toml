@@ -6,9 +6,10 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[litellm,local,lab,chroma]",
-    "ragbits-document-search[gcs, huggingface]",
+    "ragbits-core[chroma,lab,litellm,local,otel]",
+    "ragbits-document-search[gcs,huggingface]",
     "ragbits-evaluate[relari]",
+    "ragbits-guardrails[openai]",
 ]
 
 [tool.uv]
@@ -35,6 +36,7 @@ ragbits-cli = { workspace = true }
 ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
 ragbits-evaluate = {workspace = true}
+ragbits-guardrails = {workspace = true}
 
 [tool.uv.workspace]
 members = [
@@ -42,6 +44,7 @@ members = [
     "packages/ragbits-core",
     "packages/ragbits-document-search",
     "packages/ragbits-evaluate",
+    "packages/ragbits-guardrails",
 ]
 
 [tool.pytest]
@@ -88,6 +91,7 @@ mypy_path = [
     "packages/ragbits-core/src",
     "packages/ragbits-document-search/src",
     "packages/ragbits-evaluate/src",
+    "packages/ragbits-guardrails/src",
 ]
 exclude = ["scripts"]
 
@@ -146,7 +150,6 @@ ignore = [
     "PLR0913",
 ]
 
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -172,7 +175,6 @@ convention = "google"
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
-
 
 [tool.ruff.lint.isort]
 known-first-party = ["ragbits"]
