@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
+### Changed
+
+- ragbits-core updated to version v0.3.0
+
 ## 0.2.0 (2024-10-23)
 
 - Initial release of the package.

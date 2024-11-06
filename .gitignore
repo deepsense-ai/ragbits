@@ -95,3 +95,5 @@ dist/
 
 # examples
 chroma/
+
+.aider*
