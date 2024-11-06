@@ -1,33 +1,150 @@
-# How-To: Autoconfigure your pipeline
+# How to Autoconfigure Your Pipeline
 
-Ragbits offers a feature enabling users to automatically configure the hyperparameters of the pipeline.
+Ragbits provides a feature that allows users to automatically configure hyperparameters for a pipeline. This functionality is agnostic to the type of optimized structure, with the only requirements being the following:
 
-The functionality is agnostic of a type of optimized structure - the only assumptions are:is that it needs to inherit
+- The optimized pipeline must inherit from `ragbits.evaluate.pipelines.base.EvaluationPipeline`.
+- The definition of optimized metrics must adhere to the `ragbits.evaluate.metrics.base.Metric` interface.
+- These metrics should be gathered into an instance of `ragbits.evaluate.metrics.base.MetricSet`.
+- An instance of a class inheriting from `ragbits.evaluate.metrics.loader.base.DataLoader` must be provided as the data source for optimization.
 
-* the optimized pipeline structure needs to inherit from `ragbits.evaluate.pipelines.base.EvaluationPipeline`
-* definition of optimized metrics need to follow `ragbits.evaluate.metrics.base.Metric` interface
-* they need to be gathered into `ragbits.evaluate.metrics.base.MetricSet` object instance
+## Supported Parameter Types
+
+The optimized parameters can be of the following types:
+
+- **Continuous**
+- **Ordinal**
+- **Categorical**
+
+For ordinal and continuous parameters, the values should be integers or floats. For categorical parameters, more sophisticated structures are supported, including the possibility of nested parameters of other types.
+
+Each optimized variable should be marked with the `optimize=True` flag in the configuration.
+
+For categorical variables, you must also provide the `choices` field, which lists all possible values to be considered during optimization. For continuous and ordinal variables, the `range` field should be specified as a two-element list defining the minimum and maximum values of interest. For continuous parameters, the elements must be floats, while for ordinal parameters, they must be integers.
+
+## Example Usage
+
+In this example, we will optimize a system prompt for a question-answering pipeline so that the answers contain the minimal number of tokens.
+
+### Define the Optimized Pipeline Structure
+
+```python
+from dataclasses import dataclass
+from ragbits.evaluate.pipelines.base import EvaluationResult, EvaluationPipeline
+from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.prompt import Prompt
+from pydantic import BaseModel
 
 
-
-## Supported parameter types
-
-The optimize parameters can be:
-
-* continous
-* ordinal
-* categorical
+@dataclass
+class RandomQuestionPipelineResult(EvaluationResult):
+    answer: str
 
 
-Ordinal and continous ones need to be primitives, for categorical - the more sophisticated structures
-which can also include nested parameters of other types are supported.
+class QuestionRespondPromptInput(BaseModel):
+    system_prompt_content: str
+    question: str
 
 
-## Usage
+class QuestionRespondPrompt(Prompt[QuestionRespondPromptInput]):
+    system_prompt = "{{ system_prompt_content }}"
+    user_prompt = "{{ question }}"
 
-You need to create an instance of a class `ragbits.evaluate.Optimizer`, and pass it:
 
-* `pipeline_class` - a type of object to be optimized
-* `config_with_params` - `omegaconf.DictConfig` - a definition of configuration
-*
+class RandomQuestionRespondPipeline(EvaluationPipeline):
+    async def __call__(self, data: dict[str, str]) -> RandomQuestionPipelineResult:
+        llm = LiteLLM()
+        input_prompt = QuestionRespondPrompt(
+            QuestionRespondPromptInput(
+                system_prompt_content=self.config.system_prompt_content,
+                question=data["question"],
+            )
+        )
+        answer = await llm.generate(prompt=input_prompt)
+        return RandomQuestionPipelineResult(answer=answer)
+```
 
+### Define the Data Loader
+
+Next, we define the data loader. We'll use Ragbits generation stack to create an artificial data loader:
+
+
+```python
+from ragbits.evaluate.loaders.base import DataLoader, DataT
+from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.prompt import Prompt
+from pydantic import BaseModel
+from omegaconf import OmegaConf
+
+
+class DatasetGenerationPromptInput(BaseModel):
+    topic: str
+
+
+class DatasetGenerationPrompt(Prompt[DatasetGenerationPromptInput]):
+    system_prompt = "Be a provider of random questions on a topic specified by the user."
+    user_prompt = "Generate a question about {{ topic }}"
+
+
+class RandomQuestionsDataLoader(DataLoader):
+    async def load(self) -> DataT:
+        questions = []
+        llm = LiteLLM()
+        for _ in range(self.config.num_questions):
+            question = await llm.generate(
+                DatasetGenerationPrompt(DatasetGenerationPromptInput(topic=self.config.question_topic))
+            )
+            questions.append({"question": question})
+        return questions
+
+
+dataloader_config = OmegaConf.create(
+    {"num_questions": 10, "question_topic": "conspiracy theories"}
+)
+dataloader = RandomQuestionsDataLoader(dataloader_config)
+```
+
+### Define the Metrics and Run the Experiment
+
+```python
+from typing import Any
+import tiktoken
+from ragbits.evaluate.optimizer import Optimizer
+from ragbits.evaluate.metrics.base import Metric, MetricSet, ResultT
+from omegaconf import OmegaConf
+
+
+class TokenCountMetric(Metric):
+    def compute(self, results: list[ResultT]) -> dict[str, Any]:
+        encoding = tiktoken.get_encoding("cl100k_base")
+        num_tokens = [len(encoding.encode(out.answer)) for out in results]
+        return {"num_tokens": sum(num_tokens) / len(num_tokens)}
+
+
+metrics = MetricSet(TokenCountMetric())
+
+optimization_cfg = OmegaConf.create(
+    {"direction": "minimize", "n_trials": 4, "neptune_project": None}
+)
+optimizer = Optimizer(optimization_cfg)
+
+optimized_params = OmegaConf.create(
+    {
+        "system_prompt_content": {
+            "optimize": True,
+            "choices": [
+                "Be a friendly bot answering user questions. Be as concise as possible",
+                "Be a silly bot answering user questions. Use as few tokens as possible",
+                "Be informative and straight to the point",
+                "Respond to user questions in as few words as possible",
+            ],
+        }
+    }
+)
+configs_with_scores = optimizer.optimize(
+    pipeline_class=RandomQuestionRespondPipeline,
+    config_with_params=optimized_params,
+    metrics=metrics,
+    dataloader=dataloader,
+)
+print(configs_with_scores)
+```

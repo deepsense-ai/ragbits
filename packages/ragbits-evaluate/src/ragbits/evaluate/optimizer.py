@@ -53,7 +53,7 @@ class Optimizer:
             neptune_callback = npt_utils.NeptuneCallback(neptune_run)
             optimization_kwargs["callbacks"] = [neptune_callback]
         def objective(trial: optuna.Trial) -> float:
-            self._objective(
+            return self._objective(
                 trial=trial,
                 pipeline_class=pipeline_class,
                 config_with_params=config_with_params,
