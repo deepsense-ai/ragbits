@@ -11,12 +11,25 @@ from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
 documents = [
-    DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
     DocumentMeta.create_text_document_from_literal(
-        "Why doesn't James Bond fart in bed? Because it would blow his cover."
+        """
+        RIP boiled water. You will be mist.
+        """
     ),
     DocumentMeta.create_text_document_from_literal(
-        "Why programmers don't like to swim? Because they're scared of the floating points."
+        """
+        Why doesn't James Bond fart in bed? Because it would blow his cover.
+        """
+    ),
+    DocumentMeta.create_text_document_from_literal(
+        """
+        Why programmers don't like to swim? Because they're scared of the floating points.
+        """
+    ),
+    DocumentMeta.create_text_document_from_literal(
+        """
+        This one is completely unrelated.
+        """
     ),
 ]
 

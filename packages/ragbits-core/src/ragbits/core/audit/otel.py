@@ -84,7 +84,8 @@ def _format_attributes(data: dict, prefix: str | None = None) -> dict[str, Attri
             flattened.update(_format_attributes(value, current_key))
         elif isinstance(value, list | tuple):
             flattened[current_key] = [
-                item if isinstance(item, str | float | int | bool) else repr(item) for item in value  # type: ignore
+                item if isinstance(item, str | float | int | bool) else repr(item)
+                for item in value  # type: ignore
             ]
         elif isinstance(value, str | float | int | bool):
             flattened[current_key] = value

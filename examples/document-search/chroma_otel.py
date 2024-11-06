@@ -2,17 +2,29 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[chroma,litellm]",
+#     "ragbits-core[chroma,litellm,otel]",
 # ]
 # ///
 import asyncio
 
 from chromadb import PersistentClient
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
+
+provider = TracerProvider(resource=Resource({SERVICE_NAME: "ragbits"}))
+provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter("http://localhost:4317", insecure=True)))
+trace.set_tracer_provider(provider)
+
+audit.set_trace_handlers("otel")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(

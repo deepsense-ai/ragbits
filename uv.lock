@@ -3,7 +3,8 @@ requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11'",
     "python_full_version == '3.11.*'",
-    "python_full_version == '3.12.*'",
+    "python_full_version >= '3.12' and python_full_version < '3.12.4'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13'",
     "python_full_version >= '3.13'",
 ]
 
@@ -3594,6 +3595,9 @@ local = [
     { name = "torch" },
     { name = "transformers" },
 ]
+otel = [
+    { name = "opentelemetry-api" },
+]
 promptfoo = [
     { name = "pyyaml" },
 ]
@@ -3614,6 +3618,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "litellm", marker = "extra == 'litellm'", specifier = "~=1.46.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.26.0" },
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = "~=1.27.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = "~=6.0.2" },
     { name = "tomli", specifier = "~=2.0.2" },
@@ -3727,7 +3732,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ragbits-cli" },
-    { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local"] },
+    { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local", "otel"] },
     { name = "ragbits-document-search", extra = ["gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
 ]
@@ -3754,7 +3759,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", extras = ["litellm", "local", "lab", "chroma"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma", "lab", "litellm", "local", "otel"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
 ]
