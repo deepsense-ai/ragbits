@@ -84,7 +84,6 @@ class VertexAIMultimodelEmbeddings(Embeddings):
             data=data,
             model=self.model,
             api_base=self.api_base,
-            concurency=self.concurency,
             options=self.options,
         ) as outputs:
             semaphore = asyncio.Semaphore(self.concurency)
