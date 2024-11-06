@@ -4,17 +4,18 @@ task:
   name: chunking-250
 
 # used only for ingestion
-providers:
-  txt:
-    config:
-      chunking_kwargs:
-        max_characters: 250
-  md:
-    config:
-      chunking_kwargs:
-        max_characters: 250
+pipeline:
+  providers:
+    txt:
+      config:
+        chunking_kwargs:
+          max_characters: 250
+    md:
+      config:
+        chunking_kwargs:
+          max_characters: 250
 
-# used for both ingestion and evaluation
-vector_store:
-  config:
-    index_name: chunk-250
+  # used for both ingestion and evaluation
+  vector_store:
+    config:
+      index_name: chunk-250

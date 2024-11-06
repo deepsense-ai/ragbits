@@ -1,6 +1,4 @@
 defaults:
   - data: corpus
-  - embedder: litellm
-  - providers: unstructured
-  - vector_store: chroma
+  - pipeline: document_ingestion
   - _self_
