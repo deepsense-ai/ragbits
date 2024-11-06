@@ -166,14 +166,20 @@ class DocumentSearch:
         vectors = await self.embedder.embed_text([element.get_key() for element in elements])
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
+        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
+
         if image_elements and self.embedder.image_support():
             image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
-            vectors.extend(image_vectors)
+            entries.extend(
+                [
+                    element.to_vector_db_entry(vector)
+                    for element, vector in zip(image_elements, image_vectors, strict=False)
+                ]
+            )
         elif image_elements:
             warnings.warn(
                 f"Image elements are not supported by the embedder {self.embedder}. "
                 f"Skipping {len(image_elements)} image elements."
             )
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
 
         await self.vector_store.store(entries)
