@@ -13,6 +13,7 @@ members = [
     "ragbits-core",
     "ragbits-document-search",
     "ragbits-evaluate",
+    "ragbits-guardrails",
     "ragbits-workspace",
 ]
 
@@ -3722,6 +3723,43 @@ dev = [
 ]
 
 [[package]]
+name = "ragbits-guardrails"
+version = "0.2.0"
+source = { editable = "packages/ragbits-guardrails" }
+dependencies = [
+    { name = "ragbits-core" },
+]
+
+[package.optional-dependencies]
+openai = [
+    { name = "openai" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "openai", marker = "extra == 'openai'", specifier = "~=1.51.0" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
+[[package]]
 name = "ragbits-workspace"
 version = "0.1.0"
 source = { virtual = "." }
@@ -3730,6 +3768,7 @@ dependencies = [
     { name = "ragbits-core", extra = ["chroma", "lab", "litellm", "local"] },
     { name = "ragbits-document-search", extra = ["gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
+    { name = "ragbits-guardrails", extra = ["openai"] },
 ]
 
 [package.dev-dependencies]
@@ -3757,6 +3796,7 @@ requires-dist = [
     { name = "ragbits-core", extras = ["litellm", "local", "lab", "chroma"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
 
 [package.metadata.requires-dev]
