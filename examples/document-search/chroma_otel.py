@@ -1,3 +1,46 @@
+"""
+Ragbits Document Search Example: Chroma x OpenTelemetry
+
+This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
+We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
+the embeddings, and the OpenTelemetry SDK to trace the operations.
+
+The script performs the following steps:
+
+    1. Create a list of documents.
+    2. Initialize the `LiteLLMEmbeddings` class with the OpenAI `text-embedding-3-small` embedding model.
+    3. Initialize the `ChromaVectorStore` class with a `PersistentClient` instance and an index name.
+    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
+    5. Ingest the documents into the `DocumentSearch` instance.
+    6. List all documents in the vector store.
+    7. Search for documents using a query.
+    8. Print the list of all documents and the search results.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/document-search/chroma_otel.py
+    ```
+
+The script exports traces to the local OTLP collector running on `http://localhost:4317`. To visualize the traces,
+you can use Jeager. The recommended way to run it is using the official Docker image:
+
+    1. Run Jaeger Docker container:
+
+        ```bash
+        docker run -d --rm --name jaeger \
+            -p 16686:16686 \
+            -p 4317:4317 \
+            jaegertracing/all-in-one:1.62.0
+        ```
+
+    2. Open the Jaeger UI in your browser:
+
+        ```
+        http://localhost:16686
+        ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -5,6 +48,7 @@
 #     "ragbits-core[chroma,litellm,otel]",
 # ]
 # ///
+
 import asyncio
 
 from chromadb import PersistentClient

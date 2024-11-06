@@ -19,11 +19,11 @@
 - [X] **[Core](packages/ragbits-core)** - Fundamental tools for working with prompts and LLMs.
 - [X] **[Document Search](packages/ragbits-document-search)** - Handles vector search to retrieve relevant documents.
 - [X] **[CLI](packages/ragbits-cli)** - The `ragbits` shell command, enabling tools such as GUI prompt management.
+- [x] **[Guardrails](packages/ragbits-guardrails)** - Ensures response safety and relevance.
+- [x] **[Evaluation](packages/ragbits-evaluate)** - Unified evaluation framework for Ragbits components.
 - [ ] **Flow Controls** - Manages multi-stage chat flows for performing advanced actions *(coming soon)*.
 - [ ] **Structured Querying** - Queries structured data sources in a predictable manner *(coming soon)*.
 - [ ] **Caching** - Adds a caching layer to reduce costs and response times *(coming soon)*.
-- [ ] **Observability & Audit** - Tracks user queries and events for easier troubleshooting *(coming soon)*.
-- [ ] **Guardrails** - Ensures response safety and relevance *(coming soon)*.
 
 ## Installation
 

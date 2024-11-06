@@ -1,3 +1,27 @@
+"""
+Ragbits Document Search Example: Basic
+
+This example demonstrates how to use the `DocumentSearch` class to search for documents with a minimal setup.
+We will use the `LiteLLMEmbeddings` class to embed the documents and the query and the `InMemoryVectorStore` class
+to store the embeddings.
+
+The script performs the following steps:
+
+    1. Create a list of documents.
+    2. Initialize the `LiteLLMEmbeddings` class with the OpenAI `text-embedding-3-small` embedding model.
+    3. Initialize the `InMemoryVectorStore` class.
+    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
+    5. Ingest the documents into the `DocumentSearch` instance.
+    6. Search for documents using a query.
+    7. Print the search results.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/document-search/basic.py
+    ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -5,6 +29,7 @@
 #     "ragbits-core[litellm]",
 # ]
 # ///
+
 import asyncio
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
