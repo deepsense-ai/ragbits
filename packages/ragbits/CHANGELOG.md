@@ -19,7 +19,7 @@
   - ragbits-core updated to version v0.3.0
   - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
   - refactor: change the type in from_source method to Source (#156).
-  - refactor: unified API for text representations of Element models (#171). 
+  - refactor: unified API for text representations of Element models (#171).
 - ragbits-evaluate updated to version v0.3.0
 - ragbits-core updated to version v0.3.0
   - Observability toolset, with initial support to export traces to OpenTelemetry (#168)
@@ -28,7 +28,7 @@
   - Support for different MetadataStores in VectorStore (#144)
   - Now LLMs can be configured separately for vision, text and structured. (#153)
   - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
-  - refactor: Refactor vector store public API. (#151) 
+  - refactor: Refactor vector store public API. (#151)
 
 ## 0.2.0 (2024-10-23)
 
