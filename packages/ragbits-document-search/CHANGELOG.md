@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
 ### Changed
 
+- ragbits-core updated to version v0.3.0
 - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
 
 ## 0.2.0 (2024-10-23)

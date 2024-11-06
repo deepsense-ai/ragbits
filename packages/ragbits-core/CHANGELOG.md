@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
 ### Changed
 
 - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).

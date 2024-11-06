@@ -2,8 +2,14 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
 ### Changed
 
+- ragbits-cli updated to version v0.3.0
+- ragbits-document-search updated to version v0.3.0
+- ragbits-evaluate updated to version v0.3.0
+- ragbits-core updated to version v0.3.0
 - Introduce ruff as linter and code formatter (#87).
 
 ## 0.2.0 (2024-10-23)
