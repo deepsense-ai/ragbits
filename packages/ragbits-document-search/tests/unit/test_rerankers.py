@@ -1,65 +1,82 @@
-from pathlib import Path
+from argparse import Namespace
+from collections.abc import Sequence
+from unittest.mock import patch
 
 import pytest
 
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
 
 
-@pytest.fixture
-def mock_litellm_response(monkeypatch):
-    class MockResponse:
-        results = [{"index": 1}, {"index": 0}]
+class CustomReranker(Reranker):
+    """
+    Custom implementation of Reranker for testing.
+    """
 
-    async def mock_rerank(*args, **kwargs):
-        return MockResponse()
+    async def rerank(  # noqa: PLR6301
+        self, elements: Sequence[Element], query: str, options: RerankerOptions | None = None
+    ) -> Sequence[Element]:
+        return elements
 
-    monkeypatch.setattr("ragbits.document_search.retrieval.rerankers.litellm.litellm.arerank", mock_rerank)
+
+def test_custom_reranker_from_config() -> None:
+    with pytest.raises(NotImplementedError) as exc_info:
+        CustomReranker.from_config({})
+
+    assert "Cannot create class CustomReranker from config" in str(exc_info.value)
 
 
-@pytest.fixture
-def reranker():
-    return LiteLLMReranker(
-        model="test_provder/test_model",
-        top_n=2,
-        return_documents=True,
-        rank_fields=["content"],
-        max_chunks_per_doc=1,
+def test_litellm_reranker_from_config() -> None:
+    reranker = LiteLLMReranker.from_config(
+        {
+            "model": "test-provder/test-model",
+            "default_options": {
+                "top_n": 2,
+                "max_chunks_per_doc": None,
+            },
+        }
     )
 
-
-@pytest.fixture
-def mock_document_meta():
-    return DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
+    assert reranker.model == "test-provder/test-model"
+    assert reranker._default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
 
 
-@pytest.fixture
-def mock_custom_element(mock_document_meta):
-    class CustomElement(Element):
-        def get_key(self):
-            return "test_key"
-
-    return CustomElement(element_type="test_type", document_meta=mock_document_meta)
-
-
-async def test_rerank_success(reranker, mock_litellm_response, mock_document_meta):
-    chunks = [
-        TextElement(content="chunk1", document_meta=mock_document_meta),
-        TextElement(content="chunk2", document_meta=mock_document_meta),
+async def test_litellm_reranker_rerank() -> None:
+    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    reranker = LiteLLMReranker(
+        model="test-provder/test-model",
+        default_options=options,
+    )
+    documents = [
+        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
+        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
+        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
     ]
-    query = "test query"
+    elements = [
+        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1]),
+        TextElement(content="Element 3", document_meta=documents[2]),
+    ]
+    reranked_elements = [
+        TextElement(content="Element 2", document_meta=documents[1]),
+        TextElement(content="Element 3", document_meta=documents[2]),
+        TextElement(content="Element 1", document_meta=documents[0]),
+    ]
+    reranker_output = Namespace(results=[{"index": 1}, {"index": 2}, {"index": 0}])
+    query = "Test query"
 
-    reranked_chunks = await reranker.rerank(chunks, query)
+    with patch(
+        "ragbits.document_search.retrieval.rerankers.litellm.litellm.arerank", return_value=reranker_output
+    ) as mock_arerank:
+        results = await reranker.rerank(elements, query)
 
-    assert reranked_chunks[0].content == "chunk2"
-    assert reranked_chunks[1].content == "chunk1"
-
-
-async def test_rerank_invalid_chunks(reranker, mock_custom_element):
-    chunks = [mock_custom_element]
-    query = "test query"
-
-    with pytest.raises(ValueError, match="All chunks must be TextElement instances"):
-        await reranker.rerank(chunks, query)
+    assert results == reranked_elements
+    mock_arerank.assert_called_once_with(
+        model="test-provder/test-model",
+        query=query,
+        documents=["Element 1", "Element 2", "Element 3"],
+        top_n=2,
+        max_chunks_per_doc=None,
+    )

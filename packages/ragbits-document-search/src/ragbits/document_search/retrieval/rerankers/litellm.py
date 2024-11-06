@@ -1,63 +1,69 @@
-from typing import List
+from collections.abc import Sequence
 
 import litellm
-from pydantic import BaseModel
 
-from ragbits.document_search.documents.element import Element, TextElement
-from ragbits.document_search.retrieval.rerankers.base import Reranker
+from ragbits.document_search.documents.element import Element
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class LiteLLMReranker(BaseModel, Reranker):
+class LiteLLMReranker(Reranker):
     """
-    A LiteLLM reranker for providers such as Cohere, Together AI, Azure AI.
-    For more details and parameters see https://docs.litellm.ai/docs/rerank
-
-    Args:
-        model: The model to use.
-        top_n: The number of most relevant documents or indices to return.
-        return_documents: Whether to return the documents or just indices and relevalnce scores.
-        rank_fields: The fields to rank on.
-        max_chunks_per_doc: The maximum number of chunks per document to consider.
-
-    Returns:
-        The reranked chunks.
+    A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    model: str
-    top_n: int | None = None
-    return_documents: bool = False
-    rank_fields: list[str] | None = None
-    max_chunks_per_doc: int | None = None
-
-    async def rerank(self, chunks: List[Element], query: str) -> List[Element]:
+    def __init__(self, model: str, default_options: RerankerOptions | None = None) -> None:
         """
-        Reranking with LiteLLM API.
+        Constructs a new LiteLLMReranker instance.
 
         Args:
-            chunks: The chunks to rerank.
-            query: The query to rerank the chunks against.
+            model: The reranker model to use.
+            default_options: The default options for reranking.
+        """
+        super().__init__(default_options)
+        self.model = model
+
+    @classmethod
+    def from_config(cls, config: dict) -> "LiteLLMReranker":
+        """
+        Creates and returns an instance of the LiteLLMReranker class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the LiteLLMReranker instance.
 
         Returns:
-            The reranked chunks.
-
-        Raises:
-            ValueError: If chunks are not a list of TextElement objects.
+            An initialized instance of the LiteLLMReranker class.
         """
-        if not all(isinstance(chunk, TextElement) for chunk in chunks):
-            raise ValueError("All chunks must be TextElement instances")
+        return cls(
+            model=config["model"],
+            default_options=RerankerOptions(**config.get("default_options", {})),
+        )
 
-        documents = [chunk.content if isinstance(chunk, TextElement) else None for chunk in chunks]
+    async def rerank(
+        self,
+        elements: Sequence[Element],
+        query: str,
+        options: RerankerOptions | None = None,
+    ) -> Sequence[Element]:
+        """
+        Rerank elements with LiteLLM API.
+
+        Args:
+            elements: The elements to rerank.
+            query: The query to rerank the elements against.
+            options: The options for reranking.
+
+        Returns:
+            The reranked elements.
+        """
+        options = self._default_options if options is None else options
+        documents = [element.get_text_representation() for element in elements]
 
         response = await litellm.arerank(
             model=self.model,
             query=query,
-            documents=documents,
-            top_n=self.top_n,
-            return_documents=self.return_documents,
-            rank_fields=self.rank_fields,
-            max_chunks_per_doc=self.max_chunks_per_doc,
+            documents=documents,  # type: ignore
+            top_n=options.top_n,
+            max_chunks_per_doc=options.max_chunks_per_doc,
         )
-        target_order = [result["index"] for result in response.results]
-        reranked_chunks = [chunks[i] for i in target_order]
 
-        return reranked_chunks
+        return [elements[result["index"]] for result in response.results]  # type: ignore
