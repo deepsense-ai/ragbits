@@ -9,13 +9,13 @@ from ragbits.core.audit.base import TraceHandler
 
 
 class MockTraceHandler(TraceHandler):
-    def start(self, name: str, inputs: dict) -> None:
+    def start(self, name: str, inputs: dict, current_span: None = None) -> None:
         pass
 
-    def stop(self, outputs: dict) -> None:
+    def stop(self, outputs: dict, current_span: None) -> None:
         pass
 
-    def error(self, error: Exception) -> None:
+    def error(self, error: Exception, current_span: None) -> None:
         pass
 
 
@@ -27,46 +27,50 @@ def mock_handler() -> MockTraceHandler:
 
 
 def test_trace_context_with_name(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
     with trace(name="test", input1="value1") as outputs:
         outputs.result = "success"
 
-    mock_handler.start.assert_called_once_with(name="test", inputs={"input1": "value1"})
-    mock_handler.stop.assert_called_once_with({"result": "success"})
+    mock_handler.start.assert_called_once_with(name="test", inputs={"input1": "value1"}, current_span=None)
+    mock_handler.stop.assert_called_once_with(outputs={"result": "success"}, current_span=current_span)
     mock_handler.error.assert_not_called()
 
 
 def test_trace_context_without_name(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
     with trace() as outputs:
         outputs.result = "success"
 
-    mock_handler.start.assert_called_once_with(name="test_trace_context_without_name", inputs={})
-    mock_handler.stop.assert_called_once_with({"result": "success"})
+    mock_handler.start.assert_called_once_with(name="test_trace_context_without_name", inputs={}, current_span=None)
+    mock_handler.stop.assert_called_once_with(outputs={"result": "success"}, current_span=current_span)
     mock_handler.error.assert_not_called()
 
 
 def test_trace_context_exception(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
     with pytest.raises(ValueError), trace(name="test"):
-        raise ValueError("test error")
+        raise (error := ValueError("test error"))
 
-    mock_handler.start.assert_called_once_with(name="test", inputs={})
-    mock_handler.error.assert_called_once()
+    mock_handler.start.assert_called_once_with(name="test", inputs={}, current_span=None)
+    mock_handler.error.assert_called_once_with(error=error, current_span=current_span)
     mock_handler.stop.assert_not_called()
 
 
 def test_traceable_sync(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
@@ -80,12 +84,14 @@ def test_traceable_sync(mock_handler: MockTraceHandler) -> None:
     mock_handler.start.assert_called_once_with(
         name="test_traceable_sync.<locals>.sample_sync_function",
         inputs={"a": 1, "b": "test"},
+        current_span=None,
     )
-    mock_handler.stop.assert_called_once_with({"returned": "1-test"})
+    mock_handler.stop.assert_called_once_with(outputs={"returned": "1-test"}, current_span=current_span)
 
 
 async def test_traceable_async(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
@@ -100,12 +106,14 @@ async def test_traceable_async(mock_handler: MockTraceHandler) -> None:
     mock_handler.start.assert_called_once_with(
         name="test_traceable_async.<locals>.sample_async_function",
         inputs={"x": 5},
+        current_span=None,
     )
-    mock_handler.stop.assert_called_once_with({"returned": 10})
+    mock_handler.stop.assert_called_once_with(outputs={"returned": 10}, current_span=current_span)
 
 
 def test_traceable_no_return(mock_handler: MockTraceHandler) -> None:
-    mock_handler.start = MagicMock()  # type: ignore
+    current_span = MagicMock()
+    mock_handler.start = MagicMock(return_value=current_span)  # type: ignore
     mock_handler.stop = MagicMock()  # type: ignore
     mock_handler.error = MagicMock()  # type: ignore
 
@@ -117,8 +125,9 @@ def test_traceable_no_return(mock_handler: MockTraceHandler) -> None:
     mock_handler.start.assert_called_once_with(
         name="test_traceable_no_return.<locals>.void_function",
         inputs={"x": 1},
+        current_span=None,
     )
-    mock_handler.stop.assert_called_once_with({})
+    mock_handler.stop.assert_called_once_with(outputs={}, current_span=current_span)
 
 
 @pytest.mark.parametrize(

@@ -20,48 +20,51 @@ class OtelTraceHandler(TraceHandler[Span]):
         super().__init__()
         self._tracer = trace.get_tracer(instrumenting_module_name=__name__, tracer_provider=provider)
 
-    def start(self, name: str, inputs: dict) -> None:
+    def start(self, name: str, inputs: dict, current_span: Span | None = None) -> Span:
         """
         Log input data at the beginning of the trace.
 
         Args:
             name: The name of the trace.
             inputs: The input data.
+            current_span: The current trace span.
+
+        Returns:
+            The updated current trace span.
         """
-        self._spans.set(self._spans.get()[:])
-        context = trace.set_span_in_context(self._spans.get()[-1]) if self._spans.get() else None
+        context = trace.set_span_in_context(current_span) if current_span else None
 
         with self._tracer.start_as_current_span(name, context=context, end_on_exit=False) as span:
             attributes = _format_attributes(inputs, prefix="inputs")
             span.set_attributes(attributes)
 
-        self._spans.get().append(span)
+        return span
 
-    def stop(self, outputs: dict) -> None:
+    def stop(self, outputs: dict, current_span: Span) -> None:  # noqa: PLR6301
         """
         Log output data at the end of the trace.
 
         Args:
             outputs: The output data.
+            current_span: The current trace span.
         """
-        span = self._spans.get().pop()
         attributes = _format_attributes(outputs, prefix="outputs")
-        span.set_attributes(attributes)
-        span.set_status(StatusCode.OK)
-        span.end()
+        current_span.set_attributes(attributes)
+        current_span.set_status(StatusCode.OK)
+        current_span.end()
 
-    def error(self, error: Exception) -> None:
+    def error(self, error: Exception, current_span: Span) -> None:  # noqa: PLR6301
         """
         Log error during the trace.
 
         Args:
             error: The error that occurred.
+            current_span: The current trace span.
         """
-        span = self._spans.get().pop()
         attributes = _format_attributes(vars(error), prefix="error")
-        span.set_attributes(attributes)
-        span.set_status(StatusCode.ERROR)
-        span.end()
+        current_span.set_attributes(attributes)
+        current_span.set_status(StatusCode.ERROR)
+        current_span.end()
 
 
 def _format_attributes(data: dict, prefix: str | None = None) -> dict[str, AttributeValue]:

@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from functools import wraps
 from types import SimpleNamespace
 from typing import Any, ParamSpec, TypeVar
@@ -72,18 +72,11 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
         else name
     )
 
-    for handler in _trace_handlers:
-        handler.start(name=name, inputs=inputs)
-
-    try:
-        yield (outputs := SimpleNamespace())
-    except Exception as exc:
-        for handler in _trace_handlers:
-            handler.error(exc)
-        raise exc
-
-    for handler in _trace_handlers:
-        handler.stop(vars(outputs))
+    with ExitStack() as stack:
+        outputs = [stack.enter_context(handler.trace(name, **inputs)) for handler in _trace_handlers]
+        yield (out := SimpleNamespace())
+        for output in outputs:
+            output.__dict__.update(vars(out))
 
 
 def traceable(func: Callable[P, R]) -> Callable[P, R]:
