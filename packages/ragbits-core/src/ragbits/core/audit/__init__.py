@@ -99,8 +99,8 @@ def traceable(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        # TODO: Add support for unnamed arguments.
-        with trace(name=func.__qualname__, **kwargs) as outputs:
+        inputs = _get_function_inputs(func, args, kwargs)
+        with trace(name=func.__qualname__, **inputs) as outputs:
             returned = func(*args, **kwargs)
             if returned is not None:
                 outputs.returned = returned
@@ -108,11 +108,42 @@ def traceable(func: Callable[P, R]) -> Callable[P, R]:
 
     @wraps(func)
     async def wrapper_async(*args: P.args, **kwargs: P.kwargs) -> R:
-        # TODO: Add support for unnamed arguments.
-        with trace(name=func.__qualname__, **kwargs) as outputs:
+        inputs = _get_function_inputs(func, args, kwargs)
+        with trace(name=func.__qualname__, **inputs) as outputs:
             returned = await func(*args, **kwargs)  # type: ignore
             if returned is not None:
                 outputs.returned = returned
         return returned
 
     return wrapper_async if asyncio.iscoroutinefunction(func) else wrapper  # type: ignore
+
+
+def _get_function_inputs(func: Callable, args: tuple, kwargs: dict) -> dict:
+    """
+    Get the dictionary of inputs for a function based on positional and keyword arguments.
+
+    Args:
+        func: The function to get inputs for.
+        args: The positional arguments.
+        kwargs: The keyword arguments.
+
+    Returns:
+        The dictionary of inputs.
+    """
+    sig_params = inspect.signature(func).parameters
+    merged = {}
+    pos_args_used = 0
+
+    for param_name, param in sig_params.items():
+        if param_name in kwargs:
+            merged[param_name] = kwargs[param_name]
+        elif pos_args_used < len(args):
+            if param_name not in ("self", "cls", "args", "kwargs"):
+                merged[param_name] = args[pos_args_used]
+            pos_args_used += 1
+        elif param.default is not param.empty:
+            merged[param_name] = param.default
+
+    merged.update({k: v for k, v in kwargs.items() if k not in merged})
+
+    return merged
