@@ -21,7 +21,9 @@ documents = [
 ]
 
 config = {
-    "embedder": {"type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings"},
+    "embedder": {
+        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+    },
     "vector_store": {
         "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
         "config": {
@@ -42,7 +44,16 @@ config = {
             },
         },
     },
-    "reranker": {"type": "ragbits.document_search.retrieval.rerankers.noop:NoopReranker"},
+    "reranker": {
+        "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+        "config": {
+            "model": "cohere/rerank-english-v3.0",
+            "default_options": {
+                "top_n": 3,
+                "max_chunks_per_doc": None,
+            },
+        },
+    },
     "providers": {"txt": {"type": "DummyProvider"}},
     "rephraser": {
         "type": "LLMQueryRephraser",

@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from functools import cached_property
 
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.element import TextElement
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
@@ -43,7 +42,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
             The evaluation result.
         """
         elements = await self.document_search.search(data["question"])
-        predicted_passages = [element.content for element in elements if isinstance(element, TextElement)]
+        predicted_passages = [element.get_text_representation() for element in elements]
         return DocumentSearchResult(
             question=data["question"],
             reference_passages=data["passages"],

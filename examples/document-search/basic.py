@@ -8,10 +8,10 @@
 import asyncio
 
 from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
 from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -51,17 +51,16 @@ async def main() -> None:
     embedder = LiteLLMEmbeddings(
         model="text-embedding-3-small",
     )
-    results = await embedder.embed_text(["I'm boiling my water and I need a", "joke"])
-    # vector_store = InMemoryVectorStore()
-    # document_search = DocumentSearch(
-    #     embedder=embedder,
-    #     vector_store=vector_store,
-    # )
+    vector_store = InMemoryVectorStore()
+    document_search = DocumentSearch(
+        embedder=embedder,
+        vector_store=vector_store,
+    )
 
-    # await document_search.ingest(documents)
+    await document_search.ingest(documents)
 
-    # results = await document_search.search("I'm boiling my water and I need a joke")
-    # print(results)
+    results = await document_search.search("I'm boiling my water and I need a joke")
+    print(results)
 
 
 if __name__ == "__main__":
