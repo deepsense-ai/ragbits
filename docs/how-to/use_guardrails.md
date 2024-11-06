@@ -1,12 +1,12 @@
 # How-To: Use Guardrails
 
-ragbits offers an expandable guardrails system. You can use one of the available guardrails or create your own to prevent toxic language, PII leaks etc.
+Ragbits offers an expandable guardrails system. You can use one of the available guardrails or create your own to prevent toxic language, PII leaks etc.
 
 In this guide we will show you how to use guardrail based on OpenAI moderation and how to creat your own guardrail.
 
 
 ## Using existing guardrail
-To use one of the existing guardrails you need to import it together with GuardrailManager. Next you simply pass a list of guardrails to the manager
+To use one of the existing guardrails you need to import it together with `GuardrailManager`. Next you simply pass a list of guardrails to the manager
 and call `verify()` function that will check the input (`str` or `Prompt`) against all provided guardrails asynchronously.
 
 ```python
@@ -24,11 +24,8 @@ if __name__ == '__main__':
     print(asyncio.run(verify_message("Test message")))
 ```
 
-The expected output has the following structure:
+The expected output is an object with the following properties:
 ```python
-from pydantic import BaseModel
-
-class GuardrailVerificationResult(BaseModel):
     guardrail_name: str
     succeeded: bool
     fail_reason: str | None
