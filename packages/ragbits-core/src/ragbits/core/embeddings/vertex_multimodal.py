@@ -10,6 +10,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
+from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embeddings
 from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
@@ -79,21 +80,28 @@ class VertexAIMultimodelEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-        semaphore = asyncio.Semaphore(self.concurency)
-        try:
-            response = await asyncio.gather(
-                *[self._call_litellm(instance, semaphore) for instance in data],
-            )
-        except VertexAIError as exc:
-            raise EmbeddingStatusError(exc.message, exc.status_code) from exc
+        with trace(
+            data=data,
+            model=self.model,
+            api_base=self.api_base,
+            concurency=self.concurency,
+            options=self.options,
+        ) as outputs:
+            semaphore = asyncio.Semaphore(self.concurency)
+            try:
+                response = await asyncio.gather(
+                    *[self._call_litellm(instance, semaphore) for instance in data],
+                )
+            except VertexAIError as exc:
+                raise EmbeddingStatusError(exc.message, exc.status_code) from exc
 
-        embeddings: list[dict] = []
-        for i, embedding in enumerate(response):
-            if embedding.data is None or not embedding.data:
-                raise EmbeddingResponseError(f"No embeddings returned for instance {i}")
-            embeddings.append(embedding.data[0])
+            outputs.embeddings = []
+            for i, embedding in enumerate(response):
+                if embedding.data is None or not embedding.data:
+                    raise EmbeddingResponseError(f"No embeddings returned for instance {i}")
+                outputs.embeddings.append(embedding.data[0])
 
-        return embeddings
+            return outputs.embeddings
 
     async def _call_litellm(self, instance: dict, semaphore: asyncio.Semaphore) -> litellm.EmbeddingResponse:
         """

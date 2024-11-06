@@ -1,3 +1,28 @@
+"""
+Ragbits Document Search Example: Multimodal Embeddings
+
+This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
+
+It employes the "multimodalembedding" from VertexAI. In order to use it, make sure that you are
+logged in to Google Cloud (using the `gcloud auth login` command) and that you have the necessary permissions.
+
+The script performs the following steps:
+    1. Create a list of example documents.
+    2. Initialize the `VertexAIMultimodelEmbeddings` class (which uses the VertexAI multimodal embeddings).
+    3. Initialize the `InMemoryVectorStore` class, which stores the embeddings for the duration of the script.
+    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
+    5. Ingest the documents into the `DocumentSearch` instance.
+    6. List all embeddings in the vector store.
+    7. Search for documents using a query.
+    8. Print the search results.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run python examples/document-search/multimodal.py
+    ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
