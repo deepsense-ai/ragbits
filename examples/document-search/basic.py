@@ -12,7 +12,6 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
-
 documents = [
     DocumentMeta.create_text_document_from_literal(
         """

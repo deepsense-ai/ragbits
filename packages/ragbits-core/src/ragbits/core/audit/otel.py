@@ -22,7 +22,7 @@ class OtelTraceHandler(TraceHandler[Span]):
 
     def start(self, name: str, inputs: dict) -> None:
         """
-        Log input data at the start of the trace.
+        Log input data at the beginning of the trace.
 
         Args:
             name: The name of the trace.
@@ -37,7 +37,7 @@ class OtelTraceHandler(TraceHandler[Span]):
 
         self._spans.get().append(span)
 
-    def end(self, outputs: dict) -> None:
+    def stop(self, outputs: dict) -> None:
         """
         Log output data at the end of the trace.
 

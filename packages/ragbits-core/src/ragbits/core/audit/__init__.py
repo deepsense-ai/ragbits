@@ -83,7 +83,7 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
         raise exc
 
     for handler in _trace_handlers:
-        handler.end(vars(outputs))
+        handler.stop(vars(outputs))
 
 
 def traceable(func: Callable[P, R]) -> Callable[P, R]:
