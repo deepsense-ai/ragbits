@@ -59,6 +59,9 @@ class DocumentSearchPipeline(EvaluationPipeline):
 
 
 class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
+    """
+    A class for joint doument ingestion and search
+    """
     def __init__(self, config: DictConfig | None = None) -> None:
         super().__init__(config)
         self.config.vector_store.config.index_name = str(uuid.uuid4())
@@ -66,13 +69,21 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
         self._lock = asyncio.Lock()
 
     async def __call__(self, data: dict) -> DocumentSearchResult:
+        """
+        Queries a vector store with given data
+        Ingests the corpus to the store if has not been done
+        Args:
+            data: dict - query
+        Returns:
+            DocumentSearchResult - query result
+        """
         async with self._lock:
             if not self._ingested:
                 await self._ingest_documents()
                 self._ingested = True
         return await super().__call__(data)
 
-    async def _ingest_documents(self):
+    async def _ingest_documents(self) -> None:
         documents = await tqdm.gather(
             *[
                 DocumentMeta.from_source(
