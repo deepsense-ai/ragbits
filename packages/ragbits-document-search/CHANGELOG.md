@@ -4,10 +4,18 @@
 
 ## 0.3.0 (2024-11-06)
 
+### Added
+
+- Add location metadata to documents ingested into DocumentSearch (#122).
+- Add LiteLLM Reranker (#109).
+
+
 ### Changed
 
 - ragbits-core updated to version v0.3.0
 - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
+- refactor: change the type in from_source method to Source (#156).
+- refactor: unified API for text representations of Element models (#171).
 
 ## 0.2.0 (2024-10-23)
 
