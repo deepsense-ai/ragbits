@@ -34,3 +34,12 @@ class LLMResponseError(LLMError):
 
     def __init__(self, message: str = "Data returned by API invalid for expected schema.") -> None:
         super().__init__(message)
+
+
+class LLMEmptyResponseError(LLMError):
+    """
+    Raised when an API response is empty.
+    """
+
+    def __init__(self, message: str = "Empty response returned by API.") -> None:
+        super().__init__(message)

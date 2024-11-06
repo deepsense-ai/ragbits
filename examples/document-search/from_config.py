@@ -1,3 +1,25 @@
+"""
+Ragbits Document Search Example: DocumentSearch from Config
+
+This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
+We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
+the embeddings, and the `LiteLLMReranker` class to rerank the search results. We will also use the `LLMQueryRephraser`
+class to rephrase the query.
+
+The script performs the following steps:
+
+        1. Create a list of documents.
+        2. Initialize the `DocumentSearch` class with the predefined configuration.
+        3. Ingest the documents into the `DocumentSearch` instance.
+        4. Search for documents using a query.
+        5. Print the search results.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/document-search/from_config.py
+    ```
+"""
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -5,18 +27,32 @@
 #     "ragbits-core[chroma,litellm]",
 # ]
 # ///
+
 import asyncio
 
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
 documents = [
-    DocumentMeta.create_text_document_from_literal("RIP boiled water. You will be mist."),
     DocumentMeta.create_text_document_from_literal(
-        "Why doesn't James Bond fart in bed? Because it would blow his cover."
+        """
+        RIP boiled water. You will be mist.
+        """
     ),
     DocumentMeta.create_text_document_from_literal(
-        "Why programmers don't like to swim? Because they're scared of the floating points."
+        """
+        Why doesn't James Bond fart in bed? Because it would blow his cover.
+        """
+    ),
+    DocumentMeta.create_text_document_from_literal(
+        """
+        Why programmers don't like to swim? Because they're scared of the floating points.
+        """
+    ),
+    DocumentMeta.create_text_document_from_literal(
+        """
+        This one is completely unrelated.
+        """
     ),
 ]
 

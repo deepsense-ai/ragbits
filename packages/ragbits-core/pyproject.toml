@@ -56,6 +56,9 @@ lab = [
 promptfoo = [
     "PyYAML~=6.0.2",
 ]
+otel = [
+    "opentelemetry-api~=1.27.0",
+]
 
 [tool.uv]
 dev-dependencies = [

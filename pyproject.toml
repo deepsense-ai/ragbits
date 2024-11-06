@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[litellm,local,lab,chroma]",
-    "ragbits-document-search[gcs, huggingface]",
+    "ragbits-core[chroma,lab,litellm,local,otel]",
+    "ragbits-document-search[gcs,huggingface]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
 ]
@@ -150,7 +150,6 @@ ignore = [
     "PLR0913",
 ]
 
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -176,7 +175,6 @@ convention = "google"
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
-
 
 [tool.ruff.lint.isort]
 known-first-party = ["ragbits"]

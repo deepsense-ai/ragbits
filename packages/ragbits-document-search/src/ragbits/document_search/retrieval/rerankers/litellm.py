@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 import litellm
 
+from ragbits.core.audit import traceable
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
@@ -38,6 +39,7 @@ class LiteLLMReranker(Reranker):
             default_options=RerankerOptions(**config.get("default_options", {})),
         )
 
+    @traceable
     async def rerank(
         self,
         elements: Sequence[Element],

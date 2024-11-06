@@ -8,6 +8,7 @@ import chromadb
 from chromadb import Collection
 from chromadb.api import ClientAPI
 
+from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
@@ -75,6 +76,7 @@ class ChromaVectorStore(VectorStore):
             metadata_store=get_metadata_store(config.get("metadata_store")),
         )
 
+    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
@@ -94,6 +96,7 @@ class ChromaVectorStore(VectorStore):
         )
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
 
+    @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieves entries from the ChromaDB collection.
@@ -138,6 +141,7 @@ class ChromaVectorStore(VectorStore):
             if options.max_distance is None or distance <= options.max_distance
         ]
 
+    @traceable
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:

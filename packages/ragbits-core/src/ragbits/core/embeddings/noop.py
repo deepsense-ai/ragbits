@@ -1,3 +1,4 @@
+from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embeddings
 
 
@@ -10,6 +11,7 @@ class NoopEmbeddings(Embeddings):
     or as a placeholder when an actual embedding model is not required.
     """
 
+    @traceable
     async def embed_text(self, data: list[str]) -> list[list[float]]:  # noqa: PLR6301
         """
         Embeds a list of strings into a list of vectors.

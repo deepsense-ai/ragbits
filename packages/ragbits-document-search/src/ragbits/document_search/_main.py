@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ragbits.core.audit import traceable
 from ragbits.core.embeddings import Embeddings, get_embeddings
 from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
@@ -83,6 +84,7 @@ class DocumentSearch:
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
 
+    @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
@@ -140,6 +142,7 @@ class DocumentSearch:
         document_processor = self.document_processor_router.get_provider(document_meta)
         return await document_processor.process(document_meta)
 
+    @traceable
     async def ingest(
         self,
         documents: Sequence[DocumentMeta | Document | Source],

@@ -1,5 +1,6 @@
 from typing import Any
 
+from ragbits.core.audit import traceable
 from ragbits.core.llms import get_llm
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
@@ -27,6 +28,7 @@ class LLMQueryRephraser(QueryRephraser):
         self._llm = llm
         self._prompt = prompt or QueryRephraserPrompt
 
+    @traceable
     async def rephrase(self, query: str) -> list[str]:
         """
         Rephrase a given query using the LLM.
