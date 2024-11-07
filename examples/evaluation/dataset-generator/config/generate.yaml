@@ -1,0 +1,5 @@
+defaults:
+  - pipeline: qa
+  - _self_
+
+input_name: chunk

@@ -8,7 +8,6 @@ class BasicAnswerGenInput(BaseModel):
 
 
 class BasicAnswerGenPrompt(Prompt[BasicAnswerGenInput, str]):
-
     system_prompt = """You are an AI assistant to answer the given question in the provide evidence text.
   Do not mention any of these in the answer: "in the given text", "in the provided information", etc.
 Users do not know the passage source of the answer, so it should not be mentioned in the answer.
@@ -25,7 +24,6 @@ class PassagesGenInput(BaseModel):
 
 
 class PassagesGenPrompt(Prompt[PassagesGenInput, str]):
-
     system_prompt = """You are an AI tasked with retrieving passages (one or many) from the provided Chunk that that contain information needed to generate the provided Answer to the given Question.
 
 Instructions:
@@ -43,7 +41,6 @@ class QueryGenInput(BaseModel):
 
 
 class QueryGenPrompt(Prompt[QueryGenInput, str]):
-
     system_prompt = """You're an AI tasked to convert Text into a factoid question.
 Factoid questions are those seeking brief, factual information that can be easily verified. They typically require a yes or no answer or a brief explanation and often inquire about specific details such as dates, names, places, or events.
 

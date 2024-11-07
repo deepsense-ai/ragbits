@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from datasets import Dataset
 from hydra.core.hydra_config import HydraConfig
 from neptune import Run
 from neptune.utils import stringify_unsupported
@@ -28,7 +29,7 @@ def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
         json.dump(data, file, indent=4)
 
 
-def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path:
+def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Path:
     """
     Log the evaluation results locally.
 
@@ -40,12 +41,8 @@ def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path
         The output directory.
     """
     output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
-    metrics_file = output_dir / "metrics.json"
-    results_file = output_dir / "results.json"
-
-    _save(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
-    _save(results_file, results=results["results"])
-
+    dataset_file = output_dir / "dataset.hf"
+    dataset.save_to_disk(dataset_path=str(dataset_file))
     return output_dir
 
 

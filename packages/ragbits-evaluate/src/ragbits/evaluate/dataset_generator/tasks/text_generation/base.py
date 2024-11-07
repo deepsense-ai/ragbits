@@ -34,9 +34,7 @@ class BaseDistilabelTask(TextGeneration, ABC):
         return chat
 
     @abstractmethod
-    def format_output(
-        self, output: str, input: dict[str, Any] | None = None
-    ) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
         """
         Formats the generated question into a structured dictionary with the original "chunk" input.
 

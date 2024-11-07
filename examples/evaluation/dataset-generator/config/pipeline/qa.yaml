@@ -1,0 +1,15 @@
+name: synthetic-RAG-data
+tasks:
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:QueryGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      name: gpt-4o
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:AnswerGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      name: gpt-4o
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:PassagesGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      name: gpt-4o
+    filter: ragbits.evaluate.dataset_generator.tasks.filter.dont_know:DontKnowFilter

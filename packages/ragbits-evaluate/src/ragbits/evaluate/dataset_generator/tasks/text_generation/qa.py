@@ -6,7 +6,6 @@ from ...prompts.qa import BasicAnswerGenPrompt, PassagesGenPrompt, QueryGenPromp
 from ...utils import get_closest_substring, get_passages_list
 
 
-
 from .base import BaseDistilabelTask
 
 
@@ -18,9 +17,7 @@ class QueryGenTask(BaseDistilabelTask):
     def __init__(self, llm: LLM, prompt_class: type[Prompt] = QueryGenPrompt):
         super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class)
 
-    def format_output(
-        self, output: str, input: dict[str, Any] | None = None
-    ) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
         """
         Formats the generated question into a structured dictionary with the original "chunk" input.
 
@@ -42,13 +39,14 @@ class PassagesGenTask(BaseDistilabelTask):
     get_matches: bool = False
 
     def __init__(self, llm: LLM, prompt_class: type[Prompt] = PassagesGenPrompt):
-        super().__init__(llm=llm, inputs=["chunk", "question", "basic_answer"],
-                         outputs=["question", "chunk", "passages"], prompt_class=prompt_class)
+        super().__init__(
+            llm=llm,
+            inputs=["chunk", "question", "basic_answer"],
+            outputs=["question", "chunk", "passages"],
+            prompt_class=prompt_class,
+        )
 
-
-    def format_output(
-        self, output: str, input: dict[str, Any] | None = None
-    ) -> dict[str, list[str]]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, list[str]]:
         """
         Formats the model's output into a structured dictionary with "question", "chunk", and "passages".
         If `get_matches` is `True`, attempts to find the closest matches for each passage within the
@@ -88,9 +86,7 @@ class AnswerGenTask(BaseDistilabelTask):
     def __init__(self, llm: LLM, prompt_class: type[Prompt] = BasicAnswerGenPrompt):
         super().__init__(llm=llm, inputs=["chunk", "question"], outputs=["basic_answer"], prompt_class=prompt_class)
 
-    def format_output(
-        self, output: str, input: dict[str, Any] | None = None
-    ) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
         """
         Formats the model's output into a structured dictionary with the "basic_answer" key.
 
