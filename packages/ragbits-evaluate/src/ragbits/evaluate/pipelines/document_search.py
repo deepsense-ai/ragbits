@@ -62,6 +62,7 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
     """
     A class for joint doument ingestion and search
     """
+
     def __init__(self, config: DictConfig | None = None) -> None:
         super().__init__(config)
         self.config.vector_store.config.index_name = str(uuid.uuid4())

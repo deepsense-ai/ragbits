@@ -19,6 +19,8 @@ metrics:
       threshold: 0.5
 
 
-neptune:
-  project: ragbits
-  run: false
+callbacks:
+  - type: ragbits.evaluate.callbacks.neptune:NeptuneCallbackConfigurator
+    args:
+      callback_type: neptune.integrations.optuna:NeptuneCallback
+      project: deepsense-ai/ragbits

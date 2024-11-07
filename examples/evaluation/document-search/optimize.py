@@ -23,17 +23,20 @@ def main(config: DictConfig) -> None:
     dataloader = dataloader_factory(config.data)
     pipeline_class = get_cls_from_config(config.pipeline.type, module)
     metrics = metric_set_factory(config.metrics)
+    callback_configurators = None
+    if getattr(config, "callbacks", None):
+        callback_configurators = [
+            get_cls_from_config(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in config.callbacks
+        ]
 
-    optimization_cfg = OmegaConf.create(
-        {"direction": "maximize", "n_trials": 10, "neptune_project": config.neptune.project}
-    )
+    optimization_cfg = OmegaConf.create({"direction": "maximize", "n_trials": 10})
     optimizer = Optimizer(cfg=optimization_cfg)
     configs_with_scores = optimizer.optimize(
         pipeline_class=pipeline_class,
         config_with_params=config.pipeline,
         metrics=metrics,
         dataloader=dataloader,
-        log_to_neptune=config.neptune.run,
+        callback_configurators=callback_configurators,
     )
     log_optimization_to_file(configs_with_scores)
 

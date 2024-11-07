@@ -2,11 +2,10 @@ import asyncio
 from copy import deepcopy
 from typing import Any
 
-import neptune
-import neptune.integrations.optuna as npt_utils
 import optuna
 from omegaconf import DictConfig, ListConfig
 
+from .callbacks.base import CallbackConfigurator
 from .evaluator import Evaluator
 from .loaders.base import DataLoader
 from .metrics.base import MetricSet
@@ -30,7 +29,7 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
-        log_to_neptune: bool = False,
+        callback_configurators: list[CallbackConfigurator] | None = None,
     ) -> list[tuple[DictConfig, float, dict[str, float]]]:
         """
         A method for running the optimization process for given parameters
@@ -43,15 +42,11 @@ class Optimizer:
         Returns:
             list of tuples with configs and their scores
         """
-        if not self.config.neptune_project and log_to_neptune:
-            raise ValueError("To log results to neptune pass project name to optimizer config")
         # TODO check details on how to parametrize optuna
         optimization_kwargs = {"n_trials": self.config.n_trials}
-        neptune_run = None
-        if log_to_neptune:
-            neptune_run = neptune.init_run(project=self.config.neptune_project)
-            neptune_callback = npt_utils.NeptuneCallback(neptune_run)
-            optimization_kwargs["callbacks"] = [neptune_callback]
+        if callback_configurators:
+            optimization_kwargs["callbacks"] = [configurator.get_callback() for configurator in callback_configurators]
+
         def objective(trial: optuna.Trial) -> float:
             return self._objective(
                 trial=trial,
@@ -59,8 +54,8 @@ class Optimizer:
                 config_with_params=config_with_params,
                 dataloader=dataloader,
                 metrics=metrics,
-                neptune_run=neptune_run,
             )
+
         study = optuna.create_study(direction=self.config.direction)
 
         study.optimize(objective, **optimization_kwargs)
@@ -77,7 +72,6 @@ class Optimizer:
         config_with_params: DictConfig,
         dataloader: DataLoader,
         metrics: MetricSet,
-        neptune_run: neptune.Run | None = None,
     ) -> float:
         config_for_trial = deepcopy(config_with_params)
         self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
@@ -98,7 +92,7 @@ class Optimizer:
         )
         return results["metrics"]
 
-    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None: # noqa: PLR0912
+    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:  # noqa: PLR0912
         """
         Recursive method for sampling parameter values for optuna.Trial
         """
