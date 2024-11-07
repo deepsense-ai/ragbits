@@ -6,7 +6,7 @@ from ragbits.core.prompt import Prompt, ChatFormat
 
 
 class BaseDistilabelTask(TextGeneration, ABC):
-    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: type[Prompt]):
+    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: type[Prompt], **kwargs):
         super().__init__(llm=llm)
         self._inputs = inputs
         self._outputs = outputs

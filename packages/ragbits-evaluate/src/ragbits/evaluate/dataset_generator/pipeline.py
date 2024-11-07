@@ -30,8 +30,14 @@ class DatasetGenerationPipeline:
         tasks = []
         for task_config in self.config.pipeline.tasks:
             llm_config = task_config.llm
-            llm = get_cls_from_config(llm_config.provider_type, module)(model=llm_config.name)
-            task = get_cls_from_config(task_config.type, module)(llm=llm)
+            provider_type = llm_config.provider_type
+            if provider_type.startswith("distilabel"):
+                llm_kwargs = {"model": llm_config.name}
+            elif provider_type.startswith("ragbits"):
+                llm_kwargs = {"model_name": llm_config.name}
+            llm = get_cls_from_config(llm_config.provider_type, module)(**llm_kwargs)
+            task_kwargs = {"llm": llm, "num_per_query": getattr(task_config, "num_per_query", 1)}
+            task = get_cls_from_config(task_config.type, module)(**task_kwargs)
             tasks.append(task)
             if getattr(task_config, "filter", None):
                 filter = get_cls_from_config(task_config.filter, module)(task)

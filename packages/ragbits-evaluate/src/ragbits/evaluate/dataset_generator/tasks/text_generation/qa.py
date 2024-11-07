@@ -14,8 +14,8 @@ class QueryGenTask(BaseDistilabelTask):
     A task for generating a question based on a provided text chunk.
     """
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = QueryGenPrompt):
-        super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class)
+    def __init__(self, llm: LLM, prompt_class: type[Prompt] = QueryGenPrompt, **kwargs):
+        super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class, **kwargs)
 
     def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
         """
@@ -38,7 +38,7 @@ class PassagesGenTask(BaseDistilabelTask):
 
     get_matches: bool = False
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = PassagesGenPrompt):
+    def __init__(self, llm: LLM, prompt_class: type[Prompt] = PassagesGenPrompt, **kwargs):
         super().__init__(
             llm=llm,
             inputs=["chunk", "question", "basic_answer"],
@@ -83,7 +83,7 @@ class AnswerGenTask(BaseDistilabelTask):
     the `TextGeneration` task from the `distilabel` package.
     """
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = BasicAnswerGenPrompt):
+    def __init__(self, llm: LLM, prompt_class: type[Prompt] = BasicAnswerGenPrompt, **kwargs):
         super().__init__(llm=llm, inputs=["chunk", "question"], outputs=["basic_answer"], prompt_class=prompt_class)
 
     def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
