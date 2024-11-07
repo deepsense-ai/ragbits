@@ -12,6 +12,7 @@ module = sys.modules[__name__]
 
 class NeptuneCallbackConfigurator(CallbackConfigurator):
     """A class for configuration of neptune callbacks"""
+
     def get_callback(self) -> Callable:
         """
         Creates neptune callback based on configuration

@@ -6,6 +6,7 @@ from omegaconf import DictConfig
 
 class CallbackConfigurator(ABC):
     """An abstract class for callback configuration"""
+
     def __init__(self, config: DictConfig):
         self.config = config
 
