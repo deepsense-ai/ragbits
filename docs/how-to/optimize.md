@@ -123,7 +123,7 @@ class TokenCountMetric(Metric):
 metrics = MetricSet(TokenCountMetric())
 
 optimization_cfg = OmegaConf.create(
-    {"direction": "minimize", "n_trials": 4, "neptune_project": None}
+    {"direction": "minimize", "n_trials": 4}
 )
 optimizer = Optimizer(optimization_cfg)
 
