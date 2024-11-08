@@ -1,6 +1,6 @@
 import sys
 
-from omegaconf import DictConfig, ListConfig
+from omegaconf import ListConfig
 
 from ragbits.core.utils.config_handling import get_cls_from_config
 

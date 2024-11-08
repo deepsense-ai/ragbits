@@ -6,7 +6,7 @@ from continuous_eval.metrics.retrieval import PrecisionRecallF1, RankedRetrieval
 from continuous_eval.metrics.retrieval.matching_strategy import RougeChunkMatch
 from omegaconf import DictConfig, OmegaConf
 
-from ragbits.evaluate.metrics.base import Metric, MetricSet
+from ragbits.evaluate.metrics.base import Metric
 from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
 
 
@@ -71,4 +71,3 @@ class DocumentSearchRankedRetrievalMetrics(DocumentSearchMetric):
     """
 
     metric_cls = RankedRetrievalMetrics
-
