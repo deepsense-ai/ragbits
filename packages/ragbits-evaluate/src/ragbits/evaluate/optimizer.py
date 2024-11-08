@@ -128,7 +128,7 @@ class Optimizer:
         for key, value in cfg.items():
             if isinstance(value, DictConfig):
                 if value.get("optimize"):
-                    param_id = f"{'.'.join(ancestors)}.{key}"
+                    param_id = f"{'.'.join(ancestors)}.{key}" # type: ignore
                     choices = value.get("choices")
                     values_range = value.get("range")
                     if choices and values_range:
@@ -145,14 +145,14 @@ class Optimizer:
                     else:
                         if not choices:
                             raise ValueError("Either choices or range must be specified")
-                        choice_idx = trial.suggest_categorical(name=param_id, choices=choices_index)
+                        choice_idx = trial.suggest_categorical(name=param_id, choices=choices_index) # type: ignore
                         choice = choices[choice_idx]
                         if isinstance(choice, DictConfig):
-                            self._set_values_for_optimized_params(choice, trial, ancestors + [key, str(choice_idx)])
+                            self._set_values_for_optimized_params(choice, trial, ancestors + [key, str(choice_idx)]) # type: ignore
                         cfg[key] = choice
                 else:
-                    self._set_values_for_optimized_params(value, trial, ancestors + [key])
+                    self._set_values_for_optimized_params(value, trial, ancestors + [key]) # type: ignore
             elif isinstance(value, ListConfig):
                 for param in value:
                     if isinstance(param, DictConfig):
-                        self._set_values_for_optimized_params(param, trial, ancestors + [key])
+                        self._set_values_for_optimized_params(param, trial, ancestors + [key]) # type: ignore

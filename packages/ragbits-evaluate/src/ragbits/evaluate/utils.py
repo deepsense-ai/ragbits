@@ -49,7 +49,7 @@ def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path
     return output_dir
 
 
-def log_optimization_to_file(results: list[tuple[DictConfig, float]], output_dir: Path | None = None) -> Path:
+def log_optimization_to_file(results: list[tuple[DictConfig, float, dict[str, float]]], output_dir: Path | None = None) -> Path:
     """
     Log the evaluation results locally.
 

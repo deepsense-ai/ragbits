@@ -1,6 +1,6 @@
 import sys
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 
 from ragbits.core.utils.config_handling import get_cls_from_config
 
@@ -9,7 +9,7 @@ from .base import MetricSet
 module = sys.modules[__name__]
 
 
-def metric_set_factory(cfg: DictConfig) -> MetricSet:
+def metric_set_factory(cfg: ListConfig) -> MetricSet:
     """
     A function creating MetricSet instance from the configuration
     Args:
