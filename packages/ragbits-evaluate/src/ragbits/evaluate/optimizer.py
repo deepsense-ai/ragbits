@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from copy import deepcopy
 from typing import Any
 
@@ -16,6 +17,8 @@ class Optimizer:
     """
     Class for optimization
     """
+
+    INFINITY = 1e16
 
     def __init__(self, cfg: DictConfig):
         self.config = cfg
@@ -63,7 +66,14 @@ class Optimizer:
             (trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"])
             for trial in study.get_trials()
         ]
-        return configs_with_scores
+
+        def sorting_key(results: tuple[DictConfig, float, dict[str, float]]) -> float:
+            if self.config.direction == "maximize":
+                return -results[1]
+            else:
+                return results[1]
+
+        return sorted(configs_with_scores, key=sorting_key)
 
     def _objective(
         self,
@@ -73,11 +83,30 @@ class Optimizer:
         dataloader: DataLoader,
         metrics: MetricSet,
     ) -> float:
-        config_for_trial = deepcopy(config_with_params)
-        self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
-        pipeline = pipeline_class(config_for_trial)
-        metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
-        score = sum(metrics_values.values())
+        max_retries = getattr(self.config, "max_retries_for_trial", 1)
+        config_for_trial = None
+        for attempt_idx in range(max_retries):
+            try:
+                config_for_trial = deepcopy(config_with_params)
+                self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
+                pipeline = pipeline_class(config_for_trial)
+                metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
+                score = sum(metrics_values.values())
+                break
+            except Exception as e:
+                if attempt_idx < max_retries - 1:
+                    warnings.warn(
+                        message=f"Execution of the trial failed: {e}. A retry will be initiated.", category=UserWarning
+                    )
+                else:
+                    score = self.INFINITY
+                    if self.config.direction == "maximize":
+                        score *= -1
+                    metrics_values = {}
+                    warnings.warn(
+                        message=f"Execution of the trial failed: {e}. Setting the score to {score}",
+                        category=UserWarning,
+                    )
         trial.set_user_attr("score", score)
         trial.set_user_attr("cfg", config_for_trial)
         trial.set_user_attr("all_metrics", metrics_values)

@@ -106,7 +106,7 @@ dataloader = RandomQuestionsDataLoader(dataloader_config)
 ### Define the Metrics and Run the Experiment
 
 ```python
-from typing import Any
+from pprint import pp as pprint
 import tiktoken
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.metrics.base import Metric, MetricSet, ResultT
@@ -123,7 +123,7 @@ class TokenCountMetric(Metric):
 metrics = MetricSet(TokenCountMetric())
 
 optimization_cfg = OmegaConf.create(
-    {"direction": "minimize", "n_trials": 4}
+    {"direction": "minimize", "n_trials": 4, "max_retries_for_trial": 3}
 )
 optimizer = Optimizer(optimization_cfg)
 
@@ -146,5 +146,33 @@ configs_with_scores = optimizer.optimize(
     metrics=metrics,
     dataloader=dataloader,
 )
-print(configs_with_scores)
+pprint(configs_with_scores)
 ```
+
+After executing the code, your console should display an output structure similar to this:
+
+```json
+[({'system_prompt_content': 'Be a silly bot answering user questions. Use as few tokens as possible'},
+  6.0,
+  {'num_tokens': 6.0}),
+ ({'system_prompt_content': 'Be a silly bot answering user questions. Use as few tokens as possible'},
+  10.7,
+  {'num_tokens': 10.7}),
+ ({'system_prompt_content': 'Be a friendly bot answering user questions. Be as concise as possible'},
+  37.8,
+  {'num_tokens': 37.8}),
+ ({'system_prompt_content': 'Be informative and straight to the point'},
+  113.2,
+  {'num_tokens': 113.2})]
+
+```
+
+This output consists of tuples, each containing three elements:
+
+1. The configuration used in the trial.
+2. The score achieved.
+3. A dictionary of detailed metrics that contribute to the score.
+
+The tuples are ordered from the best to the worst configuration based on the score.
+
+Please note that the details may vary between runs due to the non-deterministic nature of both the LLM and the optimization algorithm.
