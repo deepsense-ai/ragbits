@@ -86,7 +86,7 @@ class DatasetGenerationPrompt(Prompt[DatasetGenerationPromptInput]):
 
 
 class RandomQuestionsDataLoader(DataLoader):
-    async def load(self) -> DataT:
+    async def load(self) -> list[dict[str, str]]:
         questions = []
         llm = LiteLLM()
         for _ in range(self.config.num_questions):
@@ -114,7 +114,7 @@ from omegaconf import OmegaConf
 
 
 class TokenCountMetric(Metric):
-    def compute(self, results: list[ResultT]) -> dict[str, Any]:
+    def compute(self, results: list[ResultT]) -> dict[str, float]:
         encoding = tiktoken.get_encoding("cl100k_base")
         num_tokens = [len(encoding.encode(out.answer)) for out in results]
         return {"num_tokens": sum(num_tokens) / len(num_tokens)}
