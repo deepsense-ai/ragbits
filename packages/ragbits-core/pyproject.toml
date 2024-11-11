@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.2.0"
+version = "0.3.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -55,6 +55,9 @@ lab = [
 ]
 promptfoo = [
     "PyYAML~=6.0.2",
+]
+otel = [
+    "opentelemetry-api~=1.27.0",
 ]
 qdrant = [
     "qdrant-client~=1.12.1",

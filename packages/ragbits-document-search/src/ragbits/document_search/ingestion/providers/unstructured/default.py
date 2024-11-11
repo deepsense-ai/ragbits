@@ -7,6 +7,7 @@ from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
 
+from ragbits.core.audit import traceable
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.providers.base import BaseProvider
@@ -102,6 +103,7 @@ class UnstructuredDefaultProvider(BaseProvider):
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
+    @traceable
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
         """
         Process the document using the Unstructured API.

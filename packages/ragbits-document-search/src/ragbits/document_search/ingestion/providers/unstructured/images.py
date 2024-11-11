@@ -21,8 +21,8 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
     to_text_element,
 )
 
-DEFAULT_LLM_IMAGE_SUMMARIZATION_MODEL = "gpt-4o-mini"
 DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
+DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
 class _ImagePrompt(Prompt):
@@ -32,9 +32,6 @@ class _ImagePrompt(Prompt):
 
 class _ImagePromptInput(BaseModel):
     images: list[bytes]
-
-
-DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):

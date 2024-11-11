@@ -87,11 +87,13 @@ cmake-build-*/
 **/.terraform.lock.hcl
 **/.terraform
 
-# benchmarks
-benchmarks/sql/data/
-
 # mkdocs generated files
 site/
 
 # build artifacts
 dist/
+
+# examples
+chroma/
+
+.aider*

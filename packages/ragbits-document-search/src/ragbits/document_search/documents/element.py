@@ -7,6 +7,15 @@ from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
 
+class ElementLocation(BaseModel):
+    """
+    An object representing position of chunk within document.
+    """
+
+    page_number: int | None = None
+    coordinates: dict | None = None
+
+
 class Element(BaseModel, ABC):
     """
     An object representing an element in a document.
@@ -14,16 +23,26 @@ class Element(BaseModel, ABC):
 
     element_type: str
     document_meta: DocumentMeta
+    location: ElementLocation | None = None
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    @abstractmethod
     def get_key(self) -> str:
         """
         Get the key of the element which will be used to generate the vector.
 
         Returns:
             The key.
+        """
+        return self.get_text_representation()
+
+    @abstractmethod
+    def get_text_representation(self) -> str:
+        """
+        Get the text representation of the element.
+
+        Returns:
+            The text representation.
         """
 
     @classmethod
@@ -77,12 +96,12 @@ class TextElement(Element):
     element_type: str = "text"
     content: str
 
-    def get_key(self) -> str:
+    def get_text_representation(self) -> str:
         """
-        Get the key of the element which will be used to generate the vector.
+        Get the text representation of the element.
 
         Returns:
-            The key.
+            The text representation.
         """
         return self.content
 
@@ -97,11 +116,11 @@ class ImageElement(Element):
     ocr_extracted_text: str
     image_bytes: bytes
 
-    def get_key(self) -> str:
+    def get_text_representation(self) -> str:
         """
-        Get the key of the element which will be used to generate the vector.
+        Get the text representation of the element.
 
         Returns:
-            The key.
+            The text representation.
         """
-        return self.description + " " + self.ocr_extracted_text
+        return f"Description: {self.description}\nExtracted text: {self.ocr_extracted_text}"

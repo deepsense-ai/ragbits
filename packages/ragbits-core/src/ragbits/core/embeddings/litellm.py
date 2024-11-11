@@ -5,9 +5,11 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
+from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embeddings
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
+    EmbeddingEmptyResponseError,
     EmbeddingResponseError,
     EmbeddingStatusError,
 )
@@ -64,23 +66,40 @@ class LiteLLMEmbeddings(Embeddings):
 
         Raises:
             EmbeddingConnectionError: If there is a connection error with the embedding API.
+            EmbeddingEmptyResponseError: If the embedding API returns an empty response.
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
-        try:
-            response = await litellm.aembedding(
-                input=data,
-                model=self.model,
-                api_base=self.api_base,
-                api_key=self.api_key,
-                api_version=self.api_version,
-                **self.options,
-            )
-        except litellm.openai.APIConnectionError as exc:
-            raise EmbeddingConnectionError() from exc
-        except litellm.openai.APIStatusError as exc:
-            raise EmbeddingStatusError(exc.message, exc.status_code) from exc
-        except litellm.openai.APIResponseValidationError as exc:
-            raise EmbeddingResponseError() from exc
+        with trace(
+            data=data,
+            model=self.model,
+            api_base=self.api_base,
+            api_version=self.api_version,
+            options=self.options,
+        ) as outputs:
+            try:
+                response = await litellm.aembedding(
+                    input=data,
+                    model=self.model,
+                    api_base=self.api_base,
+                    api_key=self.api_key,
+                    api_version=self.api_version,
+                    **self.options,
+                )
+            except litellm.openai.APIConnectionError as exc:
+                raise EmbeddingConnectionError() from exc
+            except litellm.openai.APIStatusError as exc:
+                raise EmbeddingStatusError(exc.message, exc.status_code) from exc
+            except litellm.openai.APIResponseValidationError as exc:
+                raise EmbeddingResponseError() from exc
 
-        return [embedding["embedding"] for embedding in response.data]
+            if not response.data:
+                raise EmbeddingEmptyResponseError()
+
+            outputs.embeddings = [embedding["embedding"] for embedding in response.data]
+            if response.usage:
+                outputs.completion_tokens = response.usage.completion_tokens
+                outputs.prompt_tokens = response.usage.prompt_tokens
+                outputs.total_tokens = response.usage.total_tokens
+
+        return outputs.embeddings
