@@ -29,6 +29,27 @@ def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
         json.dump(data, file, indent=4)
 
 
+def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path:
+    """
+    Log the evaluation results locally.
+
+    Args:
+        results: The evaluation results.
+        output_dir: The output directory.
+
+    Returns:
+        The output directory.
+    """
+    output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
+    metrics_file = output_dir / "metrics.json"
+    results_file = output_dir / "results.json"
+
+    _save(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
+    _save(results_file, results=results["results"])
+
+    return output_dir
+
+
 def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Path:
     """
     Log the evaluation results locally.
