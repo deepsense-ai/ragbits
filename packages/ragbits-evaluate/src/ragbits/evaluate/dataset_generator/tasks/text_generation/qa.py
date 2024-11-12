@@ -14,7 +14,7 @@ class QueryGenTask(BaseDistilabelTask):
     def __init__(self, llm: LLM, prompt_class: str):
         super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class)
 
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:  # noqa: PLR6301
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str | list[str]]:  # noqa: PLR6301
         """
         Formats the generated question into a structured dictionary with the original "chunk" input.
 
@@ -25,7 +25,7 @@ class QueryGenTask(BaseDistilabelTask):
         Returns:
             A dictionary containing "chunk" and "question".
         """
-        return {"chunk": input["chunk"], "question": output}
+        return {"chunk": input["chunk"], "question": output} #type: ignore
 
 
 class PassagesGenTask(BaseDistilabelTask):
@@ -43,7 +43,7 @@ class PassagesGenTask(BaseDistilabelTask):
             prompt_class=prompt_class,
         )
 
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, list[str]]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str | list[str]]:
         """
         Formats the model's output into a structured dictionary with "question", "chunk", and "passages".
         If `get_matches` is `True`, attempts to find the closest matches for each passage within the
@@ -57,21 +57,21 @@ class PassagesGenTask(BaseDistilabelTask):
         Returns:
             A dictionary with "chunk", "question", and a list of "passages".
         """
-        passages = get_passages_list(output) or []
+        passages: list[str] = get_passages_list(output) or []
 
         if self.get_matches:
-            matched_passages = []
+            matched_passages: list[str] = []
 
             for passage in passages:
-                if passage in input["chunk"]:
+                if passage in input["chunk"]: #type: ignore
                     matched_passages.append(passage)
                 else:
-                    matched_passage = get_closest_substring(input["chunk"], passage)
+                    matched_passage = get_closest_substring(input["chunk"], passage) #type: ignore
                     matched_passages.append(matched_passage)
 
-            return {"chunk": input["chunk"], "question": input["question"], "passages": matched_passages}
+            return {"chunk": input["chunk"], "question": input["question"], "passages": matched_passages} #type: ignore
 
-        return {"chunk": input["chunk"], "question": input["question"], "passages": passages}
+        return {"chunk": input["chunk"], "question": input["question"], "passages": passages} #type: ignore
 
 
 class AnswerGenTask(BaseDistilabelTask):
@@ -83,7 +83,7 @@ class AnswerGenTask(BaseDistilabelTask):
     def __init__(self, llm: LLM, prompt_class: str):
         super().__init__(llm=llm, inputs=["chunk", "question"], outputs=["basic_answer"], prompt_class=prompt_class)
 
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:  # noqa: PLR6301
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str | list[str]]:  # noqa: PLR6301
         """
         Formats the model's output into a structured dictionary with the "basic_answer" key.
 

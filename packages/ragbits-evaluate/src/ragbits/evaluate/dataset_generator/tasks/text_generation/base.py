@@ -50,11 +50,11 @@ class BaseDistilabelTask(TextGeneration, ABC):
         Returns:
             The formatted chat object containing the input for query generation.
         """
-        chat = self._prompt_class(self._prompt_class.input_type(**input)).chat
+        chat = self._prompt_class(self._prompt_class.input_type(**input)).chat #type: ignore
         return chat
 
     @abstractmethod
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str | list[str]]:
         """
         Formats the generated question into a structured dictionary with the original "chunk" input.
 

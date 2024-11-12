@@ -1,4 +1,5 @@
 import sys
+from typing import Any
 
 from datasets import Dataset
 from distilabel.pipeline import Pipeline
@@ -43,9 +44,9 @@ class DatasetGenerationPipeline:
             llm_config = task_config.llm
             llm_kwargs = OmegaConf.to_container(llm_config.kwargs)
             llm = get_cls_from_config(llm_config.provider_type, module)(**llm_kwargs)
-            task_kwargs = {"llm": llm}
+            task_kwargs: dict[Any, Any] = {"llm": llm}
             if getattr(task_config, "kwargs", None):
-                task_kwargs.update(OmegaConf.to_container(task_config.kwargs))
+                task_kwargs.update(OmegaConf.to_container(task_config.kwargs)) #type: ignore
             task = get_cls_from_config(task_config.type, module)(**task_kwargs)
             tasks.append(task)
             if getattr(task_config, "filters", None):
