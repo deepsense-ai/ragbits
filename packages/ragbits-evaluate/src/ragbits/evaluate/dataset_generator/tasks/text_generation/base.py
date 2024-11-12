@@ -5,7 +5,7 @@ from typing import Any
 from distilabel.llms.base import LLM
 from distilabel.steps.tasks import TextGeneration
 
-from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt import ChatFormat, Prompt
 from ragbits.core.utils.config_handling import get_cls_from_config
 
 module = sys.modules[__name__]
@@ -14,11 +14,13 @@ module = sys.modules[__name__]
 class BaseDistilabelTask(TextGeneration, ABC):
     """Base class for distilabel TextGeneration tasks"""
 
-    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: str):
+    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: str | type[Prompt]):
         super().__init__(llm=llm)
         self._inputs = inputs
         self._outputs = outputs
-        self._prompt_class = get_cls_from_config(prompt_class, module)
+        self._prompt_class = (
+            get_cls_from_config(prompt_class, module) if isinstance(prompt_class, str) else prompt_class
+        )
 
     @property
     def inputs(self) -> list[str]:
