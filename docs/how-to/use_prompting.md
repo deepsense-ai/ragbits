@@ -11,46 +11,186 @@ To define a static prompt without an input model, you can create a subclass of t
 ```python
 from ragbits.core.prompt import Prompt
 
-class StaticPrompt(Prompt):
-    user_prompt = "Hello, how are you?"
+
+class JokePrompt(Prompt):
+    """
+    A prompt that generates jokes.
+    """
+
+    system_prompt = """
+    You are a joke generator. The jokes you generate should be funny and not offensive.
+    """
+
+    user_prompt = """Tell me a joke."""
+```
+Passing the prompt to a model is as simple as:
+```python
+from ragbits.core.llms.litellm import LiteLLM
+
+
+llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+static_prompt = JokePrompt()
+print(await llm.generate(static_prompt))
 ```
 
 ### Extending the Prompt with an Input Model
-To extend the prompt with an input model, define a Pydantic model for the input data and pass it as a generic type to the `Prompt` class.
+To extend the prompt with an input model, define a Pydantic model for the input data and pass it as a generic type to the `Prompt` class. The output type defaults to string.
+
+Let's use a RAG example as a case study:
 
 ```python
 from pydantic import BaseModel
+
 from ragbits.core.prompt import Prompt
 
-class GreetingInput(BaseModel):
-    name: str
 
-class GreetingPrompt(Prompt[GreetingInput, str]):
-    user_prompt = "Hello, {{ name }}!"
-```
+class QueryWithContext(BaseModel):
+    """
+    Input format for the QueryWithContext.
+    """
 
-### How to Configure Prompt's Output Data Type
-#### Configuring output as a simple type
-You can configure the ouput as a simple type, such as `bool`
-```python
-class BooleanPrompt(Prompt[GreetingInput, bool]):
-    user_prompt = "Is your name {{ name }}?"
+    query: str
+    context: list[str]
+
+
+class RAGPrompt(Prompt[QueryWithContext]):
+    """
+    A simple prompt for RAG system.
+    """
+
+    system_prompt = """
+    You are a helpful assistant. Answer the QUESTION that will be provided using CONTEXT.
+    If in the given CONTEXT there is not enough information refuse to answer.
+    """
+
+    user_prompt = """
+    QUESTION:
+    {{ query }}
+
+    CONTEXT:
+    {% for item in context %}
+        {{ item }}
+    {% endfor %}
+    """
+
+...
+
+prompt = RAGPrompt(QueryWithContext(query=message, context=[i.get_text_representation() for i in results]))
+response = await self._llm.generate(prompt)
+print(response)
+...
 ```
+### How to configure `Prompt`'s output data type
 #### Defining output as a Pydantic Model
 You can define the output of a prompt as a Pydantic model by specifying the output type as a generic parameter.
 ```python
 from pydantic import BaseModel
 
-class GreetingOutput(BaseModel):
-    message: str
+from ragbits.core.prompt import Prompt
 
-class GreetingPrompt(Prompt[GreetingInput, GreetingOutput]):
-    user_prompt = "Hello, {{ name }}!"
+
+class QueryWithContext(BaseModel):
+    """
+    Input format for the QueryWithContext.
+    """
+
+    query: str
+    context: list[str]
+
+
+class ChatAnswer(BaseModel):
+    """
+    Output format for the ChatAnswer.
+    """
+
+    answer: str
+
+
+class RAGPrompt(Prompt[QueryWithContext, ChatAnswer]):
+    """
+    A simple prompt for RAG system.
+    """
+
+    system_prompt = """
+    You are a helpful assistant. Answer the QUESTION that will be provided using CONTEXT.
+    If in the given CONTEXT there is not enough information refuse to answer.
+    """
+
+    user_prompt = """
+    QUESTION:
+    {{ query }}
+
+    CONTEXT:
+    {% for item in context %}
+        {{ item }}
+    {% endfor %}
+    """
+
+...
+
+prompt = RAGPrompt(QueryWithContext(query=message, context=[i.get_text_representation() for i in results]))
+response = await self._llm.generate(prompt)
+print(response.answer)
+...
 ```
+#### Configuring output as a simple type
+You can configure the ouput as a simple type, such as `bool`
+```python
+from pydantic import BaseModel
 
-### How to Create a Custom Output Parser for a Prompt
+from ragbits.core.prompt import Prompt
+
+
+class RoleInput(BaseModel):
+    role: str
+
+
+class BooleanPrompt(Prompt[RoleInput, bool]):
+    user_prompt = "Are you {{ role }}? Answer 'yes' or 'no' only."
+
+
+boolean_prompt = BooleanPrompt(RoleInput(role = "an AI Assistant"))
+assert boolean_prompt.parse_response("true") is True
+```
+Please note that an actual response from LLM is going to raise `ResponseParsingError`. This is because the response is not natively parsable to boolean:
+```python
+llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+print(await llm.generate(boolean_prompt))
+```
+```
+ragbits.core.prompt.parsers.ResponseParsingError: Could not parse 'yes, i am an ai assistant designed to help with a wide range of inquiries and tasks. how can i assist you today?' as a boolean
+```
+Although it can be fixed with a proper prompt, please see how to create a custom output parser for a `Prompt` below.
+
+### How to create a custom output parser for a `Prompt`
 To create a custom output parser for a prompt, define a custom data type and provide a parser function.
 
+```python
+from pydantic import BaseModel
+
+from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.parsers import ResponseParsingError
+
+
+class RoleInput(BaseModel):
+    role: str
+
+
+class BooleanPrompt(Prompt[RoleInput, bool]):
+    user_prompt = "Are you {{ role }}? (yes/no)"
+
+    @staticmethod
+    def response_parser(response: str) -> bool:
+        print("resp",response)
+        if "yes" in response.lower():
+            return True
+        elif "no" in response.lower():
+            return False
+        else:
+            raise ResponseParsingError("Response is not a valid boolean value.")
+```
+
+Another example of custom parser for handling empty responses.
 ```python
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.parsers import ResponseParsingError
@@ -68,5 +208,3 @@ class CustomPrompt(Prompt[GreetingInput, CustomOutput]):
             raise ResponseParsingError("Response is empty")
         return CustomOutput(response)
 ```
-
-### How to Pass Images to a Prompt
