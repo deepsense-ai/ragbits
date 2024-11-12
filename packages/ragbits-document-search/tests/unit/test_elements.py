@@ -8,15 +8,13 @@ def test_resolving_element_type():
         element_type: str = "custom_element"
         foo: str
 
-        def get_key(self) -> str:
-            return self.foo + self.foo
-
         def get_text_representation(self) -> str:
             return self.foo + self.foo
 
     element = Element.from_vector_db_entry(
         db_entry=VectorStoreEntry(
-            key="key",
+            id="test id",
+            content="test content",
             vector=[0.1, 0.2],
             metadata={
                 "element_type": "custom_element",
@@ -31,6 +29,7 @@ def test_resolving_element_type():
 
     assert isinstance(element, MyElement)
     assert element.foo == "bar"
-    assert element.get_key() == "barbar"
+    assert element.get_text_for_embedding() == "barbar"
+    assert element.get_text_representation() == "barbar"
     assert element.document_meta.document_type == DocumentType.TXT
     assert element.document_meta.source.source_type == "local_file_source"

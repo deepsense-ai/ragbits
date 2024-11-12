@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from hashlib import sha256
 from typing import Literal
 
 import chromadb
@@ -84,9 +83,8 @@ class ChromaVectorStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        # TODO: Think about better id components for hashing and move hash computing to VectorStoreEntry
-        ids = [sha256(entry.key.encode("utf-8")).hexdigest() for entry in entries]
-        documents = [entry.key for entry in entries]
+        ids = [entry.id for entry in entries]
+        documents = [entry.content for entry in entries]
         embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
         metadatas = (
@@ -132,12 +130,13 @@ class ChromaVectorStore(VectorStore):
 
         return [
             VectorStoreEntry(
-                key=document,
+                id=id,
+                content=document,
                 vector=list(embeddings),
                 metadata=metadata,  # type: ignore
             )
-            for batch in zip(metadatas, embeddings, distances, documents, strict=False)
-            for metadata, embeddings, distance, document in zip(*batch, strict=False)
+            for batch in zip(ids, metadatas, embeddings, distances, documents, strict=False)
+            for id, metadata, embeddings, distance, document in zip(*batch, strict=False)
             if options.max_distance is None or distance <= options.max_distance
         ]
 
@@ -182,9 +181,10 @@ class ChromaVectorStore(VectorStore):
 
         return [
             VectorStoreEntry(
-                key=document,
+                id=id,
+                content=document,
                 vector=list(embedding),
                 metadata=metadata,  # type: ignore
             )
-            for metadata, embedding, document in zip(metadatas, embeddings, documents, strict=False)
+            for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=False)
         ]
