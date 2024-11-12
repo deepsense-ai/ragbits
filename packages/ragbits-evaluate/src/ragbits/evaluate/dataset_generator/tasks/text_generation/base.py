@@ -50,7 +50,7 @@ class BaseDistilabelTask(TextGeneration, ABC):
         Returns:
             The formatted chat object containing the input for query generation.
         """
-        chat = self._prompt_class(self._prompt_class.input_type(**input)).chat #type: ignore
+        chat = self._prompt_class(self._prompt_class.input_type(**input)).chat  # type: ignore
         return chat
 
     @abstractmethod

@@ -25,7 +25,7 @@ class QueryGenTask(BaseDistilabelTask):
         Returns:
             A dictionary containing "chunk" and "question".
         """
-        return {"chunk": input["chunk"], "question": output} #type: ignore
+        return {"chunk": input["chunk"], "question": output}  # type: ignore
 
 
 class PassagesGenTask(BaseDistilabelTask):
@@ -63,15 +63,15 @@ class PassagesGenTask(BaseDistilabelTask):
             matched_passages: list[str] = []
 
             for passage in passages:
-                if passage in input["chunk"]: #type: ignore
+                if passage in input["chunk"]:  # type: ignore
                     matched_passages.append(passage)
                 else:
-                    matched_passage = get_closest_substring(input["chunk"], passage) #type: ignore
+                    matched_passage = get_closest_substring(input["chunk"], passage)  # type: ignore
                     matched_passages.append(matched_passage)
 
-            return {"chunk": input["chunk"], "question": input["question"], "passages": matched_passages} #type: ignore
+            return {"chunk": input["chunk"], "question": input["question"], "passages": matched_passages}  # type: ignore
 
-        return {"chunk": input["chunk"], "question": input["question"], "passages": passages} #type: ignore
+        return {"chunk": input["chunk"], "question": input["question"], "passages": passages}  # type: ignore
 
 
 class AnswerGenTask(BaseDistilabelTask):
