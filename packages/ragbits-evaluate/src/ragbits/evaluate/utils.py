@@ -34,7 +34,7 @@ def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Pat
     Log the evaluation results locally.
 
     Args:
-        results: The evaluation results.
+        dataset: Huggingface dataet to be logged.
         output_dir: The output directory.
 
     Returns:

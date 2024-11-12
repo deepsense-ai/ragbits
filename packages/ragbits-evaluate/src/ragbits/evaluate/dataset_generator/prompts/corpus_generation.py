@@ -1,12 +1,19 @@
 from pydantic import BaseModel
+
 from ragbits.core.prompt import Prompt
 
 
 class BasicCorpusGenerationPromptInput(BaseModel):
+    """A definition of input for corpus generation task"""
+
     query: str
 
 
 class BasicCorpusGenerationPrompt(Prompt[BasicCorpusGenerationPromptInput]):
-    system_prompt: str = "You are a provider of random factoids on topic requested by a user. Use very few tokens and sentence equivalents"
-    user_prompt: str = "Provide factoids about {{ query }}"
+    """A basic prompt for corpus generation"""
 
+    system_prompt: str = (
+        "You are a provider of random factoids on topic requested by a user.",
+        "Do not write a long essays, but short random facts about a given topic" "Use as few tokens as possible",
+    )
+    user_prompt: str = "Provide factoids about {{ query }}"

@@ -1,23 +1,41 @@
+import sys
 from abc import ABC, abstractmethod
 from typing import Any
-from distilabel.steps.tasks import TextGeneration
+
 from distilabel.llms.base import LLM
-from ragbits.core.prompt import Prompt, ChatFormat
+from distilabel.steps.tasks import TextGeneration
+
+from ragbits.core.prompt import ChatFormat
+from ragbits.core.utils.config_handling import get_cls_from_config
+
+module = sys.modules[__name__]
 
 
 class BaseDistilabelTask(TextGeneration, ABC):
-    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: type[Prompt], **kwargs):
+    """Base class for distilabel TextGeneration tasks"""
+
+    def __init__(self, llm: LLM, inputs: list[str], outputs: list[str], prompt_class: str):
         super().__init__(llm=llm)
         self._inputs = inputs
         self._outputs = outputs
-        self._prompt_class = prompt_class
+        self._prompt_class = get_cls_from_config(prompt_class, module)
 
     @property
-    def inputs(self):
+    def inputs(self) -> list[str]:
+        """
+        Property describing input fields for a task
+        Returns:
+            list of input fields for a task
+        """
         return self._inputs
 
     @property
     def outputs(self) -> list[str]:
+        """
+        Property describing output fields of the task
+        Returns:
+            list of outputs for a task
+        """
         return self._outputs
 
     def format_input(self, input: dict[str, Any]) -> ChatFormat:

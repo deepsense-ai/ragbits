@@ -1,8 +1,8 @@
 from typing import Any
-from distilabel.steps import StepInput
+
+from distilabel.steps import StepInput, StepOutput
 
 from .base import BaseFilter
-
 
 DONT_KNOW_PHRASES: list[str] = [
     "I don't know",
@@ -12,7 +12,16 @@ DONT_KNOW_PHRASES: list[str] = [
 
 
 class DontKnowFilter(BaseFilter):
+    """A class for basic rule-based filtering of don't know anwers"""
+
     def process(self, *inputs: StepInput) -> "StepOutput":
+        """
+        Runs the processing step
+        Args:
+            inputs - inputs to the step
+        Returns:
+            filtered outputs
+        """
         result = [
             {input_type: inp[input_type] for input_type in inp} for inp in inputs[0] if not self._is_dont_know(inp)
         ]

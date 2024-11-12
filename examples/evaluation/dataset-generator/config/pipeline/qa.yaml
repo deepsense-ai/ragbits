@@ -3,18 +3,31 @@ tasks:
   - type: ragbits.evaluate.dataset_generator.tasks.corpus_generation:CorpusGenerationStep
     llm:
       provider_type: ragbits.core.llms.litellm:LiteLLM
-      name: gpt-4o
-    num_per_query: 5
+      kwargs:
+        model_name: gpt-4o
+    kwargs:
+      num_per_query: 5
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.corpus_generation:BasicCorpusGenerationPrompt
   - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:QueryGenTask
     llm:
       provider_type: distilabel.llms:OpenAILLM
-      name: gpt-4o
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:QueryGenPrompt
   - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:AnswerGenTask
     llm:
       provider_type: distilabel.llms:OpenAILLM
-      name: gpt-4o
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:BasicAnswerGenPrompt
   - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:PassagesGenTask
     llm:
       provider_type: distilabel.llms:OpenAILLM
-      name: gpt-4o
-    filter: ragbits.evaluate.dataset_generator.tasks.filter.dont_know:DontKnowFilter
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:PassagesGenPrompt
+    filters:
+      - ragbits.evaluate.dataset_generator.tasks.filter.dont_know:DontKnowFilter

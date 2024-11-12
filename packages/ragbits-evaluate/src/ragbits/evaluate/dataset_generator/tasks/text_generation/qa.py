@@ -1,11 +1,8 @@
 from typing import Any
+
 from distilabel.llms.base import LLM
 
-from ragbits.core.prompt import Prompt
-from ...prompts.qa import BasicAnswerGenPrompt, PassagesGenPrompt, QueryGenPrompt
 from ...utils import get_closest_substring, get_passages_list
-
-
 from .base import BaseDistilabelTask
 
 
@@ -14,10 +11,10 @@ class QueryGenTask(BaseDistilabelTask):
     A task for generating a question based on a provided text chunk.
     """
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = QueryGenPrompt, **kwargs):
-        super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class, **kwargs)
+    def __init__(self, llm: LLM, prompt_class: str):
+        super().__init__(llm=llm, inputs=["chunk"], outputs=["question", "chunk"], prompt_class=prompt_class)
 
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:  # noqa: PLR6301
         """
         Formats the generated question into a structured dictionary with the original "chunk" input.
 
@@ -38,7 +35,7 @@ class PassagesGenTask(BaseDistilabelTask):
 
     get_matches: bool = False
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = PassagesGenPrompt, **kwargs):
+    def __init__(self, llm: LLM, prompt_class: str):
         super().__init__(
             llm=llm,
             inputs=["chunk", "question", "basic_answer"],
@@ -83,10 +80,10 @@ class AnswerGenTask(BaseDistilabelTask):
     the `TextGeneration` task from the `distilabel` package.
     """
 
-    def __init__(self, llm: LLM, prompt_class: type[Prompt] = BasicAnswerGenPrompt, **kwargs):
+    def __init__(self, llm: LLM, prompt_class: str):
         super().__init__(llm=llm, inputs=["chunk", "question"], outputs=["basic_answer"], prompt_class=prompt_class)
 
-    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:
+    def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str]:  # noqa: PLR6301
         """
         Formats the model's output into a structured dictionary with the "basic_answer" key.
 
