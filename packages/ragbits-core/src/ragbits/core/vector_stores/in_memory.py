@@ -25,7 +25,7 @@ class InMemoryVectorStore(VectorStore):
             metadata_store: The metadata store to use.
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
-        self._storage: list[VectorStoreEntry] = []
+        self._storage: dict[str, VectorStoreEntry] = {}
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -35,7 +35,8 @@ class InMemoryVectorStore(VectorStore):
         Args:
             entries: The entries to store.
         """
-        self._storage.extend(entries)
+        for entry in entries:
+            self._storage[entry.id] = entry
 
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
@@ -51,7 +52,10 @@ class InMemoryVectorStore(VectorStore):
         """
         options = self._default_options if options is None else options
         entries = sorted(
-            ((entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector)))) for entry in self._storage),
+            (
+                (entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector))))
+                for entry in self._storage.values()
+            ),
             key=lambda x: x[1],
         )
         return [
@@ -76,7 +80,7 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             The entries.
         """
-        entries = iter(self._storage)
+        entries = iter(self._storage.values())
 
         if where:
             entries = (

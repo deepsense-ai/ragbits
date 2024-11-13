@@ -2,9 +2,33 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
+### Added
+
+- ragbits-guardrails v0.3.0:
+  - Initial release of the package (#169).
+  - First guardrail with OpenAI Moderation.
+
 ### Changed
 
-- Introduce ruff as linter and code formatter (#87).
+- ragbits-cli updated to version v0.3.0
+- ragbits-document-search updated to version v0.3.0
+  - Add location metadata to documents ingested into DocumentSearch (#122).
+  - Add LiteLLM Reranker (#109).
+  - ragbits-core updated to version v0.3.0
+  - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
+  - refactor: change the type in from_source method to Source (#156).
+  - refactor: unified API for text representations of Element models (#171).
+- ragbits-evaluate updated to version v0.3.0
+- ragbits-core updated to version v0.3.0
+  - Observability toolset, with initial support to export traces to OpenTelemetry (#168)
+  - CLI commands to render / exec prompts (#146)
+  - Support of images in Prompt abstractions (#149)
+  - Support for different MetadataStores in VectorStore (#144)
+  - Now LLMs can be configured separately for vision, text and structured. (#153)
+  - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
+  - refactor: Refactor vector store public API. (#151)
 
 ## 0.2.0 (2024-10-23)
 

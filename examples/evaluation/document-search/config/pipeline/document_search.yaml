@@ -1,0 +1,7 @@
+defaults:
+  - embedder: litellm
+  - providers: unstructured
+  - vector_store: chroma
+  - rephraser: noop
+  - reranker: noop
+  - _self_

@@ -3,9 +3,10 @@ from abc import ABC
 from typing import Any
 
 from continuous_eval.metrics.retrieval import PrecisionRecallF1, RankedRetrievalMetrics
-from omegaconf import DictConfig
+from continuous_eval.metrics.retrieval.matching_strategy import RougeChunkMatch
+from omegaconf import DictConfig, OmegaConf
 
-from ragbits.evaluate.metrics.base import Metric, MetricSet
+from ragbits.evaluate.metrics.base import Metric
 from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
 
 
@@ -16,6 +17,8 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
     """
 
     metric_cls: type[PrecisionRecallF1 | RankedRetrievalMetrics]
+    default_matching_strategy: type[RougeChunkMatch] = RougeChunkMatch
+    default_matching_options: DictConfig = OmegaConf.create({"threshold": 0.5})
 
     def __init__(self, config: DictConfig | None = None) -> None:
         """
@@ -25,12 +28,17 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
             config: The metric configuration.
         """
         super().__init__(config)
+        if not self.config:
+            matching_strategy = self.default_matching_strategy
+            options = self.default_matching_options
 
-        matching_strategy = getattr(
-            importlib.import_module("continuous_eval.metrics.retrieval.matching_strategy"),
-            self.config.matching_strategy,
-        )
-        self.metric = self.metric_cls(matching_strategy(**self.config.options))
+        else:
+            matching_strategy = getattr(
+                importlib.import_module("continuous_eval.metrics.retrieval.matching_strategy"),
+                self.config.matching_strategy,
+            )
+            options = self.config.options
+        self.metric = self.metric_cls(matching_strategy(**options))
 
     def compute(self, results: list[DocumentSearchResult]) -> dict[str, Any]:
         """
@@ -63,6 +71,3 @@ class DocumentSearchRankedRetrievalMetrics(DocumentSearchMetric):
     """
 
     metric_cls = RankedRetrievalMetrics
-
-
-document_search_metrics = MetricSet(DocumentSearchPrecisionRecallF1, DocumentSearchRankedRetrievalMetrics)

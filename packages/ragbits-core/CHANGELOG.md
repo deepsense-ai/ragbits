@@ -2,9 +2,20 @@
 
 ## Unreleased
 
+## 0.3.0 (2024-11-06)
+
+### Added
+
+- Observability toolset, with initial support to export traces to OpenTelemetry (#168)
+- CLI commands to render / exec prompts (#146)
+- Support of images in Prompt abstractions (#149)
+- Support for different MetadataStores in VectorStore (#144)
+- Now LLMs can be configured separately for vision, text and structured. (#153)
+
 ### Changed
 
 - refactor: Add dynamic loading for modules that depend on optional dependencies (#148).
+- refactor: Refactor vector store public API. (#151)
 
 ## 0.2.0 (2024-10-23)
 

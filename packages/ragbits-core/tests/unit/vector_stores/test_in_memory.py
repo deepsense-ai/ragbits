@@ -20,15 +20,6 @@ class AnimalElement(Element):
     type: str
     age: int
 
-    def get_key(self) -> str:
-        """
-        Get the key of the element which will be used to generate the vector.
-
-        Returns:
-            The key.
-        """
-        return self.name
-
     def get_text_representation(self) -> str:
         """
         Get the text representation of the element.
