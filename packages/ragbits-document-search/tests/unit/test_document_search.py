@@ -11,6 +11,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta, D
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.processor_strategies.sequential import SequentialProcessing
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
@@ -19,6 +20,7 @@ CONFIG = {
     "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
+    "processing_strategy": {"type": "SequentialProcessing"},
 }
 
 
@@ -163,3 +165,40 @@ async def test_document_search_ingest_multiple_from_sources():
 
     assert len(results) == 2
     assert {result.content for result in results} == {"foo", "bar"}  # type: ignore
+
+
+async def test_document_search_with_batched():
+    documents = [
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Suzy Sheep"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Danny Dog"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Pedro Pony"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Emily Elephant"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Candy Cat"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's teacher is Madame Gazelle"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's doctor is Dr. Brown Bear"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Chloe Pig"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Alexander Pig"),
+    ]
+
+    embeddings_mock = AsyncMock()
+    embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
+
+    # processing_strategy = BatchedAsyncProcessing(batch_size=5)
+    processing_strategy = SequentialProcessing()
+    vectore_store = InMemoryVectorStore()
+
+    document_search = DocumentSearch(
+        embedder=embeddings_mock,
+        vector_store=vectore_store,
+        processing_strategy=processing_strategy,
+    )
+
+    await document_search.ingest(documents)
+
+    results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 100}))
+
+    assert len(await vectore_store.list()) == 12
+    assert len(results) == 12

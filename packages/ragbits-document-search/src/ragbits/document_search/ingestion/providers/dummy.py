@@ -13,7 +13,7 @@ class DummyProvider(BaseProvider):
     It should be used for testing purposes only.
     """
 
-    SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT}
+    SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT, DocumentType.MD}
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
         """
