@@ -41,6 +41,7 @@ class Element(BaseModel, ABC):
         """
         id_components = [
             self.document_meta.id,
+            self.element_type,
             self.get_text_for_embedding(),
             self.get_text_representation(),
             str(self.location),
