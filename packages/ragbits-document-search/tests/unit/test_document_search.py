@@ -11,7 +11,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta, D
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.sequential import SequentialProcessing
+from ragbits.document_search.ingestion.processor_strategies.batched import BatchedAsyncProcessing
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
@@ -186,8 +186,7 @@ async def test_document_search_with_batched():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
 
-    # processing_strategy = BatchedAsyncProcessing(batch_size=5)
-    processing_strategy = SequentialProcessing()
+    processing_strategy = BatchedAsyncProcessing(batch_size=5)
     vectore_store = InMemoryVectorStore()
 
     document_search = DocumentSearch(
