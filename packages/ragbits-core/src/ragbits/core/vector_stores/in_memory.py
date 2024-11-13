@@ -36,7 +36,7 @@ class InMemoryVectorStore(VectorStore):
             entries: The entries to store.
         """
         for entry in entries:
-            self._storage[entry.key] = entry
+            self._storage[entry.id] = entry
 
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
