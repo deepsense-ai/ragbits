@@ -1,5 +1,5 @@
 import json
-from typing import Literal
+from typing import Literal, Any, Dict, Union
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -15,6 +15,33 @@ class ChromaVectorStore(VectorStore):
     """
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
+
+    @staticmethod
+    def _flatten_dict(d: Dict[str, Any], parent_key: str = '', sep: str = '.') -> Dict[str, Union[str, int, float, bool]]:
+        """
+        Recursively flatten a nested dictionary, converting non-primitive types to strings.
+
+        Args:
+            d: The dictionary to flatten
+            parent_key: The parent key for nested keys
+            sep: The separator between nested keys
+
+        Returns:
+            A flattened dictionary with primitive types and stringified complex types
+        """
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+
+            if isinstance(v, dict):
+                items.extend(ChromaVectorStore._flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, (str, int, float, bool)):
+                items.append((new_key, v))
+            else:
+                # Convert other types to string
+                items.append((new_key, str(v)))
+
+        return dict(items)
 
     def __init__(
         self,
@@ -79,10 +106,13 @@ class ChromaVectorStore(VectorStore):
         embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
 
+        # Flatten metadata
+        flattened_metadatas = [self._flatten_dict(metadata) for metadata in metadatas]
+
         metadatas = (
-            [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
+            flattened_metadatas
             if self._metadata_store is None
-            else await self._metadata_store.store(ids, metadatas)  # type: ignore
+            else await self._metadata_store.store(ids, flattened_metadatas)  # type: ignore
         )
 
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
@@ -115,7 +145,7 @@ class ChromaVectorStore(VectorStore):
         distances = results.get("distances") or []
         documents = results.get("documents") or []
         metadatas = [
-            [json.loads(metadata["__metadata"]) for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
+            [metadata for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(*ids)
         ]
