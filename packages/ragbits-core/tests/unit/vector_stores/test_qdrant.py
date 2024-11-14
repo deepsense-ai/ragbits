@@ -18,7 +18,8 @@ def mock_qdrant_store() -> QdrantVectorStore:
 async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     data = [
         VectorStoreEntry(
-            key="test_key",
+            id="1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+            content="test_key",
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from typing import Literal
 
@@ -56,7 +54,7 @@ class ChromaVectorStore(VectorStore):
         )
 
     @classmethod
-    def from_config(cls, config: dict) -> ChromaVectorStore:
+    def from_config(cls, config: dict) -> "ChromaVectorStore":
         """
         Creates and returns an instance of the ChromaVectorStore class from the given configuration.
 
@@ -87,11 +85,13 @@ class ChromaVectorStore(VectorStore):
         documents = [entry.content for entry in entries]
         embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
+
         metadatas = (
             [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
             if self._metadata_store is None
             else await self._metadata_store.store(ids, metadatas)  # type: ignore
         )
+
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
 
     @traceable
@@ -116,14 +116,13 @@ class ChromaVectorStore(VectorStore):
             n_results=options.k,
             include=["metadatas", "embeddings", "distances", "documents"],
         )
+
         ids = results.get("ids") or []
-        metadatas = results.get("metadatas") or []
         embeddings = results.get("embeddings") or []
         distances = results.get("distances") or []
         documents = results.get("documents") or []
-
         metadatas = [
-            [json.loads(metadata["__metadata"]) for batch in metadatas for metadata in batch]  # type: ignore
+            [json.loads(metadata["__metadata"]) for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(*ids)
         ]
@@ -162,19 +161,18 @@ class ChromaVectorStore(VectorStore):
         # Cast `where` to chromadb's Where type
         where_chroma: chromadb.Where | None = dict(where) if where else None
 
-        get_results = self._collection.get(
+        results = self._collection.get(
             where=where_chroma,
             limit=limit,
             offset=offset,
             include=["metadatas", "embeddings", "documents"],
         )
-        ids = get_results.get("ids") or []
-        metadatas = get_results.get("metadatas") or []
-        embeddings = get_results.get("embeddings") or []
-        documents = get_results.get("documents") or []
 
+        ids = results.get("ids") or []
+        embeddings = results.get("embeddings") or []
+        documents = results.get("documents") or []
         metadatas = (
-            [json.loads(metadata["__metadata"]) for metadata in metadatas]  # type: ignore
+            [json.loads(metadata["__metadata"]) for metadata in results.get("metadatas", [])]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(ids)
         )

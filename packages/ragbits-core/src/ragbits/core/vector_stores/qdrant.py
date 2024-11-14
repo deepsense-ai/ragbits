@@ -1,7 +1,4 @@
-from __future__ import annotations
-
 import json
-import uuid
 
 import qdrant_client
 from qdrant_client import AsyncQdrantClient
@@ -43,7 +40,7 @@ class QdrantVectorStore(VectorStore):
         self._distance_method = distance_method
 
     @classmethod
-    def from_config(cls, config: dict) -> QdrantVectorStore:
+    def from_config(cls, config: dict) -> "QdrantVectorStore":
         """
         Creates and returns an instance of the QdrantVectorStore class from the given configuration.
 
@@ -79,11 +76,11 @@ class QdrantVectorStore(VectorStore):
                 vectors_config=VectorParams(size=len(entries[0].vector), distance=self._distance_method),
             )
 
-        ids = [str(uuid.uuid5(uuid.NAMESPACE_DNS, str(entry))) for entry in entries]
+        ids = [entry.id for entry in entries]
         embeddings = [entry.vector for entry in entries]
-        payloads = [{"__document": entry.key} for entry in entries]
-
+        payloads = [{"__document": entry.content} for entry in entries]
         metadatas = [entry.metadata for entry in entries]
+
         metadatas = (
             [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
             if self._metadata_store is None
@@ -138,11 +135,12 @@ class QdrantVectorStore(VectorStore):
 
         return [
             VectorStoreEntry(
-                key=document,
+                id=str(id),
+                content=document,
                 vector=vector,  # type: ignore
                 metadata=metadata,
             )
-            for document, vector, metadata in zip(documents, vectors, metadatas, strict=True)
+            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
         ]
 
     @traceable
@@ -187,9 +185,10 @@ class QdrantVectorStore(VectorStore):
 
         return [
             VectorStoreEntry(
-                key=document,
+                id=str(id),
+                content=document,
                 vector=vector,  # type: ignore
                 metadata=metadata,
             )
-            for document, vector, metadata in zip(documents, vectors, metadatas, strict=True)
+            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
         ]
