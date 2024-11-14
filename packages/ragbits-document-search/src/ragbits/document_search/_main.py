@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from typing import Any
 
@@ -8,7 +9,7 @@ from ragbits.core.embeddings import Embeddings, get_embeddings
 from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
@@ -169,6 +170,23 @@ class DocumentSearch:
         Args:
             elements: The list of Elements to insert.
         """
-        vectors = await self.embedder.embed_text([element.get_key() for element in elements])
+        vectors = await self.embedder.embed_text([element.get_text_for_embedding() for element in elements])
+
+        image_elements = [element for element in elements if isinstance(element, ImageElement)]
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
+
+        if image_elements and self.embedder.image_support():
+            image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
+            entries.extend(
+                [
+                    element.to_vector_db_entry(vector)
+                    for element, vector in zip(image_elements, image_vectors, strict=False)
+                ]
+            )
+        elif image_elements:
+            warnings.warn(
+                f"Image elements are not supported by the embedder {self.embedder}. "
+                f"Skipping {len(image_elements)} image elements."
+            )
+
         await self.vector_store.store(entries)

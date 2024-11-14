@@ -1,7 +1,8 @@
+import uuid
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
@@ -27,12 +28,33 @@ class Element(BaseModel, ABC):
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    def get_key(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def id(self) -> str:
         """
-        Get the key of the element which will be used to generate the vector.
+        Get the ID of the element. The id is primarly used as a key in the vector store.
+        The current representation is a UUID5 hash of various element metadata, including
+        its contents and location where it was sourced from.
 
         Returns:
-            The key.
+            The ID in the form of a UUID5 hash.
+        """
+        id_components = [
+            self.document_meta.id,
+            self.element_type,
+            self.get_text_for_embedding(),
+            self.get_text_representation(),
+            str(self.location),
+        ]
+
+        return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+
+    def get_text_for_embedding(self) -> str:
+        """
+        Get the text representation of the element for embedding.
+
+        Returns:
+            The text representation for embedding.
         """
         return self.get_text_representation()
 
@@ -82,8 +104,9 @@ class Element(BaseModel, ABC):
             The vector database entry
         """
         return VectorStoreEntry(
-            key=self.get_key(),
+            id=self.id,
             vector=vector,
+            content=self.get_text_for_embedding(),
             metadata=self.model_dump(),
         )
 

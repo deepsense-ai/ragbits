@@ -12,8 +12,9 @@ class VectorStoreEntry(BaseModel):
     An object representing a vector database entry.
     """
 
-    key: str
+    id: str
     vector: list[float]
+    content: str
     metadata: dict
 
 
