@@ -4,27 +4,26 @@ import json
 import uuid
 
 import qdrant_client
-from qdrant_client import AsyncQdrantClient, models
+from qdrant_client import AsyncQdrantClient
+from qdrant_client.models import Distance, Filter, VectorParams
 
+from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
-DOCUMENT_PAYLOAD_KEY = "__document"
-METADATA_PAYLOAD_KEY = "__metadata"
-
 
 class QdrantVectorStore(VectorStore):
     """
-    Vectorstore implementation using [Qdrant](https://qdrant.tech/).
+    Vector store implementation using [Qdrant](https://qdrant.tech).
     """
 
     def __init__(
         self,
         client: AsyncQdrantClient,
-        collection_name: str,
-        distance: models.Distance = models.Distance.COSINE,
+        index_name: str,
+        distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:
@@ -33,15 +32,15 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             client: An instance of the Qdrant client.
-            collection_name: The name of the Qdrant collection.
-            distance: The distance metric to use when creating the collection.
+            index_name: The name of the index.
+            distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
             metadata_store: The metadata store to use. If None, the metadata will be stored in Qdrant.
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._client = client
-        self._collection_name = collection_name
-        self._distance = distance
+        self._index_name = index_name
+        self._distance_method = distance_method
 
     @classmethod
     def from_config(cls, config: dict) -> QdrantVectorStore:
@@ -57,12 +56,13 @@ class QdrantVectorStore(VectorStore):
         client_cls = get_cls_from_config(config["client"]["type"], qdrant_client)
         return cls(
             client=client_cls(**config["client"].get("config", {})),
-            collection_name=config["collection_name"],
-            distance=config.get("distance", "Cosine"),
+            index_name=config["index_name"],
+            distance_method=config.get("distance_method", Distance.COSINE),
             default_options=VectorStoreOptions(**config.get("default_options", {})),
             metadata_store=get_metadata_store(config.get("metadata_store")),
         )
 
+    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
@@ -71,81 +71,84 @@ class QdrantVectorStore(VectorStore):
             entries: List of VectorStoreEntry objects to store
 
         Raises:
-            ValueError: If entries list is empty
-            QdrantException: If upload to collection fails
+            QdrantException: If upload to collection fails.
         """
-        if not entries:
-            raise ValueError("Empty list of entries are not allowed.")
-
-        if not await self._client.collection_exists(self._collection_name):
+        if not await self._client.collection_exists(self._index_name):
             await self._client.create_collection(
-                collection_name=self._collection_name,
-                vectors_config=models.VectorParams(size=len(entries[0].vector), distance=self._distance),
+                collection_name=self._index_name,
+                vectors_config=VectorParams(size=len(entries[0].vector), distance=self._distance_method),
             )
 
-        # Generate deterministic UUIDs for consistent addressing
         ids = [str(uuid.uuid5(uuid.NAMESPACE_DNS, str(entry))) for entry in entries]
+        embeddings = [entry.vector for entry in entries]
+        payloads = [{"__document": entry.key} for entry in entries]
 
-        documents, embeddings, metadatas = zip(
-            *[(entry.key, entry.vector, entry.metadata) for entry in entries], strict=True
+        metadatas = [entry.metadata for entry in entries]
+        metadatas = (
+            [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
+            if self._metadata_store is None
+            else await self._metadata_store.store(ids, metadatas)  # type: ignore
         )
-
-        if self._metadata_store is not None:
-            await self._metadata_store.store(ids, metadatas)
-            payloads = [{DOCUMENT_PAYLOAD_KEY: doc} for doc in documents]
-        else:
-            payloads = [
-                {DOCUMENT_PAYLOAD_KEY: doc, METADATA_PAYLOAD_KEY: json.dumps(meta, default=str, ensure_ascii=False)}
-                for doc, meta in zip(documents, metadatas, strict=True)
-            ]
+        if metadatas is not None:
+            payloads = [{**payload, **metadata} for (payload, metadata) in zip(payloads, metadatas, strict=False)]
 
         self._client.upload_collection(
-            collection_name=self._collection_name,
-            vectors=list(embeddings),
-            payload=list(payloads),
-            ids=list(ids),
+            collection_name=self._index_name,
+            vectors=embeddings,
+            payload=payloads,
+            ids=ids,
             wait=True,
         )
 
+    @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
         Retrieves entries from the Qdrant collection based on vector similarity.
 
         Args:
-            vector: Query vector for similarity search
-            options: Configuration options for the query (default: self._default_options)
+            vector: The vector to query.
+            options: The options for querying the vector store.
 
         Returns:
-            List[VectorStoreEntry]: Matched entries sorted by similarity
+            The retrieved entries.
 
         Raises:
-            ValueError: If vector dimensions don't match collection
             MetadataNotFoundError: If metadata cannot be retrieved
         """
-        if not vector:
-            raise ValueError("Query vector cannot be empty")
+        options = options or self._default_options
+        score_threshold = 1 - options.max_distance if options.max_distance else None
 
-        # Use default options if none provided
-        query_options = options or self._default_options
+        results = await self._client.query_points(
+            collection_name=self._index_name,
+            query=vector,
+            limit=options.k,
+            score_threshold=score_threshold,
+            with_payload=True,
+            with_vectors=True,
+        )
 
-        score_threshold = 1 - query_options.max_distance if query_options.max_distance else None
+        ids = [point.id for point in results.points]
+        vectors = [point.vector for point in results.points]
+        documents = [point.payload["__document"] for point in results.points]  # type: ignore
+        metadatas = (
+            [json.loads(point.payload["__metadata"]) for point in results.points]  # type: ignore
+            if self._metadata_store is None
+            else await self._metadata_store.get(ids)  # type: ignore
+        )
 
-        points = (
-            await self._client.query_points(
-                collection_name=self._collection_name,
-                query=vector,
-                limit=query_options.k,
-                score_threshold=score_threshold,
-                with_payload=True,
-                with_vectors=True,
+        return [
+            VectorStoreEntry(
+                key=document,
+                vector=vector,  # type: ignore
+                metadata=metadata,
             )
-        ).points
+            for document, vector, metadata in zip(documents, vectors, metadatas, strict=True)
+        ]
 
-        return await self._parse_points(points)
-
-    async def list(
+    @traceable
+    async def list(  # type: ignore
         self,
-        where: models.Filter | None = None,  # type: ignore
+        where: Filter | None = None,  # type: ignore
         limit: int | None = None,
         offset: int = 0,
     ) -> list[VectorStoreEntry]:
@@ -154,7 +157,7 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             where: Conditions for filtering results.
-            Reference: https://qdrant.tech/documentation/concepts/filtering/
+            Reference: https://qdrant.tech/documentation/concepts/filtering
             limit: The maximum number of entries to return.
             offset: The number of entries to skip.
 
@@ -164,34 +167,28 @@ class QdrantVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        points = (
-            await self._client.query_points(
-                collection_name=self._collection_name,
-                query_filter=where,
-                limit=limit or 10,
-                offset=offset,
-                with_payload=True,
-                with_vectors=True,
-            )
-        ).points
+        results = await self._client.query_points(
+            collection_name=self._index_name,
+            query_filter=where,
+            limit=limit or 10,
+            offset=offset,
+            with_payload=True,
+            with_vectors=True,
+        )
 
-        return await self._parse_points(points)
-
-    async def _parse_points(self, points: list[models.ScoredPoint]) -> list[VectorStoreEntry]:  # type: ignore
-        points_data = [(point.id, point.vector, point.payload) for point in points]  # type: ignore
-        ids, vectors, payloads = zip(*points_data, strict=True)
-
-        if self._metadata_store:
-            metadatas = await self._metadata_store.get(*ids)
-        else:
-            metadatas = [json.loads(payload.get(METADATA_PAYLOAD_KEY, "{}")) for payload in payloads]
-
-        documents = [payload.get(DOCUMENT_PAYLOAD_KEY, "") for payload in payloads]
+        ids = [point.id for point in results.points]
+        vectors = [point.vector for point in results.points]
+        documents = [point.payload["__document"] for point in results.points]  # type: ignore
+        metadatas = (
+            [json.loads(point.payload["__metadata"]) for point in results.points]  # type: ignore
+            if self._metadata_store is None
+            else await self._metadata_store.get(ids)  # type: ignore
+        )
 
         return [
             VectorStoreEntry(
                 key=document,
-                vector=vector,
+                vector=vector,  # type: ignore
                 metadata=metadata,
             )
             for document, vector, metadata in zip(documents, vectors, metadatas, strict=True)

@@ -17,14 +17,14 @@ from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, Vecto
 
 class ChromaVectorStore(VectorStore):
     """
-    Class that stores text embeddings using [Chroma](https://docs.trychroma.com/).
+    Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
 
     def __init__(
         self,
         client: ClientAPI,
         index_name: str,
-        distance_method: Literal["l2", "ip", "cosine"] = "l2",
+        distance_method: Literal["l2", "ip", "cosine"] = "cosine",
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:

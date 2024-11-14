@@ -9,7 +9,7 @@ The script performs the following steps:
 
     1. Create a list of documents.
     2. Initialize the `LiteLLMEmbeddings` class with the OpenAI `text-embedding-3-small` embedding model.
-    3. Initialize the `ChromaVectorStore` class with a `PersistentClient` instance and an index name.
+    3. Initialize the `ChromaVectorStore` class with a `EphemeralClient` instance and an index name.
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
     6. List all documents in the vector store.
@@ -33,7 +33,7 @@ To run the script, execute the following command:
 
 import asyncio
 
-from chromadb import PersistentClient
+from chromadb import EphemeralClient
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
@@ -72,7 +72,7 @@ async def main() -> None:
         model="text-embedding-3-small",
     )
     vector_store = ChromaVectorStore(
-        client=PersistentClient("./chroma"),
+        client=EphemeralClient(),
         index_name="jokes",
     )
     document_search = DocumentSearch(
@@ -91,7 +91,7 @@ async def main() -> None:
     query = "I'm boiling my water and I need a joke"
     vector_store_kwargs = {
         "k": 2,
-        "max_distance": None,
+        "max_distance": 0.6,
     }
     results = await document_search.search(
         query,
