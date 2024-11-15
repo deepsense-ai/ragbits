@@ -13,8 +13,8 @@ class VectorStoreEntry(BaseModel):
     """
 
     id: str
+    key: str
     vector: list[float]
-    content: str
     metadata: dict
 
 
@@ -47,6 +47,22 @@ class VectorStore(ABC):
         super().__init__()
         self._default_options = default_options or VectorStoreOptions()
         self._metadata_store = metadata_store
+
+    @classmethod
+    def from_config(cls, config: dict) -> "VectorStore":
+        """
+        Creates and returns an instance of the Reranker class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the Reranker instance.
+
+        Returns:
+            An initialized instance of the Reranker class.
+
+        Raises:
+            NotImplementedError: If the class cannot be created from the provided configuration.
+        """
+        raise NotImplementedError(f"Cannot create class {cls.__name__} from config.")
 
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:

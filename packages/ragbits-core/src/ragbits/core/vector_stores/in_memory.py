@@ -3,6 +3,7 @@ from itertools import islice
 import numpy as np
 
 from ragbits.core.audit import traceable
+from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
@@ -26,6 +27,22 @@ class InMemoryVectorStore(VectorStore):
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._storage: dict[str, VectorStoreEntry] = {}
+
+    @classmethod
+    def from_config(cls, config: dict) -> "InMemoryVectorStore":
+        """
+        Creates and returns an instance of the InMemoryVectorStore class from the given configuration.
+
+        Args:
+            config: A dictionary containing the configuration for initializing the InMemoryVectorStore instance.
+
+        Returns:
+            An initialized instance of the InMemoryVectorStore class.
+        """
+        return cls(
+            default_options=VectorStoreOptions(**config.get("default_options", {})),
+            metadata_store=get_metadata_store(config.get("metadata_store")),
+        )
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:

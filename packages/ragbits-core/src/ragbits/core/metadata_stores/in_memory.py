@@ -23,7 +23,7 @@ class InMemoryMetadataStore(MetadataStore):
             ids: list of unique ids of the entries
             metadatas: list of dicts with metadata.
         """
-        for _id, metadata in zip(ids, metadatas, strict=False):
+        for _id, metadata in zip(ids, metadatas, strict=True):
             self._storage[_id] = metadata
 
     @traceable

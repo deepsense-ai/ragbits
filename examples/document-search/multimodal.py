@@ -91,7 +91,7 @@ async def main() -> None:
     print("Results for 'Fluffy teady bear toy':")
     for result in results:
         document = await result.document_meta.fetch()
-        print(f"Type: {result.element_type}, Location: {document.local_path}, Text: {result.get_text_representation()}")
+        print(f"Type: {result.element_type}, Location: {document.local_path}, Text: {result.text_representation}")
 
 
 if __name__ == "__main__":
