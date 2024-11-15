@@ -2,7 +2,6 @@ import json
 from typing import Literal
 
 import chromadb
-from chromadb import Collection
 from chromadb.api import ClientAPI
 
 from ragbits.core.audit import traceable
@@ -39,16 +38,7 @@ class ChromaVectorStore(VectorStore):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        self._collection = self._get_chroma_collection()
-
-    def _get_chroma_collection(self) -> Collection:
-        """
-        Gets or creates a collection with the given name and metadata.
-
-        Returns:
-            The collection.
-        """
-        return self._client.get_or_create_collection(
+        self._collection = self._client.get_or_create_collection(
             name=self._index_name,
             metadata={"hnsw:space": self._distance_method},
         )
@@ -68,7 +58,7 @@ class ChromaVectorStore(VectorStore):
         return cls(
             client=client_cls(**config["client"].get("config", {})),
             index_name=config["index_name"],
-            distance_method=config.get("distance_method", "l2"),
+            distance_method=config.get("distance_method", "cosine"),
             default_options=VectorStoreOptions(**config.get("default_options", {})),
             metadata_store=get_metadata_store(config.get("metadata_store")),
         )
@@ -81,8 +71,11 @@ class ChromaVectorStore(VectorStore):
         Args:
             entries: The entries to store.
         """
+        if not entries:
+            return
+
         ids = [entry.id for entry in entries]
-        documents = [entry.content for entry in entries]
+        documents = [entry.key for entry in entries]
         embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
 
@@ -130,12 +123,12 @@ class ChromaVectorStore(VectorStore):
         return [
             VectorStoreEntry(
                 id=id,
-                content=document,
+                key=document,
                 vector=list(embeddings),
                 metadata=metadata,  # type: ignore
             )
-            for batch in zip(ids, metadatas, embeddings, distances, documents, strict=False)
-            for id, metadata, embeddings, distance, document in zip(*batch, strict=False)
+            for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
+            for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
             if options.max_distance is None or distance <= options.max_distance
         ]
 
@@ -180,9 +173,9 @@ class ChromaVectorStore(VectorStore):
         return [
             VectorStoreEntry(
                 id=id,
-                content=document,
+                key=document,
                 vector=list(embedding),
                 metadata=metadata,  # type: ignore
             )
-            for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=False)
+            for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]

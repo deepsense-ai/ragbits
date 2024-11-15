@@ -130,7 +130,7 @@ async def main() -> None:
 
     print()
     print(f"Documents similar to: {query}")
-    print([element.get_text_representation() for element in results])
+    print([element.text_representation for element in results])
 
 
 if __name__ == "__main__":

@@ -70,6 +70,9 @@ class QdrantVectorStore(VectorStore):
         Raises:
             QdrantException: If upload to collection fails.
         """
+        if not entries:
+            return
+
         if not await self._client.collection_exists(self._index_name):
             await self._client.create_collection(
                 collection_name=self._index_name,
@@ -78,16 +81,16 @@ class QdrantVectorStore(VectorStore):
 
         ids = [entry.id for entry in entries]
         embeddings = [entry.vector for entry in entries]
-        payloads = [{"__document": entry.content} for entry in entries]
+        payloads = [{"document": entry.key} for entry in entries]
         metadatas = [entry.metadata for entry in entries]
 
         metadatas = (
-            [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
+            [{"metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
             if self._metadata_store is None
             else await self._metadata_store.store(ids, metadatas)  # type: ignore
         )
         if metadatas is not None:
-            payloads = [{**payload, **metadata} for (payload, metadata) in zip(payloads, metadatas, strict=False)]
+            payloads = [{**payload, **metadata} for (payload, metadata) in zip(payloads, metadatas, strict=True)]
 
         self._client.upload_collection(
             collection_name=self._index_name,
@@ -126,9 +129,9 @@ class QdrantVectorStore(VectorStore):
 
         ids = [point.id for point in results.points]
         vectors = [point.vector for point in results.points]
-        documents = [point.payload["__document"] for point in results.points]  # type: ignore
+        documents = [point.payload["document"] for point in results.points]  # type: ignore
         metadatas = (
-            [json.loads(point.payload["__metadata"]) for point in results.points]  # type: ignore
+            [json.loads(point.payload["metadata"]) for point in results.points]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(ids)  # type: ignore
         )
@@ -136,7 +139,7 @@ class QdrantVectorStore(VectorStore):
         return [
             VectorStoreEntry(
                 id=str(id),
-                content=document,
+                key=document,
                 vector=vector,  # type: ignore
                 metadata=metadata,
             )
@@ -176,9 +179,9 @@ class QdrantVectorStore(VectorStore):
 
         ids = [point.id for point in results.points]
         vectors = [point.vector for point in results.points]
-        documents = [point.payload["__document"] for point in results.points]  # type: ignore
+        documents = [point.payload["document"] for point in results.points]  # type: ignore
         metadatas = (
-            [json.loads(point.payload["__metadata"]) for point in results.points]  # type: ignore
+            [json.loads(point.payload["metadata"]) for point in results.points]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(ids)  # type: ignore
         )
@@ -186,7 +189,7 @@ class QdrantVectorStore(VectorStore):
         return [
             VectorStoreEntry(
                 id=str(id),
-                content=document,
+                key=document,
                 vector=vector,  # type: ignore
                 metadata=metadata,
             )

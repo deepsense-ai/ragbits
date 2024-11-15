@@ -58,7 +58,7 @@ class LiteLLMReranker(Reranker):
             The reranked elements.
         """
         options = self._default_options if options is None else options
-        documents = [element.get_text_representation() for element in elements]
+        documents = [element.text_representation for element in elements]
 
         response = await litellm.arerank(
             model=self.model,

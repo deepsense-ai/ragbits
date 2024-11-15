@@ -170,7 +170,7 @@ class DocumentSearch:
         Args:
             elements: The list of Elements to insert.
         """
-        vectors = await self.embedder.embed_text([element.get_text_for_embedding() for element in elements])
+        vectors = await self.embedder.embed_text([element.key for element in elements])
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
         entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]

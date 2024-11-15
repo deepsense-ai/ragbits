@@ -42,24 +42,27 @@ class Element(BaseModel, ABC):
         id_components = [
             self.document_meta.id,
             self.element_type,
-            self.get_text_for_embedding(),
-            self.get_text_representation(),
+            self.key,
+            self.text_representation,
             str(self.location),
         ]
-
         return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
 
-    def get_text_for_embedding(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def key(self) -> str:
         """
-        Get the text representation of the element for embedding.
+        Get the representation of the element for embedding.
 
         Returns:
-            The text representation for embedding.
+            The representation for embedding.
         """
-        return self.get_text_representation()
+        return self.text_representation
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
     @abstractmethod
-    def get_text_representation(self) -> str:
+    def text_representation(self) -> str:
         """
         Get the text representation of the element.
 
@@ -68,12 +71,10 @@ class Element(BaseModel, ABC):
         """
 
     @classmethod
-    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:  # pylint: disable=unused-argument #noqa: ANN401
+    def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         element_type_default = cls.model_fields["element_type"].default
-
         if element_type_default is None:
             raise ValueError("Element type must be defined")
-
         Element._elements_registry[element_type_default] = cls
 
     @classmethod
@@ -87,11 +88,9 @@ class Element(BaseModel, ABC):
         Returns:
             The element.
         """
-        meta = db_entry.metadata
-        element_type = meta["element_type"]
+        element_type = db_entry.metadata["element_type"]
         element_cls = Element._elements_registry[element_type]
-
-        return element_cls(**meta)
+        return element_cls(**db_entry.metadata)
 
     def to_vector_db_entry(self, vector: list[float]) -> VectorStoreEntry:
         """
@@ -105,9 +104,9 @@ class Element(BaseModel, ABC):
         """
         return VectorStoreEntry(
             id=self.id,
+            key=self.key,
             vector=vector,
-            content=self.get_text_for_embedding(),
-            metadata=self.model_dump(),
+            metadata=self.model_dump(exclude={"id", "key"}),
         )
 
 
@@ -119,7 +118,9 @@ class TextElement(Element):
     element_type: str = "text"
     content: str
 
-    def get_text_representation(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def text_representation(self) -> str:
         """
         Get the text representation of the element.
 
@@ -139,7 +140,9 @@ class ImageElement(Element):
     ocr_extracted_text: str
     image_bytes: bytes
 
-    def get_text_representation(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def text_representation(self) -> str:
         """
         Get the text representation of the element.
 

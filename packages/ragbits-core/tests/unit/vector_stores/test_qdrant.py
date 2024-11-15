@@ -19,7 +19,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     data = [
         VectorStoreEntry(
             id="1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-            content="test_key",
+            key="test_key",
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",
@@ -42,8 +42,8 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
         vectors=[[0.1, 0.2, 0.3]],
         payload=[
             {
-                "__document": "test_key",
-                "__metadata": '{"content": "test content", '
+                "document": "test_key",
+                "metadata": '{"content": "test content", '
                 '"document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
             }
         ],
@@ -61,8 +61,8 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.12, 0.25, 0.29],
                 score=0.9,
                 payload={
-                    "__document": "test_key 1",
-                    "__metadata": '{"content": "test content 1",'
+                    "document": "test_key 1",
+                    "metadata": '{"content": "test content 1",'
                     '"document": {"title": "test title 1", '
                     '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
                 },
@@ -73,8 +73,8 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.13, 0.26, 0.30],
                 score=0.9,
                 payload={
-                    "__document": "test_key 2",
-                    "__metadata": '{"content": "test content 2", '
+                    "document": "test_key 2",
+                    "metadata": '{"content": "test content 2", '
                     '"document": {"title": "test title 2", '
                     '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
                 },
@@ -105,8 +105,8 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.12, 0.25, 0.29],
                 score=0.9,
                 payload={
-                    "__document": "test_key 1",
-                    "__metadata": '{"content": "test content 1",'
+                    "document": "test_key 1",
+                    "metadata": '{"content": "test content 1",'
                     '"document": {"title": "test title 1", '
                     '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
                 },
@@ -117,8 +117,8 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.13, 0.26, 0.30],
                 score=0.9,
                 payload={
-                    "__document": "test_key 2",
-                    "__metadata": '{"content": "test content 2", '
+                    "document": "test_key 2",
+                    "metadata": '{"content": "test content 2", '
                     '"document": {"title": "test title 2", '
                     '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
                 },

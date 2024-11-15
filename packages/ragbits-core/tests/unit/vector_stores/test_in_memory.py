@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from pydantic import computed_field
 
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -20,12 +21,14 @@ class AnimalElement(Element):
     type: str
     age: int
 
-    def get_text_representation(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def text_representation(self) -> str:
         """
         Get the text representation of the element.
 
         Returns:
-            The key.
+            The text representation.
         """
         return self.name
 
