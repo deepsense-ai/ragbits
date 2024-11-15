@@ -90,7 +90,7 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
     entries = await mock_qdrant_store.retrieve([0.12, 0.25, 0.29])
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document"]["title"] == result["title"]
         assert entry.vector == result["vector"]
@@ -134,7 +134,7 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
     entries = await mock_qdrant_store.list()
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document"]["title"] == result["title"]
         assert entry.vector == result["vector"]

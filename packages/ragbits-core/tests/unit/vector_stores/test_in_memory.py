@@ -69,7 +69,7 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
     entries = await store.retrieve(search_vector, options=VectorStoreOptions(k=k, max_distance=max_distance))
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["name"] == result
 
 

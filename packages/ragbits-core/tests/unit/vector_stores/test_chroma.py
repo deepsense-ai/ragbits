@@ -87,7 +87,7 @@ async def test_retrieve(
     entries = await mock_chromadb_store.retrieve(vector, options=VectorStoreOptions(max_distance=max_distance))
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document"]["title"] == result["title"]
         assert entry.vector == result["vector"]
