@@ -1,5 +1,6 @@
+from collections.abc import AsyncGenerator
+
 from pydantic import BaseModel
-from typing import AsyncGenerator
 
 from ragbits.core.llms.clients.litellm import LiteLLMOptions
 from ragbits.core.llms.litellm import LiteLLM

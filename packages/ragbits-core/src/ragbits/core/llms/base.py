@@ -2,9 +2,9 @@ import enum
 import types as tps
 import warnings as wrngs
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from functools import cached_property
-from typing import AsyncGenerator, Generic, cast, overload
-
+from typing import Generic, cast, overload
 
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 

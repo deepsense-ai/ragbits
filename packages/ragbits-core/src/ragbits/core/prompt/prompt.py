@@ -1,7 +1,7 @@
 import textwrap
 from abc import ABCMeta
-from collections.abc import Callable
-from typing import AsyncGenerator, Any, Generic, cast, get_args, get_origin, overload
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
@@ -236,7 +236,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Raises:
             ResponseParsingError: If the response cannot be parsed.
         """
-        return self.response_parser(response) # type: ignore
+        return self.response_parser(response)  # type: ignore
 
     @classmethod
     def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
