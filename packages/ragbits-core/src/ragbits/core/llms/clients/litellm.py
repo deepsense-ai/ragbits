@@ -1,5 +1,7 @@
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
+from litellm import CustomStreamWrapper
 from pydantic import BaseModel
 
 try:
@@ -81,7 +83,8 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+        stream: bool = False,
+    ) -> str | AsyncGenerator[str, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
@@ -91,6 +94,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
             Only used if the client has been initialized with `use_structured_output=True`.
+            stream: indicator whether to stream the output
 
         Returns:
             Response string from LLM.
@@ -125,6 +129,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
                     api_key=self.api_key,
                     api_version=self.api_version,
                     response_format=response_format,
+                    stream=stream,
                     **options.dict(),
                 )
             except litellm.openai.APIConnectionError as exc:
@@ -134,11 +139,22 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             except litellm.openai.APIResponseValidationError as exc:
                 raise LLMResponseError() from exc
 
-            if not response.choices:  # type: ignore
+            if (
+                not getattr(response, "choices", None)
+                and not stream
+                or stream
+                and not getattr(response, "completion_stream", None)
+            ):  # type: ignore
                 raise LLMEmptyResponseError()
 
-            outputs.response = response.choices[0].message.content  # type: ignore
-            if response.usage:  # type: ignore
+            async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
+                async for item in response:
+                    yield item.choices[0].delta.content or ""
+
+            outputs.response = (
+                response.choices[0].message.content if not stream else response_to_async_generator(response)
+            )  # type: ignore
+            if getattr(response, "usage", None):  # type: ignore
                 outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
                 outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
                 outputs.total_tokens = response.usage.total_tokens  # type: ignore

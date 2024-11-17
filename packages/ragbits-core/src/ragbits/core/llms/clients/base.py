@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, Generic, TypeVar
 
@@ -71,7 +72,8 @@ class LLMClient(Generic[LLMClientOptions], ABC):
         options: LLMClientOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+        stream: bool = False,
+    ) -> str | AsyncGenerator[str, None]:
         """
         Calls LLM inference API.
 
@@ -80,6 +82,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
+            stream: whether to stream the output
 
         Returns:
             Response string from LLM.

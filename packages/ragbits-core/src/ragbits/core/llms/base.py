@@ -1,4 +1,5 @@
 import enum
+import types as tps
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from functools import cached_property
@@ -80,12 +81,15 @@ class LLM(Generic[LLMClientOptions], ABC):
             Raw text response from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
-
+        stream_output = False
+        if hasattr(prompt, "output_type"):
+            stream_output = prompt.output_type == tps.AsyncGeneratorType
         response = await self.client.call(
             conversation=self._format_chat_for_llm(prompt),
             options=options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
+            stream=stream_output,
         )
 
         return response

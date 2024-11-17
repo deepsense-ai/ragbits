@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
 from pydantic import BaseModel
@@ -74,7 +75,8 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+        stream: bool = False,
+    ) -> str | AsyncGenerator[str, None]:
         """
         Makes a call to the local LLM with the provided prompt and options.
 
@@ -83,6 +85,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
+            stream: indicator whether to stream the output
 
         Returns:
             Response string from LLM.
