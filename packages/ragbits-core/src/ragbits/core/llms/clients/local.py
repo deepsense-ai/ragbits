@@ -17,7 +17,7 @@ except ImportError:
 from ragbits.core.prompt import ChatFormat
 
 from ..types import NOT_GIVEN, NotGiven
-from .base import LLMClient, LLMClientOptions, LLMOptions
+from .base import LLMClient, LLMOptions
 
 
 @dataclass
