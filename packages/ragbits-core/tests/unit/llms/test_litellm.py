@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import AsyncGenerator
 
 from ragbits.core.llms.clients.litellm import LiteLLMOptions
 from ragbits.core.llms.litellm import LiteLLM
@@ -56,7 +57,7 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         return [{"content": self.message, "role": "user"}]
 
     @staticmethod
-    def parse_response(response: str) -> int:
+    def parse_response(response: str | AsyncGenerator[str, None]) -> int:
         """
         Parser for the prompt.
 

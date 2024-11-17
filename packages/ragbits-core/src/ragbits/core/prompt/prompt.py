@@ -1,7 +1,7 @@
 import textwrap
 from abc import ABCMeta
 from collections.abc import Callable
-from typing import Any, Generic, cast, get_args, get_origin, overload
+from typing import AsyncGenerator, Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
@@ -223,7 +223,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         return issubclass(self.output_type, BaseModel)
 
-    def parse_response(self, response: str) -> OutputT:
+    def parse_response(self, response: str | AsyncGenerator[str, None]) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 
@@ -236,7 +236,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Raises:
             ResponseParsingError: If the response cannot be parsed.
         """
-        return self.response_parser(response)
+        return self.response_parser(response) # type: ignore
 
     @classmethod
     def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:

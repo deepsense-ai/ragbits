@@ -142,5 +142,5 @@ DEFAULT_PARSERS: dict[type, Callable[[str], Any]] = {
     str: str_parser,
     float: float_parser,
     bool: bool_parser,
-    types.AsyncGeneratorType: async_generator_parser,
+    types.AsyncGeneratorType: async_generator_parser, # type: ignore
 }

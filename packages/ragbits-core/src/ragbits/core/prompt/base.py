@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Generic
+from typing import AsyncGenerator, Any, Generic
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar
@@ -54,7 +54,7 @@ class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def parse_response(self, response: str) -> OutputT:
+    def parse_response(self, response: str | AsyncGenerator[str, None]) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 

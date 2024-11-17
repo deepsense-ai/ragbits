@@ -3,7 +3,8 @@ import types as tps
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from functools import cached_property
-from typing import Generic, cast, overload
+from typing import AsyncGenerator, Generic, cast, overload
+
 
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 
@@ -69,7 +70,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePrompt,
         *,
         options: LLMOptions | None = None,
-    ) -> str:
+    ) -> str | AsyncGenerator[str, None]:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
