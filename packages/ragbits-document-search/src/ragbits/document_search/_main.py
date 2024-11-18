@@ -12,6 +12,11 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.processor_strategies import (
+    ProcessingExecutionStrategy,
+    SequentialProcessing,
+    get_processing_strategy,
+)
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
@@ -48,6 +53,8 @@ class DocumentSearch:
     vector_store: VectorStore
     query_rephraser: QueryRephraser
     reranker: Reranker
+    document_processor_router: DocumentProcessorRouter
+    processing_strategy: ProcessingExecutionStrategy
 
     def __init__(
         self,
@@ -56,12 +63,14 @@ class DocumentSearch:
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
+        processing_strategy: ProcessingExecutionStrategy | None = None,
     ) -> None:
         self.embedder = embedder
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
+        self.processing_strategy = processing_strategy or SequentialProcessing()
 
     @classmethod
     def from_config(cls, config: dict) -> "DocumentSearch":
@@ -78,12 +87,13 @@ class DocumentSearch:
         query_rephraser = get_rephraser(config.get("rephraser"))
         reranker = get_reranker(config.get("reranker"))
         vector_store = get_vector_store(config["vector_store"])
+        processing_strategy = get_processing_strategy(config.get("processing_strategy"))
 
         providers_config_dict: dict = config.get("providers", {})
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(providers_config_dict)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router)
+        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
 
     @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
@@ -114,35 +124,6 @@ class DocumentSearch:
             options=RerankerOptions(**config.reranker_kwargs),
         )
 
-    async def _process_document(
-        self,
-        document: DocumentMeta | Document | Source,
-        document_processor: BaseProvider | None = None,
-    ) -> list[Element]:
-        """
-        Process a document and return the elements.
-
-        Args:
-            document: The document to process.
-            document_processor: The document processor to use. If not provided, the document processor will be
-                determined based on the document metadata.
-
-        Returns:
-            The elements.
-        """
-        if isinstance(document, Source):
-            document_meta = await DocumentMeta.from_source(document)
-        elif isinstance(document, DocumentMeta):
-            document_meta = document
-        else:
-            document_meta = document.metadata
-
-        if document_processor is None:
-            document_processor = self.document_processor_router.get_provider(document_meta)
-
-        document_processor = self.document_processor_router.get_provider(document_meta)
-        return await document_processor.process(document_meta)
-
     @traceable
     async def ingest(
         self,
@@ -157,10 +138,9 @@ class DocumentSearch:
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
-        elements = []
-        # TODO: Parallelize
-        for document in documents:
-            elements.extend(await self._process_document(document, document_processor))
+        elements = await self.processing_strategy.process_documents(
+            documents, self.document_processor_router, document_processor
+        )
         await self.insert_elements(elements)
 
     async def insert_elements(self, elements: list[Element]) -> None:
