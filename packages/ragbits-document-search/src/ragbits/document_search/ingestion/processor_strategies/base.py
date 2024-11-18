@@ -12,7 +12,11 @@ from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 class ProcessingExecutionStrategy(ABC):
     """
-    Reranks elements retrieved from vector store.
+    Base class for processing execution strategies that define how documents are processed to become elements.
+
+    Processing execution strategies are responsible for processing documents using the appropriate processor,
+    which means that they don't usually determine the business logic of the processing itself, but rather how
+    the processing is executed.
     """
 
     @classmethod
