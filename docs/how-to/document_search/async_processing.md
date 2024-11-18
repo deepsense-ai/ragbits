@@ -12,6 +12,11 @@ The default execution strategy in Ragbits is [`SequentialProcessing`][ragbits.do
 Unless you specify a different strategy, Ragbits will use the `SequentialProcessing` strategy by default when ingesting documents:
 
 ```python
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.document import DocumentMeta
+
 documents = [
     DocumentMeta.create_text_document_from_literal("Example document 1"),
     DocumentMeta.create_text_document_from_literal("Example document 2"),
@@ -37,6 +42,12 @@ If you need to process documents simultaneously, you can use the [`BatchedAsyncP
 To use the `BatchedAsyncProcessing` strategy, specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance:
 
 ```python
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.ingestion.processor_strategies import BatchedAsyncProcessing
+
 documents = [
     DocumentMeta.create_text_document_from_literal("Example document 1"),
     DocumentMeta.create_text_document_from_literal("Example document 2"),

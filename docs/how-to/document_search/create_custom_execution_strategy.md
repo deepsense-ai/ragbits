@@ -66,6 +66,12 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
 To use your custom execution strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance:
 
 ```python
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.document import DocumentMeta
+
+
 documents = [
     DocumentMeta.create_text_document_from_literal("Example document 1"),
     DocumentMeta.create_text_document_from_literal("Example document 2"),
