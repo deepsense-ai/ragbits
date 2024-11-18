@@ -1,4 +1,4 @@
-# How-To: Use Guardrails
+# How to use Guardrails
 
 Ragbits offers an expandable guardrails system. You can use one of the available guardrails or create your own to prevent toxic language, PII leaks etc.
 

@@ -7,7 +7,12 @@ copyright: Copyright &copy; 2024 deepsense.ai
 nav:
   - rabgbits: index.md
   - How-to Guides:
-      - integrations/promptfoo.md
+      - how-to/optimize.md
+      - how-to/use_guardrails.md
+      - how-to/integrations/promptfoo.md
+      - Document Search:
+          - how-to/document_search/async_processing.md
+          - how-to/document_search/create_custom_execution_strategy.md
   - API Reference:
       - Core:
           - api_reference/core/prompt.md
@@ -17,8 +22,9 @@ nav:
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
-          - api_reference/document_search/ingestion.md
-
+          - Ingestion:
+            - api_reference/document_search/processing.md
+            - api_reference/document_search/execution_strategies.md
 theme:
   name: material
   icon:
