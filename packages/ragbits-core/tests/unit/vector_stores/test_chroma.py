@@ -14,16 +14,11 @@ def mock_chromadb_store() -> ChromaVectorStore:
     )
 
 
-async def test_get_chroma_collection(mock_chromadb_store: ChromaVectorStore) -> None:
-    _ = mock_chromadb_store._get_chroma_collection()
-    assert mock_chromadb_store._client.get_or_create_collection.call_count == 2  # type: ignore
-
-
 async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
     data = [
         VectorStoreEntry(
             id="test_key",
-            content="test content",
+            key="test content",
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",
@@ -70,8 +65,7 @@ async def test_retrieve(
     mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
 ) -> None:
     vector = [0.1, 0.2, 0.3]
-    mock_collection = mock_chromadb_store._get_chroma_collection()
-    mock_collection.query.return_value = {  # type: ignore
+    mock_chromadb_store._collection.query.return_value = {  # type: ignore
         "metadatas": [
             [
                 {
@@ -93,17 +87,16 @@ async def test_retrieve(
     entries = await mock_chromadb_store.retrieve(vector, options=VectorStoreOptions(max_distance=max_distance))
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document"]["title"] == result["title"]
         assert entry.vector == result["vector"]
         assert entry.id == f"test_id_{results.index(result) + 1}"
-        assert entry.content == result["content"]
+        assert entry.key == result["content"]
 
 
 async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
-    mock_collection = mock_chromadb_store._get_chroma_collection()
-    mock_collection.get.return_value = {  # type: ignore
+    mock_chromadb_store._collection.get.return_value = {  # type: ignore
         "metadatas": [
             {
                 "__metadata": '{"content": "test content", "document": {"title": "test title", "source":'
@@ -125,10 +118,10 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert entries[0].metadata["content"] == "test content"
     assert entries[0].metadata["document"]["title"] == "test title"
     assert entries[0].vector == [0.12, 0.25, 0.29]
-    assert entries[0].content == "test content 1"
+    assert entries[0].key == "test content 1"
     assert entries[0].id == "test_id_1"
     assert entries[1].metadata["content"] == "test content 2"
     assert entries[1].metadata["document"]["title"] == "test title 2"
     assert entries[1].vector == [0.13, 0.26, 0.30]
-    assert entries[1].content == "test content2"
+    assert entries[1].key == "test content2"
     assert entries[1].id == "test_id_2"

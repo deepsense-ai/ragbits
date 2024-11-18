@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from pydantic import computed_field
 
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -20,12 +21,14 @@ class AnimalElement(Element):
     type: str
     age: int
 
-    def get_text_representation(self) -> str:
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def text_representation(self) -> str:
         """
         Get the text representation of the element.
 
         Returns:
-            The key.
+            The text representation.
         """
         return self.name
 
@@ -66,7 +69,7 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
     entries = await store.retrieve(search_vector, options=VectorStoreOptions(k=k, max_distance=max_distance))
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=False):
+    for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["name"] == result
 
 

@@ -59,6 +59,9 @@ promptfoo = [
 otel = [
     "opentelemetry-api~=1.27.0",
 ]
+qdrant = [
+    "qdrant-client~=1.12.1",
+]
 
 [tool.uv]
 dev-dependencies = [
