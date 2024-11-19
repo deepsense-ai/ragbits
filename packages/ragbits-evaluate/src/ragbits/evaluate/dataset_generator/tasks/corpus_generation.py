@@ -57,7 +57,7 @@ class CorpusGenerationStep(Step):
         result = []
         for topic in inputs[0]:
             for _ in range(self._num_per_query):
-                new_inp = deepcopy(inp)
+                new_inp = deepcopy(topic)
                 prompt_inp = self._prompt_class.input_type(**{self.inputs[0]: new_inp[self.inputs[0]]})  # type: ignore
                 new_inp[self.outputs[0]] = asyncio.get_event_loop().run_until_complete(
                     self._llm.generate(prompt=self._prompt_class(prompt_inp))
