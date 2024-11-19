@@ -1,6 +1,7 @@
 import enum
 import warnings as wrngs
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from functools import cached_property
 from typing import Generic, cast, overload
 
@@ -80,7 +81,6 @@ class LLM(Generic[LLMClientOptions], ABC):
             Raw text response from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
-
         response = await self.client.call(
             conversation=self._format_chat_for_llm(prompt),
             options=options,
@@ -129,6 +129,32 @@ class LLM(Generic[LLMClientOptions], ABC):
             return prompt.parse_response(response)
 
         return cast(OutputT, response)
+
+    async def generate_streaming(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMOptions | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Prepares and sends a prompt to the LLM and streams the results.
+
+        Args:
+            prompt: Formatted prompt template with conversation.
+            options: Options to use for the LLM client.
+
+        Returns:
+            Response stream from LLM.
+        """
+        options = (self.default_options | options) if options else self.default_options
+        response = await self.client.call_streaming(
+            conversation=self._format_chat_for_llm(prompt),
+            options=options,
+            json_mode=prompt.json_mode,
+            output_schema=prompt.output_schema(),
+        )
+        async for text_piece in response:
+            yield text_piece
 
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
         if prompt.list_images():

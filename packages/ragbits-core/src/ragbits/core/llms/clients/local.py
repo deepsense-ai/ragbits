@@ -1,10 +1,14 @@
+import asyncio
+import threading
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
 from pydantic import BaseModel
 
 try:
+    import accelerate  # noqa: F401
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
     HAS_LOCAL_LLM = True
 except ImportError:
@@ -99,3 +103,40 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         response = outputs[0][input_ids.shape[-1] :]
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         return decoded_response
+
+    async def call_streaming(
+        self,
+        conversation: ChatFormat,
+        options: LocalLLMOptions,
+        json_mode: bool = False,
+        output_schema: type[BaseModel] | dict | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Makes a call to the local LLM with the provided prompt and options in streaming manner.
+
+        Args:
+            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            options: Additional settings used by the LLM.
+            json_mode: Force the response to be in JSON format (not used).
+            output_schema: Output schema for requesting a specific response format (not used).
+
+        Returns:
+            Async generator of tokens
+        """
+        input_ids = self.tokenizer.apply_chat_template(
+            conversation, add_generation_prompt=True, return_tensors="pt"
+        ).to(self.model.device)
+        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
+        generation_kwargs = dict(streamer=streamer, **options.dict())
+        generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)
+
+        async def streamer_to_async_generator(
+            streamer: TextIteratorStreamer, generation_thread: threading.Thread
+        ) -> AsyncGenerator[str, None]:
+            generation_thread.start()
+            for text_piece in streamer:
+                yield text_piece
+                await asyncio.sleep(0.0)
+            generation_thread.join()
+
+        return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)

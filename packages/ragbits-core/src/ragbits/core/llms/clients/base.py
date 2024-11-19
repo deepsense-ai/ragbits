@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, Generic, TypeVar
 
@@ -83,4 +84,25 @@ class LLMClient(Generic[LLMClientOptions], ABC):
 
         Returns:
             Response string from LLM.
+        """
+
+    @abstractmethod
+    async def call_streaming(
+        self,
+        conversation: ChatFormat,
+        options: LLMClientOptions,
+        json_mode: bool = False,
+        output_schema: type[BaseModel] | dict | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Calls LLM inference API with output streaming.
+
+        Args:
+            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            options: Additional settings used by LLM.
+            json_mode: Force the response to be in JSON format.
+            output_schema: Schema for structured response (either Pydantic model or a JSON schema).
+
+        Returns:
+            Response stream from LLM.
         """
