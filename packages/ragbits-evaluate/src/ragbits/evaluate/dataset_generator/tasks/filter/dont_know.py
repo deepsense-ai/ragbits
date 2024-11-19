@@ -16,17 +16,17 @@ class DontKnowFilter(BaseFilter):
 
     def process(self, *inputs: StepInput) -> "StepOutput":
         """
-        Runs the processing step
+        Runs the basic rule-based filtering of the inputs
         Args:
-            inputs - inputs to the step
+            inputs - the outputs of some generation step
         Returns:
-            filtered outputs
+            outputs filtered to the ones that do not contain the pre-defined phrases
         """
         result = [
-            {input_type: inp[input_type] for input_type in inp} for inp in inputs[0] if not self._is_dont_know(inp)
+            {input_type: input_[input_type] for input_type in input_} for input_ in inputs[0] if not self._is_dont_know(input_)
         ]
         yield result
 
     @staticmethod
-    def _is_dont_know(inp: dict[str, Any]) -> bool:
-        return any(s.lower() in inp["basic_answer"].lower() for s in DONT_KNOW_PHRASES)
+    def _is_dont_know(input_: dict[str, Any]) -> bool:
+        return any(s.lower() in input_["basic_answer"].lower() for s in DONT_KNOW_PHRASES)
