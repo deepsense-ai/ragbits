@@ -1,4 +1,4 @@
-import ast
+import json
 import re
 import warnings
 from difflib import SequenceMatcher
@@ -35,7 +35,7 @@ def get_passages_list(raw_passages: str) -> list[str]:
         passages_content = match.group(1)
         try:
             # Use eval to convert the string to a list, assuming it's a valid list-like format
-            return ast.literal_eval("[" + passages_content + "]")
+            return json.loads("[" + passages_content + "]")
         except (SyntaxError, ValueError):
             warnings.warn("Unable to evaluate the passages content. Check the format.", category=UserWarning)
             return []
