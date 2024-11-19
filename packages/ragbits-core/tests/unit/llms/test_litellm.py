@@ -1,4 +1,3 @@
-
 from pydantic import BaseModel
 
 from ragbits.core.llms.clients.litellm import LiteLLMOptions
