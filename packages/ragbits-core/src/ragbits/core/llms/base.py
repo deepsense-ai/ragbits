@@ -137,14 +137,14 @@ class LLM(Generic[LLMClientOptions], ABC):
         options: LLMOptions | None = None,
     ) -> AsyncGenerator[str, None]:
         """
-        Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
+        Prepares and sends a prompt to the LLM and streams the results.
 
         Args:
             prompt: Formatted prompt template with conversation.
             options: Options to use for the LLM client.
 
         Returns:
-            Raw text response from LLM.
+            Stream response from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
         response = await self.client.call_streaming(
