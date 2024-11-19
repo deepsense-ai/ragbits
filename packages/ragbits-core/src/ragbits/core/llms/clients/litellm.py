@@ -1,11 +1,11 @@
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
-from litellm import CustomStreamWrapper
 from pydantic import BaseModel
 
 try:
     import litellm
+    from litellm.utils import CustomStreamWrapper, ModelResponse
 
     HAS_LITELLM = True
 except ImportError:
@@ -102,14 +102,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        supported_params = litellm.get_supported_openai_params(model=self.model_name)
-
-        response_format = None
-        if supported_params is not None and "response_format" in supported_params:
-            if output_schema is not None and self.use_structured_output:
-                response_format = output_schema
-            elif json_mode:
-                response_format = {"type": "json_object"}
+        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         with trace(
             messages=conversation,
@@ -119,22 +112,9 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             response_format=response_format,
             options=options.dict(),
         ) as outputs:
-            try:
-                response = await litellm.acompletion(
-                    messages=conversation,
-                    model=self.model_name,
-                    base_url=self.base_url,
-                    api_key=self.api_key,
-                    api_version=self.api_version,
-                    response_format=response_format,
-                    **options.dict(),
-                )
-            except litellm.openai.APIConnectionError as exc:
-                raise LLMConnectionError() from exc
-            except litellm.openai.APIStatusError as exc:
-                raise LLMStatusError(exc.message, exc.status_code) from exc
-            except litellm.openai.APIResponseValidationError as exc:
-                raise LLMResponseError() from exc
+            response = await self._get_litellm_response(
+                conversation=conversation, options=options, response_format=response_format
+            )
 
             if not response.choices:  # type: ignore
                 raise LLMEmptyResponseError()
@@ -172,15 +152,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        supported_params = litellm.get_supported_openai_params(model=self.model_name)
-
-        response_format = None
-        if supported_params is not None and "response_format" in supported_params:
-            if output_schema is not None and self.use_structured_output:
-                response_format = output_schema
-            elif json_mode:
-                response_format = {"type": "json_object"}
-
+        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         with trace(
             messages=conversation,
             model=self.model_name,
@@ -189,23 +161,9 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             response_format=response_format,
             options=options.dict(),
         ) as outputs:
-            try:
-                response = await litellm.acompletion(
-                    messages=conversation,
-                    model=self.model_name,
-                    base_url=self.base_url,
-                    api_key=self.api_key,
-                    api_version=self.api_version,
-                    response_format=response_format,
-                    stream=True,
-                    **options.dict(),
-                )
-            except litellm.openai.APIConnectionError as exc:
-                raise LLMConnectionError() from exc
-            except litellm.openai.APIStatusError as exc:
-                raise LLMStatusError(exc.message, exc.status_code) from exc
-            except litellm.openai.APIResponseValidationError as exc:
-                raise LLMResponseError() from exc
+            response = await self._get_litellm_response(
+                conversation=conversation, options=options, response_format=response_format, stream=True
+            )
 
             if not response.completion_stream:  # type: ignore
                 raise LLMEmptyResponseError()
@@ -216,3 +174,42 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
 
             outputs.response = response_to_async_generator(response)  # type: ignore
         return outputs.response  # type: ignore
+
+    async def _get_litellm_response(
+        self,
+        conversation: ChatFormat,
+        options: LiteLLMOptions,
+        response_format: type[BaseModel] | dict | None,
+        stream: bool = False,
+    ) -> ModelResponse | CustomStreamWrapper:
+        try:
+            response = await litellm.acompletion(
+                messages=conversation,
+                model=self.model_name,
+                base_url=self.base_url,
+                api_key=self.api_key,
+                api_version=self.api_version,
+                response_format=response_format,
+                stream=stream,
+                **options.dict(),
+            )
+        except litellm.openai.APIConnectionError as exc:
+            raise LLMConnectionError() from exc
+        except litellm.openai.APIStatusError as exc:
+            raise LLMStatusError(exc.message, exc.status_code) from exc
+        except litellm.openai.APIResponseValidationError as exc:
+            raise LLMResponseError() from exc
+        return response
+
+    def _get_response_format(
+        self, output_schema: type[BaseModel] | dict | None, json_mode: bool
+    ) -> type[BaseModel] | dict | None:
+        supported_params = litellm.get_supported_openai_params(model=self.model_name)
+
+        response_format = None
+        if supported_params is not None and "response_format" in supported_params:
+            if output_schema is not None and self.use_structured_output:
+                response_format = output_schema
+            elif json_mode:
+                response_format = {"type": "json_object"}
+        return response_format
