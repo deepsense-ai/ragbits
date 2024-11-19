@@ -1,6 +1,6 @@
 import textwrap
 from abc import ABCMeta
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import Callable
 from typing import Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
