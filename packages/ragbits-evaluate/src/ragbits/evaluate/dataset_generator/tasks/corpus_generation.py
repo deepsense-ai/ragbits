@@ -35,7 +35,7 @@ class CorpusGenerationStep(Step):
         Returns:
             list of input fields
         """
-        return ["query"]
+        return ["topic"]
 
     @property
     def outputs(self) -> list[str]:
@@ -54,13 +54,26 @@ class CorpusGenerationStep(Step):
         Returns:
             a generated corpus
         """
-        result = []
-        for topic in inputs[0]:
-            for _ in range(self._num_per_query):
-                new_inp = deepcopy(topic)
-                prompt_inp = self._prompt_class.input_type(**{self.inputs[0]: new_inp[self.inputs[0]]})  # type: ignore
-                new_inp[self.outputs[0]] = asyncio.get_event_loop().run_until_complete(
-                    self._llm.generate(prompt=self._prompt_class(prompt_inp))
-                )
-                result.append(new_inp)
+        result = asyncio.get_event_loop().run_until_complete(self._process_topics(topics=inputs[0]))
         yield result
+
+    async def _process_topics(self, topics: list[dict]) -> list[dict]:
+        """
+        Processes a list of topics concurrently, respecting the batch size limit.
+
+        Args:
+            topics (List[dict]): A list of topics to process.
+
+        Returns:
+            List[dict]: A list of processed topics.
+        """
+        tasks = [self._process_topic(topic) for _ in range(self._num_per_query) for topic in topics]
+        results = await asyncio.gather(*tasks)
+        return results
+
+    async def _process_topic(self, topic: dict) -> dict:
+        new_inp = deepcopy(topic)
+        prompt_inp = self._prompt_class.input_type(**{self.inputs[0]: new_inp[self.inputs[0]]})  # type: ignore
+        new_inp[self.outputs[0]] = await self._llm.generate(prompt=self._prompt_class(prompt_inp))
+        return new_inp
+

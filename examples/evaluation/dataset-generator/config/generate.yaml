@@ -1,4 +1,4 @@
-input_name: query
+input_name: topic
 name: synthetic-RAG-data
 tasks:
   - type: ragbits.evaluate.dataset_generator.tasks.corpus_generation:CorpusGenerationStep

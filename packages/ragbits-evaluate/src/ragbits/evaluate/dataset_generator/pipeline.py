@@ -75,9 +75,9 @@ class DatasetGenerationPipelineConfig(BaseModel):
                 type=task_config.type,
                 llm=LLMConfigForTask(
                     provider_type=task_config.llm.provider_type,
-                    kwargs=OmegaConf.to_container(task_config.llm.kwargs),
+                    kwargs=OmegaConf.to_container(task_config.llm.kwargs),  # type: ignore
                 ),
-                kwargs=OmegaConf.to_container(task_config.kwargs),
+                kwargs=OmegaConf.to_container(task_config.kwargs),  # type: ignore
                 filters=getattr(task_config, "filters", None),
             )
             for task_config in dict_config.tasks
@@ -125,10 +125,10 @@ class DatasetGenerationPipeline:
             task_kwargs.update(task_config.kwargs or {})  # type: ignore
             task = get_cls_from_config(task_config.type, module)(**task_kwargs)
             tasks.append(task)
-            if getattr(task_config, "filters", None):
-                for filter_type in task_config.filters:
-                    filter = get_cls_from_config(filter_type, module)(tasks[-1])
-                    tasks.append(filter)
+            filter_types = getattr(task_config, "filters", None) or []
+            for filter_type in filter_types:
+                filter = get_cls_from_config(filter_type, module)(tasks[-1])
+                tasks.append(filter)
         return tasks
 
     def _instantiate_pipeline(self) -> None:
