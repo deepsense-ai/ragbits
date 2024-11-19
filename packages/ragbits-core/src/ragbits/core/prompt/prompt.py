@@ -228,7 +228,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Parse the response from the LLM to the desired output type.
 
         Args:
-            response (str | AsyncGenerator): The response from the LLM.
+            response (str): The response from the LLM.
 
         Returns:
             OutputT: The parsed response.

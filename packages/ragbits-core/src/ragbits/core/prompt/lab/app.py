@@ -112,7 +112,7 @@ def send_prompt_to_llm(state: PromptState) -> str:
     except Exception as e:  # pylint: disable=broad-except
         response = str(e)
 
-    return response  # type: ignore
+    return response
 
 
 def get_input_type_fields(obj: BaseModel | None) -> list[dict]:

@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import AsyncGenerator, Any, Generic
+from typing import Any, Generic
 
 from pydantic import BaseModel
 from typing_extensions import TypeVar

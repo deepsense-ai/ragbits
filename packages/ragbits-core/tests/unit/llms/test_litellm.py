@@ -1,4 +1,3 @@
-from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
@@ -58,7 +57,7 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         return [{"content": self.message, "role": "user"}]
 
     @staticmethod
-    def parse_response(response: str | AsyncGenerator[str, None]) -> int:
+    def parse_response(response: str) -> int:
         """
         Parser for the prompt.
 
