@@ -95,7 +95,7 @@ pipeline_config = OmegaConf.create(
 
 
 topics = ["conspiracy theories", "retrival augmented generation"]
-pipeline = DatasetGenerationPipeline(pipeline_config)
+pipeline = DatasetGenerationPipeline.from_dict_config(dict_config=pipeline_config)
 dataset = pipeline(topics)
 print_dataset(dataset)
 ```
@@ -193,7 +193,7 @@ topics = [
     "Large Language Models (LLM) are trained to predict the term given the context",
     "Logistic regression is a simpliest form of neural network with no hidden neurons and output activated with sigmoid function",
 ]
-pipeline = DatasetGenerationPipeline(pipeline_config)
+pipeline = DatasetGenerationPipeline.from_dict_config(dict_config=pipeline_config)
 dataset = pipeline(topics)
 print_dataset(dataset)
 ```

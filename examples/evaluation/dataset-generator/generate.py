@@ -15,10 +15,8 @@ def main(config: DictConfig) -> None:
         None
     """
     TOPICS = ["conspiracy theories", "machine learning"]
-
-    generation_pipeline = DatasetGenerationPipeline(config=config)
+    generation_pipeline = DatasetGenerationPipeline.from_dict_config(dict_config=config)
     result_dataset = generation_pipeline(corpus=TOPICS)
-    breakpoint()
     log_dataset_to_file(dataset=result_dataset)
 
 
