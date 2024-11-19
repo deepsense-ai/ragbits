@@ -23,7 +23,9 @@ class DontKnowFilter(BaseFilter):
             outputs filtered to the ones that do not contain the pre-defined phrases
         """
         result = [
-            {input_type: input_[input_type] for input_type in input_} for input_ in inputs[0] if not self._is_dont_know(input_)
+            {input_type: input_[input_type] for input_type in input_}
+            for input_ in inputs[0]
+            if not self._is_dont_know(input_)
         ]
         yield result
 
