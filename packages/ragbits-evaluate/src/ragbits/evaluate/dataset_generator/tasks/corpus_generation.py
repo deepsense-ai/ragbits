@@ -67,4 +67,3 @@ class CorpusGenerationStep(Step):
         prompt_inp = self._prompt_class.input_type(**{self.inputs[0]: new_inp[self.inputs[0]]})  # type: ignore
         new_inp[self.outputs[0]] = await self._llm.generate(prompt=self._prompt_class(prompt_inp))
         return new_inp
-
