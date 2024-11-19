@@ -54,7 +54,7 @@ class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def parse_response(self, response: str | AsyncGenerator[str, None]) -> OutputT:
+    def parse_response(self, response: str) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 

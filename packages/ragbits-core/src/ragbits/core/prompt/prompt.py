@@ -31,7 +31,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
-    response_parser: Callable[[str], OutputT] | None
+    response_parser: Callable[[str], OutputT]
 
     # Automatically set in __init_subclass__
     input_type: type[InputT] | None
@@ -92,7 +92,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return textwrap.dedent(message).strip()
 
     @classmethod
-    def _detect_response_parser(cls) -> Callable[[str], OutputT] | None:
+    def _detect_response_parser(cls) -> Callable[[str], OutputT]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
         if issubclass(cls.output_type, BaseModel):
@@ -111,8 +111,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             cls._parse_template(cls._format_message(cls.system_prompt)) if cls.system_prompt else None
         )
         cls.user_prompt_template = cls._parse_template(cls._format_message(cls.user_prompt))
-        parser = cls._detect_response_parser()
-        cls.response_parser = staticmethod(parser) if parser else None
+        cls.response_parser = staticmethod(cls._detect_response_parser())
 
         return super().__init_subclass__(**kwargs)
 
@@ -224,7 +223,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         return issubclass(self.output_type, BaseModel)
 
-    def parse_response(self, response: str | AsyncGenerator[str, None]) -> OutputT:
+    def parse_response(self, response: str) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 
