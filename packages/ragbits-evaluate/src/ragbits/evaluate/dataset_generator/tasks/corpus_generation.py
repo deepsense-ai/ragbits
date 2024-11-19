@@ -35,7 +35,7 @@ class CorpusGenerationStep(Step):
         Returns:
             list of input fields
         """
-        return ["topic"]
+        return ["query"]
 
     @property
     def outputs(self) -> list[str]:
@@ -58,15 +58,6 @@ class CorpusGenerationStep(Step):
         yield result
 
     async def _process_topics(self, topics: list[dict]) -> list[dict]:
-        """
-        Processes a list of topics concurrently, respecting the batch size limit.
-
-        Args:
-            topics (List[dict]): A list of topics to process.
-
-        Returns:
-            List[dict]: A list of processed topics.
-        """
         tasks = [self._process_topic(topic) for _ in range(self._num_per_query) for topic in topics]
         results = await asyncio.gather(*tasks)
         return results
