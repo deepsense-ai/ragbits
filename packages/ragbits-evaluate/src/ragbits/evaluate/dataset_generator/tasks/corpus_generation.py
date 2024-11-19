@@ -55,7 +55,7 @@ class CorpusGenerationStep(Step):
             a generated corpus
         """
         result = []
-        for inp in inputs[0]:
+        for topic in inputs[0]:
             for _ in range(self._num_per_query):
                 new_inp = deepcopy(inp)
                 prompt_inp = self._prompt_class.input_type(**{self.inputs[0]: new_inp[self.inputs[0]]})  # type: ignore
