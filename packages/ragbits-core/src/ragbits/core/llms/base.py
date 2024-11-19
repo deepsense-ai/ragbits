@@ -144,7 +144,7 @@ class LLM(Generic[LLMClientOptions], ABC):
             options: Options to use for the LLM client.
 
         Returns:
-            Stream response from LLM.
+            Response stream from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
         response = await self.client.call_streaming(
