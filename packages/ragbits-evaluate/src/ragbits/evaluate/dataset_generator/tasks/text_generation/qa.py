@@ -33,7 +33,7 @@ class PassagesGenTask(BaseDistilabelTask):
     A task for generating passages related to a specific question and answer from a text chunk.
     """
 
-    get_matches: bool = False
+    should_get_matches: bool = False
 
     def __init__(self, llm: LLM, prompt_class: str):
         super().__init__(
@@ -58,7 +58,7 @@ class PassagesGenTask(BaseDistilabelTask):
         """
         passages: list[str] = get_passages_list(output) or []
 
-        if self.get_matches:
+        if self.should_get_matches:
             matched_passages: list[str] = []
 
             for passage in passages:

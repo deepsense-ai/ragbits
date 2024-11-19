@@ -18,7 +18,7 @@ class CorpusGenerationStep(Step):
     def __init__(
         self,
         llm: LLM,
-        num_per_query: int,
+        num_per_topic: int,
         prompt_class: str | type[Prompt],
     ):
         super().__init__()
@@ -26,7 +26,7 @@ class CorpusGenerationStep(Step):
         self._prompt_class = (
             get_cls_from_config(prompt_class, module) if isinstance(prompt_class, str) else prompt_class
         )
-        self._num_per_query = num_per_query
+        self._num_per_topic = num_per_topic
 
     @property
     def inputs(self) -> list[str]:
@@ -58,7 +58,7 @@ class CorpusGenerationStep(Step):
         yield result
 
     async def _process_topics(self, topics: list[dict]) -> list[dict]:
-        tasks = [self._process_topic(topic) for _ in range(self._num_per_query) for topic in topics]
+        tasks = [self._process_topic(topic) for _ in range(self._num_per_topic) for topic in topics]
         results = await asyncio.gather(*tasks)
         return results
 

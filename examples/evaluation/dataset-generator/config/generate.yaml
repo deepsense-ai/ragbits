@@ -7,7 +7,7 @@ tasks:
       kwargs:
         model_name: gpt-4o
     kwargs:
-      num_per_query: 5
+      num_per_topic: 5
       prompt_class: ragbits.evaluate.dataset_generator.prompts.corpus_generation:BasicCorpusGenerationPrompt
   - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:QueryGenTask
     llm:
