@@ -83,8 +83,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-        stream: bool = False,
-    ) -> str | AsyncGenerator[str, None]:
+    ) -> str:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
@@ -94,7 +93,6 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
             Only used if the client has been initialized with `use_structured_output=True`.
-            stream: indicator whether to stream the output
 
         Returns:
             Response string from LLM.
@@ -129,7 +127,6 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
                     api_key=self.api_key,
                     api_version=self.api_version,
                     response_format=response_format,
-                    stream=stream,
                     **options.dict(),
                 )
             except litellm.openai.APIConnectionError as exc:
@@ -139,24 +136,83 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             except litellm.openai.APIResponseValidationError as exc:
                 raise LLMResponseError() from exc
 
-            if (
-                not getattr(response, "choices", None)
-                and not stream
-                or stream
-                and not getattr(response, "completion_stream", None)
-            ):  # type: ignore
+            if not response.choices:  # type: ignore
+                raise LLMEmptyResponseError()
+
+            outputs.response = response.choices[0].message.content  # type: ignore
+            if response.usage:  # type: ignore
+                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
+                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
+                outputs.total_tokens = response.usage.total_tokens  # type: ignore
+
+        return outputs.response  # type: ignore
+
+    async def call_streaming(
+        self,
+        conversation: ChatFormat,
+        options: LiteLLMOptions,
+        json_mode: bool = False,
+        output_schema: type[BaseModel] | dict | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Calls the appropriate LLM endpoint with the given prompt and options.
+
+        Args:
+            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            options: Additional settings used by the LLM.
+            json_mode: Force the response to be in JSON format.
+            output_schema: Output schema for requesting a specific response format.
+            Only used if the client has been initialized with `use_structured_output=True`.
+
+        Returns:
+            Response string from LLM.
+
+        Raises:
+            LLMConnectionError: If there is a connection error with the LLM API.
+            LLMStatusError: If the LLM API returns an error status code.
+            LLMResponseError: If the LLM API response is invalid.
+        """
+        supported_params = litellm.get_supported_openai_params(model=self.model_name)
+
+        response_format = None
+        if supported_params is not None and "response_format" in supported_params:
+            if output_schema is not None and self.use_structured_output:
+                response_format = output_schema
+            elif json_mode:
+                response_format = {"type": "json_object"}
+
+        with trace(
+            messages=conversation,
+            model=self.model_name,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            response_format=response_format,
+            options=options.dict(),
+        ) as outputs:
+            try:
+                response = await litellm.acompletion(
+                    messages=conversation,
+                    model=self.model_name,
+                    base_url=self.base_url,
+                    api_key=self.api_key,
+                    api_version=self.api_version,
+                    response_format=response_format,
+                    stream=True,
+                    **options.dict(),
+                )
+            except litellm.openai.APIConnectionError as exc:
+                raise LLMConnectionError() from exc
+            except litellm.openai.APIStatusError as exc:
+                raise LLMStatusError(exc.message, exc.status_code) from exc
+            except litellm.openai.APIResponseValidationError as exc:
+                raise LLMResponseError() from exc
+
+            if not response.completion_stream:  # type: ignore
                 raise LLMEmptyResponseError()
 
             async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
                 async for item in response:
                     yield item.choices[0].delta.content or ""
 
-            outputs.response = (
-                response.choices[0].message.content if not stream else response_to_async_generator(response)
-            )  # type: ignore
-            if getattr(response, "usage", None):  # type: ignore
-                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
-                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
-                outputs.total_tokens = response.usage.total_tokens  # type: ignore
-
+            outputs.response = response_to_async_generator(response)  # type: ignore
         return outputs.response  # type: ignore

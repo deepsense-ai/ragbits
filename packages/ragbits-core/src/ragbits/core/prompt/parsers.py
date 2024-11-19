@@ -1,5 +1,4 @@
-import types
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import Callable
 from typing import Any, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -89,19 +88,6 @@ def bool_parser(value: str) -> bool:
     raise ResponseParsingError(f"Could not parse '{value}' as a boolean")
 
 
-def async_generator_parser(value: AsyncGenerator[str, None]) -> AsyncGenerator[str, None]:
-    """
-    Parses an async generator.
-
-    Args:
-        value: async generator to parse.
-
-    Returns:
-        async generator.
-    """
-    return value
-
-
 def build_pydantic_parser(model: type[PydanticModelT]) -> Callable[[str], PydanticModelT]:
     """
     Builds a parser for a specific Pydantic model.
@@ -142,5 +128,4 @@ DEFAULT_PARSERS: dict[type, Callable[[str], Any]] = {
     str: str_parser,
     float: float_parser,
     bool: bool_parser,
-    types.AsyncGeneratorType: async_generator_parser,  # type: ignore
 }

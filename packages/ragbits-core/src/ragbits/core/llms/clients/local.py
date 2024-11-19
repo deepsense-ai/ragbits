@@ -78,36 +78,6 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-        stream: bool = False,
-    ) -> str | AsyncGenerator[str, None]:
-        """
-        Makes a call to the local LLM with the provided prompt and options.
-
-        Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
-            options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format (not used).
-            output_schema: Output schema for requesting a specific response format (not used).
-            stream: indicator whether to stream the output
-
-        Returns:
-            Response string from LLM.
-        """
-        if not stream:
-            return await self._call(
-                conversation=conversation, options=options, json_mode=json_mode, output_schema=output_schema
-            )
-        else:
-            return self._call_streaming(
-                conversation=conversation, options=options, json_mode=json_mode, output_schema=output_schema
-            )
-
-    async def _call(
-        self,
-        conversation: ChatFormat,
-        options: LocalLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -134,7 +104,7 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         return decoded_response
 
-    async def _call_streaming(
+    async def call_streaming(
         self,
         conversation: ChatFormat,
         options: LocalLLMOptions,
@@ -159,8 +129,14 @@ class LocalLLMClient(LLMClient[LocalLLMOptions]):
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
         generation_kwargs = dict(streamer=streamer, **options.dict())
         generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)
-        generation_thread.start()
-        for text_piece in streamer:
-            yield text_piece
-            await asyncio.sleep(0.0)
-        generation_thread.join()
+
+        async def streamer_to_async_generator(
+            streamer: TextIteratorStreamer, generation_thread: threading.Thread
+        ) -> AsyncGenerator[str, None]:
+            generation_thread.start()
+            for text_piece in streamer:
+                yield text_piece
+                await asyncio.sleep(0.0)
+            generation_thread.join()
+
+        return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)

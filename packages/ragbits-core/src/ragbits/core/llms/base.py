@@ -1,5 +1,4 @@
 import enum
-import types as tps
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
@@ -70,7 +69,7 @@ class LLM(Generic[LLMClientOptions], ABC):
         prompt: BasePrompt,
         *,
         options: LLMOptions | None = None,
-    ) -> str | AsyncGenerator[str, None]:
+    ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
@@ -82,15 +81,11 @@ class LLM(Generic[LLMClientOptions], ABC):
             Raw text response from LLM.
         """
         options = (self.default_options | options) if options else self.default_options
-        stream_output = False
-        if hasattr(prompt, "output_type"):
-            stream_output = prompt.output_type == tps.AsyncGeneratorType
         response = await self.client.call(
             conversation=self._format_chat_for_llm(prompt),
             options=options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
-            stream=stream_output,
         )
 
         return response
@@ -134,6 +129,32 @@ class LLM(Generic[LLMClientOptions], ABC):
             return prompt.parse_response(response)
 
         return cast(OutputT, response)
+
+    async def generate_streaming(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMOptions | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
+
+        Args:
+            prompt: Formatted prompt template with conversation.
+            options: Options to use for the LLM client.
+
+        Returns:
+            Raw text response from LLM.
+        """
+        options = (self.default_options | options) if options else self.default_options
+        response = await self.client.call_streaming(
+            conversation=self._format_chat_for_llm(prompt),
+            options=options,
+            json_mode=prompt.json_mode,
+            output_schema=prompt.output_schema(),
+        )
+        async for text_piece in response:
+            yield text_piece
 
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
         if prompt.list_images():
