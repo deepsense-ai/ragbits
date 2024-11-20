@@ -38,6 +38,8 @@ def print_dataset(dataset: Dataset):
         )
     print("\r\n".join(entries))
 
+# configuration should follow
+# ragbits.evaluate.dataset_generator.DatasetGenerationPipelineConfig data model
 pipeline_config = OmegaConf.create(
     {
         "input_name": "query",
@@ -132,6 +134,9 @@ from datasets import Dataset
 from omegaconf import OmegaConf
 from ragbits.evaluate.dataset_generator.pipeline import DatasetGenerationPipeline
 
+
+# configuration should follow
+# ragbits.evaluate.dataset_generator.DatasetGenerationPipelineConfig data model
 pipeline_config = OmegaConf.create(
     {
         "input_name": "chunk",
