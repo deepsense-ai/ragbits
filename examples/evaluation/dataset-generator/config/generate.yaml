@@ -1,0 +1,34 @@
+input_name: query
+name: synthetic-RAG-data
+tasks:
+  - type: ragbits.evaluate.dataset_generator.tasks.corpus_generation:CorpusGenerationStep
+    llm:
+      provider_type: ragbits.core.llms.litellm:LiteLLM
+      kwargs:
+        model_name: gpt-4o
+    kwargs:
+      num_per_topic: 5
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.corpus_generation:BasicCorpusGenerationPrompt
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:QueryGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:QueryGenPrompt
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:AnswerGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:BasicAnswerGenPrompt
+  - type: ragbits.evaluate.dataset_generator.tasks.text_generation.qa:PassagesGenTask
+    llm:
+      provider_type: distilabel.llms:OpenAILLM
+      kwargs:
+        model: gpt-4o
+    kwargs:
+      prompt_class: ragbits.evaluate.dataset_generator.prompts.qa:PassagesGenPrompt
+    filters:
+      - ragbits.evaluate.dataset_generator.tasks.filter.dont_know:DontKnowFilter

@@ -3,3 +3,4 @@ tiktoken
 chardet
 chroma-hnswlib
 rouge
+distilabel
