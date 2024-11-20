@@ -34,7 +34,6 @@ def get_passages_list(raw_passages: str) -> list[str]:
     if match:
         passages_content = match.group(1)
         try:
-            # Use eval to convert the string to a list, assuming it's a valid list-like format
             return json.loads("[" + passages_content + "]")
         except (SyntaxError, ValueError):
             warnings.warn("Unable to evaluate the passages content. Check the format.", category=UserWarning)
