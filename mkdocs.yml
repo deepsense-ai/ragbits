@@ -8,15 +8,15 @@ nav:
   - rabgbits: index.md
   - How-to Guides:
       - integrations/promptfoo.md
-      - how-to/document-search/search_documents.md
-      - how-to/document-search/use_rephraser.md
-      - how-to/document-search/use_reranker.md
       - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
+          - how-to/document-search/search_documents.md
+          - how-to/document-search/use_rephraser.md
+          - how-to/document-search/use_reranker.md
   - API Reference:
       - Core:
           - api_reference/core/prompt.md
