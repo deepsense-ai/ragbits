@@ -10,7 +10,8 @@ def main(config: DictConfig) -> None:
     """
     A main function for dataset generation example
     Args:
-        config - configuration
+        config (DictConfig) - configuration should follow
+        ragbits.evaluate.dataset_generator.DatasetGenerationPipelineConfig data model
     Returns:
         None
     """
