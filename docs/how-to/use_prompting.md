@@ -25,12 +25,15 @@ class JokePrompt(Prompt):
 ```
 Passing the prompt to a model is as simple as:
 ```python
+import asyncio
 from ragbits.core.llms.litellm import LiteLLM
 
+async def main():
+    llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+    static_prompt = JokePrompt()
+    print(await llm.generate(static_prompt))
 
-llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
-static_prompt = JokePrompt()
-print(await llm.generate(static_prompt))
+asyncio.run(main())
 ```
 
 ### Extending the Prompt with an Input Model
@@ -39,9 +42,11 @@ To extend the prompt with an input model, define a Pydantic model for the input 
 Let's use a RAG example as a case study:
 
 ```python
+import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt
+from ragbits.core.llms.litellm import LiteLLM
 
 
 class QueryWithContext(BaseModel):
@@ -73,12 +78,23 @@ class RAGPrompt(Prompt[QueryWithContext]):
     {% endfor %}
     """
 
-...
 
-prompt = RAGPrompt(QueryWithContext(query=message, context=[i.get_text_representation() for i in results]))
-response = await self._llm.generate(prompt)
-print(response)
-...
+async def main():
+    llm = LiteLLM()
+    query = "Write down names of last two world cup winners"
+    context = ["Today is November 2017", "Germany won 2014 world cup", "Spain won 2010 world cup"]
+    prompt = RAGPrompt(QueryWithContext(query=query, context=context))
+    response = await llm.generate(prompt)
+    print(response)
+
+
+asyncio.run(main())
+```
+
+After succesful execution console should something like:
+
+```text
+The last two World Cup winners as of November 2017 are Germany (2014) and Spain (2010).
 ```
 ### How to configure `Prompt`'s output data type
 #### Defining output as a Pydantic Model
