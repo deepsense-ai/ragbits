@@ -98,11 +98,16 @@ The last two World Cup winners as of November 2017 are Germany (2014) and Spain 
 ```
 ### How to configure `Prompt`'s output data type
 #### Defining output as a Pydantic Model
-You can define the output of a prompt as a Pydantic model by specifying the output type as a generic parameter.
+You can define the output of a prompt as a Pydantic model by specifying the output type as a generic parameter. However, note that not all llm models support output schema definition. To use this feature effectively, you must set the `use_structured_output=True` flag when initializing the LLM. If this flag is not used, you will need to ensure that the JSON schema of your data model is incorporated into the prompt.
+
+Let’s revisit the previous example, making one adjustment: this time, we will define a structured output format.
+
 ```python
+import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt
+from ragbits.core.llms.litellm import LiteLLM
 
 
 class QueryWithContext(BaseModel):
@@ -114,15 +119,12 @@ class QueryWithContext(BaseModel):
     context: list[str]
 
 
-class ChatAnswer(BaseModel):
-    """
-    Output format for the ChatAnswer.
-    """
-
-    answer: str
+class OutputSchema(BaseModel):
+    last: str
+    previous: str
 
 
-class RAGPrompt(Prompt[QueryWithContext, ChatAnswer]):
+class RAGPrompt(Prompt[QueryWithContext, OutputSchema]):
     """
     A simple prompt for RAG system.
     """
@@ -142,19 +144,39 @@ class RAGPrompt(Prompt[QueryWithContext, ChatAnswer]):
     {% endfor %}
     """
 
-...
 
-prompt = RAGPrompt(QueryWithContext(query=message, context=[i.get_text_representation() for i in results]))
-response = await self._llm.generate(prompt)
-print(response.answer)
-...
+async def main():
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    query = "Write down names of last two world cup winners"
+    context = ["Today is November 2017", "Germany won 2014 world cup", "Spain won 2010 world cup"]
+    prompt = RAGPrompt(QueryWithContext(query=query, context=context))
+    response = await llm.generate(prompt)
+    print(response)
+
+
+asyncio.run(main())
+```
+
+After succesful execution console should display:
+
+```text
+last='Germany' previous='Spain'
 ```
 #### Configuring output as a simple type
-You can configure the ouput as a simple type, such as `bool`
+You can configure the ouput as a simple type, such as `bool`, `int` or `float`.
+In order for those parsers to execute properly you would need to force the model with the prompt that you pass
+to generate raw response in a format that can be converted to numeric type (for `int` and `float`) or some finite
+set of words (the example below shows exact values) that are interpreted as bool. If those conditions are not met
+`ragbits.core.prompt.parsers.ResponseParsingError` would be raised
+
 ```python
+import asyncio
+
 from pydantic import BaseModel
 
+from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.parsers import ResponseParsingError
 
 
 class RoleInput(BaseModel):
@@ -162,65 +184,70 @@ class RoleInput(BaseModel):
 
 
 class BooleanPrompt(Prompt[RoleInput, bool]):
-    user_prompt = "Are you {{ role }}? Answer 'yes' or 'no' only."
+    user_prompt = ("Are you {{ role }}? Answer 'yes' or 'no' only."
+        "Do not provide any other additional information - just a single word"
+                   )
+
+def assert_responses(boolean_prompt: BooleanPrompt) -> None:
+    # all allowed values parsed to true
+    for s in ["true", "1", "yes", "y", "TRUE", "YES"]:
+        assert boolean_prompt.parse_response(s)
+    # all allowed values parsed to false
+    for s in ["false", "0", "no", "n", "FALSE", "NO"]:
+        assert not boolean_prompt.parse_response(s)
+
+async def main():
+    llm = LiteLLM()
+    boolean_prompt = BooleanPrompt(RoleInput(role="a human"))
+    assert_responses(boolean_prompt)
+    try:
+        gen = await llm.generate(prompt=boolean_prompt)
+    except ResponseParsingError as e:
+        print(f"Failed to parse response: {e}")
+    print(gen)
 
 
-boolean_prompt = BooleanPrompt(RoleInput(role = "an AI Assistant"))
-assert boolean_prompt.parse_response("true") is True
+asyncio.run(main())
 ```
-Please note that an actual response from LLM is going to raise `ResponseParsingError`. This is because the response is not natively parsable to boolean:
-```python
-llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
-print(await llm.generate(boolean_prompt))
-```
-```
-ragbits.core.prompt.parsers.ResponseParsingError: Could not parse 'yes, i am an ai assistant designed to help with a wide range of inquiries and tasks. how can i assist you today?' as a boolean
-```
-Although it can be fixed with a proper prompt, please see how to create a custom output parser for a `Prompt` below.
+
+
 
 ### How to create a custom output parser for a `Prompt`
-To create a custom output parser for a prompt, define a custom data type and provide a parser function.
+The limitiations described above can be handled by creating a custom parser. The example below will show you how:
 
 ```python
+import asyncio
+import re
 from pydantic import BaseModel
 
+from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.parsers import ResponseParsingError
 
 
-class RoleInput(BaseModel):
-    role: str
+class ItemInput(BaseModel):
+    items: str
 
 
-class BooleanPrompt(Prompt[RoleInput, bool]):
-    user_prompt = "Are you {{ role }}? (yes/no)"
+class IntegerPrompt(Prompt[ItemInput, int]):
+    system_prompt = "Respond to user as quantitive analytics bot"
+    user_prompt = "How many {{ items }}"
 
     @staticmethod
-    def response_parser(response: str) -> bool:
-        print("resp",response)
-        if "yes" in response.lower():
-            return True
-        elif "no" in response.lower():
-            return False
-        else:
-            raise ResponseParsingError("Response is not a valid boolean value.")
+    def response_parser(response: str) -> int:
+        print(response)
+        all_integers = re.findall(r"\b\d+\b", response)
+        if len(all_integers) > 0:
+            return all_integers[0]
+        return -1
+
+
+async def main():
+    llm = LiteLLM()
+    prompt = IntegerPrompt(ItemInput(items="people do live in Raglandia?"))
+    response = await llm.generate(prompt=prompt)
+    print(response)
+
+
+asyncio.run(main())
 ```
 
-Another example of custom parser for handling empty responses.
-```python
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.parsers import ResponseParsingError
-
-class CustomOutput:
-    def __init__(self, value: str):
-        self.value = value
-
-class CustomPrompt(Prompt[GreetingInput, CustomOutput]):
-    user_prompt = "Hello, {{ name }}!"
-
-    @staticmethod
-    def response_parser(response: str) -> CustomOutput:
-        if not response:
-            raise ResponseParsingError("Response is empty")
-        return CustomOutput(response)
-```
