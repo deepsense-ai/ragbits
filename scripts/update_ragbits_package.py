@@ -251,6 +251,7 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
             is_continue = True
 
         if is_continue:
+            _update_ragbits_extras(packages)
             version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
             casted_update_type = _check_update_type(version, new_version)
 
