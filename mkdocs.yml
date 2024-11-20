@@ -7,7 +7,6 @@ copyright: Copyright &copy; 2024 deepsense.ai
 nav:
   - rabgbits: index.md
   - How-to Guides:
-      - integrations/promptfoo.md
       - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
