@@ -39,6 +39,43 @@ dependencies = [
     "ragbits-core==0.3.0"
 ]
 
+[project.optional-dependencies]
+chroma = [
+    "chromadb~=0.4.24",
+]
+huggingface = [
+    "datasets~=3.0.1",
+]
+gcs = [
+    "gcloud-aio-storage~=9.3.0"
+]
+lab = [
+    "gradio~=4.44.0",
+]
+litellm = [
+    "litellm~=1.46.0",
+]
+local = [
+    "torch~=2.2.1",
+    "transformers~=4.44.2",
+    "numpy~=1.26.0"
+]
+openai = [
+    "openai~=1.51.0",
+]
+otel = [
+    "opentelemetry-api~=1.27.0",
+]
+promptfoo = [
+    "PyYAML~=6.0.2",
+]
+qdrant = [
+    "qdrant-client~=1.12.1",
+]
+relari = [
+    "continuous-eval~=0.3.12",
+]
+
 [build-system]
 requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
