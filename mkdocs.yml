@@ -7,6 +7,10 @@ copyright: Copyright &copy; 2024 deepsense.ai
 nav:
   - rabgbits: index.md
   - How-to Guides:
+      - integrations/promptfoo.md
+      - how-to/document-search/search_documents.md
+      - how-to/document-search/use_rephraser.md
+      - how-to/document-search/use_reranker.md
       - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
