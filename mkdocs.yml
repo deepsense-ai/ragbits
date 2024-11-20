@@ -10,6 +10,7 @@ nav:
       - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
+      - how-to/use_prompting.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
