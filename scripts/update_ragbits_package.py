@@ -193,11 +193,11 @@ def _update_ragbits_extras(packages: list[str]) -> None:
             for extra, deps in pkg_pyproject["project"]["optional-dependencies"].items():
                 if extra in extras and extras[extra] != deps:
                     raise Exception(
-                        f"Duplicate extras found: '{extra}' exists in multiple packages that have different dependencies."
+                        f"Duplicate extras: '{extra}' exists in multiple packages with different dependencies."
                     )
                 extras[extra] = deps
 
-    extras = {extra: deps for extra, deps in sorted(extras.items())}
+    extras = dict(sorted(extras.items()))
 
     ragbits_pyproject_path = PACKAGES_DIR / "ragbits" / "pyproject.toml"
     ragbits_pyproject_data = tomlkit.parse(ragbits_pyproject_path.read_text())
