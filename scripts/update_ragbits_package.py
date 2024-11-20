@@ -181,6 +181,31 @@ def _create_changelog_release(pkg_name: str, new_version: str) -> None:
     changelog_path.write_text(changelog_content)
 
 
+def _update_ragbits_extras(packages: list[str]) -> None:
+    subpackages = [pkg for pkg in packages if pkg != "ragbits"]
+
+    extras = {}
+    for pkg in subpackages:
+        pkg_pyproject_path = PACKAGES_DIR / pkg / 'pyproject.toml'
+        pkg_pyproject = tomlkit.parse(pkg_pyproject_path.read_text())
+
+        if 'optional-dependencies' in pkg_pyproject['project']:
+            for extra, deps in pkg_pyproject['project']['optional-dependencies'].items():
+                if extra in extras and extras[extra] != deps:
+                    raise Exception(f"Duplicate extras found: '{extra}' exists in multiple packages that have different dependencies.")
+                extras[extra] = deps
+
+    extras = {extra: deps for extra, deps in sorted(extras.items())}
+
+    ragbits_pyproject_path = PACKAGES_DIR / "ragbits" / "pyproject.toml"
+    ragbits_pyproject_data = tomlkit.parse(ragbits_pyproject_path.read_text())
+
+    for extra, deps in extras.items():
+        ragbits_pyproject_data['project']['optional-dependencies'][extra] = deps
+
+    ragbits_pyproject_path.write_text(tomlkit.dumps(ragbits_pyproject_data))
+
+
 def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
@@ -214,6 +239,7 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
 
     if pkg_name == "ragbits":
         _update_pkg_version(pkg_name, update_type=casted_update_type)
+        _update_ragbits_extras(packages)
 
     elif pkg_name == "ragbits-core":
         if user_prompt_required:
