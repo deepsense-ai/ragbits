@@ -135,3 +135,63 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert entries[1].vector == [0.13, 0.26, 0.30]
     assert entries[1].key == "test content2"
     assert entries[1].id == "test_id_2"
+
+
+async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> None:
+    # Prepare nested metadata structure
+    original_metadata = {
+        "content": "test content",
+        "document": {
+            "title": "test title",
+            "source": {
+                "path": "/test/path",
+                "type": "pdf"
+            },
+            "metadata": {
+                "author": "Test Author",
+                "tags": ["test", "metadata"],
+                "pages": 42
+            }
+        }
+    }
+
+    # Create and store entry
+    input_entry = VectorStoreEntry(
+        id="test_doc_1",
+        content="test content",
+        vector=[0.1, 0.2, 0.3],
+        metadata=original_metadata
+    )
+    
+    # Mock the collection's behavior for both store and retrieve
+    mock_collection = mock_chromadb_store._get_chroma_collection()
+    
+    # Store the entry
+    await mock_chromadb_store.store([input_entry])
+    
+    # Verify store called with flattened metadata
+    mock_collection.add.assert_called_once()  # type: ignore
+    stored_metadata = mock_collection.add.call_args[1]["metadatas"][0]  # type: ignore
+    assert stored_metadata["content"] == "test content"
+    assert stored_metadata["document.title"] == "test title"
+    assert stored_metadata["document.source.path"] == "/test/path"
+    assert stored_metadata["document.source.type"] == "pdf"
+    assert stored_metadata["document.metadata.author"] == "Test Author"
+    assert stored_metadata["document.metadata.pages"] == 42
+    
+    # Mock query response with flattened metadata
+    mock_collection.query.return_value = {  # type: ignore
+        "ids": [["test_doc_1"]],
+        "embeddings": [[[0.1, 0.2, 0.3]]],
+        "distances": [[0.0]],
+        "documents": [["test content"]],
+        "metadatas": [[stored_metadata]]
+    }
+    
+    # Retrieve the entry
+    retrieved_entries = await mock_chromadb_store.retrieve([0.1, 0.2, 0.3])
+    assert len(retrieved_entries) == 1
+    
+    retrieved_metadata = retrieved_entries[0].metadata
+    # Verify the nested structure is restored correctly
+    assert retrieved_metadata == original_metadata
