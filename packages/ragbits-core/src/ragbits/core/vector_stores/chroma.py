@@ -1,5 +1,5 @@
 import json
-from typing import Literal, Any, Dict, Union
+from typing import Any, Literal
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -17,7 +17,7 @@ class ChromaVectorStore(VectorStore):
     """
 
     @staticmethod
-    def _flatten_dict(d: Dict[str, Any], parent_key: str = '', sep: str = '.') -> Dict[str, Union[str, int, float, bool]]:
+    def _flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, str | int | float | bool]:
         """
         Recursively flatten a nested dictionary, converting non-primitive types to strings.
 
@@ -29,13 +29,13 @@ class ChromaVectorStore(VectorStore):
         Returns:
             A flattened dictionary with primitive types and stringified complex types
         """
-        items = []
+        items: list = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
             if isinstance(v, dict):
                 items.extend(ChromaVectorStore._flatten_dict(v, new_key, sep=sep).items())
-            elif isinstance(v, (str, int, float, bool)):
+            elif isinstance(v, str | int | float | bool):
                 items.append((new_key, v))
             else:
                 # Convert other types to string
@@ -44,7 +44,7 @@ class ChromaVectorStore(VectorStore):
         return dict(items)
 
     @staticmethod
-    def _unflatten_dict(d: Dict[str, Any], sep: str = '.') -> Dict[str, Any]:
+    def _unflatten_dict(d: dict[str, Any], sep: str = ".") -> dict[str, Any]:
         """
         Convert a flattened dictionary back to a nested dictionary.
 
@@ -55,21 +55,21 @@ class ChromaVectorStore(VectorStore):
         Returns:
             An unflattened nested dictionary
         """
-        result: Dict[str, Any] = {}
-        
+        result: dict[str, Any] = {}
+
         for key, value in d.items():
             parts = key.split(sep)
             target = result
-            
+
             # Navigate through the parts except the last one
             for part in parts[:-1]:
                 target = target.setdefault(part, {})
-            
+
             # Set the value at the final level
             if isinstance(value, str):
                 # Try to parse string values that might be JSON or list-like strings
                 try:
-                    if value.startswith('[') and value.endswith(']'):
+                    if value.startswith("[") and value.endswith("]"):
                         # Handle list-like strings
                         target[parts[-1]] = json.loads(value.replace("'", '"'))
                     else:
@@ -78,7 +78,7 @@ class ChromaVectorStore(VectorStore):
                     target[parts[-1]] = value
             else:
                 target[parts[-1]] = value
-        
+
         return result
 
     def __init__(
