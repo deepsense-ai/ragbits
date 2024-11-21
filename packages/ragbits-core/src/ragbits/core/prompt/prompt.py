@@ -77,14 +77,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes]:
+    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
         images = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
             for field in image_input_fields:
                 images_for_field = getattr(input_data, field)
                 if images_for_field:
-                    images.extend(images_for_field)
+                    if isinstance(images_for_field, (list, tuple)):
+                        images.extend(images_for_field)
+                    else:
+                        images.append(images_for_field)
         return images
 
     @classmethod
