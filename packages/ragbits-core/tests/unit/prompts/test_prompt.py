@@ -26,7 +26,7 @@ class _ImagePromptInput(pydantic.BaseModel):
 
 class _ImagesPromptInput(pydantic.BaseModel):
     """
-    List input format for the TestImagePrompt
+    List input format for the TestImagePrompt.
     """
 
     images: list[bytes | str]
