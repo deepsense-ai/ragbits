@@ -84,7 +84,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             for field in image_input_fields:
                 images_for_field = getattr(input_data, field)
                 if images_for_field:
-                    if isinstance(images_for_field, (list, tuple)):
+                    if isinstance(images_for_field, list | tuple):
                         images.extend(images_for_field)
                     else:
                         images.append(images_for_field)

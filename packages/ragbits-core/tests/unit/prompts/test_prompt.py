@@ -121,7 +121,7 @@ def test_raises_when_no_input_data():
 
 
 @pytest.mark.parametrize(
-    "field_value,image_present",
+    ("field_value", "image_present"),
     [
         (_get_image_bytes(), True),
         ("http://example.com/image.jpg", True),
@@ -140,7 +140,7 @@ def test_image_prompt(field_value: bytes | str, image_present: bool):
 
 
 @pytest.mark.parametrize(
-    "field_value,expected_number",
+    ("field_value", "expected_number"),
     [
         ([_get_image_bytes(), "http://example.com/image.jpg"], 2),
         (["http://example.com/image.jpg"], 1),
