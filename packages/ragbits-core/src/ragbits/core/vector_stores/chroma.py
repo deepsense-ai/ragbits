@@ -67,9 +67,13 @@ class ChromaVectorStore(VectorStore):
             
             # Set the value at the final level
             if isinstance(value, str):
-                # Try to parse string values that might be JSON
+                # Try to parse string values that might be JSON or list-like strings
                 try:
-                    target[parts[-1]] = json.loads(value)
+                    if value.startswith('[') and value.endswith(']'):
+                        # Handle list-like strings
+                        target[parts[-1]] = json.loads(value.replace("'", '"'))
+                    else:
+                        target[parts[-1]] = json.loads(value)
                 except (json.JSONDecodeError, TypeError):
                     target[parts[-1]] = value
             else:
