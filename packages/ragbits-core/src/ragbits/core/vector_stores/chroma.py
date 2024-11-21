@@ -43,6 +43,40 @@ class ChromaVectorStore(VectorStore):
 
         return dict(items)
 
+    @staticmethod
+    def _unflatten_dict(d: Dict[str, Any], sep: str = '.') -> Dict[str, Any]:
+        """
+        Convert a flattened dictionary back to a nested dictionary.
+
+        Args:
+            d: The flattened dictionary to unflatten
+            sep: The separator used between nested keys
+
+        Returns:
+            An unflattened nested dictionary
+        """
+        result: Dict[str, Any] = {}
+        
+        for key, value in d.items():
+            parts = key.split(sep)
+            target = result
+            
+            # Navigate through the parts except the last one
+            for part in parts[:-1]:
+                target = target.setdefault(part, {})
+            
+            # Set the value at the final level
+            if isinstance(value, str):
+                # Try to parse string values that might be JSON
+                try:
+                    target[parts[-1]] = json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    target[parts[-1]] = value
+            else:
+                target[parts[-1]] = value
+        
+        return result
+
     def __init__(
         self,
         client: ClientAPI,
@@ -155,7 +189,7 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embeddings),
-                metadata=metadata,  # type: ignore
+                metadata=self._unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
             for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
@@ -205,7 +239,7 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embedding),
-                metadata=metadata,  # type: ignore
+                metadata=self._unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]
