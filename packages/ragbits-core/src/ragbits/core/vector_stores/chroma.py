@@ -194,19 +194,16 @@ class ChromaVectorStore(VectorStore):
         Returns:
             A flattened dictionary with primitive types and stringified complex types
         """
-        items: list = []
+        items: dict[str, str | int | float | bool] = {}
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
             if isinstance(v, dict):
-                items.extend(ChromaVectorStore._flatten_dict(v, new_key, sep=sep).items())
-            elif isinstance(v, str | int | float | bool):
-                items.append((new_key, v))
+                items = {**items, **ChromaVectorStore._flatten_dict(v, new_key, sep=sep)}
             else:
-                # Convert other types to string
-                items.append((new_key, str(v)))
+                items[new_key] = v if isinstance(v, str | int | float | bool) else str(v)
 
-        return dict(items)
+        return items
 
     @staticmethod
     def _unflatten_dict(d: dict[str, Any], sep: str = ".") -> dict[str, Any]:
