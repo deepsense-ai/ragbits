@@ -16,71 +16,6 @@ class ChromaVectorStore(VectorStore):
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
 
-    @staticmethod
-    def _flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, str | int | float | bool]:
-        """
-        Recursively flatten a nested dictionary, converting non-primitive types to strings.
-
-        Args:
-            d: The dictionary to flatten
-            parent_key: The parent key for nested keys
-            sep: The separator between nested keys
-
-        Returns:
-            A flattened dictionary with primitive types and stringified complex types
-        """
-        items: list = []
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-
-            if isinstance(v, dict):
-                items.extend(ChromaVectorStore._flatten_dict(v, new_key, sep=sep).items())
-            elif isinstance(v, str | int | float | bool):
-                items.append((new_key, v))
-            else:
-                # Convert other types to string
-                items.append((new_key, str(v)))
-
-        return dict(items)
-
-    @staticmethod
-    def _unflatten_dict(d: dict[str, Any], sep: str = ".") -> dict[str, Any]:
-        """
-        Convert a flattened dictionary back to a nested dictionary.
-
-        Args:
-            d: The flattened dictionary to unflatten
-            sep: The separator used between nested keys
-
-        Returns:
-            An unflattened nested dictionary
-        """
-        result: dict[str, Any] = {}
-
-        for key, value in d.items():
-            parts = key.split(sep)
-            target = result
-
-            # Navigate through the parts except the last one
-            for part in parts[:-1]:
-                target = target.setdefault(part, {})
-
-            # Set the value at the final level
-            if isinstance(value, str):
-                # Try to parse string values that might be JSON or list-like strings
-                try:
-                    if value.startswith("[") and value.endswith("]"):
-                        # Handle list-like strings
-                        target[parts[-1]] = json.loads(value.replace("'", '"'))
-                    else:
-                        target[parts[-1]] = json.loads(value)
-                except (json.JSONDecodeError, TypeError):
-                    target[parts[-1]] = value
-            else:
-                target[parts[-1]] = value
-
-        return result
-
     def __init__(
         self,
         client: ClientAPI,
@@ -245,3 +180,68 @@ class ChromaVectorStore(VectorStore):
             )
             for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]
+
+    @staticmethod
+    def _flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, str | int | float | bool]:
+        """
+        Recursively flatten a nested dictionary, converting non-primitive types to strings.
+
+        Args:
+            d: The dictionary to flatten
+            parent_key: The parent key for nested keys
+            sep: The separator between nested keys
+
+        Returns:
+            A flattened dictionary with primitive types and stringified complex types
+        """
+        items: list = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+
+            if isinstance(v, dict):
+                items.extend(ChromaVectorStore._flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, str | int | float | bool):
+                items.append((new_key, v))
+            else:
+                # Convert other types to string
+                items.append((new_key, str(v)))
+
+        return dict(items)
+
+    @staticmethod
+    def _unflatten_dict(d: dict[str, Any], sep: str = ".") -> dict[str, Any]:
+        """
+        Convert a flattened dictionary back to a nested dictionary.
+
+        Args:
+            d: The flattened dictionary to unflatten
+            sep: The separator used between nested keys
+
+        Returns:
+            An unflattened nested dictionary
+        """
+        result: dict[str, Any] = {}
+
+        for key, value in d.items():
+            parts = key.split(sep)
+            target = result
+
+            # Navigate through the parts except the last one
+            for part in parts[:-1]:
+                target = target.setdefault(part, {})
+
+            # Set the value at the final level
+            if isinstance(value, str):
+                # Try to parse string values that might be JSON or list-like strings
+                try:
+                    if value.startswith("[") and value.endswith("]"):
+                        # Handle list-like strings
+                        target[parts[-1]] = json.loads(value.replace("'", '"'))
+                    else:
+                        target[parts[-1]] = json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    target[parts[-1]] = value
+            else:
+                target[parts[-1]] = value
+
+        return result
