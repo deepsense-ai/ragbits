@@ -150,11 +150,11 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
 
     # Create and store entry
     input_entry = VectorStoreEntry(
-        id="test_doc_1", content="test content", vector=[0.1, 0.2, 0.3], metadata=original_metadata
+        id="test_doc_1", key="test content", vector=[0.1, 0.2, 0.3], metadata=original_metadata
     )
 
     # Mock the collection's behavior for both store and retrieve
-    mock_collection = mock_chromadb_store._get_chroma_collection()
+    mock_collection = mock_chromadb_store._collection
 
     # Store the entry
     await mock_chromadb_store.store([input_entry])

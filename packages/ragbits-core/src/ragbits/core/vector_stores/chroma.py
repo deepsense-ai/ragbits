@@ -233,7 +233,7 @@ class ChromaVectorStore(VectorStore):
         embeddings = results.get("embeddings") or []
         documents = results.get("documents") or []
         metadatas = (
-            [json.loads(metadata["__metadata"]) for metadata in results.get("metadatas", [])]  # type: ignore
+            results.get("metadatas") or []
             if self._metadata_store is None
             else await self._metadata_store.get(ids)
         )
