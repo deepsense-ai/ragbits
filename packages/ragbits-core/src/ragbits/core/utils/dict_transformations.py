@@ -16,7 +16,7 @@ def flatten_dict(
         A flattened dictionary with primitive types and stringified complex types
 
     Raises:
-        ValueError: If the dictionary cannot be safely flattened due to the presence of the separator in the parent key.
+        ValueError: If the dictionary cannot be safely flattened due to the presence of the separator in the dict key.
     """
     items: dict[str, str | int | float | bool] = {}
     for k, v in input_dict.items():
@@ -24,7 +24,7 @@ def flatten_dict(
             raise ValueError(f"Separator '{sep}' found in key '{parent_key}' Cannot flatten dictionary safely.")
 
         if k.endswith("]"):
-            raise ValueError(f"Key '{parent_key}' cannot end with ']' Cannot flatten dictionary safely.")
+            raise ValueError(f"Key '{k}' cannot end with ']' Cannot flatten dictionary safely.")
 
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
