@@ -75,6 +75,9 @@ def unflatten_dict(input_dict: dict[Any, Any]) -> dict[Any, Any] | list:
           converted to a list
         - The function preserves the original values for non-nested keys
         - Keys are sorted before processing to ensure consistent results
+
+    Attribution:
+        - This function is based on the answer by user "djtubig-malicex" on Stack Overflow: https://stackoverflow.com/a/67905359/27947364
     """
     new_dict: dict[Any, Any] = {}
     field_keys = sorted(input_dict.keys())
