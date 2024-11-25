@@ -1,5 +1,4 @@
-import json
-from typing import Any, Literal
+from typing import Literal
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -8,6 +7,7 @@ from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
@@ -80,7 +80,7 @@ class ChromaVectorStore(VectorStore):
         metadatas = [entry.metadata for entry in entries]
 
         # Flatten metadata
-        flattened_metadatas = [self._flatten_dict(metadata) for metadata in metadatas]
+        flattened_metadatas = [flatten_dict(metadata) for metadata in metadatas]
 
         metadatas = (
             flattened_metadatas
@@ -128,7 +128,7 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embeddings),
-                metadata=self._unflatten_dict(metadata) if metadata else {},  # type: ignore
+                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
             for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
@@ -176,69 +176,7 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embedding),
-                metadata=self._unflatten_dict(metadata) if metadata else {},  # type: ignore
+                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]
-
-    @staticmethod
-    def _flatten_dict(d: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, str | int | float | bool]:
-        """
-        Recursively flatten a nested dictionary, converting non-primitive types to strings.
-
-        Args:
-            d: The dictionary to flatten
-            parent_key: The parent key for nested keys
-            sep: The separator between nested keys
-
-        Returns:
-            A flattened dictionary with primitive types and stringified complex types
-        """
-        items: dict[str, str | int | float | bool] = {}
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-
-            if isinstance(v, dict):
-                items = {**items, **ChromaVectorStore._flatten_dict(v, new_key, sep=sep)}
-            else:
-                items[new_key] = v if isinstance(v, str | int | float | bool) else str(v)
-
-        return items
-
-    @staticmethod
-    def _unflatten_dict(d: dict[str, Any], sep: str = ".") -> dict[str, Any]:
-        """
-        Convert a flattened dictionary back to a nested dictionary.
-
-        Args:
-            d: The flattened dictionary to unflatten
-            sep: The separator used between nested keys
-
-        Returns:
-            An unflattened nested dictionary
-        """
-        result: dict[str, Any] = {}
-
-        for key, value in d.items():
-            parts = key.split(sep)
-            target = result
-
-            # Navigate through the parts except the last one
-            for part in parts[:-1]:
-                target = target.setdefault(part, {})
-
-            # Set the value at the final level
-            if isinstance(value, str):
-                # Try to parse string values that might be JSON or list-like strings
-                try:
-                    if value.startswith("[") and value.endswith("]"):
-                        # Handle list-like strings
-                        target[parts[-1]] = json.loads(value.replace("'", '"'))
-                    else:
-                        target[parts[-1]] = json.loads(value)
-                except (json.JSONDecodeError, TypeError):
-                    target[parts[-1]] = value
-            else:
-                target[parts[-1]] = value
-
-        return result
