@@ -1,3 +1,5 @@
+import pytest
+
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 
 
@@ -85,3 +87,63 @@ def test_flatten_unflatten():
     flattened = flatten_dict(input_dict)
     unflatten_dict(flattened)
     assert input_dict == unflatten_dict(flattened)
+
+
+def test_simple_flat_dict():
+    input_dict = {"a": 1, "b": 2, "c": 3}
+    expected = {"a": 1, "b": 2, "c": 3}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_nested_dot_notation():
+    input_dict = {"user.name": "John", "user.age": 30, "user.address.street": "123 Main St"}
+    expected = {"user": {"name": "John", "age": 30, "address": {"street": "123 Main St"}}}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_array_notation():
+    input_dict = {"users[0]": "John", "users[1]": "Jane", "users[2]": "Bob"}
+    expected = {"users": ["John", "Jane", "Bob"]}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_mixed_notation():
+    input_dict = {"users[0].name": "John", "users[0].age": 30, "users[1].name": "Jane", "users[1].age": 25}
+    expected = {"users": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}]}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_direct_array_indices():
+    input_dict = {"0": "First", "1": "Second", "2": "Third"}
+    expected = ["First", "Second", "Third"]
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_mixed_types():
+    input_dict = {"string": "value", "number": 42, "boolean": True, "nested.value": None}
+    expected = {"string": "value", "number": 42, "boolean": True, "nested": {"value": None}}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_empty_dict():
+    input_dict: dict = {}
+    expected: dict = {}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_deep_nesting():
+    input_dict = {"a.b.c.d.e": "value", "a.b.c.d.f": "another"}
+    expected = {"a": {"b": {"c": {"d": {"e": "value", "f": "another"}}}}}
+    assert unflatten_dict(input_dict) == expected
+
+
+def test_invalid_array_indices():
+    input_dict = {"arr[0]": "first", "arr[invalid]": "second"}
+    with pytest.raises(ValueError):
+        unflatten_dict(input_dict)
+
+
+def test_mixed_array_and_object():
+    input_dict = {"users[0].name": "John", "users[0].pets[0]": "Dog", "users[0].pets[1]": "Cat"}
+    expected = {"users": [{"name": "John", "pets": ["Dog", "Cat"]}]}
+    assert unflatten_dict(input_dict) == expected

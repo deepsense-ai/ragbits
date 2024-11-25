@@ -23,8 +23,8 @@ def flatten_dict(
         if sep in k:
             raise ValueError(f"Separator '{sep}' found in key '{parent_key}' Cannot flatten dictionary safely.")
 
-        if k.endswith("]"):
-            raise ValueError(f"Key '{k}' cannot end with ']' Cannot flatten dictionary safely.")
+        if "[" in k or "]" in k:
+            raise ValueError(f"Key '{k}' cannot consist '[]' characters. Cannot flatten dictionary safely.")
 
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
 
@@ -43,7 +43,7 @@ def flatten_dict(
     return items
 
 
-def unflatten_dict(input_dict: dict[Any, Any]) -> dict[Any, Any] | list:
+def unflatten_dict(input_dict: dict[str, Any]) -> dict[str, Any] | list:
     """
     Converts a flattened dictionary with dot notation and array notation into a nested structure.
 
@@ -79,10 +79,13 @@ def unflatten_dict(input_dict: dict[Any, Any]) -> dict[Any, Any] | list:
     Attribution:
         - This function is based on the answer by user "djtubig-malicex" on Stack Overflow: https://stackoverflow.com/a/67905359/27947364
     """
+    if not input_dict:
+        return {}
+
     new_dict: dict[Any, Any] = {}
     field_keys = sorted(input_dict.keys())
 
-    def _parse_key(key: str) -> tuple[str | int | None, str | int | None]:
+    def _decompose_key(key: str) -> tuple[str | int | None, str | int | None]:
         _key = str(key)
         _current_key: str | int | None = None
         _current_subkey: str | int | None = None
@@ -109,7 +112,7 @@ def unflatten_dict(input_dict: dict[Any, Any]) -> dict[Any, Any] | list:
 
     for each_key in field_keys:
         field_value = input_dict[each_key]
-        current_key, current_subkey = _parse_key(each_key)
+        current_key, current_subkey = _decompose_key(each_key)
 
         if current_key is not None and current_subkey is not None:
             if isinstance(current_key, str) and current_key.isdigit():
