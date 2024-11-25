@@ -20,10 +20,10 @@ def flatten_dict(
     """
     items: dict[str, str | int | float | bool] = {}
     for k, v in input_dict.items():
-        if sep in parent_key:
+        if sep in k:
             raise ValueError(f"Separator '{sep}' found in key '{parent_key}' Cannot flatten dictionary safely.")
 
-        if parent_key.endswith("]"):
+        if k.endswith("]"):
             raise ValueError(f"Key '{parent_key}' cannot end with ']' Cannot flatten dictionary safely.")
 
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
