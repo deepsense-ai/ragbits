@@ -39,8 +39,10 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
         embeddings=[[0.1, 0.2, 0.3]],
         metadatas=[
             {
-                "__metadata": '{"content": "test content", "document": {"title": "test title", "source":'
-                ' {"path": "/test/path"}, "document_type": "test_type"}}',
+                "content": "test content",
+                "document.title": "test title",
+                "document.source.path": "/test/path",
+                "document.document_type": "test_type",
             }
         ],
         documents=["test content"],
@@ -69,12 +71,16 @@ async def test_retrieve(
         "metadatas": [
             [
                 {
-                    "__metadata": '{"content": "test content 1", "document": {"title": "test title 1", "source":'
-                    ' {"path": "/test/path-1"}, "document_type": "txt"}}',
+                    "content": "test content 1",
+                    "document.title": "test title 1",
+                    "document.source.path": "/test/path-1",
+                    "document.document_type": "txt",
                 },
                 {
-                    "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source":'
-                    ' {"path": "/test/path-2"}, "document_type": "txt"}}',
+                    "content": "test content 2",
+                    "document.title": "test title 2",
+                    "document.source.path": "/test/path-2",
+                    "document.document_type": "txt",
                 },
             ]
         ],
@@ -99,12 +105,16 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     mock_chromadb_store._collection.get.return_value = {  # type: ignore
         "metadatas": [
             {
-                "__metadata": '{"content": "test content", "document": {"title": "test title", "source":'
-                ' {"path": "/test/path"}, "document_type": "test_type"}}',
+                "content": "test content",
+                "document.title": "test title",
+                "document.source.path": "/test/path",
+                "document.document_type": "test_type",
             },
             {
-                "__metadata": '{"content": "test content 2", "document": {"title": "test title 2", "source":'
-                ' {"path": "/test/path"}, "document_type": "test_type"}}',
+                "content": "test content 2",
+                "document.title": "test title 2",
+                "document.source.path": "/test/path",
+                "document.document_type": "test_type",
             },
         ],
         "embeddings": [[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]],
@@ -125,3 +135,53 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert entries[1].vector == [0.13, 0.26, 0.30]
     assert entries[1].key == "test content2"
     assert entries[1].id == "test_id_2"
+
+
+async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> None:
+    # Prepare nested metadata structure
+    original_metadata = {
+        "content": "test content",
+        "document": {
+            "title": "test title",
+            "source": {"path": "/test/path", "type": "pdf"},
+            "metadata": {"author": "Test Author", "tags": ["test", "metadata"], "pages": 42},
+        },
+    }
+
+    # Create and store entry
+    input_entry = VectorStoreEntry(
+        id="test_doc_1", key="test content", vector=[0.1, 0.2, 0.3], metadata=original_metadata
+    )
+
+    # Mock the collection's behavior for both store and retrieve
+    mock_collection = mock_chromadb_store._collection
+
+    # Store the entry
+    await mock_chromadb_store.store([input_entry])
+
+    # Verify store called with flattened metadata
+    mock_collection.add.assert_called_once()  # type: ignore
+    stored_metadata = mock_collection.add.call_args[1]["metadatas"][0]  # type: ignore
+    assert stored_metadata["content"] == "test content"
+    assert stored_metadata["document.title"] == "test title"
+    assert stored_metadata["document.source.path"] == "/test/path"
+    assert stored_metadata["document.source.type"] == "pdf"
+    assert stored_metadata["document.metadata.author"] == "Test Author"
+    assert stored_metadata["document.metadata.pages"] == 42
+
+    # Mock query response with flattened metadata
+    mock_collection.query.return_value = {  # type: ignore
+        "ids": [["test_doc_1"]],
+        "embeddings": [[[0.1, 0.2, 0.3]]],
+        "distances": [[0.0]],
+        "documents": [["test content"]],
+        "metadatas": [[stored_metadata]],
+    }
+
+    # Retrieve the entry
+    retrieved_entries = await mock_chromadb_store.retrieve([0.1, 0.2, 0.3])
+    assert len(retrieved_entries) == 1
+
+    retrieved_metadata = retrieved_entries[0].metadata
+    # Verify the nested structure is restored correctly
+    assert retrieved_metadata == original_metadata
