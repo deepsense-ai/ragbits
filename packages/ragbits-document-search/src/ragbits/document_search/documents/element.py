@@ -100,10 +100,12 @@ class Element(BaseModel, ABC):
 
         Args:
             vector: The vector.
+            embedding_type: EmbeddingTypes.TEXT, EmbeddingTypes.IMAGE or None
 
         Returns:
             The vector database entry
         """
+        metadata = self.model_dump(exclude={"id", "key"})
         vector_store_entry_id = self.id
         if embedding_type:
             id_components = [
@@ -111,9 +113,7 @@ class Element(BaseModel, ABC):
                 str(embedding_type),
             ]
             vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
-
-        metadata = self.model_dump(exclude={"id", "key"})
-        metadata["embedding_type"] = str(embedding_type)
+            metadata["embedding_type"] = str(embedding_type)
         return VectorStoreEntry(
             id=vector_store_entry_id,
             key=self.key,

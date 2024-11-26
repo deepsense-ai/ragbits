@@ -5,7 +5,7 @@ from ragbits.core.utils.config_handling import get_cls_from_config
 from .base import Embeddings, EmbeddingTypes
 from .noop import NoopEmbeddings
 
-__all__ = ["Embeddings", "NoopEmbeddings", "EmbeddingTypes"]
+__all__ = ["EmbeddingTypes", "Embeddings", "NoopEmbeddings"]
 
 module = sys.modules[__name__]
 

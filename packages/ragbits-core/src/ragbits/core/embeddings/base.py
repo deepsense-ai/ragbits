@@ -3,6 +3,9 @@ from enum import Enum
 
 
 class EmbeddingTypes(Enum):
+    """
+    Enum for listing supported embedding types
+    """
     TEXT: str = "text"
     IMAGE: str = "image"
 
