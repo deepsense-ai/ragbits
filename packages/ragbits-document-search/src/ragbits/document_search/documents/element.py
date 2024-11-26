@@ -42,15 +42,15 @@ class Element(BaseModel, ABC):
         id_components = [
             self.document_meta.id,
             self.element_type,
-            self.key,
-            self.text_representation,
             str(self.location),
         ]
+        if self.key:
+            id_components.append(self.key)
         return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def key(self) -> str:
+    def key(self) -> str | None:
         """
         Get the representation of the element for embedding.
 
@@ -136,17 +136,24 @@ class ImageElement(Element):
     """
 
     element_type: str = "image"
-    description: str
-    ocr_extracted_text: str
+    description: str | None
+    ocr_extracted_text: str | None
     image_bytes: bytes
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
         Returns:
             The text representation.
         """
-        return f"Description: {self.description}\nExtracted text: {self.ocr_extracted_text}"
+        if not self.description or not self.ocr_extracted_text:
+            return None
+        desc = ""
+        if self.description:
+            desc += f"Description: {self.description}\n"
+        if self.ocr_extracted_text:
+            desc += f"Extracted text: {self.ocr_extracted_text}"
+        return desc
