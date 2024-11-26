@@ -152,7 +152,7 @@ class DocumentSearch:
         """
         elements_with_text = [element for element in elements if element.key]
         images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
-        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])
+        vectors = await self.embedder.embed_text([element.key for element in elements_with_text if element.key])
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
 
@@ -160,7 +160,7 @@ class DocumentSearch:
         if num_images_with_no_textual_repr > 0:
             warnings.warn(
                 f"{len(image_elements) - len(images_with_text)} of {len(image_elements)}"
-                f"Have no textual representation"
+                "Have no textual representation and have not been text emedded"
             )
 
         entries = [

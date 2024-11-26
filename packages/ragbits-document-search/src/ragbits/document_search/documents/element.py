@@ -62,7 +62,7 @@ class Element(BaseModel, ABC):
     @computed_field  # type: ignore[prop-decorator]
     @property
     @abstractmethod
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
@@ -116,7 +116,7 @@ class Element(BaseModel, ABC):
             metadata["embedding_type"] = str(embedding_type)
         return VectorStoreEntry(
             id=vector_store_entry_id,
-            key=self.key,
+            key=self.key or "null",
             vector=vector,
             metadata=metadata,
         )
