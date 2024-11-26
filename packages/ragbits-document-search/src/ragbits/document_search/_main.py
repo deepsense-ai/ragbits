@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings import Embeddings, get_embeddings
+from ragbits.core.embeddings import Embeddings, EmbeddingTypes, get_embeddings
 from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -150,16 +150,29 @@ class DocumentSearch:
         Args:
             elements: The list of Elements to insert.
         """
-        vectors = await self.embedder.embed_text([element.key for element in elements])
+        elements_with_text = [element for element in elements if element.key]
+        images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
+        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
+
+        num_images_with_no_textual_repr = len(image_elements) - len(images_with_text)
+        if num_images_with_no_textual_repr > 0:
+            warnings.warn(
+                f"{len(image_elements) - len(images_with_text)} of {len(image_elements)}"
+                f"Have no textual representation"
+            )
+
+        entries = [
+            element.to_vector_db_entry(vector, EmbeddingTypes.TEXT)
+            for element, vector in zip(elements_with_text, vectors, strict=False)
+        ]
 
         if image_elements and self.embedder.image_support():
             image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
             entries.extend(
                 [
-                    element.to_vector_db_entry(vector)
+                    element.to_vector_db_entry(vector, EmbeddingTypes.IMAGE)
                     for element, vector in zip(image_elements, image_vectors, strict=False)
                 ]
             )

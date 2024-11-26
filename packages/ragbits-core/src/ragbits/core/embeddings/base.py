@@ -1,4 +1,10 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+
+
+class EmbeddingTypes(Enum):
+    TEXT: str = "text"
+    IMAGE: str = "image"
 
 
 class Embeddings(ABC):

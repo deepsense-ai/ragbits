@@ -4,6 +4,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, computed_field
 
+from ragbits.core.embeddings import EmbeddingTypes
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -42,15 +43,14 @@ class Element(BaseModel, ABC):
         id_components = [
             self.document_meta.id,
             self.element_type,
-            self.key,
-            self.text_representation,
+            self.key or "null",
             str(self.location),
         ]
         return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def key(self) -> str:
+    def key(self) -> str | None:
         """
         Get the representation of the element for embedding.
 
@@ -90,9 +90,11 @@ class Element(BaseModel, ABC):
         """
         element_type = db_entry.metadata["element_type"]
         element_cls = Element._elements_registry[element_type]
+        if "embedding_type" in db_entry.metadata:
+            del db_entry.metadata["embedding_type"]
         return element_cls(**db_entry.metadata)
 
-    def to_vector_db_entry(self, vector: list[float]) -> VectorStoreEntry:
+    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingTypes | None = None) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 
@@ -102,11 +104,21 @@ class Element(BaseModel, ABC):
         Returns:
             The vector database entry
         """
+        vector_store_entry_id = self.id
+        if embedding_type:
+            id_components = [
+                vector_store_entry_id,
+                str(embedding_type),
+            ]
+            vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+
+        metadata = self.model_dump(exclude={"id", "key"})
+        metadata["embedding_type"] = str(embedding_type)
         return VectorStoreEntry(
-            id=self.id,
+            id=vector_store_entry_id,
             key=self.key,
             vector=vector,
-            metadata=self.model_dump(exclude={"id", "key"}),
+            metadata=metadata,
         )
 
 
@@ -142,11 +154,18 @@ class ImageElement(Element):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
         Returns:
             The text representation.
         """
-        return f"Description: {self.description}\nExtracted text: {self.ocr_extracted_text}"
+        if not self.description and not self.ocr_extracted_text:
+            return None
+        repr = ""
+        if self.description:
+            repr += f"Description: {self.description}\n"
+        if self.ocr_extracted_text:
+            repr += f"Extracted text: {self.ocr_extracted_text}"
+        return repr
