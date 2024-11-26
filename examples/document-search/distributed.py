@@ -24,7 +24,7 @@ To run the script, execute the following command:
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search[cluster]",
+#     "ragbits-document-search[distributed]",
 #     "ragbits-core[litellm]",
 # ]
 # ///
@@ -35,6 +35,7 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.ingestion.processor_strategies import DistributedProcessing
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
@@ -68,9 +69,11 @@ async def main() -> None:
         model="text-embedding-3-small",
     )
     vector_store = InMemoryVectorStore()
+    processing_strategy = DistributedProcessing()
     document_search = DocumentSearch(
         embedder=embedder,
         vector_store=vector_store,
+        processing_strategy=processing_strategy,
     )
 
     await document_search.ingest(documents)
