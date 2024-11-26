@@ -4,10 +4,10 @@ from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import ProcessingExecutionStrategy
 from .batched import BatchedAsyncProcessing
-from .sequential import SequentialProcessing
 from .distributed import DistributedProcessing
+from .sequential import SequentialProcessing
 
-__all__ = ["BatchedAsyncProcessing", "ProcessingExecutionStrategy", "SequentialProcessing", "DistributedProcessing"]
+__all__ = ["BatchedAsyncProcessing", "DistributedProcessing", "ProcessingExecutionStrategy", "SequentialProcessing"]
 
 
 def get_processing_strategy(config: dict | None = None) -> ProcessingExecutionStrategy:
