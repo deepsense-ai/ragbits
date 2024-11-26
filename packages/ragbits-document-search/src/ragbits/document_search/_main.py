@@ -159,7 +159,7 @@ class DocumentSearch:
         num_images_with_no_textual_repr = len(image_elements) - len(images_with_text)
         if num_images_with_no_textual_repr > 0:
             warnings.warn(
-                f"{len(image_elements) - len(images_with_text)} of {len(image_elements)}"
+                f"{num_images_with_no_textual_repr} of {len(image_elements)}"
                 "Have no textual representation and have not been text emedded"
             )
 
