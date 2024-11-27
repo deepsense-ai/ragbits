@@ -141,7 +141,25 @@ class DocumentSearch:
         elements = await self.processing_strategy.process_documents(
             documents, self.document_processor_router, document_processor
         )
+        await self.remove_entries_with_same_id(elements)
         await self.insert_elements(elements)
+
+    async def remove_entries_with_same_id(self, elements: list[Element]) -> None:
+        """
+        Remove entries from the vector store whose source id is present in the elements' metadata.
+
+        Args:
+            elements: List of elements whose source ids will be checked and removed from the vector store if present.
+        """
+        unique_source_ids = {element.document_meta.source.id for element in elements}
+
+        ids_to_delete = []
+        for entry in await self.vector_store.list():
+            if entry.metadata["document_meta"]["source"]["id"] in unique_source_ids:
+                ids_to_delete.append(entry.id)
+
+        if ids_to_delete:
+            await self.vector_store.remove(ids_to_delete)
 
     async def insert_elements(self, elements: list[Element]) -> None:
         """
