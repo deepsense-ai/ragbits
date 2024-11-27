@@ -1,7 +1,7 @@
-import contextlib
 import os
 import tempfile
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -9,16 +9,12 @@ from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
 
-try:
+with suppress(ImportError):
     from gcloud.aio.storage import Storage
-except ImportError:
-    contextlib.suppress(ImportError)
 
-try:
+with suppress(ImportError):
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
-except ImportError:
-    contextlib.suppress(ImportError)
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
