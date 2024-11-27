@@ -105,18 +105,12 @@ class Element(BaseModel, ABC):
         Returns:
             The vector database entry
         """
-        id_components = [
-            self.id,
-            str(embedding_type),
-        ]
-        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
-        metadata = self.model_dump(exclude={"id", "key"})
-        metadata["embedding_type"] = str(embedding_type)
-        return VectorStoreEntry(
-            id=vector_store_entry_id,
-            key=self.key or "null",
+        return VectorStoreEntry.from_element_data(
+            element_id=self.id,
+            element_key=self.key or "null",
             vector=vector,
-            metadata=metadata,
+            metadata=self.model_dump(exclude={"id", "key"}),
+            embedding_type=embedding_type,
         )
 
 
