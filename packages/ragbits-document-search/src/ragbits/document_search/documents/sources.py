@@ -1,3 +1,4 @@
+import contextlib
 import os
 import tempfile
 from abc import ABC, abstractmethod
@@ -11,13 +12,13 @@ from pydantic_core import CoreSchema, core_schema
 try:
     from gcloud.aio.storage import Storage
 except ImportError:
-    pass
+    contextlib.suppress(ImportError)
 
 try:
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 except ImportError:
-    pass
+    contextlib.suppress(ImportError)
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
