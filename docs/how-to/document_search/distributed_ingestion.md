@@ -35,7 +35,8 @@ By default, when run outside of a Ray cluster, the Ray Core library will paralle
 
 ## Remote document ingestion
 
-When run inside a Ray cluster, the Ray Core library will parallelize the processing of documents across the nodes in the cluster. There are several ways of sending documents to the Ray cluster for processing, but using Ray Jobs API is by far the most recommended one.  
+When run inside a Ray cluster, the Ray Core library will parallelize the processing of documents across the nodes in the cluster. There are several ways of sending documents to the Ray cluster for processing, but using Ray Jobs API is by far the most recommended one.
+
 To use Ray Jobs API, you should prepare the processing script and the documents to be processed, and then submit the job to the Ray cluster.
 Make sure to replace `<cluster_address>` with the address of your Ray cluster and adjust the `entrypoint` and `runtime_env` parameters to match your setup.
 
@@ -46,7 +47,7 @@ client = JobSubmissionClient("http://<cluster_address>:8265")
 job_id = client.submit_job(
     entrypoint="python script.py",
     runtime_env={
-        "working_dir": "./", 
+        "working_dir": "./",
         "pip": [
             "ragbits-core[litellm]",
             "ragbits-document-search[distributed]"
