@@ -33,6 +33,12 @@ classifiers = [
 ]
 dependencies = ["unstructured>=0.15.13", "unstructured-client>=0.26.0", "pdf2image>=1.17.0", "ragbits-core==0.4.0"]
 
+[project.urls]
+"Homepage" = "https://github.com/deepsense-ai/ragbits"
+"Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
+"Documentation" = "https://ragbits.deepsense.ai/"
+"Source" = "https://github.com/deepsense-ai/ragbits"
+
 [project.optional-dependencies]
 gcs = [
     "gcloud-aio-storage~=9.3.0"

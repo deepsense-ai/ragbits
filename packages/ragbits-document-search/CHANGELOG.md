@@ -4,6 +4,11 @@
 
 ## 0.4.0 (2024-11-27)
 
+### Added
+
+- Add support for batch ingestion (#185).
+- Ingesting images is now supported (#172).
+
 ### Changed
 
 - ragbits-core updated to version v0.4.0

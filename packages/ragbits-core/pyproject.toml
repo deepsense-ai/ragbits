@@ -38,6 +38,12 @@ dependencies = [
     "tomli~=2.0.2",
 ]
 
+[project.urls]
+"Homepage" = "https://github.com/deepsense-ai/ragbits"
+"Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
+"Documentation" = "https://ragbits.deepsense.ai/"
+"Source" = "https://github.com/deepsense-ai/ragbits"
+
 [project.optional-dependencies]
 chroma = [
     "chromadb~=0.4.24",

@@ -8,9 +8,16 @@
 
 - ragbits-cli updated to version v0.4.0
 - ragbits-document-search updated to version v0.4.0
+  - Add support for batch ingestion (#185).
+  - Ingesting images is now supported (#172).
 - ragbits-evaluate updated to version v0.4.0
+  - Introduced optimization with optuna (#177).
+  - Add synthetic data generation pipeline (#165).
 - ragbits-guardrails updated to version v0.4.0
 - ragbits-core updated to version v0.4.0
+  - Add support for Qdrant VectorStore (#163).
+  - Add streaming interface to LLMs (#188).
+  - Better images support in Prompt abstractions (#201).
 
 ## 0.3.0 (2024-11-06)
 

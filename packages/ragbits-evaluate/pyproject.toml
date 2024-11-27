@@ -4,6 +4,7 @@ version = "0.4.0"
 description = "Evaluation module for Ragbits components"
 readme = "README.md"
 requires-python = ">=3.10"
+
 license = "MIT"
 authors = [
     { name = "deepsense.ai", email = "ragbits@deepsense.ai"}
@@ -32,6 +33,12 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = ["hydra-core~=1.3.2", "neptune~=1.12.0", "optuna==4.0.0", "distilabel==1.4.1", "ragbits-core==0.4.0"]
+
+[project.urls]
+"Homepage" = "https://github.com/deepsense-ai/ragbits"
+"Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
+"Documentation" = "https://ragbits.deepsense.ai/"
+"Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
 relari = [

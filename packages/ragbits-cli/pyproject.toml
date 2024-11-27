@@ -33,6 +33,12 @@ classifiers = [
 ]
 dependencies = ["typer>=0.12.5", "ragbits-core==0.4.0"]
 
+[project.urls]
+"Homepage" = "https://github.com/deepsense-ai/ragbits"
+"Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
+"Documentation" = "https://ragbits.deepsense.ai/"
+"Source" = "https://github.com/deepsense-ai/ragbits"
+
 [project.scripts]
 ragbits = "ragbits.cli:main"
 rbts = "ragbits.cli:main"
