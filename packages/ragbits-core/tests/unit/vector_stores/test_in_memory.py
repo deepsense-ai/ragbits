@@ -49,7 +49,9 @@ async def store_fixture() -> InMemoryVectorStore:
         ),
     ]
 
-    entries = [element[0].to_vector_db_entry(vector=element[1], embedding_type=EmbeddingTypes.TEXT) for element in elements]
+    entries = [
+        element[0].to_vector_db_entry(vector=element[1], embedding_type=EmbeddingTypes.TEXT) for element in elements
+    ]
 
     store = InMemoryVectorStore()
     await store.store(entries)
