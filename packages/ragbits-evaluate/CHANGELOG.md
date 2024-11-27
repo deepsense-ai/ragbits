@@ -2,7 +2,16 @@
 
 ## Unreleased
 
-- Generic autoconfiguration pipeline framework
+## 0.4.0 (2024-11-27)
+
+### Added
+
+- Introduced optimization with optuna (#177).
+- Add synthetic data generation pipeline (#165).
+
+### Changed
+
+- ragbits-core updated to version v0.4.0
 
 ## 0.3.0 (2024-11-06)
 

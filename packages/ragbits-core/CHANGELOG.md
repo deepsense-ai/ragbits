@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.4.0 (2024-11-27)
+
+
+### Added
+
+- Add support for Qdrant VectorStore (#163).
+- Add streaming interface to LLMs (#188).
+- Better images support in Prompt abstractions (#201).
+
+
 ## 0.3.0 (2024-11-06)
 
 ### Added

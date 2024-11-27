@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.3.0"
+version = "0.4.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -37,6 +37,12 @@ dependencies = [
     "typer~=0.12.5",
     "tomli~=2.0.2",
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/deepsense-ai/ragbits"
+"Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
+"Documentation" = "https://ragbits.deepsense.ai/"
+"Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
 chroma = [
