@@ -1,7 +1,7 @@
 import json
 
 import qdrant_client
-from qdrant_client import AsyncQdrantClient
+from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, Filter, VectorParams
 
 from ragbits.core.audit import traceable
@@ -145,6 +145,21 @@ class QdrantVectorStore(VectorStore):
             )
             for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
         ]
+
+    @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+        await self._client.delete(
+            collection_name=self._index_name,
+            points_selector=models.PointIdsList(
+                points=ids,
+            ),
+        )
 
     @traceable
     async def list(  # type: ignore

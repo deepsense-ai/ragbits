@@ -82,6 +82,17 @@ class InMemoryVectorStore(VectorStore):
         ]
 
     @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+        for id in ids:
+            del self._storage[id]
+
+    @traceable
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:
