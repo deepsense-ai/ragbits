@@ -95,6 +95,15 @@ async def test_retrieve(
         assert entry.key == result["content"]
 
 
+async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
+    ids_to_remove = ["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
+
+    await mock_chromadb_store.remove(ids_to_remove)
+
+    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_once()  # type: ignore
+    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_with(ids=ids_to_remove)
+
+
 async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     mock_chromadb_store._collection.get.return_value = {  # type: ignore
         "metadatas": [
