@@ -42,9 +42,6 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         def process_document_remotely(document: DocumentMeta | Document | Source) -> list[Element]:
             return asyncio.run(self.process_document(document, processor_router, processor_overwrite))
 
-        tasks = [
-            process_document_remotely.remote(document)
-            for document in documents
-        ]
+        tasks = [process_document_remotely.remote(document) for document in documents]
 
         return sum(await asyncio.gather(*tasks), [])

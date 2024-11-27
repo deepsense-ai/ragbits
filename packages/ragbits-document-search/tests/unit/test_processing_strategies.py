@@ -32,6 +32,7 @@ async def test_batched_strategy(documents: list[DocumentMeta]):
     elements = await strategy.process_documents(documents, router)
     assert len(elements) == 5
 
+
 async def test_distributed_strategy(documents: list[DocumentMeta]):
     router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = DistributedProcessing()
