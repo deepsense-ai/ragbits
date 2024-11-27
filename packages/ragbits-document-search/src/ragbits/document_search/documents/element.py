@@ -102,11 +102,14 @@ class Element(BaseModel, ABC):
         Returns:
             The vector database entry
         """
+        metadata = self.model_dump(exclude={"id", "key"})
+        metadata["document_meta"]["source"]["id"] = self.document_meta.source.id
+
         return VectorStoreEntry(
             id=self.id,
             key=self.key,
             vector=vector,
-            metadata=self.model_dump(exclude={"id", "key"}),
+            metadata=metadata,
         )
 
 
