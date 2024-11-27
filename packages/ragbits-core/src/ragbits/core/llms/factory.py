@@ -49,9 +49,6 @@ def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
     if llm_type not in core_config.default_llm_factories:
         raise ValueError(f"Default LLM of type {llm_type} is not defined in pyproject.toml config.")
     factory = core_config.default_llm_factories[llm_type]
-    if factory is None:
-        raise ValueError("Default LLM factory is not set")
-
     return get_llm_from_factory(factory)
 
 
@@ -75,3 +72,14 @@ def simple_litellm_vision_factory() -> LLM:
         LLM: An instance of the LiteLLM.
     """
     return LiteLLM(model_name="gpt-4o-mini")
+
+
+def simple_litellm_structured_output_factory() -> LLM:
+    """
+    A basic LLM factory that creates an LiteLLM instance with the structured output.
+    Functionality supported
+
+    Returns:
+        LLM: An instance of the LiteLLM.
+    """
+    return LiteLLM(model_name="gpt-4o-mini-2024-07-18", use_structured_output=True)
