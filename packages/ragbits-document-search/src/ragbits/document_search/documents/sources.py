@@ -1,6 +1,7 @@
 import os
 import tempfile
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -8,12 +9,12 @@ from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
 
-try:
+with suppress(ImportError):
+    from gcloud.aio.storage import Storage
+
+with suppress(ImportError):
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
-    from gcloud.aio.storage import Storage
-except ImportError:
-    pass
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
@@ -193,8 +194,8 @@ class GCSSource(Source):
 
         return path
 
-    @requires_dependencies(["gcloud.aio.storage"], "gcs")
     @classmethod
+    @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
         """
         List all sources in the given GCS bucket, matching the prefix.
