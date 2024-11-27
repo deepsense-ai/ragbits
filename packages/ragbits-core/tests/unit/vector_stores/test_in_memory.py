@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import computed_field
 
+from ragbits.core.embeddings import EmbeddingTypes
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -48,7 +49,7 @@ async def store_fixture() -> InMemoryVectorStore:
         ),
     ]
 
-    entries = [element[0].to_vector_db_entry(vector=element[1]) for element in elements]
+    entries = [element[0].to_vector_db_entry(vector=element[1], embedding_type=EmbeddingTypes.TEXT) for element in elements]
 
     store = InMemoryVectorStore()
     await store.store(entries)

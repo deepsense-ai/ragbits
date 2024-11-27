@@ -94,26 +94,24 @@ class Element(BaseModel, ABC):
             del db_entry.metadata["embedding_type"]
         return element_cls(**db_entry.metadata)
 
-    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingTypes | None = None) -> VectorStoreEntry:
+    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingTypes) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 
         Args:
             vector: The vector.
-            embedding_type: EmbeddingTypes.TEXT, EmbeddingTypes.IMAGE or None
+            embedding_type: EmbeddingTypes.TEXT, EmbeddingTypes.IMAGE
 
         Returns:
             The vector database entry
         """
+        id_components = [
+            self.id,
+            str(embedding_type),
+        ]
+        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
         metadata = self.model_dump(exclude={"id", "key"})
-        vector_store_entry_id = self.id
-        if embedding_type:
-            id_components = [
-                vector_store_entry_id,
-                str(embedding_type),
-            ]
-            vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
-            metadata["embedding_type"] = str(embedding_type)
+        metadata["embedding_type"] = str(embedding_type)
         return VectorStoreEntry(
             id=vector_store_entry_id,
             key=self.key or "null",
