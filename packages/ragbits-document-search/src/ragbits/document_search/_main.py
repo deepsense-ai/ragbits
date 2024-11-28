@@ -141,10 +141,10 @@ class DocumentSearch:
         elements = await self.processing_strategy.process_documents(
             documents, self.document_processor_router, document_processor
         )
-        await self.remove_entries_with_same_id(elements)
+        await self.remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
 
-    async def remove_entries_with_same_id(self, elements: list[Element]) -> None:
+    async def remove_entries_with_same_sources(self, elements: list[Element]) -> None:
         """
         Remove entries from the vector store whose source id is present in the elements' metadata.
 
