@@ -35,20 +35,28 @@ class Element(BaseModel, ABC):
     def id(self) -> str:
         """
         Retrieve the ID of the element, primarily used to represent the element's data.
-        The ID is computed as a UUID5 hash based on the element's data and embedding type
-        during insertion into the vector store.
 
         Returns:
-            UUID: The computed UUID5 hash representing the element.
+            str: string representing element
         """
-        id_components = [
-            self.document_meta.id,
-            self.element_type,
-            str(self.key),
-            str(self.text_representation),
-            str(self.location),
-        ]
-        return "-".join(id_components)
+        id_components = self.get_id_components()
+        return "&".join(f"{k}={v}" for k, v in id_components.items())
+
+    def get_id_components(self) -> dict[str, str]:
+        """
+        Creates a dictionary of key value pairs of id components
+
+        Returns:
+            dict: a dictionary
+        """
+        id_components = {
+            "meta": self.document_meta.id,
+            "type": self.element_type,
+            "key": str(self.key),
+            "text": str(self.text_representation),
+            "location": str(self.location),
+        }
+        return id_components
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -164,21 +172,13 @@ class ImageElement(Element):
             repr += f"Extracted text: {self.ocr_extracted_text}"
         return repr
 
-    @property
-    def id(self) -> str:
+    def get_id_components(self) -> dict[str, str]:
         """
-        Retrieve the ID of the element, primarily used to represent the element's data.
-        The ID is computed as a UUID5 hash based on the element's data and embedding type
-        during insertion into the vector store.
+        Creates a dictionary of key value pairs of id components
 
         Returns:
-           UUID: The computed UUID5 hash representing the element.
+            dict: a dictionary
         """
-        id_components = [
-            self.document_meta.id,
-            self.element_type,
-            str(self.key),
-            str(self.location),
-            hashlib.sha256(self.image_bytes).hexdigest(),
-        ]
-        return "-".join(id_components)
+        id_components = super().get_id_components()
+        id_components["image_hash"] = hashlib.sha256(self.image_bytes).hexdigest()
+        return id_components
