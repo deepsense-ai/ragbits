@@ -28,7 +28,15 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         Args:
             batch_size: The size of the batch to process documents in.
             It defaults to 10, but should be increased if the document processing is trivial (< 1s per batch).
+
+        Raises:
+            ModuleNotFoundError: If Ray is not installed.
         """
+        if not HAS_RAY:
+            raise ModuleNotFoundError(
+                "You need to install the 'distributed' extra requirements to use Ray distributed computing"
+            )
+
         self.batch_size = batch_size
 
     async def process_documents(
@@ -49,14 +57,7 @@ class DistributedProcessing(ProcessingExecutionStrategy):
 
         Returns:
             A list of elements.
-
-        Raises:
-            ModuleNotFoundError: If Ray is not installed
         """
-        if not HAS_RAY:
-            raise ModuleNotFoundError(
-                "You need to install the 'distributed' extra requirements to use Ray distributed computing"
-            )
 
         @ray.remote
         def process_document_remotely(documents: Sequence[DocumentMeta | Document | Source]) -> list[Element]:
