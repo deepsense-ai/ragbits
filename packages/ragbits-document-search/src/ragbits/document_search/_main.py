@@ -156,13 +156,6 @@ class DocumentSearch:
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
 
-        num_images_with_no_textual_repr = len(image_elements) - len(images_with_text)
-        if num_images_with_no_textual_repr > 0:
-            warnings.warn(
-                f"{num_images_with_no_textual_repr} of {len(image_elements)}"
-                "Have no textual representation and have not been text emedded"
-            )
-
         entries = [
             element.to_vector_db_entry(vector, EmbeddingType.TEXT)
             for element, vector in zip(elements_with_text, vectors, strict=False)
@@ -180,11 +173,6 @@ class DocumentSearch:
                 ]
             )
             not_embedded_image_elements = []
-        elif image_elements:
-            warnings.warn(
-                f"Image elements are not supported by the embedder {self.embedder}. "
-                f"Skipping {len(image_elements)} image elements."
-            )
 
         for image_element in not_embedded_image_elements:
             warnings.warn(f"Image: {image_element.id} could not be embedded")
