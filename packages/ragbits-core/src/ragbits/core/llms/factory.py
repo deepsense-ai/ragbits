@@ -13,7 +13,7 @@ def get_llm_from_factory(factory_path: str) -> LLM:
         factory_path (str): The path to the factory function.
 
     Returns:
-        LLM: An instance of the LLM.
+        LLM: An instance of the LLM class.
     """
     module_name, function_name = factory_path.rsplit(".", 1)
     module = importlib.import_module(module_name)
@@ -44,7 +44,7 @@ def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
         LLM: An instance of the default LLM.
 
     Raises:
-        ValueError: If the default LLM factory is not set or expected llm type is not defined in config
+        ValueError: If the expected llm type is not defined in config
     """
     if llm_type not in core_config.default_llm_factories:
         raise ValueError(f"Default LLM of type {llm_type} is not defined in pyproject.toml config.")
@@ -58,7 +58,7 @@ def simple_litellm_factory() -> LLM:
     default options, and assumes that the API key is set in the environment.
 
     Returns:
-        LLM: An instance of the LiteLLM.
+        LLM: An instance of the LiteLLM class.
     """
     return LiteLLM()
 
@@ -69,7 +69,7 @@ def simple_litellm_vision_factory() -> LLM:
     default options, and assumes that the API key is set in the environment.
 
     Returns:
-        LLM: An instance of the LiteLLM.
+        LLM: An instance of the LiteLLM class.
     """
     return LiteLLM(model_name="gpt-4o-mini")
 
