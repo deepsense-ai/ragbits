@@ -152,7 +152,7 @@ class DocumentSearch:
         """
         elements_with_text = [element for element in elements if element.key]
         images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
-        vectors = await self.embedder.embed_text([element.key for element in elements_with_text]) #type: ignore
+        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])  # type: ignore
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
 
