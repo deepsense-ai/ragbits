@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
@@ -29,24 +30,25 @@ class Element(BaseModel, ABC):
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    @computed_field  # type: ignore[prop-decorator]
+    # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         """
-        Get the ID of the element. The id is primarly used as a key in the vector store.
-        The current representation is a UUID5 hash of various element metadata, including
-        its contents and location where it was sourced from.
+        Retrieve the ID of the element, primarily used to represent the element's data.
+        The ID is computed as a UUID5 hash based on the element's data and embedding type
+        during insertion into the vector store.
 
         Returns:
-            The ID in the form of a UUID5 hash.
+            UUID: The computed UUID5 hash representing the element.
         """
         id_components = [
             self.document_meta.id,
             self.element_type,
-            self.key or "null",
+            str(self.key),
+            str(self.text_representation),
             str(self.location),
         ]
-        return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        return "-".join(id_components)
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -100,18 +102,18 @@ class Element(BaseModel, ABC):
 
         Args:
             vector: The vector.
-            embedding_type: EmbeddingTypes.TEXT, EmbeddingTypes.IMAGE
-
+            embedding_type: EmbeddingTypes
         Returns:
             The vector database entry
         """
-        return VectorStoreEntry.from_element_data(
-            element_id=self.id,
-            element_key=self.key or "null",
-            vector=vector,
-            metadata=self.model_dump(exclude={"id", "key"}),
-            embedding_type=embedding_type,
-        )
+        id_components = [
+            self.id,
+            str(embedding_type),
+        ]
+        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        metadata = self.model_dump(exclude={"id", "key"})
+        metadata["embedding_type"] = str(embedding_type)
+        return VectorStoreEntry(id=vector_store_entry_id, key=str(self.key), vector=vector, metadata=metadata)
 
 
 class TextElement(Element):
@@ -161,3 +163,22 @@ class ImageElement(Element):
         if self.ocr_extracted_text:
             repr += f"Extracted text: {self.ocr_extracted_text}"
         return repr
+
+    @property
+    def id(self) -> str:
+        """
+        Retrieve the ID of the element, primarily used to represent the element's data.
+        The ID is computed as a UUID5 hash based on the element's data and embedding type
+        during insertion into the vector store.
+
+        Returns:
+           UUID: The computed UUID5 hash representing the element.
+        """
+        id_components = [
+            self.document_meta.id,
+            self.element_type,
+            str(self.key),
+            str(self.location),
+            hashlib.sha256(self.image_bytes).hexdigest(),
+        ]
+        return "-".join(id_components)

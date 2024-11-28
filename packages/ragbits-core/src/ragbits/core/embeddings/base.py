@@ -4,7 +4,7 @@ from enum import Enum
 
 class EmbeddingTypes(Enum):
     """
-    Enum for listing supported embedding types
+    Types of Embeddings based on supported features
     """
 
     TEXT: str = "text"

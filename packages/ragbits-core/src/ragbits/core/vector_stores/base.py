@@ -1,9 +1,7 @@
-import uuid
 from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
-from ragbits.core.embeddings import EmbeddingTypes
 from ragbits.core.metadata_stores.base import MetadataStore
 
 WhereQuery = dict[str, str | int | float | bool]
@@ -18,29 +16,6 @@ class VectorStoreEntry(BaseModel):
     key: str
     vector: list[float]
     metadata: dict
-
-    @classmethod
-    def from_element_data(
-        cls, element_id: str, element_key: str, vector: list[float], metadata: dict, embedding_type: EmbeddingTypes
-    ) -> "VectorStoreEntry":
-        """
-        Instantiates VectorStoreEntry from Element Data
-        Args:
-            element_id: str, id of element
-            element_key: str - text representation of element
-            vector: embedded element
-            metadata: dict - element metadata
-            embedding_type: type of embedding, EmbeddingTypes.TEXT or EmbeddingTypes.IMAGE
-        Returns:
-            instance of VectorStoreEntry
-        """
-        id_components = [
-            element_id,
-            str(embedding_type),
-        ]
-        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
-        metadata["embedding_type"] = str(embedding_type)
-        return cls(id=vector_store_entry_id, key=element_key, vector=vector, metadata=metadata)
 
 
 class VectorStoreOptions(BaseModel, ABC):
