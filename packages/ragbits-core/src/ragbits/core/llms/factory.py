@@ -80,6 +80,6 @@ def simple_litellm_structured_output_factory() -> LLM:
     Functionality supported
 
     Returns:
-        LLM: An instance of the LiteLLM.
+        LLM: An instance of the LiteLLM class.
     """
     return LiteLLM(model_name="gpt-4o-mini-2024-07-18", use_structured_output=True)
