@@ -82,6 +82,11 @@ jobs:
           source .venv/bin/activate
           ./check_licenses.sh
 
+      - name: Check documentation builds correctly
+        run: |
+          source .venv/bin/activate
+          mkdocs build --strict
+
       - name: Generate pip freeze
         run: |
           source .venv/bin/activate

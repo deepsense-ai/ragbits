@@ -10,8 +10,8 @@ hide:
 </style>
 
 <div align="center" markdown="span">
-  ![ragbits logo](./assets/ragbits.png#only-light){ width="50%" }
-  ![ragbits logo](./assets/ragbits.png#only-dark){ width="50%" }
+  <!-- TODO: Shouldn't custom assets live in this repo too? -->
+  <img alt="ragbits logo" src="./assets/ragbits.png" width="50%">
 </div>
 
 <p align="center">

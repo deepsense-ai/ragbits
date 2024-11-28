@@ -39,6 +39,17 @@ then
 fi
 
 echo "✅ Linting passed!"
+
+echo "\n📚 Making sure that docs build...\n"
+
+uv run mkdocs build --strict
+
+if [ $? -ne 0 ]
+then
+    echo "⚠ Docs build failed. Aborting..."
+    exit 1
+fi
+
 echo "\n🔎 Running type checking...\n"
 
 uv run mypy .

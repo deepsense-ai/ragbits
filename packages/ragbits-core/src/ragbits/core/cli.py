@@ -39,7 +39,7 @@ def register(app: typer.Typer) -> None:
     @prompts_app.command()
     def lab(
         file_pattern: str = core_config.prompt_path_pattern,
-        llm_factory: str | None = core_config.default_llm_factories[LLMType.TEXT],
+        llm_factory: str = core_config.default_llm_factories[LLMType.TEXT],
     ) -> None:
         """
         Launches the interactive application for listing, rendering, and testing prompts
