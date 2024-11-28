@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
     "ragbits-core[chroma,lab,litellm,local,otel,qdrant]",
-    "ragbits-document-search[gcs,huggingface]",
+    "ragbits-document-search[gcs,huggingface,distributed]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
 ]

@@ -18,10 +18,18 @@ class _PromptInput(pydantic.BaseModel):
 
 class _ImagePromptInput(pydantic.BaseModel):
     """
-    Input format for the TestImagePrompt
+    Input format for the TestImagePrompt.
     """
 
-    images: list[bytes]
+    image: bytes | str | None
+
+
+class _ImagesPromptInput(pydantic.BaseModel):
+    """
+    List input format for the TestImagePrompt.
+    """
+
+    images: list[bytes | str]
 
 
 class _PromptOutput(pydantic.BaseModel):
@@ -31,6 +39,12 @@ class _PromptOutput(pydantic.BaseModel):
 
     song_title: str
     song_lyrics: str
+
+
+def _get_image_bytes() -> bytes:
+    """Get the test image as bytes."""
+    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
+        return f.read()
 
 
 def test_raises_when_no_user_message():
@@ -106,18 +120,43 @@ def test_raises_when_no_input_data():
         TestPrompt()
 
 
-def test_image_prompt():
-    """Tests the prompt creation of images"""
-    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
-        image_bytes = f.read()
-    image_list = [image_bytes]
+@pytest.mark.parametrize(
+    ("field_value", "image_present"),
+    [
+        (_get_image_bytes(), True),
+        ("http://example.com/image.jpg", True),
+        (None, False),
+    ],
+)
+def test_image_prompt(field_value: bytes | str, image_present: bool):
+    """Tests the prompt creation using an image"""
 
     class ImagePrompt(Prompt):
         user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=field_value))
+    assert (len(prompt.list_images()) > 0) == image_present
+
+
+@pytest.mark.parametrize(
+    ("field_value", "expected_number"),
+    [
+        ([_get_image_bytes(), "http://example.com/image.jpg"], 2),
+        (["http://example.com/image.jpg"], 1),
+        ([_get_image_bytes()], 1),
+        ([], 0),
+    ],
+)
+def test_images_prompt(field_value: list[bytes | str], expected_number: int):
+    """Tests the prompt creation using images"""
+
+    class ImagesPrompt(Prompt):
+        user_prompt = "What is on these images?"
         image_input_fields = ["images"]
 
-    prompt = ImagePrompt(_ImagePromptInput(images=image_list))
-    assert len(prompt.list_images()) == 1
+    prompt = ImagesPrompt(_ImagesPromptInput(images=field_value))
+    assert len(prompt.list_images()) == expected_number
 
 
 def test_prompt_with_no_input_type():
