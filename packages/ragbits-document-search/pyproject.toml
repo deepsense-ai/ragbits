@@ -46,6 +46,9 @@ gcs = [
 huggingface = [
     "datasets~=3.0.1",
 ]
+distributed = [
+    "ray>=2.39.0",
+]
 
 [tool.uv]
 dev-dependencies = [
