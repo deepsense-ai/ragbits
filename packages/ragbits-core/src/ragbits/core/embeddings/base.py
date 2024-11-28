@@ -4,7 +4,13 @@ from enum import Enum
 
 class EmbeddingTypes(Enum):
     """
-    Types of Embeddings based on supported features
+    Defines types of embeddings based on supported features.
+
+    Used to specify the embedding type for a given element. Unlike `element_type`,
+    which categorizes the element itself, `embedding_type` determines how the
+    element's data is represented. For example, an image element can support
+    multiple embedding types, such as a description, OCR output, or raw bytes,
+    allowing for the creation of different embeddings for the same element.
     """
 
     TEXT: str = "text"
