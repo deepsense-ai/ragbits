@@ -32,11 +32,7 @@ def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
     Returns:
         LLM: An instance of the default LLM.
 
-    Raises:
-        ValueError: If the expected llm type is not defined in config
     """
-    if llm_type not in core_config.default_llm_factories:
-        raise ValueError(f"Default LLM of type {llm_type} is not defined in pyproject.toml config.")
     factory = core_config.default_llm_factories[llm_type]
     return get_llm_from_factory(factory)
 
