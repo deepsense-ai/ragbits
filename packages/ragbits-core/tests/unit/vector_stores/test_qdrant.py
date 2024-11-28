@@ -112,6 +112,7 @@ async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
 
 
 async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
+    mock_qdrant_store._client.collection_exists.return_value = True  # type: ignore
     mock_qdrant_store._client.query_points.return_value = models.QueryResponse(  # type: ignore
         points=[
             models.ScoredPoint(

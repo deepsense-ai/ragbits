@@ -184,10 +184,8 @@ class QdrantVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        collections = await self._client.get_collections()
-        collection_names = [collection.name for collection in collections.collections]
-
-        if self._index_name not in collection_names:
+        collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+        if not collection_exists:
             return []
 
         results = await self._client.query_points(
