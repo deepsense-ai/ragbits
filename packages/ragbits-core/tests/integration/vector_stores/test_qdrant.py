@@ -1,10 +1,10 @@
 import os
 import tempfile
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -26,9 +26,8 @@ async def test_update_document() -> None:
     document_1 = DocumentMeta.from_local_path(Path(document_1_path))
     document_2 = DocumentMeta.from_local_path(Path(document_2_path))
 
-    embedder = LiteLLMEmbeddings(
-        model="text-embedding-3-small",
-    )
+    embedder = AsyncMock()
+    embedder.embed_text.return_value = [[0.0], [0.0]]
     vector_store = QdrantVectorStore(
         client=AsyncQdrantClient(":memory:"),
         index_name="test_index_name",
