@@ -21,17 +21,6 @@ def get_llm_from_factory(factory_path: str) -> LLM:
     return function()
 
 
-def has_default_llm(llm_type: LLMType = LLMType.TEXT) -> bool:
-    """
-    Check if the default LLM factory is set in the configuration.
-
-    Returns:
-        bool: Whether the default LLM factory is set.
-    """
-    default_factory = core_config.default_llm_factories.get(llm_type, None)
-    return default_factory is not None
-
-
 def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
     """
     Get an instance of the default LLM using the factory function
