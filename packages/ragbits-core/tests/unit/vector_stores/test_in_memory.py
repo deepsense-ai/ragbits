@@ -72,6 +72,7 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["name"] == result
 
+
 async def test_remove(store: InMemoryVectorStore) -> None:
     entries = await store.list()
     entry_number = len(entries)

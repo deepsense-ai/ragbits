@@ -1,4 +1,5 @@
 import json
+import typing
 
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
@@ -157,7 +158,7 @@ class QdrantVectorStore(VectorStore):
         await self._client.delete(
             collection_name=self._index_name,
             points_selector=models.PointIdsList(
-                points=ids,
+                points=typing.cast(list[int | str], ids),
             ),
         )
 

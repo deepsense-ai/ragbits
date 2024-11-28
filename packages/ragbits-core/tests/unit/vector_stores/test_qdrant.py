@@ -1,3 +1,4 @@
+import typing
 from unittest.mock import AsyncMock
 
 import pytest
@@ -102,10 +103,10 @@ async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
     await mock_qdrant_store.remove(ids_to_remove)
 
     mock_qdrant_store._client.delete.assert_called_once()  # type: ignore
-    mock_qdrant_store._client.delete.assert_called_with(
+    mock_qdrant_store._client.delete.assert_called_with(  # type: ignore
         collection_name="test_collection",
         points_selector=models.PointIdsList(
-            points=ids_to_remove,
+            points=typing.cast(list[int | str], ids_to_remove),
         ),
     )
 

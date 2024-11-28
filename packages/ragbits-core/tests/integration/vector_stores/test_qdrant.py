@@ -15,13 +15,13 @@ async def test_update_document() -> None:
     document_2_content = "This is another test sentence and it should be removed from the vector store"
     document_2_new_content = "This is one more test sentence and it should be added to the vector store"
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as document_1:
-        document_1.write(document_1_content)
-        document_1_path = document_1.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as file_1:
+        file_1.write(document_1_content)
+        document_1_path = file_1.name
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as document_2:
-        document_2.write(document_2_content)
-        document_2_path = document_2.name
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8") as file_2:
+        file_2.write(document_2_content)
+        document_2_path = file_2.name
 
     document_1 = DocumentMeta.from_local_path(Path(document_1_path))
     document_2 = DocumentMeta.from_local_path(Path(document_2_path))

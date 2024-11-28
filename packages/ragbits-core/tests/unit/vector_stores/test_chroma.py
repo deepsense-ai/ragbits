@@ -101,7 +101,7 @@ async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
     await mock_chromadb_store.remove(ids_to_remove)
 
     mock_chromadb_store._client.get_or_create_collection().delete.assert_called_once()  # type: ignore
-    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_with(ids=ids_to_remove)
+    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_with(ids=ids_to_remove)  # type: ignore
 
 
 async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
