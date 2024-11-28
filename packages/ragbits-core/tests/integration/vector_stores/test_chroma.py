@@ -8,7 +8,7 @@ from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.sources import LocalFileSource
 
 
-async def test_update_document() -> None:
+async def test_handling_document_ingestion_with_different_content_and_verifying_replacement() -> None:
     document_1_content = "This is a test sentence and it should be in the vector store"
     document_2_content = "This is another test sentence and it should be removed from the vector store"
     document_2_new_content = "This is one more test sentence and it should be added to the vector store"
