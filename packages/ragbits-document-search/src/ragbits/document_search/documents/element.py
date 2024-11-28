@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, computed_field
 
-from ragbits.core.embeddings import EmbeddingTypes
+from ragbits.core.embeddings import EmbeddingType
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -96,7 +96,7 @@ class Element(BaseModel, ABC):
             del db_entry.metadata["embedding_type"]
         return element_cls(**db_entry.metadata)
 
-    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingTypes) -> VectorStoreEntry:
+    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingType) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 

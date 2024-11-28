@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 
-class EmbeddingTypes(Enum):
+class EmbeddingType(Enum):
     """
     Indicates the type of embedding in regard to what kind of data has been embedded.
 

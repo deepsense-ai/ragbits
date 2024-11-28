@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings import Embeddings, EmbeddingTypes, get_embeddings
+from ragbits.core.embeddings import Embeddings, EmbeddingType, get_embeddings
 from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -164,7 +164,7 @@ class DocumentSearch:
             )
 
         entries = [
-            element.to_vector_db_entry(vector, EmbeddingTypes.TEXT)
+            element.to_vector_db_entry(vector, EmbeddingType.TEXT)
             for element, vector in zip(elements_with_text, vectors, strict=False)
         ]
         not_embedded_image_elements = [
@@ -175,7 +175,7 @@ class DocumentSearch:
             image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
             entries.extend(
                 [
-                    element.to_vector_db_entry(vector, EmbeddingTypes.IMAGE)
+                    element.to_vector_db_entry(vector, EmbeddingType.IMAGE)
                     for element, vector in zip(image_elements, image_vectors, strict=False)
                 ]
             )
