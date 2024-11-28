@@ -76,8 +76,7 @@ def simple_litellm_vision_factory() -> LLM:
 
 def simple_litellm_structured_output_factory() -> LLM:
     """
-    A basic LLM factory that creates an LiteLLM instance with the structured output.
-    Functionality supported
+    A basic LLM factory that creates an LiteLLM instance with the support for structured output.
 
     Returns:
         LLM: An instance of the LiteLLM class.
