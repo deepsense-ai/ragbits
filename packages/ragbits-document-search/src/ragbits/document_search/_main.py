@@ -167,7 +167,9 @@ class DocumentSearch:
             element.to_vector_db_entry(vector, EmbeddingTypes.TEXT)
             for element, vector in zip(elements_with_text, vectors, strict=False)
         ]
-        num_embedded_images = len(images_with_text)
+        not_embedded_image_elements = [
+            image_element for image_element in image_elements if image_element not in images_with_text
+        ]
 
         if image_elements and self.embedder.image_support():
             image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
@@ -177,16 +179,14 @@ class DocumentSearch:
                     for element, vector in zip(image_elements, image_vectors, strict=False)
                 ]
             )
-            num_embedded_images = len(image_elements)
+            not_embedded_image_elements = []
         elif image_elements:
             warnings.warn(
                 f"Image elements are not supported by the embedder {self.embedder}. "
                 f"Skipping {len(image_elements)} image elements."
             )
 
-        if len(image_elements) > num_embedded_images:
-            warnings.warn(
-                f"{len(image_elements) - num_embedded_images} of {len(image_elements)} have not been embedded"
-            )
+        for image_element in not_embedded_image_elements:
+            warnings.warn(f"Image: {image_element.id} could not be embedded")
 
         await self.vector_store.store(entries)
