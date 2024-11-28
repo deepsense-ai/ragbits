@@ -4,7 +4,7 @@ from enum import Enum
 
 class EmbeddingTypes(Enum):
     """
-    Defines types of embeddings based on supported features.
+    Indicates the type of embedding in regard to what kind of data has been embedded.
 
     Used to specify the embedding type for a given element. Unlike `element_type`,
     which categorizes the element itself, `embedding_type` determines how the
