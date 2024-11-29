@@ -1,9 +1,11 @@
+import hashlib
 import uuid
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, computed_field
 
+from ragbits.core.embeddings import EmbeddingType
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -28,29 +30,37 @@ class Element(BaseModel, ABC):
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    @computed_field  # type: ignore[prop-decorator]
+    # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         """
-        Get the ID of the element. The id is primarly used as a key in the vector store.
-        The current representation is a UUID5 hash of various element metadata, including
-        its contents and location where it was sourced from.
+        Retrieve the ID of the element, primarily used to represent the element's data.
 
         Returns:
-            The ID in the form of a UUID5 hash.
+            str: string representing element
         """
-        id_components = [
-            self.document_meta.id,
-            self.element_type,
-            self.key,
-            self.text_representation,
-            str(self.location),
-        ]
-        return str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        id_components = self.get_id_components()
+        return "&".join(f"{k}={v}" for k, v in id_components.items())
+
+    def get_id_components(self) -> dict[str, str]:
+        """
+        Creates a dictionary of key value pairs of id components
+
+        Returns:
+            dict: a dictionary
+        """
+        id_components = {
+            "meta": self.document_meta.id,
+            "type": self.element_type,
+            "key": str(self.key),
+            "text": str(self.text_representation),
+            "location": str(self.location),
+        }
+        return id_components
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def key(self) -> str:
+    def key(self) -> str | None:
         """
         Get the representation of the element for embedding.
 
@@ -62,7 +72,7 @@ class Element(BaseModel, ABC):
     @computed_field  # type: ignore[prop-decorator]
     @property
     @abstractmethod
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
@@ -90,24 +100,28 @@ class Element(BaseModel, ABC):
         """
         element_type = db_entry.metadata["element_type"]
         element_cls = Element._elements_registry[element_type]
+        if "embedding_type" in db_entry.metadata:
+            del db_entry.metadata["embedding_type"]
         return element_cls(**db_entry.metadata)
 
-    def to_vector_db_entry(self, vector: list[float]) -> VectorStoreEntry:
+    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingType) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 
         Args:
             vector: The vector.
-
+            embedding_type: EmbeddingTypes
         Returns:
             The vector database entry
         """
-        return VectorStoreEntry(
-            id=self.id,
-            key=self.key,
-            vector=vector,
-            metadata=self.model_dump(exclude={"id", "key"}),
-        )
+        id_components = [
+            self.id,
+            str(embedding_type),
+        ]
+        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        metadata = self.model_dump(exclude={"id", "key"})
+        metadata["embedding_type"] = str(embedding_type)
+        return VectorStoreEntry(id=vector_store_entry_id, key=str(self.key), vector=vector, metadata=metadata)
 
 
 class TextElement(Element):
@@ -142,11 +156,29 @@ class ImageElement(Element):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
         Returns:
             The text representation.
         """
-        return f"Description: {self.description}\nExtracted text: {self.ocr_extracted_text}"
+        if not self.description and not self.ocr_extracted_text:
+            return None
+        repr = ""
+        if self.description:
+            repr += f"Description: {self.description}\n"
+        if self.ocr_extracted_text:
+            repr += f"Extracted text: {self.ocr_extracted_text}"
+        return repr
+
+    def get_id_components(self) -> dict[str, str]:
+        """
+        Creates a dictionary of key value pairs of id components
+
+        Returns:
+            dict: a dictionary
+        """
+        id_components = super().get_id_components()
+        id_components["image_hash"] = hashlib.sha256(self.image_bytes).hexdigest()
+        return id_components
