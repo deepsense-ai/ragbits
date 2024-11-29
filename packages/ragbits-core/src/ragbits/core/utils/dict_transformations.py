@@ -3,9 +3,7 @@ from typing import Any
 SimpleTypes = str | int | float | bool | None
 
 
-def flatten_dict(
-    input_dict: dict[str, Any], parent_key: str = "", sep: str = "."
-) -> dict[str, SimpleTypes]:
+def flatten_dict(input_dict: dict[str, Any], parent_key: str = "", sep: str = ".") -> dict[str, SimpleTypes]:
     """
     Recursively flatten a nested dictionary and lists, converting non-primitive types to strings.
 
