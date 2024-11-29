@@ -1,8 +1,10 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search",
-#     "ragbits[litellm,chromadb]",
+#     "ragbits-document-search[huggingface]",
+#     "ragbits-core[litellm,chroma]",
+#     "hydra-core~=1.3.2",
+#     "unstructured[md]>=0.15.13"
 # ]
 # ///
 import asyncio
