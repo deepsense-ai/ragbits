@@ -156,7 +156,7 @@ class DocumentSearch:
         ids_to_delete = []
         # TODO: Pass 'where' argument to the list method to filter results and optimize search
         for entry in await self.vector_store.list():
-            if entry.metadata["document_meta"]["source"]["id"] in unique_source_ids:
+            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
                 ids_to_delete.append(entry.id)
 
         if ids_to_delete:
