@@ -20,9 +20,8 @@ class TraceHandler(Generic[SpanT], ABC):
         Constructs a new TraceHandler instance.
         """
         super().__init__()
-        _spans = ContextVar[list[SpanT] | None]("_spans", default=None)
-        _spans.set([])
-        self._spans = _spans  # type: ignore
+        self._spans = ContextVar[list[SpanT]]("_spans")
+        self._spans.set([])
 
     @abstractmethod
     def start(self, name: str, inputs: dict, current_span: SpanT | None = None) -> SpanT:
