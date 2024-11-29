@@ -4,7 +4,7 @@
 #     "ragbits-document-search[huggingface]",
 #     "ragbits-core[litellm,chroma]",
 #     "hydra-core~=1.3.2",
-#     "unstructured[md]>=0.15.13"
+#     "unstructured[md]>=0.15.13",
 # ]
 # ///
 import asyncio
