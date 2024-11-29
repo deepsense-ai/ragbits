@@ -188,10 +188,12 @@ class QdrantVectorStore(VectorStore):
         if not collection_exists:
             return []
 
+        limit = limit or (await self._client.count(collection_name=self._index_name)).count
+
         results = await self._client.query_points(
             collection_name=self._index_name,
             query_filter=where,
-            limit=limit or 10,
+            limit=limit,
             offset=offset,
             with_payload=True,
             with_vectors=True,
