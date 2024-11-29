@@ -51,7 +51,7 @@ you can use Jeager. The recommended way to run it is using the official Docker i
 
 import asyncio
 
-from chromadb import PersistentClient
+from chromadb import EphemeralClient
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -102,7 +102,7 @@ async def main() -> None:
         model="text-embedding-3-small",
     )
     vector_store = ChromaVectorStore(
-        client=PersistentClient("./chroma"),
+        client=EphemeralClient(),
         index_name="jokes",
     )
     document_search = DocumentSearch(

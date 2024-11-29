@@ -80,7 +80,7 @@ class ChromaVectorStore(VectorStore):
         metadatas = [entry.metadata for entry in entries]
 
         # Flatten metadata
-        flattened_metadatas = [flatten_dict(metadata) for metadata in metadatas]
+        flattened_metadatas = [self._flatten_metadata(metadata) for metadata in metadatas]
 
         metadatas = (
             flattened_metadatas
@@ -190,3 +190,8 @@ class ChromaVectorStore(VectorStore):
             )
             for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]
+
+    @staticmethod
+    def _flatten_metadata(metadata: dict) -> dict:
+        """Flattens the metadata dictionary. Removes any None values as they are not supported by ChromaDB."""
+        return {k: v for k, v in flatten_dict(metadata).items() if v is not None}
