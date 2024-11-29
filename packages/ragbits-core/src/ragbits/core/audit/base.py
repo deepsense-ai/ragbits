@@ -13,12 +13,16 @@ class TraceHandler(Generic[SpanT], ABC):
     Base class for all trace handlers.
     """
 
+    _spans: ContextVar[list[SpanT]]
+
     def __init__(self) -> None:
         """
         Constructs a new TraceHandler instance.
         """
         super().__init__()
-        self._spans = ContextVar[list[SpanT]]("_spans", default=[])
+        _spans = ContextVar[list[SpanT] | None]("_spans", default=None)
+        _spans.set([])
+        self._spans = _spans  # type: ignore
 
     @abstractmethod
     def start(self, name: str, inputs: dict, current_span: SpanT | None = None) -> SpanT:
