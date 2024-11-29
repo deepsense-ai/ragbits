@@ -1,9 +1,11 @@
 from typing import Any
 
+SimpleTypes = str | int | float | bool | None
+
 
 def flatten_dict(
     input_dict: dict[str, Any], parent_key: str = "", sep: str = "."
-) -> dict[str, str | int | float | bool]:
+) -> dict[str, SimpleTypes]:
     """
     Recursively flatten a nested dictionary and lists, converting non-primitive types to strings.
 
@@ -18,7 +20,7 @@ def flatten_dict(
     Raises:
         ValueError: If the dictionary cannot be safely flattened due to the presence of the separator in the dict key.
     """
-    items: dict[str, str | int | float | bool] = {}
+    items: dict[str, SimpleTypes] = {}
     for k, v in input_dict.items():
         if sep in k:
             raise ValueError(f"Separator '{sep}' found in key '{parent_key}' Cannot flatten dictionary safely.")
@@ -36,9 +38,9 @@ def flatten_dict(
                 if isinstance(item, dict):
                     items = {**items, **flatten_dict(item, list_key, sep=sep)}
                 else:
-                    items[list_key] = item if isinstance(item, str | int | float | bool) else str(item)
+                    items[list_key] = item if isinstance(item, SimpleTypes) else str(item)
         else:
-            items[new_key] = v if isinstance(v, str | int | float | bool) else str(v)
+            items[new_key] = v if isinstance(v, SimpleTypes) else str(v)
 
     return items
 
