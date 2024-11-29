@@ -154,6 +154,9 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             ids: The list of entries' IDs to remove.
+
+        Raises:
+            ValueError: If collection named `self._index_name` is not present in the vector store.
         """
         await self._client.delete(
             collection_name=self._index_name,
