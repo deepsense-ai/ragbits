@@ -1,3 +1,4 @@
+import typing
 from unittest.mock import AsyncMock
 
 import pytest
@@ -96,7 +97,22 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
         assert entry.vector == result["vector"]
 
 
+async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
+    ids_to_remove = ["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
+
+    await mock_qdrant_store.remove(ids_to_remove)
+
+    mock_qdrant_store._client.delete.assert_called_once()  # type: ignore
+    mock_qdrant_store._client.delete.assert_called_with(  # type: ignore
+        collection_name="test_collection",
+        points_selector=models.PointIdsList(
+            points=typing.cast(list[int | str], ids_to_remove),
+        ),
+    )
+
+
 async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
+    mock_qdrant_store._client.collection_exists.return_value = True  # type: ignore
     mock_qdrant_store._client.query_points.return_value = models.QueryResponse(  # type: ignore
         points=[
             models.ScoredPoint(

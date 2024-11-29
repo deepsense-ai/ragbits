@@ -76,6 +76,16 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
         assert entry.metadata["name"] == result
 
 
+async def test_remove(store: InMemoryVectorStore) -> None:
+    entries = await store.list()
+    entry_number = len(entries)
+
+    ids_to_remove = [entries[0].id]
+    await store.remove(ids_to_remove)
+
+    assert len(await store.list()) == entry_number - 1
+
+
 async def test_list_all(store: InMemoryVectorStore) -> None:
     results = await store.list()
 

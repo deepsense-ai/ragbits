@@ -136,6 +136,16 @@ class ChromaVectorStore(VectorStore):
         ]
 
     @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+        self._collection.delete(ids=ids)
+
+    @traceable
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:
