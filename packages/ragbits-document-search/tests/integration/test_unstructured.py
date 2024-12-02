@@ -33,7 +33,7 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
 
     elements = await document_processor.get_provider(document_meta).process(document_meta)
 
-    assert isinstance(document_processor._providers[DocumentType.TXT], UnstructuredDefaultProvider)
+    assert isinstance(document_processor._providers[DocumentType.TXT], type(UnstructuredDefaultProvider))
     assert len(elements) == 1
     assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
 
