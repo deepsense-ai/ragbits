@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import computed_field
 
+from ragbits.core.embeddings import EmbeddingType
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -48,7 +49,9 @@ async def store_fixture() -> InMemoryVectorStore:
         ),
     ]
 
-    entries = [element[0].to_vector_db_entry(vector=element[1]) for element in elements]
+    entries = [
+        element[0].to_vector_db_entry(vector=element[1], embedding_type=EmbeddingType.TEXT) for element in elements
+    ]
 
     store = InMemoryVectorStore()
     await store.store(entries)
@@ -71,6 +74,16 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
     assert len(entries) == len(results)
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["name"] == result
+
+
+async def test_remove(store: InMemoryVectorStore) -> None:
+    entries = await store.list()
+    entry_number = len(entries)
+
+    ids_to_remove = [entries[0].id]
+    await store.remove(ids_to_remove)
+
+    assert len(await store.list()) == entry_number - 1
 
 
 async def test_list_all(store: InMemoryVectorStore) -> None:

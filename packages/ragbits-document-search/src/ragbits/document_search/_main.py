@@ -5,7 +5,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings import Embeddings, get_embeddings
+from ragbits.core.embeddings import Embeddings, EmbeddingType, get_embeddings
 from ragbits.core.vector_stores import VectorStore, get_vector_store
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -141,7 +141,26 @@ class DocumentSearch:
         elements = await self.processing_strategy.process_documents(
             documents, self.document_processor_router, document_processor
         )
+        await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
+
+    async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
+        """
+        Remove entries from the vector store whose source id is present in the elements' metadata.
+
+        Args:
+            elements: List of elements whose source ids will be checked and removed from the vector store if present.
+        """
+        unique_source_ids = {element.document_meta.source.id for element in elements}
+
+        ids_to_delete = []
+        # TODO: Pass 'where' argument to the list method to filter results and optimize search
+        for entry in await self.vector_store.list():
+            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
+                ids_to_delete.append(entry.id)
+
+        if ids_to_delete:
+            await self.vector_store.remove(ids_to_delete)
 
     async def insert_elements(self, elements: list[Element]) -> None:
         """
@@ -150,23 +169,31 @@ class DocumentSearch:
         Args:
             elements: The list of Elements to insert.
         """
-        vectors = await self.embedder.embed_text([element.key for element in elements])
+        elements_with_text = [element for element in elements if element.key]
+        images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
+        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])  # type: ignore
 
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
-        entries = [element.to_vector_db_entry(vector) for element, vector in zip(elements, vectors, strict=False)]
+
+        entries = [
+            element.to_vector_db_entry(vector, EmbeddingType.TEXT)
+            for element, vector in zip(elements_with_text, vectors, strict=False)
+        ]
+        not_embedded_image_elements = [
+            image_element for image_element in image_elements if image_element not in images_with_text
+        ]
 
         if image_elements and self.embedder.image_support():
             image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
             entries.extend(
                 [
-                    element.to_vector_db_entry(vector)
+                    element.to_vector_db_entry(vector, EmbeddingType.IMAGE)
                     for element, vector in zip(image_elements, image_vectors, strict=False)
                 ]
             )
-        elif image_elements:
-            warnings.warn(
-                f"Image elements are not supported by the embedder {self.embedder}. "
-                f"Skipping {len(image_elements)} image elements."
-            )
+            not_embedded_image_elements = []
+
+        for image_element in not_embedded_image_elements:
+            warnings.warn(f"Image: {image_element.id} could not be embedded")
 
         await self.vector_store.store(entries)

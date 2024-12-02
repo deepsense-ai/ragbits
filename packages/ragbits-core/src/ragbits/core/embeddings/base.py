@@ -1,4 +1,20 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+
+
+class EmbeddingType(Enum):
+    """
+    Indicates the type of embedding in regard to what kind of data has been embedded.
+
+    Used to specify the embedding type for a given element. Unlike `Element` type,
+    which categorizes the element itself, `EmbeddingType` determines how the
+    element's data is represented. For example, an image element can support
+    multiple embedding types, such as a description, OCR output, or raw bytes,
+    allowing for the creation of different embeddings for the same element.
+    """
+
+    TEXT: str = "text"
+    IMAGE: str = "image"
 
 
 class Embeddings(ABC):

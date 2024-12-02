@@ -87,6 +87,15 @@ class VectorStore(ABC):
         """
 
     @abstractmethod
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+
+    @abstractmethod
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:
