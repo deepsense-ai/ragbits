@@ -1,4 +1,5 @@
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -55,7 +56,7 @@ async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    providers: dict[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
+    providers: dict[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {DocumentType.TXT: DummyProvider()}
     router = DocumentProcessorRouter.from_config(providers)
 
     document_search = DocumentSearch(

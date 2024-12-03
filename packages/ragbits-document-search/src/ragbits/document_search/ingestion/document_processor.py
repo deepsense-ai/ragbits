@@ -1,4 +1,6 @@
 import copy
+from collections.abc import Callable
+from typing import cast
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers import get_provider
@@ -7,30 +9,31 @@ from ragbits.document_search.ingestion.providers.unstructured.default import Uns
 from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
 from ragbits.document_search.ingestion.providers.unstructured.pdf import UnstructuredPdfProvider
 
-ProvidersConfig = dict[DocumentType, BaseProvider]
+# TODO consider defining with some defined schema
+ProvidersConfig = dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]
 
 
 DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
-    DocumentType.TXT: UnstructuredDefaultProvider(),
-    DocumentType.MD: UnstructuredDefaultProvider(),
-    DocumentType.PDF: UnstructuredPdfProvider(),
-    DocumentType.DOCX: UnstructuredDefaultProvider(),
-    DocumentType.DOC: UnstructuredDefaultProvider(),
-    DocumentType.PPTX: UnstructuredDefaultProvider(),
-    DocumentType.PPT: UnstructuredDefaultProvider(),
-    DocumentType.XLSX: UnstructuredDefaultProvider(),
-    DocumentType.XLS: UnstructuredDefaultProvider(),
-    DocumentType.CSV: UnstructuredDefaultProvider(),
-    DocumentType.HTML: UnstructuredDefaultProvider(),
-    DocumentType.EPUB: UnstructuredDefaultProvider(),
-    DocumentType.ORG: UnstructuredDefaultProvider(),
-    DocumentType.ODT: UnstructuredDefaultProvider(),
-    DocumentType.RST: UnstructuredDefaultProvider(),
-    DocumentType.RTF: UnstructuredDefaultProvider(),
-    DocumentType.TSV: UnstructuredDefaultProvider(),
-    DocumentType.XML: UnstructuredDefaultProvider(),
-    DocumentType.JPG: UnstructuredImageProvider(),
-    DocumentType.PNG: UnstructuredImageProvider(),
+    DocumentType.TXT: UnstructuredDefaultProvider,
+    DocumentType.MD: UnstructuredDefaultProvider,
+    DocumentType.PDF: UnstructuredPdfProvider,
+    DocumentType.DOCX: UnstructuredDefaultProvider,
+    DocumentType.DOC: UnstructuredDefaultProvider,
+    DocumentType.PPTX: UnstructuredDefaultProvider,
+    DocumentType.PPT: UnstructuredDefaultProvider,
+    DocumentType.XLSX: UnstructuredDefaultProvider,
+    DocumentType.XLS: UnstructuredDefaultProvider,
+    DocumentType.CSV: UnstructuredDefaultProvider,
+    DocumentType.HTML: UnstructuredDefaultProvider,
+    DocumentType.EPUB: UnstructuredDefaultProvider,
+    DocumentType.ORG: UnstructuredDefaultProvider,
+    DocumentType.ODT: UnstructuredDefaultProvider,
+    DocumentType.RST: UnstructuredDefaultProvider,
+    DocumentType.RTF: UnstructuredDefaultProvider,
+    DocumentType.TSV: UnstructuredDefaultProvider,
+    DocumentType.XML: UnstructuredDefaultProvider,
+    DocumentType.JPG: UnstructuredImageProvider,
+    DocumentType.PNG: UnstructuredImageProvider,
 }
 
 
@@ -40,7 +43,7 @@ class DocumentProcessorRouter:
     metadata such as the document type.
     """
 
-    def __init__(self, providers: dict[DocumentType, BaseProvider]):
+    def __init__(self, providers: dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]):
         self._providers = providers
 
     @staticmethod
@@ -65,7 +68,9 @@ class DocumentProcessorRouter:
         providers_config = {}
 
         for document_type, config in dict_config.items():
-            providers_config[DocumentType(document_type)] = get_provider(config)
+            providers_config[DocumentType(document_type)] = cast(
+                Callable[[], BaseProvider] | BaseProvider, get_provider(config)
+            )
 
         return providers_config
 
@@ -106,7 +111,11 @@ class DocumentProcessorRouter:
         Raises:
             ValueError: If no provider is found for the document type.
         """
-        provider = self._providers.get(document_meta.document_type)
-        if provider is None:
+        provider_class_or_provider = self._providers.get(document_meta.document_type)
+        if provider_class_or_provider is None:
             raise ValueError(f"No provider found for the document type {document_meta.document_type}")
+        elif isinstance(provider_class_or_provider, BaseProvider):
+            provider = provider_class_or_provider
+        else:
+            provider = provider_class_or_provider()
         return provider
