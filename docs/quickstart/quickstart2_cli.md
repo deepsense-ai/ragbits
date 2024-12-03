@@ -41,5 +41,5 @@ Then, click "Render prompt" to view the final prompt content, with all placehold
 <!-- TODO: Add a link to the how-to article on using `ragbits prompts exec` -->
 In this guide, you learned how to use the `ragbits` CLI to interact with prompts that you have defined in your project using the Prompts Lab tool. This tool enables you to test your prompts with Large Language Models and see how the model responds to different prompts.
 
-<!-- ## Next Step
-In the next Quickstart guide, you will learn how to use ragbit's Document Search capabilities to retrieve relevant documents for your prompts: [Quickstart 3: Adding RAG Capabilities](quickstart3_rag.md). -->
+## Next Step
+In the next Quickstart guide, you will learn how to use ragbit's Document Search capabilities to retrieve relevant documents for your prompts: [Quickstart 3: Adding RAG Capabilities](quickstart3_rag.md).

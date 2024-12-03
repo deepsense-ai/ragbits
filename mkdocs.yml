@@ -9,6 +9,7 @@ nav:
   - Quick Start:
       - quickstart/quickstart1_prompts.md
       - quickstart/quickstart2_cli.md
+      - quickstart/quickstart3_rag.md
   - How-to Guides:
       - how-to/optimize.md
       - how-to/use_guardrails.md
