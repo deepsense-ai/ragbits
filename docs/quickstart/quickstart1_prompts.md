@@ -31,12 +31,12 @@ Where `path.within.your.project` is the path to the Python module where the prom
 uv run ragbits prompts exec joke_prompt:JokePrompt
 ```
 
-This command will send the prompt to the default Large Language Model (LLM) and display the generated response in the terminal.
+This command will send the prompt to the default Large Language Model and display the generated response in the terminal.
 
 !!! note
     If there is no default LLM configured for your project, Ragbits will use OpenAI's gpt-3.5-turbo. Ensure that the `OPENAI_API_KEY` environment variable is set and contains your OpenAI API key.
 
-    Alternatively, you can use your custom LLM factory (a function that creates an instance of [ragbit's LLM class][ragbits.core.llms.LLM]) by specifying the path to the factory function using the `--llm-factory` option with the `ragbits prompts exec` command.
+    Alternatively, you can use your custom LLM factory (a function that creates an instance of [Ragbits's LLM class][ragbits.core.llms.LLM]) by specifying the path to the factory function using the `--llm-factory` option with the `ragbits prompts exec` command.
 
     <!-- TODO: link to the how-to on configuring default LLMs in pyproject.toml -->
 
@@ -101,10 +101,13 @@ uv run ragbits prompts exec joke_prompt:SongPrompt --payload '{"subject": "unico
 
 Remember to change `joke_prompt` to the name of the module where the prompt is defined and adjust the values of the placeholders to your liking.
 
+!!! tip
+    Ragbits also comes with a built-in GUI tool called Prompts Lab that allows you to manage and interact with prompts in a more user-friendly way. To learn more about using Prompts Lab, see the how-to article [How to Manage Prompts using GUI with Prompts Lab](../how-to/prompts_lab.md).
+
 ## Conclusion
 You now know how to define a prompt in Ragbits and how to use it with Large Language Models. You've also learned to make the prompt dynamic by using Pydantic models and the Jinja2 templating language. To learn more about defining prompts, such as configuring the desired output format, refer to the how-to article [How to define and use Prompts in Ragbits](../how-to/use_prompting.md).
 
 <!-- TODO: Add a link to the how-to articles on using images in prompts and on defining custom prompt sources -->
 
 ## Next Step
-In the next Quickstart guide, you will learn how to use Ragbit's Document Search capabilities to retrieve relevant documents for your prompts: [Quickstart 2: Adding RAG Capabilities](quickstart2_rag.md).
+In the next Quickstart guide, you will learn how to use Ragbits's Document Search capabilities to retrieve relevant documents for your prompts: [Quickstart 2: Adding RAG Capabilities](quickstart2_rag.md).
