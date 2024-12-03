@@ -1,10 +1,10 @@
 # Quickstart 2: Adding RAG Capabilities
 
-In this chapter, we will look at how to use Ragbit's Document Search capabilities to retrieve relevant documents for your prompts. This technique is based on the Retrieve and Generate (RAG) architecture, which allows the LLM to generate responses informed by relevant information from your documents.
+In this chapter, we will explore how to use Ragbit's Document Search capabilities to retrieve relevant documents for your prompts. This technique is based on the Retrieval Augmented Generation (RAG) architecture, which allows the LLM to generate responses informed by relevant information from your documents.
 
 To work with document content, we first need to "ingest" them (i.e., process, embed, and store them in a vector database). Afterwards, we can search for relevant documents based on the user's input and use the retrieved information to enhance the LLM's response.
 
-We will continue with the example of generating a song about Ragbits. In the previous chapters, you learned how to define a prompt and interact with it using the `ragbits` CLI. We will now upgrade the prompt with a document search capability to provide the LLM with additional context to generate a song on the given subject.
+We will continue with the example of generating custom songs. In the previous chapters, you learned how to define a prompt and interact with it using the `ragbits` CLI. We will now upgrade the prompt with a document search capability to provide the LLM with additional context when generating a song on the given subject (in this case: inspirations from children's stories).
 
 ## Getting the Documents
 
@@ -14,7 +14,7 @@ To leverage the RAG capabilities, you need to provide a set of documents that th
 git clone https://github.com/global-asp/pb-source.git
 ```
 
-The short stories are in Markdown format. Ragbits supports [various document formats][ragbits.document_search.documents.document.DocumentType] including PDF and DOC, as well as non-textual files such as images.
+The short stories are in Markdown format. Ragbits supports [various document formats][ragbits.document_search.documents.document.DocumentType], including PDF and DOC, as well as non-textual files such as images.
 
 ## Defining the Document Search Object
 
@@ -51,7 +51,7 @@ documents_path = Path(__file__).parent / "pb-source/en"
 documents = LocalFileSource.list_sources(documents_path, file_pattern="*.md")[:100]
 ```
 
-Because the documents are stored locally, we are using `LocalFileSource` here. Ragbits also supports a variety of other sources including Google Cloud Storage, HuggingFace, and custom sources.
+Because the documents are stored locally, we are using `LocalFileSource` here. Ragbits also supports a variety of other sources including Google Cloud Storage, Hugging Face, and custom sources.
 
 ## Ingesting the Documents
 
@@ -93,7 +93,7 @@ class SongIdea(BaseModel):
     inspirations: list[str]
 ```
 
-The updated model looks similar to the earlier model but now incorporates a new field, `inspirations`. This field will contain inspirations for the song, retrieved from the documents.
+The updated model looks similar to the earlier model, but now incorporates a new field, `inspirations`. This field will contain inspirations for the song, retrieved from the documents.
 
 Next, we need to adjust the prompt to include these inspirations in the prompt text:
 
@@ -120,11 +120,11 @@ class SongPrompt(Prompt[SongIdea]):
     """
 ```
 
-The prompt looks similar to the previous one but now includes sections with inspirations sourced from the retrieved documents.
+The prompt looks similar to the previous one but now includes a section with inspirations sourced from the retrieved documents.
 
 ## Using the Prompt with the LLM
 
-Now that we have a prompt that includes inspirations from the documents, we can create a function that employs the LLM to generate a song given a subject, age group, and genre. At the same time, this function will automatically supply inspirations from the ingested documents:
+Now that we have a prompt that includes inspirations from the documents, we can create a function that uses the LLM to generate a song given a subject, age group, and genre. At the same time, this function will automatically supply inspirations from the ingested documents:
 
 ```python
 from ragbits.core.llms.litellm import LiteLLM
@@ -139,7 +139,7 @@ async def get_song_idea(subject: str, age_group: int, genre: str) -> str:
     return await llm.generate(prompt)
 ```
 
-This function searches for documents related to the subject, extracts the text representations of the elements, and passes them to the prompt alongside the subject, age group, and genre. The LLM then generates a song based on the provided prompt.
+This function searches for documents related to the subject, extracts the text representations of the found elements, and passes them to the prompt alongside the subject, age group, and genre. The LLM then generates a song based on the provided prompt.
 
 We can now modify the `main` function to use the function we just created:
 
@@ -154,4 +154,4 @@ async def main():
 
 ## Conclusion
 
-In this guide, you learned how to use Ragbits' Document Search capabilities to find pertinent documents for your prompts and utilize them to enhance the LLM's responses. By incorporating the RAG architecture with your prompts, you can provide the LLM with additional context and information to produce more accurate and relevant responses.
+In this guide, you learned how to use Ragbits' Document Search capabilities to find documents relevant to the user's question and utilize them to enhance the LLM's responses. By incorporating the RAG architecture with your prompts, you can provide the LLM with additional context and information to produce more accurate and relevant responses.
