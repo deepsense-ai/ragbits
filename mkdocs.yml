@@ -6,17 +6,23 @@ repo_url: https://github.com/deepsense-ai/ragbits
 copyright: Copyright &copy; 2024 deepsense.ai
 nav:
   - rabgbits: index.md
+  - Quick Start:
+      - quickstart/quickstart1_prompts.md
+      - quickstart/quickstart2_rag.md
   - How-to Guides:
+      - how-to/use_prompting.md
+      - how-to/prompts_lab.md
       - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
-      - how-to/use_prompting.md
+      - how-to/generate_dataset.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
-          - how-to/document-search/search_documents.md
-          - how-to/document-search/use_rephraser.md
-          - how-to/document-search/use_reranker.md
+          - how-to/document_search/search_documents.md
+          - how-to/document_search/use_rephraser.md
+          - how-to/document_search/use_reranker.md
+          - how-to/document_search/distributed_ingestion.md
   - API Reference:
       - Core:
           - api_reference/core/prompt.md
@@ -84,8 +90,7 @@ markdown_extensions:
       permalink: "#"
 plugins:
   - search
-  - autorefs:
-      enable: true
+  - autorefs
   - mkdocstrings:
       handlers:
         python:

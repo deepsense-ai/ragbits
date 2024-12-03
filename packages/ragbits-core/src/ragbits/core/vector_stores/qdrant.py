@@ -177,7 +177,7 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             where: Conditions for filtering results.
-            Reference: https://qdrant.tech/documentation/concepts/filtering
+                Reference: https://qdrant.tech/documentation/concepts/filtering
             limit: The maximum number of entries to return.
             offset: The number of entries to skip.
 

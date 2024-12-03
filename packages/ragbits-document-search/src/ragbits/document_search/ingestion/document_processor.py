@@ -83,7 +83,7 @@ class DocumentProcessorRouter:
 
         Args:
             providers_config: The dictionary with the providers configuration, mapping the document types to the
-             provider class.
+                provider class.
 
         Returns:
             The DocumentProcessorRouter.
