@@ -18,6 +18,7 @@ from ..helpers import env_vars_not_set
     "config",
     [
         {},
+        pytest.param({DocumentType.TXT: UnstructuredDefaultProvider()}),
         pytest.param(
             {DocumentType.TXT: UnstructuredDefaultProvider(use_api=True)},
             marks=pytest.mark.skipif(
@@ -33,7 +34,12 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
 
     elements = await document_processor.get_provider(document_meta).process(document_meta)
 
-    assert isinstance(document_processor._providers[DocumentType.TXT], type(UnstructuredDefaultProvider))
+    expected_provider_type = (
+        UnstructuredDefaultProvider
+        if isinstance(config.get(DocumentType.TXT), UnstructuredDefaultProvider)
+        else type(UnstructuredDefaultProvider)
+    )
+    assert isinstance(document_processor._providers[DocumentType.TXT], expected_provider_type)
     assert len(elements) == 1
     assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
 
