@@ -1,4 +1,4 @@
-# Quickstart 3: Adding RAG Capabilities
+# Quickstart 2: Adding RAG Capabilities
 
 In this chapter, we will look at how to use Ragbit's Document Search capabilities to retrieve relevant documents for your prompts. This technique is based on the Retrieve and Generate (RAG) architecture, which allows the LLM to generate responses informed by relevant information from your documents.
 
