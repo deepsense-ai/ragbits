@@ -1,4 +1,5 @@
 import copy
+from collections.abc import Callable
 from typing import cast
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -8,7 +9,8 @@ from ragbits.document_search.ingestion.providers.unstructured.default import Uns
 from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
 from ragbits.document_search.ingestion.providers.unstructured.pdf import UnstructuredPdfProvider
 
-ProvidersConfig = dict[DocumentType, type[BaseProvider] | BaseProvider]
+# TODO consider defining with some defined schema
+ProvidersConfig = dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]
 
 
 DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
@@ -41,7 +43,7 @@ class DocumentProcessorRouter:
     metadata such as the document type.
     """
 
-    def __init__(self, providers: dict[DocumentType, type[BaseProvider] | BaseProvider]):
+    def __init__(self, providers: dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]):
         self._providers = providers
 
     @staticmethod
@@ -67,7 +69,7 @@ class DocumentProcessorRouter:
 
         for document_type, config in dict_config.items():
             providers_config[DocumentType(document_type)] = cast(
-                type[BaseProvider] | BaseProvider, get_provider(config)
+                Callable[[], BaseProvider] | BaseProvider, get_provider(config)
             )
 
         return providers_config
