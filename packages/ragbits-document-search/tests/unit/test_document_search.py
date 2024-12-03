@@ -1,7 +1,7 @@
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import AsyncMock
-from typing import Callable
 
 import pytest
 
