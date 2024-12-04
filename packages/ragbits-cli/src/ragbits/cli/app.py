@@ -56,3 +56,6 @@ class CLI(typer.Typer):
             for row in data_dicts:
                 table.add_row(*[str(value) for value in row.values()])
             self.console.print(table)
+        else:
+            raise ValueError(f"Output type: {output_type} not supported")
+
