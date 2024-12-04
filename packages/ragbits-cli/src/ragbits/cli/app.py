@@ -35,13 +35,17 @@ class CLI(typer.Typer):
             raise ValueError("Output type must be either 'text' or 'json'")
         self.state.output_type = output_type
 
-    def print_output(self, data: list[BaseModel]) -> None:
+    def print_output(self, data: list[BaseModel] | BaseModel) -> None:
         """
         Process and display output based on the current state's output type.
 
         Args:
             data: list of ditionaries or list of pydantic models representing output of CLI function
         """
+        if isinstance(data, BaseModel):
+            data = [data]
+        if len(data) == 0:
+            raise ValueError("At last one element needs to be passed")
         first_el_instance = type(data[0])
         if any(not isinstance(datapoint, first_el_instance) for datapoint in data):
             raise ValueError("All the rows need to be of the same type")
@@ -51,8 +55,9 @@ class CLI(typer.Typer):
             print(json.dumps(data_dicts, indent=4))
         elif output_type == "text":
             table = Table(show_header=True, header_style="bold magenta")
-            for key in data_dicts[0]:
-                table.add_column(key.title())
+            properties = data[0].model_json_schema()["properties"]
+            for key in properties:
+                table.add_column(properties[key]["title"])
             for row in data_dicts:
                 table.add_row(*[str(value) for value in row.values()])
             self.console.print(table)
