@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from typing import Any
 
 import typer
 from pydantic import BaseModel
@@ -10,15 +11,20 @@ from rich.table import Table
 @dataclass()
 class CliState:
     """A dataclass describing CLI state"""
+
     output_type: str = "text"
+
+
+CliOutputFormat = list[dict[str, Any]] | list[BaseModel]
 
 
 class CLI(typer.Typer):
     """A CLI class with output formatting"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = CliState()
-        self.console = Console()
+        self.state: CliState = CliState()
+        self.console: Console = Console()
 
     def set_output_type(self, output_type: str) -> None:
         """
@@ -32,7 +38,7 @@ class CLI(typer.Typer):
             raise ValueError("Output type must be either 'text' or 'json'")
         self.state.output_type = output_type
 
-    def print_output(self, data: list[dict[str, str]] | list[BaseModel]) -> None:
+    def print_output(self, data: CliOutputFormat) -> None:
         """
         Process and display output based on the current state's output type.
 
@@ -40,7 +46,7 @@ class CLI(typer.Typer):
             data: list of ditionaries or list of pydantic models representing output of CLI function
         """
         if isinstance(data[0], BaseModel):
-            data = [output.model_dump(mode="python") for output in data]
+            data = [output.model_dump(mode="python") for output in data]  # type: ignore
         output_type = self.state.output_type
         if output_type == "json":
             try:
@@ -56,6 +62,6 @@ class CLI(typer.Typer):
                 table.add_column(key.title())
 
             for row in data:
-                table.add_row(*[str(value) for value in row.values()])
+                table.add_row(*[str(value) for value in row.values()])  # type: ignore
 
             self.console.print(table)
