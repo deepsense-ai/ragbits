@@ -2,8 +2,8 @@ import copy
 from collections.abc import Callable
 from typing import cast
 
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.providers import get_provider
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
@@ -47,17 +47,9 @@ class DocumentProcessorRouter:
         self._providers = providers
 
     @staticmethod
-    def from_dict_to_providers_config(dict_config: dict) -> ProvidersConfig:
+    def from_dict_to_providers_config(dict_config: dict[str, ObjectContructionConfig]) -> ProvidersConfig:
         """
-        Creates ProvidersConfig from dictionary config.
-        Example of the dictionary config:
-        {
-            "txt": {
-                {
-                    "type": "UnstructuredProvider"
-                }
-            }
-        }
+        Creates ProvidersConfig from dictionary that maps document types to the provider configuration.
 
         Args:
             dict_config: The dictionary with configuration.
@@ -69,7 +61,8 @@ class DocumentProcessorRouter:
 
         for document_type, config in dict_config.items():
             providers_config[DocumentType(document_type)] = cast(
-                Callable[[], BaseProvider] | BaseProvider, get_provider(config)
+                Callable[[], BaseProvider] | BaseProvider,
+                BaseProvider.subclass_from_config(config),
             )
 
         return providers_config

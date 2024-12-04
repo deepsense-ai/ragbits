@@ -2,8 +2,6 @@ from argparse import Namespace
 from collections.abc import Sequence
 from unittest.mock import patch
 
-import pytest
-
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -22,10 +20,8 @@ class CustomReranker(Reranker):
 
 
 def test_custom_reranker_from_config() -> None:
-    with pytest.raises(NotImplementedError) as exc_info:
-        CustomReranker.from_config({})
-
-    assert "Cannot create class CustomReranker from config" in str(exc_info.value)
+    reranker = CustomReranker.from_config({})
+    assert isinstance(reranker, CustomReranker)
 
 
 def test_litellm_reranker_from_config() -> None:

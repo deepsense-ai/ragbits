@@ -83,8 +83,4 @@ class CustomReranker(Reranker):
         options: RerankerOptions | None = None,
     ) -> Sequence[Element]:
         pass
-
-    @classmethod
-    def from_config(cls, config: dict) -> "CustomReranker":
-        pass
 ```

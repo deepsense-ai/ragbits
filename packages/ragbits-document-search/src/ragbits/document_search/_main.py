@@ -5,8 +5,9 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings import Embeddings, EmbeddingType, get_embeddings
-from ragbits.core.vector_stores import VectorStore, get_vector_store
+from ragbits.core.embeddings import Embeddings, EmbeddingType
+from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement
@@ -15,13 +16,10 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,
     SequentialProcessing,
-    get_processing_strategy,
 )
 from ragbits.document_search.ingestion.providers.base import BaseProvider
-from ragbits.document_search.retrieval.rephrasers import get_rephraser
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
-from ragbits.document_search.retrieval.rerankers import get_reranker
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
@@ -34,6 +32,19 @@ class SearchConfig(BaseModel):
     reranker_kwargs: dict[str, Any] = Field(default_factory=dict)
     vector_store_kwargs: dict[str, Any] = Field(default_factory=dict)
     embedder_kwargs: dict[str, Any] = Field(default_factory=dict)
+
+
+class DocumentSearchConfig(BaseModel):
+    """
+    Configuration for the DocumentSearch.from_config method.
+    """
+
+    embedder: ObjectContructionConfig
+    vector_store: ObjectContructionConfig
+    rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
+    reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
+    processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialProcessing")
+    providers: dict[str, ObjectContructionConfig] = {}
 
 
 class DocumentSearch:
@@ -73,24 +84,23 @@ class DocumentSearch:
         self.processing_strategy = processing_strategy or SequentialProcessing()
 
     @classmethod
-    def from_config(cls, config: dict) -> "DocumentSearch":
+    def from_config(cls, config: DocumentSearchConfig) -> "DocumentSearch":
         """
         Creates and returns an instance of the DocumentSearch class from the given configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the DocumentSearch instance.
+            config: A configuration object containing the configuration for initializing the DocumentSearch instance.
 
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-        embedder = get_embeddings(config["embedder"])
-        query_rephraser = get_rephraser(config.get("rephraser"))
-        reranker = get_reranker(config.get("reranker"))
-        vector_store = get_vector_store(config["vector_store"])
-        processing_strategy = get_processing_strategy(config.get("processing_strategy"))
+        embedder = Embeddings.subclass_from_config(config.embedder)
+        query_rephraser = QueryRephraser.subclass_from_config(config.rephraser)
+        reranker = Reranker.subclass_from_config(config.reranker)
+        vector_store = VectorStore.subclass_from_config(config.vector_store)
+        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(config.processing_strategy)
 
-        providers_config_dict: dict = config.get("providers", {})
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(providers_config_dict)
+        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(config.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)

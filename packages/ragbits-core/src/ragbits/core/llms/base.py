@@ -3,9 +3,13 @@ import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from functools import cached_property
-from typing import Generic, cast, overload
+from typing import ClassVar, Generic, cast, overload
 
+from typing_extensions import Self
+
+from ragbits.core import llms
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.utils.config_handling import WithConstructionConfig
 
 from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 
@@ -20,12 +24,13 @@ class LLMType(enum.Enum):
     STRUCTURED_OUTPUT = "structured_output"
 
 
-class LLM(Generic[LLMClientOptions], ABC):
+class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
     """
     Abstract class for interaction with Large Language Model.
     """
 
     _options_cls: type[LLMClientOptions]
+    default_module: ClassVar = llms
 
     def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
         """
@@ -160,3 +165,20 @@ class LLM(Generic[LLMClientOptions], ABC):
         if prompt.list_images():
             wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
         return prompt.chat
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        default_options = config.pop("default_options", None)
+
+        options = cls._options_cls(**default_options) if default_options else None
+
+        return cls(**config, default_options=options)

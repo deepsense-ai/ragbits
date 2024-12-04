@@ -7,7 +7,7 @@ import pytest
 
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search._main import SearchConfig
+from ragbits.document_search._main import DocumentSearchConfig, SearchConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import LocalFileSource
@@ -41,7 +41,7 @@ CONFIG = {
     ],
 )
 async def test_document_search_from_config(document: DocumentMeta, expected: str):
-    document_search = DocumentSearch.from_config(CONFIG)
+    document_search = DocumentSearch.from_config(DocumentSearchConfig.model_validate(CONFIG))
 
     await document_search.ingest([document])
     results = await document_search.search("Peppa's brother")
@@ -154,7 +154,7 @@ async def test_document_search_with_search_config():
 
 
 async def test_document_search_ingest_multiple_from_sources():
-    document_search = DocumentSearch.from_config(CONFIG)
+    document_search = DocumentSearch.from_config(DocumentSearchConfig.model_validate(CONFIG))
     examples_files = Path(__file__).parent / "example_files"
 
     await document_search.ingest(

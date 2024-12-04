@@ -1,10 +1,16 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar
+
+from ragbits.core import metadata_stores
+from ragbits.core.utils.config_handling import WithConstructionConfig
 
 
-class MetadataStore(ABC):
+class MetadataStore(WithConstructionConfig, ABC):
     """
     An abstract class for metadata storage. Allows to store, query and retrieve metadata in form of key value pairs.
     """
+
+    default_module: ClassVar = metadata_stores
 
     @abstractmethod
     async def store(self, ids: list[str], metadatas: list[dict]) -> None:

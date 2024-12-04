@@ -1,6 +1,10 @@
+import abc
 from importlib import import_module
 from types import ModuleType
-from typing import Any
+from typing import Any, ClassVar
+
+from pydantic import BaseModel
+from typing_extensions import Self
 
 
 class InvalidConfigError(Exception):
@@ -36,3 +40,55 @@ def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:  # no
         return getattr(default_module, cls_path)
     except AttributeError as err:
         raise InvalidConfigError(f"Class {cls_path} not found in module {default_module}") from err
+
+
+class ObjectContructionConfig(BaseModel):
+    """
+    A model for object construction configuration.
+    """
+
+    # Path to the class to be constructed
+    type: str
+
+    # Configuration details for the class
+    config: dict[str, Any] = {}
+
+
+class WithConstructionConfig(abc.ABC):
+    """
+    A mixin class that provides methods for initializing classes from configuration.
+    """
+
+    # The default module to search for the subclass if no specific module is provided in the type string.
+    default_module: ClassVar[ModuleType]
+
+    @classmethod
+    def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
+        """
+        Initializes the class with the provided configuration. May return a subclass of the class,
+        if requested by the configuration.
+
+        Args:
+            config: A model containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        subclass = get_cls_from_config(config.type, cls.default_module)
+        if not issubclass(subclass, cls):
+            raise InvalidConfigError(f"{subclass} is not a subclass of {cls}")
+
+        return subclass.from_config(config.config)
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        return cls(**config)

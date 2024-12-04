@@ -1,8 +1,12 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
 from pydantic import BaseModel
+from typing_extensions import Self
 
+from ragbits.core import vector_stores
 from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 
 WhereQuery = dict[str, str | int | float | bool]
 
@@ -27,10 +31,12 @@ class VectorStoreOptions(BaseModel, ABC):
     max_distance: float | None = None
 
 
-class VectorStore(ABC):
+class VectorStore(WithConstructionConfig, ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
+
+    default_module: ClassVar = vector_stores
 
     def __init__(
         self,
@@ -49,20 +55,27 @@ class VectorStore(ABC):
         self._metadata_store = metadata_store
 
     @classmethod
-    def from_config(cls, config: dict) -> "VectorStore":
+    def from_config(cls, config: dict) -> Self:
         """
-        Creates and returns an instance of the Reranker class from the given configuration.
+        Initializes the class with the provided configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the Reranker instance.
+            config: A dictionary containing configuration details for the class.
 
         Returns:
-            An initialized instance of the Reranker class.
-
-        Raises:
-            NotImplementedError: If the class cannot be created from the provided configuration.
+            An instance of the class initialized with the provided configuration.
         """
-        raise NotImplementedError(f"Cannot create class {cls.__name__} from config.")
+        default_options = config.pop("default_options", None)
+        options = VectorStoreOptions(**default_options) if default_options else None
+
+        store_config = config.pop("metadata_store", None)
+        store = (
+            MetadataStore.subclass_from_config(ObjectContructionConfig.model_validate(store_config))
+            if store_config
+            else None
+        )
+
+        return cls(**config, default_options=options, metadata_store=store)
 
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:
