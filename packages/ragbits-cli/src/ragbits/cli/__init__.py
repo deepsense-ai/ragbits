@@ -2,11 +2,25 @@ import importlib.util
 import pkgutil
 from pathlib import Path
 
-from typer import Typer
+import typer
 
 import ragbits
 
-app = Typer(no_args_is_help=True)
+from .app import CLI
+
+app = CLI(no_args_is_help=True)
+
+
+@app.callback()
+def output_type(
+    output: str = typer.Option("text", "--output", "-o", help="Set the output type (text or json)"),
+) -> None:
+    """Sets an output type for the CLI
+    Args:
+        output: type of output to be set
+    """
+    app.set_output_type(output_type=output)
+    print(f"Output type set to {output}")
 
 
 def main() -> None:
