@@ -2,6 +2,16 @@
 
 In this Quickstart guide, you will learn how to define a dynamic prompt in Ragbits and how to use such a prompt with Large Language Models.
 
+## Installing Ragbits
+
+To install Ragbits, run the following command in your terminal:
+
+```bash
+pip install ragbits[litellm]
+```
+
+This command will install all the popular Ragbits packages, along with [LiteLLM](https://docs.litellm.ai/docs/), which we will use in this guide for communicating with LLM APIs.
+
 ## Defining a Static Prompt
 The most standard way to define a prompt in Ragbits is to create a class that inherits from the `Prompt` class and configure it by setting values for appropriate properties. Here is an example of a simple prompt that asks the model to write a song about Ragbits:
 
@@ -22,13 +32,13 @@ Next, we'll learn how to make this prompt more dynamic (e.g., by adding placehol
 Even at this stage, you can test the prompt using the built-in `ragbits` CLI tool. To do this, you need to run the following command in your terminal:
 
 ```bash
-uv run ragbits prompts exec path.within.your.project:SongPrompt
+ragbits prompts exec path.within.your.project:SongPrompt
 ```
 
 Where `path.within.your.project` is the path to the Python module where the prompt is defined. In the simplest case, when you are in the same directory as the file, it will be the name of the file without the `.py` extension. For example, if the prompt is defined in a file named `song_prompt.py`, you would run:
 
 ```bash
-uv run ragbits prompts exec song_prompt:SongPrompt
+ragbits prompts exec song_prompt:SongPrompt
 ```
 
 This command will send the prompt to the default Large Language Model and display the generated response in the terminal.
@@ -96,7 +106,7 @@ This example illustrates how to set a system prompt and use conditional statemen
 Besides using the dynamic prompt in Python, you can still test it using the `ragbits` CLI tool. The only difference is that now you need to provide the values for the placeholders in the prompt in JSON format. Here's an example:
 
 ```bash
-uv run ragbits prompts exec song_prompt:SongPrompt --payload '{"subject": "unicorns", "age_group": 12, "genre": "pop"}'
+ragbits prompts exec song_prompt:SongPrompt --payload '{"subject": "unicorns", "age_group": 12, "genre": "pop"}'
 ```
 
 Remember to change `song_prompt` to the name of the module where the prompt is defined and adjust the values of the placeholders to your liking.
