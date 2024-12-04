@@ -27,7 +27,7 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
 
 
 class LLMResponseCliOutput(BaseModel):
-    """An output model for CLI methods"""
+    """An output model for llm responses in CLI"""
 
     question: ChatFormat
     answer: str | BaseModel | None = None
