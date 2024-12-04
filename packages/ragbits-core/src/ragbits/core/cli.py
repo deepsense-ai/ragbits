@@ -26,7 +26,7 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
     return prompt_cls()
 
 
-class PromptsCliOutput(BaseModel):
+class LLMResponseCliOutput(BaseModel):
     """An output model for CLI methods"""
 
     question: ChatFormat
@@ -76,7 +76,7 @@ def register(app: CLI) -> None:
         Renders a prompt by loading a class from a module and initializing it with a given payload.
         """
         prompt = _render(prompt_path=prompt_path, payload=payload)
-        response = PromptsCliOutput(question=prompt.chat)
+        response = LLMResponseCliOutput(question=prompt.chat)
         app.print_output(response)
 
     @prompts_app.command(name="exec")
@@ -100,7 +100,7 @@ def register(app: CLI) -> None:
         llm = get_llm_from_factory(llm_factory)
 
         llm_output = asyncio.run(llm.generate(prompt))
-        response = PromptsCliOutput(question=prompt.chat, answer=llm_output)
+        response = LLMResponseCliOutput(question=prompt.chat, answer=llm_output)
         app.print_output(response)
 
     app.add_typer(prompts_app, name="prompts", help="Commands for managing prompts")

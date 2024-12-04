@@ -1,5 +1,6 @@
 import json
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any
 
 import typer
@@ -8,11 +9,18 @@ from rich.console import Console
 from rich.table import Table
 
 
+class OutputType(Enum):
+    """Indicates a type of CLI output formatting"""
+
+    TEXT = "text"
+    JSON = "json"
+
+
 @dataclass()
 class CliState:
     """A dataclass describing CLI state"""
 
-    output_type: str = "text"
+    output_type: OutputType = OutputType.TEXT
 
 
 class CLI(typer.Typer):
@@ -33,7 +41,10 @@ class CLI(typer.Typer):
         """
         if output_type not in ["text", "json"]:
             raise ValueError("Output type must be either 'text' or 'json'")
-        self.state.output_type = output_type
+        if output_type == "json":
+            self.state.output_type = OutputType.JSON
+        if output_type == "text":
+            self.state.output_type = OutputType.TEXT
 
     def print_output(self, data: list[BaseModel] | BaseModel) -> None:
         """
@@ -51,9 +62,9 @@ class CLI(typer.Typer):
             raise ValueError("All the rows need to be of the same type")
         data_dicts: list[dict] = [output.model_dump(mode="python") for output in data]
         output_type = self.state.output_type
-        if output_type == "json":
+        if output_type == OutputType.JSON:
             print(json.dumps(data_dicts, indent=4))
-        elif output_type == "text":
+        elif output_type == OutputType.TEXT:
             table = Table(show_header=True, header_style="bold magenta")
             properties = data[0].model_json_schema()["properties"]
             for key in properties:
