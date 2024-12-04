@@ -58,4 +58,3 @@ class CLI(typer.Typer):
             self.console.print(table)
         else:
             raise ValueError(f"Output type: {output_type} not supported")
-
