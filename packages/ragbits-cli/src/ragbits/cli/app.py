@@ -15,13 +15,10 @@ class CliState:
     output_type: str = "text"
 
 
-CliOutputFormat = list[dict[str, Any]] | list[BaseModel]
-
-
 class CLI(typer.Typer):
     """A CLI class with output formatting"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):  # noqa: ANN401
         super().__init__(*args, **kwargs)
         self.state: CliState = CliState()
         self.console: Console = Console()
@@ -38,30 +35,24 @@ class CLI(typer.Typer):
             raise ValueError("Output type must be either 'text' or 'json'")
         self.state.output_type = output_type
 
-    def print_output(self, data: CliOutputFormat) -> None:
+    def print_output(self, data: list[BaseModel]) -> None:
         """
         Process and display output based on the current state's output type.
 
         Args:
             data: list of ditionaries or list of pydantic models representing output of CLI function
         """
-        if isinstance(data[0], BaseModel):
-            data = [output.model_dump(mode="python") for output in data]  # type: ignore
+        first_el_instance = data[0].__class__
+        if any(not isinstance(datapoint, first_el_instance) for datapoint in data):
+            raise ValueError("All the rows need to be of the same type")
+        data_dicts: list[dict] = [output.model_dump(mode="python") for output in data]
         output_type = self.state.output_type
         if output_type == "json":
-            try:
-                print(json.dumps(data, indent=4))
-            except TypeError as err:
-                raise ValueError("Output data is not JSON serializable") from err
-        else:
-            if not data or not isinstance(data, list) or not isinstance(data[0], dict):
-                raise ValueError("For text output, data must be a list of dictionaries.")
-
+            print(json.dumps(data_dicts, indent=4))
+        elif output_type == "text":
             table = Table(show_header=True, header_style="bold magenta")
-            for key in data[0]:
+            for key in data_dicts[0]:
                 table.add_column(key.title())
-
-            for row in data:
-                table.add_row(*[str(value) for value in row.values()])  # type: ignore
-
+            for row in data_dicts:
+                table.add_row(*[str(value) for value in row.values()])
             self.console.print(table)

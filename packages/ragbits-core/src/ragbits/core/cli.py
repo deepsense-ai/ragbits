@@ -4,12 +4,11 @@ import asyncio
 import json
 from importlib import import_module
 from pathlib import Path
-from typing import cast
 
 import typer
 from pydantic import BaseModel
 
-from ragbits.cli.app import CLI, CliOutputFormat
+from ragbits.cli.app import CLI
 from ragbits.core.config import core_config
 from ragbits.core.llms.base import LLMType
 from ragbits.core.prompt.prompt import ChatFormat, Prompt
@@ -78,7 +77,7 @@ def register(app: CLI) -> None:
         """
         prompt = _render(prompt_path=prompt_path, payload=payload)
         response = CliOutput(question=prompt.chat)
-        app.print_output(cast(CliOutputFormat, [response]))
+        app.print_output([response])
 
     @prompts_app.command(name="exec")
     def execute(
@@ -92,7 +91,6 @@ def register(app: CLI) -> None:
         Raises:
             ValueError: If `llm_factory` is not provided.
         """
-        print(app.state)
         from ragbits.core.llms.factory import get_llm_from_factory
 
         prompt = _render(prompt_path=prompt_path, payload=payload)
@@ -103,6 +101,6 @@ def register(app: CLI) -> None:
 
         llm_output = asyncio.run(llm.generate(prompt))
         response = CliOutput(question=prompt.chat, answer=llm_output)
-        app.print_output(cast(CliOutputFormat, [response]))
+        app.print_output([response])
 
     app.add_typer(prompts_app, name="prompts", help="Commands for managing prompts")
