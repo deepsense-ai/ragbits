@@ -42,7 +42,7 @@ class CLI(typer.Typer):
         Args:
             data: list of ditionaries or list of pydantic models representing output of CLI function
         """
-        first_el_instance = data[0].__class__
+        first_el_instance = type(data[0])
         if any(not isinstance(datapoint, first_el_instance) for datapoint in data):
             raise ValueError("All the rows need to be of the same type")
         data_dicts: list[dict] = [output.model_dump(mode="python") for output in data]
