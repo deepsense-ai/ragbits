@@ -3,9 +3,10 @@ import sys
 from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import Embeddings, EmbeddingType
+from .litellm import LiteLLMEmbeddings
 from .noop import NoopEmbeddings
 
-__all__ = ["EmbeddingType", "Embeddings", "NoopEmbeddings"]
+__all__ = ["EmbeddingType", "Embeddings", "LiteLLMEmbeddings", "NoopEmbeddings"]
 
 module = sys.modules[__name__]
 

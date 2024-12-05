@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.5.0 (2024-12-05)
+
+### Added
+
+- Distributed ingestion with usage of https://www.ray.io/ (#207)
+- Documents can be now replaced in existing VectorStore (#210)
+
+### Changed
+
+- ragbits-core updated to version v0.5.0
+- Providers are now loaded dynamically (#219)
+
 ## 0.4.0 (2024-11-27)
 
 ### Added
