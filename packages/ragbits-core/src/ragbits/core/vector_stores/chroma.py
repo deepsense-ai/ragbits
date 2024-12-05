@@ -1,4 +1,3 @@
-import json
 from typing import Literal
 
 import chromadb
@@ -8,6 +7,7 @@ from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
@@ -79,10 +79,13 @@ class ChromaVectorStore(VectorStore):
         embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
 
+        # Flatten metadata
+        flattened_metadatas = [self._flatten_metadata(metadata) for metadata in metadatas]
+
         metadatas = (
-            [{"__metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
+            flattened_metadatas
             if self._metadata_store is None
-            else await self._metadata_store.store(ids, metadatas)  # type: ignore
+            else await self._metadata_store.store(ids, flattened_metadatas)  # type: ignore
         )
 
         self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
@@ -115,7 +118,7 @@ class ChromaVectorStore(VectorStore):
         distances = results.get("distances") or []
         documents = results.get("documents") or []
         metadatas = [
-            [json.loads(metadata["__metadata"]) for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
+            [metadata for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
             if self._metadata_store is None
             else await self._metadata_store.get(*ids)
         ]
@@ -125,12 +128,22 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embeddings),
-                metadata=metadata,  # type: ignore
+                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
             for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
             if options.max_distance is None or distance <= options.max_distance
         ]
+
+    @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+        self._collection.delete(ids=ids)
 
     @traceable
     async def list(
@@ -165,9 +178,7 @@ class ChromaVectorStore(VectorStore):
         embeddings = results.get("embeddings") or []
         documents = results.get("documents") or []
         metadatas = (
-            [json.loads(metadata["__metadata"]) for metadata in results.get("metadatas", [])]  # type: ignore
-            if self._metadata_store is None
-            else await self._metadata_store.get(ids)
+            results.get("metadatas") or [] if self._metadata_store is None else await self._metadata_store.get(ids)
         )
 
         return [
@@ -175,7 +186,12 @@ class ChromaVectorStore(VectorStore):
                 id=id,
                 key=document,
                 vector=list(embedding),
-                metadata=metadata,  # type: ignore
+                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
             )
             for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
         ]
+
+    @staticmethod
+    def _flatten_metadata(metadata: dict) -> dict:
+        """Flattens the metadata dictionary. Removes any None values as they are not supported by ChromaDB."""
+        return {k: v for k, v in flatten_dict(metadata).items() if v is not None}

@@ -1,7 +1,8 @@
 import json
+import typing
 
 import qdrant_client
-from qdrant_client import AsyncQdrantClient
+from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, Filter, VectorParams
 
 from ragbits.core.audit import traceable
@@ -147,6 +148,24 @@ class QdrantVectorStore(VectorStore):
         ]
 
     @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+
+        Raises:
+            ValueError: If collection named `self._index_name` is not present in the vector store.
+        """
+        await self._client.delete(
+            collection_name=self._index_name,
+            points_selector=models.PointIdsList(
+                points=typing.cast(list[int | str], ids),
+            ),
+        )
+
+    @traceable
     async def list(  # type: ignore
         self,
         where: Filter | None = None,  # type: ignore
@@ -158,7 +177,7 @@ class QdrantVectorStore(VectorStore):
 
         Args:
             where: Conditions for filtering results.
-            Reference: https://qdrant.tech/documentation/concepts/filtering
+                Reference: https://qdrant.tech/documentation/concepts/filtering
             limit: The maximum number of entries to return.
             offset: The number of entries to skip.
 
@@ -168,10 +187,16 @@ class QdrantVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
+        collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+        if not collection_exists:
+            return []
+
+        limit = limit or (await self._client.count(collection_name=self._index_name)).count
+
         results = await self._client.query_points(
             collection_name=self._index_name,
             query_filter=where,
-            limit=limit or 10,
+            limit=limit,
             offset=offset,
             with_payload=True,
             with_vectors=True,

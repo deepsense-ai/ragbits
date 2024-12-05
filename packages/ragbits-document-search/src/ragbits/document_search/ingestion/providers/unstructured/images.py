@@ -1,4 +1,3 @@
-import warnings
 from pathlib import Path
 
 from PIL import Image
@@ -8,8 +7,7 @@ from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
 from ragbits.core.llms.base import LLM, LLMType
-from ragbits.core.llms.factory import get_default_llm, has_default_llm
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms.factory import get_default_llm
 from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ImageElement
@@ -22,7 +20,6 @@ from ragbits.document_search.ingestion.providers.unstructured.utils import (
 )
 
 DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
-DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL = "gpt-4o-mini"
 
 
 class _ImagePrompt(Prompt):
@@ -96,15 +93,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
         prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
         if self.image_describer is None:
-            if self._llm is not None:
-                llm_to_use = self._llm
-            elif has_default_llm(LLMType.VISION):
-                llm_to_use = get_default_llm(LLMType.VISION)
-            else:
-                warnings.warn(
-                    f"Vision LLM was not provided, setting default option to {DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL}"
-                )
-                llm_to_use = LiteLLM(DEFAULT_LLM_IMAGE_DESCRIPTION_MODEL)
+            llm_to_use = self._llm if self._llm is not None else get_default_llm(LLMType.VISION)
             self.image_describer = ImageDescriber(llm_to_use)
         image_description = await self.image_describer.get_image_description(prompt=prompt)
         return ImageElement(

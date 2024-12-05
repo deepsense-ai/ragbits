@@ -16,11 +16,11 @@
 
 ## What's Included?
 
-- [X] **[Core](packages/ragbits-core)** - Fundamental tools for working with prompts and LLMs.
-- [X] **[Document Search](packages/ragbits-document-search)** - Handles vector search to retrieve relevant documents.
-- [X] **[CLI](packages/ragbits-cli)** - The `ragbits` shell command, enabling tools such as GUI prompt management.
-- [x] **[Guardrails](packages/ragbits-guardrails)** - Ensures response safety and relevance.
-- [x] **[Evaluation](packages/ragbits-evaluate)** - Unified evaluation framework for Ragbits components.
+- [X] **[Core](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-core)** - Fundamental tools for working with prompts and LLMs.
+- [X] **[Document Search](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-document-search)** - Handles vector search to retrieve relevant documents.
+- [X] **[CLI](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-cli)** - The `ragbits` shell command, enabling tools such as GUI prompt management.
+- [x] **[Guardrails](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-guardrails)** - Ensures response safety and relevance.
+- [x] **[Evaluation](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-evaluate)** - Unified evaluation framework for Ragbits components.
 - [ ] **Flow Controls** - Manages multi-stage chat flows for performing advanced actions *(coming soon)*.
 - [ ] **Structured Querying** - Queries structured data sources in a predictable manner *(coming soon)*.
 - [ ] **Caching** - Adds a caching layer to reduce costs and response times *(coming soon)*.
@@ -83,8 +83,8 @@ Add a link to the full tutorial.
 
 ## License
 
-Ragbits is licensed under the [MIT License](LICENSE).
+Ragbits is licensed under the [MIT License](https://github.com/deepsense-ai/ragbits/tree/main/LICENSE).
 
 ## Contributing
 
-We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
+We welcome contributions! Please read [CONTRIBUTING.md](https://github.com/deepsense-ai/ragbits/tree/main/CONTRIBUTING.md) for more information.

@@ -98,7 +98,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
             user_message_content = [
                 {
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"},
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"
+                        if isinstance(im, bytes)
+                        else im,
+                    },
                 }
                 for im in images
             ]

@@ -77,14 +77,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes]:
-        images = []
+    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
+        images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
             for field in image_input_fields:
                 images_for_field = getattr(input_data, field)
                 if images_for_field:
-                    images.extend(images_for_field)
+                    if isinstance(images_for_field, list | tuple):
+                        images.extend(images_for_field)
+                    else:
+                        images.append(images_for_field)
         return images
 
     @classmethod
@@ -195,9 +198,9 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def list_images(self) -> list[bytes]:
+    def list_images(self) -> list[bytes | str]:
         """
-        Returns the schema of the list of images compatible with llm apis
+        Returns the schema of the list of images compatible with LLM APIs
         Returns:
             list of dictionaries
         """

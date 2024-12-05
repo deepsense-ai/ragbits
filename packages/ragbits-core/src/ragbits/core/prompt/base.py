@@ -38,9 +38,9 @@ class BasePrompt(metaclass=ABCMeta):
         return None
 
     # ruff: noqa
-    def list_images(self) -> list[bytes]:
+    def list_images(self) -> list[bytes | str]:
         """
-        Returns the schema of the list of images compatible with llm apis
+        Returns the schema of the list of images compatible with LLM APIs
         Returns:
             list of dictionaries
         """
