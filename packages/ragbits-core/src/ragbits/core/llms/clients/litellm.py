@@ -57,9 +57,6 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             api_key: API key used to authenticate with the LLM API.
             api_version: API version of the LLM API.
             use_structured_output: Whether to request a structured output from the model. Default is False.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
         super().__init__(model_name)
         self.base_url = base_url

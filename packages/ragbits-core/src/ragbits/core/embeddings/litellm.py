@@ -35,9 +35,6 @@ class LiteLLMEmbeddings(Embeddings):
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
         super().__init__()
         self.model = model

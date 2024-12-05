@@ -42,9 +42,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
             use_structured_output: Whether to request a
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
         super().__init__(model_name, default_options)
         self.base_url = base_url
