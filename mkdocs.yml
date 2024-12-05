@@ -12,10 +12,8 @@ nav:
   - How-to Guides:
       - how-to/use_prompting.md
       - how-to/prompts_lab.md
-      - how-to/optimize.md
       - how-to/use_guardrails.md
       - how-to/integrations/promptfoo.md
-      - how-to/generate_dataset.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
@@ -30,6 +28,7 @@ nav:
           - how-to/evaluate/custom_metric.md
           - how-to/evaluate/custom_evaluation_pipeline.md
           - how-to/evaluate/custom_metric.md
+          - how-to/evaluate/custom_dataloader.md
   - API Reference:
       - Core:
           - api_reference/core/prompt.md
