@@ -36,7 +36,7 @@ class SearchConfig(BaseModel):
 
 class DocumentSearchConfig(BaseModel):
     """
-    Configuration for the DocumentSearch.from_config method.
+    Schema for for the dict taken by DocumentSearch.from_config method.
     """
 
     embedder: ObjectContructionConfig
@@ -84,7 +84,7 @@ class DocumentSearch:
         self.processing_strategy = processing_strategy or SequentialProcessing()
 
     @classmethod
-    def from_config(cls, config: DocumentSearchConfig) -> "DocumentSearch":
+    def from_config(cls, config: dict) -> "DocumentSearch":
         """
         Creates and returns an instance of the DocumentSearch class from the given configuration.
 
@@ -94,13 +94,15 @@ class DocumentSearch:
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
         """
-        embedder = Embeddings.subclass_from_config(config.embedder)
-        query_rephraser = QueryRephraser.subclass_from_config(config.rephraser)
-        reranker = Reranker.subclass_from_config(config.reranker)
-        vector_store = VectorStore.subclass_from_config(config.vector_store)
-        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(config.processing_strategy)
+        model = DocumentSearchConfig.model_validate(config)
 
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(config.providers)
+        embedder = Embeddings.subclass_from_config(model.embedder)
+        query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
+        reranker = Reranker.subclass_from_config(model.reranker)
+        vector_store = VectorStore.subclass_from_config(model.vector_store)
+        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(model.processing_strategy)
+
+        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)

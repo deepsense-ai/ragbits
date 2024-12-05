@@ -31,7 +31,6 @@ To run the script, execute the following command:
 import asyncio
 
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search._main import DocumentSearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
 documents = [
@@ -57,56 +56,54 @@ documents = [
     ),
 ]
 
-config = DocumentSearchConfig.model_validate(
-    {
-        "embedder": {
-            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
-        },
-        "vector_store": {
-            "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
-            "config": {
-                "client": {
-                    "type": "PersistentClient",
-                    "config": {
-                        "path": "chroma",
-                    },
-                },
-                "index_name": "jokes",
-                "distance_method": "l2",
-                "default_options": {
-                    "k": 3,
-                    "max_distance": 1.2,
-                },
-                "metadata_store": {
-                    "type": "InMemoryMetadataStore",
+config = {
+    "embedder": {
+        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+    },
+    "vector_store": {
+        "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+        "config": {
+            "client": {
+                "type": "PersistentClient",
+                "config": {
+                    "path": "chroma",
                 },
             },
-        },
-        "reranker": {
-            "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
-            "config": {
-                "model": "cohere/rerank-english-v3.0",
-                "default_options": {
-                    "top_n": 3,
-                    "max_chunks_per_doc": None,
-                },
+            "index_name": "jokes",
+            "distance_method": "l2",
+            "default_options": {
+                "k": 3,
+                "max_distance": 1.2,
+            },
+            "metadata_store": {
+                "type": "InMemoryMetadataStore",
             },
         },
-        "providers": {"txt": {"type": "DummyProvider"}},
-        "rephraser": {
-            "type": "LLMQueryRephraser",
-            "config": {
-                "llm": {
-                    "type": "ragbits.core.llms.litellm:LiteLLM",
-                    "config": {
-                        "model_name": "gpt-4-turbo",
-                    },
-                },
-                "prompt": "QueryRephraserPrompt",
+    },
+    "reranker": {
+        "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+        "config": {
+            "model": "cohere/rerank-english-v3.0",
+            "default_options": {
+                "top_n": 3,
+                "max_chunks_per_doc": None,
             },
         },
-    }
-)
+    },
+    "providers": {"txt": {"type": "DummyProvider"}},
+    "rephraser": {
+        "type": "LLMQueryRephraser",
+        "config": {
+            "llm": {
+                "type": "ragbits.core.llms.litellm:LiteLLM",
+                "config": {
+                    "model_name": "gpt-4-turbo",
+                },
+            },
+            "prompt": "QueryRephraserPrompt",
+        },
+    },
+}
 
 
 async def main() -> None:
