@@ -1,9 +1,4 @@
-try:
-    import litellm
-
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
+import litellm
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embeddings
@@ -40,13 +35,7 @@ class LiteLLMEmbeddings(Embeddings):
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM embeddings models")
-
         super().__init__()
         self.model = model
         self.options = options or {}

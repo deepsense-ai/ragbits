@@ -1,12 +1,29 @@
 import importlib.util
 import pkgutil
 from pathlib import Path
+from typing import Annotated
 
-from typer import Typer
+import typer
 
 import ragbits
 
-app = Typer(no_args_is_help=True)
+from .app import CLI, OutputType
+
+app = CLI(no_args_is_help=True)
+
+
+@app.callback()
+def output_type(
+    # `OutputType.text.value` used as a workaround for the issue with `typer.Option` not accepting Enum values
+    output: Annotated[
+        OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
+    ] = OutputType.text.value,  # type: ignore
+) -> None:
+    """Sets an output type for the CLI
+    Args:
+        output: type of output to be set
+    """
+    app.set_output_type(output_type=output)
 
 
 def main() -> None:

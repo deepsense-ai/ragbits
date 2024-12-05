@@ -26,7 +26,7 @@ To run the script, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[litellm]",
+#     "ragbits-core",
 # ]
 # ///
 

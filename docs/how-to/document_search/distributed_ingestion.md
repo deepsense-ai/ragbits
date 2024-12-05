@@ -49,7 +49,7 @@ job_id = client.submit_job(
     runtime_env={
         "working_dir": "./",
         "pip": [
-            "ragbits-core[litellm]",
+            "ragbits-core",
             "ragbits-document-search[distributed]"
         ]
     },
@@ -62,7 +62,7 @@ Ray Jobs is also available as CLI commands. You can submit a job using the follo
 ```bash
 ray job submit \
     --address http://<cluster_address>:8265 \
-    --runtime-env '{"pip": ["ragbits-core[litellm]", "ragbits-document-search[distributed]"]}'\
+    --runtime-env '{"pip": ["ragbits-core", "ragbits-document-search[distributed]"]}'\
     --working-dir . \
     -- python script.py
 ```
