@@ -45,7 +45,7 @@ you can use Jeager. The recommended way to run it is using the official Docker i
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[chroma,litellm,otel]",
+#     "ragbits-core[chroma,otel]",
 # ]
 # ///
 

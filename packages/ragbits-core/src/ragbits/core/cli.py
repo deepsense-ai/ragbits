@@ -6,11 +6,12 @@ from importlib import import_module
 from pathlib import Path
 
 import typer
-from rich import print as pprint
+from pydantic import BaseModel
 
+from ragbits.cli.app import CLI
 from ragbits.core.config import core_config
 from ragbits.core.llms.base import LLMType
-from ragbits.core.prompt.prompt import Prompt
+from ragbits.core.prompt.prompt import ChatFormat, Prompt
 
 
 def _render(prompt_path: str, payload: str | None) -> Prompt:
@@ -25,10 +26,17 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
     return prompt_cls()
 
 
+class LLMResponseCliOutput(BaseModel):
+    """An output model for llm responses in CLI"""
+
+    question: ChatFormat
+    answer: str | BaseModel | None = None
+
+
 prompts_app = typer.Typer(no_args_is_help=True)
 
 
-def register(app: typer.Typer) -> None:
+def register(app: CLI) -> None:
     """
     Register the CLI commands for the package.
 
@@ -68,9 +76,8 @@ def register(app: typer.Typer) -> None:
         Renders a prompt by loading a class from a module and initializing it with a given payload.
         """
         prompt = _render(prompt_path=prompt_path, payload=payload)
-
-        pprint("[orange3]RENDERED PROMPT:")
-        pprint(prompt.chat)
+        response = LLMResponseCliOutput(question=prompt.chat)
+        app.print_output(response)
 
     @prompts_app.command(name="exec")
     def execute(
@@ -92,11 +99,8 @@ def register(app: typer.Typer) -> None:
             raise ValueError("`llm_factory` must be provided")
         llm = get_llm_from_factory(llm_factory)
 
-        response = asyncio.run(llm.generate(prompt))
-
-        pprint("[orange3]QUESTION:")
-        pprint(prompt.chat)
-        pprint("[orange3]ANSWER:")
-        pprint(response)
+        llm_output = asyncio.run(llm.generate(prompt))
+        response = LLMResponseCliOutput(question=prompt.chat, answer=llm_output)
+        app.print_output(response)
 
     app.add_typer(prompts_app, name="prompts", help="Commands for managing prompts")

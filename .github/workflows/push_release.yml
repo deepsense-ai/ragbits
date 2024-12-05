@@ -1,0 +1,51 @@
+name: Push Release
+
+on:
+  pull_request_target:
+    types:
+      - closed
+jobs:
+  publish_release:
+    if: startsWith(github.head_ref, 'release/') && github.event.pull_request.merged == true && github.event.pull_request.user.login == 'ds-ragbits-robot'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: "0.4.10"
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Get tag name
+        id: tag_name
+        run: |
+          TAG_NAME=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/.*-//')
+          echo "new_tag=$TAG_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create release notes
+        run: |
+          uv run scripts/create_release_notes.py
+
+      - name: Publish release
+        run: |
+          gh release create ${{ steps.tag_name.outputs.new_tag }} \
+            --title "${{ steps.tag_name.outputs.new_tag }}" \
+            --notes-file RELEASE_NOTES.md
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Build packages
+        run: |
+          for dir in packages/*/; do uv build "$dir" --out-dir dist; done
+
+      - name: Publish packages
+        run: |
+          uv tool run twine upload dist/*
+        env:
+            TWINE_USERNAME: __token__
+            TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}

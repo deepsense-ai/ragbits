@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[litellm]",
+#     "ragbits-core",
 # ]
 # ///
 import asyncio

@@ -1,16 +1,9 @@
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
+import litellm
+from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
-
-try:
-    import litellm
-    from litellm.utils import CustomStreamWrapper, ModelResponse
-
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
-
 
 from ragbits.core.audit import trace
 from ragbits.core.prompt import ChatFormat
@@ -64,13 +57,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             api_key: API key used to authenticate with the LLM API.
             api_version: API version of the LLM API.
             use_structured_output: Whether to request a structured output from the model. Default is False.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM models")
-
         super().__init__(model_name)
         self.base_url = base_url
         self.api_key = api_key
@@ -181,7 +168,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
         stream: bool = False,
-    ) -> "ModelResponse | CustomStreamWrapper":
+    ) -> ModelResponse | CustomStreamWrapper:
         try:
             response = await litellm.acompletion(
                 messages=conversation,

@@ -52,9 +52,6 @@ gcs = [
 lab = [
     "gradio~=4.44.0",
 ]
-litellm = [
-    "litellm~=1.46.0",
-]
 local = [
     "torch~=2.2.1",
     "transformers~=4.44.2",

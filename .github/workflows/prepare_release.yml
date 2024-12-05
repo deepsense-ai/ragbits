@@ -1,4 +1,4 @@
-name: Semantic Release
+name: Prepare Release
 
 on:
   workflow_dispatch:
@@ -17,10 +17,7 @@ on:
         required: true
         type: choice
         options:
-          - "ragbits"
-          - "ragbits-cli"
           - "ragbits-core"
-          - "ragbits-document-search"
 
 jobs:
   release:
@@ -41,12 +38,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Create release branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b release/${{ github.event.inputs.packageName }}-$(date +%Y-%m-%d)
-
       - name: Update packages
         id: packages_update
         run: |
@@ -54,6 +45,12 @@ jobs:
           uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }}
           echo new_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
           uv sync
+
+      - name: Create release branch
+        run: |
+          git config user.name "ds-ragbits-robot"
+          git config user.email "ds-ragbits-robot@users.noreply.github.com"
+          git checkout -b release/${{ github.event.inputs.packageName }}-v${{ steps.packages_update.outputs.new_version }}
 
       - name: Create PR with updated packages
         run: |
