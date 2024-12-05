@@ -2,8 +2,15 @@
 
 ## Unreleased
 
-## 0.4.0 (2024-11-27)
+## 0.5.0 (2024-12-05)
 
+### Added
+
+- Default LLM factory when configuration is not provided (#209).
+- Add remove operation to VectorStore (#210).
+- Install litellm package by default (#236).
+
+## 0.4.0 (2024-11-27)
 
 ### Added
 
