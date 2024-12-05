@@ -56,6 +56,9 @@ class DocumentProcessorRouter:
 
         Returns:
             ProvidersConfig object.
+
+        Raises:
+            InvalidConfigError: If a provider class can't be found or is not the correct type.
         """
         providers_config = {}
 

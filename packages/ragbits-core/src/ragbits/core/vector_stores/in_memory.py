@@ -38,6 +38,10 @@ class InMemoryVectorStore(VectorStore):
 
         Returns:
             An initialized instance of the InMemoryVectorStore class.
+
+        Raises:
+            ValidationError: The metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The metadata_store class can't be found or is not the correct type.
         """
         store = (
             MetadataStore.subclass_from_config(ObjectContructionConfig.model_validate(config["metadata_store"]))

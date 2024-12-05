@@ -27,6 +27,9 @@ def get_cls_from_config(cls_path: str, default_module: ModuleType | None) -> Any
 
     Returns:
         Any: The object retrieved from the specified or default module.
+
+    Raises:
+        InvalidConfigError: The requested class is not found under the specified module
     """
     if ":" in cls_path:
         try:
@@ -76,6 +79,9 @@ class WithConstructionConfig(abc.ABC):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            InvalidConfigError: The class can't be found or is not a subclass of the current class.
         """
         subclass = get_cls_from_config(config.type, cls.default_module)
         if not issubclass(subclass, cls):

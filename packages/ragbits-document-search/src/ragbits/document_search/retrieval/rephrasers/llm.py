@@ -61,8 +61,10 @@ class LLMQueryRephraser(QueryRephraser):
             An instance of the rephraser class initialized with the provided configuration.
 
         Raises:
-           KeyError: If the configuration dictionary does not contain the required keys.
-           ValueError: If the prompt class is not a subclass of `Prompt` or the LLM class is not a subclass of `LLM`.
+           ValidationError: If the LLM or prompt configuration doesn't follow the expected format.
+           InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
+           ValueError: If the prompt class is not a subclass of `Prompt`.
+
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
         prompt_cls = None

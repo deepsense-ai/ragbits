@@ -93,6 +93,10 @@ class DocumentSearch:
 
         Returns:
             DocumentSearch: An initialized instance of the DocumentSearch class.
+
+        Raises:
+            ValidationError: If the configuration doesn't follow the expected format.
+            InvalidConfigError: If one of the specified classes can't be found or is not the correct type.
         """
         model = DocumentSearchConfig.model_validate(config)
 

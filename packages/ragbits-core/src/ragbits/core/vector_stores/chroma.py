@@ -53,6 +53,10 @@ class ChromaVectorStore(VectorStore):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            ValidationError: The client or metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
         """
         client_options = ObjectContructionConfig.model_validate(config["client"])
         client_cls = get_cls_from_config(client_options.type, chromadb)

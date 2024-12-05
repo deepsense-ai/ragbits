@@ -64,6 +64,10 @@ class VectorStore(WithConstructionConfig, ABC):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            ValidationError: The metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The metadata_store class can't be found or is not the correct type.
         """
         default_options = config.pop("default_options", None)
         options = VectorStoreOptions(**default_options) if default_options else None
