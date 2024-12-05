@@ -22,7 +22,7 @@ def output_type(
     Args:
         output: type of output to be set
     """
-    if not output:
+    if output is None:
         return
     app.set_output_type(output_type=output)
 
