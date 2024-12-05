@@ -3,8 +3,9 @@ import sys
 from ragbits.core.utils.config_handling import get_cls_from_config
 
 from .base import LLM
+from .litellm import LiteLLM
 
-__all__ = ["LLM"]
+__all__ = ["LLM", "LiteLLM"]
 
 module = sys.modules[__name__]
 
