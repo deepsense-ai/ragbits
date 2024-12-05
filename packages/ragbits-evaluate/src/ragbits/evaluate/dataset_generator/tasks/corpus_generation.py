@@ -7,7 +7,7 @@ from distilabel.steps.base import Step
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 module = sys.modules[__name__]
 
@@ -23,9 +23,7 @@ class CorpusGenerationStep(Step):
     ):
         super().__init__()
         self._llm = llm
-        self._prompt_class = (
-            get_cls_from_config(prompt_class, module) if isinstance(prompt_class, str) else prompt_class
-        )
+        self._prompt_class = import_by_path(prompt_class, module) if isinstance(prompt_class, str) else prompt_class
         self._num_per_topic = num_per_topic
 
     @property

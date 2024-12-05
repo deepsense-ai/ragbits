@@ -8,7 +8,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
-from ragbits.core.utils.config_handling import ObjectContructionConfig, get_cls_from_config
+from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
 
@@ -56,7 +56,7 @@ class QdrantVectorStore(VectorStore):
             InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
         """
         client_options = ObjectContructionConfig.model_validate(config["client"])
-        client_cls = get_cls_from_config(client_options.type, qdrant_client)
+        client_cls = import_by_path(client_options.type, qdrant_client)
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 

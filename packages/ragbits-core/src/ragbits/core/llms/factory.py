@@ -1,24 +1,6 @@
-import importlib
-
 from ragbits.core.config import core_config
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.litellm import LiteLLM
-
-
-def get_llm_from_factory(factory_path: str) -> LLM:
-    """
-    Get an instance of an LLM using a factory function specified by the user.
-
-    Args:
-        factory_path (str): The path to the factory function.
-
-    Returns:
-        LLM: An instance of the LLM class.
-    """
-    module_name, function_name = factory_path.rsplit(".", 1)
-    module = importlib.import_module(module_name)
-    function = getattr(module, function_name)
-    return function()
 
 
 def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
@@ -34,7 +16,7 @@ def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
 
     """
     factory = core_config.default_llm_factories[llm_type]
-    return get_llm_from_factory(factory)
+    return LLM.subclass_from_factory(factory)
 
 
 def simple_litellm_factory() -> LLM:

@@ -2,6 +2,6 @@
 name = "factory_project"
 
 [tool.ragbits.core.default_llm_factories]
-text = "ragbits.core.llms.factory.simple_litellm_factory"
-vision = "ragbits.core.llms.factory.simple_litellm_vision_factory"
-structured_output = "ragbits.core.llms.factory.simple_litellm_vision_factory"
+text = "ragbits.core.llms.factory:simple_litellm_factory"
+vision = "ragbits.core.llms.factory:simple_litellm_vision_factory"
+structured_output = "ragbits.core.llms.factory:simple_litellm_vision_factory"

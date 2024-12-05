@@ -16,7 +16,6 @@ from rich.console import Console
 from ragbits.core.config import core_config
 from ragbits.core.llms import LLM
 from ragbits.core.llms.base import LLMType
-from ragbits.core.llms.factory import get_llm_from_factory
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.discovery import PromptDiscovery
 
@@ -166,7 +165,7 @@ or provide a custom file pattern using the [b]--file-pattern[/b] flag."""
         prompts_state = gr.State(
             PromptState(
                 prompts=list(prompts),
-                llm=get_llm_from_factory(llm_factory) if llm_factory else None,
+                llm=LLM.subclass_from_factory(llm_factory) if llm_factory else None,
             )
         )
 

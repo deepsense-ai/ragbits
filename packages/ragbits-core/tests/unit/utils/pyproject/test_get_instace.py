@@ -80,9 +80,9 @@ def test_get_config_instance_factories():
     )
 
     assert config.default_llm_factories == {
-        LLMType.TEXT: "ragbits.core.llms.factory.simple_litellm_factory",
-        LLMType.VISION: "ragbits.core.llms.factory.simple_litellm_vision_factory",
-        LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory.simple_litellm_vision_factory",
+        LLMType.TEXT: "ragbits.core.llms.factory:simple_litellm_factory",
+        LLMType.VISION: "ragbits.core.llms.factory:simple_litellm_vision_factory",
+        LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory:simple_litellm_vision_factory",
     }
 
 

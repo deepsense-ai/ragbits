@@ -2,7 +2,7 @@ import sys
 
 from omegaconf import DictConfig
 
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 from .base import DataLoader
 
@@ -17,5 +17,5 @@ def dataloader_factory(config: DictConfig) -> DataLoader:
     Returns:
         DataLoader
     """
-    dataloader_class = get_cls_from_config(config.type, module)
+    dataloader_class = import_by_path(config.type, module)
     return dataloader_class(config.options)

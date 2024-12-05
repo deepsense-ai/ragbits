@@ -7,7 +7,7 @@ from distilabel.steps.base import Step
 from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel
 
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 module = sys.modules[__name__]
 
@@ -120,14 +120,14 @@ class DatasetGenerationPipeline:
         tasks = []
         for task_config in self.config.tasks:
             llm_config = task_config.llm
-            llm = get_cls_from_config(llm_config.provider_type, module)(**llm_config.kwargs)
+            llm = import_by_path(llm_config.provider_type, module)(**llm_config.kwargs)
             task_kwargs: dict[Any, Any] = {"llm": llm}
             task_kwargs.update(task_config.kwargs or {})  # type: ignore
-            task = get_cls_from_config(task_config.type, module)(**task_kwargs)
+            task = import_by_path(task_config.type, module)(**task_kwargs)
             tasks.append(task)
             filter_types = getattr(task_config, "filters", None) or []
             for filter_type in filter_types:
-                filter = get_cls_from_config(filter_type, module)(tasks[-1])
+                filter = import_by_path(filter_type, module)(tasks[-1])
                 tasks.append(filter)
         return tasks
 
