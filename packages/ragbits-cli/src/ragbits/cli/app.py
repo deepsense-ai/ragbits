@@ -12,15 +12,15 @@ from rich.table import Table
 class OutputType(Enum):
     """Indicates a type of CLI output formatting"""
 
-    TEXT = "text"
-    JSON = "json"
+    text = "text"
+    json = "json"
 
 
 @dataclass()
 class CliState:
     """A dataclass describing CLI state"""
 
-    output_type: OutputType = OutputType.TEXT
+    output_type: OutputType = OutputType.text
 
 
 class CLI(typer.Typer):
@@ -31,20 +31,13 @@ class CLI(typer.Typer):
         self.state: CliState = CliState()
         self.console: Console = Console()
 
-    def set_output_type(self, output_type: str) -> None:
+    def set_output_type(self, output_type: OutputType) -> None:
         """
         Set the output type in the app state
         Args:
-            output_type: str
-        Raises:
-            ValueError - if the output_type is not `json` or `text`
+            output_type: OutputType
         """
-        if output_type not in ["text", "json"]:
-            raise ValueError("Output type must be either 'text' or 'json'")
-        if output_type == "json":
-            self.state.output_type = OutputType.JSON
-        if output_type == "text":
-            self.state.output_type = OutputType.TEXT
+        self.state.output_type = output_type
 
     def print_output(self, data: list[BaseModel] | BaseModel) -> None:
         """
@@ -56,15 +49,16 @@ class CLI(typer.Typer):
         if isinstance(data, BaseModel):
             data = [data]
         if len(data) == 0:
-            raise ValueError("At last one element needs to be passed")
+            self._print_empty_list()
+            return
         first_el_instance = type(data[0])
         if any(not isinstance(datapoint, first_el_instance) for datapoint in data):
             raise ValueError("All the rows need to be of the same type")
         data_dicts: list[dict] = [output.model_dump(mode="python") for output in data]
         output_type = self.state.output_type
-        if output_type == OutputType.JSON:
+        if output_type == OutputType.json:
             print(json.dumps(data_dicts, indent=4))
-        elif output_type == OutputType.TEXT:
+        elif output_type == OutputType.text:
             table = Table(show_header=True, header_style="bold magenta")
             properties = data[0].model_json_schema()["properties"]
             for key in properties:
@@ -74,3 +68,9 @@ class CLI(typer.Typer):
             self.console.print(table)
         else:
             raise ValueError(f"Output type: {output_type} not supported")
+
+    def _print_empty_list(self) -> None:
+        if self.state.output_type == OutputType.text:
+            print("Empty data list")
+        elif self.state.output_type == OutputType.json:
+            print(json.dumps([]))
