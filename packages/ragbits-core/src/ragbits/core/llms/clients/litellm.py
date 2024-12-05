@@ -171,7 +171,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
         stream: bool = False,
-    ) -> "ModelResponse | CustomStreamWrapper":
+    ) -> ModelResponse | CustomStreamWrapper:
         try:
             response = await litellm.acompletion(
                 messages=conversation,
