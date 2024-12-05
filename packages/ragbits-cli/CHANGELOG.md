@@ -4,6 +4,10 @@
 
 ## 0.5.0 (2024-12-05)
 
+### Added
+
+- Add global flag to specify output type: text or json (#232).
+
 ### Changed
 
 - ragbits-core updated to version v0.5.0
