@@ -1,9 +1,4 @@
-try:
-    import litellm
-
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
+import litellm
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embeddings
@@ -44,9 +39,6 @@ class LiteLLMEmbeddings(Embeddings):
         Raises:
             ImportError: If the 'litellm' extra requirements are not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM embeddings models")
-
         super().__init__()
         self.model = model
         self.options = options or {}

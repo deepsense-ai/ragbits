@@ -1,16 +1,9 @@
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 
+import litellm
+from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
-
-try:
-    import litellm
-    from litellm.utils import CustomStreamWrapper, ModelResponse
-
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
-
 
 from ragbits.core.audit import trace
 from ragbits.core.prompt import ChatFormat
@@ -68,9 +61,6 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         Raises:
             ImportError: If the 'litellm' extra requirements are not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM models")
-
         super().__init__(model_name)
         self.base_url = base_url
         self.api_key = api_key

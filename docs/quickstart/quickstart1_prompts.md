@@ -7,7 +7,7 @@ In this Quickstart guide, you will learn how to define a dynamic prompt in Ragbi
 To install Ragbits, run the following command in your terminal:
 
 ```bash
-pip install ragbits[litellm]
+pip install ragbits
 ```
 
 This command will install all the popular Ragbits packages, along with [LiteLLM](https://docs.litellm.ai/docs/), which we will use in this guide for communicating with LLM APIs.

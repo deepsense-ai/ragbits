@@ -3,7 +3,7 @@
 # dependencies = [
 #     "gradio",
 #     "ragbits-document-search",
-#     "ragbits-core[chroma,litellm]",
+#     "ragbits-core[chroma]",
 # ]
 # ///
 from collections.abc import AsyncIterator
