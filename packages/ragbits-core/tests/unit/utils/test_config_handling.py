@@ -22,6 +22,10 @@ class ExampleWithNoDefaultModule(WithConstructionConfig):
         self.bar = bar
 
 
+def example_factory() -> ExampleClassWithConfigMixin:
+    return ExampleSubclass("aligator", 42)
+
+
 def test_defacult_from_config():
     config = {"foo": "foo", "bar": 1}
     instance = ExampleClassWithConfigMixin.from_config(config)
@@ -62,3 +66,15 @@ def test_no_default_module():
     )
     with pytest.raises(InvalidConfigError):
         ExampleWithNoDefaultModule.subclass_from_config(config)
+
+
+def test_subclass_from_factory():
+    instance = ExampleClassWithConfigMixin.subclass_from_factory("unit.utils.test_config_handling:example_factory")
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "aligator"
+    assert instance.bar == 42
+
+
+def test_subclass_from_factory_incorrect_class():
+    with pytest.raises(InvalidConfigError):
+        ExampleWithNoDefaultModule.subclass_from_factory("unit.utils.test_config_handling:example_factory")
