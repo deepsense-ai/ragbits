@@ -14,15 +14,16 @@ app = CLI(no_args_is_help=True)
 
 @app.callback()
 def output_type(
-    # `OutputType.text.value` used as a workaround for the issue with `typer.Option` not accepting Enum values
     output: Annotated[
-        OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
-    ] = OutputType.text.value,  # type: ignore
+        OutputType | None, typer.Option("--output", "-o", help="Set the output type (text or json)")
+    ] = None,
 ) -> None:
     """Sets an output type for the CLI
     Args:
         output: type of output to be set
     """
+    if not output:
+        return
     app.set_output_type(output_type=output)
 
 
