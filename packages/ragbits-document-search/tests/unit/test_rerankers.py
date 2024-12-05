@@ -2,10 +2,12 @@ from argparse import Namespace
 from collections.abc import Sequence
 from unittest.mock import patch
 
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
+from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
 class CustomReranker(Reranker):
@@ -76,3 +78,49 @@ async def test_litellm_reranker_rerank() -> None:
         top_n=2,
         max_chunks_per_doc=None,
     )
+
+
+def test_subclass_from_config():
+    config = ObjectContructionConfig.model_validate(
+        {
+            "type": "ragbits.document_search.retrieval.rerankers:NoopReranker",
+            "config": {
+                "default_options": {
+                    "top_n": 12,
+                    "max_chunks_per_doc": 42,
+                },
+            },
+        }
+    )
+    reranker = Reranker.subclass_from_config(config)
+    assert isinstance(reranker, NoopReranker)
+    assert isinstance(reranker._default_options, RerankerOptions)
+    assert reranker._default_options.top_n == 12
+    assert reranker._default_options.max_chunks_per_doc == 42
+
+
+def test_subclass_from_config_default_path():
+    config = ObjectContructionConfig.model_validate({"type": "NoopReranker"})
+    reranker = Reranker.subclass_from_config(config)
+    assert isinstance(reranker, NoopReranker)
+
+
+def test_subclass_from_config_llm():
+    config = ObjectContructionConfig.model_validate(
+        {
+            "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+            "config": {
+                "model": "some_model",
+                "default_options": {
+                    "top_n": 12,
+                    "max_chunks_per_doc": 42,
+                },
+            },
+        }
+    )
+    reranker = Reranker.subclass_from_config(config)
+    assert isinstance(reranker, LiteLLMReranker)
+    assert isinstance(reranker._default_options, RerankerOptions)
+    assert reranker.model == "some_model"
+    assert reranker._default_options.top_n == 12
+    assert reranker._default_options.max_chunks_per_doc == 42

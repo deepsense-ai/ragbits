@@ -13,7 +13,7 @@ class InvalidConfigError(Exception):
     """
 
 
-def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:  # noqa: ANN401
+def get_cls_from_config(cls_path: str, default_module: ModuleType | None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns a class based on the given type string. The class can be either in the
     default module or a specified module if provided in the type string.
@@ -35,6 +35,9 @@ def get_cls_from_config(cls_path: str, default_module: ModuleType) -> Any:  # no
             return getattr(module, object_stringified)
         except AttributeError as err:
             raise InvalidConfigError(f"Class {object_stringified} not found in module {module_stringified}") from err
+
+    if default_module is None:
+        raise InvalidConfigError("Given type string does not contain a module and no default module provided")
 
     try:
         return getattr(default_module, cls_path)
@@ -60,7 +63,7 @@ class WithConstructionConfig(abc.ABC):
     """
 
     # The default module to search for the subclass if no specific module is provided in the type string.
-    default_module: ClassVar[ModuleType]
+    default_module: ClassVar[ModuleType | None] = None
 
     @classmethod
     def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:

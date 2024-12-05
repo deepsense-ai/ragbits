@@ -65,5 +65,8 @@ class LLMQueryRephraser(QueryRephraser):
            ValueError: If the prompt class is not a subclass of `Prompt` or the LLM class is not a subclass of `LLM`.
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
-        prompt_cls = get_rephraser_prompt(prompt) if (prompt := config.get("prompt")) else None
+        prompt_cls = None
+        if "prompt" in config:
+            prompt_config = ObjectContructionConfig.model_validate(config["prompt"])
+            prompt_cls = get_rephraser_prompt(prompt_config.type)
         return cls(llm=llm, prompt=prompt_cls)
