@@ -25,3 +25,9 @@ def test_subclass_from_config():
     assert isinstance(llm.default_options, LiteLLMOptions)
     assert llm.default_options.frequency_penalty == 0.2
     assert llm.default_options.n == 42
+
+
+def test_subclass_from_config_default_path():
+    config = ObjectContructionConfig.model_validate({"type": "LiteLLM"})
+    llm: LLM = LLM.subclass_from_config(config)
+    assert isinstance(llm, LiteLLM)
