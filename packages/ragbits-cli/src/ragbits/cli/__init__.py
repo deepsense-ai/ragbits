@@ -20,7 +20,6 @@ def output_type(
         output: type of output to be set
     """
     app.set_output_type(output_type=output)
-    print(f"Output type set to {output}")
 
 
 def main() -> None:
