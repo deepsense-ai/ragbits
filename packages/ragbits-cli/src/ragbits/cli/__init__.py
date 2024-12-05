@@ -1,6 +1,7 @@
 import importlib.util
 import pkgutil
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -13,8 +14,12 @@ app = CLI(no_args_is_help=True)
 
 @app.callback()
 def output_type(
-    output: OutputType = typer.Option("text", "--output", "-o", help="Set the output type (text or json)"),  # noqa: B008
+    output: Annotated[
+        OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
+    ] = OutputType.text.value,  # type: ignore
 ) -> None:
+    # type ignore is a workaround for typer issue
+    # enforcing to use str as default value
     """Sets an output type for the CLI
     Args:
         output: type of output to be set
