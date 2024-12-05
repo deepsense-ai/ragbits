@@ -3,8 +3,8 @@ from itertools import islice
 import numpy as np
 
 from ragbits.core.audit import traceable
-from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
@@ -38,10 +38,19 @@ class InMemoryVectorStore(VectorStore):
 
         Returns:
             An initialized instance of the InMemoryVectorStore class.
+
+        Raises:
+            ValidationError: The metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The metadata_store class can't be found or is not the correct type.
         """
+        store = (
+            MetadataStore.subclass_from_config(ObjectContructionConfig.model_validate(config["metadata_store"]))
+            if "metadata_store" in config
+            else None
+        )
         return cls(
             default_options=VectorStoreOptions(**config.get("default_options", {})),
-            metadata_store=get_metadata_store(config.get("metadata_store")),
+            metadata_store=store,
         )
 
     @traceable

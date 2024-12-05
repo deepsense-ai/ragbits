@@ -4,11 +4,11 @@ import typing
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, Filter, VectorParams
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
-from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import ObjectContructionConfig, get_cls_from_config
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
 
@@ -41,24 +41,24 @@ class QdrantVectorStore(VectorStore):
         self._distance_method = distance_method
 
     @classmethod
-    def from_config(cls, config: dict) -> "QdrantVectorStore":
+    def from_config(cls, config: dict) -> Self:
         """
-        Creates and returns an instance of the QdrantVectorStore class from the given configuration.
+        Initializes the class with the provided configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the QdrantVectorStore instance.
+            config: A dictionary containing configuration details for the class.
 
         Returns:
-            An initialized instance of the QdrantVectorStore class.
+            An instance of the class initialized with the provided configuration.
+
+        Raises:
+            ValidationError: The client or metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
         """
-        client_cls = get_cls_from_config(config["client"]["type"], qdrant_client)
-        return cls(
-            client=client_cls(**config["client"].get("config", {})),
-            index_name=config["index_name"],
-            distance_method=config.get("distance_method", Distance.COSINE),
-            default_options=VectorStoreOptions(**config.get("default_options", {})),
-            metadata_store=get_metadata_store(config.get("metadata_store")),
-        )
+        client_options = ObjectContructionConfig.model_validate(config["client"])
+        client_cls = get_cls_from_config(client_options.type, qdrant_client)
+        config["client"] = client_cls(**client_options.config)
+        return super().from_config(config)
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
