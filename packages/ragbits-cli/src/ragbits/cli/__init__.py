@@ -13,7 +13,7 @@ app = CLI(no_args_is_help=True)
 
 @app.callback()
 def output_type(
-    output: OutputType = typer.Option("text", "--output", "-o", help="Set the output type (text or json)"),
+    output: OutputType = typer.Option("text", "--output", "-o", help="Set the output type (text or json)"), # noqa: B008
 ) -> None:
     """Sets an output type for the CLI
     Args:
