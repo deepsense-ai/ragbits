@@ -2,12 +2,7 @@ import base64
 import warnings
 from functools import cached_property
 
-try:
-    import litellm
-
-    HAS_LITELLM = True
-except ImportError:
-    HAS_LITELLM = False
+import litellm
 
 from ragbits.core.prompt.base import BasePrompt, ChatFormat
 
@@ -47,13 +42,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             use_structured_output: Whether to request a
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
-
-        Raises:
-            ImportError: If the 'litellm' extra requirements are not installed.
         """
-        if not HAS_LITELLM:
-            raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM models")
-
         super().__init__(model_name, default_options)
         self.base_url = base_url
         self.api_key = api_key

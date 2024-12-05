@@ -3,7 +3,7 @@
 # dependencies = [
 #     "ragbits-document-search",
 #     "ragbits-evaluate[relari]",
-#     "ragbits-core[litellm,chroma]",
+#     "ragbits-core[chroma]",
 # ]
 # ///
 import asyncio
