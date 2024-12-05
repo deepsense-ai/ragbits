@@ -10,7 +10,7 @@ To install Ragbits, run the following command in your terminal:
 pip install ragbits
 ```
 
-This command will install all the popular Ragbits packages, along with [LiteLLM](https://docs.litellm.ai/docs/), which we will use in this guide for communicating with LLM APIs.
+This command will install all the popular Ragbits packages.
 
 ## Defining a Static Prompt
 The most standard way to define a prompt in Ragbits is to create a class that inherits from the `Prompt` class and configure it by setting values for appropriate properties. Here is an example of a simple prompt that asks the model to write a song about Ragbits:

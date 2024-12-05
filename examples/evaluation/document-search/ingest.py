@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search[huggingface]",
-#     "ragbits-core[litellm,chroma]",
+#     "ragbits-core[chroma]",
 #     "hydra-core~=1.3.2",
 #     "unstructured[md]>=0.15.13",
 # ]
