@@ -3,7 +3,7 @@ import sys
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 from ragbits.evaluate.loaders import dataloader_factory
 from ragbits.evaluate.metrics import metric_set_factory
 from ragbits.evaluate.optimizer import Optimizer
@@ -21,12 +21,12 @@ def main(config: DictConfig) -> None:
         config: Hydra configuration.
     """
     dataloader = dataloader_factory(config.data)
-    pipeline_class = get_cls_from_config(config.pipeline.type, module)
+    pipeline_class = import_by_path(config.pipeline.type, module)
     metrics = metric_set_factory(config.metrics)
     callback_configurators = None
     if getattr(config, "callbacks", None):
         callback_configurators = [
-            get_cls_from_config(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in config.callbacks
+            import_by_path(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in config.callbacks
         ]
 
     optimization_cfg = OmegaConf.create({"direction": "maximize", "n_trials": 10})

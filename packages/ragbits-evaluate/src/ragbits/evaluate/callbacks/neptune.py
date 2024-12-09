@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import neptune
 
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 from .base import CallbackConfigurator
 
@@ -21,6 +21,6 @@ class NeptuneCallbackConfigurator(CallbackConfigurator):
         Returns:
             Callable: configured neptune callback
         """
-        callback_class = get_cls_from_config(self.config.callback_type, module)
+        callback_class = import_by_path(self.config.callback_type, module)
         run = neptune.init_run(project=self.config.project)
         return callback_class(run)
