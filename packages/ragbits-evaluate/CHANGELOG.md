@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 0.5.1 (2024-12-09)
+
 ### Changed
 
+- ragbits-core updated to version v0.5.1
 - document search evaluation now returns all Element types, rather than only TextElements (#241).
 
 ## 0.5.0 (2024-12-05)
