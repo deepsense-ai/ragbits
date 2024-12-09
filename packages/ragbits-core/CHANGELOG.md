@@ -4,6 +4,10 @@
 
 ## 0.5.1 (2024-12-09)
 
+### Changed
+
+- Refactor: added standardized way to create ragbits objects from config (#233).
+
 ## 0.5.0 (2024-12-05)
 
 ### Added
