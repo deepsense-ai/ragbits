@@ -8,7 +8,6 @@ from tqdm.asyncio import tqdm
 
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import HuggingFaceSource
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
