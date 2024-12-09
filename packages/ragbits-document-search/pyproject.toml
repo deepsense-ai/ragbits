@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-document-search"
-version = "0.4.0"
+version = "0.5.0"
 description = "Document Search module for Ragbits"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["unstructured>=0.15.13", "unstructured-client>=0.26.0", "pdf2image>=1.17.0", "ragbits-core==0.4.0"]
+dependencies = ["unstructured>=0.15.13", "unstructured-client>=0.26.0", "pdf2image>=1.17.0", "ragbits-core==0.5.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"

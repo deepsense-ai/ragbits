@@ -2,11 +2,11 @@ from typing import Literal
 
 import chromadb
 from chromadb.api import ClientAPI
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
-from ragbits.core.metadata_stores import get_metadata_store
 from ragbits.core.metadata_stores.base import MetadataStore
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import ObjectContructionConfig, get_cls_from_config
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
@@ -44,24 +44,24 @@ class ChromaVectorStore(VectorStore):
         )
 
     @classmethod
-    def from_config(cls, config: dict) -> "ChromaVectorStore":
+    def from_config(cls, config: dict) -> Self:
         """
-        Creates and returns an instance of the ChromaVectorStore class from the given configuration.
+        Initializes the class with the provided configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the ChromaVectorStore instance.
+            config: A dictionary containing configuration details for the class.
 
         Returns:
-            An initialized instance of the ChromaVectorStore class.
+            An instance of the class initialized with the provided configuration.
+
+        Raises:
+            ValidationError: The client or metadata_store configuration doesn't follow the expected format.
+            InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
         """
-        client_cls = get_cls_from_config(config["client"]["type"], chromadb)
-        return cls(
-            client=client_cls(**config["client"].get("config", {})),
-            index_name=config["index_name"],
-            distance_method=config.get("distance_method", "cosine"),
-            default_options=VectorStoreOptions(**config.get("default_options", {})),
-            metadata_store=get_metadata_store(config.get("metadata_store")),
-        )
+        client_options = ObjectContructionConfig.model_validate(config["client"])
+        client_cls = get_cls_from_config(client_options.type, chromadb)
+        config["client"] = client_cls(**client_options.config)
+        return super().from_config(config)
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:

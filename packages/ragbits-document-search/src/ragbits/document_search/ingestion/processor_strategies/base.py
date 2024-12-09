@@ -1,16 +1,17 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import ClassVar
 
-from typing_extensions import Self
-
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.ingestion import processor_strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
-class ProcessingExecutionStrategy(ABC):
+class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
     """
     Base class for processing execution strategies that define how documents are processed to become elements.
 
@@ -19,18 +20,7 @@ class ProcessingExecutionStrategy(ABC):
     the processing is executed.
     """
 
-    @classmethod
-    def from_config(cls, config: dict) -> Self:
-        """
-        Creates and returns an instance of the ProcessingExecutionStrategy subclass from the given configuration.
-
-        Args:
-            config: A dictionary containing the configuration for initializing the instance.
-
-        Returns:
-            An initialized instance of the ProcessingExecutionStrategy subclass.
-        """
-        return cls(**config)
+    default_module: ClassVar = processor_strategies
 
     @staticmethod
     async def to_document_meta(document: DocumentMeta | Document | Source) -> DocumentMeta:

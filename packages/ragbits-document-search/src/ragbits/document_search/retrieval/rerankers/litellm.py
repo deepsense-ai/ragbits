@@ -23,22 +23,6 @@ class LiteLLMReranker(Reranker):
         super().__init__(default_options)
         self.model = model
 
-    @classmethod
-    def from_config(cls, config: dict) -> "LiteLLMReranker":
-        """
-        Creates and returns an instance of the LiteLLMReranker class from the given configuration.
-
-        Args:
-            config: A dictionary containing the configuration for initializing the LiteLLMReranker instance.
-
-        Returns:
-            An initialized instance of the LiteLLMReranker class.
-        """
-        return cls(
-            model=config["model"],
-            default_options=RerankerOptions(**config.get("default_options", {})),
-        )
-
     @traceable
     async def rerank(
         self,

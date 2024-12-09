@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import ClassVar
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
+from ragbits.document_search.ingestion import providers
 
 
 class DocumentTypeNotSupportedError(Exception):
@@ -14,10 +17,12 @@ class DocumentTypeNotSupportedError(Exception):
         super().__init__(message)
 
 
-class BaseProvider(ABC):
+class BaseProvider(WithConstructionConfig, ABC):
     """
     A base class for the document processing providers.
     """
+
+    default_module: ClassVar = providers
 
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
 

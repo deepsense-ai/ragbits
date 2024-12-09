@@ -1,9 +1,9 @@
 from typing import Any
 
 from ragbits.core.audit import traceable
-from ragbits.core.llms import get_llm
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.prompts import (
     QueryRephraserInput,
@@ -61,9 +61,14 @@ class LLMQueryRephraser(QueryRephraser):
             An instance of the rephraser class initialized with the provided configuration.
 
         Raises:
-           KeyError: If the configuration dictionary does not contain the required keys.
-           ValueError: If the prompt class is not a subclass of `Prompt` or the LLM class is not a subclass of `LLM`.
+           ValidationError: If the LLM or prompt configuration doesn't follow the expected format.
+           InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
+           ValueError: If the prompt class is not a subclass of `Prompt`.
+
         """
-        llm = get_llm(config["llm"])
-        prompt_cls = get_rephraser_prompt(prompt) if (prompt := config.get("prompt")) else None
+        llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
+        prompt_cls = None
+        if "prompt" in config:
+            prompt_config = ObjectContructionConfig.model_validate(config["prompt"])
+            prompt_cls = get_rephraser_prompt(prompt_config.type)
         return cls(llm=llm, prompt=prompt_cls)

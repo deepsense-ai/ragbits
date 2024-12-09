@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.5.0 (2024-12-05)
+
+### Changed
+
+- ragbits-cli updated to version v0.5.0
+  - Add global flag to specify output type: text or json (#232).
+- ragbits-document-search updated to version v0.5.0
+  - Distributed ingestion with usage of https://www.ray.io/ (#207)
+  - Documents can be now replaced in existing VectorStore (#210)
+  - Providers are now loaded dynamically (#219)
+- ragbits-evaluate updated to version v0.5.0
+- ragbits-guardrails updated to version v0.5.0
+- ragbits-core updated to version v0.5.0
+  - Default LLM factory when configuration is not provided (#209).
+  - Add remove operation to VectorStore (#210).
+  - Install litellm package by default (#236).
+
 ## 0.4.0 (2024-11-27)
 
 ### Changed

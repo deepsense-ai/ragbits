@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
+from typing import ClassVar
 
 from pydantic import BaseModel
+from typing_extensions import Self
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.element import Element
+from ragbits.document_search.retrieval import rerankers
 
 
 class RerankerOptions(BaseModel):
@@ -15,10 +19,12 @@ class RerankerOptions(BaseModel):
     max_chunks_per_doc: int | None = None
 
 
-class Reranker(ABC):
+class Reranker(WithConstructionConfig, ABC):
     """
     Reranks elements retrieved from vector store.
     """
+
+    default_module: ClassVar = rerankers
 
     def __init__(self, default_options: RerankerOptions | None = None) -> None:
         """
@@ -30,20 +36,19 @@ class Reranker(ABC):
         self._default_options = default_options or RerankerOptions()
 
     @classmethod
-    def from_config(cls, config: dict) -> "Reranker":
+    def from_config(cls, config: dict) -> Self:
         """
-        Creates and returns an instance of the Reranker class from the given configuration.
+        Initializes the class with the provided configuration.
 
         Args:
-            config: A dictionary containing the configuration for initializing the Reranker instance.
+            config: A dictionary containing configuration details for the class.
 
         Returns:
-            An initialized instance of the Reranker class.
-
-        Raises:
-            NotImplementedError: If the class cannot be created from the provided configuration.
+            An instance of the class initialized with the provided configuration.
         """
-        raise NotImplementedError(f"Cannot create class {cls.__name__} from config.")
+        default_options = config.pop("default_options", None)
+        options = RerankerOptions(**default_options) if default_options else None
+        return cls(**config, default_options=options)
 
     @abstractmethod
     async def rerank(
