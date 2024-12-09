@@ -109,7 +109,6 @@ class WithConstructionConfig(abc.ABC):
         factory = import_by_path(factory_path, cls.default_module)
         obj = factory()
         if not isinstance(obj, cls):
-            print(obj, type(obj))
             raise InvalidConfigError(f"The object returned by factory {factory_path} is not an instance of {cls}")
         return obj
 
