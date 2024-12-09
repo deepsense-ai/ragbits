@@ -10,7 +10,7 @@ from pydantic import BaseModel
 
 from ragbits.cli.app import CLI
 from ragbits.core.config import core_config
-from ragbits.core.llms.base import LLMType
+from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.prompt.prompt import ChatFormat, Prompt
 
 
@@ -91,13 +91,11 @@ def register(app: CLI) -> None:
         Raises:
             ValueError: If `llm_factory` is not provided.
         """
-        from ragbits.core.llms.factory import get_llm_from_factory
-
         prompt = _render(prompt_path=prompt_path, payload=payload)
 
         if llm_factory is None:
             raise ValueError("`llm_factory` must be provided")
-        llm = get_llm_from_factory(llm_factory)
+        llm: LLM = LLM.subclass_from_factory(llm_factory)
 
         llm_output = asyncio.run(llm.generate(prompt))
         response = LLMResponseCliOutput(question=prompt.chat, answer=llm_output)

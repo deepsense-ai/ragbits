@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from ragbits.core.prompt.prompt import Prompt
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 module = sys.modules[__name__]
 
@@ -46,7 +46,7 @@ def get_rephraser_prompt(prompt: str) -> type[Prompt[QueryRephraserInput, Any]]:
     Raises:
         ValueError: If the prompt class is not a subclass of `Prompt`.
     """
-    prompt_cls = get_cls_from_config(prompt, module)
+    prompt_cls = import_by_path(prompt, module)
 
     if not issubclass(prompt_cls, Prompt):
         raise ValueError(f"Invalid rephraser prompt class: {prompt_cls}")

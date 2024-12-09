@@ -2,7 +2,7 @@ import sys
 
 from omegaconf import ListConfig
 
-from ragbits.core.utils.config_handling import get_cls_from_config
+from ragbits.core.utils.config_handling import import_by_path
 
 from .base import MetricSet
 
@@ -19,6 +19,6 @@ def metric_set_factory(cfg: ListConfig) -> MetricSet:
     """
     metrics = []
     for metric_cfg in cfg:
-        metric_module = get_cls_from_config(metric_cfg.type, module)
+        metric_module = import_by_path(metric_cfg.type, module)
         metrics.append(metric_module(metric_cfg))
     return MetricSet(*metrics)
