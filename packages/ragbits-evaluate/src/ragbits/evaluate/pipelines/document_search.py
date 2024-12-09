@@ -50,7 +50,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
             The evaluation result.
         """
         elements = await self.document_search.search(data["question"])
-        predicted_passages = [element.content for element in elements if isinstance(element, TextElement)]
+        predicted_passages = [element.text_representation for element in elements]
         return DocumentSearchResult(
             question=data["question"],
             reference_passages=data["passages"],
