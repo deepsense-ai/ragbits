@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- document search evaluation now returns all Element types, rather than only TextElements (#241).
+
 ## 0.5.0 (2024-12-05)
 
 ### Changed
