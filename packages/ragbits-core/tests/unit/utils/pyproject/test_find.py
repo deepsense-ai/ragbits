@@ -4,7 +4,7 @@ import pytest
 
 from ragbits.core.utils._pyproject import find_pyproject
 
-projects_dir = Path(__file__).parent / "testprojects"
+projects_dir = Path(__file__).parent.parent / "testprojects"
 
 
 def test_find_in_current_dir():

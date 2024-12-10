@@ -11,6 +11,7 @@ class MetadataStore(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = metadata_stores
+    configuration_key: ClassVar = "metadata_store"
 
     @abstractmethod
     async def store(self, ids: list[str], metadatas: list[dict]) -> None:

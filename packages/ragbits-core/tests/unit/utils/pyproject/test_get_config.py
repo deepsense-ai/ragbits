@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ragbits.core.utils._pyproject import get_ragbits_config
 
-projects_dir = Path(__file__).parent / "testprojects"
+projects_dir = Path(__file__).parent.parent / "testprojects"
 
 
 def test_get_config():
@@ -16,6 +16,7 @@ def test_get_config():
             "is_happy": True,
             "happiness_level": 100,
         },
+        "project_base_path": str(projects_dir / "happy_project"),
     }
 
 

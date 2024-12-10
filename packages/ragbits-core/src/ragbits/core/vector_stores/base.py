@@ -37,6 +37,7 @@ class VectorStore(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = vector_stores
+    configuration_key: ClassVar = "vector_store"
 
     def __init__(
         self,

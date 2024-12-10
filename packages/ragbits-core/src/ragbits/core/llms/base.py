@@ -31,6 +31,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
 
     _options_cls: type[LLMClientOptions]
     default_module: ClassVar = llms
+    configuration_key: ClassVar = "llm"
 
     def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
         """
