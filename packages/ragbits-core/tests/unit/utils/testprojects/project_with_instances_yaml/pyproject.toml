@@ -1,0 +1,5 @@
+[project]
+name = "project_with_instances_yaml"
+
+[tool.ragbits.core]
+default_instaces_config_path = "instances.yaml"

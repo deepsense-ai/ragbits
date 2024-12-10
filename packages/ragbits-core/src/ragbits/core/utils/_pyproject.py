@@ -1,11 +1,9 @@
-import enum
 from pathlib import Path
 from typing import Any, TypeVar
 
 import tomli
+import yaml
 from pydantic import BaseModel
-
-from ragbits.core.llms.base import LLMType
 
 
 def find_pyproject(current_dir: Path | None = None) -> Path:
@@ -57,7 +55,13 @@ def get_ragbits_config(current_dir: Path | None = None) -> dict[str, Any]:
 
     with pyproject.open("rb") as f:
         pyproject_data = tomli.load(f)
-    return pyproject_data.get("tool", {}).get("ragbits", {})
+
+    config = pyproject_data.get("tool", {}).get("ragbits", {})
+
+    # Detect project base path from pyproject.toml location
+    if "project_base_path" not in config:
+        config["project_base_path"] = str(pyproject.absolute().parent)
+    return config
 
 
 ConfigModelT = TypeVar("ConfigModelT", bound=BaseModel)
@@ -83,16 +87,28 @@ def get_config_instance(
 
     config = get_ragbits_config(current_dir)
     if subproject:
-        config = config.get(subproject, {})
-    if "default_llm_factories" in config:
-        config["default_llm_factories"] = {
-            _resolve_enum_member(k): v for k, v in config["default_llm_factories"].items()
+        config = {
+            **config.get(subproject, {}),
+            "project_base_path": config.get("project_base_path"),
         }
-    return model(**config)
+    return model.model_validate(config)
 
 
-def _resolve_enum_member(enum_string: str) -> enum.Enum:
-    try:
-        return LLMType(enum_string)
-    except ValueError as err:
-        raise ValueError("Unsupported LLMType value provided in default_llm_factories in pyproject.toml") from err
+def get_config_from_yaml(yaml_path: Path) -> dict:
+    """
+    Reads a YAML file and returns its content as a dictionary.
+
+    Args:
+        yaml_path: The path to the YAML file.
+
+    Returns:
+        dict: The content of the YAML file as a dictionary.
+
+    Raises:
+        ValueError: If the YAML file does not contain a dictionary.
+    """
+    with open(yaml_path) as file:
+        obj = yaml.safe_load(file)
+        if not isinstance(obj, dict):
+            raise ValueError(f"Expected a dictionary in {yaml_path}")
+        return obj

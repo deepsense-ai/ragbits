@@ -25,6 +25,7 @@ class Reranker(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = rerankers
+    configuration_key: ClassVar = "reranker"
 
     def __init__(self, default_options: RerankerOptions | None = None) -> None:
         """

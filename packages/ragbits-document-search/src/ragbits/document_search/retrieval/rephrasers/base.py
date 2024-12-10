@@ -11,6 +11,7 @@ class QueryRephraser(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = rephrasers
+    configuration_key: ClassVar = "rephraser"
 
     @abstractmethod
     async def rephrase(self, query: str) -> list[str]:

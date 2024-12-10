@@ -7,9 +7,16 @@ import typer
 
 import ragbits
 
-from .app import CLI, OutputType
+from .state import OutputType, cli_state, print_output
 
-app = CLI(no_args_is_help=True)
+__all__ = [
+    "OutputType",
+    "app",
+    "cli_state",
+    "print_output",
+]
+
+app = typer.Typer(no_args_is_help=True)
 
 
 @app.callback()
@@ -23,12 +30,12 @@ def output_type(
     Args:
         output: type of output to be set
     """
-    app.set_output_type(output_type=output)
+    cli_state.output_type = output
 
 
-def main() -> None:
+def autodiscover() -> None:
     """
-    Main entry point for the CLI.
+    Autodiscover and register all the CLI modules in the ragbits packages.
 
     This function registers all the CLI modules in the ragbits packages:
         - iterates over every package in the ragbits.* namespace
@@ -46,4 +53,10 @@ def main() -> None:
         register_func = importlib.import_module(f"ragbits.{module.name}.cli").register
         register_func(app)
 
+
+def main() -> None:
+    """
+    Main entry point for the CLI. Registers all the CLI commands and runs the app.
+    """
+    autodiscover()
     app()

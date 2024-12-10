@@ -1,12 +1,18 @@
 import sys
+from pathlib import Path
 
 import pytest
 
+from ragbits.core.config import CoreConfig, core_config
+from ragbits.core.utils._pyproject import get_config_instance
 from ragbits.core.utils.config_handling import InvalidConfigError, ObjectContructionConfig, WithConstructionConfig
+
+projects_dir = Path(__file__).parent / "testprojects"
 
 
 class ExampleClassWithConfigMixin(WithConstructionConfig):
     default_module = sys.modules[__name__]
+    configuration_key = "example"
 
     def __init__(self, foo: str, bar: int) -> None:
         self.foo = foo
@@ -78,3 +84,37 @@ def test_subclass_from_factory():
 def test_subclass_from_factory_incorrect_class():
     with pytest.raises(InvalidConfigError):
         ExampleWithNoDefaultModule.subclass_from_factory("unit.utils.test_config_handling:example_factory")
+
+
+def test_subclass_from_defaults_factory_override():
+    instance = ExampleClassWithConfigMixin.subclass_from_defaults(
+        core_config, factory_path_override="unit.utils.test_config_handling:example_factory"
+    )
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "aligator"
+    assert instance.bar == 42
+
+
+def test_subclass_from_defaults_pyproject_factory():
+    config = get_config_instance(
+        CoreConfig,
+        subproject="core",
+        current_dir=projects_dir / "project_with_instance_factory",
+    )
+    instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "aligator"
+    assert instance.bar == 42
+
+
+def test_subclass_from_defaults_instance_yaml():
+    config = get_config_instance(
+        CoreConfig,
+        subproject="core",
+        current_dir=projects_dir / "project_with_instances_yaml",
+    )
+    print(config)
+    instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "I am a foo"
+    assert instance.bar == 122

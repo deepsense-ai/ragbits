@@ -1,0 +1,5 @@
+[project]
+name = "instance_factory_project"
+
+[tool.ragbits.core.default_factories]
+example = "unit.utils.test_config_handling:example_factory"

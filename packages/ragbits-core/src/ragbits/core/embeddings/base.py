@@ -27,6 +27,7 @@ class Embeddings(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = embeddings
+    configuration_key: ClassVar = "embedder"
 
     @abstractmethod
     async def embed_text(self, data: list[str]) -> list[list[float]]:

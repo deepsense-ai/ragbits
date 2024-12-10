@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 import abc
 from importlib import import_module
+from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel
 from typing_extensions import Self
+
+from ragbits.core.utils._pyproject import get_config_from_yaml
+
+if TYPE_CHECKING:
+    from ragbits.core.config import CoreConfig
 
 
 class InvalidConfigError(Exception):
@@ -68,6 +76,9 @@ class WithConstructionConfig(abc.ABC):
     # The default module to search for the subclass if no specific module is provided in the type string.
     default_module: ClassVar[ModuleType | None] = None
 
+    # The key under configuration for this class (and its subclasses) can be found.
+    configuration_key: ClassVar[str]
+
     @classmethod
     def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
         """
@@ -111,6 +122,40 @@ class WithConstructionConfig(abc.ABC):
         if not isinstance(obj, cls):
             raise InvalidConfigError(f"The object returned by factory {factory_path} is not an instance of {cls}")
         return obj
+
+    @classmethod
+    def subclass_from_defaults(
+        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    ) -> Self:
+        """
+        Tries to create an instance by looking at default configuration file, and default factory function.
+        Takes optional overrides for both, which takes a higher precedence.
+
+        Args:
+            defaults: The CoreConfig instance containing default factory and configuration details.
+            factory_path_override: A string representing the path to the factory function
+                in the format of "module.submodule:factory_name".
+            yaml_path_override: A string representing the path to the YAML file containing
+                the Ragstack instance configuration.
+
+        Raises:
+            InvalidConfigError: If the default factory or configuration can't be found.
+        """
+        if yaml_path_override:
+            config = get_config_from_yaml(yaml_path_override)
+            if type_config := config.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+
+        if factory_path_override:
+            return cls.subclass_from_factory(factory_path_override)
+
+        if default_factory := defaults.default_factories.get(cls.configuration_key):
+            return cls.subclass_from_factory(default_factory)
+
+        if default_config := defaults.default_instances_config.get(cls.configuration_key):
+            return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
+
+        raise InvalidConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

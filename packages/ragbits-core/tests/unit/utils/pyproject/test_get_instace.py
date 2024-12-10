@@ -7,7 +7,7 @@ from ragbits.core.config import CoreConfig
 from ragbits.core.llms.base import LLMType
 from ragbits.core.utils._pyproject import get_config_instance
 
-projects_dir = Path(__file__).parent / "testprojects"
+projects_dir = Path(__file__).parent.parent / "testprojects"
 
 
 class HappyProjectConfig(BaseModel):
@@ -95,4 +95,4 @@ def test_get_config_instance_bad_factories():
             current_dir=projects_dir / "bad_factory_project",
         )
 
-    assert "Unsupported LLMType value provided in default_llm_factories in pyproject.toml" in str(err.value)
+    assert "Input should be 'text', 'vision' or 'structured_output'" in str(err.value)
