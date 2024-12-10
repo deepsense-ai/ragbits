@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.5.0"
+version = "0.5.1"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"

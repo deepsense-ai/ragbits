@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.5.1 (2024-12-09)
+
+### Changed
+
+- ragbits-cli updated to version v0.5.1
+- ragbits-document-search updated to version v0.5.1
+- ragbits-evaluate updated to version v0.5.1
+  - Document search evaluation now returns all Element types, rather than only TextElements (#241).
+- ragbits-guardrails updated to version v0.5.1
+- ragbits-core updated to version v0.5.1
+  - Refactor: added standardized way to create ragbits objects from config (#233).
+
 ## 0.5.0 (2024-12-05)
 
 ### Changed
