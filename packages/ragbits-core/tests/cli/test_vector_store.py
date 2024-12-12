@@ -5,7 +5,7 @@ import pytest
 from typer.testing import CliRunner
 
 from ragbits.cli import app as root_app
-from ragbits.cli import autodiscover
+from ragbits.cli import autoregister
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.core.embeddings.noop import NoopEmbeddings
 from ragbits.core.vector_stores import InMemoryVectorStore, VectorStore
@@ -155,7 +155,7 @@ def test_vector_store_query():
 
 
 def test_vector_store_list_json():
-    autodiscover()
+    autoregister()
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         root_app,

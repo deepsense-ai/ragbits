@@ -33,7 +33,7 @@ def output_type(
     cli_state.output_type = output
 
 
-def autodiscover() -> None:
+def autoregister() -> None:
     """
     Autodiscover and register all the CLI modules in the ragbits packages.
 
@@ -58,5 +58,5 @@ def main() -> None:
     """
     Main entry point for the CLI. Registers all the CLI commands and runs the app.
     """
-    autodiscover()
+    autoregister()
     app()
