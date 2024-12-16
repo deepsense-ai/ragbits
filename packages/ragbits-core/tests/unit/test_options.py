@@ -35,7 +35,6 @@ def test_merge_options() -> None:
     options_b = OptionsB()
     options_c = OptionsC()
 
-    merged = options_a | options_b
-    merged = merged | options_c
+    merged = options_a | options_b | options_c
 
     assert merged.dict() == {"a": 2, "b": 2, "c": "c", "d": None, "e": None}

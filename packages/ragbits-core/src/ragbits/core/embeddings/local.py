@@ -37,6 +37,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         Args:
             model_name: Name of the model to use.
             api_key: The API key for Hugging Face authentication.
+            options: Default options for the embedding model.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -59,7 +60,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
 
         Args:
             data: List of strings to get embeddings for.
-            options: Additional options to pass to the encoder.
+            options: Additional options to pass to the embedding model.
 
         Returns:
             List of embeddings for the given strings.
