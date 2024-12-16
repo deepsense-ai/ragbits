@@ -3939,7 +3939,7 @@ requires-dist = [
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", marker = "extra == 'distributed'", specifier = ">=2.39.0" },
-    { name = "unstructured", specifier = ">=0.16.0" },
+    { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
 
