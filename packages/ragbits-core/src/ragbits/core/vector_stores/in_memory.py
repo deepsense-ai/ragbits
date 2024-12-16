@@ -13,6 +13,8 @@ class InMemoryVectorStore(VectorStore):
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
+    _options_cls = VectorStoreOptions
+
     def __init__(
         self,
         default_options: VectorStoreOptions | None = None,
@@ -76,7 +78,7 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             The entries.
         """
-        options = self._default_options if options is None else options
+        merged_options = (self._default_options | options) if options else self._default_options
         entries = sorted(
             (
                 (entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector))))
@@ -86,8 +88,8 @@ class InMemoryVectorStore(VectorStore):
         )
         return [
             entry
-            for entry, distance in entries[: options.k]
-            if options.max_distance is None or distance <= options.max_distance
+            for entry, distance in entries[: merged_options.k]
+            if merged_options.max_distance is None or distance <= merged_options.max_distance
         ]
 
     @traceable

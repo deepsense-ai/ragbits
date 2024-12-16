@@ -16,6 +16,8 @@ class ChromaVectorStore(VectorStore):
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
 
+    _options_cls = VectorStoreOptions
+
     def __init__(
         self,
         client: ClientAPI,
@@ -105,11 +107,11 @@ class ChromaVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        options = self._default_options if options is None else options
+        merged_options = (self._default_options | options) if options else self._default_options
 
         results = self._collection.query(
             query_embeddings=vector,
-            n_results=options.k,
+            n_results=merged_options.k,
             include=["metadatas", "embeddings", "distances", "documents"],
         )
 
@@ -132,7 +134,7 @@ class ChromaVectorStore(VectorStore):
             )
             for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
             for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
-            if options.max_distance is None or distance <= options.max_distance
+            if merged_options.max_distance is None or distance <= merged_options.max_distance
         ]
 
     @traceable

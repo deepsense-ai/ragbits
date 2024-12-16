@@ -1,14 +1,11 @@
 from abc import ABC
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict
 
 from ragbits.core.types import NotGiven
 
-OptionsType = TypeVar("OptionsType", bound="Options")
 
-
-# @dataclass(config={"extra": "allow", "arbitrary_types_allowed": True})
 class Options(BaseModel, ABC):
     """
     A dataclass that represents all available options. Thanks to the extra='allow' configuration, it allows for

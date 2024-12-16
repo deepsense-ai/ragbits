@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
 from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 
 WhereQuery = dict[str, str | int | float | bool]
@@ -22,7 +23,7 @@ class VectorStoreEntry(BaseModel):
     metadata: dict
 
 
-class VectorStoreOptions(BaseModel, ABC):
+class VectorStoreOptions(Options):
     """
     An object representing the options for the vector store.
     """
@@ -31,17 +32,21 @@ class VectorStoreOptions(BaseModel, ABC):
     max_distance: float | None = None
 
 
-class VectorStore(WithConstructionConfig, ABC):
+VectorStoreOptionsType = TypeVar("VectorStoreOptionsType", bound=VectorStoreOptions)
+
+
+class VectorStore(Generic[VectorStoreOptionsType], WithConstructionConfig, ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
+    _options_cls: type[VectorStoreOptionsType]
     default_module: ClassVar = vector_stores
     configuration_key: ClassVar = "vector_store"
 
     def __init__(
         self,
-        default_options: VectorStoreOptions | None = None,
+        default_options: VectorStoreOptionsType | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:
         """
@@ -52,7 +57,7 @@ class VectorStore(WithConstructionConfig, ABC):
             metadata_store: The metadata store to use.
         """
         super().__init__()
-        self._default_options = default_options or VectorStoreOptions()
+        self._default_options = default_options or self._options_cls()
         self._metadata_store = metadata_store
 
     @classmethod
@@ -71,7 +76,7 @@ class VectorStore(WithConstructionConfig, ABC):
             InvalidConfigError: The metadata_store class can't be found or is not the correct type.
         """
         default_options = config.pop("default_options", None)
-        options = VectorStoreOptions(**default_options) if default_options else None
+        options = cls._options_cls(**default_options) if default_options else None
 
         store_config = config.pop("metadata_store", None)
         store = (
@@ -92,7 +97,9 @@ class VectorStore(WithConstructionConfig, ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(
+        self, vector: list[float], options: VectorStoreOptionsType | None = None
+    ) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
 

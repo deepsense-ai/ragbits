@@ -25,7 +25,7 @@ def test_subclass_from_config():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
     assert isinstance(store._default_options, VectorStoreOptions)
     assert store._default_options.k == 10
@@ -35,7 +35,7 @@ def test_subclass_from_config():
 
 def test_subclass_from_config_default_path():
     config = ObjectContructionConfig.model_validate({"type": "InMemoryVectorStore"})
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
 
 
@@ -53,7 +53,7 @@ def test_subclass_from_config_chroma_client():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, ChromaVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, ClientAPI)
@@ -80,7 +80,7 @@ def test_subclass_from_config_drant_client():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, QdrantVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, AsyncQdrantClient)
