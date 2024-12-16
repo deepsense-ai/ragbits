@@ -3,7 +3,9 @@ import pkgutil
 from pathlib import Path
 from typing import Annotated
 
+import click
 import typer
+from typer.main import get_command
 
 import ragbits
 
@@ -17,19 +19,17 @@ __all__ = [
 ]
 
 app = typer.Typer(no_args_is_help=True)
+_click_app: click.Command | None = None  # initialized in the `init_for_mkdocs` function
 
 
 @app.callback()
-def output_type(
+def ragbits_cli(
     # `OutputType.text.value` used as a workaround for the issue with `typer.Option` not accepting Enum values
     output: Annotated[
         OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
     ] = OutputType.text.value,  # type: ignore
 ) -> None:
-    """Sets an output type for the CLI
-    Args:
-        output: type of output to be set
-    """
+    """Common CLI arguments for all ragbits commands."""
     cli_state.output_type = output
 
 
@@ -52,6 +52,19 @@ def autoregister() -> None:
     for module in cli_enabled_modules:
         register_func = importlib.import_module(f"ragbits.{module.name}.cli").register
         register_func(app)
+
+
+def _init_for_mkdocs() -> None:
+    """
+    Initializes the CLI app for the mkdocs environment.
+
+    This function registers all the CLI commands and sets the `_click_app` variable to a click
+    command object containing all the CLI commands. This way the `mkdocs-click` plugin can
+    create an automatic CLI documentation.
+    """
+    global _click_app  # noqa: PLW0603
+    autoregister()
+    _click_app = get_command(app)
 
 
 def main() -> None:

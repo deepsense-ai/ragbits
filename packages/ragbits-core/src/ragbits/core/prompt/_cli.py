@@ -41,6 +41,8 @@ def lab(
     """
     Launches the interactive application for listing, rendering, and testing prompts
     defined within the current project.
+
+    For more information, see the [Prompts Lab documentation](../how-to/prompts_lab.md).
     """
     from ragbits.core.prompt.lab.app import lab_app
 
@@ -55,6 +57,8 @@ def generate_promptfoo_configs(
 ) -> None:
     """
     Generates the configuration files for the PromptFoo prompts.
+
+    For more information, see the [Promptfoo integration documentation](../how-to/integrations/promptfoo.md).
     """
     from ragbits.core.prompt.promptfoo import generate_configs
 
@@ -80,8 +84,7 @@ def execute(
     """
     Executes a prompt using the specified prompt class and LLM factory.
 
-    Raises:
-        ValueError: If `llm_factory` is not provided.
+    For an example of how to use this command, see the [Quickstart guide](../quickstart/quickstart1_prompts.md).
     """
     prompt = _render(prompt_path=prompt_path, payload=payload)
 

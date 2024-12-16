@@ -2222,6 +2222,19 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-click"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "markdown" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/61/d6b68573b4c399cd201502e4ea4cbfc12e274333d9ee622668cfbc9940ac/mkdocs_click-0.8.1.tar.gz", hash = "sha256:0a88cce04870c5d70ff63138e2418219c3c4119cc928a59c66b76eb5214edba6", size = 17874 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/ce/12158add31617ea579f7975f502812555371d7b8a4410c993a27d7e20727/mkdocs_click-0.8.1-py3-none-any.whl", hash = "sha256:a100ff938be63911f86465a1c21d29a669a7c51932b700fdb3daa90d13b61ee4", size = 14862 },
+]
+
+[[package]]
 name = "mkdocs-get-deps"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4053,6 +4066,7 @@ dev = [
     { name = "griffe-typingdoc" },
     { name = "mkdocs" },
     { name = "mkdocs-autorefs" },
+    { name = "mkdocs-click" },
     { name = "mkdocs-material" },
     { name = "mkdocs-material-extensions" },
     { name = "mkdocstrings" },
@@ -4081,6 +4095,7 @@ dev = [
     { name = "griffe-typingdoc", specifier = ">=0.2.7" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-autorefs", specifier = ">=1.2.0" },
+    { name = "mkdocs-click", specifier = ">=0.8.1" },
     { name = "mkdocs-material", specifier = ">=9.5.39" },
     { name = "mkdocs-material-extensions", specifier = ">=1.3.1" },
     { name = "mkdocstrings", specifier = ">=0.26.1" },
