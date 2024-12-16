@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import ClassVar
+from typing import ClassVar, Generic, TypeVar
 
 from ragbits.core import embeddings
+from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import WithConstructionConfig
+
+EmbeddingsClientOptions = TypeVar("EmbeddingsClientOptions", bound=Options)
 
 
 class EmbeddingType(Enum):
@@ -21,7 +24,7 @@ class EmbeddingType(Enum):
     IMAGE: str = "image"
 
 
-class Embeddings(WithConstructionConfig, ABC):
+class Embeddings(Generic[EmbeddingsClientOptions], WithConstructionConfig, ABC):
     """
     Abstract client for communication with embedding models.
     """
@@ -30,12 +33,13 @@ class Embeddings(WithConstructionConfig, ABC):
     configuration_key: ClassVar = "embedder"
 
     @abstractmethod
-    async def embed_text(self, data: list[str]) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: EmbeddingsClientOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
+            options: Additional settings used by the Embeddings model.
 
         Returns:
             List of embeddings for the given strings.

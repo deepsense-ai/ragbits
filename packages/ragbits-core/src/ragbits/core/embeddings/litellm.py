@@ -8,9 +8,23 @@ from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
     EmbeddingStatusError,
 )
+from ragbits.core.options import Options
+from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LiteLLMEmbeddings(Embeddings):
+class LiteLLMEmbeddingsOptions(Options):
+    """
+    Dataclass that represents available call options for the LiteLLMEmbeddingClient client.
+    Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding#optional-litellm-fields).
+    """
+
+    dimensions: int | None | NotGiven = NOT_GIVEN
+    timeout: int | None | NotGiven = NOT_GIVEN
+    user: str | None | NotGiven = NOT_GIVEN
+    encoding_format: str | None | NotGiven = NOT_GIVEN
+
+
+class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """
@@ -18,7 +32,7 @@ class LiteLLMEmbeddings(Embeddings):
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        options: dict | None = None,
+        options: LiteLLMEmbeddingsOptions | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
         api_version: str | None = None,
@@ -38,17 +52,18 @@ class LiteLLMEmbeddings(Embeddings):
         """
         super().__init__()
         self.model = model
-        self.options = options or {}
+        self.default_options = options or LiteLLMEmbeddingsOptions()
         self.api_base = api_base
         self.api_key = api_key
         self.api_version = api_version
 
-    async def embed_text(self, data: list[str]) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LiteLLMEmbeddingsOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
+            options: Additional options to pass to the Lite LLM API.
 
         Returns:
             List of embeddings for the given strings.
@@ -59,12 +74,14 @@ class LiteLLMEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
+        merged_options = (self.default_options | options) if options else self.default_options
+        options_dict = merged_options.dict() if merged_options else {}
         with trace(
             data=data,
             model=self.model,
             api_base=self.api_base,
             api_version=self.api_version,
-            options=self.options,
+            options=options_dict,
         ) as outputs:
             try:
                 response = await litellm.aembedding(
@@ -73,7 +90,7 @@ class LiteLLMEmbeddings(Embeddings):
                     api_base=self.api_base,
                     api_key=self.api_key,
                     api_version=self.api_version,
-                    **self.options,
+                    **options_dict,
                 )
             except litellm.openai.APIConnectionError as exc:
                 raise EmbeddingConnectionError() from exc

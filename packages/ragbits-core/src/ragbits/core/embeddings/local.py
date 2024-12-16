@@ -1,5 +1,8 @@
 from collections.abc import Iterator
 
+from ragbits.core.embeddings import Embeddings
+from ragbits.core.options import Options
+
 try:
     import torch
     import torch.nn.functional as F
@@ -9,10 +12,16 @@ try:
 except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
-from ragbits.core.embeddings import Embeddings
+
+class LocalEmbeddingsOptions(Options):
+    """
+    Dataclass that represents available call options for the LocalEmbeddings client.
+    """
+
+    batch_size: int = 1
 
 
-class LocalEmbeddings(Embeddings):
+class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
     """
@@ -43,18 +52,19 @@ class LocalEmbeddings(Embeddings):
         self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
-    async def embed_text(self, data: list[str], batch_size: int = 1) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LocalEmbeddingsOptions | None = None) -> list[list[float]]:
         """Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.
-            batch_size: Batch size.
+            options: Additional options to pass to the encoder.
 
         Returns:
             List of embeddings for the given strings.
         """
+        options = options or LocalEmbeddingsOptions()
         embeddings = []
-        for batch in self._batch(data, batch_size):
+        for batch in self._batch(data, options.batch_size):
             batch_dict = self.tokenizer(
                 batch,
                 max_length=self.tokenizer.model_max_length,

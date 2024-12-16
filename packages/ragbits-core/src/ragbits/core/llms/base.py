@@ -8,10 +8,9 @@ from typing import ClassVar, Generic, cast, overload
 from typing_extensions import Self
 
 from ragbits.core import llms
+from ragbits.core.llms.clients.base import LLMClient, LLMClientOptions
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 from ragbits.core.utils.config_handling import WithConstructionConfig
-
-from .clients.base import LLMClient, LLMClientOptions, LLMOptions
 
 
 class LLMType(enum.Enum):
@@ -33,7 +32,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
     default_module: ClassVar = llms
     configuration_key: ClassVar = "llm"
 
-    def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
+    def __init__(self, model_name: str, default_options: LLMClientOptions | None = None) -> None:
         """
         Constructs a new LLM instance.
 
@@ -74,7 +73,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptions | None = None,
     ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -86,10 +85,10 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         Returns:
             Raw text response from LLM.
         """
-        options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         response = await self.client.call(
             conversation=self._format_chat_for_llm(prompt),
-            options=options,
+            options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )
@@ -101,7 +100,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePromptWithParser[OutputT],
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptions | None = None,
     ) -> OutputT: ...
 
     @overload
@@ -109,14 +108,14 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptions | None = None,
     ) -> OutputT: ...
 
     async def generate(
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptions | None = None,
     ) -> OutputT:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
@@ -140,7 +139,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptions | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
@@ -152,10 +151,10 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         Returns:
             Response stream from LLM.
         """
-        options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         response = await self.client.call_streaming(
             conversation=self._format_chat_for_llm(prompt),
-            options=options,
+            options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )

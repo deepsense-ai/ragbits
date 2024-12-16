@@ -16,6 +16,7 @@ from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
     EmbeddingStatusError,
 )
+from ragbits.core.options import Options
 
 
 class VertexAIMultimodelEmbeddings(Embeddings):
@@ -31,7 +32,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
         api_base: str | None = None,
         api_key: str | None = None,
         concurency: int = 10,
-        options: dict | None = None,
+        options: Options | None = None,
     ) -> None:
         """
         Constructs the embedding client for multimodal VertexAI models.
@@ -58,7 +59,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
         self.api_base = api_base
         self.api_key = api_key
         self.concurency = concurency
-        self.options = options or {}
+        self.options = options or Options()
 
         supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
         if model not in supported_models:
@@ -84,7 +85,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
             data=data,
             model=self.model,
             api_base=self.api_base,
-            options=self.options,
+            options=self.options.dict(),
         ) as outputs:
             semaphore = asyncio.Semaphore(self.concurency)
             try:
@@ -119,17 +120,18 @@ class VertexAIMultimodelEmbeddings(Embeddings):
                 model=f"{self.VERTEX_AI_PREFIX}{self.model}",
                 api_base=self.api_base,
                 api_key=self.api_key,
-                **self.options,
+                **self.options.dict(),
             )
 
         return response
 
-    async def embed_text(self, data: list[str]) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
+            options: Additional options to pass to the VertexAI multimodal embeddings API.
 
         Returns:
             List of embeddings for the given strings.
@@ -138,6 +140,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
             EmbeddingStatusError: If the embedding API returns an error status code.
             EmbeddingResponseError: If the embedding API response is invalid.
         """
+        self.options = (self.options | options) if options else self.options
         response = await self._embed([{"text": text} for text in data])
         return [embedding["textEmbedding"] for embedding in response]
 

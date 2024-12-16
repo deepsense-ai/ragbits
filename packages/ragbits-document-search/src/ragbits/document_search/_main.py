@@ -100,7 +100,7 @@ class DocumentSearch:
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        embedder = Embeddings.subclass_from_config(model.embedder)
+        embedder: Embeddings = Embeddings.subclass_from_config(model.embedder)
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker = Reranker.subclass_from_config(model.reranker)
         vector_store = VectorStore.subclass_from_config(model.vector_store)
