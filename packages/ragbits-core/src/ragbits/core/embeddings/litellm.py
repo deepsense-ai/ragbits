@@ -75,13 +75,12 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
             EmbeddingResponseError: If the embedding API response is invalid.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        options_dict = merged_options.dict() if merged_options else {}
         with trace(
             data=data,
             model=self.model,
             api_base=self.api_base,
             api_version=self.api_version,
-            options=options_dict,
+            options=merged_options.dict(),
         ) as outputs:
             try:
                 response = await litellm.aembedding(
@@ -90,7 +89,7 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
                     api_base=self.api_base,
                     api_key=self.api_key,
                     api_version=self.api_version,
-                    **options_dict,
+                    **merged_options.dict(),
                 )
             except litellm.openai.APIConnectionError as exc:
                 raise EmbeddingConnectionError() from exc

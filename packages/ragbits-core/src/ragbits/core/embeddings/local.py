@@ -30,6 +30,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         self,
         model_name: str,
         api_key: str | None = None,
+        options: LocalEmbeddingsOptions | None = None,
     ) -> None:
         """Constructs a new local LLM instance.
 
@@ -45,6 +46,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
 
         super().__init__()
 
+        self.default_options = options or LocalEmbeddingsOptions()
         self.hf_api_key = api_key
         self.model_name = model_name
 
