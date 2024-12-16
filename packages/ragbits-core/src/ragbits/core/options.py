@@ -31,7 +31,7 @@ class Options(BaseModel, ABC):
 
         return self.__class__(**updated_dict)
 
-    def dict(self) -> dict[str, Any]:  # type: ignore
+    def dict(self) -> dict[str, Any]:  # type: ignore # mypy complains about overriding BaseModel.dict
         """
         Creates a dictionary representation of the Options instance.
         If a value is None, it will be replaced with a provider-specific not-given sentinel.
