@@ -1,5 +1,6 @@
 import time
 from typing import Optional
+
 from rich.tree import Tree
 
 
@@ -50,7 +51,7 @@ class CLISpan:
             "parent": self.parent.name if self.parent else None,
         }
 
-    def to_tree(self, tree: Tree = None, color: str = None) -> Tree:
+    def to_tree(self, tree: Tree = None, color: str = "bold blue") -> Tree:
         """
         Convert theCLISpan object and its children into a Rich Tree structure for console rendering.
 
@@ -63,7 +64,7 @@ class CLISpan:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
         if tree is None:
-            tree = Tree(f"[bold blue]{self.name}[/bold blue] (Duration: {self.end_time - self.start_time:.3f}s)")
+            tree = Tree(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
         else:
             child_tree = tree.add(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
             tree = child_tree
