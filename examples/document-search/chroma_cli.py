@@ -40,7 +40,6 @@ from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
-
 audit.set_trace_handlers("cli")
 
 documents = [
