@@ -35,8 +35,7 @@ class CLITracer(TraceHandler[CLISpan]):
 
         return span
 
-
-    def stop(self, outputs: dict, current_span: CLISpan) -> None: # noqa: PLR6301
+    def stop(self, outputs: dict, current_span: CLISpan) -> None:  # noqa: PLR6301
         """
         Log output data at the end of the trace.
 
@@ -51,7 +50,7 @@ class CLITracer(TraceHandler[CLISpan]):
             console = Console()
             console.print(current_span.to_tree())
 
-    def error(self, error: Exception, current_span: CLISpan) -> None: # noqa: PLR6301
+    def error(self, error: Exception, current_span: CLISpan) -> None:  # noqa: PLR6301
         """
         Log error during the trace.
 
