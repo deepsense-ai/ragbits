@@ -82,13 +82,9 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
     with ExitStack() as stack:
         outputs = [stack.enter_context(handler.trace(name, **inputs)) for handler in _trace_handlers]
 
-
         yield (out := SimpleNamespace())
         for output in outputs:
             output.__dict__.update(vars(out))
-
-
-
 
 
 def traceable(func: Callable[P, R]) -> Callable[P, R]:
