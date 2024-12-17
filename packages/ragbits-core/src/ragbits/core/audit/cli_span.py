@@ -23,7 +23,7 @@ class CLISpan:
         self.parent = parent
         self.start_time: float = time.time()
         self.end_time: float | None = None
-        self.children: list["CLISpan"] = []
+        self.children: list[CLISpan] = []
         self.status: str = "started"
 
     def end(self) -> None:
@@ -63,7 +63,6 @@ class CLISpan:
         Returns:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
-
         if tree is None and self.end_time:
             tree = Tree(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
 
