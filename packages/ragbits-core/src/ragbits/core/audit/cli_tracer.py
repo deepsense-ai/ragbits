@@ -9,6 +9,7 @@ class CLITracer(TraceHandler[CLISpan]):
     """
     CLITracer class for all trace handlers.
     """
+
     def __init__(self) -> None:
         """
         Construct a new CLITracer instance.
@@ -37,7 +38,6 @@ class CLITracer(TraceHandler[CLISpan]):
         return span
 
     def stop(self, outputs: dict, current_span: CLISpan) -> None:
-
         """
         Log output data at the end of the trace.
 
