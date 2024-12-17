@@ -1,7 +1,6 @@
 from rich.console import Console
 
 from ragbits.core.audit import TraceHandler
-from ragbits.core.audit.base import SpanT
 from ragbits.core.audit.cli_span import CLISpan
 
 
@@ -15,7 +14,6 @@ class CLITracer(TraceHandler[CLISpan]):
         Construct a new CLITracer instance.
         """
         super().__init__()
-        self.main_track = []
 
     def start(self, name: str, inputs: dict, current_span: CLISpan | None = None) -> CLISpan:
         """
@@ -37,7 +35,8 @@ class CLITracer(TraceHandler[CLISpan]):
 
         return span
 
-    def stop(self, outputs: dict, current_span: CLISpan) -> None:
+
+    def stop(self, outputs: dict, current_span: CLISpan) -> None: # noqa: PLR6301
         """
         Log output data at the end of the trace.
 
@@ -52,7 +51,7 @@ class CLITracer(TraceHandler[CLISpan]):
             console = Console()
             console.print(current_span.to_tree())
 
-    def error(self, error: Exception, current_span: SpanT) -> None:
+    def error(self, error: Exception, current_span: CLISpan) -> None: # noqa: PLR6301
         """
         Log error during the trace.
 
