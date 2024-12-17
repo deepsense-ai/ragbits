@@ -21,15 +21,14 @@ class CLISpan:
             "start_time": self.start_time,
             "end_time": self.end_time,
             "children": [child.to_dict() for child in self.children],
-            "parent": self.parent.name if self.parent else None
+            "parent": self.parent.name if self.parent else None,
         }
 
     def to_tree(self, tree=None, color=None):
         if tree is None:
             tree = Tree(f"[bold blue]{self.name}[/bold blue] (Duration: {self.end_time - self.start_time:.3f}s)")
         else:
-            child_tree = tree.add(
-                f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
+            child_tree = tree.add(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
             tree = child_tree
 
         for child in self.children:
