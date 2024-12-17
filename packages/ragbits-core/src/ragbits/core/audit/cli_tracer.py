@@ -1,11 +1,8 @@
-import time
-import contextvars
-from contextlib import contextmanager
+from rich.console import Console
 
+from ragbits.core.audit import TraceHandler
 from ragbits.core.audit.base import SpanT
 from ragbits.core.audit.cli_span import CLISpan
-from ragbits.core.audit import TraceHandler
-from rich.console import Console
 
 
 class Tracer(TraceHandler[CLISpan]):
@@ -15,7 +12,7 @@ class Tracer(TraceHandler[CLISpan]):
 
     def start(self, name: str, inputs: dict, current_span: CLISpan | None = None) -> CLISpan:
         # print("Buu ", self._spans.get())
-        parent =self._spans.get()[-1] if self._spans.get() else None
+        parent = self._spans.get()[-1] if self._spans.get() else None
         span = CLISpan(name, parent)
 
         if parent:
@@ -28,7 +25,7 @@ class Tracer(TraceHandler[CLISpan]):
 
     def stop(self, outputs: dict, current_span: CLISpan) -> None:
         current_span.end()
-        current_span.status="done"
+        current_span.status = "done"
         # print(f"[Span Ended] ", current_span.name, current_span.end_time)
 
         if current_span.parent is None:
@@ -37,7 +34,7 @@ class Tracer(TraceHandler[CLISpan]):
 
     def error(self, error: Exception, current_span: SpanT) -> None:
         current_span.end()
-        current_span.status="error"
+        current_span.status = "error"
         if current_span.parent is None:
             console = Console()
             console.print(current_span.to_tree())

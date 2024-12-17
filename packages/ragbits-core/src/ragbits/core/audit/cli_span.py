@@ -1,7 +1,7 @@
 import time
 
-from rich.console import Console
 from rich.tree import Tree
+
 
 class CLISpan:
     def __init__(self, name, parent=None):
@@ -14,7 +14,6 @@ class CLISpan:
 
     def end(self):
         self.end_time = time.time()
-
 
     def to_dict(self):
         return {
