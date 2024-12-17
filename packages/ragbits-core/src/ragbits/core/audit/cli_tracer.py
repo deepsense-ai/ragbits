@@ -45,7 +45,6 @@ class CLITracer(TraceHandler[CLISpan]):
             outputs: The output data.
             current_span: The current trace span.
         """
-
         current_span.end()
         current_span.status = "done"
 
