@@ -8,7 +8,7 @@ class CLISpan:
     CLI Span represents a single operation within a trace.
     """
 
-    def __init__(self, name: str, parent: Optional['CLISpan'] = None):
+    def __init__(self, name: str, parent: Optional["CLISpan"] = None):
         """
         Constructs a new CLI Span.
         Sets the start time of the span - the wall time at which the operation started.
