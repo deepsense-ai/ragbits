@@ -21,10 +21,10 @@ class CLISpan:
         """
         self.name = name
         self.parent = parent
-        self.start_time = time.time()
-        self.end_time = None
-        self.children = []
-        self.status = "started"
+        self.start_time: float = time.time()
+        self.end_time: float | None = None
+        self.children: list["CLISpan"] = []
+        self.status: str = "started"
 
     def end(self) -> None:
         """Sets the current time as the span's end time.
@@ -51,7 +51,7 @@ class CLISpan:
             "parent": self.parent.name if self.parent else None,
         }
 
-    def to_tree(self, tree: Tree = None, color: str = "bold blue") -> Tree:
+    def to_tree(self, tree: Tree | None = None, color: str = "bold blue") -> Tree | None:
         """
         Convert theCLISpan object and its children into a Rich Tree structure for console rendering.
 
@@ -63,9 +63,11 @@ class CLISpan:
         Returns:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
-        if tree is None:
+
+        if tree is None and self.end_time:
             tree = Tree(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
-        else:
+
+        elif tree and self.end_time:
             child_tree = tree.add(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
             tree = child_tree
 
