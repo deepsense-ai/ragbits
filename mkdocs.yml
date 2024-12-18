@@ -29,6 +29,8 @@ nav:
           - how-to/evaluate/custom_evaluation_pipeline.md
           - how-to/evaluate/custom_metric.md
           - how-to/evaluate/custom_dataloader.md
+  - CLI:
+      - cli/main.md
   - API Reference:
       - Core:
           - api_reference/core/prompt.md
@@ -41,6 +43,8 @@ nav:
           - Ingestion:
             - api_reference/document_search/processing.md
             - api_reference/document_search/execution_strategies.md
+hooks:
+  - mkdocs_hooks.py
 theme:
   name: material
   icon:
@@ -69,6 +73,8 @@ theme:
     - navigation.top
     - content.code.annotate
     - content.code.copy
+    - toc.integrate
+    - toc.follow
 extra_css:
   - stylesheets/extra.css
 markdown_extensions:
@@ -94,6 +100,7 @@ markdown_extensions:
       alternate_style: true
   - toc:
       permalink: "#"
+  - mkdocs-click
 plugins:
   - search
   - autorefs
