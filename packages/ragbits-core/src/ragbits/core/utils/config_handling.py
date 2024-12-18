@@ -4,11 +4,12 @@ import abc
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from ragbits.core.options import OptionsTypeVar
 from ragbits.core.utils._pyproject import get_config_from_yaml
 
 if TYPE_CHECKING:
@@ -169,3 +170,35 @@ class WithConstructionConfig(abc.ABC):
             An instance of the class initialized with the provided configuration.
         """
         return cls(**config)
+
+
+class ConfigurableComponent(Generic[OptionsTypeVar], WithConstructionConfig):
+    """
+    Base class for components with configurable options.
+    """
+
+    _options_cls: type[OptionsTypeVar]
+
+    def __init__(self, default_options: OptionsTypeVar | None = None) -> None:
+        """
+        Constructs a new ConfigurableComponent instance.
+
+        Args:
+            default_options: The default options for the component.
+        """
+        self.default_options = default_options or self._options_cls()
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        default_options = config.pop("default_options", None)
+        options = cls._options_cls(**default_options) if default_options else None
+        return cls(**config, default_options=options)

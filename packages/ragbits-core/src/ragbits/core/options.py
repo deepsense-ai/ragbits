@@ -1,9 +1,11 @@
 from abc import ABC
-from typing import Any, ClassVar
+from typing import Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict
 
 from ragbits.core.types import NotGiven
+
+OptionsTypeVar = TypeVar("OptionsTypeVar", bound="Options")
 
 
 class Options(BaseModel, ABC):

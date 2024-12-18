@@ -118,7 +118,7 @@ class QdrantVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If metadata cannot be retrieved
         """
-        merged_options = (self._default_options | options) if options else self._default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
 
         results = await self._client.query_points(

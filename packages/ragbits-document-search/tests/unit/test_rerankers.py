@@ -15,6 +15,8 @@ class CustomReranker(Reranker):
     Custom implementation of Reranker for testing.
     """
 
+    _options_cls = RerankerOptions
+
     async def rerank(  # noqa: PLR6301
         self, elements: Sequence[Element], query: str, options: RerankerOptions | None = None
     ) -> Sequence[Element]:
@@ -37,8 +39,8 @@ def test_litellm_reranker_from_config() -> None:
         }
     )
 
-    assert reranker.model == "test-provder/test-model"
-    assert reranker._default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    assert reranker.model == "test-provder/test-model"  # type: ignore
+    assert reranker.default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
 
 
 async def test_litellm_reranker_rerank() -> None:
@@ -92,16 +94,16 @@ def test_subclass_from_config():
             },
         }
     )
-    reranker = Reranker.subclass_from_config(config)
+    reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, NoopReranker)
-    assert isinstance(reranker._default_options, RerankerOptions)
-    assert reranker._default_options.top_n == 12
-    assert reranker._default_options.max_chunks_per_doc == 42
+    assert isinstance(reranker.default_options, RerankerOptions)
+    assert reranker.default_options.top_n == 12
+    assert reranker.default_options.max_chunks_per_doc == 42
 
 
 def test_subclass_from_config_default_path():
     config = ObjectContructionConfig.model_validate({"type": "NoopReranker"})
-    reranker = Reranker.subclass_from_config(config)
+    reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, NoopReranker)
 
 
@@ -118,9 +120,9 @@ def test_subclass_from_config_llm():
             },
         }
     )
-    reranker = Reranker.subclass_from_config(config)
+    reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, LiteLLMReranker)
-    assert isinstance(reranker._default_options, RerankerOptions)
+    assert isinstance(reranker.default_options, RerankerOptions)
     assert reranker.model == "some_model"
-    assert reranker._default_options.top_n == 12
-    assert reranker._default_options.max_chunks_per_doc == 42
+    assert reranker.default_options.top_n == 12
+    assert reranker.default_options.max_chunks_per_doc == 42

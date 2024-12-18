@@ -29,10 +29,12 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
     Client for creating text embeddings using LiteLLM API.
     """
 
+    _options_cls = LiteLLMEmbeddingsOptions
+
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        options: LiteLLMEmbeddingsOptions | None = None,
+        default_options: LiteLLMEmbeddingsOptions | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
         api_version: str | None = None,
@@ -43,16 +45,15 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
-            options: Defualt options to pass to the LiteLLM API.
+            default_options: Defualt options to pass to the LiteLLM API.
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
         """
-        super().__init__()
+        super().__init__(default_options=default_options)
         self.model = model
-        self.default_options = options or LiteLLMEmbeddingsOptions()
         self.api_base = api_base
         self.api_key = api_key
         self.api_version = api_version

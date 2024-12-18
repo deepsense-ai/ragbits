@@ -107,7 +107,7 @@ class ChromaVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        merged_options = (self._default_options | options) if options else self._default_options
+        merged_options = (self.default_options | options) if options else self.default_options
 
         results = self._collection.query(
             query_embeddings=vector,

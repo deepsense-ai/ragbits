@@ -26,18 +26,20 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
     Class for interaction with any encoder available in HuggingFace.
     """
 
+    _options_cls = LocalEmbeddingsOptions
+
     def __init__(
         self,
         model_name: str,
         api_key: str | None = None,
-        options: LocalEmbeddingsOptions | None = None,
+        default_options: LocalEmbeddingsOptions | None = None,
     ) -> None:
         """Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
             api_key: The API key for Hugging Face authentication.
-            options: Default options for the embedding model.
+            default_options: Default options for the embedding model.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -45,9 +47,8 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         if not HAS_LOCAL_EMBEDDINGS:
             raise ImportError("You need to install the 'local' extra requirements to use local embeddings models")
 
-        super().__init__()
+        super().__init__(default_options=default_options)
 
-        self.default_options = options or LocalEmbeddingsOptions()
         self.hf_api_key = api_key
         self.model_name = model_name
 
@@ -65,9 +66,10 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         Returns:
             List of embeddings for the given strings.
         """
-        options = options or LocalEmbeddingsOptions()
+        merged_options: LocalEmbeddingsOptions = (self.default_options | options) if options else self.default_options  # type: ignore
+        # for some reason, mypy doesn't recognize that merged_options is LocalEmbeddingsOptions, it thinks it's Options
         embeddings = []
-        for batch in self._batch(data, options.batch_size):
+        for batch in self._batch(data, merged_options.batch_size):
             batch_dict = self.tokenizer(
                 batch,
                 max_length=self.tokenizer.model_max_length,

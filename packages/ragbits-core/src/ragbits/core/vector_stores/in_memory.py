@@ -78,7 +78,7 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             The entries.
         """
-        merged_options = (self._default_options | options) if options else self._default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         entries = sorted(
             (
                 (entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector))))

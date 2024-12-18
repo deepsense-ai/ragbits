@@ -1,5 +1,6 @@
 from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embeddings, EmbeddingsClientOptions
+from ragbits.core.options import Options
 
 
 class NoopEmbeddings(Embeddings):
@@ -10,6 +11,8 @@ class NoopEmbeddings(Embeddings):
     embedding vector for each input text. It's mainly useful for testing
     or as a placeholder when an actual embedding model is not required.
     """
+
+    _options_cls = Options
 
     @traceable
     async def embed_text(self, data: list[str], options: EmbeddingsClientOptions | None = None) -> list[list[float]]:  # noqa: PLR6301

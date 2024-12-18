@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar, Generic, TypeVar
+from typing import ClassVar, TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -7,7 +7,7 @@ from typing_extensions import Self
 from ragbits.core import vector_stores
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.options import Options
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
 
 WhereQuery = dict[str, str | int | float | bool]
 
@@ -35,7 +35,7 @@ class VectorStoreOptions(Options):
 VectorStoreOptionsType = TypeVar("VectorStoreOptionsType", bound=VectorStoreOptions)
 
 
-class VectorStore(Generic[VectorStoreOptionsType], WithConstructionConfig, ABC):
+class VectorStore(ConfigurableComponent[VectorStoreOptionsType], ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
@@ -56,8 +56,7 @@ class VectorStore(Generic[VectorStoreOptionsType], WithConstructionConfig, ABC):
             default_options: The default options for querying the vector store.
             metadata_store: The metadata store to use.
         """
-        super().__init__()
-        self._default_options = default_options or self._options_cls()
+        super().__init__(default_options=default_options)
         self._metadata_store = metadata_store
 
     @classmethod

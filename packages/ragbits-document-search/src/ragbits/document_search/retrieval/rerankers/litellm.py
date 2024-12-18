@@ -7,10 +7,12 @@ from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class LiteLLMReranker(Reranker):
+class LiteLLMReranker(Reranker[RerankerOptions]):
     """
     A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
+
+    _options_cls = RerankerOptions
 
     def __init__(self, model: str, default_options: RerankerOptions | None = None) -> None:
         """
@@ -20,7 +22,7 @@ class LiteLLMReranker(Reranker):
             model: The reranker model to use.
             default_options: The default options for reranking.
         """
-        super().__init__(default_options)
+        super().__init__(default_options=default_options)
         self.model = model
 
     @traceable
@@ -41,15 +43,16 @@ class LiteLLMReranker(Reranker):
         Returns:
             The reranked elements.
         """
-        options = self._default_options if options is None else options
+        merged_options: RerankerOptions = (self.default_options | options) if options else self.default_options  # type: ignore
+        # for some reason, mypy doesn't recognize that merged_options is RerankerOptions, it thinks it's Options
         documents = [element.text_representation for element in elements]
 
         response = await litellm.arerank(
             model=self.model,
             query=query,
             documents=documents,  # type: ignore
-            top_n=options.top_n,
-            max_chunks_per_doc=options.max_chunks_per_doc,
+            top_n=merged_options.top_n,
+            max_chunks_per_doc=merged_options.max_chunks_per_doc,
         )
 
         return [elements[result["index"]] for result in response.results]  # type: ignore
