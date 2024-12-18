@@ -48,7 +48,14 @@ class Evaluator:
         }
 
     @classmethod
-    async def run_experiment_from_config(cls, config: DictConfig) -> dict[str, Any] | None:
+    async def run_experiment_from_config(cls, config: DictConfig) -> dict[str, Any]:
+        """
+        Runs the evaluation experiment basing on configuration
+        Args:
+            config: DictConfig - soe config
+        Returns:
+            dictionary of metrics with scores
+        """
         dataloader = dataloader_factory(config.data)
         pipeline = pipeline_factory(config.pipeline)
 

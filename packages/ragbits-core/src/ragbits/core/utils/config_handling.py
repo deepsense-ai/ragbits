@@ -86,7 +86,6 @@ class WithConstructionConfig(abc.ABC):
         subclass = import_by_path(config.type, cls.default_module)
         if not issubclass(subclass, cls):
             raise InvalidConfigError(f"{subclass} is not a subclass of {cls}")
-
         return subclass.from_config(config.config)
 
     @classmethod

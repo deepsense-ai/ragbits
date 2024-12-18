@@ -1,16 +1,23 @@
 import asyncio
+import sys
 import warnings
 from copy import deepcopy
 from typing import Any
 
 import optuna
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
+from ragbits.core.utils.config_handling import import_by_path
 
+from .loaders import dataloader_factory
+from .metrics import metric_set_factory
 from .callbacks.base import CallbackConfigurator
 from .evaluator import Evaluator
 from .loaders.base import DataLoader
 from .metrics.base import MetricSet
 from .pipelines.base import EvaluationPipeline
+
+
+module = sys.modules[__name__]
 
 
 class Optimizer:
@@ -25,6 +32,36 @@ class Optimizer:
         # workaround for optuna not allowing different choices for different trials
         # TODO check how optuna handles parallelism. discuss if we want to have parallel studies
         self._choices_cache: dict[str, list[Any]] = {}
+
+    @classmethod
+    def run_experiment_from_config(cls, config: dict[str, DictConfig]) -> list[tuple[DictConfig, float, dict[str, float]]]:
+        """
+        Runs the optimization experiment configured with config object
+        Args:
+            config: dict
+        Returns:
+             list of configs with scores
+        """
+        optimizer_config = config["optimizer"]
+        config = config["experiment_config"]
+        dataloader = dataloader_factory(config.data)
+        pipeline_class = import_by_path(config.pipeline.type, module)
+        metrics = metric_set_factory(config.metrics)
+        callback_configurators = None
+        if getattr(config, "callbacks", None):
+            callback_configurators = [
+                import_by_path(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in config.callbacks
+            ]
+
+        optimizer = cls(cfg=optimizer_config)
+        configs_with_scores = optimizer.optimize(
+            pipeline_class=pipeline_class,
+            config_with_params=config.pipeline,
+            metrics=metrics,
+            dataloader=dataloader,
+            callback_configurators=callback_configurators,
+        )
+        return configs_with_scores
 
     def optimize(
         self,

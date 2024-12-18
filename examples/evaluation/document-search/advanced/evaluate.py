@@ -13,9 +13,6 @@ import hydra
 from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.loaders import dataloader_factory
-from ragbits.evaluate.metrics import metric_set_factory
-from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)

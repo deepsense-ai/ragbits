@@ -38,7 +38,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
         """
         return DocumentSearch.from_config(self.config)  # type: ignore
 
-    async def __call__(self, data: dict) -> DocumentSearchResult | None:
+    async def __call__(self, data: dict | None) -> DocumentSearchResult | None:
         """
         Runs the document search evaluation pipeline.
 
@@ -64,11 +64,11 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
 
     def __init__(self, config: DictConfig | None = None) -> None:
         super().__init__(config)
-        self.config.vector_store.config.index_name = str(uuid.uuid4())
+        # self.config.vector_store.config.index_name = str(uuid.uuid4())
         self._ingested = False
         self._lock = asyncio.Lock()
 
-    async def __call__(self, data: dict) -> DocumentSearchResult | None:
+    async def __call__(self, data: dict | None = None) -> DocumentSearchResult | None:
         """
         Queries a vector store with given data
         Ingests the corpus to the store if has not been done
