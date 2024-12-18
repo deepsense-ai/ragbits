@@ -55,15 +55,16 @@ class CLISpan:
         child_color = "bold green"
 
         if tree is None and self.end_time:
-
             tree = Tree(
                 f"[{color}]{self.name}[/{color}] Duration: {self.end_time - self.start_time:.3f}s\n"
-                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]")
+                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]"
+            )
 
         elif tree and self.end_time:
             child_tree = tree.add(
                 f"[{color}]{self.name}[/{color}] Duration: {self.end_time - self.start_time:.3f}s\n"
-                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]")
+                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]"
+            )
             tree = child_tree
 
         for child in self.children:
