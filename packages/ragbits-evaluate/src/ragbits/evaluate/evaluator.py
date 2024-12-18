@@ -3,10 +3,14 @@ from collections.abc import Iterable
 from dataclasses import asdict
 from typing import Any
 
+from omegaconf import DictConfig
 from tqdm.asyncio import tqdm
 
-from ragbits.evaluate.loaders.base import DataLoader
-from ragbits.evaluate.metrics.base import MetricSet
+from .loaders import dataloader_factory
+from .metrics import metric_set_factory
+from .loaders.base import DataLoader
+from .metrics.base import MetricSet
+from .pipelines import pipeline_factory
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
@@ -19,7 +23,7 @@ class Evaluator:
         self,
         pipeline: EvaluationPipeline,
         dataloader: DataLoader,
-        metrics: MetricSet,
+        metrics: MetricSet | None,
     ) -> dict[str, Any]:
         """
         Compute the evaluation results for the given pipeline and data.
@@ -34,7 +38,7 @@ class Evaluator:
         """
         dataset = await dataloader.load()
         results, perf_results = await self._call_pipeline(pipeline, dataset)
-        computed_metrics = self._compute_metrics(metrics, results)
+        computed_metrics = self._compute_metrics(metrics, results) if metrics else {}
         processed_results = self._results_processor(results)
 
         return {
@@ -42,6 +46,22 @@ class Evaluator:
             **computed_metrics,
             **processed_results,
         }
+
+    @classmethod
+    async def run_experiment_from_config(cls, config: DictConfig) -> dict[str, Any] | None:
+        dataloader = dataloader_factory(config.data)
+        pipeline = pipeline_factory(config.pipeline)
+
+        metric_config = config.get("metrics", None)
+        metrics = metric_set_factory(metric_config) if metric_config is not None else None
+
+        evaluator = cls()
+        results = await evaluator.compute(
+            pipeline=pipeline,
+            dataloader=dataloader,
+            metrics=metrics,
+        )
+        return results
 
     async def _call_pipeline(
         self,

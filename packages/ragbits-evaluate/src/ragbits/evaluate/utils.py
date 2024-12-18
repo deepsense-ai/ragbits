@@ -101,7 +101,7 @@ def setup_neptune(config: DictConfig) -> Run | None:
     Returns:
         The Neptune run.
     """
-    if config.neptune.run:
+    if config.get("neptune", {}).get("run"):
         run = Run(
             project=config.neptune.project,
             tags=[

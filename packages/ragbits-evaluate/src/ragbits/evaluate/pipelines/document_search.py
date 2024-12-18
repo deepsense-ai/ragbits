@@ -38,7 +38,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
         """
         return DocumentSearch.from_config(self.config)  # type: ignore
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: dict) -> DocumentSearchResult | None:
         """
         Runs the document search evaluation pipeline.
 
@@ -68,7 +68,7 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
         self._ingested = False
         self._lock = asyncio.Lock()
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: dict) -> DocumentSearchResult | None:
         """
         Queries a vector store with given data
         Ingests the corpus to the store if has not been done
@@ -78,10 +78,11 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
             DocumentSearchResult - query result
         """
         async with self._lock:
-            if not self._ingested:
+            if not self._ingested and self.config.get("ingest", False):
                 await self._ingest_documents()
                 self._ingested = True
-        return await super().__call__(data)
+        if self.config.get("search", True):
+            return await super().__call__(data)
 
     async def _ingest_documents(self) -> None:
         documents = await tqdm.gather(
