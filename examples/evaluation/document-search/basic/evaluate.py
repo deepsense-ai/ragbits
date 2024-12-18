@@ -13,8 +13,9 @@ import uuid
 from pathlib import Path
 
 from omegaconf import OmegaConf
-from ragbits.evaluate.utils import log_to_file
+
 from ragbits.evaluate.evaluator import Evaluator
+from ragbits.evaluate.utils import log_to_file
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)

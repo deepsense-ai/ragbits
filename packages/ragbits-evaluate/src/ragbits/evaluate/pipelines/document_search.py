@@ -85,6 +85,8 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
             return await super().__call__(data)
 
     async def _ingest_documents(self) -> None:
+        if self.config.get("search", False) and self.config.get("ingest", False):
+            self.document_search.vector_store._index_name = str(uuid.uuid4())
         documents = await tqdm.gather(
             *[
                 DocumentMeta.from_source(

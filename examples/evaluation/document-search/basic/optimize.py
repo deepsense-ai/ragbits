@@ -1,6 +1,6 @@
 import sys
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.utils import log_optimization_to_file
@@ -12,20 +12,30 @@ def main() -> None:
     """
     Function running evaluation for all datasets and evaluation tasks defined in config.
     """
-
     config = OmegaConf.create(
         {
             "pipeline": {
                 "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
                 "ingest": True,
                 "search": True,
+                "answer_data_source": {
+                    "name": "hf-docs",
+                    "path": "micpst/hf-docs",
+                    "split": "train",
+                    "num_docs": 5,
+                },
+                "providers": {
+                    "txt": {
+                        "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"
+                    }
+                },
                 "embedder": {
-                    "model": "text-embedding-3-small",
-                    "options": {"dimensions": {"optimize": True, "range": [32, 512]}, "encoding_format": float},
-                    "providers": {
-                        "txt": {
-                            "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"
-                        }
+                    "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+                    "config": {
+                        "model": "text-embedding-3-small",
+                        "options": {
+                            "dimensions": {"optimize": True, "range": [32, 512]},
+                        },
                     },
                 },
             },

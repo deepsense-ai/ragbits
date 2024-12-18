@@ -11,6 +11,7 @@ import asyncio
 import logging
 
 from omegaconf import OmegaConf
+
 from ragbits.evaluate.pipelines import pipeline_factory
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)

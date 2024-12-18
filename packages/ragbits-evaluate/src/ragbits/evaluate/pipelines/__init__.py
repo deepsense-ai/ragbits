@@ -10,6 +10,13 @@ module = sys.modules[__name__]
 
 
 def pipeline_factory(pipeline_config: DictConfig) -> EvaluationPipeline:
+    """
+    Factory of evaluation pipelines
+    Args:
+        pipeline_config: DictConfig
+    Returns:
+        instance of evaluation pipeline
+    """
     pipeline_module = import_by_path(pipeline_config.type, module)
     pipeline = pipeline_module(pipeline_config)
     return pipeline

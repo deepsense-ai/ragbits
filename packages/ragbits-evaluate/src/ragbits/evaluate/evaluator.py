@@ -6,12 +6,13 @@ from typing import Any
 from omegaconf import DictConfig
 from tqdm.asyncio import tqdm
 
+from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
+
 from .loaders import dataloader_factory
-from .metrics import metric_set_factory
 from .loaders.base import DataLoader
+from .metrics import metric_set_factory
 from .metrics.base import MetricSet
 from .pipelines import pipeline_factory
-from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
 class Evaluator:

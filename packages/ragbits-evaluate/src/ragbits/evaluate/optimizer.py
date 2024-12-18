@@ -5,17 +5,17 @@ from copy import deepcopy
 from typing import Any
 
 import optuna
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig
+
 from ragbits.core.utils.config_handling import import_by_path
 
-from .loaders import dataloader_factory
-from .metrics import metric_set_factory
 from .callbacks.base import CallbackConfigurator
 from .evaluator import Evaluator
+from .loaders import dataloader_factory
 from .loaders.base import DataLoader
+from .metrics import metric_set_factory
 from .metrics.base import MetricSet
 from .pipelines.base import EvaluationPipeline
-
 
 module = sys.modules[__name__]
 
@@ -34,7 +34,9 @@ class Optimizer:
         self._choices_cache: dict[str, list[Any]] = {}
 
     @classmethod
-    def run_experiment_from_config(cls, config: dict[str, DictConfig]) -> list[tuple[DictConfig, float, dict[str, float]]]:
+    def run_experiment_from_config(
+        cls, config: dict[str, DictConfig]
+    ) -> list[tuple[DictConfig, float, dict[str, float]]]:
         """
         Runs the optimization experiment configured with config object
         Args:
