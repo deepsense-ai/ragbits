@@ -45,20 +45,20 @@ class Optimizer:
              list of configs with scores
         """
         optimizer_config = config["optimizer"]
-        config = config["experiment_config"]
-        dataloader = dataloader_factory(config.data)
-        pipeline_class = import_by_path(config.pipeline.type, module)
-        metrics = metric_set_factory(config.metrics)
+        exp_config = config["experiment_config"]
+        dataloader = dataloader_factory(exp_config.data)
+        pipeline_class = import_by_path(exp_config.pipeline.type, module)
+        metrics = metric_set_factory(exp_config.metrics)
         callback_configurators = None
-        if getattr(config, "callbacks", None):
+        if getattr(exp_config, "callbacks", None):
             callback_configurators = [
-                import_by_path(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in config.callbacks
+                import_by_path(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in exp_config.callbacks
             ]
 
         optimizer = cls(cfg=optimizer_config)
         configs_with_scores = optimizer.optimize(
             pipeline_class=pipeline_class,
-            config_with_params=config.pipeline,
+            config_with_params=exp_config.pipeline,
             metrics=metrics,
             dataloader=dataloader,
             callback_configurators=callback_configurators,

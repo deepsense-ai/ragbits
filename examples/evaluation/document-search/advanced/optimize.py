@@ -17,8 +17,8 @@ def main(config: DictConfig) -> None:
     Args:
         config: Hydra configuration.
     """
-    config = {"optimizer": OmegaConf.create({"direction": "maximize", "n_trials": 10}), "experiment_config": config}
-    configs_with_scores = Optimizer.run_experiment_from_config(config=config)
+    exp_config = {"optimizer": OmegaConf.create({"direction": "maximize", "n_trials": 10}), "experiment_config": config}
+    configs_with_scores = Optimizer.run_experiment_from_config(config=exp_config)
     log_optimization_to_file(configs_with_scores)
 
 

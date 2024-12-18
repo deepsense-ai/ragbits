@@ -28,7 +28,7 @@ class EvaluationPipeline(ABC):
         self.config = config or DictConfig({})
 
     @abstractmethod
-    async def __call__(self, data: dict[str, Any]) -> EvaluationResult:
+    async def __call__(self, data: dict[str, Any] | None = None) -> EvaluationResult | None:
         """
         Runs the evaluation pipeline.
 
