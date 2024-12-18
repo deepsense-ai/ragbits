@@ -10,7 +10,7 @@ class NoopReranker(Reranker[RerankerOptions]):
     A no-op reranker that does not change the order of the elements.
     """
 
-    _options_cls = RerankerOptions
+    options_cls = RerankerOptions
 
     @traceable
     async def rerank(  # noqa: PLR6301

@@ -26,7 +26,7 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
     Abstract class for interaction with Large Language Model.
     """
 
-    _options_cls: type[LLMClientOptions]
+    options_cls: type[LLMClientOptions]
     default_module: ClassVar = llms
     configuration_key: ClassVar = "llm"
 
@@ -39,14 +39,14 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
             default_options: Default options to be used.
 
         Raises:
-            TypeError: If the subclass is missing the '_options_cls' attribute.
+            TypeError: If the subclass is missing the 'options_cls' attribute.
         """
         super().__init__(default_options=default_options)
         self.model_name = model_name
 
     def __init_subclass__(cls) -> None:
-        if not hasattr(cls, "_options_cls"):
-            raise TypeError(f"Class {cls.__name__} is missing the '_options_cls' attribute")
+        if not hasattr(cls, "options_cls"):
+            raise TypeError(f"Class {cls.__name__} is missing the 'options_cls' attribute")
 
     @cached_property
     @abstractmethod

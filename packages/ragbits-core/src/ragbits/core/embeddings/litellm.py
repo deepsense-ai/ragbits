@@ -29,7 +29,7 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
     Client for creating text embeddings using LiteLLM API.
     """
 
-    _options_cls = LiteLLMEmbeddingsOptions
+    options_cls = LiteLLMEmbeddingsOptions
 
     def __init__(
         self,

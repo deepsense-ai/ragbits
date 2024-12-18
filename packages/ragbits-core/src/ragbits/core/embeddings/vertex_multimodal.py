@@ -24,7 +24,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
     Client for creating text embeddings using LiteLLM API.
     """
 
-    _options_cls = Options
+    options_cls = Options
     VERTEX_AI_PREFIX = "vertex_ai/"
 
     def __init__(

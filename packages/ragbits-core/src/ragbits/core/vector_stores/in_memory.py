@@ -13,7 +13,7 @@ class InMemoryVectorStore(VectorStore):
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
 
-    _options_cls = VectorStoreOptions
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,

@@ -26,7 +26,7 @@ class Reranker(ConfigurableComponent[RerankerOptionsType], ABC):
     """
 
     default_module: ClassVar = rerankers
-    _options_cls: type[RerankerOptionsType]
+    options_cls: type[RerankerOptionsType]
     configuration_key: ClassVar = "reranker"
 
     @abstractmethod

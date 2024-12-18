@@ -12,7 +12,7 @@ class NoopEmbeddings(Embeddings):
     or as a placeholder when an actual embedding model is not required.
     """
 
-    _options_cls = Options
+    options_cls = Options
 
     @traceable
     async def embed_text(self, data: list[str], options: EmbeddingsClientOptions | None = None) -> list[list[float]]:  # noqa: PLR6301

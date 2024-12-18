@@ -16,7 +16,7 @@ class ChromaVectorStore(VectorStore):
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
 
-    _options_cls = VectorStoreOptions
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,

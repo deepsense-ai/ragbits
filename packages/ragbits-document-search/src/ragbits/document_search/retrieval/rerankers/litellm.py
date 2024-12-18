@@ -12,7 +12,7 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
     A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    _options_cls = RerankerOptions
+    options_cls = RerankerOptions
 
     def __init__(self, model: str, default_options: RerankerOptions | None = None) -> None:
         """

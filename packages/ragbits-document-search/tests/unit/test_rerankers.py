@@ -15,7 +15,7 @@ class CustomReranker(Reranker):
     Custom implementation of Reranker for testing.
     """
 
-    _options_cls = RerankerOptions
+    options_cls = RerankerOptions
 
     async def rerank(  # noqa: PLR6301
         self, elements: Sequence[Element], query: str, options: RerankerOptions | None = None

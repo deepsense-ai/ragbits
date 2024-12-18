@@ -17,7 +17,7 @@ class QdrantVectorStore(VectorStore):
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
 
-    _options_cls = VectorStoreOptions
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,

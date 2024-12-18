@@ -177,7 +177,7 @@ class ConfigurableComponent(Generic[OptionsTypeVar], WithConstructionConfig):
     Base class for components with configurable options.
     """
 
-    _options_cls: type[OptionsTypeVar]
+    options_cls: type[OptionsTypeVar]
 
     def __init__(self, default_options: OptionsTypeVar | None = None) -> None:
         """
@@ -186,7 +186,7 @@ class ConfigurableComponent(Generic[OptionsTypeVar], WithConstructionConfig):
         Args:
             default_options: The default options for the component.
         """
-        self.default_options = default_options or self._options_cls()
+        self.default_options = default_options or self.options_cls()
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:
@@ -200,5 +200,5 @@ class ConfigurableComponent(Generic[OptionsTypeVar], WithConstructionConfig):
             An instance of the class initialized with the provided configuration.
         """
         default_options = config.pop("default_options", None)
-        options = cls._options_cls(**default_options) if default_options else None
+        options = cls.options_cls(**default_options) if default_options else None
         return cls(**config, default_options=options)

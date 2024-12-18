@@ -29,7 +29,7 @@ class Embeddings(ConfigurableComponent[EmbeddingsClientOptions], ABC):
     Abstract client for communication with embedding models.
     """
 
-    _options_cls: type[EmbeddingsClientOptions]
+    options_cls: type[EmbeddingsClientOptions]
     default_module: ClassVar = embeddings
     configuration_key: ClassVar = "embedder"
 

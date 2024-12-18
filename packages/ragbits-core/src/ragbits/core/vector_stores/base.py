@@ -40,7 +40,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsType], ABC):
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    _options_cls: type[VectorStoreOptionsType]
+    options_cls: type[VectorStoreOptionsType]
     default_module: ClassVar = vector_stores
     configuration_key: ClassVar = "vector_store"
 
@@ -75,7 +75,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsType], ABC):
             InvalidConfigError: The metadata_store class can't be found or is not the correct type.
         """
         default_options = config.pop("default_options", None)
-        options = cls._options_cls(**default_options) if default_options else None
+        options = cls.options_cls(**default_options) if default_options else None
 
         store_config = config.pop("metadata_store", None)
         store = (

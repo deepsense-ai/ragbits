@@ -26,7 +26,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
     Class for interaction with any encoder available in HuggingFace.
     """
 
-    _options_cls = LocalEmbeddingsOptions
+    options_cls = LocalEmbeddingsOptions
 
     def __init__(
         self,
