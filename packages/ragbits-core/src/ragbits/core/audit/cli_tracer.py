@@ -28,7 +28,7 @@ class CLITracer(TraceHandler[CLISpan]):
             The updated current trace span.
         """
         parent = self._spans.get()[-1] if self._spans.get() else None
-        span = CLISpan(name, parent)
+        span = CLISpan(name, inputs, parent)
 
         if parent:
             parent.children.append(span)
@@ -45,6 +45,7 @@ class CLITracer(TraceHandler[CLISpan]):
         """
         current_span.end()
         current_span.status = "done"
+        current_span.outputs = outputs
 
         if current_span.parent is None:
             console = Console()

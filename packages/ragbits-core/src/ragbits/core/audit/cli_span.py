@@ -9,7 +9,7 @@ class CLISpan:
     CLI Span represents a single operation within a trace.
     """
 
-    def __init__(self, name: str, parent: Optional["CLISpan"] = None):
+    def __init__(self, name: str, inputs: dict, parent: Optional["CLISpan"] = None):
         """
         Constructs a new CLI Span.
         Sets the start time of the span - the wall time at which the operation started.
@@ -17,6 +17,7 @@ class CLISpan:
 
         Args:
             name: The name of the span.
+            inputs: The inputs of the span.
             parent: the parent of initiated span.
         """
         self.name = name
@@ -25,6 +26,8 @@ class CLISpan:
         self.end_time: float | None = None
         self.children: list[CLISpan] = []
         self.status: str = "started"
+        self.inputs: dict = inputs or {}
+        self.outputs: dict = {}
 
     def end(self) -> None:
         """Sets the current time as the span's end time.
@@ -34,22 +37,6 @@ class CLISpan:
         """
         if self.end_time is None:
             self.end_time = time.time()
-
-    def to_dict(self) -> dict:
-        """
-        Convert the CLISpan object and its children into a dictionary representation.
-
-        Returns:
-        dict: A dictionary containing the span's name, start time, end time, events,
-              and a list of its children's dictionary representations.
-        """
-        return {
-            "name": self.name,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
-            "children": [child.to_dict() for child in self.children],
-            "parent": self.parent.name if self.parent else None,
-        }
 
     def to_tree(self, tree: Tree | None = None, color: str = "bold blue") -> Tree | None:
         """
@@ -63,16 +50,25 @@ class CLISpan:
         Returns:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
+        secondary_color = "grey50"
+        error_color = "bold red"
+        child_color = "bold green"
+
         if tree is None and self.end_time:
-            tree = Tree(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
+
+            tree = Tree(
+                f"[{color}]{self.name}[/{color}] Duration: {self.end_time - self.start_time:.3f}s\n"
+                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]")
 
         elif tree and self.end_time:
-            child_tree = tree.add(f"[{color}]{self.name}[/{color}] (Duration: {self.end_time - self.start_time:.3f}s)")
+            child_tree = tree.add(
+                f"[{color}]{self.name}[/{color}] Duration: {self.end_time - self.start_time:.3f}s\n"
+                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]")
             tree = child_tree
 
         for child in self.children:
             if child.status == "error":
-                child.to_tree(tree, "bold red")
+                child.to_tree(tree, error_color)
             else:
-                child.to_tree(tree, "bold green")
+                child.to_tree(tree, child_color)
         return tree
