@@ -43,8 +43,7 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
         Returns:
             The reranked elements.
         """
-        merged_options: RerankerOptions = (self.default_options | options) if options else self.default_options  # type: ignore
-        # for some reason, mypy doesn't recognize that merged_options is RerankerOptions, it thinks it's Options
+        merged_options = (self.default_options | options) if options else self.default_options
         documents = [element.text_representation for element in elements]
 
         response = await litellm.arerank(

@@ -17,16 +17,16 @@ class RerankerOptions(Options):
     max_chunks_per_doc: int | None = None
 
 
-RerankerOptionsType = TypeVar("RerankerOptionsType", bound=RerankerOptions)
+RerankerOptionsT = TypeVar("RerankerOptionsT", bound=RerankerOptions)
 
 
-class Reranker(ConfigurableComponent[RerankerOptionsType], ABC):
+class Reranker(ConfigurableComponent[RerankerOptionsT], ABC):
     """
     Reranks elements retrieved from vector store.
     """
 
     default_module: ClassVar = rerankers
-    options_cls: type[RerankerOptionsType]
+    options_cls: type[RerankerOptionsT]
     configuration_key: ClassVar = "reranker"
 
     @abstractmethod
@@ -34,7 +34,7 @@ class Reranker(ConfigurableComponent[RerankerOptionsType], ABC):
         self,
         elements: Sequence[Element],
         query: str,
-        options: RerankerOptionsType | None = None,
+        options: RerankerOptionsT | None = None,
     ) -> Sequence[Element]:
         """
         Rerank elements.
