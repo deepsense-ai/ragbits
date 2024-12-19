@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import pkgutil
 from pathlib import Path
 from typing import Annotated
@@ -8,6 +9,7 @@ import typer
 from typer.main import get_command
 
 import ragbits
+from ragbits.core import audit
 
 from .state import OutputType, cli_state, print_output
 
@@ -28,7 +30,9 @@ def ragbits_cli(
     output: Annotated[
         OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
     ] = OutputType.text.value,  # type: ignore
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode"),
+    verbose: bool = typer.Option(
+        bool(int(os.getenv("RAGBITS_VERBOSE", "0"))), "--verbose", "-v", help="Enable verbose mode"
+    ),
 ) -> None:
     """Common CLI arguments for all ragbits commands."""
     cli_state.output_type = output
@@ -36,7 +40,7 @@ def ragbits_cli(
 
     if verbose:
         typer.echo("Verbose mode is enabled.")
-        ragbits.core.audit.set_trace_handlers('cli')
+        audit.set_trace_handlers("cli")
     else:
         typer.echo("Verbose mode is disabled.")
 
