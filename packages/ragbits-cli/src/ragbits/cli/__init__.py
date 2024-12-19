@@ -41,8 +41,6 @@ def ragbits_cli(
     if verbose:
         typer.echo("Verbose mode is enabled.")
         audit.set_trace_handlers("cli")
-    else:
-        typer.echo("Verbose mode is disabled.")
 
 
 def autoregister() -> None:
