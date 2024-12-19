@@ -15,7 +15,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
     Class for interaction with any LLM supported by LiteLLM API.
     """
 
-    _options_cls = LiteLLMOptions
+    options_cls = LiteLLMOptions
 
     def __init__(
         self,

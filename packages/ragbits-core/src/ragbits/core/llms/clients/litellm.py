@@ -1,20 +1,23 @@
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 
 from ragbits.core.audit import trace
+from ragbits.core.llms.clients.base import LLMClient
+from ragbits.core.llms.clients.exceptions import (
+    LLMConnectionError,
+    LLMEmptyResponseError,
+    LLMResponseError,
+    LLMStatusError,
+)
+from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
-
-from ..types import NOT_GIVEN, NotGiven
-from .base import LLMClient, LLMOptions
-from .exceptions import LLMConnectionError, LLMEmptyResponseError, LLMResponseError, LLMStatusError
+from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-@dataclass
-class LiteLLMOptions(LLMOptions):
+class LiteLLMOptions(Options):
     """
     Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
