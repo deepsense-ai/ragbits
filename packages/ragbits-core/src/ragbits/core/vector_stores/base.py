@@ -32,21 +32,21 @@ class VectorStoreOptions(Options):
     max_distance: float | None = None
 
 
-VectorStoreOptionsType = TypeVar("VectorStoreOptionsType", bound=VectorStoreOptions)
+VectorStoreOptionsT = TypeVar("VectorStoreOptionsT", bound=VectorStoreOptions)
 
 
-class VectorStore(ConfigurableComponent[VectorStoreOptionsType], ABC):
+class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
     """
     A class with an implementation of Vector Store, allowing to store and retrieve vectors by similarity function.
     """
 
-    options_cls: type[VectorStoreOptionsType]
+    options_cls: type[VectorStoreOptionsT]
     default_module: ClassVar = vector_stores
     configuration_key: ClassVar = "vector_store"
 
     def __init__(
         self,
-        default_options: VectorStoreOptionsType | None = None,
+        default_options: VectorStoreOptionsT | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:
         """
@@ -96,9 +96,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsType], ABC):
         """
 
     @abstractmethod
-    async def retrieve(
-        self, vector: list[float], options: VectorStoreOptionsType | None = None
-    ) -> list[VectorStoreEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreEntry]:
         """
         Retrieve entries from the vector store.
 
