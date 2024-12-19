@@ -186,7 +186,7 @@ class ConfigurableComponent(Generic[OptionsTypeVar], WithConstructionConfig):
         Args:
             default_options: The default options for the component.
         """
-        self.default_options = default_options or self.options_cls()
+        self.default_options: OptionsTypeVar = default_options or self.options_cls()
 
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:

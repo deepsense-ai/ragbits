@@ -8,7 +8,7 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
-class InMemoryVectorStore(VectorStore):
+class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """

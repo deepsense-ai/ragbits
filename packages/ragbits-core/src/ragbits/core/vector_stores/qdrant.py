@@ -12,7 +12,7 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, import_b
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
 
-class QdrantVectorStore(VectorStore):
+class QdrantVectorStore(VectorStore[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """

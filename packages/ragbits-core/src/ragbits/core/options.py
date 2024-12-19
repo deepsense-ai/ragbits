@@ -2,6 +2,7 @@ from abc import ABC
 from typing import Any, ClassVar, TypeVar
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import Self
 
 from ragbits.core.types import NotGiven
 
@@ -17,7 +18,7 @@ class Options(BaseModel, ABC):
     model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
     _not_given: ClassVar[Any] = None
 
-    def __or__(self, other: "Options") -> "Options":
+    def __or__(self, other: "Options") -> Self:
         """
         Merges two Options, prioritizing non-NOT_GIVEN values from the 'other' object.
         """

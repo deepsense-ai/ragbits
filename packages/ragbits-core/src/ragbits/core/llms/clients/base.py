@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 
-LLMClientOptions = TypeVar("LLMClientOptions", bound=Options)
+LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
 
 
-class LLMClient(Generic[LLMClientOptions], ABC):
+class LLMClient(Generic[LLMClientOptionsT], ABC):
     """
     Abstract client for a direct communication with LLM.
     """
@@ -28,7 +28,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
     async def call(
         self,
         conversation: ChatFormat,
-        options: LLMClientOptions,
+        options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
     ) -> str:
@@ -49,7 +49,7 @@ class LLMClient(Generic[LLMClientOptions], ABC):
     async def call_streaming(
         self,
         conversation: ChatFormat,
-        options: LLMClientOptions,
+        options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
     ) -> AsyncGenerator[str, None]:

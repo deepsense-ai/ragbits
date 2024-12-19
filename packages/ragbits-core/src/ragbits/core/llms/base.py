@@ -6,7 +6,7 @@ from functools import cached_property
 from typing import ClassVar, cast, overload
 
 from ragbits.core import llms
-from ragbits.core.llms.clients.base import LLMClient, LLMClientOptions
+from ragbits.core.llms.clients.base import LLMClient, LLMClientOptionsT
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
@@ -21,16 +21,16 @@ class LLMType(enum.Enum):
     STRUCTURED_OUTPUT = "structured_output"
 
 
-class LLM(ConfigurableComponent[LLMClientOptions], ABC):
+class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     """
     Abstract class for interaction with Large Language Model.
     """
 
-    options_cls: type[LLMClientOptions]
+    options_cls: type[LLMClientOptionsT]
     default_module: ClassVar = llms
     configuration_key: ClassVar = "llm"
 
-    def __init__(self, model_name: str, default_options: LLMClientOptions | None = None) -> None:
+    def __init__(self, model_name: str, default_options: LLMClientOptionsT | None = None) -> None:
         """
         Constructs a new LLM instance.
 
@@ -71,7 +71,7 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMClientOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -98,7 +98,7 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
         self,
         prompt: BasePromptWithParser[OutputT],
         *,
-        options: LLMClientOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT: ...
 
     @overload
@@ -106,14 +106,14 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMClientOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT: ...
 
     async def generate(
         self,
         prompt: BasePrompt,
         *,
-        options: LLMClientOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
@@ -137,7 +137,7 @@ class LLM(ConfigurableComponent[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMClientOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
