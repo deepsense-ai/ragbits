@@ -114,6 +114,47 @@ def test_vector_store_list_limit_offset():
     assert "entry 3" not in result.stdout
 
 
+def test_vector_store_list_columns():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        vector_stores_app,
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key,metadata"],
+    )
+    assert result.exit_code == 0
+    assert "entry 1" in result.stdout
+    assert "entry 2" in result.stdout
+    assert "entry 3" in result.stdout
+    assert "Vector" not in result.stdout
+    assert "Id" in result.stdout
+    assert "Key" in result.stdout
+    assert "Metadata" in result.stdout
+    assert "another_key" in result.stdout
+
+    result = runner.invoke(
+        vector_stores_app,
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key"],
+    )
+    assert result.exit_code == 0
+    assert "entry 1" in result.stdout
+    assert "entry 2" in result.stdout
+    assert "entry 3" in result.stdout
+    assert "Vector" not in result.stdout
+    assert "Id" in result.stdout
+    assert "Key" in result.stdout
+    assert "Metadata" not in result.stdout
+    assert "another_key" not in result.stdout
+
+
+def test_vector_store_list_columns_non_existent():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        vector_stores_app,
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key,non_existent"],
+    )
+    assert result.exit_code == 1
+    assert "Unknown column: non_existent" in result.stderr
+
+
 def test_vector_store_remove():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
