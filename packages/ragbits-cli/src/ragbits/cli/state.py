@@ -19,6 +19,7 @@ class OutputType(Enum):
 class CliState:
     """A dataclass describing CLI state"""
 
+    verbose: bool = False
     output_type: OutputType = OutputType.text
 
 
