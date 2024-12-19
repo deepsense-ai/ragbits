@@ -8,10 +8,12 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
-class InMemoryVectorStore(VectorStore):
+class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
+
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,
@@ -76,7 +78,7 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             The entries.
         """
-        options = self._default_options if options is None else options
+        merged_options = (self.default_options | options) if options else self.default_options
         entries = sorted(
             (
                 (entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector))))
@@ -86,8 +88,8 @@ class InMemoryVectorStore(VectorStore):
         )
         return [
             entry
-            for entry, distance in entries[: options.k]
-            if options.max_distance is None or distance <= options.max_distance
+            for entry, distance in entries[: merged_options.k]
+            if merged_options.max_distance is None or distance <= merged_options.max_distance
         ]
 
     @traceable
