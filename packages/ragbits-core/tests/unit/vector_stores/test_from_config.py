@@ -25,17 +25,17 @@ def test_subclass_from_config():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
-    assert isinstance(store._default_options, VectorStoreOptions)
-    assert store._default_options.k == 10
-    assert store._default_options.max_distance == 0.22
+    assert isinstance(store.default_options, VectorStoreOptions)
+    assert store.default_options.k == 10
+    assert store.default_options.max_distance == 0.22
     assert isinstance(store._metadata_store, InMemoryMetadataStore)
 
 
 def test_subclass_from_config_default_path():
     config = ObjectContructionConfig.model_validate({"type": "InMemoryVectorStore"})
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
 
 
@@ -53,12 +53,12 @@ def test_subclass_from_config_chroma_client():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, ChromaVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, ClientAPI)
-    assert store._default_options.k == 10
-    assert store._default_options.max_distance == 0.22
+    assert store.default_options.k == 10
+    assert store.default_options.max_distance == 0.22
 
 
 def test_subclass_from_config_drant_client():
@@ -80,10 +80,10 @@ def test_subclass_from_config_drant_client():
             },
         }
     )
-    store = VectorStore.subclass_from_config(config)
+    store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, QdrantVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, AsyncQdrantClient)
     assert isinstance(store._client._client, AsyncQdrantLocal)
-    assert store._default_options.k == 10
-    assert store._default_options.max_distance == 0.22
+    assert store.default_options.k == 10
+    assert store.default_options.max_distance == 0.22
