@@ -5,13 +5,11 @@ from typing import Annotated
 
 import typer
 from pydantic import BaseModel
-from rich.console import Console
 
 from ragbits.cli import cli_state, print_output
+from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import OutputType
-from ragbits.core.config import core_config
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.utils.config_handling import InvalidConfigError
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 
 vector_stores_app = typer.Typer(no_args_is_help=True)
@@ -41,15 +39,11 @@ def common_args(
         typer.Option(help="Path to a YAML configuration file for the vector store", exists=True, resolve_path=True),
     ] = None,
 ) -> None:
-    try:
-        state.vector_store = VectorStore.subclass_from_defaults(
-            core_config,
-            factory_path_override=factory_path,
-            yaml_path_override=yaml_path,
-        )
-    except InvalidConfigError as e:
-        Console(stderr=True).print(e)
-        raise typer.Exit(1) from e
+    state.vector_store = get_instance_or_exit(
+        VectorStore,
+        factory_path=factory_path,
+        yaml_path=yaml_path,
+    )
 
 
 @vector_stores_app.command(name="list")
@@ -126,16 +120,14 @@ def query(
         if state.vector_store is None:
             raise ValueError("Vector store not initialized")
 
-        try:
-            embedder: Embeddings = Embeddings.subclass_from_defaults(
-                core_config,
-                factory_path_override=embedder_factory_path,
-                yaml_path_override=embedder_yaml_path,
-            )
-        except InvalidConfigError as e:
-            Console(stderr=True).print(e)
-            raise typer.Exit(1) from e
-
+        embedder = get_instance_or_exit(
+            Embeddings,
+            factory_path=embedder_factory_path,
+            yaml_path=embedder_yaml_path,
+            factory_path_argument_name="--embedder_factory_path",
+            yaml_path_argument_name="--embedder_yaml_path",
+            type_name="embedder",
+        )
         search_vector = await embedder.embed_text([text])
 
         options = VectorStoreOptions(k=k, max_distance=max_distance)
