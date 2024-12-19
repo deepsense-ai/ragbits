@@ -68,10 +68,7 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
         The output data.
     """
     # We need to go up 2 frames (trace() and __enter__()) to get the parent function.
-    if cli_state.verbose == "cli":
-        set_trace_handlers("cli")
-    else:
-        print("No verbose state")
+
     parent_frame = inspect.stack()[2].frame
     name = (
         (

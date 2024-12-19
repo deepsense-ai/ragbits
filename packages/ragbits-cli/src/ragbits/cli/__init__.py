@@ -31,8 +31,12 @@ def ragbits_cli(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode"),
 ) -> None:
     """Common CLI arguments for all ragbits commands."""
+    cli_state.output_type = output
+    cli_state.verbose = verbose
+
     if verbose:
         typer.echo("Verbose mode is enabled.")
+        ragbits.core.audit.set_trace_handlers('cli')
     else:
         typer.echo("Verbose mode is disabled.")
 
