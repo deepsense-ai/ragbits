@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from dataclasses import dataclass
 from functools import cached_property
 
@@ -38,7 +37,7 @@ class DocumentSearchPipeline(EvaluationPipeline):
         """
         return DocumentSearch.from_config(self.config)  # type: ignore
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: dict | None = None) -> DocumentSearchResult | None:
         """
         Runs the document search evaluation pipeline.
 
@@ -48,13 +47,15 @@ class DocumentSearchPipeline(EvaluationPipeline):
         Returns:
             The evaluation result.
         """
-        elements = await self.document_search.search(data["question"])
-        predicted_passages = [element.text_representation or "" for element in elements]
-        return DocumentSearchResult(
-            question=data["question"],
-            reference_passages=data["passages"],
-            predicted_passages=predicted_passages,
-        )
+        if data is not None:
+            elements = await self.document_search.search(data["question"])
+            predicted_passages = [element.text_representation or "" for element in elements]
+            return DocumentSearchResult(
+                question=data["question"],
+                reference_passages=data["passages"],
+                predicted_passages=predicted_passages,
+            )
+        return None
 
 
 class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
@@ -64,11 +65,11 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
 
     def __init__(self, config: DictConfig | None = None) -> None:
         super().__init__(config)
-        self.config.vector_store.config.index_name = str(uuid.uuid4())
+        # self.config.vector_store.config.index_name = str(uuid.uuid4())
         self._ingested = False
         self._lock = asyncio.Lock()
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: dict | None = None) -> DocumentSearchResult | None:  # type: ignore
         """
         Queries a vector store with given data
         Ingests the corpus to the store if has not been done
@@ -78,10 +79,11 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
             DocumentSearchResult - query result
         """
         async with self._lock:
-            if not self._ingested:
+            if not self._ingested and self.config.get("ingest", False):
                 await self._ingest_documents()
                 self._ingested = True
-        return await super().__call__(data)
+        if self.config.get("search", True):
+            return await super().__call__(data)
 
     async def _ingest_documents(self) -> None:
         documents = await tqdm.gather(
