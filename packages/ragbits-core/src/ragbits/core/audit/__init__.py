@@ -42,6 +42,12 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
                 from ragbits.core.audit.otel import OtelTraceHandler
 
                 _trace_handlers.append(OtelTraceHandler())
+
+            elif handler == "cli":
+                from ragbits.core.audit.cli import CLITraceHandler
+
+                _trace_handlers.append(CLITraceHandler())
+
             else:
                 raise ValueError(f"Handler {handler} not found.")
         else:
@@ -61,6 +67,7 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
         The output data.
     """
     # We need to go up 2 frames (trace() and __enter__()) to get the parent function.
+
     parent_frame = inspect.stack()[2].frame
     name = (
         (
@@ -74,6 +81,7 @@ def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]: 
 
     with ExitStack() as stack:
         outputs = [stack.enter_context(handler.trace(name, **inputs)) for handler in _trace_handlers]
+
         yield (out := SimpleNamespace())
         for output in outputs:
             output.__dict__.update(vars(out))
