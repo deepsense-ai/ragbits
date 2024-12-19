@@ -18,7 +18,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
     Class for interaction with any LLM available in HuggingFace.
     """
 
-    _options_cls = LocalLLMOptions
+    options_cls = LocalLLMOptions
 
     def __init__(
         self,

@@ -4,11 +4,12 @@ import abc
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from ragbits.core.options import OptionsT
 from ragbits.core.utils._pyproject import get_config_from_yaml
 
 if TYPE_CHECKING:
@@ -18,6 +19,12 @@ if TYPE_CHECKING:
 class InvalidConfigError(Exception):
     """
     An exception to be raised when an invalid configuration is provided.
+    """
+
+
+class NoDefaultConfigError(InvalidConfigError):
+    """
+    An exception to be raised when no falling back to default configuration is not possible.
     """
 
 
@@ -155,7 +162,7 @@ class WithConstructionConfig(abc.ABC):
         if default_config := defaults.default_instances_config.get(cls.configuration_key):
             return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
 
-        raise InvalidConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -169,3 +176,35 @@ class WithConstructionConfig(abc.ABC):
             An instance of the class initialized with the provided configuration.
         """
         return cls(**config)
+
+
+class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
+    """
+    Base class for components with configurable options.
+    """
+
+    options_cls: type[OptionsT]
+
+    def __init__(self, default_options: OptionsT | None = None) -> None:
+        """
+        Constructs a new ConfigurableComponent instance.
+
+        Args:
+            default_options: The default options for the component.
+        """
+        self.default_options: OptionsT = default_options or self.options_cls()
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        default_options = config.pop("default_options", None)
+        options = cls.options_cls(**default_options) if default_options else None
+        return cls(**config, default_options=options)

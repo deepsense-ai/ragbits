@@ -3,15 +3,12 @@ import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from functools import cached_property
-from typing import ClassVar, Generic, cast, overload
-
-from typing_extensions import Self
+from typing import ClassVar, cast, overload
 
 from ragbits.core import llms
+from ragbits.core.llms.clients.base import LLMClient, LLMClientOptionsT
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
-from ragbits.core.utils.config_handling import WithConstructionConfig
-
-from .clients.base import LLMClient, LLMClientOptions, LLMOptions
+from ragbits.core.utils.config_handling import ConfigurableComponent
 
 
 class LLMType(enum.Enum):
@@ -24,16 +21,16 @@ class LLMType(enum.Enum):
     STRUCTURED_OUTPUT = "structured_output"
 
 
-class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
+class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     """
     Abstract class for interaction with Large Language Model.
     """
 
-    _options_cls: type[LLMClientOptions]
+    options_cls: type[LLMClientOptionsT]
     default_module: ClassVar = llms
     configuration_key: ClassVar = "llm"
 
-    def __init__(self, model_name: str, default_options: LLMOptions | None = None) -> None:
+    def __init__(self, model_name: str, default_options: LLMClientOptionsT | None = None) -> None:
         """
         Constructs a new LLM instance.
 
@@ -42,14 +39,14 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
             default_options: Default options to be used.
 
         Raises:
-            TypeError: If the subclass is missing the '_options_cls' attribute.
+            TypeError: If the subclass is missing the 'options_cls' attribute.
         """
+        super().__init__(default_options=default_options)
         self.model_name = model_name
-        self.default_options = default_options or self._options_cls()
 
     def __init_subclass__(cls) -> None:
-        if not hasattr(cls, "_options_cls"):
-            raise TypeError(f"Class {cls.__name__} is missing the '_options_cls' attribute")
+        if not hasattr(cls, "options_cls"):
+            raise TypeError(f"Class {cls.__name__} is missing the 'options_cls' attribute")
 
     @cached_property
     @abstractmethod
@@ -74,7 +71,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> str:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -86,10 +83,10 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         Returns:
             Raw text response from LLM.
         """
-        options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         response = await self.client.call(
             conversation=self._format_chat_for_llm(prompt),
-            options=options,
+            options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )
@@ -101,7 +98,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePromptWithParser[OutputT],
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT: ...
 
     @overload
@@ -109,14 +106,14 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT: ...
 
     async def generate(
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> OutputT:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
@@ -140,7 +137,7 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         self,
         prompt: BasePrompt,
         *,
-        options: LLMOptions | None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
@@ -152,10 +149,10 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         Returns:
             Response stream from LLM.
         """
-        options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
         response = await self.client.call_streaming(
             conversation=self._format_chat_for_llm(prompt),
-            options=options,
+            options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )
@@ -166,20 +163,3 @@ class LLM(WithConstructionConfig, Generic[LLMClientOptions], ABC):
         if prompt.list_images():
             wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
         return prompt.chat
-
-    @classmethod
-    def from_config(cls, config: dict) -> Self:
-        """
-        Initializes the class with the provided configuration.
-
-        Args:
-            config: A dictionary containing configuration details for the class.
-
-        Returns:
-            An instance of the class initialized with the provided configuration.
-        """
-        default_options = config.pop("default_options", None)
-
-        options = cls._options_cls(**default_options) if default_options else None
-
-        return cls(**config, default_options=options)

@@ -11,10 +11,12 @@ from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
-class ChromaVectorStore(VectorStore):
+class ChromaVectorStore(VectorStore[VectorStoreOptions]):
     """
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
+
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,
@@ -105,11 +107,11 @@ class ChromaVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        options = self._default_options if options is None else options
+        merged_options = (self.default_options | options) if options else self.default_options
 
         results = self._collection.query(
             query_embeddings=vector,
-            n_results=options.k,
+            n_results=merged_options.k,
             include=["metadatas", "embeddings", "distances", "documents"],
         )
 
@@ -132,7 +134,7 @@ class ChromaVectorStore(VectorStore):
             )
             for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
             for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
-            if options.max_distance is None or distance <= options.max_distance
+            if merged_options.max_distance is None or distance <= merged_options.max_distance
         ]
 
     @traceable

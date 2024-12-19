@@ -12,10 +12,12 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, import_b
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
 
-class QdrantVectorStore(VectorStore):
+class QdrantVectorStore(VectorStore[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
+
+    options_cls = VectorStoreOptions
 
     def __init__(
         self,
@@ -116,13 +118,13 @@ class QdrantVectorStore(VectorStore):
         Raises:
             MetadataNotFoundError: If metadata cannot be retrieved
         """
-        options = options or self._default_options
-        score_threshold = 1 - options.max_distance if options.max_distance else None
+        merged_options = (self.default_options | options) if options else self.default_options
+        score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
 
         results = await self._client.query_points(
             collection_name=self._index_name,
             query=vector,
-            limit=options.k,
+            limit=merged_options.k,
             score_threshold=score_threshold,
             with_payload=True,
             with_vectors=True,

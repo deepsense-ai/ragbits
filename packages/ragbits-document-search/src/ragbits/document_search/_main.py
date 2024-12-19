@@ -100,10 +100,10 @@ class DocumentSearch:
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        embedder = Embeddings.subclass_from_config(model.embedder)
+        embedder: Embeddings = Embeddings.subclass_from_config(model.embedder)
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
-        reranker = Reranker.subclass_from_config(model.reranker)
-        vector_store = VectorStore.subclass_from_config(model.vector_store)
+        reranker: Reranker = Reranker.subclass_from_config(model.reranker)
+        vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
         processing_strategy = ProcessingExecutionStrategy.subclass_from_config(model.processing_strategy)
 
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
