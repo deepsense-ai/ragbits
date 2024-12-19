@@ -1,7 +1,6 @@
 import asyncio
 import threading
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass
 
 from pydantic import BaseModel
 
@@ -14,14 +13,14 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
+
+from ragbits.core.llms.clients.base import LLMClient
+from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
-
-from ..types import NOT_GIVEN, NotGiven
-from .base import LLMClient, LLMOptions
+from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-@dataclass
-class LocalLLMOptions(LLMOptions):
+class LocalLLMOptions(Options):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]

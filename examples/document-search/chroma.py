@@ -35,7 +35,8 @@ import asyncio
 
 from chromadb import EphemeralClient
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddings, LiteLLMEmbeddingsOptions
+from ragbits.core.vector_stores import VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
@@ -70,10 +71,18 @@ async def main() -> None:
     """
     embedder = LiteLLMEmbeddings(
         model="text-embedding-3-small",
+        default_options=LiteLLMEmbeddingsOptions(
+            dimensions=1024,
+            timeout=1000,
+        ),
     )
     vector_store = ChromaVectorStore(
         client=EphemeralClient(),
         index_name="jokes",
+        default_options=VectorStoreOptions(
+            k=10,
+            max_distance=0.22,
+        ),
     )
     document_search = DocumentSearch(
         embedder=embedder,

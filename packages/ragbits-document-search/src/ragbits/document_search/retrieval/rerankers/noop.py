@@ -5,10 +5,12 @@ from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class NoopReranker(Reranker):
+class NoopReranker(Reranker[RerankerOptions]):
     """
     A no-op reranker that does not change the order of the elements.
     """
+
+    options_cls = RerankerOptions
 
     @traceable
     async def rerank(  # noqa: PLR6301

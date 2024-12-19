@@ -1,5 +1,8 @@
 from collections.abc import Iterator
 
+from ragbits.core.embeddings import Embeddings
+from ragbits.core.options import Options
+
 try:
     import torch
     import torch.nn.functional as F
@@ -9,24 +12,34 @@ try:
 except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
-from ragbits.core.embeddings import Embeddings
+
+class LocalEmbeddingsOptions(Options):
+    """
+    Dataclass that represents available call options for the LocalEmbeddings client.
+    """
+
+    batch_size: int = 1
 
 
-class LocalEmbeddings(Embeddings):
+class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
     """
+
+    options_cls = LocalEmbeddingsOptions
 
     def __init__(
         self,
         model_name: str,
         api_key: str | None = None,
+        default_options: LocalEmbeddingsOptions | None = None,
     ) -> None:
         """Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
             api_key: The API key for Hugging Face authentication.
+            default_options: Default options for the embedding model.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -34,7 +47,7 @@ class LocalEmbeddings(Embeddings):
         if not HAS_LOCAL_EMBEDDINGS:
             raise ImportError("You need to install the 'local' extra requirements to use local embeddings models")
 
-        super().__init__()
+        super().__init__(default_options=default_options)
 
         self.hf_api_key = api_key
         self.model_name = model_name
@@ -43,18 +56,20 @@ class LocalEmbeddings(Embeddings):
         self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
-    async def embed_text(self, data: list[str], batch_size: int = 1) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LocalEmbeddingsOptions | None = None) -> list[list[float]]:
         """Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.
-            batch_size: Batch size.
+            options: Additional options to pass to the embedding model.
 
         Returns:
             List of embeddings for the given strings.
         """
+        merged_options = (self.default_options | options) if options else self.default_options
+
         embeddings = []
-        for batch in self._batch(data, batch_size):
+        for batch in self._batch(data, merged_options.batch_size):
             batch_dict = self.tokenizer(
                 batch,
                 max_length=self.tokenizer.model_max_length,

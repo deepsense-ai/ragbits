@@ -127,7 +127,7 @@ def query(
             raise ValueError("Vector store not initialized")
 
         try:
-            embedder = Embeddings.subclass_from_defaults(
+            embedder: Embeddings = Embeddings.subclass_from_defaults(
                 core_config,
                 factory_path_override=embedder_factory_path,
                 yaml_path_override=embedder_yaml_path,
