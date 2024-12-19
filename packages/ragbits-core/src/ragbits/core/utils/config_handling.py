@@ -22,6 +22,12 @@ class InvalidConfigError(Exception):
     """
 
 
+class NoDefaultConfigError(InvalidConfigError):
+    """
+    An exception to be raised when no falling back to default configuration is not possible.
+    """
+
+
 def import_by_path(path: str, default_module: ModuleType | None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns an object based on the string in the format of "module.submodule:object_name".
@@ -156,7 +162,7 @@ class WithConstructionConfig(abc.ABC):
         if default_config := defaults.default_instances_config.get(cls.configuration_key):
             return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
 
-        raise InvalidConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

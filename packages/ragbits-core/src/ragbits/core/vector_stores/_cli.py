@@ -4,13 +4,11 @@ from pathlib import Path
 
 import typer
 from pydantic import BaseModel
-from rich.console import Console
 
 from ragbits.cli import cli_state, print_output
+from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import OutputType
-from ragbits.core.config import core_config
 from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.utils.config_handling import InvalidConfigError
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 
 vector_stores_app = typer.Typer(no_args_is_help=True)
@@ -27,17 +25,13 @@ state: CLIState = CLIState()
 @vector_stores_app.callback()
 def common_args(
     factory_path: str | None = None,
-    yaml_path: str | None = None,
+    yaml_path: Path | None = None,
 ) -> None:
-    try:
-        state.vector_store = VectorStore.subclass_from_defaults(
-            core_config,
-            factory_path_override=factory_path,
-            yaml_path_override=Path.cwd() / yaml_path if yaml_path else None,
-        )
-    except InvalidConfigError as e:
-        Console(stderr=True).print(e)
-        raise typer.Exit(1) from e
+    state.vector_store = get_instance_or_exit(
+        VectorStore,
+        factory_path=factory_path,
+        yaml_path=yaml_path,
+    )
 
 
 @vector_stores_app.command(name="list")
@@ -85,7 +79,7 @@ def query(
     k: int = 5,
     max_distance: float | None = None,
     embedder_factory_path: str | None = None,
-    embedder_yaml_path: str | None = None,
+    embedder_yaml_path: Path | None = None,
 ) -> None:
     """
     Query the chosen vector store.
@@ -95,16 +89,14 @@ def query(
         if state.vector_store is None:
             raise ValueError("Vector store not initialized")
 
-        try:
-            embedder: Embeddings = Embeddings.subclass_from_defaults(
-                core_config,
-                factory_path_override=embedder_factory_path,
-                yaml_path_override=Path.cwd() / embedder_yaml_path if embedder_yaml_path else None,
-            )
-        except InvalidConfigError as e:
-            Console(stderr=True).print(e)
-            raise typer.Exit(1) from e
-
+        embedder = get_instance_or_exit(
+            Embeddings,
+            factory_path=embedder_factory_path,
+            yaml_path=embedder_yaml_path,
+            factory_path_argument_name="--embedder_factory_path",
+            yaml_path_argument_name="--embedder_yaml_path",
+            type_name="embedder",
+        )
         search_vector = await embedder.embed_text([text])
 
         options = VectorStoreOptions(k=k, max_distance=max_distance)
