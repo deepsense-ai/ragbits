@@ -66,8 +66,8 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         Returns:
             List of embeddings for the given strings.
         """
-        merged_options: LocalEmbeddingsOptions = (self.default_options | options) if options else self.default_options  # type: ignore
-        # for some reason, mypy doesn't recognize that merged_options is LocalEmbeddingsOptions, it thinks it's Options
+        merged_options = (self.default_options | options) if options else self.default_options
+
         embeddings = []
         for batch in self._batch(data, merged_options.batch_size):
             batch_dict = self.tokenizer(

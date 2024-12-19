@@ -76,6 +76,7 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
             EmbeddingResponseError: If the embedding API response is invalid.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+
         with trace(
             data=data,
             model=self.model,

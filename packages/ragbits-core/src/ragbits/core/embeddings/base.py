@@ -6,7 +6,7 @@ from ragbits.core import embeddings
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-EmbeddingsClientOptions = TypeVar("EmbeddingsClientOptions", bound=Options)
+EmbeddingsOptionsT = TypeVar("EmbeddingsOptionsT", bound=Options)
 
 
 class EmbeddingType(Enum):
@@ -20,21 +20,21 @@ class EmbeddingType(Enum):
     allowing for the creation of different embeddings for the same element.
     """
 
-    TEXT: str = "text"
-    IMAGE: str = "image"
+    TEXT = "text"
+    IMAGE = "image"
 
 
-class Embeddings(ConfigurableComponent[EmbeddingsClientOptions], ABC):
+class Embeddings(ConfigurableComponent[EmbeddingsOptionsT], ABC):
     """
     Abstract client for communication with embedding models.
     """
 
-    options_cls: type[EmbeddingsClientOptions]
+    options_cls: type[EmbeddingsOptionsT]
     default_module: ClassVar = embeddings
     configuration_key: ClassVar = "embedder"
 
     @abstractmethod
-    async def embed_text(self, data: list[str], options: EmbeddingsClientOptions | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: EmbeddingsOptionsT | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
@@ -55,12 +55,13 @@ class Embeddings(ConfigurableComponent[EmbeddingsClientOptions], ABC):
         """
         return False
 
-    async def embed_image(self, images: list[bytes]) -> list[list[float]]:
+    async def embed_image(self, images: list[bytes], options: EmbeddingsOptionsT | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given images.
 
         Args:
             images: List of images to get embeddings for.
+            options: Additional settings used by the Embeddings model.
 
         Returns:
             List of embeddings for the given images.

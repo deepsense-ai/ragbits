@@ -1,6 +1,8 @@
 import asyncio
 import base64
 
+from ragbits.core.embeddings.litellm import LiteLLMEmbeddingsOptions
+
 try:
     import litellm
     from litellm.llms.vertex_ai_and_google_ai_studio.common_utils import VertexAIError
@@ -16,15 +18,14 @@ from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
     EmbeddingStatusError,
 )
-from ragbits.core.options import Options
 
 
-class VertexAIMultimodelEmbeddings(Embeddings):
+class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """
 
-    options_cls = Options
+    options_cls = LiteLLMEmbeddingsOptions
     VERTEX_AI_PREFIX = "vertex_ai/"
 
     def __init__(
@@ -33,7 +34,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
         api_base: str | None = None,
         api_key: str | None = None,
         concurency: int = 10,
-        default_options: Options | None = None,
+        default_options: LiteLLMEmbeddingsOptions | None = None,
     ) -> None:
         """
         Constructs the embedding client for multimodal VertexAI models.
@@ -65,7 +66,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
         if model not in supported_models:
             raise ValueError(f"Model {model} is not supported by VertexAI multimodal embeddings")
 
-    async def _embed(self, data: list[dict], options: Options | None = None) -> list[dict]:
+    async def _embed(self, data: list[dict], options: LiteLLMEmbeddingsOptions | None = None) -> list[dict]:
         """
         Creates embeddings for the given data. The format is defined in the VertexAI API:
         https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings
@@ -106,7 +107,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
             return outputs.embeddings
 
     async def _call_litellm(
-        self, instance: dict, semaphore: asyncio.Semaphore, options: Options
+        self, instance: dict, semaphore: asyncio.Semaphore, options: LiteLLMEmbeddingsOptions
     ) -> litellm.EmbeddingResponse:
         """
         Calls the LiteLLM API to get embeddings for the given data.
@@ -130,7 +131,7 @@ class VertexAIMultimodelEmbeddings(Embeddings):
 
         return response
 
-    async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LiteLLMEmbeddingsOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
@@ -157,7 +158,9 @@ class VertexAIMultimodelEmbeddings(Embeddings):
         """
         return True
 
-    async def embed_image(self, images: list[bytes], options: Options | None = None) -> list[list[float]]:
+    async def embed_image(
+        self, images: list[bytes], options: LiteLLMEmbeddingsOptions | None = None
+    ) -> list[list[float]]:
         """
         Creates embeddings for the given images.
 

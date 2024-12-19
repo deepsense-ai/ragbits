@@ -6,7 +6,7 @@ from typing_extensions import Self
 
 from ragbits.core.types import NotGiven
 
-OptionsTypeVar = TypeVar("OptionsTypeVar", bound="Options")
+OptionsT = TypeVar("OptionsT", bound="Options")
 
 
 class Options(BaseModel, ABC):

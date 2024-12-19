@@ -1,9 +1,9 @@
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings.base import Embeddings, EmbeddingsClientOptions
+from ragbits.core.embeddings.base import Embeddings
 from ragbits.core.options import Options
 
 
-class NoopEmbeddings(Embeddings):
+class NoopEmbeddings(Embeddings[Options]):
     """
     A no-op implementation of the Embeddings class.
 
@@ -15,7 +15,7 @@ class NoopEmbeddings(Embeddings):
     options_cls = Options
 
     @traceable
-    async def embed_text(self, data: list[str], options: EmbeddingsClientOptions | None = None) -> list[list[float]]:  # noqa: PLR6301
+    async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:  # noqa: PLR6301
         """
         Embeds a list of strings into a list of vectors.
 
