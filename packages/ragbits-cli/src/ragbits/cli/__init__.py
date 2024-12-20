@@ -30,15 +30,14 @@ def ragbits_cli(
     output: Annotated[
         OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
     ] = OutputType.text.value,  # type: ignore
-    verbose: bool = typer.Option(
-        bool(int(os.getenv("RAGBITS_VERBOSE", "0"))), "--verbose", "-v", help="Enable verbose mode"
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode"
     ),
 ) -> None:
     """Common CLI arguments for all ragbits commands."""
     cli_state.output_type = output
     cli_state.verbose = verbose
 
-    if verbose:
+    if verbose and int(os.getenv("RAGBITS_VERBOSE","0"))==0:
         typer.echo("Verbose mode is enabled.")
         audit.set_trace_handlers("cli")
 
