@@ -13,9 +13,6 @@ import hydra
 from omegaconf import DictConfig
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.loaders import dataloader_factory
-from ragbits.evaluate.metrics import metric_set_factory
-from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
@@ -31,20 +28,8 @@ async def bench(config: DictConfig) -> None:
         config: Hydra configuration.
     """
     run = setup_neptune(config)
-
-    log.info("Starting evaluation...")
-
-    dataloader = dataloader_factory(config.data)
-    pipeline = DocumentSearchPipeline(config.pipeline)
-    metrics = metric_set_factory(config.metrics)
-
-    evaluator = Evaluator()
-    results = await evaluator.compute(
-        pipeline=pipeline,
-        dataloader=dataloader,
-        metrics=metrics,
-    )
-
+    log.info("Starting the experiment...")
+    results = await Evaluator.run_experiment_from_config(config=config)
     output_dir = log_to_file(results)
     if run:
         log_to_neptune(run, results, output_dir)

@@ -8,3 +8,5 @@ defaults:
   - _self_
 
 type: ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline
+ingest: true
+

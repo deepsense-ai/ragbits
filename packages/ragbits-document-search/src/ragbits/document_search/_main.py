@@ -39,8 +39,11 @@ class DocumentSearchConfig(BaseModel):
     Schema for for the dict taken by DocumentSearch.from_config method.
     """
 
-    embedder: ObjectContructionConfig
-    vector_store: ObjectContructionConfig
+    embedder: ObjectContructionConfig = ObjectContructionConfig(type="LiteLLMEmbeddings")
+    vector_store: ObjectContructionConfig = ObjectContructionConfig(
+        type="ChromaVectorStore",
+        config={"client": {"type": "PersistentClient"}, "index_name": "default"},
+    )
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
     processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialProcessing")
