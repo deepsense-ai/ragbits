@@ -41,12 +41,14 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
             if handler == "otel":
                 from ragbits.core.audit.otel import OtelTraceHandler
 
-                _trace_handlers.append(OtelTraceHandler())
+                if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
+                    _trace_handlers.append(OtelTraceHandler())
 
             elif handler == "cli":
                 from ragbits.core.audit.cli import CLITraceHandler
 
-                _trace_handlers.append(CLITraceHandler())
+                if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
+                    _trace_handlers.append(CLITraceHandler())
 
             else:
                 raise ValueError(f"Handler {handler} not found.")
