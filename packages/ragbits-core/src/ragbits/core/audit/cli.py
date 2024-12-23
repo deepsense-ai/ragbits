@@ -57,10 +57,8 @@ class CLISpan:
         error_color = "bold red"
         child_color = "bold green"
         duration = self.end_time - self.start_time if self.end_time else 0.0
-        inputs = ""
-        outputs = ""
-        # inputs = dicts_to_string(self.inputs)
-        # outputs = dicts_to_string(self.outputs)
+        inputs = dicts_to_string(self.inputs)
+        outputs = dicts_to_string(self.outputs)
         if tree is None:
             tree = Tree(
                 f"[{color}]{self.name}[/{color}] Duration: {duration:.3f}s\n"
