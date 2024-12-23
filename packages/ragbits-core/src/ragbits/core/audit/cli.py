@@ -58,16 +58,18 @@ class CLISpan:
         child_color = "bold green"
         duration = self.end_time - self.start_time if self.end_time else 0.0
 
+        inputs = dicts_to_string(self.inputs)
+        outputs = dicts_to_string(self.outputs)
         if tree is None:
             tree = Tree(
                 f"[{color}]{self.name}[/{color}] Duration: {duration:.3f}s\n"
-                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]"
+                f"[{secondary_color}]Inputs: {inputs}\nOutputs: {outputs}[/{secondary_color}]"
             )
 
         else:
             child_tree = tree.add(
                 f"[{color}]{self.name}[/{color}] Duration: {duration:.3f}s\n"
-                f"[{secondary_color}]Inputs: {self.inputs}\nOutputs: {self.outputs})[/{secondary_color}]"
+                f"[{secondary_color}]Inputs: {inputs}\nOutputs: {outputs}[/{secondary_color}]"
             )
             tree = child_tree
 
@@ -77,6 +79,29 @@ class CLISpan:
             else:
                 child.to_tree(tree, child_color)
         return tree
+
+
+def dicts_to_string(input_dict: dict) -> str:
+    """
+    Converts a dict of dicts to a string representation.
+
+    Args:
+        input_dict (dict): A dict.
+
+    Returns:
+        str: A string representation.
+
+    """
+    string_output = ""
+    for key, value in input_dict.items():
+        if key.startswith("vector"):
+            continue
+        if value:
+            if isinstance(value, dict):
+                dicts_to_string(input_dict[key])
+            else:
+                string_output += "\n[yellow]'" + str(key) + "':[/yellow][grey54]  " + str(value) + "[/grey54]"
+    return string_output
 
 
 class CLITraceHandler(TraceHandler[CLISpan]):
