@@ -1,11 +1,13 @@
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from typing import TypeVar
 
+import typer
 from pydantic import BaseModel
 from rich.console import Console
-from rich.table import Table
+from rich.table import Column, Table
 
 
 class OutputType(Enum):
@@ -24,41 +26,87 @@ class CliState:
 
 cli_state = CliState()
 
+ModelT = TypeVar("ModelT", bound=BaseModel)
 
-def print_output(data: Sequence[BaseModel] | BaseModel) -> None:
+
+def print_output_table(
+    data: Sequence[ModelT], columns: Mapping[str, Column] | Sequence[str] | str | None = None
+) -> None:
     """
-    Process and display output based on the current state's output type.
+    Display data from Pydantic models in a table format.
+
+    Args:
+        data: a list of pydantic models representing output of CLI function
+        columns: a list of columns to display in the output table: either as a list, string with comma separated names,
+            or for grater control over how the data is displayed a mapping of column names to Column objects.
+            If not provided, the columns will be inferred from the model schema.
+    """
+    console = Console()
+
+    if not data:
+        console.print("No results")
+        return
+
+    fields = data[0].model_fields
+
+    # Human readable titles for columns
+    titles = {key: value.get("title", key) for key, value in data[0].model_json_schema()["properties"].items()}
+
+    # Normalize the list of columns
+    if columns is None:
+        columns = {key: Column() for key in fields}
+    elif isinstance(columns, str):
+        columns = {key: Column() for key in columns.split(",")}
+    elif isinstance(columns, Sequence):
+        columns = {key: Column() for key in columns}
+
+    # Add headers to columns if not provided
+    for key in columns:
+        if key not in fields:
+            Console(stderr=True).print(f"Unknown column: {key}")
+            raise typer.Exit(1)
+
+        column = columns[key]
+        if column.header == "":
+            column.header = titles.get(key, key)
+
+    # Create and print the table
+    table = Table(*columns.values(), show_header=True, header_style="bold magenta")
+    for row in data:
+        table.add_row(*[str(getattr(row, key)) for key in columns])
+    console.print(table)
+
+
+def print_output_json(data: Sequence[ModelT]) -> None:
+    """
+    Display data from Pydantic models in a JSON format.
 
     Args:
         data: a list of pydantic models representing output of CLI function
     """
     console = Console()
-    if isinstance(data, BaseModel):
+    console.print(json.dumps([output.model_dump(mode="json") for output in data], indent=4))
+
+
+def print_output(
+    data: Sequence[ModelT] | ModelT, columns: Mapping[str, Column] | Sequence[str] | str | None = None
+) -> None:
+    """
+    Process and display output based on the current state's output type.
+
+    Args:
+        data: a list of pydantic models representing output of CLI function
+        columns: a list of columns to display in the output table: either as a list, string with comma separated names,
+            or for grater control over how the data is displayed a mapping of column names to Column objects.
+            If not provided, the columns will be inferred from the model schema.
+    """
+    if not isinstance(data, Sequence):
         data = [data]
-    if len(data) == 0:
-        _print_empty_list()
-        return
-    first_el_instance = type(data[0])
-    if any(not isinstance(datapoint, first_el_instance) for datapoint in data):
-        raise ValueError("All the rows need to be of the same type")
-    data_dicts: list[dict] = [output.model_dump(mode="python") for output in data]
-    output_type = cli_state.output_type
-    if output_type == OutputType.json:
-        console.print(json.dumps(data_dicts, indent=4))
-    elif output_type == OutputType.text:
-        table = Table(show_header=True, header_style="bold magenta")
-        properties = data[0].model_json_schema()["properties"]
-        for key in properties:
-            table.add_column(properties[key]["title"])
-        for row in data_dicts:
-            table.add_row(*[str(value) for value in row.values()])
-        console.print(table)
-    else:
-        raise ValueError(f"Output type: {output_type} not supported")
 
-
-def _print_empty_list() -> None:
-    if cli_state.output_type == OutputType.text:
-        print("Empty data list")
-    elif cli_state.output_type == OutputType.json:
-        print(json.dumps([]))
+    match cli_state.output_type:
+        case OutputType.text:
+            print_output_table(data, columns)
+        case OutputType.json:
+            print_output_json(data)
+        case _:
+            raise ValueError(f"Unsupported output type: {cli_state.output_type}")
