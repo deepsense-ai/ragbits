@@ -9,7 +9,6 @@ from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from .base import LLM
 from .clients.litellm import LiteLLMClient, LiteLLMOptions
 
-
 class LiteLLM(LLM[LiteLLMOptions]):
     """
     Class for interaction with any LLM supported by LiteLLM API.
@@ -26,6 +25,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_key: str | None = None,
         api_version: str | None = None,
         use_structured_output: bool = False,
+        router: litellm.Router | None = None,
     ) -> None:
         """
         Constructs a new LiteLLM instance.
@@ -42,12 +42,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
             use_structured_output: Whether to request a
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
+            router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
         """
         super().__init__(model_name, default_options)
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
         self.use_structured_output = use_structured_output
+        self.router = router
 
     @cached_property
     def client(self) -> LiteLLMClient:
@@ -60,6 +62,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             api_key=self.api_key,
             api_version=self.api_version,
             use_structured_output=self.use_structured_output,
+            router=self.router
         )
 
     def count_tokens(self, prompt: BasePrompt) -> int:
