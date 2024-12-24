@@ -9,6 +9,7 @@ from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from .base import LLM
 from .clients.litellm import LiteLLMClient, LiteLLMOptions
 
+
 class LiteLLM(LLM[LiteLLMOptions]):
     """
     Class for interaction with any LLM supported by LiteLLM API.
@@ -62,7 +63,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             api_key=self.api_key,
             api_version=self.api_version,
             use_structured_output=self.use_structured_output,
-            router=self.router
+            router=self.router,
         )
 
     def count_tokens(self, prompt: BasePrompt) -> int:
