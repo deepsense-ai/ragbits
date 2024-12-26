@@ -2,6 +2,7 @@ import os
 import re
 import tempfile
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar
@@ -30,6 +31,7 @@ class Source(BaseModel, ABC):
 
     # Registry of all subclasses by their unique identifier
     _registry: ClassVar[dict[str, type["Source"]]] = {}
+    protocol: ClassVar[str | None] = None
 
     @classmethod
     def class_identifier(cls) -> str:
@@ -65,9 +67,34 @@ class Source(BaseModel, ABC):
         """
 
     @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
-        Source._registry[cls.class_identifier()] = cls
+    @abstractmethod
+    def from_uri(cls, path: str) -> Sequence["Source"]:
+        """Create Source instances from a URI path.
+
+        The path can contain glob patterns (asterisks) to match multiple sources, but pattern support
+        varies by source type. Each source implementation defines which patterns it supports:
+
+        - LocalFileSource: Supports full glob patterns ('*', '**', etc.) via Path.glob
+        - GCSSource: Supports simple prefix matching with '*' at the end of path
+        - HuggingFaceSource: Does not support glob patterns
+
+        Args:
+            path: The path part of the URI (after protocol://). Pattern support depends on source type.
+
+        Returns:
+            A sequence of Source objects matching the path pattern
+
+        Raises:
+            ValueError: If the path contains unsupported pattern for this source type
+        """
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
+        Source._registry[cls.class_identifier()] = cls
+        if cls.protocol is not None:
+            from ragbits.document_search.documents.source_resolver import SourceResolver
+            SourceResolver.register_protocol(cls.protocol, cls)
 
 
 class SourceDiscriminator:
@@ -151,6 +178,27 @@ class LocalFileSource(Source):
         """
         return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
+    @classmethod
+    def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
+        """Create LocalFileSource instances from a URI path.
+
+        Supports full glob patterns via Path.glob:
+        - '*' matches any number of characters except path separators
+        - '**' matches any number of characters including path separators
+        - '?' matches exactly one character
+
+        Args:
+            path: The path part of the URI (after file://). Can contain glob patterns.
+
+        Returns:
+            A sequence of LocalFileSource objects matching the pattern
+        """
+        path_obj = Path(path)
+        if "*" in path or "?" in path:
+            # If path contains wildcards, use list_sources with the parent directory
+            return cls.list_sources(path_obj.parent, path_obj.name)
+        return [cls(path=path_obj)]
+
 
 class GCSSource(Source):
     """
@@ -159,6 +207,7 @@ class GCSSource(Source):
 
     bucket: str
     object_name: str
+    protocol: ClassVar[str] = "gcs"
 
     @property
     def id(self) -> str:
@@ -224,6 +273,47 @@ class GCSSource(Source):
                 sources.append(cls(bucket=bucket, object_name=obj["name"]))
             return sources
 
+    @classmethod
+    def from_uri(cls, path: str) -> Sequence["GCSSource"]:
+        """Create GCSSource instances from a URI path.
+
+        Supports simple prefix matching with '*' at the end of path.
+        For example:
+        - "bucket/folder/*" - matches all files in the folder
+        - "bucket/folder/prefix*" - matches all files starting with prefix
+
+        More complex patterns like '**' or '?' are not supported.
+
+        Args:
+            path: The path part of the URI (after gcs://). Can end with '*' for pattern matching.
+
+        Returns:
+            A sequence of GCSSource objects matching the pattern
+
+        Raises:
+            ValueError: If an unsupported pattern is used
+        """
+        if "**" in path or "?" in path:
+            raise ValueError(
+                "GCSSource only supports '*' at the end of path. "
+                "Patterns like '**' or '?' are not supported."
+            )
+
+        # Split into bucket and prefix
+        bucket, prefix = path.split("/", 1) if "/" in path else (path, "")
+
+        if "*" in prefix:
+            if not prefix.endswith("*"):
+                raise ValueError(
+                    "GCSSource only supports '*' at the end of path. "
+                    f"Invalid pattern: {prefix}"
+                )
+            # Remove the trailing * for GCS prefix listing
+            prefix = prefix[:-1]
+            return cls.list_sources(bucket=bucket, prefix=prefix)
+
+        return [cls(bucket=bucket, object_name=prefix)]
+
 
 class HuggingFaceSource(Source):
     """
@@ -233,6 +323,7 @@ class HuggingFaceSource(Source):
     path: str
     split: str = "train"
     row: int
+    protocol: ClassVar[str] = "huggingface"
 
     @property
     def id(self) -> str:
@@ -279,6 +370,37 @@ class HuggingFaceSource(Source):
                 file.write(data["content"])
 
         return path
+
+    @classmethod
+    def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
+        """Create HuggingFaceSource instances from a URI path.
+
+        Pattern matching is not supported. The path must be in the format:
+        huggingface://dataset_path/split/row
+
+        Args:
+            path: The path part of the URI (after huggingface://)
+
+        Returns:
+            A sequence containing a single HuggingFaceSource
+
+        Raises:
+            ValueError: If the path contains patterns or has invalid format
+        """
+        if "*" in path or "?" in path:
+            raise ValueError(
+                "HuggingFaceSource does not support patterns. "
+                "Path must be in format: dataset_path/split/row"
+            )
+
+        try:
+            dataset_path, split, row = path.split("/")
+            return [cls(path=dataset_path, split=split, row=int(row))]
+        except ValueError:
+            raise ValueError(
+                "Invalid HuggingFace path format. "
+                "Expected: dataset_path/split/row"
+            )
 
     @classmethod
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
