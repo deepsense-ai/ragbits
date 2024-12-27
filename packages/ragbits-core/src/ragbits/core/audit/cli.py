@@ -1,10 +1,33 @@
 import time
+from enum import Enum
 from typing import Optional
 
-from rich import print as rich_print
+from rich.live import Live
 from rich.tree import Tree
 
 from ragbits.core.audit import TraceHandler
+
+
+class SpanStatus(str, Enum):
+    """
+    SpanStatus represents the status of the span.
+    """
+
+    ERROR = "error"
+    STARTED = "started"
+    COMPLETED = "completed"
+
+
+class PrintColor(str, Enum):
+    """
+    SpanPrintColor represents the color of font for printing the span related information to the console.
+    """
+
+    parent_color = "bold blue"
+    child_color = "bold green"
+    error_color = "bold red"
+    faded_color = "grey50"
+    key_color = "yellow"
 
 
 class CLISpan:
@@ -25,10 +48,10 @@ class CLISpan:
         """
         self.name = name
         self.parent = parent
-        self.start_time: float = time.perf_counter()
+        self.start_time: float = time.time()
         self.end_time: float | None = None
         self.children: list[CLISpan] = []
-        self.status: str = "started"
+        self.status: str = SpanStatus.STARTED
         self.inputs: dict = inputs or {}
         self.outputs: dict = {}
 
@@ -39,9 +62,9 @@ class CLISpan:
         further calls are ignored.
         """
         if self.end_time is None:
-            self.end_time = time.perf_counter()
+            self.end_time = time.time()
 
-    def to_tree(self, tree: Tree | None = None, color: str = "bold blue") -> Tree | None:
+    def to_tree(self, tree: Tree | None = None, color: str = PrintColor.parent_color) -> Tree:
         """
         Convert theCLISpan object and its children into a Rich Tree structure for console rendering.
 
@@ -53,30 +76,28 @@ class CLISpan:
         Returns:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
-        secondary_color = "grey50"
-        error_color = "bold red"
-        child_color = "bold green"
         duration = self.end_time - self.start_time if self.end_time else 0.0
         inputs = dicts_to_string(self.inputs)
         outputs = dicts_to_string(self.outputs)
         if tree is None:
+            if self.status == SpanStatus.ERROR:
+                color = PrintColor.error_color
             tree = Tree(
-                f"[{color}]{self.name}[/{color}] Duration: {duration:.3f}s\n"
-                f"[{secondary_color}]Inputs: {inputs}\nOutputs: {outputs}[/{secondary_color}]"
+                f"[{color}]{self.name}[/{color}] Status: {self.status}; Duration: {duration:.3f}s\n"
+                f"[{PrintColor.faded_color}]Inputs: {inputs}\nOutputs: {outputs}[/{PrintColor.faded_color}]"
             )
-
         else:
             child_tree = tree.add(
-                f"[{color}]{self.name}[/{color}] Duration: {duration:.3f}s\n"
-                f"[{secondary_color}]Inputs: {inputs}\nOutputs: {outputs}[/{secondary_color}]"
+                f"[{color}]{self.name}[/{color}] Status: {self.status}; Duration: {duration:.3f}s\n"
+                f"[{PrintColor.faded_color}]Inputs: {inputs}\nOutputs: {outputs}[/{PrintColor.faded_color}]"
             )
             tree = child_tree
 
         for child in self.children:
-            if child.status == "error":
-                child.to_tree(tree, error_color)
+            if child.status == SpanStatus.ERROR:
+                child.to_tree(tree, PrintColor.error_color)
             else:
-                child.to_tree(tree, child_color)
+                child.to_tree(tree, PrintColor.child_color)
         return tree
 
 
@@ -92,14 +113,20 @@ def dicts_to_string(input_dict: dict) -> str:
 
     """
     string_output = ""
+    max_print_lenght = 200
     for key, value in input_dict.items():
-        if key.startswith("vector"):
-            continue
         if value:
             if isinstance(value, dict):
                 dicts_to_string(input_dict[key])
             else:
-                string_output += "\n[yellow]'" + str(key) + "':[/yellow][grey54]  " + str(value) + "[/grey54]"
+                new_string_output = (
+                    f"\n[{PrintColor.key_color}]{str(key)}:[/{PrintColor.key_color}] "
+                    f"[{PrintColor.faded_color}]{str(value)}[/{PrintColor.faded_color}]"
+                )
+                if len(new_string_output) > max_print_lenght:
+                    new_string_output = new_string_output[:max_print_lenght] + f" (...) [/{PrintColor.faded_color}]"
+                string_output += new_string_output
+
     return string_output
 
 
@@ -107,6 +134,12 @@ class CLITraceHandler(TraceHandler[CLISpan]):
     """
     CLITraceHandler class for all trace handlers.
     """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.root_span: CLISpan | None = None
+        self.live_tree: Tree | None = None
+        self.live: Live | None = None
 
     def start(self, name: str, inputs: dict, current_span: CLISpan | None = None) -> CLISpan:  # noqa: PLR6301
         """
@@ -124,8 +157,27 @@ class CLITraceHandler(TraceHandler[CLISpan]):
 
         if current_span:
             current_span.children.append(span)
+        else:
+            self.live_tree = Tree(f"Spans from main {name}")
+            self.live = Live(self.live_tree, refresh_per_second=4)
+            self.live.start()
+            self.root_span = span
+        self.update_live()
 
         return span
+
+    def update_live(self, final: bool = False) -> None:
+        """
+        Updates the live tree of the current span.
+
+        Args:
+            final (bool, optional): Whether the live tree can be stopped or not.
+        """
+        tree = self.root_span.to_tree() if self.root_span else Tree("No spans yet.")
+        if self.live:
+            self.live.update(tree)
+            if final:
+                self.live.stop()
 
     def stop(self, outputs: dict, current_span: CLISpan) -> None:  # noqa: PLR6301
         """
@@ -136,11 +188,11 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             current_span: The current trace span.
         """
         current_span.end()
-        current_span.status = "done"
+        current_span.status = SpanStatus.COMPLETED
         current_span.outputs = outputs
-
         if current_span.parent is None:
-            rich_print(current_span.to_tree())
+            self.update_live(final=True)
+        self.update_live()
 
     def error(self, error: Exception, current_span: CLISpan) -> None:  # noqa: PLR6301
         """
@@ -151,6 +203,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             current_span: The current trace span.
         """
         current_span.end()
-        current_span.status = "error"
+        current_span.status = SpanStatus.ERROR
         if current_span.parent is None:
-            rich_print(current_span.to_tree())
+            self.update_live(final=True)
+        self.update_live()
