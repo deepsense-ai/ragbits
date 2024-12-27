@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.6.0 (2024-12-27)
+
 ### Changed
 
 - Feat: Implement generic Options class (#248).
