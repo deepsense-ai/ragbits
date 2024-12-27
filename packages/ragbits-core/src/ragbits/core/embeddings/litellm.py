@@ -103,9 +103,10 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
             if not response.data:
                 raise EmbeddingEmptyResponseError()
 
+            outputs.embeddings = [embedding["embedding"] for embedding in response.data]
             if response.usage:
                 outputs.completion_tokens = response.usage.completion_tokens
                 outputs.prompt_tokens = response.usage.prompt_tokens
                 outputs.total_tokens = response.usage.total_tokens
 
-        return [embedding["embedding"] for embedding in response.data]
+        return outputs.embeddings
