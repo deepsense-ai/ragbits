@@ -35,7 +35,7 @@ def ragbits_cli(
     cli_state.output_type = output
     cli_state.verbose = verbose
 
-    if verbose == 0:
+    if verbose == 1:
         typer.echo("Verbose mode is enabled.")
         audit.set_trace_handlers("cli")
 
