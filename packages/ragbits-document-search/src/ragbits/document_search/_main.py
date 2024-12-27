@@ -215,7 +215,8 @@ class DocumentSearch(WithConstructionConfig):
         """
         if isinstance(documents, str):
             from ragbits.document_search.documents.source_resolver import SourceResolver
-            sources = SourceResolver.resolve(documents)
+
+            sources = await SourceResolver.resolve(documents)
         else:
             sources = documents
 

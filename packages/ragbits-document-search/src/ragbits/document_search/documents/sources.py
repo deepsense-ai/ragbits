@@ -68,7 +68,7 @@ class Source(BaseModel, ABC):
 
     @classmethod
     @abstractmethod
-    def from_uri(cls, path: str) -> Sequence["Source"]:
+    async def from_uri(cls, path: str) -> Sequence["Source"]:
         """Create Source instances from a URI path.
 
         The path can contain glob patterns (asterisks) to match multiple sources, but pattern support
@@ -94,6 +94,7 @@ class Source(BaseModel, ABC):
         Source._registry[cls.class_identifier()] = cls
         if cls.protocol is not None:
             from ragbits.document_search.documents.source_resolver import SourceResolver
+
             SourceResolver.register_protocol(cls.protocol, cls)
 
 
@@ -139,6 +140,7 @@ class LocalFileSource(Source):
     """
 
     path: Path
+    protocol: ClassVar[str] = "file"
 
     @property
     def id(self) -> str:
@@ -179,25 +181,34 @@ class LocalFileSource(Source):
         return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
     @classmethod
-    def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
+    async def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
         """Create LocalFileSource instances from a URI path.
 
         Supports full glob patterns via Path.glob:
-        - '*' matches any number of characters except path separators
-        - '**' matches any number of characters including path separators
+        - "**/*.txt" - all .txt files in any subdirectory
+        - "*.py" - all Python files in the current directory
+        - "**/*" - all files in any subdirectory
         - '?' matches exactly one character
 
         Args:
-            path: The path part of the URI (after file://). Can contain glob patterns.
+            path: The path part of the URI (after file://)
 
         Returns:
-            A sequence of LocalFileSource objects matching the pattern
+            A sequence of LocalFileSource objects
         """
-        path_obj = Path(path)
-        if "*" in path or "?" in path:
-            # If path contains wildcards, use list_sources with the parent directory
-            return cls.list_sources(path_obj.parent, path_obj.name)
-        return [cls(path=path_obj)]
+        # Handle absolute paths
+        path = Path(path)
+        if not path.is_absolute():
+            # For relative paths, use current directory as base
+            path = Path.cwd() / path
+
+        if "*" in str(path):
+            # If path contains wildcards, use its parent as base
+            base_path = path.parent
+            pattern = path.name
+            return [cls(path=file_path) for file_path in base_path.glob(pattern)]
+
+        return [cls(path=path)]
 
 
 class GCSSource(Source):
@@ -208,6 +219,29 @@ class GCSSource(Source):
     bucket: str
     object_name: str
     protocol: ClassVar[str] = "gcs"
+    _storage: Any | None = None  # Storage client for dependency injection
+
+    @classmethod
+    def set_storage(cls, storage: Any) -> None:
+        """Set the storage client for all instances.
+
+        Args:
+            storage: The storage client to use
+        """
+        cls._storage = storage
+
+    async def _get_storage(self) -> Any:
+        """Get the storage client.
+
+        Returns:
+            The storage client to use. If none was injected, creates a new one.
+        """
+        if self._storage is not None:
+            return self._storage
+
+        from gcloud.aio.storage import Storage
+
+        return Storage()
 
     @property
     def id(self) -> str:
@@ -241,8 +275,8 @@ class GCSSource(Source):
         path = bucket_local_dir / self.object_name
 
         if not path.is_file():
-            async with Storage() as client:  # type: ignore
-                # TODO: Add error handling for download
+            storage = await self._get_storage()
+            async with storage as client:
                 content = await client.download(self.bucket, self.object_name)
                 Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
                 with open(path, mode="wb+") as file_object:
@@ -266,7 +300,10 @@ class GCSSource(Source):
         Raises:
             ImportError: If the required 'gcloud-aio-storage' package is not installed
         """
-        async with Storage() as client:
+        # Create a temporary instance just to get the storage client
+        temp_source = cls(bucket=bucket, object_name=prefix)
+        storage = await temp_source._get_storage()
+        async with storage as client:
             objects = await client.list_objects(bucket, params={"prefix": prefix})
             sources = []
             for obj in objects["items"]:
@@ -274,7 +311,7 @@ class GCSSource(Source):
             return sources
 
     @classmethod
-    def from_uri(cls, path: str) -> Sequence["GCSSource"]:
+    async def from_uri(cls, path: str) -> Sequence["GCSSource"]:
         """Create GCSSource instances from a URI path.
 
         Supports simple prefix matching with '*' at the end of path.
@@ -295,8 +332,7 @@ class GCSSource(Source):
         """
         if "**" in path or "?" in path:
             raise ValueError(
-                "GCSSource only supports '*' at the end of path. "
-                "Patterns like '**' or '?' are not supported."
+                "GCSSource only supports '*' at the end of path. " "Patterns like '**' or '?' are not supported."
             )
 
         # Split into bucket and prefix
@@ -304,13 +340,10 @@ class GCSSource(Source):
 
         if "*" in prefix:
             if not prefix.endswith("*"):
-                raise ValueError(
-                    "GCSSource only supports '*' at the end of path. "
-                    f"Invalid pattern: {prefix}"
-                )
+                raise ValueError("GCSSource only supports '*' at the end of path. " f"Invalid pattern: {prefix}")
             # Remove the trailing * for GCS prefix listing
             prefix = prefix[:-1]
-            return cls.list_sources(bucket=bucket, prefix=prefix)
+            return await cls.list_sources(bucket=bucket, prefix=prefix)
 
         return [cls(bucket=bucket, object_name=prefix)]
 
@@ -372,7 +405,7 @@ class HuggingFaceSource(Source):
         return path
 
     @classmethod
-    def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
+    async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
         """Create HuggingFaceSource instances from a URI path.
 
         Pattern matching is not supported. The path must be in the format:
@@ -389,18 +422,14 @@ class HuggingFaceSource(Source):
         """
         if "*" in path or "?" in path:
             raise ValueError(
-                "HuggingFaceSource does not support patterns. "
-                "Path must be in format: dataset_path/split/row"
+                "HuggingFaceSource does not support patterns. " "Path must be in format: dataset_path/split/row"
             )
 
         try:
             dataset_path, split, row = path.split("/")
             return [cls(path=dataset_path, split=split, row=int(row))]
         except ValueError:
-            raise ValueError(
-                "Invalid HuggingFace path format. "
-                "Expected: dataset_path/split/row"
-            )
+            raise ValueError("Invalid HuggingFace path format. " "Expected: dataset_path/split/row")
 
     @classmethod
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:

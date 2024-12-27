@@ -12,8 +12,9 @@ class SourceResolver:
 
     Example:
         >>> SourceResolver.register_protocol("gcs", GCSSource)
-        >>> sources = SourceResolver.resolve("gcs://my-bucket/path/to/files/*")
+        >>> sources = await SourceResolver.resolve("gcs://my-bucket/path/to/files/*")
     """
+
     _protocol_handlers: ClassVar[dict[str, type[Source]]] = {}
 
     @classmethod
@@ -27,14 +28,13 @@ class SourceResolver:
         cls._protocol_handlers[protocol] = source_class
 
     @classmethod
-    def resolve(cls, uri: str) -> Sequence[Source]:
+    async def resolve(cls, uri: str) -> Sequence[Source]:
         """Resolve a URI into a sequence of Source objects.
 
         The URI format should be: protocol://path
         For example:
         - file:///path/to/files/*
         - gcs://bucket/prefix/*
-        - s3://bucket/prefix/*
 
         Args:
             uri: The URI to resolve
@@ -52,10 +52,7 @@ class SourceResolver:
 
         if protocol not in cls._protocol_handlers:
             supported = ", ".join(sorted(cls._protocol_handlers.keys()))
-            raise ValueError(
-                f"Unsupported protocol: {protocol}. "
-                f"Supported protocols are: {supported}"
-            )
+            raise ValueError(f"Unsupported protocol: {protocol}. " f"Supported protocols are: {supported}")
 
         handler_class = cls._protocol_handlers[protocol]
-        return handler_class.from_uri(path)
+        return await handler_class.from_uri(path)

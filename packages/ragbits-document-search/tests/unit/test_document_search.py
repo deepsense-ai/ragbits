@@ -1,6 +1,8 @@
+import os
 import tempfile
 from collections.abc import Callable
 from pathlib import Path
+from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,11 +10,21 @@ import pytest
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
-from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import (
+    Document,
+    DocumentMeta,
+    DocumentType,
+)
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.documents.sources import (
+    GCSSource,
+    HuggingFaceSource,
+    LocalFileSource,
+)
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.batched import BatchedAsyncProcessing
+from ragbits.document_search.ingestion.processor_strategies.batched import (
+    BatchedAsyncProcessing,
+)
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
@@ -23,6 +35,20 @@ CONFIG = {
     "providers": {"txt": {"type": "DummyProvider"}},
     "processing_strategy": {"type": "SequentialProcessing"},
 }
+
+
+# This fixture is used automatically for every test due to autouse=True.
+# It ensures source protocols are registered before any test runs.
+@pytest.fixture(autouse=True)
+def setup_sources():
+    # Import sources to ensure protocols are registered
+    from ragbits.document_search.documents.sources import (
+        GCSSource,
+        HuggingFaceSource,
+        LocalFileSource,
+    )
+
+    yield
 
 
 @pytest.mark.parametrize(
@@ -202,3 +228,250 @@ async def test_document_search_with_batched():
 
     assert len(await vectore_store.list()) == 12
     assert len(results) == 12
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_uri_basic():
+    # Setup
+    with tempfile.TemporaryDirectory() as temp_dir:
+        test_file = Path(temp_dir) / "test.txt"
+        test_file.write_text("Test content")
+
+        document_search = DocumentSearch.from_config(CONFIG)
+
+        # Test ingesting from URI
+        await document_search.ingest(f"file://{test_file}")
+
+        # Verify
+        results = await document_search.search("Test content")
+        assert len(results) == 1
+        assert results[0].content == "Test content"
+        assert isinstance(results[0].document_meta.source, LocalFileSource)
+        assert str(results[0].document_meta.source.path) == str(test_file)
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_uri_with_wildcard():
+    # Setup
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Create multiple test files
+        test_files = [
+            (Path(temp_dir) / "test1.txt", "First test content"),
+            (Path(temp_dir) / "test2.txt", "Second test content"),
+            (Path(temp_dir) / "other.txt", "Other content"),
+        ]
+        for path, content in test_files:
+            path.write_text(content)
+
+        document_search = DocumentSearch.from_config(CONFIG)
+
+        # Test ingesting from URI with wildcard
+        await document_search.ingest(f"file://{temp_dir}/test*.txt")
+
+        # Verify only matching files were ingested
+        results = await document_search.search("test content")
+        assert len(results) == 2
+
+        contents = {result.content for result in results}
+        assert contents == {"First test content", "Second test content"}
+
+        # Verify sources are correct
+        sources = {str(result.document_meta.source.path) for result in results}
+        expected_sources = {str(test_files[0][0]), str(test_files[1][0])}
+        assert sources == expected_sources
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_gcs_uri_basic():
+    # Create mock storage client
+    storage_mock = mock.AsyncMock()
+    storage_mock.download = mock.AsyncMock(return_value=b"GCS test content")
+    storage_mock.list_objects = mock.AsyncMock(
+        return_value={"items": [{"name": "folder/test1.txt"}, {"name": "folder/test2.txt"}]}
+    )
+    storage_mock.__aenter__ = mock.AsyncMock(return_value=storage_mock)
+    storage_mock.__aexit__ = mock.AsyncMock()
+
+    # Create mock storage factory
+    mock_storage = mock.Mock()
+    mock_storage.return_value = storage_mock
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set up local storage dir
+        os.environ["LOCAL_STORAGE_DIR"] = temp_dir
+
+        # Inject the mock storage
+        GCSSource.set_storage(mock_storage())
+
+        document_search = DocumentSearch.from_config(CONFIG)
+
+        # Test single file
+        await document_search.ingest("gcs://test-bucket/folder/test1.txt")
+        results = await document_search.search("GCS test content")
+        assert len(results) == 1
+        assert isinstance(results[0].document_meta.source, GCSSource)
+        assert results[0].document_meta.source.bucket == "test-bucket"
+        assert results[0].document_meta.source.object_name == "folder/test1.txt"
+
+        # Clean up
+        GCSSource.set_storage(None)
+        del os.environ["LOCAL_STORAGE_DIR"]
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_gcs_uri_with_wildcard():
+    # Create mock storage client
+    storage_mock = mock.AsyncMock()
+    storage_mock.download = mock.AsyncMock(side_effect=[b"GCS test content 1", b"GCS test content 2"])
+    storage_mock.list_objects = mock.AsyncMock(
+        return_value={"items": [{"name": "folder/test1.txt"}, {"name": "folder/test2.txt"}]}
+    )
+    storage_mock.__aenter__ = mock.AsyncMock(return_value=storage_mock)
+    storage_mock.__aexit__ = mock.AsyncMock()
+
+    # Create mock storage factory
+    mock_storage = mock.Mock()
+    mock_storage.return_value = storage_mock
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set up local storage dir
+        os.environ["LOCAL_STORAGE_DIR"] = temp_dir
+
+        # Inject the mock storage
+        GCSSource.set_storage(mock_storage())
+
+        document_search = DocumentSearch.from_config(CONFIG)
+
+        # Test wildcard ingestion
+        await document_search.ingest("gcs://test-bucket/folder/*")
+
+        # Verify both files were ingested
+        results = await document_search.search("GCS test content")
+        assert len(results) == 2
+
+        # Verify first file
+        assert isinstance(results[0].document_meta.source, GCSSource)
+        assert results[0].document_meta.source.bucket == "test-bucket"
+        assert results[0].document_meta.source.object_name == "folder/test1.txt"
+
+        # Verify second file
+        assert isinstance(results[1].document_meta.source, GCSSource)
+        assert results[1].document_meta.source.bucket == "test-bucket"
+        assert results[1].document_meta.source.object_name == "folder/test2.txt"
+
+        # Clean up
+        GCSSource.set_storage(None)
+        del os.environ["LOCAL_STORAGE_DIR"]
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_gcs_uri_invalid_pattern():
+    # Create mock storage client
+    storage_mock = mock.AsyncMock()
+    storage_mock.__aenter__ = mock.AsyncMock(return_value=storage_mock)
+    storage_mock.__aexit__ = mock.AsyncMock()
+
+    # Create mock storage factory
+    mock_storage = mock.Mock()
+    mock_storage.return_value = storage_mock
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set up local storage dir
+        os.environ["LOCAL_STORAGE_DIR"] = temp_dir
+
+        # Inject the mock storage
+        GCSSource.set_storage(mock_storage())
+
+        document_search = DocumentSearch.from_config(CONFIG)
+
+        # Test invalid patterns
+        with pytest.raises(ValueError, match="GCSSource only supports '\\*' at the end of path"):
+            await document_search.ingest("gcs://test-bucket/folder/**.txt")
+
+        with pytest.raises(ValueError, match="GCSSource only supports '\\*' at the end of path"):
+            await document_search.ingest("gcs://test-bucket/folder/test?.txt")
+
+        with pytest.raises(ValueError, match="GCSSource only supports '\\*' at the end of path"):
+            await document_search.ingest("gcs://test-bucket/folder/test*file.txt")
+
+        # Test empty list response
+        storage_mock.list_objects = mock.AsyncMock(return_value={"items": []})
+        await document_search.ingest("gcs://test-bucket/folder/*")
+        results = await document_search.search("GCS test content")
+        assert len(results) == 0
+
+        # Clean up
+        GCSSource.set_storage(None)
+        del os.environ["LOCAL_STORAGE_DIR"]
+
+
+@pytest.mark.asyncio
+async def test_document_search_ingest_from_huggingface_uri_basic():
+    # Create mock data
+    mock_data = [
+        {
+            "content": "HuggingFace test content",
+            "source": "dataset_name/train/test.txt",  # Must be .txt for TextDocument
+        }
+    ]
+
+    # Create a simple dataset class that supports skip/take
+    class MockDataset:
+        def __init__(self, data):
+            self.data = data
+            self.current_index = 0
+
+        def skip(self, n):
+            self.current_index = n
+            return self
+
+        def take(self, n):
+            return self
+
+        def __iter__(self):
+            if self.current_index < len(self.data):
+                return iter(self.data[self.current_index : self.current_index + 1])
+            return iter([])
+
+    # Mock dataset loading and embeddings
+    dataset = MockDataset(mock_data)
+    embeddings_mock = AsyncMock()
+    embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
+
+    # Create providers dict with actual provider instance
+    providers = {DocumentType.TXT: DummyProvider()}
+
+    # Mock vector store to track operations
+    vector_store = InMemoryVectorStore()
+
+    # Create a temporary directory for storing test files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Set the environment variable for local storage
+        os.environ["LOCAL_STORAGE_DIR"] = temp_dir
+        storage_dir = Path(temp_dir)
+
+        # Create the source directory and file
+        source_dir = storage_dir / "dataset_name/train"
+        source_dir.mkdir(parents=True, exist_ok=True)
+        source_file = source_dir / "test.txt"
+        with open(source_file, mode="w", encoding="utf-8") as file:
+            file.write("HuggingFace test content")
+
+        with (
+            mock.patch("ragbits.document_search.documents.sources.load_dataset", return_value=dataset),
+            mock.patch("ragbits.document_search.documents.sources.get_local_storage_dir", return_value=storage_dir),
+        ):
+            document_search = DocumentSearch(
+                embedder=embeddings_mock,
+                vector_store=vector_store,
+                document_processor_router=DocumentProcessorRouter.from_config(providers),
+            )
+
+            await document_search.ingest("huggingface://dataset_name/train/0")
+
+            results = await document_search.search("HuggingFace test content")
+            assert len(results) == 1
+            assert isinstance(results[0].document_meta.source, HuggingFaceSource)
+            assert results[0].document_meta.source.path == "dataset_name"
+            assert results[0].document_meta.source.split == "train"
+            assert results[0].document_meta.source.row == 0
