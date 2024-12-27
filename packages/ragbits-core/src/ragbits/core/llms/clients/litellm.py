@@ -50,6 +50,7 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         api_key: str | None = None,
         api_version: str | None = None,
         use_structured_output: bool = False,
+        router: litellm.Router | None = None,
     ) -> None:
         """
         Constructs a new LiteLLMClient instance.
@@ -60,12 +61,14 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
             api_key: API key used to authenticate with the LLM API.
             api_version: API version of the LLM API.
             use_structured_output: Whether to request a structured output from the model. Default is False.
+            router: Router to be used to route requests to different models.
         """
         super().__init__(model_name)
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
         self.use_structured_output = use_structured_output
+        self.router = router
 
     async def call(
         self,
@@ -172,8 +175,10 @@ class LiteLLMClient(LLMClient[LiteLLMOptions]):
         response_format: type[BaseModel] | dict | None,
         stream: bool = False,
     ) -> ModelResponse | CustomStreamWrapper:
+        entrypoint = self.router or litellm
+
         try:
-            response = await litellm.acompletion(
+            response = await entrypoint.acompletion(
                 messages=conversation,
                 model=self.model_name,
                 base_url=self.base_url,
