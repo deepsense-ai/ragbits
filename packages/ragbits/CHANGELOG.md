@@ -7,10 +7,16 @@
 ### Changed
 
 - ragbits-cli updated to version v0.6.0
+  - Better error handling when dynamic importing fails in the CLI (#259).
+  - Add option to choose what columns to display in the output (#257).
+- ragbits-core updated to version v0.6.0
+  - Add option to pass LiteLLM router to LLM instances (#262).
+  - Add commands to browse vector stores (#244).
+  - Implement generic Options class (#248).
+  - Fix LiteLLM crash in python 3.13 (#245).
 - ragbits-document-search updated to version v0.6.0
 - ragbits-evaluate updated to version v0.6.0
 - ragbits-guardrails updated to version v0.6.0
-- ragbits-core updated to version v0.6.0
 
 ## 0.5.1 (2024-12-09)
 

@@ -4,6 +4,11 @@
 
 ## 0.6.0 (2024-12-27)
 
+### Added
+
+- Better error handling when dynamic importing fails in the CLI (#259).
+- Add option to choose what columns to display in the output (#257).
+
 ### Changed
 
 - ragbits-core updated to version v0.6.0
