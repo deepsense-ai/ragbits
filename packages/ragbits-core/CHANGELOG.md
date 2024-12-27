@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+## 0.6.0 (2024-12-27)
+
+### Added
+
+- Add option to pass LiteLLM router to LLM instances (#262).
+- Add commands to browse vector stores (#244).
+
 ### Changed
 
-- Feat: Implement generic Options class (#248).
+- Implement generic Options class (#248).
+- Fix LiteLLM crash in python 3.13 (#245).
 
 ## 0.5.1 (2024-12-09)
 
