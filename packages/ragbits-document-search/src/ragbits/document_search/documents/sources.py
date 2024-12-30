@@ -5,7 +5,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, ClassVar
+from types import TracebackType
+from typing import Any, ClassVar, Protocol, runtime_checkable
 
 from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
@@ -18,10 +19,54 @@ with suppress(ImportError):
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 
+from aiohttp import ClientSession
+
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
+
+
+@runtime_checkable
+class StorageProtocol(Protocol):
+    """Protocol for storage clients."""
+
+    async def download(
+        self,
+        bucket: str,
+        object_name: str,
+        *,
+        headers: dict[str, Any] | None = None,
+        timeout: int = 60,
+        session: ClientSession | None = None,
+    ) -> bytes:
+        """Download a file from storage."""
+        ...
+
+    async def list_objects(
+        self,
+        bucket: str,
+        *,
+        params: dict[str, str] | None = None,
+        headers: dict[str, Any] | None = None,
+        session: ClientSession | None = None,
+        timeout: int = 60,
+    ) -> dict[str, Any]:
+        """List objects in storage."""
+        ...
+
+    async def __aenter__(self) -> "StorageProtocol":
+        """Enter async context."""
+        ...
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        """Exit async context."""
+        ...
 
 
 class Source(BaseModel, ABC):
@@ -89,7 +134,7 @@ class Source(BaseModel, ABC):
         """
 
     @classmethod
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         super().__init_subclass__(**kwargs)
         Source._registry[cls.class_identifier()] = cls
         if cls.protocol is not None:
@@ -197,18 +242,18 @@ class LocalFileSource(Source):
             A sequence of LocalFileSource objects
         """
         # Handle absolute paths
-        path = Path(path)
-        if not path.is_absolute():
+        path_obj: Path = Path(path)
+        if not path_obj.is_absolute():
             # For relative paths, use current directory as base
-            path = Path.cwd() / path
+            path_obj = Path.cwd() / path_obj
 
-        if "*" in str(path):
+        if "*" in str(path_obj):
             # If path contains wildcards, use its parent as base
-            base_path = path.parent
-            pattern = path.name
+            base_path = path_obj.parent
+            pattern = path_obj.name
             return [cls(path=file_path) for file_path in base_path.glob(pattern)]
 
-        return [cls(path=path)]
+        return [cls(path=path_obj)]
 
 
 class GCSSource(Source):
@@ -217,10 +262,10 @@ class GCSSource(Source):
     bucket: str
     object_name: str
     protocol: ClassVar[str] = "gcs"
-    _storage: "StorageClient | None" = None  # Storage client for dependency injection
+    _storage: "StorageProtocol | None" = None  # Storage client for dependency injection
 
     @classmethod
-    def set_storage(cls, storage: "StorageClient") -> None:
+    def set_storage(cls, storage: "StorageProtocol | None") -> None:
         """Set the storage client for all instances.
 
         Args:
@@ -228,17 +273,17 @@ class GCSSource(Source):
         """
         cls._storage = storage
 
-    async def _get_storage(self) -> "StorageClient":
+    @classmethod
+    @requires_dependencies(["gcloud.aio.storage"], "gcs")
+    async def _get_storage(cls) -> "StorageProtocol":
         """Get the storage client.
 
         Returns:
             The storage client to use. If none was injected, creates a new one.
         """
-        if self._storage is not None:
-            return self._storage
-
-        from gcloud.aio.storage import Storage
-        return Storage()
+        if cls._storage is None:
+            cls._storage = StorageClient()
+        return cls._storage
 
     @property
     def id(self) -> str:
@@ -284,8 +329,7 @@ class GCSSource(Source):
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
-        """
-        List all sources in the given GCS bucket, matching the prefix.
+        """List all sources in the given GCS bucket, matching the prefix.
 
         Args:
             bucket: The GCS bucket.
@@ -297,15 +341,10 @@ class GCSSource(Source):
         Raises:
             ImportError: If the required 'gcloud-aio-storage' package is not installed
         """
-        # Create a temporary instance just to get the storage client
-        temp_source = cls(bucket=bucket, object_name=prefix)
-        storage = await temp_source._get_storage()
-        async with storage as client:
-            objects = await client.list_objects(bucket, params={"prefix": prefix})
-            sources = []
-            for obj in objects["items"]:
-                sources.append(cls(bucket=bucket, object_name=obj["name"]))
-            return sources
+        async with await cls._get_storage() as storage:
+            result = await storage.list_objects(bucket, params={"prefix": prefix})
+            items = result.get("items", [])
+            return [cls(bucket=bucket, object_name=item["name"]) for item in items]
 
     @classmethod
     async def from_uri(cls, path: str) -> Sequence["GCSSource"]:

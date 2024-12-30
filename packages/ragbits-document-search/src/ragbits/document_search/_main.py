@@ -218,7 +218,7 @@ class DocumentSearch(WithConstructionConfig):
 
             sources = await SourceResolver.resolve(documents)
         else:
-            sources = documents
+            sources = documents  # type: ignore[assignment]
 
         elements = await self.processing_strategy.process_documents(
             sources, self.document_processor_router, document_processor

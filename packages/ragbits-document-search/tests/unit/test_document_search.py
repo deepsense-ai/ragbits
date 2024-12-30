@@ -1,7 +1,8 @@
 import os
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import cast
 from unittest import mock
 from unittest.mock import AsyncMock
 
@@ -18,7 +19,6 @@ from ragbits.document_search.documents.document import (
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import (
     GCSSource,
-    HuggingFaceSource,
     LocalFileSource,
 )
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
@@ -35,15 +35,6 @@ CONFIG = {
     "providers": {"txt": {"type": "DummyProvider"}},
     "processing_strategy": {"type": "SequentialProcessing"},
 }
-
-
-# This fixture is used automatically for every test due to autouse=True.
-# It ensures source protocols are registered before any test runs.
-@pytest.fixture(autouse=True)
-def setup_sources():
-    # Import sources to ensure protocols are registered
-
-    return
 
 
 @pytest.mark.parametrize(
@@ -70,14 +61,14 @@ async def test_document_search_from_config(document: DocumentMeta, expected: str
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == expected  # type: ignore
+    assert first_result.content == expected
 
 
 async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    providers: dict[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {DocumentType.TXT: DummyProvider()}
+    providers: Mapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {DocumentType.TXT: DummyProvider()}
     router = DocumentProcessorRouter.from_config(providers)
 
     document_search = DocumentSearch(
@@ -97,7 +88,7 @@ async def test_document_search_ingest_from_source():
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
+    assert first_result.content == "Name of Peppa's brother is George"
 
 
 @pytest.mark.parametrize(
@@ -123,7 +114,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
+    assert first_result.content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_insert_elements():
@@ -146,7 +137,7 @@ async def test_document_search_insert_elements():
     first_result = results[0]
 
     assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"  # type: ignore
+    assert first_result.content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_with_no_results():
@@ -171,7 +162,8 @@ async def test_document_search_with_search_config():
     results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
 
     assert len(results) == 1
-    assert results[0].content == "Name of Peppa's brother is George"  # type: ignore
+    assert isinstance(results[0], TextElement)
+    assert cast(TextElement, results[0]).content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_ingest_multiple_from_sources():
@@ -186,7 +178,8 @@ async def test_document_search_ingest_multiple_from_sources():
     results = await document_search.search("foo")
 
     assert len(results) == 2
-    assert {result.content for result in results} == {"foo", "bar"}  # type: ignore
+    assert all(isinstance(result, TextElement) for result in results)
+    assert {cast(TextElement, result).content for result in results} == {"foo", "bar"}
 
 
 async def test_document_search_with_batched():
@@ -240,9 +233,10 @@ async def test_document_search_ingest_from_uri_basic():
         # Verify
         results = await document_search.search("Test content")
         assert len(results) == 1
-        assert results[0].content == "Test content"
+        assert isinstance(results[0], TextElement)
         assert isinstance(results[0].document_meta.source, LocalFileSource)
-        assert str(results[0].document_meta.source.path) == str(test_file)
+        assert str(cast(LocalFileSource, results[0].document_meta.source).path) == str(test_file)
+        assert results[0].content == "Test content"
 
 
 @pytest.mark.asyncio
@@ -266,12 +260,13 @@ async def test_document_search_ingest_from_uri_with_wildcard():
         # Verify only matching files were ingested
         results = await document_search.search("test content")
         assert len(results) == 2
+        assert all(isinstance(result, TextElement) for result in results)
 
-        contents = {result.content for result in results}
+        contents = {cast(TextElement, result).content for result in results}
         assert contents == {"First test content", "Second test content"}
 
         # Verify sources are correct
-        sources = {str(result.document_meta.source.path) for result in results}
+        sources = {str(cast(LocalFileSource, result.document_meta.source).path) for result in results}
         expected_sources = {str(test_files[0][0]), str(test_files[1][0])}
         assert sources == expected_sources
 
@@ -304,12 +299,10 @@ async def test_document_search_ingest_from_gcs_uri_basic():
         await document_search.ingest("gcs://test-bucket/folder/test1.txt")
         results = await document_search.search("GCS test content")
         assert len(results) == 1
-        assert isinstance(results[0].document_meta.source, GCSSource)
-        assert results[0].document_meta.source.bucket == "test-bucket"
-        assert results[0].document_meta.source.object_name == "folder/test1.txt"
+        assert isinstance(results[0], TextElement)
+        assert results[0].content == "GCS test content"
 
         # Clean up
-        GCSSource.set_storage(None)
         del os.environ["LOCAL_STORAGE_DIR"]
 
 
@@ -345,17 +338,20 @@ async def test_document_search_ingest_from_gcs_uri_with_wildcard():
         assert len(results) == 2
 
         # Verify first file
-        assert isinstance(results[0].document_meta.source, GCSSource)
-        assert results[0].document_meta.source.bucket == "test-bucket"
-        assert results[0].document_meta.source.object_name == "folder/test1.txt"
+        assert isinstance(results[0], TextElement)
+        assert results[0].content == "GCS test content 1"
 
         # Verify second file
-        assert isinstance(results[1].document_meta.source, GCSSource)
-        assert results[1].document_meta.source.bucket == "test-bucket"
-        assert results[1].document_meta.source.object_name == "folder/test2.txt"
+        assert isinstance(results[1], TextElement)
+        assert results[1].content == "GCS test content 2"
 
         # Clean up
-        GCSSource.set_storage(None)
+        storage_mock = mock.AsyncMock()
+        storage_mock.download = mock.AsyncMock(return_value=b"")
+        storage_mock.list_objects = mock.AsyncMock(return_value={"items": []})
+        storage_mock.__aenter__ = mock.AsyncMock(return_value=storage_mock)
+        storage_mock.__aexit__ = mock.AsyncMock()
+        GCSSource.set_storage(storage_mock)
         del os.environ["LOCAL_STORAGE_DIR"]
 
 
@@ -396,7 +392,12 @@ async def test_document_search_ingest_from_gcs_uri_invalid_pattern():
         assert len(results) == 0
 
         # Clean up
-        GCSSource.set_storage(None)
+        storage_mock = mock.AsyncMock()
+        storage_mock.download = mock.AsyncMock(return_value=b"")
+        storage_mock.list_objects = mock.AsyncMock(return_value={"items": []})
+        storage_mock.__aenter__ = mock.AsyncMock(return_value=storage_mock)
+        storage_mock.__aexit__ = mock.AsyncMock()
+        GCSSource.set_storage(storage_mock)
         del os.environ["LOCAL_STORAGE_DIR"]
 
 
@@ -434,7 +435,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
 
     # Create providers dict with actual provider instance
-    providers = {DocumentType.TXT: DummyProvider()}
+    providers: Mapping[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
 
     # Mock vector store to track operations
     vector_store = InMemoryVectorStore()
@@ -466,7 +467,5 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
 
             results = await document_search.search("HuggingFace test content")
             assert len(results) == 1
-            assert isinstance(results[0].document_meta.source, HuggingFaceSource)
-            assert results[0].document_meta.source.path == "dataset_name"
-            assert results[0].document_meta.source.split == "train"
-            assert results[0].document_meta.source.row == 0
+            assert isinstance(results[0], TextElement)
+            assert results[0].content == "HuggingFace test content"

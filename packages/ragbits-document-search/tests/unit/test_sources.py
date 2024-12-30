@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
-from typing import Any, Protocol, runtime_checkable
+from types import TracebackType
+from typing import Any, Protocol, TypeVar, runtime_checkable
 from unittest.mock import MagicMock, patch
+
+from aiohttp import ClientSession
 
 from ragbits.document_search.documents.sources import (
     LOCAL_STORAGE_DIR_ENV,
@@ -12,50 +15,103 @@ from ragbits.document_search.documents.sources import (
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 
+try:
+    from gcloud.aio.storage import Storage as StorageClient
+except ImportError:
+    StorageClient = TypeVar("StorageClient")  # type: ignore
+
+
 @runtime_checkable
 class MockStorageProtocol(Protocol):
     """Protocol for mocking GCS storage client in tests."""
 
-    async def download(self, bucket: str, object_name: str, timeout: int | None = None) -> bytes:
+    async def download(
+        self,
+        bucket: str,
+        object_name: str,
+        *,
+        headers: dict[str, Any] | None = None,
+        timeout: int = 60,
+        session: ClientSession | None = None,
+    ) -> bytes:
         """Download a file from storage."""
         ...
 
-    async def list_objects(self, bucket: str, params: dict[str, str] | None = None) -> dict[str, list[dict[str, str]]]:
-        """List objects in a bucket."""
+    async def list_objects(
+        self,
+        bucket: str,
+        *,
+        params: dict[str, str] | None = None,
+        headers: dict[str, Any] | None = None,
+        session: ClientSession | None = None,
+        timeout: int = 60,
+    ) -> dict[str, Any]:
+        """List objects in storage."""
         ...
 
     async def __aenter__(self) -> "MockStorageProtocol":
         """Enter async context."""
         ...
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:  # noqa: ANN401
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Exit async context."""
         ...
 
 
 class MockStorage(MockStorageProtocol):
-    """Mock storage client for testing GCSSource."""
+    """Mock GCS storage client."""
 
-    def __init__(self, download_response: bytes | None = None):
-        self.download_response = download_response or b"This is the content of the file."
-        self.downloaded_files: list[tuple[str, str]] = []  # [(bucket, object_name), ...]
-        self.listed_buckets: list[tuple[str, dict[str, str] | None]] = []  # [(bucket, params), ...]
+    def __init__(self) -> None:
+        """Initialize mock storage."""
+        self.objects: dict[str, bytes] = {}
+        self.downloaded_files: list[tuple[str, str]] = []
 
-    async def download(self, bucket: str, object_name: str, timeout: int | None = None) -> bytes:
-        """Record download call and return mock response."""
+    async def download(
+        self,
+        bucket: str,
+        object_name: str,
+        *,
+        headers: dict[str, Any] | None = None,
+        timeout: int = 60,
+        session: ClientSession | None = None,
+    ) -> bytes:
+        """Mock download method."""
+        key = f"{bucket}/{object_name}"
         self.downloaded_files.append((bucket, object_name))
-        return self.download_response
+        return self.objects.get(key, b"This is the content of the file.")
 
-    async def list_objects(self, bucket: str, params: dict[str, str] | None = None) -> dict[str, list[dict[str, str]]]:
-        """Record list call and return mock response."""
-        self.listed_buckets.append((bucket, params))
-        return {"items": [{"name": "doc.md"}]}
+    async def list_objects(
+        self,
+        bucket: str,
+        *,
+        params: dict[str, str] | None = None,
+        headers: dict[str, Any] | None = None,
+        session: ClientSession | None = None,
+        timeout: int = 60,
+    ) -> dict[str, Any]:
+        """Mock list_objects method."""
+        prefix = params.get("prefix", "") if params else ""
+        items = []
+        for key in self.objects:
+            if key.startswith(f"{bucket}/{prefix}"):
+                items.append({"name": key.split("/", 1)[1]})
+        return {"items": items}
 
-    async def __aenter__(self) -> "MockStorageProtocol":
+    async def __aenter__(self) -> "MockStorage":
         """Enter async context."""
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:  # noqa: ANN401
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Exit async context."""
         pass
 
