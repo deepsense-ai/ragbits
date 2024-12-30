@@ -4,6 +4,8 @@
 #     "gradio",
 #     "ragbits-document-search",
 #     "ragbits-core[chroma]",
+#     "pdfplumber",
+#     "unstructured[pdf]"
 # ]
 # ///
 from collections.abc import AsyncIterator
