@@ -42,13 +42,8 @@ CONFIG = {
 @pytest.fixture(autouse=True)
 def setup_sources():
     # Import sources to ensure protocols are registered
-    from ragbits.document_search.documents.sources import (
-        GCSSource,
-        HuggingFaceSource,
-        LocalFileSource,
-    )
 
-    yield
+    return
 
 
 @pytest.mark.parametrize(
@@ -417,15 +412,15 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
 
     # Create a simple dataset class that supports skip/take
     class MockDataset:
-        def __init__(self, data):
+        def __init__(self, data: list):
             self.data = data
             self.current_index = 0
 
-        def skip(self, n):
+        def skip(self, n: int) -> "MockDataset":
             self.current_index = n
             return self
 
-        def take(self, n):
+        def take(self, n: int) -> "MockDataset":
             return self
 
         def __iter__(self):

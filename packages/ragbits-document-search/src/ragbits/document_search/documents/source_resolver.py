@@ -47,8 +47,8 @@ class SourceResolver:
         """
         try:
             protocol, path = uri.split("://", 1)
-        except ValueError:
-            raise ValueError(f"Invalid URI format: {uri}. Expected format: protocol://path")
+        except ValueError as err:
+            raise ValueError(f"Invalid URI format: {uri}. Expected format: protocol://path") from err
 
         if protocol not in cls._protocol_handlers:
             supported = ", ".join(sorted(cls._protocol_handlers.keys()))
