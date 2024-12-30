@@ -12,7 +12,7 @@ from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
 
 with suppress(ImportError):
-    from gcloud.aio.storage import Storage
+    from gcloud.aio.storage import Storage as StorageClient
 
 with suppress(ImportError):
     from datasets import load_dataset
@@ -89,7 +89,7 @@ class Source(BaseModel, ABC):
         """
 
     @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
         Source._registry[cls.class_identifier()] = cls
         if cls.protocol is not None:
@@ -191,7 +191,7 @@ class LocalFileSource(Source):
         - '?' matches exactly one character
 
         Args:
-            path: The path part of the URI (after file://)
+            path: The path part of the URI (after file://). Pattern support depends on source type.
 
         Returns:
             A sequence of LocalFileSource objects
@@ -212,25 +212,23 @@ class LocalFileSource(Source):
 
 
 class GCSSource(Source):
-    """
-    An object representing a GCS file source.
-    """
+    """An object representing a GCS file source."""
 
     bucket: str
     object_name: str
     protocol: ClassVar[str] = "gcs"
-    _storage: Any | None = None  # Storage client for dependency injection
+    _storage: "StorageClient | None" = None  # Storage client for dependency injection
 
     @classmethod
-    def set_storage(cls, storage: Any) -> None:
+    def set_storage(cls, storage: "StorageClient") -> None:
         """Set the storage client for all instances.
 
         Args:
-            storage: The storage client to use
+            storage: The storage client to use (in tests, this can be a mock)
         """
         cls._storage = storage
 
-    async def _get_storage(self) -> Any:
+    async def _get_storage(self) -> "StorageClient":
         """Get the storage client.
 
         Returns:
@@ -240,7 +238,6 @@ class GCSSource(Source):
             return self._storage
 
         from gcloud.aio.storage import Storage
-
         return Storage()
 
     @property
@@ -428,8 +425,8 @@ class HuggingFaceSource(Source):
         try:
             dataset_path, split, row = path.split("/")
             return [cls(path=dataset_path, split=split, row=int(row))]
-        except ValueError:
-            raise ValueError("Invalid HuggingFace path format. " "Expected: dataset_path/split/row")
+        except ValueError as err:
+            raise ValueError("Invalid HuggingFace path format. " "Expected: dataset_path/split/row") from err
 
     @classmethod
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
