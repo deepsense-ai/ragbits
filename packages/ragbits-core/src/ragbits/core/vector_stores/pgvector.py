@@ -3,7 +3,6 @@ from typing import get_type_hints
 
 import asyncpg
 
-
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
@@ -160,8 +159,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         distance_operator = PgVectorDistance.DISTANCE_OPS[self.distance_method][1]
 
-
-        query = f"SELECT * FROM {self.table_name}" #noqa S608
+        query = f"SELECT * FROM {self.table_name}"  # noqa S608
         if query_options:
             if query_options.max_distance and self.distance_method == "ip":
                 query += f""" WHERE vector {distance_operator} '{vector}'
@@ -189,7 +187,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             sql query.
         """
-        query = f"SELECT * FROM {self.table_name}" #noqa S608
+        query = f"SELECT * FROM {self.table_name}"  # noqa S608
         if where:
             filters = []
             for key, value in where.items():
@@ -246,9 +244,13 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         if self.client:
             async with self.client.acquire() as conn:
                 for entry in entries:
-                    await conn.execute(insert_query.format(self.table_name),
-                                       entry.id, entry.key, str(entry.vector), json.dumps(entry.metadata))
-
+                    await conn.execute(
+                        insert_query.format(self.table_name),
+                        entry.id,
+                        entry.key,
+                        str(entry.vector),
+                        json.dumps(entry.metadata),
+                    )
 
         else:
             print("No connection to the database, cannot store entries")
@@ -288,7 +290,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print("No connection to the database, cannot retrieve entries")
             return []
 
-
     @traceable
     async def remove(self, ids: list[str]) -> None:
         """
@@ -310,7 +311,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 await conn.execute(remove_query.format(self.table_name), ids)
         else:
             print("No connection to the database, cannot remove entries")
-
 
     @traceable
     async def list(
@@ -349,4 +349,3 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         else:
             print("No connection to the database, cannot list entries")
             return []
-
