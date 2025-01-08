@@ -36,20 +36,21 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         self,
         client: asyncpg.Pool,
         table_name: str,
-        vector_size: int  = 512,
-        distance_method: str  = "cosine",
-        hnsw_params=None,
+        vector_size: int = 512,
+        distance_method: str = "cosine",
+        hnsw_params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:
         """
-        Constructs a new ChromaVectorStore instance.
+        Constructs a new PgVectorStore instance.
 
         Args:
+            client: The pgVector database connection pool.
             table_name: The name of the table.
-            db: The database connection string.
             vector_size: The size of the vectors.
             distance_method: The distance method to use.
+            hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
             metadata_store: The metadata store to use. If None, the metadata will be stored in pgVector db.
         """
@@ -100,7 +101,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         query = f"SELECT * FROM {self.table_name}"  # noqa S608
         if not query_options:
-            query_options= self.default_options
+            query_options = self.default_options
         if query_options.max_distance and self.distance_method == "ip":
             query += f""" WHERE vector {distance_operator} '{vector}'
             BETWEEN {(-1) * query_options.max_distance} AND {query_options.max_distance}"""
@@ -143,7 +144,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         query += ";"
         return query
 
-
     async def create_table(self) -> None:
         """
         Create a pgVector table with an HNSW index for given similarity.
@@ -161,8 +161,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 USING hnsw (vector {})
                 WITH (m = {}, ef_construction = {});
                 """
-
-
 
         async with self.client.acquire() as conn:
             await conn.execute(create_vector_extension)
@@ -185,8 +183,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             else:
                 print("Index already exists!")
 
-
-
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -203,7 +199,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         VALUES ($1, $2, $3, $4)
         """
 
-
         try:
             async with self.client.acquire() as conn:
                 for entry in entries:
@@ -217,7 +212,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
-
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -243,8 +237,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
 
-
-
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
@@ -264,7 +256,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         query_options = (self.default_options | options) if options else self.default_options
         retrieve_query = self._create_retrieve_query(vector, query_options)
 
-
         try:
             async with self.client.acquire() as conn:
                 results = await conn.fetch(retrieve_query)
@@ -283,8 +274,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
             return []
-
-
 
     @traceable
     async def list(
@@ -324,4 +313,3 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
             return []
-
