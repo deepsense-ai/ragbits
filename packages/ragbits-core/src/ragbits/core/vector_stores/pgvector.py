@@ -25,7 +25,6 @@ class PgVectorDistance:
     }
 
 
-
 class PgVectorStore(VectorStore[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
@@ -35,8 +34,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
     def __init__(
         self,
+        client: asyncpg.Pool,
         table_name: str,
-        db: str,
         vector_size: int  = 512,
         distance_method: str  = "cosine",
         hnsw_params=None,
@@ -57,9 +56,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         super().__init__(default_options=default_options, metadata_store=metadata_store)
         if hnsw_params is None:
             hnsw_params = {"m": 4, "ef_construction": 10}
-        self.connection = None
+        self.client = client
         self.table_name = table_name
-        self.db = db
         self.vector_size = vector_size
         self.distance_method = distance_method
         self.hnsw_params = hnsw_params
@@ -164,10 +162,9 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 WITH (m = {}, ef_construction = {});
                 """
 
-        if not self.connection:
-            self.connection = await asyncpg.create_pool(self.db)
 
-        async with self.connection.acquire() as conn:
+
+        async with self.client.acquire() as conn:
             await conn.execute(create_vector_extension)
             exists = await conn.fetchval(check_table_existence, self.table_name)
 
@@ -201,15 +198,14 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         if not entries:
             return
 
-
         insert_query = """
         INSERT INTO {} (id, key, vector, metadata)
         VALUES ($1, $2, $3, $4)
         """
 
-        self.connection = await asyncpg.create_pool(self.db)
+
         try:
-            async with self.connection.acquire() as conn:
+            async with self.client.acquire() as conn:
                 for entry in entries:
                     await conn.execute(
                         insert_query.format(self.table_name),
@@ -221,9 +217,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
-        finally:
-            await self.connection.close()
-            self.connection = None
+
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -241,16 +235,14 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         DELETE FROM {}
         WHERE id = ANY($1)
         """
-        self.connection = await asyncpg.create_pool(self.db)
+
         try:
-            async with self.connection.acquire() as conn:
+            async with self.client.acquire() as conn:
                 await conn.execute(remove_query.format(self.table_name), ids)
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
-        finally:
-            await self.connection.close()
-            self.connection = None
+
 
 
     @traceable
@@ -271,9 +263,10 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         query_options = (self.default_options | options) if options else self.default_options
         retrieve_query = self._create_retrieve_query(vector, query_options)
-        self.connection = await asyncpg.create_pool(self.db)
+
+
         try:
-            async with self.connection.acquire() as conn:
+            async with self.client.acquire() as conn:
                 results = await conn.fetch(retrieve_query)
 
             return [
@@ -290,9 +283,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
             return []
-        finally:
-            await self.connection.close()
-            self.connection = None
+
 
 
     @traceable
@@ -316,9 +307,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         list_query = self._create_list_query(where, limit, offset)
 
-        self.connection = await asyncpg.create_pool(self.db)
         try:
-            async with self.connection.acquire() as conn:
+            async with self.client.acquire() as conn:
                 results = await conn.fetch(list_query)
 
             return [
@@ -334,6 +324,4 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self.table_name} does not exist. Creating the table.")
             await self.create_table()
             return []
-        finally:
-            await self.connection.close()
-            self.connection = None
+
