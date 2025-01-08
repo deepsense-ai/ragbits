@@ -208,19 +208,22 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
 
         self.connection = await asyncpg.create_pool(self.db)
-        await self.create_table()
-        async with self.connection.acquire() as conn:
-            for entry in entries:
-                await conn.execute(
-                    insert_query.format(self.table_name),
-                    entry.id,
-                    entry.key,
-                    str(entry.vector),
-                    json.dumps(entry.metadata),
-                )
-                print("Added entry: ", entry.id)
-        await self.connection.close()
-        self.connection = None
+        try:
+            async with self.connection.acquire() as conn:
+                for entry in entries:
+                    await conn.execute(
+                        insert_query.format(self.table_name),
+                        entry.id,
+                        entry.key,
+                        str(entry.vector),
+                        json.dumps(entry.metadata),
+                    )
+        except asyncpg.exceptions.UndefinedTableError:
+            print(f"Table {self.table_name} does not exist. Creating the table.")
+            await self.create_table()
+        finally:
+            await self.connection.close()
+            self.connection = None
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -239,10 +242,16 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         WHERE id = ANY($1)
         """
         self.connection = await asyncpg.create_pool(self.db)
-        async with self.connection.acquire() as conn:
-            await conn.execute(remove_query.format(self.table_name), ids)
-        await self.connection.close()
-        self.connection = None
+        try:
+            async with self.connection.acquire() as conn:
+                await conn.execute(remove_query.format(self.table_name), ids)
+        except asyncpg.exceptions.UndefinedTableError:
+            print(f"Table {self.table_name} does not exist. Creating the table.")
+            await self.create_table()
+        finally:
+            await self.connection.close()
+            self.connection = None
+
 
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
@@ -263,21 +272,28 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         query_options = (self.default_options | options) if options else self.default_options
         retrieve_query = self._create_retrieve_query(vector, query_options)
         self.connection = await asyncpg.create_pool(self.db)
-        async with self.connection.acquire() as conn:
-            results = await conn.fetch(retrieve_query)
+        try:
+            async with self.connection.acquire() as conn:
+                results = await conn.fetch(retrieve_query)
 
-        return [
-            VectorStoreEntry(
-                id=record["id"],
-                key=record["key"],
-                vector=json.loads(record["vector"]),
-                metadata=json.loads(record["metadata"]),
-            )
-            for record in results
-        ]
+            return [
+                VectorStoreEntry(
+                    id=record["id"],
+                    key=record["key"],
+                    vector=json.loads(record["vector"]),
+                    metadata=json.loads(record["metadata"]),
+                )
+                for record in results
+            ]
 
-        await self.connection.close()
-        self.connection = None
+        except asyncpg.exceptions.UndefinedTableError:
+            print(f"Table {self.table_name} does not exist. Creating the table.")
+            await self.create_table()
+            return []
+        finally:
+            await self.connection.close()
+            self.connection = None
+
 
     @traceable
     async def list(
@@ -301,17 +317,23 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         list_query = self._create_list_query(where, limit, offset)
 
         self.connection = await asyncpg.create_pool(self.db)
-        async with self.connection.acquire() as conn:
-            results = await conn.fetch(list_query)
+        try:
+            async with self.connection.acquire() as conn:
+                results = await conn.fetch(list_query)
 
-        return [
-            VectorStoreEntry(
-                id=record["id"],
-                key=record["key"],
-                vector=json.loads(record["vector"]),
-                metadata=json.loads(record["metadata"]),
-            )
-            for record in results
-        ]
-        await self.connection.close()
-        self.connection = None
+            return [
+                VectorStoreEntry(
+                    id=record["id"],
+                    key=record["key"],
+                    vector=json.loads(record["vector"]),
+                    metadata=json.loads(record["metadata"]),
+                )
+                for record in results
+            ]
+        except asyncpg.exceptions.UndefinedTableError:
+            print(f"Table {self.table_name} does not exist. Creating the table.")
+            await self.create_table()
+            return []
+        finally:
+            await self.connection.close()
+            self.connection = None
