@@ -25,16 +25,6 @@ class PgVectorDistance:
     }
 
 
-class PgVectorConfig:
-    """
-    Base configuration for pgVector.
-    """
-
-    db: str = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
-    vector_size: int = 512
-    distance_method: str = "cosine"
-    hnsw_params: dict = {"m": 4, "ef_construction": 10}
-
 
 class PgVectorStore(VectorStore[VectorStoreOptions]):
     """
@@ -46,9 +36,10 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
     def __init__(
         self,
         table_name: str,
-        db: str | None = None,
-        vector_size: int | None = None,
-        distance_method: str | None = None,
+        db: str,
+        vector_size: int  = 512,
+        distance_method: str  = "cosine",
+        hnsw_params=None,
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
     ) -> None:
@@ -56,7 +47,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Constructs a new ChromaVectorStore instance.
 
         Args:
-            table_name: The name of the index.
+            table_name: The name of the table.
             db: The database connection string.
             vector_size: The size of the vectors.
             distance_method: The distance method to use.
@@ -64,64 +55,14 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             metadata_store: The metadata store to use. If None, the metadata will be stored in pgVector db.
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
-        conf = PgVectorConfig()
-        self.client = None
+        if hnsw_params is None:
+            hnsw_params = {"m": 4, "ef_construction": 10}
+        self.connection = None
         self.table_name = table_name
-        self.distance_method = distance_method if distance_method else conf.distance_method
-        self.vector_size = vector_size if vector_size else conf.vector_size
-        self.hnsw_params = conf.hnsw_params
-        self.db = db if db else conf.db
-
-    async def connect(self) -> None:
-        """Initialize the connection pool."""
-        self.client = await asyncpg.create_pool(self.db)
-
-    async def close(self) -> None:
-        """Close the connection pool."""
-        if self.client:
-            await self.client.close()
-            self.client = None
-
-    async def create_table(self) -> None:
-        """
-        Create a pgVector table with an HNSW index for given similarity.
-        """
-        check_table_existence = """
-                SELECT EXISTS (
-                SELECT FROM information_schema.tables
-                WHERE table_name = $1
-            ); """
-
-        create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
-
-        create_index_query = """
-                CREATE INDEX {} ON {}
-                USING hnsw (vector {})
-                WITH (m = {}, ef_construction = {});
-                """
-        if self.client:
-            async with self.client.acquire() as conn:
-                await conn.execute(create_vector_extension)
-                exists = await conn.fetchval(check_table_existence, self.table_name)
-
-                if not exists:
-                    create_command = self._create_table_command()
-                    await conn.execute(create_command)
-                    hnsw_name = self.table_name + "_hnsw_idx"
-                    query = create_index_query.format(
-                        hnsw_name,
-                        self.table_name,
-                        PgVectorDistance.DISTANCE_OPS[self.distance_method][0],
-                        self.hnsw_params["m"],
-                        self.hnsw_params["ef_construction"],
-                    )
-                    await conn.execute(query)
-                    print("Index created!")
-
-                else:
-                    print("Index already exists!")
-        else:
-            print("No connection to the database, cannot create table")
+        self.db = db
+        self.vector_size = vector_size
+        self.distance_method = distance_method
+        self.hnsw_params = hnsw_params
 
     def _create_table_command(self) -> str:
         """
@@ -144,7 +85,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 sql_type = type_mapping.get(column_type)
                 columns.append(f"{column} {sql_type}")
 
-        return f"CREATE TABLE {self.table_name} (\n    " + ",\n    ".join(columns) + "\n);"
+        return f"CREATE TABLE {self.table_name} (" + ", ".join(columns) + ");"
 
     def _create_retrieve_query(self, vector: list[float], query_options: VectorStoreOptions | None = None) -> str:
         """
@@ -160,15 +101,16 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         distance_operator = PgVectorDistance.DISTANCE_OPS[self.distance_method][1]
 
         query = f"SELECT * FROM {self.table_name}"  # noqa S608
-        if query_options:
-            if query_options.max_distance and self.distance_method == "ip":
-                query += f""" WHERE vector {distance_operator} '{vector}'
-                BETWEEN {(-1) * query_options.max_distance} AND {query_options.max_distance}"""
-            elif query_options.max_distance:
-                query += f" WHERE vector {distance_operator} '{vector}' < {query_options.max_distance}"
-            query += f" ORDER BY vector {distance_operator} '{vector}'"
-            if query_options.k:
-                query += f" LIMIT {query_options.k}"
+        if not query_options:
+            query_options= self.default_options
+        if query_options.max_distance and self.distance_method == "ip":
+            query += f""" WHERE vector {distance_operator} '{vector}'
+            BETWEEN {(-1) * query_options.max_distance} AND {query_options.max_distance}"""
+        elif query_options.max_distance:
+            query += f" WHERE vector {distance_operator} '{vector}' < {query_options.max_distance}"
+        query += f" ORDER BY vector {distance_operator} '{vector}'"
+        if query_options.k:
+            query += f" LIMIT {query_options.k}"
 
         query += ";"
 
@@ -203,25 +145,50 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         query += ";"
         return query
 
-    # @classmethod
-    # def from_config(cls, config: dict) -> Self:
-    #     """
-    #     Initializes the class with the provided configuration.
-    #
-    #     Args:
-    #         config: A dictionary containing configuration details for the class.
-    #
-    #     Returns:
-    #         An instance of the class initialized with the provided configuration.
-    #
-    #     Raises:
-    #         ValidationError: The client or metadata_store configuration doesn't follow the expected format.
-    #         InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
-    #     """
-    #     client_options = ObjectContructionConfig.model_validate(config["client"])
-    #     client_cls = import_by_path(client_options.type, pgvector)
-    #     config["client"] = client_cls(**client_options.config)
-    #     return super().from_config(config)
+
+    async def create_table(self) -> None:
+        """
+        Create a pgVector table with an HNSW index for given similarity.
+        """
+        check_table_existence = """
+                SELECT EXISTS (
+                SELECT FROM information_schema.tables
+                WHERE table_name = $1
+            ); """
+
+        create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
+
+        create_index_query = """
+                CREATE INDEX {} ON {}
+                USING hnsw (vector {})
+                WITH (m = {}, ef_construction = {});
+                """
+
+        if not self.connection:
+            self.connection = await asyncpg.create_pool(self.db)
+
+        async with self.connection.acquire() as conn:
+            await conn.execute(create_vector_extension)
+            exists = await conn.fetchval(check_table_existence, self.table_name)
+
+            if not exists:
+                create_command = self._create_table_command()
+                await conn.execute(create_command)
+                hnsw_name = self.table_name + "_hnsw_idx"
+                query = create_index_query.format(
+                    hnsw_name,
+                    self.table_name,
+                    PgVectorDistance.DISTANCE_OPS[self.distance_method][0],
+                    self.hnsw_params["m"],
+                    self.hnsw_params["ef_construction"],
+                )
+                await conn.execute(query)
+                print("Index created!")
+
+            else:
+                print("Index already exists!")
+
+
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -234,26 +201,48 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         if not entries:
             return
 
-        await self.create_table()
 
         insert_query = """
         INSERT INTO {} (id, key, vector, metadata)
         VALUES ($1, $2, $3, $4)
         """
 
-        if self.client:
-            async with self.client.acquire() as conn:
-                for entry in entries:
-                    await conn.execute(
-                        insert_query.format(self.table_name),
-                        entry.id,
-                        entry.key,
-                        str(entry.vector),
-                        json.dumps(entry.metadata),
-                    )
+        self.connection = await asyncpg.create_pool(self.db)
+        await self.create_table()
+        async with self.connection.acquire() as conn:
+            for entry in entries:
+                await conn.execute(
+                    insert_query.format(self.table_name),
+                    entry.id,
+                    entry.key,
+                    str(entry.vector),
+                    json.dumps(entry.metadata),
+                )
+                print("Added entry: ", entry.id)
+        await self.connection.close()
+        self.connection = None
 
-        else:
-            print("No connection to the database, cannot store entries")
+    @traceable
+    async def remove(self, ids: list[str]) -> None:
+        """
+        Remove entries from the vector store.
+
+        Args:
+            ids: The list of entries' IDs to remove.
+        """
+        if not ids:
+            print("No IDs provided, nothing to remove")
+            return
+
+        remove_query = """
+        DELETE FROM {}
+        WHERE id = ANY($1)
+        """
+        self.connection = await asyncpg.create_pool(self.db)
+        async with self.connection.acquire() as conn:
+            await conn.execute(remove_query.format(self.table_name), ids)
+        await self.connection.close()
+        self.connection = None
 
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
@@ -273,44 +262,22 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         query_options = (self.default_options | options) if options else self.default_options
         retrieve_query = self._create_retrieve_query(vector, query_options)
-        if self.client:
-            async with self.client.acquire() as conn:
-                results = await conn.fetch(retrieve_query)
+        self.connection = await asyncpg.create_pool(self.db)
+        async with self.connection.acquire() as conn:
+            results = await conn.fetch(retrieve_query)
 
-            return [
-                VectorStoreEntry(
-                    id=record["id"],
-                    key=record["key"],
-                    vector=json.loads(record["vector"]),
-                    metadata=json.loads(record["metadata"]),
-                )
-                for record in results
-            ]
-        else:
-            print("No connection to the database, cannot retrieve entries")
-            return []
+        return [
+            VectorStoreEntry(
+                id=record["id"],
+                key=record["key"],
+                vector=json.loads(record["vector"]),
+                metadata=json.loads(record["metadata"]),
+            )
+            for record in results
+        ]
 
-    @traceable
-    async def remove(self, ids: list[str]) -> None:
-        """
-        Remove entries from the vector store.
-
-        Args:
-            ids: The list of entries' IDs to remove.
-        """
-        if not ids:
-            print("No IDs provided, nothing to remove")
-            return
-
-        remove_query = """
-        DELETE FROM {}
-        WHERE id = ANY($1)
-        """
-        if self.client:
-            async with self.client.acquire() as conn:
-                await conn.execute(remove_query.format(self.table_name), ids)
-        else:
-            print("No connection to the database, cannot remove entries")
+        await self.connection.close()
+        self.connection = None
 
     @traceable
     async def list(
@@ -333,19 +300,18 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         list_query = self._create_list_query(where, limit, offset)
 
-        if self.client:
-            async with self.client.acquire() as conn:
-                results = await conn.fetch(list_query)
+        self.connection = await asyncpg.create_pool(self.db)
+        async with self.connection.acquire() as conn:
+            results = await conn.fetch(list_query)
 
-            return [
-                VectorStoreEntry(
-                    id=record["id"],
-                    key=record["key"],
-                    vector=json.loads(record["vector"]),
-                    metadata=json.loads(record["metadata"]),
-                )
-                for record in results
-            ]
-        else:
-            print("No connection to the database, cannot list entries")
-            return []
+        return [
+            VectorStoreEntry(
+                id=record["id"],
+                key=record["key"],
+                vector=json.loads(record["vector"]),
+                metadata=json.loads(record["metadata"]),
+            )
+            for record in results
+        ]
+        await self.connection.close()
+        self.connection = None
