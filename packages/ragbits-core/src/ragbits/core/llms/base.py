@@ -80,7 +80,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Raw text response from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        response = await self.client.call(
+        response = await self.call(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
             json_mode=prompt.json_mode,
@@ -146,7 +146,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Response stream from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        response = await self.client.call_streaming(
+        response = await self.call_streaming(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
             json_mode=prompt.json_mode,
