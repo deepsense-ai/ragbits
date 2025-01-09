@@ -35,6 +35,23 @@ async def evaluate() -> dict:
                 "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
                 "ingest": False,
                 "search": True,
+                "vector_store": {
+                    "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+                    "config": {
+                        "client": {
+                            "type": "PersistentClient",
+                            "config": {
+                                "path": "chroma"
+                            }
+                        },
+                        "index_name": "default",
+                        "distance_method": "l2",
+                        "default_options": {
+                            "k": 3,
+                            "max_distance": 1.2
+                        }
+                    }
+                },
                 "providers": {
                     "txt": {
                         "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"

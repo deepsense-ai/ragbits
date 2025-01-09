@@ -1,19 +1,20 @@
 from abc import ABC, abstractmethod
 from typing import Any, Generic, TypeVar
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.evaluate.pipelines.base import EvaluationResult
 
 ResultT = TypeVar("ResultT", bound=EvaluationResult)
 
 
-class Metric(Generic[ResultT], ABC):
+class Metric(WithConstructionConfig, Generic[ResultT], ABC):
     """
     Base class for metrics.
     """
 
-    def __init__(self, config: DictConfig | None = None) -> None:
+    def __init__(self, config: dict | None = None) -> None:
         """
         Initializes the metric.
 
@@ -21,7 +22,7 @@ class Metric(Generic[ResultT], ABC):
             config: The metric configuration.
         """
         super().__init__()
-        self.config = config
+        self.config = OmegaConf.create(config) if config else OmegaConf.create({})
         self.weight: float = getattr(self.config, "weight", 1.0)
 
     @abstractmethod

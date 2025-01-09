@@ -20,7 +20,7 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
     default_matching_strategy: type[RougeChunkMatch] = RougeChunkMatch
     default_matching_options: DictConfig = OmegaConf.create({"threshold": 0.5})
 
-    def __init__(self, config: DictConfig | None = None) -> None:
+    def __init__(self, config: dict | None = None) -> None:
         """
         Initializes the metric.
 

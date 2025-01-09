@@ -9,7 +9,7 @@ from .base import DataLoader
 module = sys.modules[__name__]
 
 
-def dataloader_factory(config: DictConfig) -> DataLoader:
+def dataloader_factory(config: dict) -> DataLoader:
     """
     A function creating dataloader from a dataloder config
     Args:
@@ -17,5 +17,5 @@ def dataloader_factory(config: DictConfig) -> DataLoader:
     Returns:
         DataLoader
     """
-    dataloader_class = import_by_path(config.type, module)
-    return dataloader_class(config.options)
+    dataloader_class = import_by_path(config["type"], module)
+    return dataloader_class.from_config({"config": config["options"]})

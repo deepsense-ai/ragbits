@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 
-from omegaconf import DictConfig
+from omegaconf import OmegaConf
+from ragbits.core.utils.config_handling import WithConstructionConfig
 
 
-class CallbackConfigurator(ABC):
+class CallbackConfigurator(WithConstructionConfig, ABC):
     """An abstract class for callback configuration"""
 
-    def __init__(self, config: DictConfig):
-        self.config = config
+    def __init__(self, config: dict):
+        self.config = OmegaConf.create(config)
 
     @abstractmethod
     def get_callback(self) -> Callable:

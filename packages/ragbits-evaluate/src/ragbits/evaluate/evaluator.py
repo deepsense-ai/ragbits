@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from dataclasses import asdict
 from typing import Any
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from tqdm.asyncio import tqdm
 
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
@@ -57,11 +57,11 @@ class Evaluator:
         Returns:
             dictionary of metrics with scores
         """
-        dataloader = dataloader_factory(config.data)
-        pipeline = pipeline_factory(config.pipeline)
+        dataloader = dataloader_factory(OmegaConf.to_container(config.data))
+        pipeline = pipeline_factory(OmegaConf.to_container(config.pipeline))
 
         metric_config = config.get("metrics", None)
-        metrics = metric_set_factory(metric_config) if metric_config is not None else None
+        metrics = metric_set_factory(OmegaConf.to_container(metric_config)) if metric_config is not None else None
 
         evaluator = cls()
         results = await evaluator.compute(

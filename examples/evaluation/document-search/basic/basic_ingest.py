@@ -28,8 +28,7 @@ async def ingest() -> None:
     """
     log.info("Ingesting documents...")
 
-    config = OmegaConf.create(
-        {
+    config = {
             "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
             "ingest": True,
             "search": False,
@@ -38,7 +37,6 @@ async def ingest() -> None:
                 "txt": {"type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"}
             },
         }
-    )
 
     ingestor = pipeline_factory(config)  # type: ignore
 

@@ -1,4 +1,5 @@
 import sys
+from pathlib import Path
 
 from omegaconf import OmegaConf
 
@@ -54,7 +55,10 @@ def main() -> None:
     )
     exp_config = {"optimizer": OmegaConf.create({"direction": "maximize", "n_trials": 10}), "experiment_config": config}
     configs_with_scores = Optimizer.run_experiment_from_config(config=exp_config)
-    log_optimization_to_file(configs_with_scores)
+
+    OUT_DIR = Path("basic_optimization_2")
+    OUT_DIR.mkdir()
+    log_optimization_to_file(configs_with_scores, output_dir=OUT_DIR)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
+from ragbits.core.utils.config_handling import WithConstructionConfig
 
 
 @dataclass
@@ -12,12 +13,12 @@ class EvaluationResult(ABC):
     """
 
 
-class EvaluationPipeline(ABC):
+class EvaluationPipeline(WithConstructionConfig, ABC):
     """
     Collection evaluation pipeline.
     """
 
-    def __init__(self, config: DictConfig | None = None) -> None:
+    def __init__(self, config: dict | None) -> None:
         """
         Initializes the evaluation pipeline.
 
@@ -25,7 +26,8 @@ class EvaluationPipeline(ABC):
             config: The evaluation pipeline configuration.
         """
         super().__init__()
-        self.config = config or DictConfig({})
+
+        self.config = OmegaConf.create(config) if config else DictConfig({})
 
     @abstractmethod
     async def __call__(self, data: dict[str, Any] | None = None) -> EvaluationResult | None:

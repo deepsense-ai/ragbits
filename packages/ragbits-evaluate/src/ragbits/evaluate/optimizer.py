@@ -5,7 +5,7 @@ from copy import deepcopy
 from typing import Any
 
 import optuna
-from omegaconf import DictConfig, ListConfig
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from ragbits.core.utils.config_handling import import_by_path
 
@@ -46,13 +46,13 @@ class Optimizer:
         """
         optimizer_config = config["optimizer"]
         exp_config = config["experiment_config"]
-        dataloader = dataloader_factory(exp_config.data)
+        dataloader = dataloader_factory(OmegaConf.to_container(exp_config.data))
         pipeline_class = import_by_path(exp_config.pipeline.type, module)
-        metrics = metric_set_factory(exp_config.metrics)
+        metrics = metric_set_factory(OmegaConf.to_container(exp_config.metrics))
         callback_configurators = None
         if getattr(exp_config, "callbacks", None):
             callback_configurators = [
-                import_by_path(callback_cfg.type, module)(callback_cfg.args) for callback_cfg in exp_config.callbacks
+                import_by_path(callback_cfg.type, module)(OmegaConf.to_container(callback_cfg.args)) for callback_cfg in exp_config.callbacks
             ]
 
         optimizer = cls(cfg=optimizer_config)
@@ -102,7 +102,7 @@ class Optimizer:
 
         study.optimize(objective, **optimization_kwargs)
         configs_with_scores = [
-            (trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"])
+            (OmegaConf.to_container(trial.user_attrs["cfg"]), trial.user_attrs["score"], trial.user_attrs["all_metrics"])
             for trial in study.get_trials()
         ]
 
@@ -128,7 +128,7 @@ class Optimizer:
             try:
                 config_for_trial = deepcopy(config_with_params)
                 self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
-                pipeline = pipeline_class(config_for_trial)
+                pipeline = pipeline_class.from_config(OmegaConf.to_container(config_for_trial))
                 metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
                 score = sum(metrics_values.values())
                 break
