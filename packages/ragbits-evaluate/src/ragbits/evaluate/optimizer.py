@@ -7,7 +7,7 @@ from typing import Any, cast
 import optuna
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
-from ragbits.core.utils.config_handling import import_by_path
+from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 
 from .callbacks.base import CallbackConfigurator
 from .evaluator import Evaluator
@@ -20,21 +20,21 @@ from .pipelines.base import EvaluationPipeline
 module = sys.modules[__name__]
 
 
-class Optimizer:
+class Optimizer(WithConstructionConfig):
     """
     Class for optimization
     """
 
     INFINITY = 1e16
 
-    def __init__(self, cfg: DictConfig):
-        self.config = cfg
+    def __init__(self, config: dict):
+        self.config = OmegaConf.create(config)
         # workaround for optuna not allowing different choices for different trials
         # TODO check how optuna handles parallelism. discuss if we want to have parallel studies
         self._choices_cache: dict[str, list[Any]] = {}
 
     @classmethod
-    def run_experiment_from_config(cls, config: dict[str, DictConfig]) -> list[tuple[dict, float, dict[str, float]]]:
+    def run_experiment_from_config(cls, config: dict[str, dict]) -> list[tuple[dict, float, dict[str, float]]]:
         """
         Runs the optimization experiment configured with config object
         Args:
@@ -42,8 +42,8 @@ class Optimizer:
         Returns:
              list of configs with scores
         """
-        optimizer_config = config["optimizer"]
-        exp_config = config["experiment_config"]
+        optimizer_config = OmegaConf.create(config["optimizer"])
+        exp_config = OmegaConf.create(config["experiment_config"])
         dataloader = dataloader_factory(cast(dict, OmegaConf.to_container(exp_config.data)))
         pipeline_class = import_by_path(exp_config.pipeline.type, module)
         metrics = metric_set_factory(cast(list[dict], OmegaConf.to_container(exp_config.metrics)))
@@ -54,7 +54,8 @@ class Optimizer:
                 for callback_cfg in exp_config.callbacks
             ]
 
-        optimizer = cls(cfg=optimizer_config)
+        optimizer_config_dict = {"config": OmegaConf.to_container(optimizer_config)}
+        optimizer = cls.from_config(optimizer_config_dict)
         configs_with_scores = optimizer.optimize(
             pipeline_class=pipeline_class,
             config_with_params=exp_config.pipeline,

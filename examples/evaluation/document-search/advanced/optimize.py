@@ -1,4 +1,5 @@
 import sys
+from typing import cast
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -17,7 +18,10 @@ def main(config: DictConfig) -> None:
     Args:
         config: Hydra configuration.
     """
-    exp_config = {"optimizer": OmegaConf.create({"direction": "maximize", "n_trials": 10}), "experiment_config": config}
+    exp_config = {
+        "optimizer": {"direction": "maximize", "n_trials": 10},
+        "experiment_config": cast(dict, OmegaConf.to_container(config)),
+    }
     configs_with_scores = Optimizer.run_experiment_from_config(config=exp_config)
     log_optimization_to_file(configs_with_scores)
 
