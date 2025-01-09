@@ -1,14 +1,11 @@
 import base64
 import warnings
-from functools import cached_property
-
 from collections.abc import AsyncGenerator
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 
-from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from ragbits.core.audit import trace
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -17,10 +14,11 @@ from ragbits.core.llms.exceptions import (
     LLMStatusError,
 )
 from ragbits.core.options import Options
-from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 from .base import LLM
+
 
 class LiteLLMOptions(Options):
     """
@@ -119,7 +117,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 chat = chat[:-1]
             chat.append({"role": "user", "content": user_message_content})
         return chat
-    
+
     async def _call(
         self,
         conversation: ChatFormat,

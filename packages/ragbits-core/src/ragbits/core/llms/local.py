@@ -3,23 +3,23 @@ import threading
 from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
-from functools import cached_property
 
 try:
     import accelerate  # noqa: F401
-    import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+    import torch  # noqa: F401
+    from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer  # noqa: F401
 
     HAS_LOCAL_LLM = True
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 from .base import LLM
+
 
 class LocalLLMOptions(Options):
     """
@@ -83,7 +83,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         """
         input_ids = self.tokenizer.apply_chat_template(prompt.chat)
         return len(input_ids)
-    
+
     async def _call(
         self,
         conversation: ChatFormat,

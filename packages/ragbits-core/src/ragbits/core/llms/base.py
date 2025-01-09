@@ -2,10 +2,9 @@ import enum
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import ClassVar, cast, overload
-from pydantic import BaseModel
-from typing import Generic, TypeVar
+from typing import ClassVar, TypeVar, cast, overload
 
+from pydantic import BaseModel
 
 from ragbits.core import llms
 from ragbits.core.options import Options
@@ -159,7 +158,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         if prompt.list_images():
             wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
         return prompt.chat
-    
+
     @abstractmethod
     async def _call(
         self,
