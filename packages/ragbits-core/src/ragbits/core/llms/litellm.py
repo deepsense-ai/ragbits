@@ -120,7 +120,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             chat.append({"role": "user", "content": user_message_content})
         return chat
     
-    async def call(
+    async def _call(
         self,
         conversation: ChatFormat,
         options: LiteLLMOptions,
@@ -170,7 +170,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         return outputs.response  # type: ignore
 
-    async def call_streaming(
+    async def _call_streaming(
         self,
         conversation: ChatFormat,
         options: LiteLLMOptions,

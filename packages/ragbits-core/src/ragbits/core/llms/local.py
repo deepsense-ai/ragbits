@@ -84,7 +84,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         input_ids = self.tokenizer.apply_chat_template(prompt.chat)
         return len(input_ids)
     
-    async def call(
+    async def _call(
         self,
         conversation: ChatFormat,
         options: LocalLLMOptions,
@@ -116,7 +116,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         return decoded_response
 
-    async def call_streaming(
+    async def _call_streaming(
         self,
         conversation: ChatFormat,
         options: LocalLLMOptions,
