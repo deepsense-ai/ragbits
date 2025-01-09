@@ -10,8 +10,6 @@
 import asyncio
 import logging
 
-from omegaconf import OmegaConf
-
 from ragbits.evaluate.pipelines import pipeline_factory
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
@@ -29,14 +27,14 @@ async def ingest() -> None:
     log.info("Ingesting documents...")
 
     config = {
-            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
-            "ingest": True,
-            "search": False,
-            "answer_data_source": {"name": "hf-docs", "path": "micpst/hf-docs", "split": "train", "num_docs": 5},
-            "providers": {
-                "txt": {"type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"}
-            },
-        }
+        "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
+        "ingest": True,
+        "search": False,
+        "answer_data_source": {"name": "hf-docs", "path": "micpst/hf-docs", "split": "train", "num_docs": 5},
+        "providers": {
+            "txt": {"type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"}
+        },
+    }
 
     ingestor = pipeline_factory(config)  # type: ignore
 

@@ -3,7 +3,6 @@ import uuid
 from dataclasses import dataclass
 from functools import cached_property
 
-from omegaconf import DictConfig
 from tqdm.asyncio import tqdm
 
 from ragbits.document_search import DocumentSearch

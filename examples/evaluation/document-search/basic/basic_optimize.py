@@ -56,7 +56,7 @@ def main() -> None:
     exp_config = {"optimizer": OmegaConf.create({"direction": "maximize", "n_trials": 10}), "experiment_config": config}
     configs_with_scores = Optimizer.run_experiment_from_config(config=exp_config)
 
-    OUT_DIR = Path("basic_optimization_2")
+    OUT_DIR = Path("basic_optimization")
     OUT_DIR.mkdir()
     log_optimization_to_file(configs_with_scores, output_dir=OUT_DIR)
 

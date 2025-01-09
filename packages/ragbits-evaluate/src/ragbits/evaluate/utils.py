@@ -68,7 +68,7 @@ def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Pat
 
 
 def log_optimization_to_file(
-    results: list[tuple[DictConfig, float, dict[str, float]]], output_dir: Path | None = None
+    results: list[tuple[dict, float, dict[str, float]]], output_dir: Path | None = None
 ) -> Path:
     """
     Log the evaluation results locally.

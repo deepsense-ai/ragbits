@@ -38,19 +38,11 @@ async def evaluate() -> dict:
                 "vector_store": {
                     "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
                     "config": {
-                        "client": {
-                            "type": "PersistentClient",
-                            "config": {
-                                "path": "chroma"
-                            }
-                        },
+                        "client": {"type": "PersistentClient", "config": {"path": "chroma"}},
                         "index_name": "default",
                         "distance_method": "l2",
-                        "default_options": {
-                            "k": 3,
-                            "max_distance": 1.2
-                        }
-                    }
+                        "default_options": {"k": 3, "max_distance": 1.2},
+                    },
                 },
                 "providers": {
                     "txt": {

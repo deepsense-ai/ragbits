@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
+
 from ragbits.core.utils.config_handling import WithConstructionConfig
 
 

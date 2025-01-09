@@ -1,7 +1,5 @@
 import sys
 
-from omegaconf import DictConfig
-
 from ragbits.core.utils.config_handling import import_by_path
 
 from .base import DataLoader

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 
 from omegaconf import OmegaConf
+
 from ragbits.core.utils.config_handling import WithConstructionConfig
 
 

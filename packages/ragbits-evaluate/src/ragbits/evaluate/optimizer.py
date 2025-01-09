@@ -2,7 +2,7 @@ import asyncio
 import sys
 import warnings
 from copy import deepcopy
-from typing import Any
+from typing import Any, cast
 
 import optuna
 from omegaconf import DictConfig, ListConfig, OmegaConf
@@ -34,9 +34,7 @@ class Optimizer:
         self._choices_cache: dict[str, list[Any]] = {}
 
     @classmethod
-    def run_experiment_from_config(
-        cls, config: dict[str, DictConfig]
-    ) -> list[tuple[DictConfig, float, dict[str, float]]]:
+    def run_experiment_from_config(cls, config: dict[str, DictConfig]) -> list[tuple[dict, float, dict[str, float]]]:
         """
         Runs the optimization experiment configured with config object
         Args:
@@ -46,13 +44,14 @@ class Optimizer:
         """
         optimizer_config = config["optimizer"]
         exp_config = config["experiment_config"]
-        dataloader = dataloader_factory(OmegaConf.to_container(exp_config.data))
+        dataloader = dataloader_factory(cast(dict, OmegaConf.to_container(exp_config.data)))
         pipeline_class = import_by_path(exp_config.pipeline.type, module)
-        metrics = metric_set_factory(OmegaConf.to_container(exp_config.metrics))
+        metrics = metric_set_factory(cast(list[dict], OmegaConf.to_container(exp_config.metrics)))
         callback_configurators = None
         if getattr(exp_config, "callbacks", None):
             callback_configurators = [
-                import_by_path(callback_cfg.type, module)(OmegaConf.to_container(callback_cfg.args)) for callback_cfg in exp_config.callbacks
+                import_by_path(callback_cfg.type, module)(OmegaConf.to_container(callback_cfg.args))
+                for callback_cfg in exp_config.callbacks
             ]
 
         optimizer = cls(cfg=optimizer_config)
@@ -72,7 +71,7 @@ class Optimizer:
         dataloader: DataLoader,
         metrics: MetricSet,
         callback_configurators: list[CallbackConfigurator] | None = None,
-    ) -> list[tuple[DictConfig, float, dict[str, float]]]:
+    ) -> list[tuple[dict, float, dict[str, float]]]:
         """
         A method for running the optimization process for given parameters
         Args:
@@ -102,11 +101,15 @@ class Optimizer:
 
         study.optimize(objective, **optimization_kwargs)
         configs_with_scores = [
-            (OmegaConf.to_container(trial.user_attrs["cfg"]), trial.user_attrs["score"], trial.user_attrs["all_metrics"])
+            (
+                cast(dict, OmegaConf.to_container(trial.user_attrs["cfg"])),
+                trial.user_attrs["score"],
+                trial.user_attrs["all_metrics"],
+            )
             for trial in study.get_trials()
         ]
 
-        def sorting_key(results: tuple[DictConfig, float, dict[str, float]]) -> float:
+        def sorting_key(results: tuple[dict, float, dict[str, float]]) -> float:
             if self.config.direction == "maximize":
                 return -results[1]
             else:
@@ -128,7 +131,7 @@ class Optimizer:
             try:
                 config_for_trial = deepcopy(config_with_params)
                 self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
-                pipeline = pipeline_class.from_config(OmegaConf.to_container(config_for_trial))
+                pipeline = pipeline_class.from_config({"config": OmegaConf.to_container(config_for_trial)})
                 metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
                 score = sum(metrics_values.values())
                 break
