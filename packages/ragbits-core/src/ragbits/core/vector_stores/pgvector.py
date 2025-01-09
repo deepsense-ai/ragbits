@@ -194,7 +194,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         insert_query = f"""
         INSERT INTO {self._table_name} (id, key, vector, metadata)
         VALUES ($1, $2, $3, $4)
-        """ # noqa S608
+        """  # noqa S608
 
         try:
             async with self._client.acquire() as conn:
@@ -225,7 +225,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         remove_query = f"""
         DELETE FROM {self._table_name}
         WHERE id = ANY($1)
-        """ # noqa S608
+        """  # noqa S608
 
         try:
             async with self._client.acquire() as conn:
