@@ -1,4 +1,5 @@
 import json
+import re
 from typing import get_type_hints
 
 import asyncpg
@@ -8,10 +9,12 @@ from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
-class PgVectorDistance:
+class PgVectorStore(VectorStore[VectorStoreOptions]):
     """
-    Supported distance methods for pgVector.
+    Vector store implementation using [pgvector]
     """
+
+    options_cls = VectorStoreOptions
 
     DISTANCE_OPS = {
         "cosine": ("vector_cosine_ops", "<=>"),
@@ -23,14 +26,6 @@ class PgVectorDistance:
         "sparsevec_l2": ("sparsevec_l2_ops", "<->"),
         "halfvec_l2": ("halfvec_l2_ops", "<->"),
     }
-
-
-class PgVectorStore(VectorStore[VectorStoreOptions]):
-    """
-    Vector store implementation using [pgvector]
-    """
-
-    options_cls = VectorStoreOptions
 
     def __init__(
         self,
@@ -55,13 +50,17 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             metadata_store: The metadata store to use. If None, the metadata will be stored in pgVector db.
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
+
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+            raise ValueError(f"Invalid table name: {table_name}")
+
         if hnsw_params is None:
             hnsw_params = {"m": 4, "ef_construction": 10}
-        self.client = client
-        self.table_name = table_name
-        self.vector_size = vector_size
-        self.distance_method = distance_method
-        self.hnsw_params = hnsw_params
+        self._client = client
+        self._table_name = table_name
+        self._vector_size = vector_size
+        self._distance_method = distance_method
+        self._hnsw_params = hnsw_params
 
     def _create_table_command(self) -> str:
         """
@@ -72,19 +71,19 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         type_mapping = {
             str: "TEXT",
-            list: f"VECTOR({self.vector_size})",  # Requires vector_size
+            list: f"VECTOR({self._vector_size})",
             dict: "JSONB",
         }
         columns = []
         type_hints = get_type_hints(VectorStoreEntry)
         for column, column_type in type_hints.items():
-            if column_type == list[float]:  # Handle VECTOR type
+            if column_type == list[float]:
                 columns.append(f"{column} {type_mapping[list]}")
             else:
                 sql_type = type_mapping.get(column_type)
                 columns.append(f"{column} {sql_type}")
 
-        return f"CREATE TABLE {self.table_name} (" + ", ".join(columns) + ");"
+        return f"CREATE TABLE {self._table_name} (" + ", ".join(columns) + ");"
 
     def _create_retrieve_query(self, vector: list[float], query_options: VectorStoreOptions | None = None) -> str:
         """
@@ -97,12 +96,12 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             str: sql query.
         """
-        distance_operator = PgVectorDistance.DISTANCE_OPS[self.distance_method][1]
-
-        query = f"SELECT * FROM {self.table_name}"  # noqa S608
+        distance_operator = PgVectorStore.DISTANCE_OPS[self._distance_method][1]
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        query = f"SELECT * FROM {self._table_name}"  # noqa S608
         if not query_options:
             query_options = self.default_options
-        if query_options.max_distance and self.distance_method == "ip":
+        if query_options.max_distance and self._distance_method == "ip":
             query += f""" WHERE vector {distance_operator} '{vector}'
             BETWEEN {(-1) * query_options.max_distance} AND {query_options.max_distance}"""
         elif query_options.max_distance:
@@ -128,7 +127,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             sql query.
         """
-        query = f"SELECT * FROM {self.table_name}"  # noqa S608
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        query = f"SELECT * FROM {self._table_name}"  # noqa S608
         if where:
             filters = []
             for key, value in where.items():
@@ -155,33 +155,30 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             ); """
 
         create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
-
-        create_index_query = """
-                CREATE INDEX {} ON {}
-                USING hnsw (vector {})
-                WITH (m = {}, ef_construction = {});
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        create_index_query = f"""
+                CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
+                USING hnsw (vector $1)
+                WITH (m = $2, ef_construction = $3);
                 """
 
-        async with self.client.acquire() as conn:
+        async with self._client.acquire() as conn:
             await conn.execute(create_vector_extension)
-            exists = await conn.fetchval(check_table_existence, self.table_name)
+            exists = await conn.fetchval(check_table_existence, self._table_name)
 
             if not exists:
                 create_command = self._create_table_command()
                 await conn.execute(create_command)
-                hnsw_name = self.table_name + "_hnsw_idx"
-                query = create_index_query.format(
-                    hnsw_name,
-                    self.table_name,
-                    PgVectorDistance.DISTANCE_OPS[self.distance_method][0],
-                    self.hnsw_params["m"],
-                    self.hnsw_params["ef_construction"],
+                await conn.execute(
+                    create_index_query,
+                    PgVectorStore.DISTANCE_OPS[self._distance_method][0],
+                    self._hnsw_params["m"],
+                    self._hnsw_params["ef_construction"],
                 )
-                await conn.execute(query)
-                print("Index created!")
+                print("Table created!")
 
             else:
-                print("Index already exists!")
+                print("Table already exists!")
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -193,24 +190,24 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         if not entries:
             return
-
-        insert_query = """
-        INSERT INTO {} (id, key, vector, metadata)
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        insert_query = f"""
+        INSERT INTO {self._table_name} (id, key, vector, metadata)
         VALUES ($1, $2, $3, $4)
-        """
+        """ # noqa S608
 
         try:
-            async with self.client.acquire() as conn:
+            async with self._client.acquire() as conn:
                 for entry in entries:
                     await conn.execute(
-                        insert_query.format(self.table_name),
+                        insert_query,
                         entry.id,
                         entry.key,
                         str(entry.vector),
                         json.dumps(entry.metadata),
                     )
         except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self.table_name} does not exist. Creating the table.")
+            print(f"Table {self._table_name} does not exist. Creating the table.")
             await self.create_table()
 
     @traceable
@@ -224,41 +221,32 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         if not ids:
             print("No IDs provided, nothing to remove")
             return
-
-        remove_query = """
-        DELETE FROM {}
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        remove_query = f"""
+        DELETE FROM {self._table_name}
         WHERE id = ANY($1)
-        """
+        """ # noqa S608
 
         try:
-            async with self.client.acquire() as conn:
-                await conn.execute(remove_query.format(self.table_name), ids)
+            async with self._client.acquire() as conn:
+                await conn.execute(remove_query, ids)
         except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self.table_name} does not exist. Creating the table.")
+            print(f"Table {self._table_name} does not exist. Creating the table.")
             await self.create_table()
 
     @traceable
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+    async def _fetch_records(self, query: str) -> list[VectorStoreEntry]:
         """
-        Retrieves entries from the pgVector collection.
+        Fetch records from the pgVector collection.
 
         Args:
-            vector: The vector to query.
-            options: The options for querying the vector store.
-
+            query: sql query
         Returns:
-            The retrieved entries.
-
-
-        Raises:
-            MetadataNotFoundError: If the metadata is not found.
+            list of VectorStoreEntry objects.
         """
-        query_options = (self.default_options | options) if options else self.default_options
-        retrieve_query = self._create_retrieve_query(vector, query_options)
-
         try:
-            async with self.client.acquire() as conn:
-                results = await conn.fetch(retrieve_query)
+            async with self._client.acquire() as conn:
+                results = await conn.fetch(query)
 
             return [
                 VectorStoreEntry(
@@ -271,9 +259,25 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             ]
 
         except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self.table_name} does not exist. Creating the table.")
+            print(f"Table {self._table_name} does not exist. Creating the table.")
             await self.create_table()
             return []
+
+    @traceable
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+        """
+        Retrieves entries from the pgVector collection.
+
+        Args:
+            vector: The vector to query.
+            options: The options for querying the vector store.
+
+        Returns:
+            The retrieved entries.
+        """
+        query_options = (self.default_options | options) if options else self.default_options
+        retrieve_query = self._create_retrieve_query(vector, query_options)
+        return await self._fetch_records(retrieve_query)
 
     @traceable
     async def list(
@@ -290,26 +294,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         Returns:
             The entries.
-
-        Raises:
-            MetadataNotFoundError: If the metadata is not found.
         """
         list_query = self._create_list_query(where, limit, offset)
-
-        try:
-            async with self.client.acquire() as conn:
-                results = await conn.fetch(list_query)
-
-            return [
-                VectorStoreEntry(
-                    id=record["id"],
-                    key=record["key"],
-                    vector=json.loads(record["vector"]),
-                    metadata=json.loads(record["metadata"]),
-                )
-                for record in results
-            ]
-        except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self.table_name} does not exist. Creating the table.")
-            await self.create_table()
-            return []
+        return await self._fetch_records(list_query)
