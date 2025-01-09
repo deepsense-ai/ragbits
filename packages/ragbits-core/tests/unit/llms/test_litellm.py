@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-from ragbits.core.llms.clients.litellm import LiteLLMOptions
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
 
