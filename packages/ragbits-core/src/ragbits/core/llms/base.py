@@ -13,6 +13,7 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
 
+
 class LLMType(enum.Enum):
     """
     Types of LLMs based on supported features

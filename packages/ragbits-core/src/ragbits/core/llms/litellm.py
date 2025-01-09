@@ -36,6 +36,7 @@ class LiteLLMOptions(Options):
     top_p: float | None | NotGiven = NOT_GIVEN
     mock_response: str | None | NotGiven = NOT_GIVEN
 
+
 class LiteLLM(LLM[LiteLLMOptions]):
     """
     Class for interaction with any LLM supported by LiteLLM API.
