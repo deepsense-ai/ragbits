@@ -19,6 +19,7 @@ metrics:
       threshold: 0.5
 
 
+#uncomment to use neptune tracking (set your project name)
 #callbacks:
 #  - type: ragbits.evaluate.callbacks.neptune:NeptuneCallbackConfigurator
 #    args:

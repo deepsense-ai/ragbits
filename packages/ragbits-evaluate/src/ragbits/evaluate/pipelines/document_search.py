@@ -1,3 +1,4 @@
+import uuid
 import asyncio
 from dataclasses import dataclass
 from functools import cached_property
