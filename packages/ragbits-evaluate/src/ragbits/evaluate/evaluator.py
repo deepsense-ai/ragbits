@@ -1,9 +1,8 @@
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Any, cast
+from typing import Any
 
-from omegaconf import DictConfig, OmegaConf
 from tqdm.asyncio import tqdm
 
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
@@ -60,7 +59,7 @@ class Evaluator:
         dataloader = dataloader_factory(config["data"])
         pipeline = pipeline_factory(config["pipeline"])
 
-        metric_config = config.get("metrics", None)
+        metric_config = config.get("metrics")
         metrics = (
             metric_set_factory(metric_config)  # type: ignore
             if metric_config is not None
