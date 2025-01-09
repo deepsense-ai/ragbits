@@ -62,7 +62,7 @@ class Evaluator:
 
         metric_config = config.get("metrics", None)
         metrics = (
-            metric_set_factory(metric_config) # type: ignore
+            metric_set_factory(metric_config)  # type: ignore
             if metric_config is not None
             else None
         )
