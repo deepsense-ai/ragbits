@@ -8,9 +8,10 @@
 # ///
 import asyncio
 import logging
+from typing import cast
 
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
@@ -29,7 +30,7 @@ async def bench(config: DictConfig) -> None:
     """
     run = setup_neptune(config)
     log.info("Starting the experiment...")
-    results = await Evaluator.run_experiment_from_config(config=config)
+    results = await Evaluator.run_experiment_from_config(config=cast(dict, OmegaConf.to_container(config)))
     output_dir = log_to_file(results)
     if run:
         log_to_neptune(run, results, output_dir)

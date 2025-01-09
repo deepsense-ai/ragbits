@@ -12,8 +12,6 @@ import logging
 import uuid
 from pathlib import Path
 
-from omegaconf import OmegaConf
-
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.utils import log_to_file
 
@@ -29,42 +27,38 @@ async def evaluate() -> dict:
     """
     log.info("Ingesting documents...")
 
-    config = OmegaConf.create(
-        {
-            "pipeline": {
-                "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
-                "ingest": False,
-                "search": True,
-                "vector_store": {
-                    "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
-                    "config": {
-                        "client": {"type": "PersistentClient", "config": {"path": "chroma"}},
-                        "index_name": "default",
-                        "distance_method": "l2",
-                        "default_options": {"k": 3, "max_distance": 1.2},
-                    },
-                },
-                "providers": {
-                    "txt": {
-                        "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"
-                    }
+    config = {
+        "pipeline": {
+            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
+            "ingest": False,
+            "search": True,
+            "vector_store": {
+                "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+                "config": {
+                    "client": {"type": "PersistentClient", "config": {"path": "chroma"}},
+                    "index_name": "default",
+                    "distance_method": "l2",
+                    "default_options": {"k": 3, "max_distance": 1.2},
                 },
             },
-            "data": {
-                "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
-                "options": {"name": "hf-docs-retrieval", "path": "micpst/hf-docs-retrieval", "split": "train"},
+            "providers": {
+                "txt": {"type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"}
             },
-            "metrics": [
-                {
-                    "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-                    "matching_strategy": "RougeChunkMatch",
-                    "options": {"threshold": 0.5},
-                }
-            ],
-            "neptune": {"project": "ragbits", "run": False},
-            "task": {"name": "default", "type": "document-search"},
-        }
-    )
+        },
+        "data": {
+            "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
+            "options": {"name": "hf-docs-retrieval", "path": "micpst/hf-docs-retrieval", "split": "train"},
+        },
+        "metrics": [
+            {
+                "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
+                "matching_strategy": "RougeChunkMatch",
+                "options": {"threshold": 0.5},
+            }
+        ],
+        "neptune": {"project": "ragbits", "run": False},
+        "task": {"name": "default", "type": "document-search"},
+    }
 
     results = await Evaluator.run_experiment_from_config(config=config)
 

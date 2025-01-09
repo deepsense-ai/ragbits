@@ -49,7 +49,7 @@ class Evaluator:
         }
 
     @classmethod
-    async def run_experiment_from_config(cls, config: DictConfig) -> dict[str, Any]:
+    async def run_experiment_from_config(cls, config: dict) -> dict[str, Any]:
         """
         Runs the evaluation experiment basing on configuration
         Args:
@@ -57,12 +57,12 @@ class Evaluator:
         Returns:
             dictionary of metrics with scores
         """
-        dataloader = dataloader_factory(cast(dict, OmegaConf.to_container(config.data)))
-        pipeline = pipeline_factory(cast(dict, OmegaConf.to_container(config.pipeline)))
+        dataloader = dataloader_factory(config["data"])
+        pipeline = pipeline_factory(config["pipeline"])
 
         metric_config = config.get("metrics", None)
         metrics = (
-            metric_set_factory(cast(list[dict], OmegaConf.to_container(metric_config)))
+            metric_set_factory(metric_config) # type: ignore
             if metric_config is not None
             else None
         )
