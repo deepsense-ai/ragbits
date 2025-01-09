@@ -65,7 +65,7 @@ class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
 
     def __init__(self, config: DictConfig | None = None) -> None:
         super().__init__(config)
-        # self.config.vector_store.config.index_name = str(uuid.uuid4())
+        self.config.vector_store.config.index_name = str(uuid.uuid4())
         self._ingested = False
         self._lock = asyncio.Lock()
 
