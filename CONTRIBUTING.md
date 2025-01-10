@@ -30,6 +30,13 @@ We use `mypy` for type checking. To perform type checking, simply run:
 $ uv run mypy .
 ```
 
+## Testing
+We use `pytest` for testing. To run the tests, simply run:
+
+```bash
+$ uv run pytest
+```
+
 
 ## Install pre-commit or pre-push hooks
 
