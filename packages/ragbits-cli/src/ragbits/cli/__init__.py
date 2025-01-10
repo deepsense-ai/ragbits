@@ -29,7 +29,7 @@ def ragbits_cli(
     output: Annotated[
         OutputType, typer.Option("--output", "-o", help="Set the output type (text or json)")
     ] = OutputType.text.value,  # type: ignore
-    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Print additional information"),
 ) -> None:
     """Common CLI arguments for all ragbits commands."""
     cli_state.output_type = output

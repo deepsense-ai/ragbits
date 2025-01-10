@@ -77,8 +77,8 @@ class CLISpan:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
         duration = self.end_time - self.start_time if self.end_time else 0.0
-        inputs = dicts_to_string(self.inputs)
-        outputs = dicts_to_string(self.outputs)
+        inputs = _dicts_to_string(self.inputs)
+        outputs = _dicts_to_string(self.outputs)
         if tree is None:
             if self.status == SpanStatus.ERROR:
                 color = PrintColor.error_color
@@ -101,7 +101,7 @@ class CLISpan:
         return tree
 
 
-def dicts_to_string(input_dict: dict) -> str:
+def _dicts_to_string(input_dict: dict) -> str:
     """
     Converts a dict of dicts to a string representation.
 
@@ -117,7 +117,7 @@ def dicts_to_string(input_dict: dict) -> str:
     for key, value in input_dict.items():
         if value:
             if isinstance(value, dict):
-                dicts_to_string(input_dict[key])
+                _dicts_to_string(input_dict[key])
             else:
                 new_string_output = (
                     f"\n[{PrintColor.key_color}]{str(key)}:[/{PrintColor.key_color}] "
