@@ -46,5 +46,5 @@ def generate_configs(
         target_path.mkdir()
     for prompt in prompts:
         with open(target_path / f"{prompt.__qualname__}.yaml", "w", encoding="utf-8") as f:
-            prompt_path = f'file://{prompt.__module__.replace(".", os.sep)}.py:{prompt.__qualname__}.to_promptfoo'
+            prompt_path = f"file://{prompt.__module__.replace('.', os.sep)}.py:{prompt.__qualname__}.to_promptfoo"
             yaml.dump({"prompts": [prompt_path]}, f)

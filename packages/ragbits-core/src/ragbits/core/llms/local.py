@@ -68,6 +68,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
             raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
         super().__init__(model_name, default_options)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name, device_map="auto", torch_dtype=torch.bfloat16, token=api_key
+        )
         self.tokenizer = AutoTokenizer.from_pretrained(model_name, token=api_key)
         self.api_key = api_key
 
