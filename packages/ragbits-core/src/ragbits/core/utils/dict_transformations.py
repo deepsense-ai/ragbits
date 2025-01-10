@@ -98,7 +98,7 @@ def unflatten_dict(input_dict: dict[str, Any]) -> dict[str, Any] | list:
                 _current_subkey = int(_key[start_subscript_index:end_subscript_index])
 
                 if len(_key[end_subscript_index:]) > 1:
-                    _current_subkey = f"{_current_subkey}.{_key[end_subscript_index + 2:]}"
+                    _current_subkey = f"{_current_subkey}.{_key[end_subscript_index + 2 :]}"
                 break
             elif char == ".":
                 split_work = _key.split(".", 1)
