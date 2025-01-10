@@ -8,6 +8,17 @@ from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
+DISTANCE_OPS = {
+    "cosine": ("vector_cosine_ops", "<=>"),
+    "l2": ("vector_l2_ops", "<->"),
+    "l1": ("vector_l1_ops", "<+>"),
+    "ip": ("vector_ip_ops", "<#>"),
+    "bit_hamming": ("bit_hamming_ops", "<~>"),
+    "bit_jaccard": ("bit_jaccard_ops", "<%>"),
+    "sparsevec_l2": ("sparsevec_l2_ops", "<->"),
+    "halfvec_l2": ("halfvec_l2_ops", "<->"),
+}
+
 
 class PgVectorStore(VectorStore[VectorStoreOptions]):
     """
@@ -15,17 +26,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
     """
 
     options_cls = VectorStoreOptions
-
-    DISTANCE_OPS = {
-        "cosine": ("vector_cosine_ops", "<=>"),
-        "l2": ("vector_l2_ops", "<->"),
-        "l1": ("vector_l1_ops", "<+>"),
-        "ip": ("vector_ip_ops", "<#>"),
-        "bit_hamming": ("bit_hamming_ops", "<~>"),
-        "bit_jaccard": ("bit_jaccard_ops", "<%>"),
-        "sparsevec_l2": ("sparsevec_l2_ops", "<->"),
-        "halfvec_l2": ("halfvec_l2_ops", "<->"),
-    }
 
     def __init__(
         self,
@@ -96,7 +96,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             str: sql query.
         """
-        distance_operator = PgVectorStore.DISTANCE_OPS[self._distance_method][1]
+        distance_operator = DISTANCE_OPS[self._distance_method][1]
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT * FROM {self._table_name}"  # noqa S608
         if not query_options:
@@ -171,7 +171,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 await conn.execute(create_command)
                 await conn.execute(
                     create_index_query,
-                    PgVectorStore.DISTANCE_OPS[self._distance_method][0],
+                    DISTANCE_OPS[self._distance_method][0],
                     self._hnsw_params["m"],
                     self._hnsw_params["ef_construction"],
                 )
