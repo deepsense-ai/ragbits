@@ -35,7 +35,7 @@ class CLISpan:
     CLI Span represents a single operation within a trace.
     """
 
-    def __init__(self, name: str, inputs: dict, parent: Optional["CLISpan"] = None):
+    def __init__(self, name: str, inputs: dict | None = None, parent: Optional["CLISpan"] = None):
         """
         Constructs a new CLI Span.
         Sets the start time of the span - the wall time at which the operation started.
@@ -52,7 +52,7 @@ class CLISpan:
         self.end_time: float | None = None
         self.children: list[CLISpan] = []
         self.status: str = SpanStatus.STARTED
-        self.inputs: dict = inputs or {}
+        self.inputs: dict = inputs if inputs else {}
         self.outputs: dict = {}
 
     def end(self) -> None:
@@ -77,8 +77,8 @@ class CLISpan:
             Tree: A Rich Tree object representing the span hierarchy, including its events and children.
         """
         duration = self.end_time - self.start_time if self.end_time else 0.0
-        inputs = _dicts_to_string(self.inputs)
-        outputs = _dicts_to_string(self.outputs)
+        inputs = self._dicts_to_string(self.inputs)
+        outputs = self._dicts_to_string(self.outputs)
         if tree is None:
             if self.status == SpanStatus.ERROR:
                 color = PrintColor.error_color
@@ -100,34 +100,33 @@ class CLISpan:
                 child.to_tree(tree, PrintColor.child_color)
         return tree
 
+    def _dicts_to_string(self, input_dict: dict) -> str:
+        """
+        Converts a dict of dicts to a string representation.
 
-def _dicts_to_string(input_dict: dict) -> str:
-    """
-    Converts a dict of dicts to a string representation.
+        Args:
+            input_dict (dict): A dict.
 
-    Args:
-        input_dict (dict): A dict.
+        Returns:
+            str: A string representation.
 
-    Returns:
-        str: A string representation.
-
-    """
-    string_output = ""
-    max_print_lenght = 200
-    for key, value in input_dict.items():
-        if value:
-            if isinstance(value, dict):
-                _dicts_to_string(input_dict[key])
-            else:
-                new_string_output = (
-                    f"\n[{PrintColor.key_color}]{str(key)}:[/{PrintColor.key_color}] "
-                    f"[{PrintColor.faded_color}]{str(value)}[/{PrintColor.faded_color}]"
-                )
-                if len(new_string_output) > max_print_lenght:
-                    new_string_output = new_string_output[:max_print_lenght] + f" (...) [/{PrintColor.faded_color}]"
-                string_output += new_string_output
-
-    return string_output
+        """
+        parts = []
+        max_print_length = 200
+        for key, value in input_dict.items():
+            if value:
+                if isinstance(value, dict):
+                    new_string_output = f"\n[{PrintColor.key_color}]{str(key)}:[/{PrintColor.key_color}] "
+                    new_string_output += f"{{{self._dicts_to_string(value)}}}"
+                else:
+                    new_string_output = (
+                        f"\n[{PrintColor.key_color}]{str(key)}:[/{PrintColor.key_color}] "
+                        f"[{PrintColor.faded_color}]{str(value)}[/{PrintColor.faded_color}]"
+                    )
+                    if len(new_string_output) > max_print_length:
+                        new_string_output = new_string_output[:max_print_length] + f" (...) [/{PrintColor.faded_color}]"
+                parts.append(new_string_output)
+        return ", ".join(parts)
 
 
 class CLITraceHandler(TraceHandler[CLISpan]):
@@ -204,6 +203,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
         """
         current_span.end()
         current_span.status = SpanStatus.ERROR
+        current_span.outputs = {"error": str(error)}
         if current_span.parent is None:
             self.update_live(final=True)
         self.update_live()
