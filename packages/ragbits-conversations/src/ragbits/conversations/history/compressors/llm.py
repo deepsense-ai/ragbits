@@ -75,7 +75,7 @@ class StandaloneMessageCompressor(ConversationHistoryCompressor):
         other_messages = [message for message in conversation[:-1] if message["role"] in ["user", "assistant"]]
 
         if not other_messages:
-            # No history to use fro recontextualization, simply return the user message
+            # No history to use for recontextualization, simply return the user message
             return last_message["content"]
 
         history = [f"{message['role']}: {message['content']}" for message in other_messages[-self._history_len :]]
