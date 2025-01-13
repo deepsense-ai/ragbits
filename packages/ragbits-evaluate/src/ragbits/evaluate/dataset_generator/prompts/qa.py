@@ -23,7 +23,7 @@ class BasicAnswerGenPrompt(Prompt[BasicAnswerGenInput, str]):
         "If you don't know the answer just say: I don't know."
     )
 
-    user_prompt: str = "Text:\n<|text_start|>\n {{ chunk }} \n<|text_end|>\n\nQuestion:\n " "{{ question }} \n\nAnswer:"
+    user_prompt: str = "Text:\n<|text_start|>\n {{ chunk }} \n<|text_end|>\n\nQuestion:\n {{ question }} \n\nAnswer:"
 
 
 class PassagesGenInput(BaseModel):
@@ -49,9 +49,7 @@ class PassagesGenPrompt(Prompt[PassagesGenInput, str]):
         "FULL SENTENCES"
     )
 
-    user_prompt: str = (
-        "Question:\n {{ question }} \nAnswer:\n {{ basic_answer }} \nChunk:\n " "{{ chunk }}\n\nPassages:"
-    )
+    user_prompt: str = "Question:\n {{ question }} \nAnswer:\n {{ basic_answer }} \nChunk:\n {{ chunk }}\n\nPassages:"
 
 
 class QueryGenInput(BaseModel):
