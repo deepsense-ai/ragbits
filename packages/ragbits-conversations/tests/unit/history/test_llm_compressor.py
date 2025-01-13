@@ -1,6 +1,6 @@
 import pytest
 
-from ragbits.conversations.history.compressors.llm import LastMessageAndHistory, RecontextualizeLastMessage
+from ragbits.conversations.history.compressors.llm import LastMessageAndHistory, StandaloneMessageCompressor
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.prompt import Prompt
@@ -17,7 +17,7 @@ async def test_messages_included():
         {"role": "user", "content": "foo3"},
     ]
     llm = MockLLM(default_options=MockLLMOptions(response="some answer"))
-    compressor = RecontextualizeLastMessage(llm)
+    compressor = StandaloneMessageCompressor(llm)
     answer = await compressor.compress(conversation)
     assert answer == "some answer"
     user_prompt = llm.calls[0][1]
@@ -30,7 +30,7 @@ async def test_messages_included():
 
 async def test_no_messages():
     conversation: ChatFormat = []
-    compressor = RecontextualizeLastMessage(MockLLM())
+    compressor = StandaloneMessageCompressor(MockLLM())
 
     with pytest.raises(ValueError):
         await compressor.compress(conversation)
@@ -40,7 +40,7 @@ async def test_last_message_not_user():
     conversation: ChatFormat = [
         {"role": "assistant", "content": "foo2"},
     ]
-    compressor = RecontextualizeLastMessage(MockLLM())
+    compressor = StandaloneMessageCompressor(MockLLM())
 
     with pytest.raises(ValueError):
         await compressor.compress(conversation)
@@ -55,7 +55,7 @@ async def test_history_len():
         {"role": "user", "content": "foo5"},
     ]
     llm = MockLLM()
-    compressor = RecontextualizeLastMessage(llm, history_len=3)
+    compressor = StandaloneMessageCompressor(llm, history_len=3)
     await compressor.compress(conversation)
     user_prompt = llm.calls[0][1]
     assert user_prompt["role"] == "user"
@@ -84,7 +84,7 @@ async def test_only_user_and_assistant_messages_in_history():
         {"role": "user", "content": "foo6"},
     ]
     llm = MockLLM()
-    compressor = RecontextualizeLastMessage(llm, history_len=4)
+    compressor = StandaloneMessageCompressor(llm, history_len=4)
     await compressor.compress(conversation)
     user_prompt = llm.calls[0][1]
     assert user_prompt["role"] == "user"
@@ -104,7 +104,7 @@ async def test_changing_prompt():
         {"role": "user", "content": "foo3"},
     ]
     llm = MockLLM()
-    compressor = RecontextualizeLastMessage(llm, prompt=MockPrompt)
+    compressor = StandaloneMessageCompressor(llm, prompt=MockPrompt)
     await compressor.compress(conversation)
     user_prompt = llm.calls[0][0]
     assert user_prompt["role"] == "user"

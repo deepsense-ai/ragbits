@@ -1,7 +1,7 @@
 """
 Ragbits Conversations Example: Recontextualize Last Message
 
-This example demonstrates how to use the `RecontextualizeLastMessage` compressor to recontextualize
+This example demonstrates how to use the `StandaloneMessageCompressor` compressor to recontextualize
 the last message in a conversation history.
 """
 
@@ -14,7 +14,7 @@ the last message in a conversation history.
 
 import asyncio
 
-from ragbits.conversations.history.compressors.llm import RecontextualizeLastMessage
+from ragbits.conversations.history.compressors.llm import StandaloneMessageCompressor
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import ChatFormat
 
@@ -32,13 +32,13 @@ conversation: ChatFormat = [
 
 async def main() -> None:
     """
-    Main function to demonstrate the RecontextualizeLastMessage compressor.
+    Main function to demonstrate the StandaloneMessageCompressor compressor.
     """
     # Initialize the LiteLLM client
     llm = LiteLLM("gpt-4o")
 
-    # Initialize the RecontextualizeLastMessage compressor
-    compressor = RecontextualizeLastMessage(llm, history_len=10)
+    # Initialize the StandaloneMessageCompressor compressor
+    compressor = StandaloneMessageCompressor(llm, history_len=10)
 
     # Compress the conversation history
     recontextualized_message = await compressor.compress(conversation)

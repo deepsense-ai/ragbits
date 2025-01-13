@@ -1,4 +1,4 @@
 from .base import ConversationHistoryCompressor
-from .llm import RecontextualizeLastMessage
+from .llm import StandaloneMessageCompressor
 
-__all__ = ["ConversationHistoryCompressor", "RecontextualizeLastMessage"]
+__all__ = ["ConversationHistoryCompressor", "StandaloneMessageCompressor"]

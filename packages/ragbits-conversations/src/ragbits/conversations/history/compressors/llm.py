@@ -14,7 +14,7 @@ class LastMessageAndHistory(BaseModel):
     history: list[str]
 
 
-class RecontextualizeLastMessagePrompt(Prompt[LastMessageAndHistory, str]):
+class StandaloneMessageCompressorPrompt(Prompt[LastMessageAndHistory, str]):
     """
     A prompt for recontextualizing the last message in the history.
     """
@@ -37,7 +37,7 @@ class RecontextualizeLastMessagePrompt(Prompt[LastMessageAndHistory, str]):
     """
 
 
-class RecontextualizeLastMessage(ConversationHistoryCompressor):
+class StandaloneMessageCompressor(ConversationHistoryCompressor):
     """
     A compressor that uses LLM to recontextualize the last message in the history,
     i.e. create a standalone version of the message that includes necessary context.
@@ -45,7 +45,7 @@ class RecontextualizeLastMessage(ConversationHistoryCompressor):
 
     def __init__(self, llm: LLM, history_len: int = 5, prompt: type[Prompt[LastMessageAndHistory, str]] | None = None):
         """
-        Initialize the RecontextualizeLastMessage compressor with a LLM.
+        Initialize the StandaloneMessageCompressor compressor with a LLM.
 
         Args:
             llm: A LLM instance to handle recontextualizing the last message.
@@ -54,7 +54,7 @@ class RecontextualizeLastMessage(ConversationHistoryCompressor):
         """
         self._llm = llm
         self._history_len = history_len
-        self._prompt = prompt or RecontextualizeLastMessagePrompt
+        self._prompt = prompt or StandaloneMessageCompressorPrompt
 
     async def compress(self, conversation: ChatFormat) -> str:
         """
@@ -69,7 +69,10 @@ class RecontextualizeLastMessage(ConversationHistoryCompressor):
 
         last_message = conversation[-1]
         if last_message["role"] != "user":
-            raise ValueError("RecontextualizeLastMessage expects the last message to be from the user.")
+            raise ValueError("StandaloneMessageCompressor expects the last message to be from the user.")
+
+        if len(conversation) == 1:
+            return last_message["content"]
 
         # Only include "user" and "assistant" messages in the history
         other_messages = [message for message in conversation[:-1] if message["role"] in ["user", "assistant"]]
