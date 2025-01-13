@@ -71,7 +71,7 @@ class RecontextualizeLastMessage(ConversationHistoryCompressor):
         if last_message["role"] != "user":
             raise ValueError("RecontextualizeLastMessage expects the last message to be from the user.")
 
-        # Only indlucde "user" and "assistant" messages in the history
+        # Only include "user" and "assistant" messages in the history
         other_messages = [message for message in conversation[:-1] if message["role"] in ["user", "assistant"]]
 
         history = [f"{message['role']}: {message['content']}" for message in other_messages[-self._history_len :]]
