@@ -71,11 +71,12 @@ class StandaloneMessageCompressor(ConversationHistoryCompressor):
         if last_message["role"] != "user":
             raise ValueError("StandaloneMessageCompressor expects the last message to be from the user.")
 
-        if len(conversation) == 1:
-            return last_message["content"]
-
         # Only include "user" and "assistant" messages in the history
         other_messages = [message for message in conversation[:-1] if message["role"] in ["user", "assistant"]]
+
+        if not other_messages:
+            # No history to use fro recontextualization, simply return the user message
+            return last_message["content"]
 
         history = [f"{message['role']}: {message['content']}" for message in other_messages[-self._history_len :]]
 
