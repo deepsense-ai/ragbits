@@ -204,12 +204,11 @@ class DocumentSearch(WithConstructionConfig):
 
         Args:
             documents: Either:
-                - A URI string (e.g., "gcs://bucket/*") to specify source location(s), or
-                - A sequence of documents or metadata of the documents to ingest
-                URI format depends on the source type, for example:
-                - "file:///path/to/files/*.txt"
-                - "gcs://bucket/folder/*"
-                - "huggingface://dataset/split/row"
+                - A sequence of `Document`, `DocumentMetadata`, or `Source` objects
+                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example: 
+                    - "file:///path/to/files/*.txt"
+                    - "gcs://bucket/folder/*"
+                    - "huggingface://dataset/split/row"
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
