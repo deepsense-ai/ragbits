@@ -11,6 +11,7 @@ resolution-markers = [
 [manifest]
 members = [
     "ragbits-cli",
+    "ragbits-conversations",
     "ragbits-core",
     "ragbits-document-search",
     "ragbits-evaluate",
@@ -3889,6 +3890,31 @@ requires-dist = [
 ]
 
 [[package]]
+name = "ragbits-conversations"
+version = "0.6.0"
+source = { editable = "packages/ragbits-conversations" }
+
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
+[[package]]
 name = "ragbits-core"
 version = "0.6.0"
 source = { editable = "packages/ragbits-core" }
@@ -4099,6 +4125,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "asyncpg" },
     { name = "ragbits-cli" },
+    { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "lab", "local", "otel", "qdrant"] },
     { name = "ragbits-document-search", extra = ["distributed", "gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
@@ -4129,6 +4156,7 @@ dev = [
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
+    { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "local", "otel", "qdrant"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
