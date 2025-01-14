@@ -7,9 +7,9 @@ from ragbits.cli import app as root_app
 from ragbits.cli import autoregister
 from ragbits.core import audit
 
-PROCESS_NAME_STR = "InMemoryVectorStore.store Status: completed; Duration: "
-INPUTS_1_STR = "entries: [VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
-OUTPUTS_1_STR = "returned: [VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
+PROCESS_NAME_STR = "InMemoryVectorStore.store: 0.000s\n"
+INPUTS_1_STR = "inputs.entries: [\"VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
+OUTPUTS_1_STR = "outputs.returned: [\"VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
 
 
 def test_no_cli_trace_handler():
