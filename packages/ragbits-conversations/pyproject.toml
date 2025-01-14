@@ -1,8 +1,8 @@
 [project]
-name = "ragbits"
+name = "ragbits-conversations"
 version = "0.6.0"
 description = "Building blocks for rapid development of GenAI applications"
-dynamic = ["readme"]
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [
@@ -31,14 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "ragbits-document-search==0.6.0",
-    "ragbits-cli==0.6.0",
-    "ragbits-evaluate==0.6.0",
-    "ragbits-guardrails==0.6.0",
-    "ragbits-core==0.6.0",
-    "ragbits-conversations==0.6.0",
-]
+dependencies = []
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -47,54 +40,21 @@ dependencies = [
 "Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
-chroma = [
-    "chromadb~=0.4.24",
-]
-huggingface = [
-    "datasets~=3.0.1",
-]
-gcs = [
-    "gcloud-aio-storage~=9.3.0"
-]
-lab = [
-    "gradio~=4.44.0",
-]
-local = [
-    "torch~=2.2.1",
-    "transformers~=4.44.2",
-    "numpy~=1.26.0"
-]
-openai = [
-    "openai~=1.57.3",
-]
-otel = [
-    "opentelemetry-api~=1.27.0",
-]
-promptfoo = [
-    "PyYAML~=6.0.2",
-]
-qdrant = [
-    "qdrant-client~=1.12.1",
-]
-relari = [
-    "continuous-eval~=0.3.12",
-]
-distributed = [
-    "ray>=2.39.0",
+[tool.uv]
+dev-dependencies = [
+    "pre-commit~=3.8.0",
+    "pytest~=8.3.3",
+    "pytest-cov~=5.0.0",
+    "pytest-asyncio~=0.24.0",
+    "pip-licenses>=4.0.0,<5.0.0"
 ]
 
 [build-system]
-requires = ["hatchling", "hatch-fancy-pypi-readme"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-[tool.hatch.metadata.hooks.fancy-pypi-readme]
-content-type = "text/markdown"
-
-[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
-path = "../../README.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragbits"]

@@ -1,6 +1,5 @@
 from ragbits.core.llms import LLM
-from ragbits.core.llms.clients.litellm import LiteLLMOptions
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 
 
