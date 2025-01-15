@@ -31,11 +31,14 @@ To run the script, execute the following command:
 
 import asyncio
 
+from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.processor_strategies import DistributedProcessing
+
+audit.set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
