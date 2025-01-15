@@ -1,6 +1,7 @@
 import base64
 import warnings
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
@@ -35,6 +36,8 @@ class LiteLLMOptions(Options):
     temperature: float | None | NotGiven = NOT_GIVEN
     top_p: float | None | NotGiven = NOT_GIVEN
     mock_response: str | None | NotGiven = NOT_GIVEN
+    logprobs: bool | None | NotGiven = NOT_GIVEN
+    top_logprobs: int | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
@@ -125,7 +128,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
@@ -145,7 +148,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
         """
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
-
         with trace(
             messages=conversation,
             model=self.model_name,
@@ -166,8 +168,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
                 outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
                 outputs.total_tokens = response.usage.total_tokens  # type: ignore
-
-        return outputs.response  # type: ignore
+                if options.logprobs:
+                    outputs.logprobs = response.choices[0].logprobs # type: ignore
+        return vars(outputs)  # type: ignore
 
     async def _call_streaming(
         self,

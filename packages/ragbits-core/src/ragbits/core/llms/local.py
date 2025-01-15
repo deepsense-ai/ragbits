@@ -1,6 +1,7 @@
 import asyncio
 import threading
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -93,7 +94,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
         Makes a call to the local LLM with the provided prompt and options.
 
@@ -117,7 +118,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         )
         response = outputs[0][input_ids.shape[-1] :]
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
-        return decoded_response
+        return {"response": decoded_response}
 
     async def _call_streaming(
         self,

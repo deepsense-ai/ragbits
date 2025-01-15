@@ -2,7 +2,7 @@ import enum
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import ClassVar, TypeVar, cast, overload
+from typing import Any, ClassVar, TypeVar, cast, overload
 
 from pydantic import BaseModel
 
@@ -68,7 +68,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
@@ -123,11 +123,12 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Text response from LLM.
         """
         response = await self.generate_raw(prompt, options=options)
+        response_str = cast(str, response["response"])
 
         if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(response)
+            return prompt.parse_response(response_str)
 
-        return cast(OutputT, response)
+        return cast(OutputT, response_str)
 
     async def generate_streaming(
         self,
@@ -167,7 +168,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
         Calls LLM inference API.
 
@@ -178,7 +179,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
 
         Returns:
-            Response string from LLM.
+            Response dict from LLM.
         """
 
     @abstractmethod
