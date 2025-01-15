@@ -60,11 +60,11 @@ def test_cli_span_to_tree() -> None:
         third_instance.update()
 
         assert "process_1" in str(parent_instance.tree.label)
-        assert PrintColor.BLUE in str(parent_instance.tree.label)
+        assert PrintColor.RUNNING_COLOR in str(parent_instance.tree.label)
         assert "process_2" in str(second_instance.tree.label)
-        assert PrintColor.GRAY in str(second_instance.tree.label)
+        assert PrintColor.TEXT_COLOR in str(second_instance.tree.label)
         assert "process_3" in str(third_instance.tree.label)
-        assert PrintColor.RED in str(third_instance.tree.label)
+        assert PrintColor.ERROR_COLOR in str(third_instance.tree.label)
 
 
 def test_cli_trace_start() -> None:

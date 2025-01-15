@@ -22,11 +22,11 @@ class PrintColor(str, Enum):
     SpanPrintColor represents the color of font for printing the span related information to the console.
     """
 
-    BLUE = "bold blue"
-    GREEN = "bold green"
-    RED = "bold red"
-    GRAY = "grey50"
-    PURPLE = "plum4"
+    RUNNING_COLOR = "bold blue"
+    END_COLOR = "bold green"
+    ERROR_COLOR = "bold red"
+    TEXT_COLOR = "grey50"
+    KEY_COLOR = "plum4"
 
 
 class CLISpan:
@@ -59,16 +59,16 @@ class CLISpan:
         """
         elapsed = f": {(self.end_time - self.start_time):.3f}s" if self.end_time else " ..."
         color = {
-            SpanStatus.ERROR: PrintColor.RED,
-            SpanStatus.STARTED: PrintColor.BLUE,
-            SpanStatus.COMPLETED: PrintColor.GREEN,
+            SpanStatus.ERROR: PrintColor.ERROR_COLOR,
+            SpanStatus.STARTED: PrintColor.RUNNING_COLOR,
+            SpanStatus.COMPLETED: PrintColor.END_COLOR,
         }[self.status]
-        name = f"[{color}]{self.name}[/{color}][{PrintColor.GRAY}]{elapsed}[/{PrintColor.GRAY}]"
+        name = f"[{color}]{self.name}[/{color}][{PrintColor.TEXT_COLOR}]{elapsed}[/{PrintColor.TEXT_COLOR}]"
 
         # TODO: Remove truncating after implementing better CLI formatting.
         attrs = [
-            f"[{PrintColor.PURPLE}]{k}:[/{PrintColor.PURPLE}] "
-            f"[{PrintColor.GRAY}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{PrintColor.GRAY}]"  # noqa: PLR2004
+            f"[{PrintColor.KEY_COLOR}]{k}:[/{PrintColor.KEY_COLOR}] "
+            f"[{PrintColor.TEXT_COLOR}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{PrintColor.TEXT_COLOR}]"  # noqa: PLR2004
             for k, v in self.attributes.items()
         ]
         self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
