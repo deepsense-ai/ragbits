@@ -23,6 +23,7 @@ class BaseProvider(WithConstructionConfig, ABC):
     """
 
     default_module: ClassVar = providers
+    configuration_key: ClassVar = "provider"
 
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
 
