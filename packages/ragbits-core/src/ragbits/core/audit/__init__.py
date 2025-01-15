@@ -64,6 +64,7 @@ def clear_event_handlers() -> None:
 
     _trace_handlers.clear()
 
+
 @contextmanager
 def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]:  # noqa: ANN401
     """
