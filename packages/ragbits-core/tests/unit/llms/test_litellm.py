@@ -85,7 +85,7 @@ async def test_generation_with_parser():
     output = await llm.generate(prompt, options=options)
     assert output == 42
     raw_output = await llm.generate_raw(prompt, options=options)
-    assert raw_output == "I'm fine, thank you."
+    assert raw_output["response"] == "I'm fine, thank you."
 
 
 async def test_generation_with_static_prompt():
@@ -117,7 +117,7 @@ async def test_generation_with_static_prompt_with_parser():
     output = await llm.generate(prompt, options=options)
     assert output == 42
     raw_output = await llm.generate_raw(prompt, options=options)
-    assert raw_output == "42"
+    assert raw_output["response"] == "42"
 
 
 async def test_generation_with_pydantic_output():

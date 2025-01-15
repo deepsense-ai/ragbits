@@ -169,7 +169,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
                 outputs.total_tokens = response.usage.total_tokens  # type: ignore
                 if options.logprobs:
-                    outputs.logprobs = response.choices[0].logprobs # type: ignore
+                    outputs.logprobs = response.choices[0].logprobs  # type: ignore
         return vars(outputs)  # type: ignore
 
     async def _call_streaming(

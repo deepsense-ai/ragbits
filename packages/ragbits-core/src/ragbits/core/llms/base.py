@@ -77,7 +77,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Options to use for the LLM client.
 
         Returns:
-            Raw text response from LLM.
+            Raw response from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
         response = await self._call(
