@@ -3,6 +3,7 @@ import re
 from typing import get_type_hints
 
 import asyncpg
+from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
@@ -158,8 +159,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         # _table_name has been validated in the class constructor, and it is a valid table name.
         create_index_query = f"""
                 CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
-                USING hnsw (vector $1)
-                WITH (m = $2, ef_construction = $3);
+                USING hnsw (vector {DISTANCE_OPS[self._distance_method][0]})
+                WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
                 """
 
         async with self._client.acquire() as conn:
@@ -167,16 +168,16 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             exists = await conn.fetchval(check_table_existence, self._table_name)
 
             if not exists:
-                create_command = self._create_table_command()
-                await conn.execute(create_command)
-                await conn.execute(
-                    create_index_query,
-                    DISTANCE_OPS[self._distance_method][0],
-                    self._hnsw_params["m"],
-                    self._hnsw_params["ef_construction"],
-                )
-                print("Table created!")
+                create_table_query = self._create_table_command()
+                try:
+                    async with conn.transaction():
+                        await conn.execute(create_table_query)
+                        await conn.execute(create_index_query)
 
+                    print("Table and index created!")
+                except Exception as e:
+                    print(f"Failed to create table and index: {e}")
+                    raise
             else:
                 print("Table already exists!")
 
@@ -204,11 +205,18 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                         entry.id,
                         entry.key,
                         str(entry.vector),
-                        json.dumps(entry.metadata),
+                        json.dumps(entry.metadata, default=pydantic_encoder),
                     )
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self._table_name} does not exist. Creating the table.")
-            await self.create_table()
+            try:
+                await self.create_table()
+            except Exception as e:
+                print(f"Failed to handle missing table: {e}")
+                return
+
+            print("Table created successfully. Inserting entries...")
+            await self.store(entries)
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -232,7 +240,11 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 await conn.execute(remove_query, ids)
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self._table_name} does not exist. Creating the table.")
-            await self.create_table()
+            try:
+                await self.create_table()
+            except Exception as e:
+                print(f"Failed to handle missing table: {e}")
+                return
 
     @traceable
     async def _fetch_records(self, query: str) -> list[VectorStoreEntry]:
@@ -260,7 +272,11 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         except asyncpg.exceptions.UndefinedTableError:
             print(f"Table {self._table_name} does not exist. Creating the table.")
-            await self.create_table()
+            try:
+                await self.create_table()
+            except Exception as e:
+                print(f"Failed to handle missing table: {e}")
+                return []
             return []
 
     @traceable
