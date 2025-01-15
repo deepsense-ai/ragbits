@@ -4,7 +4,7 @@ from enum import Enum
 from rich.live import Live
 from rich.tree import Tree
 
-from ragbits.core.audit import TraceHandler
+from ragbits.core.audit.base import TraceHandler, format_attributes
 
 
 class SpanStatus(Enum):
@@ -50,7 +50,7 @@ class CLISpan:
         self.end_time: float | None = None
         self.status = SpanStatus.STARTED
         self.tree = Tree("")
-        if self.parent:
+        if self.parent is not None:
             self.parent.tree.add(self.tree)
 
     def update(self) -> None:
@@ -68,7 +68,7 @@ class CLISpan:
         # TODO: Remove truncating after implementing better CLI formatting.
         attrs = [
             f"[{PrintColor.PURPLE}]{k}:[/{PrintColor.PURPLE}] "
-            f"[{PrintColor.GRAY}]{v[:120] + ' (...)' if len(v) > 120 else v}[/{PrintColor.GRAY}]"  # noqa: PLR2004
+            f"[{PrintColor.GRAY}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{PrintColor.GRAY}]"  # noqa: PLR2004
             for k, v in self.attributes.items()
         ]
         self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
@@ -104,7 +104,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
         Returns:
             The updated current trace span.
         """
-        attributes = _format_attributes(inputs, prefix="inputs")
+        attributes = format_attributes(inputs, prefix="inputs")
         span = CLISpan(
             name=name,
             attributes=attributes,
@@ -128,7 +128,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             outputs: The output data.
             current_span: The current trace span.
         """
-        attributes = _format_attributes(outputs, prefix="outputs")
+        attributes = format_attributes(outputs, prefix="outputs")
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.COMPLETED
         current_span.end()
@@ -147,7 +147,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             error: The error that occurred.
             current_span: The current trace span.
         """
-        attributes = _format_attributes({"message": str(error), **vars(error)}, prefix="error")
+        attributes = format_attributes({"message": str(error), **vars(error)}, prefix="error")
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.ERROR
         current_span.end()
@@ -157,36 +157,3 @@ class CLITraceHandler(TraceHandler[CLISpan]):
 
         if current_span.parent is None:
             self.live.stop()
-
-
-def _format_attributes(data: dict, prefix: str | None = None) -> dict:
-    """
-    Format attributes for CLI.
-
-    Args:
-        data: The data to format.
-        prefix: The prefix to use for the keys.
-
-    Returns:
-        The formatted attributes.
-    """
-    flattened = {}
-
-    for key, value in data.items():
-        current_key = f"{prefix}.{key}" if prefix else key
-
-        if isinstance(value, dict):
-            flattened.update(_format_attributes(value, current_key))
-        elif isinstance(value, list | tuple):
-            flattened[current_key] = repr(
-                [
-                    item if isinstance(item, str | float | int | bool) else repr(item)
-                    for item in value  # type: ignore
-                ]
-            )
-        elif isinstance(value, str | float | int | bool):
-            flattened[current_key] = str(value)
-        else:
-            flattened[current_key] = repr(value)
-
-    return flattened

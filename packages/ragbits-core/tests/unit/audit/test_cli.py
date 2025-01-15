@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from ragbits.core.audit.cli import CLISpan, CLITraceHandler, SpanStatus
+from ragbits.core.audit.cli import CLISpan, CLITraceHandler, PrintColor, SpanStatus
 
 TEST_NAME_1 = "process_1"
 TEST_NAME_2 = "process_2"
@@ -46,6 +46,44 @@ def test_cli_span_end_method() -> None:
 
         assert test_instance.end_time == PROCESS_TIME[1]
         assert test_instance.status == SpanStatus.STARTED
+
+
+def test_cli_span_to_tree() -> None:
+    with patch("time.perf_counter", side_effect=[11.0, 22.0, 33.0]):
+        parent_instance = CLISpan(name=TEST_NAME_1, attributes=TEST_INPUT)
+        second_instance = CLISpan(name=TEST_NAME_2, attributes={}, parent=parent_instance)
+        third_instance = CLISpan(name="process_3", attributes={}, parent=second_instance)
+        third_instance.status = SpanStatus.ERROR
+
+        parent_instance.update()
+        second_instance.update()
+        third_instance.update()
+
+        assert "process_1" in str(parent_instance.tree.label)
+        assert PrintColor.BLUE in str(parent_instance.tree.label)
+        assert "process_2" in str(second_instance.tree.label)
+        assert PrintColor.GRAY in str(second_instance.tree.label)
+        assert "process_3" in str(third_instance.tree.label)
+        assert PrintColor.RED in str(third_instance.tree.label)
+
+
+def test_cli_trace_start() -> None:
+    trace_handler = CLITraceHandler()
+    parent_span = trace_handler.start(name=TEST_NAME_1, inputs=TEST_INPUT)
+
+    assert trace_handler.live is not None
+    assert trace_handler.tree is not None
+    assert TEST_NAME_1 in str(trace_handler.tree.label)
+    assert parent_span.name == TEST_NAME_1
+    assert parent_span.parent is None
+    assert parent_span.start_time is not None
+    assert parent_span.status == SpanStatus.STARTED
+
+    child_span = trace_handler.start(name=TEST_NAME_2, inputs={}, current_span=parent_span)
+    assert child_span.name == TEST_NAME_2
+    assert child_span.parent == parent_span
+    assert child_span.parent.name == TEST_NAME_1
+    trace_handler.live.stop()
 
 
 def test__cli_trace_stop() -> None:
