@@ -52,11 +52,11 @@ you can use Jeager. The recommended way to run it is using the official Docker i
 import asyncio
 
 from chromadb import EphemeralClient
-from chroma_opentelemetry import trace
-from chroma_opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from chroma_opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from chroma_opentelemetry.sdk.trace import TracerProvider
-from chroma_opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
