@@ -28,6 +28,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[OutputT]):
     """
     A schema of output with metadata
     """
+
     llm_result: OutputT
     metadata: dict[str, Any]
 
@@ -130,15 +131,34 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Text response from LLM.
         """
-        response = await self.generate_raw(prompt, options=options)
-        return cast(OutputT, self._format_raw_llm_response(llm_response=response, prompt=prompt))
+        raw_response = await self.generate_raw(prompt, options=options)
+        user_response = raw_response.pop("response")
+        if isinstance(prompt, BasePromptWithParser):
+            return prompt.parse_response(user_response)
+        return cast(OutputT, user_response)
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePromptWithParser[OutputT],
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
 
     async def generate_with_metadata(
         self,
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResponseWithMetadata[Any]:
+    ) -> LLMResponseWithMetadata[OutputT]:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
         output type of the prompt (if available).
@@ -150,9 +170,13 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Text response from LLM.
         """
-        response = await self.generate_raw(prompt, options=options)
-        llm_result = self._format_raw_llm_response(llm_response=response, prompt=prompt)
-        return LLMResponseWithMetadata(llm_result=llm_result, metadata=response)
+        raw_response = await self.generate_raw(prompt, options=options)
+        user_response = raw_response.pop("response")
+        if isinstance(prompt, BasePromptWithParser):
+            user_response = prompt.parse_response(user_response)
+            return LLMResponseWithMetadata(llm_result=user_response, metadata=raw_response)
+        user_response = cast(OutputT, user_response)
+        return LLMResponseWithMetadata(llm_result=user_response, metadata=raw_response)
 
     async def generate_streaming(
         self,
@@ -184,13 +208,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         if prompt.list_images():
             wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
         return prompt.chat
-
-    @staticmethod
-    def _format_raw_llm_response(llm_response: dict[str, Any], prompt: BasePrompt) -> Any: # noqa: ANN401
-        response_str = llm_response.pop("response")
-        if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(response_str)
-        return response_str
 
     @abstractmethod
     async def _call(
