@@ -56,6 +56,15 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
             raise TypeError(f"Invalid handler type: {type(handler)}")
 
 
+def clear_event_handlers() -> None:
+    """
+    Clear all trace handlers.
+    """
+    global _trace_handlers  # noqa: PLW0602
+
+    _trace_handlers.clear()
+
+
 @contextmanager
 def trace(name: str | None = None, **inputs: Any) -> Iterator[SimpleNamespace]:  # noqa: ANN401
     """
