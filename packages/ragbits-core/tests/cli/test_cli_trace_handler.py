@@ -1,83 +1,60 @@
 import os
 
+import typer
 from typer.testing import CliRunner
 
 from ragbits.cli import app as root_app
-from ragbits.cli import autoregister
 from ragbits.core import audit
+from ragbits.core.audit import traceable
 
-PROCESS_NAME_STR = "InMemoryVectorStore.store: 0.000s\n"
-INPUTS_1_STR = "inputs.entries: [\"VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
-OUTPUTS_1_STR = "outputs.returned: [\"VectorStoreEntry(id='1', key='entry 1', vector=[4.0, 5.0]"
+PROCESS_1_STR = "inputs.a: 4\ninputs.b: 2\noutputs.returned: 7"
+PROCESS_2_STR = "inputs.a: 5\n    inputs.b: 2\n    outputs.returned: 7"
+PROCESS_NAME_STR = "add_numbers: 0"
+
+mock_app = typer.Typer(no_args_is_help=True)
+root_app.add_typer(mock_app, name="mock")
+
+
+@mock_app.command()
+@traceable
+def add_numbers(a: int, b: int) -> int:
+    if a % 2 == 0:
+        return add_numbers(a + 1, b)
+    return a + b
+
+
+def test_add_numbers_cli_trace_handler_with_verbose():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(root_app, ["--verbose", "mock", "add-numbers", "4", "2"])
+    if os.getenv("RAGBITS_VERBOSE"):
+        assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
+    assert result.exit_code == 0
+    assert PROCESS_1_STR in result.stdout
+    assert PROCESS_2_STR in result.stdout
+    assert PROCESS_NAME_STR in result.stdout
+    audit.clear_event_handlers()
+
+
+def test_add_numbers_cli_trace_handler_with_set_cli():
+    audit.set_trace_handlers("cli")
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
+    if os.getenv("RAGBITS_VERBOSE"):
+        assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
+    assert result.exit_code == 0
+    assert PROCESS_1_STR in result.stdout
+    assert PROCESS_2_STR in result.stdout
+    assert PROCESS_NAME_STR in result.stdout
+    audit.clear_event_handlers()
 
 
 def test_no_cli_trace_handler():
-    runner = CliRunner(mix_stderr=False)
-    result = runner.invoke(
-        root_app,
-        [
-            "--output",
-            "json",
-            "vector-store",
-            "--factory-pathcli.test_vector_store:vector_store_factory",
-            "list",
-        ],
-        env={"RAGBITS_VERBOSE": "1"},
-    )
-
-    if os.getenv("RAGBITS_VERBOSE"):
-        assert os.getenv("RAGBITS_VERBOSE") == "0"
     audit.clear_event_handlers()
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
+    if os.getenv("RAGBITS_VERBOSE"):
+        assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
+    assert result.exit_code == 0
+    assert PROCESS_1_STR not in result.stdout
+    assert PROCESS_2_STR not in result.stdout
     assert PROCESS_NAME_STR not in result.stdout
-    assert INPUTS_1_STR not in result.stdout
-    assert OUTPUTS_1_STR not in result.stdout
-    assert result.exit_code == 0
-
-
-def test_set_cli_trace_handler():
-    autoregister()
-    audit.set_trace_handlers("cli")
-    runner = CliRunner(mix_stderr=False)
-    result = runner.invoke(
-        root_app,
-        [
-            "--output",
-            "json",
-            "vector-store",
-            "--factory-path",
-            "cli.test_vector_store:vector_store_factory",
-            "list",
-        ],
-    )
-    if os.getenv("RAGBITS_VERBOSE"):
-        assert os.getenv("RAGBITS_VERBOSE") == "0"
-
-    audit.clear_event_handlers()
-    assert PROCESS_NAME_STR in result.stdout
-    assert INPUTS_1_STR in result.stdout
-    assert OUTPUTS_1_STR in result.stdout
-    assert result.exit_code == 0
-
-
-def test_cli_trace_handler_from_verbose():
-    autoregister()
-    runner = CliRunner(mix_stderr=False)
-    result = runner.invoke(
-        root_app,
-        [
-            "--verbose",
-            "--output",
-            "json",
-            "vector-store",
-            "--factory-path",
-            "cli.test_vector_store:vector_store_factory",
-            "list",
-        ],
-    )
-    if os.getenv("RAGBITS_VERBOSE"):
-        assert os.getenv("RAGBITS_VERBOSE") == "0"
-    audit.clear_event_handlers()
-    assert PROCESS_NAME_STR in result.stdout
-    assert INPUTS_1_STR in result.stdout
-    assert OUTPUTS_1_STR in result.stdout
-    assert result.exit_code == 0
