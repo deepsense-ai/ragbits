@@ -1,6 +1,4 @@
 import os
-from unittest.mock import patch
-import sys
 from typer.testing import CliRunner
 
 from ragbits.cli import app as root_app
