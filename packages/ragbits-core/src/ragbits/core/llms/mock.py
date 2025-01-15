@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -42,14 +43,14 @@ class MockLLM(LLM[MockLLMOptions]):
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict[str, Any]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(conversation)
         if not isinstance(options.response, NotGiven):
-            return options.response
-        return "mocked response"
+            return {"response": options.response}
+        return {"response": "mocked response"}
 
     async def _call_streaming(  # noqa: PLR6301
         self,
