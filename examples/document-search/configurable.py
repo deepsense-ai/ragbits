@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: DocumentSearch from Config
+Ragbits Document Search Example: Configurable DocumentSearch
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
 We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
@@ -30,8 +30,11 @@ To run the script, execute the following command:
 
 import asyncio
 
+from ragbits.core import audit
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
+
+audit.set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
