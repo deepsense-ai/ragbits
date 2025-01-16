@@ -35,11 +35,14 @@ import asyncio
 
 from chromadb import EphemeralClient
 
+from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings, LiteLLMEmbeddingsOptions
 from ragbits.core.vector_stores import VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
+
+audit.set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
