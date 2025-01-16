@@ -86,3 +86,36 @@ class TraceHandler(Generic[SpanT], ABC):
 
         span = self._spans.get().pop()
         self.stop(outputs=vars(outputs), current_span=span)
+
+
+def format_attributes(data: dict, prefix: str | None = None) -> dict:
+    """
+    Format attributes for CLI.
+
+    Args:
+        data: The data to format.
+        prefix: The prefix to use for the keys.
+
+    Returns:
+        The formatted attributes.
+    """
+    flattened = {}
+
+    for key, value in data.items():
+        current_key = f"{prefix}.{key}" if prefix else key
+
+        if isinstance(value, dict):
+            flattened.update(format_attributes(value, current_key))
+        elif isinstance(value, list | tuple):
+            flattened[current_key] = repr(
+                [
+                    item if isinstance(item, str | float | int | bool) else repr(item)
+                    for item in value  # type: ignore
+                ]
+            )
+        elif isinstance(value, str | float | int | bool):
+            flattened[current_key] = value
+        else:
+            flattened[current_key] = repr(value)
+
+    return flattened
