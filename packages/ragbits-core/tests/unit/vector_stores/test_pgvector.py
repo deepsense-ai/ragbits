@@ -145,8 +145,7 @@ async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: 
     with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
         await mock_pgvector_store.store(data)
         mock_create_table.assert_called_once()
-    mock_conn.execute.assert_called_once()
-
+    assert mock_conn.execute.call_count == 2
 
 @pytest.mark.asyncio
 async def test_remove(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
