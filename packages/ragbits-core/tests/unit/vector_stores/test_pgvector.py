@@ -139,7 +139,7 @@ async def test_store_no_entries(mock_pgvector_store: PgVectorStore, mock_db_pool
 @pytest.mark.asyncio
 async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    mock_conn.execute.side_effect = asyncpg.exceptions.UndefinedTableError
+    mock_conn.execute.side_effect = [asyncpg.exceptions.UndefinedTableError, None]
     data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=VECTOR_EXAMPLE, metadata={})]
 
     with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
