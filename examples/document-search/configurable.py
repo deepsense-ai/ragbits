@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: DocumentSearch from Config
+Ragbits Document Search Example: Configurable DocumentSearch
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
 We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store

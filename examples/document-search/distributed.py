@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: Basic wtih distributed ingestion
+Ragbits Document Search Example: Distributed Ingest
 
 This example is based on the "Basic" example, but it demonstrates how to ingest documents in a distributed manner.
 The distributed ingestion is provided by "DistributedProcessing" which uses Ray to parallelize the ingestion process.
