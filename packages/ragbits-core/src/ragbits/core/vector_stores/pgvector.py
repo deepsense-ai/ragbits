@@ -239,12 +239,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             async with self._client.acquire() as conn:
                 await conn.execute(remove_query, ids)
         except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self._table_name} does not exist. Creating the table.")
-            try:
-                await self.create_table()
-            except Exception as e:
-                print(f"Failed to handle missing table: {e}")
-                return
+            print(f"Table {self._table_name} does not exist.")
+            return
 
     @traceable
     async def _fetch_records(self, query: str) -> list[VectorStoreEntry]:
@@ -271,12 +267,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             ]
 
         except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self._table_name} does not exist. Creating the table.")
-            try:
-                await self.create_table()
-            except Exception as e:
-                print(f"Failed to handle missing table: {e}")
-                return []
+            print(f"Table {self._table_name} does not exist.")
             return []
 
     @traceable

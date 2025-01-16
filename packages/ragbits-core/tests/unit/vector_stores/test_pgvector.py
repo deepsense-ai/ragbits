@@ -169,11 +169,10 @@ async def test_remove_no_ids(mock_pgvector_store: PgVectorStore, mock_db_pool: t
 async def test_remove_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
     mock_conn.execute.side_effect = asyncpg.exceptions.UndefinedTableError
-
-    with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
+    with patch("builtins.print") as mock_print:
         await mock_pgvector_store.remove(ids=["test_id"])
-        mock_create_table.assert_called_once()
-    mock_conn.execute.assert_called_once()
+        mock_conn.execute.assert_called_once()
+        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
 @pytest.mark.asyncio
@@ -205,12 +204,11 @@ async def test_fetch_records_no_table(
     _, mock_conn = mock_db_pool
     mock_conn.fetch.side_effect = asyncpg.exceptions.UndefinedTableError
     query = "SELECT * FROM some_table;"  # noqa S608
-
-    with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
+    with patch("builtins.print") as mock_print:
         results = await mock_pgvector_store._fetch_records(query=query)
         assert results == []
-        mock_create_table.assert_called_once()
-    mock_conn.fetch.assert_called_once_with(query)
+        mock_conn.fetch.assert_called_once()
+        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
 @pytest.mark.asyncio
