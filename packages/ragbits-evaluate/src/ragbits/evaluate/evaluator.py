@@ -1,6 +1,8 @@
+import asyncio
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
+from typing import Any
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
@@ -25,6 +27,8 @@ class Evaluator(WithConstructionConfig):
     """
     Evaluator class.
     """
+
+    CONCURRENCY: int = 10
 
     @classmethod
     async def run_from_config(cls, config: dict) -> dict:
@@ -80,7 +84,7 @@ class Evaluator(WithConstructionConfig):
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline,
-        dataset: Iterable,
+        dataset: Iterable[dict],
     ) -> tuple[list[EvaluationResult], dict]:
         """
         Call the pipeline with the given data.
@@ -92,9 +96,16 @@ class Evaluator(WithConstructionConfig):
         Returns:
             The evaluation results and performance metrics.
         """
+        semaphore = asyncio.Semaphore(self.CONCURRENCY)
+
+        async def _call_pipeline_with_semaphore(data: dict) -> Any:  # noqa: ANN401
+            async with semaphore:
+                return await pipeline(data)
+
         start_time = time.perf_counter()
-        pipe_outputs = await tqdm.gather(*[pipeline(data) for data in dataset], desc="Evaluation")
+        pipe_outputs = await tqdm.gather(*[_call_pipeline_with_semaphore(data) for data in dataset], desc="Evaluation")
         end_time = time.perf_counter()
+
         return pipe_outputs, self._compute_time_perf(start_time, end_time, len(pipe_outputs))
 
     @staticmethod

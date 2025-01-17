@@ -58,7 +58,6 @@ config = {
                 },
             },
         },
-        "concurrency": 10,
     },
     "metrics": {
         "precision_recall_f1": {
