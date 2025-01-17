@@ -2,7 +2,7 @@ import enum
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import Any, ClassVar, Generic, TypeVar, cast, overload
+from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel
 
@@ -30,7 +30,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[OutputT]):
     """
 
     content: OutputT
-    metadata: dict[str, Any]
+    metadata: dict
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -129,11 +129,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Text response from LLM.
         """
-        raw_response = await self.generate_raw(prompt, options=options)
-        user_response = raw_response.pop("response")
+        response = await self.generate_raw(prompt, options=options)
+        content = response.pop("response")
         if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(user_response)
-        return cast(OutputT, user_response)
+            return prompt.parse_response(content)
+        return cast(OutputT, content)
 
     @overload
     async def generate_with_metadata(

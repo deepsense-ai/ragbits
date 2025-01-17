@@ -150,7 +150,7 @@ async def test_generation_with_metadata():
     output = await llm.generate_with_metadata(prompt, options=options)
     assert output.content == "I'm fine, thank you."
     assert output.metadata == {
-        'completion_tokens': 20,
-        'prompt_tokens': 10,
-        'total_tokens': 30,
+        "completion_tokens": 20,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
     }

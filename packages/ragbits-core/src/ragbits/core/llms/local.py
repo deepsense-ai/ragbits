@@ -1,7 +1,6 @@
 import asyncio
 import threading
 from collections.abc import AsyncGenerator
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -14,12 +13,11 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
+from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-from .base import LLM
 
 
 class LocalLLMOptions(Options):
@@ -94,7 +92,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         """
         Makes a call to the local LLM with the provided prompt and options.
 
