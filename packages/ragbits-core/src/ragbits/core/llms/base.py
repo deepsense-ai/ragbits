@@ -29,7 +29,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[OutputT]):
     A schema of output with metadata
     """
 
-    llm_result: OutputT
+    content: OutputT
     metadata: dict[str, Any]
 
 
@@ -77,7 +77,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
@@ -89,14 +89,12 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Raw response from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        response = await self._call(
+        return await self._call(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )
-
-        return response
 
     @overload
     async def generate(
@@ -168,15 +166,13 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Options to use for the LLM client.
 
         Returns:
-            Text response from LLM.
+            Text response from LLM with metadata.
         """
-        raw_response = await self.generate_raw(prompt, options=options)
-        user_response = raw_response.pop("response")
+        response = await self.generate_raw(prompt, options=options)
+        content = response.pop("response")
         if isinstance(prompt, BasePromptWithParser):
-            user_response = prompt.parse_response(user_response)
-            return LLMResponseWithMetadata(llm_result=user_response, metadata=raw_response)
-        user_response = cast(OutputT, user_response)
-        return LLMResponseWithMetadata(llm_result=user_response, metadata=raw_response)
+            content = prompt.parse_response(content)
+        return LLMResponseWithMetadata[type(content)](content=content, metadata=response)  # type: ignore
 
     async def generate_streaming(
         self,
@@ -216,7 +212,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         """
         Calls LLM inference API.
 
