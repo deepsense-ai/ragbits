@@ -98,7 +98,7 @@ mypy_path = [
     "packages/ragbits-guardrails/src",
     "packages/ragbits-conversations/src",
 ]
-exclude = ["scripts"]
+exclude = ["scripts", "examples"]
 
 [[tool.mypy.overrides]]
 module = "ragbits.*"

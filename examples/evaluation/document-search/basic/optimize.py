@@ -78,7 +78,7 @@ def main() -> None:
     """
     Runs the optimization process.
     """
-    print("Starting evaluation...")
+    print("Starting optimization...")
 
     configs_with_scores = Optimizer.run_from_config(config)
 
