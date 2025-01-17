@@ -1,31 +1,31 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
-from omegaconf import DictConfig
+from typing_extensions import Self
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.evaluate.pipelines.base import EvaluationResult
 
 ResultT = TypeVar("ResultT", bound=EvaluationResult)
 
 
-class Metric(Generic[ResultT], ABC):
+class Metric(WithConstructionConfig, Generic[ResultT], ABC):
     """
     Base class for metrics.
     """
 
-    def __init__(self, config: DictConfig | None = None) -> None:
+    def __init__(self, weight: float = 1.0) -> None:
         """
         Initializes the metric.
 
         Args:
-            config: The metric configuration.
+            weight: Metric value weight in the final score, used during optimization.
         """
         super().__init__()
-        self.config = config
-        self.weight: float = getattr(self.config, "weight", 1.0)
+        self.weight = weight
 
     @abstractmethod
-    def compute(self, results: list[ResultT]) -> dict[str, Any]:
+    def compute(self, results: list[ResultT]) -> dict:
         """
         Compute the metric.
 
@@ -37,7 +37,7 @@ class Metric(Generic[ResultT], ABC):
         """
 
 
-class MetricSet(Generic[ResultT]):
+class MetricSet(WithConstructionConfig, Generic[ResultT]):
     """
     Represents a set of metrics.
     """
@@ -51,7 +51,20 @@ class MetricSet(Generic[ResultT]):
         """
         self.metrics = metrics
 
-    def compute(self, results: list[ResultT]) -> dict[str, Any]:
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Create an instance of `MetricSet` from a configuration dictionary.
+
+        Args:
+            config: A dictionary containing configuration settings for the metric set.
+
+        Returns:
+            An instance of the metric set class initialized with the provided configuration.
+        """
+        return cls(*[Metric.subclass_from_config(metric_config) for metric_config in config.values()])
+
+    def compute(self, results: list[ResultT]) -> dict:
         """
         Compute the metrics.
 

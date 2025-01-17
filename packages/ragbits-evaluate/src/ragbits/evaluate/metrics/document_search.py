@@ -1,10 +1,9 @@
 import importlib
 from abc import ABC
-from typing import Any
 
 from continuous_eval.metrics.retrieval import PrecisionRecallF1, RankedRetrievalMetrics
-from continuous_eval.metrics.retrieval.matching_strategy import RougeChunkMatch
-from omegaconf import DictConfig, OmegaConf
+from continuous_eval.metrics.retrieval.matching_strategy import MatchingStrategy
+from typing_extensions import Self
 
 from ragbits.evaluate.metrics.base import Metric
 from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
@@ -17,30 +16,37 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
     """
 
     metric_cls: type[PrecisionRecallF1 | RankedRetrievalMetrics]
-    default_matching_strategy: type[RougeChunkMatch] = RougeChunkMatch
-    default_matching_options: DictConfig = OmegaConf.create({"threshold": 0.5})
 
-    def __init__(self, config: DictConfig | None = None) -> None:
+    def __init__(self, matching_strategy: MatchingStrategy, weight: float = 1.0) -> None:
         """
-        Initializes the metric.
+        Initializes the document search metric.
 
         Args:
-            config: The metric configuration.
+            matching_strategy: Matching strategys that determine relevance.
+            weight: Metric value weight in the final score, used during optimization.
         """
-        super().__init__(config)
-        if not self.config:
-            matching_strategy = self.default_matching_strategy
-            options = self.default_matching_options
+        super().__init__(weight=weight)
+        self.metric = self.metric_cls(matching_strategy)
 
-        else:
-            matching_strategy = getattr(
-                importlib.import_module("continuous_eval.metrics.retrieval.matching_strategy"),
-                self.config.matching_strategy,
-            )
-            options = self.config.options
-        self.metric = self.metric_cls(matching_strategy(**options))
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Create an instance of `DocumentSearchMetric` from a configuration dictionary.
 
-    def compute(self, results: list[DocumentSearchResult]) -> dict[str, Any]:
+        Args:
+            config: A dictionary containing configuration settings for the metric.
+
+        Returns:
+            An instance of the metric class initialized with the provided configuration.
+        """
+        matching_strategy_cls = getattr(
+            importlib.import_module("continuous_eval.metrics.retrieval.matching_strategy"),
+            config["matching_strategy"]["type"],
+        )
+        matching_strategy = matching_strategy_cls(**config["matching_strategy"]["config"])
+        return cls(matching_strategy=matching_strategy, weight=config.get("weight", 1.0))
+
+    def compute(self, results: list[DocumentSearchResult]) -> dict:
         """
         Compute the metric.
 
