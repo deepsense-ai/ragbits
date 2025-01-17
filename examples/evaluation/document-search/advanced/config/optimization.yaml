@@ -6,7 +6,7 @@ defaults:
     - ranked_retrieval
   - _self_
 
-optimizer: 
+optimizer:
   direction: maximize
   n_trials: 5
 
