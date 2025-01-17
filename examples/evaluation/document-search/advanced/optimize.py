@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core[chroma]",
+#     "ragbits-document-search[huggingface]",
+#     "ragbits-evaluate[relari]",
+# ]
+# ///
 import logging
 from typing import cast
 
