@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
-from ragbits.evaluate.loaders.base import DataLoader
+from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 

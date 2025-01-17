@@ -16,7 +16,7 @@ logging.getLogger("httpx").setLevel(logging.ERROR)
 
 config = {
     "dataloader": {
-        "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
+        "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
         "config": {
             "path": "micpst/hf-docs-retrieval",
             "split": "train",

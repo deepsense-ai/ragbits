@@ -2,7 +2,7 @@ from typing import TypeAlias
 
 from datasets import Dataset, DatasetDict, IterableDataset, IterableDatasetDict, load_dataset
 
-from ragbits.evaluate.loaders.base import DataLoader
+from ragbits.evaluate.dataloaders.base import DataLoader
 
 HFData: TypeAlias = DatasetDict | Dataset | IterableDatasetDict | IterableDataset
 

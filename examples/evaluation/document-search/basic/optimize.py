@@ -23,7 +23,7 @@ config = {
     },
     "experiment": {
         "dataloader": {
-            "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
+            "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
             "config": {
                 "path": "micpst/hf-docs-retrieval",
                 "split": "train",
