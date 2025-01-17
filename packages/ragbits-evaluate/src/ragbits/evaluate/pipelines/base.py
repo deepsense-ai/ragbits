@@ -17,7 +17,7 @@ class EvaluationPipeline(WithConstructionConfig, ABC):
     """
 
     @abstractmethod
-    async def __call__(self, data: dict) -> EvaluationResult | None:
+    async def __call__(self, data: dict) -> EvaluationResult:
         """
         Runs the evaluation pipeline.
 
