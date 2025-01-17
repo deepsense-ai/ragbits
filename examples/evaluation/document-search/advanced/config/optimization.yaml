@@ -1,26 +1,17 @@
 defaults:
-  - pipeline: document_search_optimization
-  - data: qa
+  - dataloader@experiment.dataloader: hf
+  - pipeline@experiment.pipeline: document_search_optimization
+  - metrics@experiment.metrics:
+    - precision_recall_f1
+    - ranked_retrieval
   - _self_
 
-task:
-  name: default
-  type: document-search
-
-metrics:
-  - type: ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1
-    matching_strategy: RougeChunkMatch
-    options:
-      threshold: 0.5
-  - type: ragbits.evaluate.metrics.document_search:DocumentSearchRankedRetrievalMetrics
-    weight: -1.0
-    matching_strategy: RougeChunkMatch
-    options:
-      threshold: 0.5
-
+optimizer: 
+  direction: maximize
+  n_trials: 5
 
 #uncomment to use neptune tracking (set your project name)
-#callbacks:
+# callbacks:
 #  - type: ragbits.evaluate.callbacks.neptune:NeptuneCallbackConfigurator
 #    args:
 #      callback_type: neptune.integrations.optuna:NeptuneCallback

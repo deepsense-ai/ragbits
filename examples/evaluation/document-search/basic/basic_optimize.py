@@ -1,58 +1,89 @@
-import sys
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core[chroma]",
+#     "ragbits-document-search[huggingface]",
+#     "ragbits-evaluate[relari]",
+# ]
+# ///
+import logging
 from pathlib import Path
 
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.utils import log_optimization_to_file
 
-module = sys.modules[__name__]
+logging.getLogger("LiteLLM").setLevel(logging.ERROR)
+logging.getLogger("httpx").setLevel(logging.ERROR)
 
-
-def main() -> None:
-    """
-    Function running evaluation for all datasets and evaluation tasks defined in config.
-    """
-    config = {
-        "pipeline": {
-            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline",
-            "ingest": True,
-            "search": True,
-            "answer_data_source": {
-                "name": "hf-docs",
-                "path": "micpst/hf-docs",
+config = {
+    "optimizer": {
+        "direction": "maximize",
+        "n_trials": 5,
+    },
+    "experiment": {
+        "dataloader": {
+            "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
+            "config": {
+                "path": "micpst/hf-docs-retrieval",
                 "split": "train",
-                "num_docs": 5,
             },
-            "providers": {
-                "txt": {"type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider"}
-            },
-            "embedder": {
-                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
-                "config": {
-                    "model": "text-embedding-3-small",
-                    "options": {
-                        "dimensions": {"optimize": True, "range": [32, 512]},
+        },
+        "pipeline": {
+            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearch",
+            "config": {
+                "embedder": {
+                    "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+                    "config": {
+                        "model": "text-embedding-3-small",
+                        "default_options": {
+                            "dimensions": {
+                                "optimize": True,
+                                "range": [32, 512],
+                            },
+                        },
+                    },
+                },
+                "providers": {
+                    "txt": {
+                        "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
+                    },
+                },
+                "source": {
+                    "type": "ragbits.document_search.documents.sources:HuggingFaceSource",
+                    "config": {
+                        "path": "micpst/hf-docs",
+                        "split": "train[:5]",
                     },
                 },
             },
         },
-        "data": {
-            "type": "ragbits.evaluate.loaders.hf:HFDataLoader",
-            "options": {"name": "hf-docs-retrieval", "path": "micpst/hf-docs-retrieval", "split": "train"},
-        },
-        "metrics": [
-            {
+        "metrics": {
+            "precision_recall_f1": {
                 "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-                "matching_strategy": "RougeChunkMatch",
-                "options": {"threshold": 0.5},
-            }
-        ],
-    }
-    exp_config = {"optimizer": {"direction": "maximize", "n_trials": 10}, "experiment_config": config}
-    configs_with_scores = Optimizer.run_experiment_from_config(config=exp_config)
+                "config": {
+                    "matching_strategy": {
+                        "type": "RougeChunkMatch",
+                        "config": {
+                            "threshold": 0.5,
+                        },
+                    },
+                },
+            },
+        },
+    },
+}
 
-    OUT_DIR = Path("basic_optimization")
-    OUT_DIR.mkdir()
-    log_optimization_to_file(configs_with_scores, output_dir=OUT_DIR)
+
+def main() -> None:
+    """
+    Runs the optimization process.
+    """
+    print("Starting evaluation...")
+
+    configs_with_scores = Optimizer.run_from_config(config)
+
+    output_dir = log_optimization_to_file(configs_with_scores, Path("optimization"))
+    print(f"Optimization results saved under directory: {output_dir}")
 
 
 if __name__ == "__main__":

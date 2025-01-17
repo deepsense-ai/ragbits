@@ -7,7 +7,9 @@ from ragbits.core.utils.config_handling import WithConstructionConfig
 
 
 class CallbackConfigurator(WithConstructionConfig, ABC):
-    """An abstract class for callback configuration"""
+    """
+    Ccallback configurator base class.
+    """
 
     def __init__(self, config: dict):
         self.config = OmegaConf.create(config)
@@ -15,10 +17,8 @@ class CallbackConfigurator(WithConstructionConfig, ABC):
     @abstractmethod
     def get_callback(self) -> Callable:
         """
-        An abstract method for callback configuration
-        Args:
-            None
+        Returns configured callback.
+
         Returns:
-            Callable
+            Configured callback.
         """
-        pass

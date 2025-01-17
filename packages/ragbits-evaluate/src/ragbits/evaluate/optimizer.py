@@ -22,7 +22,7 @@ module = sys.modules[__name__]
 
 class Optimizer(WithConstructionConfig):
     """
-    Class for optimization
+    Optimizer class.
     """
 
     INFINITY = 1e16
@@ -34,19 +34,21 @@ class Optimizer(WithConstructionConfig):
         self._choices_cache: dict[str, list[Any]] = {}
 
     @classmethod
-    def run_experiment_from_config(cls, config: dict[str, dict]) -> list[tuple[dict, float, dict[str, float]]]:
+    def run_from_config(cls, config: dict) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        Runs the optimization experiment configured with config object
+        Runs the optimization process configured with a config object.
+
         Args:
-            config: dict
+            config: Optimizer config.
+
         Returns:
-             list of configs with scores
+            List of tested configs with associated scores.
         """
         optimizer_config = OmegaConf.create(config["optimizer"])
-        exp_config = OmegaConf.create(config["experiment_config"])
-        dataloader = dataloader_factory(cast(dict, OmegaConf.to_container(exp_config.data)))
+        exp_config = OmegaConf.create(config["experiment"])
+        dataloader = dataloader_factory(cast(dict, OmegaConf.to_container(exp_config.dataloader)))
         pipeline_class = import_by_path(exp_config.pipeline.type, module)
-        metrics = metric_set_factory(cast(list[dict], OmegaConf.to_container(exp_config.metrics)))
+        metrics = metric_set_factory(exp_config.metrics.values())
         callback_configurators = None
         if getattr(exp_config, "callbacks", None):
             callback_configurators = [
@@ -56,14 +58,13 @@ class Optimizer(WithConstructionConfig):
 
         optimizer_config_dict = {"config": OmegaConf.to_container(optimizer_config)}
         optimizer = cls.from_config(optimizer_config_dict)
-        configs_with_scores = optimizer.optimize(
+        return optimizer.optimize(
             pipeline_class=pipeline_class,
             config_with_params=exp_config.pipeline,
             metrics=metrics,
             dataloader=dataloader,
             callback_configurators=callback_configurators,
         )
-        return configs_with_scores
 
     def optimize(
         self,
@@ -74,15 +75,17 @@ class Optimizer(WithConstructionConfig):
         callback_configurators: list[CallbackConfigurator] | None = None,
     ) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        A method for running the optimization process for given parameters
+        Runs the optimization process for given parameters.
+
         Args:
-            pipeline_class - a type of pipeline to be optimized
-            config_with_params - a configuration defining the optimization process
-            dataloader - a dataloader
-            metrics - object representing the metrics to be optimized
-            log_to_neptune - indicator whether the results should be logged to neptune
+            pipeline_class: Pipeline to be optimized.
+            config_with_params: Configuration defining the optimization process.
+            dataloader: Data loader.
+            metrics: Metrics to be optimized.
+            callback_configurators: Experiment callback configurator.
+
         Returns:
-            list of tuples with configs and their scores
+            List of tuples with configs and their scores.
         """
         # TODO check details on how to parametrize optuna
         optimization_kwargs = {"n_trials": self.config.n_trials}
@@ -166,7 +169,7 @@ class Optimizer(WithConstructionConfig):
 
     def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:  # noqa: PLR0912
         """
-        Recursive method for sampling parameter values for optuna.Trial
+        Recursive method for sampling parameter values for optuna trial.
         """
         for key, value in cfg.items():
             if isinstance(value, DictConfig):

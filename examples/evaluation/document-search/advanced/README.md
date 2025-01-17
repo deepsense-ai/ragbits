@@ -39,3 +39,9 @@ uv run evaluate.py logger.local=True
 ```sh
 uv run evaluate.py logger.neptune=True
 ```
+
+## Optimization
+
+```sh
+uv run optimize.py
+```

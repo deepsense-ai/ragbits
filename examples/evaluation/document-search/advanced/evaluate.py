@@ -14,7 +14,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.utils import log_to_file, log_to_neptune
+from ragbits.evaluate.utils import log_evaluation_to_file, log_evaluation_to_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -33,11 +33,11 @@ async def evaluate(config: DictConfig) -> None:
     results = await Evaluator.run_from_config(evaluator_config)
 
     if config.logger.local:
-        output_dir = log_to_file(results)
+        output_dir = log_evaluation_to_file(results)
         print(f"Evaluation results saved under directory: {output_dir}")
 
     if config.logger.neptune:
-        log_to_neptune(results, config)
+        log_evaluation_to_neptune(results, config)
         print("Evaluation results uploaded to Neptune")
 
 

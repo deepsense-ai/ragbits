@@ -11,15 +11,16 @@ module = sys.modules[__name__]
 
 
 class NeptuneCallbackConfigurator(CallbackConfigurator):
-    """A class for configuration of neptune callbacks"""
+    """
+    Neptune callback configurator.
+    """
 
     def get_callback(self) -> Callable:
         """
-        Creates neptune callback based on configuration
-        Args:
-            None
+        Creates neptune callback based on configuration.
+
         Returns:
-            Callable: configured neptune callback
+           Configured neptune callback.
         """
         callback_class = import_by_path(self.config.callback_type, module)
         run = neptune.init_run(project=self.config.project)
