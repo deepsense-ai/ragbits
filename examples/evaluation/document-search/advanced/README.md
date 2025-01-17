@@ -1,35 +1,41 @@
 # Document Search Evaluation
 
-## Ingest
+## Evaluation
+
+### Evaluation on ingested data
 
 ```sh
-uv run ingest.py
+uv run evaluate.py pipeline=document_search
 ```
 
 ```sh
-uv run ingest.py +experiments=chunking-250
+uv run evaluate.py pipeline=document_search +experiments=chunking-250
 ```
 
 ```sh
-uv run ingest.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
+uv run evaluate.py --multirun pipeline=document_search +experiments=chunking-250,chunking-500,chunking-1000
 ```
 
-## Evaluate
+### Evaluation with new ingest
 
 ```sh
-uv run evaluate.py
-```
-
-```sh
-uv run evaluate.py +experiments=chunking-250
+uv run evaluate.py pipeline=document_search_ingest
 ```
 
 ```sh
-uv run evaluate.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
+uv run evaluate.py pipeline=document_search_ingest +experiments=chunking-250
 ```
 
-### Log to Neptune
+```sh
+uv run evaluate.py --multirun pipeline=document_search_ingest +experiments=chunking-250,chunking-500,chunking-1000
+```
+
+### Logging
 
 ```sh
-uv run evaluate.py neptune.run=True
+uv run evaluate.py logger.local=True
+```
+
+```sh
+uv run evaluate.py logger.neptune=True
 ```

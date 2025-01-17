@@ -4,9 +4,7 @@ defaults:
   - vector_store: chroma
   - rephraser: noop
   - reranker: noop
-  - answer_data_source: corpus
+  - answer_data_source: hf
   - _self_
 
-type: ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline
-ingest: true
-
+type: ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline

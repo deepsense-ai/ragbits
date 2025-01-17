@@ -1,9 +1,9 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search",
-#     "ragbits-evaluate[relari]",
 #     "ragbits-core[chroma]",
+#     "ragbits-document-search[huggingface]",
+#     "ragbits-evaluate[relari]",
 # ]
 # ///
 import asyncio
@@ -14,40 +14,43 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 from ragbits.evaluate.evaluator import Evaluator
-from ragbits.evaluate.utils import log_to_file, log_to_neptune, setup_neptune
+from ragbits.evaluate.utils import log_to_file, log_to_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
-log = logging.getLogger(__name__)
 
 
-async def bench(config: DictConfig) -> None:
+async def evaluate(config: DictConfig) -> None:
     """
-    Function running evaluation for all datasets and evaluation tasks defined in hydra config.
+    Document search evaluation runner.
 
     Args:
         config: Hydra configuration.
     """
-    run = setup_neptune(config)
-    log.info("Starting the experiment...")
-    results = await Evaluator.run_from_config(config=cast(dict, OmegaConf.to_container(config)))
-    output_dir = log_to_file(results)
-    if run:
-        log_to_neptune(run, results, output_dir)
+    print("Starting evaluation...")
 
-    log.info("Evaluation results saved under directory: %s", output_dir)
+    evaluator_config = cast(dict, OmegaConf.to_container(config))
+    results = await Evaluator.run_from_config(evaluator_config)
+
+    if config.logger.local:
+        output_dir = log_to_file(results)
+        print(f"Evaluation results saved under directory: {output_dir}")
+
+    if config.logger.neptune:
+        log_to_neptune(results, config)
+        print("Evaluation results uploaded to Neptune")
 
 
 @hydra.main(config_path="config", config_name="retrieval", version_base="3.2")
 def main(config: DictConfig) -> None:
     """
-    Function running evaluation for all datasets and evaluation tasks defined in hydra config.
+    Runs the evaluation process.
 
     Args:
         config: Hydra configuration.
     """
-    asyncio.run(bench(config))
+    asyncio.run(evaluate(config))
 
 
 if __name__ == "__main__":
-    main()  # pylint: disable=no-value-for-parameter
+    main()

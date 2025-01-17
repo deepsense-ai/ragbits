@@ -3,18 +3,19 @@
 task:
   name: chunking-500
 
-# used only for ingestion
 pipeline:
-  providers:
-    txt:
+  config:
+    providers:
+      txt:
+        config:
+          chunking_kwargs:
+            max_characters: 500
+            new_after_n_chars: 100
+      md:
+        config:
+          chunking_kwargs:
+            max_characters: 500
+            new_after_n_chars: 100
+    vector_store:
       config:
-        chunking_kwargs:
-          max_characters: 500
-    md:
-      config:
-        chunking_kwargs:
-          max_characters: 500
-# used for both ingestion and evaluation
-  vector_store:
-    config:
-      index_name: chunk-500
+        index_name: chunk-500

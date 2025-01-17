@@ -1,11 +1,9 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search[huggingface]",
 #     "ragbits-core[chroma]",
+#     "ragbits-document-search[huggingface]",
 #     "ragbits-evaluate[relari]",
-#     "hydra-core~=1.3.2",
-#     "unstructured[md]>=0.15.13",
 # ]
 # ///
 import asyncio
@@ -75,10 +73,6 @@ config = {
             },
         },
     },
-    "loggers": {
-        "local": True,
-        "neptune": False,
-    },
 }
 
 
@@ -87,13 +81,19 @@ async def evaluate() -> None:
     Document search evaluation runner.
     """
     print("Starting evaluation...")
+
     results = await Evaluator.run_from_config(config)
-    print("Computed metrics:\n{}".format("\n".join(f"{key}: {value}" for key, value in results["metrics"].items())))
+
+    print("Computed metrics:")
+    print("\n".join(f"{key}: {value}" for key, value in results["metrics"].items()))
+
+    print("Time perfs:")
+    print("\n".join(f"{key}: {value}" for key, value in results["time_perf"].items()))
 
 
 def main() -> None:
     """
-    Run the evaluation process.
+    Runs the evaluation process.
     """
     asyncio.run(evaluate())
 

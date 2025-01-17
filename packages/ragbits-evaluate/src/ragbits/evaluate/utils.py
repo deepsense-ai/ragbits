@@ -7,6 +7,7 @@ from typing import Any
 from datasets import Dataset
 from hydra.core.hydra_config import HydraConfig
 from neptune import Run
+from neptune.types import File
 from neptune.utils import stringify_unsupported
 from omegaconf import DictConfig, OmegaConf
 
@@ -29,7 +30,7 @@ def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
         json.dump(data, file, indent=4)
 
 
-def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path:
+def log_to_file(results: dict, output_dir: Path | None = None) -> Path:
     """
     Log the evaluation results locally.
 
@@ -48,6 +49,22 @@ def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path
     _save(results_file, results=results["results"])
 
     return output_dir
+
+
+def log_to_neptune(results: dict, config: DictConfig, tags: str | list[str] | None = None) -> None:
+    """
+    Log the evaluation results to Neptune.
+
+    Args:
+        results: Evaluation results.
+        config: Evaluation configuration.
+        tags: Experiment tags.
+    """
+    run = Run(tags=tags)
+    run["config"] = stringify_unsupported(config)
+    run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
+    run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
+    run["evaluation/results"].upload(File.from_content(json.dumps(results["results"], indent=4), extension="json"))
 
 
 def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Path:
@@ -89,45 +106,3 @@ def log_optimization_to_file(
     scores_file = output_dir / "scores.json"
     _save(scores_file, scores=scores)
     return output_dir
-
-
-def setup_neptune(config: DictConfig) -> Run | None:
-    """
-    Setup the Neptune run.
-
-    Args:
-        config: The Hydra configuration.
-
-    Returns:
-        The Neptune run.
-    """
-    if config.get("neptune", {}).get("run"):
-        run = Run(
-            project=config.neptune.project,
-            tags=[
-                config.task.type,
-                config.task.name,
-                config.data.name,
-            ],
-        )
-        run["config"] = stringify_unsupported(config)
-        return run
-    return None
-
-
-def log_to_neptune(run: Run, results: dict[str, Any], output_dir: Path | None = None) -> None:
-    """
-    Log the evaluation results to Neptune.
-
-    Args:
-        run: The Neptune run.
-        results: The evaluation results.
-        output_dir: The output directory.
-    """
-    output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
-
-    run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
-    run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
-    run["evaluation/results"] = stringify_unsupported(results["results"])
-    run["evaluation/metrics.json"].upload((output_dir / "metrics.json").as_posix())
-    run["evaluation/results.json"].upload((output_dir / "results.json").as_posix())

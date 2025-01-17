@@ -1,9 +1,0 @@
-defaults:
-  - embedder: litellm
-  - providers: unstructured
-  - vector_store: chroma
-  - _self_
-
-type: ragbits.evaluate.pipelines.document_search:DocumentSearchWithIngestionPipeline
-ingest: true
-search: false

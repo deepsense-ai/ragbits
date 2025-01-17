@@ -1,5 +1,4 @@
 type: ragbits.evaluate.loaders.hf:HFDataLoader
-options:
-  name: "hf-docs-retrieval"
+config:
   path: "micpst/hf-docs-retrieval"
   split: "train"

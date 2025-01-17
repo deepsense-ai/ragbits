@@ -4,6 +4,7 @@ defaults:
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop
   - providers@config.providers: unstructured
+  - source@config.source: hf
   - _self_
 
 type: ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline
