@@ -19,6 +19,7 @@ config = {
     "optimizer": {
         "direction": "maximize",
         "n_trials": 5,
+        "max_retries_for_trial": 1,
     },
     "experiment": {
         "dataloader": {
@@ -29,7 +30,7 @@ config = {
             },
         },
         "pipeline": {
-            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearch",
+            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
             "config": {
                 "embedder": {
                     "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
@@ -41,6 +42,15 @@ config = {
                                 "range": [32, 512],
                             },
                         },
+                    },
+                },
+                "vector_store": {
+                    "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+                    "config": {
+                        "client": {
+                            "type": "EphemeralClient",
+                        },
+                        "index_name": "baseline",
                     },
                 },
                 "providers": {

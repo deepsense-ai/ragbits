@@ -131,11 +131,12 @@ class Optimizer(WithConstructionConfig):
     ) -> float:
         max_retries = getattr(self.config, "max_retries_for_trial", 1)
         config_for_trial = None
+
         for attempt_idx in range(max_retries):
             try:
                 config_for_trial = deepcopy(config_with_params)
                 self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
-                pipeline = pipeline_class.from_config({"config": OmegaConf.to_container(config_for_trial)})
+                pipeline = pipeline_class.from_config(OmegaConf.to_container(config_for_trial.config))  # type: ignore
                 metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
                 score = sum(metrics_values.values())
                 break
@@ -153,6 +154,7 @@ class Optimizer(WithConstructionConfig):
                         message=f"Execution of the trial failed: {e}. Setting the score to {score}",
                         category=UserWarning,
                     )
+
         trial.set_user_attr("score", score)
         trial.set_user_attr("cfg", config_for_trial)
         trial.set_user_attr("all_metrics", metrics_values)

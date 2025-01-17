@@ -46,7 +46,6 @@ class Evaluator(WithConstructionConfig):
         pipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
         metrics: MetricSet = MetricSet.from_config(model.metrics)
 
-        await pipeline.prepare()
         return await cls().compute(
             pipeline=pipeline,
             dataloader=dataloader,
@@ -71,6 +70,8 @@ class Evaluator(WithConstructionConfig):
             The evaluation results.
         """
         dataset = await dataloader.load()
+        await pipeline.prepare()
+
         results, perf_results = await self._call_pipeline(pipeline, dataset)
         computed_metrics = self._compute_metrics(metrics, results) if metrics else {}
         processed_results = self._results_processor(results)

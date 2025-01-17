@@ -25,6 +25,12 @@ config = {
     "pipeline": {
         "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
         "config": {
+            "embedder": {
+                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+                "config": {
+                    "model": "text-embedding-3-small",
+                },
+            },
             "vector_store": {
                 "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
                 "config": {
