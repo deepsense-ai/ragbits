@@ -1,0 +1,5 @@
+[project]
+name = "instance_factory_project"
+
+[tool.ragbits.core.default_factories]
+document_search = "project_with_instance_factory.factories:create_document_search_instance_223"
