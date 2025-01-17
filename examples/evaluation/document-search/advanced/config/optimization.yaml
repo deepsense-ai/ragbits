@@ -11,4 +11,4 @@ optimizer:
   n_trials: 5
   max_retries_for_trial: 1
 
-neptune_callback: True
+neptune_callback: False
