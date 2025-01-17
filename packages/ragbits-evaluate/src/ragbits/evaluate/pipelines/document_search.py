@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from uuid import uuid4
 
 from typing_extensions import Self
 
@@ -45,12 +46,17 @@ class DocumentSearchPipeline(EvaluationPipeline):
         Returns:
             An instance of the pipeline class initialized with the provided configuration.
         """
+        # At this point, we assume that if the source is set, the pipeline is run in experimental mode
+        # and create random indexes for testing
+        # TODO: optimize this for cases with duplicated document search configs between runs
+        if config.get("source"):
+            config["vector_store"]["config"]["index_name"] = str(uuid4())
         document_search = DocumentSearch.from_config(config)
         return cls(document_search=document_search, source=config.get("source"))
 
     async def prepare(self) -> None:
         """
-        Prepares pipeline for evaluation.
+        Ingests corpus data for evaluation.
         """
         if self.source:
             # For now we only support HF sources for pre-evaluation ingest

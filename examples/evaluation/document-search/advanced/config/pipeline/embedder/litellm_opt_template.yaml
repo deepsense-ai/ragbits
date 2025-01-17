@@ -3,7 +3,7 @@ config:
   optimize: true
   choices:
     - model: "text-embedding-3-small"
-      options:
+      default_options:
         dimensions:
           optimize: true
           range:
@@ -11,7 +11,7 @@ config:
             - 512
         encoding_format: float
     - model: "text-embedding-3-large"
-      options:
+      default_options:
         dimensions:
           optimize: true
           range:

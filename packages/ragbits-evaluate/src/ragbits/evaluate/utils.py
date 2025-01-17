@@ -9,6 +9,7 @@ from hydra.core.hydra_config import HydraConfig
 from neptune import Run
 from neptune.types import File
 from neptune.utils import stringify_unsupported
+from neptune_optuna import NeptuneCallback
 from omegaconf import DictConfig
 
 
@@ -112,3 +113,14 @@ def _save_json(file_path: Path, **data: Any) -> None:  # noqa: ANN401
 
     with open(file_path, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=4)
+
+
+def setup_optuna_neptune_callback(tags: str | list[str] | None = None) -> NeptuneCallback:
+    """
+    Log the optimization process to Neptune.
+
+    Args:
+        tags: Experiment tags.
+    """
+    run = Run(tags=tags)
+    return NeptuneCallback(run)

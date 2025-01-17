@@ -11,9 +11,4 @@ optimizer:
   n_trials: 5
   max_retries_for_trial: 1
 
-#uncomment to use neptune tracking (set your project name)
-# callbacks:
-#  - type: ragbits.evaluate.callbacks.neptune:NeptuneCallbackConfigurator
-#    args:
-#      callback_type: neptune.integrations.optuna:NeptuneCallback
-#      project: deepsense-ai/ragbits
+neptune_callback: True

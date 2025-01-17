@@ -14,7 +14,7 @@ from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 class EvaluatorConfig(BaseModel):
     """
-    Schema for for the dict taken by Evaluator.run_from_config method.
+    Schema for for the dict taken by `Evaluator.run_from_config` method.
     """
 
     dataloader: ObjectContructionConfig

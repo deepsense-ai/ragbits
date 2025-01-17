@@ -28,7 +28,7 @@ class NoDefaultConfigError(InvalidConfigError):
     """
 
 
-def import_by_path(path: str, default_module: ModuleType | None) -> Any:  # noqa: ANN401
+def import_by_path(path: str, default_module: ModuleType | None = None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns an object based on the string in the format of "module.submodule:object_name".
     If the first part is ommited, the default module is used.
