@@ -2,7 +2,7 @@ import enum
 import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import ClassVar, TypeVar, cast, overload
+from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel
 
@@ -22,6 +22,15 @@ class LLMType(enum.Enum):
     TEXT = "text"
     VISION = "vision"
     STRUCTURED_OUTPUT = "structured_output"
+
+
+class LLMResponseWithMetadata(BaseModel, Generic[OutputT]):
+    """
+    A schema of output with metadata
+    """
+
+    content: OutputT
+    metadata: dict
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -68,7 +77,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
-    ) -> str:
+    ) -> dict:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
@@ -77,17 +86,15 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Options to use for the LLM client.
 
         Returns:
-            Raw text response from LLM.
+            Raw response from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        response = await self._call(
+        return await self._call(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
         )
-
-        return response
 
     @overload
     async def generate(
@@ -123,11 +130,49 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Text response from LLM.
         """
         response = await self.generate_raw(prompt, options=options)
-
+        content = response.pop("response")
         if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(response)
+            return prompt.parse_response(content)
+        return cast(OutputT, content)
 
-        return cast(OutputT, response)
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePromptWithParser[OutputT],
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
+
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]:
+        """
+        Prepares and sends a prompt to the LLM and returns response parsed to the
+        output type of the prompt (if available).
+
+        Args:
+            prompt: Formatted prompt template with conversation and optional response parsing configuration.
+            options: Options to use for the LLM client.
+
+        Returns:
+            Text response from LLM with metadata.
+        """
+        response = await self.generate_raw(prompt, options=options)
+        content = response.pop("response")
+        if isinstance(prompt, BasePromptWithParser):
+            content = prompt.parse_response(content)
+        return LLMResponseWithMetadata[type(content)](content=content, metadata=response)  # type: ignore
 
     async def generate_streaming(
         self,
@@ -167,7 +212,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict:
         """
         Calls LLM inference API.
 
@@ -178,7 +223,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
 
         Returns:
-            Response string from LLM.
+            Response dict from LLM.
         """
 
     @abstractmethod
