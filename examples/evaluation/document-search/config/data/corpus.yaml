@@ -1,4 +1,0 @@
-name: "hf-docs"
-path: "micpst/hf-docs"
-split: "train"
-num_docs: 5

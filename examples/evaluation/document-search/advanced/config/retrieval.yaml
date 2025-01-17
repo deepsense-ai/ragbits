@@ -1,0 +1,11 @@
+defaults:
+  - dataloader: hf
+  - pipeline: document_search
+  - metrics:
+    - precision_recall_f1
+    - ranked_retrieval
+  - _self_
+
+logger:
+  local: True
+  neptune: False
