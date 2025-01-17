@@ -1,0 +1,7 @@
+embedder:
+  type: NoopEmbeddings
+vector_store:
+  type: InMemoryVectorStore
+  config:
+    default_options:
+      k: 147

@@ -1,0 +1,17 @@
+embedder:
+  type: NoopEmbeddings
+vector_store:
+  type: InMemoryVectorStore
+  config:
+    default_options:
+      k: 147
+document_search:
+  type: DocumentSearch
+  config:
+    embedder:
+      type: NoopEmbeddings
+    vector_store:
+      type: InMemoryVectorStore
+      config:
+        default_options:
+          k: 12

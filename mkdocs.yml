@@ -43,6 +43,9 @@ nav:
           - Ingestion:
             - api_reference/document_search/processing.md
             - api_reference/document_search/execution_strategies.md
+      - Conversations:
+          - api_reference/conversations/compressors/base.md
+          - api_reference/conversations/compressors/llm.md
 hooks:
   - mkdocs_hooks.py
 theme:
