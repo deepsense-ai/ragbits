@@ -8,8 +8,8 @@ from optuna import Trial
 from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
-from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
 from ragbits.evaluate.dataloaders.base import DataLoader
+from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.base import EvaluationPipeline
 from ragbits.evaluate.utils import setup_optuna_neptune_callback
