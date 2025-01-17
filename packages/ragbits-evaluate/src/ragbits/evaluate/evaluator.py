@@ -1,30 +1,60 @@
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Any
 
+from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
+from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.evaluate.loaders.base import DataLoader
+from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
-from .loaders import dataloader_factory
-from .loaders.base import DataLoader
-from .metrics import metric_set_factory
-from .metrics.base import MetricSet
-from .pipelines import pipeline_factory
+
+class EvaluatorConfig(BaseModel):
+    """
+    Schema for for the dict taken by Evaluator.run_from_config method.
+    """
+
+    dataloader: ObjectContructionConfig
+    pipeline: ObjectContructionConfig
+    metrics: dict[str, ObjectContructionConfig]
 
 
-class Evaluator:
+class Evaluator(WithConstructionConfig):
     """
     Evaluator class.
     """
+
+    @classmethod
+    async def run_from_config(cls, config: dict) -> dict:
+        """
+        Runs the evaluation based on configuration.
+
+        Args:
+            config: Evaluation config.
+
+        Returns:
+            The evaluation results.
+        """
+        model = EvaluatorConfig.model_validate(config)
+        dataloader: DataLoader = DataLoader.subclass_from_config(model.dataloader)
+        pipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
+        metrics: MetricSet = MetricSet.from_config(model.metrics)
+
+        await pipeline.prepare()
+        return await cls().compute(
+            pipeline=pipeline,
+            dataloader=dataloader,
+            metrics=metrics,
+        )
 
     async def compute(
         self,
         pipeline: EvaluationPipeline,
         dataloader: DataLoader,
         metrics: MetricSet | None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         """
         Compute the evaluation results for the given pipeline and data.
 
@@ -47,38 +77,11 @@ class Evaluator:
             **processed_results,
         }
 
-    @classmethod
-    async def run_experiment_from_config(cls, config: dict) -> dict[str, Any]:
-        """
-        Runs the evaluation experiment basing on configuration
-        Args:
-            config: DictConfig - soe config
-        Returns:
-            dictionary of metrics with scores
-        """
-        dataloader = dataloader_factory(config["data"])
-        pipeline = pipeline_factory(config["pipeline"])
-
-        metric_config = config.get("metrics")
-        metrics = (
-            metric_set_factory(metric_config)  # type: ignore
-            if metric_config is not None
-            else None
-        )
-
-        evaluator = cls()
-        results = await evaluator.compute(
-            pipeline=pipeline,
-            dataloader=dataloader,
-            metrics=metrics,
-        )
-        return results
-
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline,
         dataset: Iterable,
-    ) -> tuple[list[EvaluationResult], dict[str, Any]]:
+    ) -> tuple[list[EvaluationResult], dict]:
         """
         Call the pipeline with the given data.
 
@@ -95,7 +98,7 @@ class Evaluator:
         return pipe_outputs, self._compute_time_perf(start_time, end_time, len(pipe_outputs))
 
     @staticmethod
-    def _results_processor(results: list[EvaluationResult]) -> dict[str, Any]:
+    def _results_processor(results: list[EvaluationResult]) -> dict:
         """
         Process the results.
 
@@ -108,7 +111,7 @@ class Evaluator:
         return {"results": [asdict(result) for result in results]}
 
     @staticmethod
-    def _compute_metrics(metrics: MetricSet, results: list[EvaluationResult]) -> dict[str, Any]:
+    def _compute_metrics(metrics: MetricSet, results: list[EvaluationResult]) -> dict:
         """
         Compute a metric using the given inputs.
 
@@ -122,7 +125,7 @@ class Evaluator:
         return {"metrics": metrics.compute(results)}
 
     @staticmethod
-    def _compute_time_perf(start_time: float, end_time: float, num_samples: int) -> dict[str, Any]:
+    def _compute_time_perf(start_time: float, end_time: float, num_samples: int) -> dict:
         """
         Compute the performance metrics.
 

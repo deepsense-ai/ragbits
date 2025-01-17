@@ -1,12 +1,8 @@
-import asyncio
-import uuid
 from dataclasses import dataclass
-from functools import cached_property
 
-from tqdm.asyncio import tqdm
+from typing_extensions import Self
 
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.sources import HuggingFaceSource
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
@@ -27,17 +23,45 @@ class DocumentSearchPipeline(EvaluationPipeline):
     Document search evaluation pipeline.
     """
 
-    @cached_property
-    def document_search(self) -> "DocumentSearch":
+    def __init__(self, document_search: DocumentSearch, source: dict | None = None) -> None:
         """
-        Returns the document search instance.
+        Initializes the document search pipeline.
+
+        Args:
+            document_search: Document Search instance.
+            source: Source data config for ingest.
+        """
+        self.document_search = document_search
+        self.source = source or {}
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Create an instance of `DocumentSearchPipeline` from a configuration dictionary.
+
+        Args:
+            config: A dictionary containing configuration settings for the pipeline.
 
         Returns:
-            The document search instance.
+            An instance of the pipeline class initialized with the provided configuration.
         """
-        return DocumentSearch.from_config(self.config)  # type: ignore
+        document_search = DocumentSearch.from_config(config)
+        return cls(document_search=document_search, source=config.get("source"))
 
-    async def __call__(self, data: dict | None = None) -> DocumentSearchResult | None:
+    async def prepare(self) -> None:
+        """
+        Prepares pipeline for evaluation.
+        """
+        if self.source:
+            # For now we only support HF sources for pre-evaluation ingest
+            # TODO: Make it generic to any data source
+            sources = await HuggingFaceSource.list_sources(
+                path=self.source["config"]["path"],
+                split=self.source["config"]["split"],
+            )
+            await self.document_search.ingest(sources)
+
+    async def __call__(self, data: dict) -> DocumentSearchResult:
         """
         Runs the document search evaluation pipeline.
 
@@ -47,56 +71,10 @@ class DocumentSearchPipeline(EvaluationPipeline):
         Returns:
             The evaluation result.
         """
-        if data is not None:
-            elements = await self.document_search.search(data["question"])
-            predicted_passages = [element.text_representation or "" for element in elements]
-            return DocumentSearchResult(
-                question=data["question"],
-                reference_passages=data["passages"],
-                predicted_passages=predicted_passages,
-            )
-        return None
-
-
-class DocumentSearchWithIngestionPipeline(DocumentSearchPipeline):
-    """
-    A class for joint doument ingestion and search
-    """
-
-    def __init__(self, config: dict | None) -> None:
-        super().__init__(config)
-        self.config.vector_store.config.index_name = str(uuid.uuid4())
-        self._ingested = False
-        self._lock = asyncio.Lock()
-
-    async def __call__(self, data: dict | None = None) -> DocumentSearchResult | None:  # type: ignore
-        """
-        Queries a vector store with given data
-        Ingests the corpus to the store if has not been done
-        Args:
-            data: dict - query
-        Returns:
-            DocumentSearchResult - query result
-        """
-        async with self._lock:
-            if not self._ingested and self.config.get("ingest", False):
-                await self._ingest_documents()
-                self._ingested = True
-        if self.config.get("search", True):
-            return await super().__call__(data)
-
-    async def _ingest_documents(self) -> None:
-        documents = await tqdm.gather(
-            *[
-                DocumentMeta.from_source(
-                    HuggingFaceSource(
-                        path=self.config.answer_data_source.path,
-                        split=self.config.answer_data_source.split,
-                        row=i,
-                    )
-                )
-                for i in range(self.config.answer_data_source.num_docs)
-            ],
-            desc="Download",
+        elements = await self.document_search.search(data["question"])
+        predicted_passages = [element.text_representation for element in elements if element.text_representation]
+        return DocumentSearchResult(
+            question=data["question"],
+            reference_passages=data["passages"],
+            predicted_passages=predicted_passages,
         )
-        await self.document_search.ingest(documents)

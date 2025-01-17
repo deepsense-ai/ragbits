@@ -30,7 +30,7 @@ async def bench(config: DictConfig) -> None:
     """
     run = setup_neptune(config)
     log.info("Starting the experiment...")
-    results = await Evaluator.run_experiment_from_config(config=cast(dict, OmegaConf.to_container(config)))
+    results = await Evaluator.run_from_config(config=cast(dict, OmegaConf.to_container(config)))
     output_dir = log_to_file(results)
     if run:
         log_to_neptune(run, results, output_dir)

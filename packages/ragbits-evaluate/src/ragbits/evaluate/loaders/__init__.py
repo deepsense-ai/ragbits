@@ -9,11 +9,13 @@ module = sys.modules[__name__]
 
 def dataloader_factory(config: dict) -> DataLoader:
     """
-    A function creating dataloader from a dataloder config
+    A function creating dataloader from a dataloder config.
+
     Args:
-        config - a dataloader configuration
+        config: Dataloader configuration.
+
     Returns:
-        DataLoader
+        Data loader.
     """
     dataloader_class = import_by_path(config["type"], module)
-    return dataloader_class.from_config({"config": config["options"]})
+    return dataloader_class.from_config(config["config"])

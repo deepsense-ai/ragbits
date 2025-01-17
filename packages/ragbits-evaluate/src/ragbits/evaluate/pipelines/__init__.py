@@ -7,15 +7,15 @@ from .base import EvaluationPipeline
 module = sys.modules[__name__]
 
 
-def pipeline_factory(pipeline_config: dict) -> EvaluationPipeline:
+def pipeline_factory(config: dict) -> EvaluationPipeline:
     """
-    Factory of evaluation pipelines
+    Factory of evaluation pipelines.
+
     Args:
-        pipeline_config: DictConfig
+        config: Pipeline config.
+
     Returns:
-        instance of evaluation pipeline
+        Instance of evaluation pipeline.
     """
-    pipeline_module = import_by_path(pipeline_config["type"], module)
-    config = {"config": pipeline_config}
-    pipeline = pipeline_module.from_config(config)
-    return pipeline
+    pipeline_module = import_by_path(config["type"], module)
+    return pipeline_module.from_config(config["config"])

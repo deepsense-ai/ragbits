@@ -7,16 +7,18 @@ from .base import MetricSet
 module = sys.modules[__name__]
 
 
-def metric_set_factory(cfg: list[dict]) -> MetricSet:
+def metric_set_factory(config: list[dict]) -> MetricSet:
     """
-    A function creating MetricSet instance from the configuration
+    A function creating MetricSet instance from the configuration.
+
     Args:
-        cfg - metric cnfiguration
+        config: Metric configuration.
+
     Returns:
-        MetricSet
+        Metric set.
     """
     metrics = []
-    for metric_cfg in cfg:
-        metric_module = import_by_path(metric_cfg["type"], module)
-        metrics.append(metric_module.from_config({"config": metric_cfg}))
+    for metric_config in config:
+        metric_module = import_by_path(metric_config["type"], module)
+        metrics.append(metric_module.from_config(metric_config["config"]))
     return MetricSet(*metrics)
