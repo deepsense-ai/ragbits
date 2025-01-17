@@ -1,13 +1,11 @@
 from collections.abc import AsyncGenerator
-from typing import Any
 
 from pydantic import BaseModel
 
+from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-from .base import LLM
 
 
 class MockLLMOptions(Options):
@@ -43,7 +41,7 @@ class MockLLM(LLM[MockLLMOptions]):
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> dict[str, Any]:
+    ) -> dict:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
