@@ -1,9 +1,9 @@
 defaults:
-  - embedder@config.embedder: litellm_opt_template
+  - embedder@config.embedder: litellm_optimization
   - vector_store@config.vector_store: chroma
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop
-  - providers@config.providers: unstructured_opt_template
+  - providers@config.providers: unstructured_optimization
   - source@config.source: hf
   - _self_
 
