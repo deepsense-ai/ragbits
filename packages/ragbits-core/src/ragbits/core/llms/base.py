@@ -158,8 +158,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
         raw_response = await self.generate_raw(prompt, options=options)
         if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(raw_response["content"])
-        return cast(OutputT, raw_response["content"])
+            return prompt.parse_response(raw_response["response"])
+        return cast(OutputT, raw_response["response"])
 
     @overload
     async def generate_with_metadata(

@@ -73,6 +73,7 @@ class SimplePrompt(BasePrompt):
     """
     A simple prompt class that can handle bare strings or chat format dictionaries.
     """
+
     def __init__(self, content: str | ChatFormat) -> None:
         self._content = content
 
