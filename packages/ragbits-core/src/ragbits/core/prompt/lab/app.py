@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass, field, replace
-from typing import Any
+from typing import Any, cast
 
 try:
     import gradio as gr
@@ -107,7 +107,7 @@ def send_prompt_to_llm(state: PromptState) -> str:
         raise ValueError("LLM model is not configured.")
 
     try:
-        response = asyncio.run(state.llm.generate_raw(prompt=state.rendered_prompt))
+        response = cast(str, asyncio.run(state.llm.generate_raw(prompt=state.rendered_prompt))["response"])
     except Exception as e:  # pylint: disable=broad-except
         response = str(e)
 

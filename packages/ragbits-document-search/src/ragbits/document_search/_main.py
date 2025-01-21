@@ -1,12 +1,17 @@
 import warnings
 from collections.abc import Sequence
-from typing import Any
+from pathlib import Path
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
+from typing_extensions import Self
 
+from ragbits import document_search
 from ragbits.core.audit import traceable
+from ragbits.core.config import CoreConfig
 from ragbits.core.embeddings import Embeddings, EmbeddingType
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils._pyproject import get_config_from_yaml
+from ragbits.core.utils.config_handling import NoDefaultConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -47,7 +52,7 @@ class DocumentSearchConfig(BaseModel):
     providers: dict[str, ObjectContructionConfig] = {}
 
 
-class DocumentSearch:
+class DocumentSearch(WithConstructionConfig):
     """
     A main entrypoint to the DocumentSearch functionality.
 
@@ -59,6 +64,10 @@ class DocumentSearch:
         2. Uses VectorStore to retrieve the most relevant chunks.
         3. Uses Reranker to rerank the chunks.
     """
+
+    # WithConstructionConfig configuration
+    default_module: ClassVar = document_search
+    configuration_key: ClassVar = "document_search"
 
     embedder: Embeddings
     vector_store: VectorStore
@@ -84,7 +93,7 @@ class DocumentSearch:
         self.processing_strategy = processing_strategy or SequentialProcessing()
 
     @classmethod
-    def from_config(cls, config: dict) -> "DocumentSearch":
+    def from_config(cls, config: dict) -> Self:
         """
         Creates and returns an instance of the DocumentSearch class from the given configuration.
 
@@ -110,6 +119,51 @@ class DocumentSearch:
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+
+    @classmethod
+    def subclass_from_defaults(
+        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    ) -> Self:
+        """
+        Tries to create an instance by looking at default configuration file, and default factory function.
+        Takes optional overrides for both, which takes a higher precedence.
+
+        Args:
+            defaults: The CoreConfig instance containing default factory and configuration details.
+            factory_path_override: A string representing the path to the factory function
+                in the format of "module.submodule:factory_name".
+            yaml_path_override: A string representing the path to the YAML file containing
+                the Ragstack instance configuration. Looks for the configuration under the key "document_search",
+                and if not found, instantiates the class with the default configuration for each component.
+
+        Raises:
+            InvalidConfigError: If the default factory or configuration can't be found.
+        """
+        if yaml_path_override:
+            config = get_config_from_yaml(yaml_path_override)
+
+            # Look for explicit document search configuration
+            if type_config := config.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+
+            # Instantate the class with the default configuration for each component
+            return cls.from_config(config)
+
+        if factory_path_override:
+            return cls.subclass_from_factory(factory_path_override)
+
+        if default_factory := defaults.default_factories.get(cls.configuration_key):
+            return cls.subclass_from_factory(default_factory)
+
+        if defaults.default_instaces_config_path is not None:
+            # Look for explicit document search configuration
+            if default_config := defaults.default_instances_config.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
+
+            # Instantate the class with the default configuration for each component
+            return cls.from_config(defaults.default_instances_config)
+
+        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
 
     @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:

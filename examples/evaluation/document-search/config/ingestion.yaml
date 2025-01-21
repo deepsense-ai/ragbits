@@ -1,4 +1,0 @@
-defaults:
-  - data: corpus
-  - pipeline: document_ingestion
-  - _self_

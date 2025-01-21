@@ -85,7 +85,7 @@ async def test_generation_with_parser():
     output = await llm.generate(prompt, options=options)
     assert output == 42
     raw_output = await llm.generate_raw(prompt, options=options)
-    assert raw_output == "I'm fine, thank you."
+    assert raw_output["response"] == "I'm fine, thank you."
 
 
 async def test_generation_with_static_prompt():
@@ -117,7 +117,7 @@ async def test_generation_with_static_prompt_with_parser():
     output = await llm.generate(prompt, options=options)
     assert output == 42
     raw_output = await llm.generate_raw(prompt, options=options)
-    assert raw_output == "42"
+    assert raw_output["response"] == "42"
 
 
 async def test_generation_with_pydantic_output():
@@ -140,3 +140,17 @@ async def test_generation_with_pydantic_output():
     output = await llm.generate(prompt, options=options)
     assert output.response == "I'm fine, thank you."
     assert output.happiness == 100
+
+
+async def test_generation_with_metadata():
+    """Test generation of a response."""
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    options = LiteLLMOptions(mock_response="I'm fine, thank you.")
+    output = await llm.generate_with_metadata(prompt, options=options)
+    assert output.content == "I'm fine, thank you."
+    assert output.metadata == {
+        "completion_tokens": 20,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+    }
