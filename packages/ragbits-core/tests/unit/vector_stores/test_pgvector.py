@@ -108,17 +108,13 @@ async def test_create_table_when_table_exist(
 # @pytest.mark.asyncio
 # async def test_create_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
 #     _, mock_conn = mock_db_pool
-#     with patch.object(
-#         mock_pgvector_store, "_create_table_command", wraps=mock_pgvector_store._create_table_command
-#     ) as mock_create_table_command:
-#         mock_conn.fetchval = AsyncMock(return_value=False)
-#         await mock_pgvector_store.create_table()
-#         mock_create_table_command.assert_called()
-#         mock_conn.fetchval.assert_called_once()
-#         calls = mock_conn.execute.mock_calls
-#         assert any("CREATE EXTENSION" in str(call) for call in calls)
-#         assert any("CREATE TABLE" in str(call) for call in calls)
-#         assert any("CREATE INDEX" in str(call) for call in calls)
+#     mock_conn.fetchval = AsyncMock(return_value=False)
+#     await mock_pgvector_store.create_table()
+#     mock_conn.fetchval.assert_called_once()
+#     calls = mock_conn.execute.mock_calls
+#     assert any("CREATE EXTENSION" in str(call) for call in calls)
+#     assert any("CREATE TABLE" in str(call) for call in calls)
+#     assert any("CREATE INDEX" in str(call) for call in calls)
 
 
 @pytest.mark.asyncio
@@ -216,26 +212,28 @@ async def test_fetch_records_no_table(
         mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
-# @pytest.mark.asyncio
-# async def test_retrieve(mock_pgvector_store: PgVectorStore) -> None:
-#     vector = VECTOR_EXAMPLE
-#     options = VectorStoreOptions()
-#     with (
-#         patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
-#         patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
-#     ):
-#         await mock_pgvector_store.retrieve(vector, options=options)
-#
-#         mock_create_retrieve_query.assert_called_once()
-#         mock_fetch_records.assert_called_once()
-#
-#
-# @pytest.mark.asyncio
-# async def test_list(mock_pgvector_store: PgVectorStore) -> None:
-#     with (
-#         patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query,
-#         patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
-#     ):
-#         await mock_pgvector_store.list(where=None, limit=1, offset=0)
-#         mock_create_list_query.assert_called_once()
-#         mock_fetch_records.assert_called_once()
+@pytest.mark.asyncio
+async def test_retrieve(mock_pgvector_store: PgVectorStore) -> None:
+    vector = VECTOR_EXAMPLE
+    options = VectorStoreOptions()
+    with (
+        patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
+        patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
+    ):
+        mock_create_retrieve_query.return_value = ("query_string", ["param1", "param2"])
+        await mock_pgvector_store.retrieve(vector, options=options)
+
+        mock_create_retrieve_query.assert_called_once()
+        mock_fetch_records.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_list(mock_pgvector_store: PgVectorStore) -> None:
+    with (
+        patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query,
+        patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
+    ):
+        mock_create_list_query.return_value = ("query_string", [1, 0])
+        await mock_pgvector_store.list(where=None, limit=1, offset=0)
+        mock_create_list_query.assert_called_once()
+        mock_fetch_records.assert_called_once()
