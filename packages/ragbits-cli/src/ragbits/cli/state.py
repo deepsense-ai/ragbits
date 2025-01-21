@@ -48,10 +48,13 @@ def print_output_table(
         console.print("No results")
         return
 
-    fields = data[0].model_fields
+    fields = {**data[0].model_fields, **data[0].model_computed_fields}
 
     # Human readable titles for columns
-    titles = {key: value.get("title", key) for key, value in data[0].model_json_schema()["properties"].items()}
+    titles = {
+        key: value.get("title", key)
+        for key, value in data[0].model_json_schema(mode="serialization")["properties"].items()
+    }
 
     # Normalize the list of columns
     if columns is None:

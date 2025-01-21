@@ -76,7 +76,10 @@ class SourceDiscriminator:
     """
 
     @staticmethod
-    def _create_instance(fields: dict[str, Any]) -> Source:
+    def _create_instance(
+        fields: dict[str, Any],
+        validator: core_schema.ValidatorFunctionWrapHandler,
+    ) -> Source:
         source_type = fields.get("source_type")
         if source_type is None:
             raise ValueError("source_type is required to create a Source instance")
@@ -84,10 +87,13 @@ class SourceDiscriminator:
         source_subclass = Source._registry.get(source_type)
         if source_subclass is None:
             raise ValueError(f"Unknown source type: {source_type}")
-        return source_subclass(**fields)
+        return source_subclass.model_validate(fields)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:  # noqa: ANN401
-        create_instance_validator = core_schema.no_info_plain_validator_function(self._create_instance)
+        create_instance_validator = core_schema.no_info_wrap_validator_function(
+            self._create_instance,
+            schema=core_schema.any_schema(),
+        )
 
         return core_schema.json_or_python_schema(
             json_schema=create_instance_validator,
