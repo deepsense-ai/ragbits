@@ -4,8 +4,12 @@
 
 ## 0.7.0 (2025-01-21)
 
+### Added
+- Add CLI command to perform search on DocumentSearch instance (#290).
+
 ### Changed
 
+- New way to initialize DocumentSearch instances (#277).
 - ragbits-core updated to version v0.7.0
 
 ## 0.6.0 (2024-12-27)
