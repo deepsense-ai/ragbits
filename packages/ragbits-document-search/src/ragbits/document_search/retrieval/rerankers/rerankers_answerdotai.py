@@ -52,6 +52,6 @@ class AnswerDotAIRerankersReranker(Reranker[RerankerOptions]):
             query=query,
             docs=documents,
         )
-        if merged_options:
+        if merged_options.top_n:
             response = response.top_k(merged_options.top_n)
         return [elements[result.document.doc_id] for result in response]
