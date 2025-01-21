@@ -27,7 +27,6 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
         metadata_store: MetadataStore | None = None,
-        limits: httpx.Limits | None = None,
     ) -> None:
         """
         Constructs a new QdrantVectorStore instance.
@@ -38,13 +37,11 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
             metadata_store: The metadata store to use. If None, the metadata will be stored in Qdrant.
-            limits: The limits to apply to the HTTP client.
         """
         super().__init__(default_options=default_options, metadata_store=metadata_store)
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        self.limits = limits
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
