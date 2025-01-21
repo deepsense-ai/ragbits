@@ -153,7 +153,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        if isinstance(prompt, (str, list)):
+        if isinstance(prompt, str | list):
             prompt = SimplePrompt(prompt)
 
         raw_response = await self.generate_raw(prompt, options=options)
