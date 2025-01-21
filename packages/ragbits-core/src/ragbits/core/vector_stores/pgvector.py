@@ -1,6 +1,6 @@
 import json
 import re
-from typing import get_type_hints
+from typing import get_type_hints, Tuple, Any
 
 import asyncpg
 from pydantic.json import pydantic_encoder
@@ -86,7 +86,9 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         return f"CREATE TABLE {self._table_name} (" + ", ".join(columns) + ");"
 
-    def _create_retrieve_query(self, vector: list[float], query_options: VectorStoreOptions | None = None) -> str:
+    def _create_retrieve_query(
+        self, vector: list[float], query_options: VectorStoreOptions | None = None
+    ) -> Tuple[str, list[Any]]:
         """
         Create sql query for retrieving entries from the pgVector collection.
 
@@ -98,24 +100,39 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             str: sql query.
         """
         distance_operator = DISTANCE_OPS[self._distance_method][1]
-        # _table_name has been validated in the class constructor, and it is a valid table name.
-        query = f"SELECT * FROM {self._table_name}"  # noqa S608
         if not query_options:
             query_options = self.default_options
-        if query_options.max_distance and self._distance_method == "ip":
-            query += f""" WHERE vector {distance_operator} '{vector}'
-            BETWEEN {(-1) * query_options.max_distance} AND {query_options.max_distance}"""
-        elif query_options.max_distance:
-            query += f" WHERE vector {distance_operator} '{vector}' < {query_options.max_distance}"
-        query += f" ORDER BY vector {distance_operator} '{vector}'"
-        if query_options.k:
-            query += f" LIMIT {query_options.k}"
 
+        # _table_name has been validated in the class constructor, and it is a valid table name.
+        query = f"SELECT * FROM {self._table_name}"  # noqa S608
+
+        values = []
+        index = 1
+
+        if query_options.max_distance and self._distance_method == "ip":
+            query += f""" WHERE vector ${index} '${index + 1}'
+            BETWEEN ${index + 2} AND ${index + 3}"""
+            values.extend([distance_operator, vector, (-1) * query_options.max_distance, query_options.max_distance])
+            index += 4
+        elif query_options.max_distance:
+            query += f" WHERE vector ${index} '${index + 1}' < ${index + 2}"
+            index += 3
+            values.extend([distance_operator, vector, query_options.max_distance])
+
+        query += f" ORDER BY vector ${index} '${index + 1}'"
+        values.extend([distance_operator, vector])
+        index += 2
+
+        if query_options.k:
+            query += f" LIMIT ${index}"
+            values.append(query_options.k)
         query += ";"
 
-        return query
+        return query, values
 
-    def _create_list_query(self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0) -> str:
+    def _create_list_query(
+        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
+    ) -> Tuple[str, list[Any]]:
         """
         Create sql query for listing entries from the pgVector collection.
 
@@ -130,20 +147,24 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT * FROM {self._table_name}"  # noqa S608
+        i = 1
+        values = []
         if where:
-            filters = []
-            for key, value in where.items():
-                filters.append(f"{key} = {value}")
-            query += " WHERE " + " AND ".join(filters)
+            query += f" WHERE metadata @> ${i}"
+            values.append(json.dumps(where))
+            i += 1
 
         if limit is not None:
-            query += f" LIMIT {limit}"
+            query += f" LIMIT ${i}"
+            values.append(limit) # type: ignore
+            i += 1
 
-        if offset is not None:
-            query += f" OFFSET {offset}"
-
+        if offset is None:
+            offset = 0
+        query += f" OFFSET ${i}"
+        values.append(offset) # type: ignore
         query += ";"
-        return query
+        return query, values
 
     async def create_table(self) -> None:
         """
@@ -154,13 +175,13 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 SELECT FROM information_schema.tables
                 WHERE table_name = $1
             ); """
-
+        distance = DISTANCE_OPS[self._distance_method][0]
         create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
         # _table_name has been validated in the class constructor, and it is a valid table name.
         create_index_query = f"""
                 CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
-                USING hnsw (vector {DISTANCE_OPS[self._distance_method][0]})
-                WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
+                USING hnsw (vector $1)
+                WITH (m = $2, ef_construction = $3);
                 """
 
         async with self._client.acquire() as conn:
@@ -172,7 +193,9 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
                 try:
                     async with conn.transaction():
                         await conn.execute(create_table_query)
-                        await conn.execute(create_index_query)
+                        await conn.execute(
+                            create_index_query, distance, self._hnsw_params["m"], self._hnsw_params["ef_construction"]
+                        )
 
                     print("Table and index created!")
                 except Exception as e:
@@ -243,18 +266,20 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             return
 
     @traceable
-    async def _fetch_records(self, query: str) -> list[VectorStoreEntry]:
+    async def _fetch_records(self, query: str, values: list[Any]) -> list[VectorStoreEntry]:
         """
         Fetch records from the pgVector collection.
 
         Args:
             query: sql query
+            values: list of values to be used in the query.
+
         Returns:
             list of VectorStoreEntry objects.
         """
         try:
             async with self._client.acquire() as conn:
-                results = await conn.fetch(query)
+                results = await conn.fetch(query, values)
 
             return [
                 VectorStoreEntry(
@@ -282,9 +307,12 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
+        if vector is None:
+            return []
+
         query_options = (self.default_options | options) if options else self.default_options
-        retrieve_query = self._create_retrieve_query(vector, query_options)
-        return await self._fetch_records(retrieve_query)
+        retrieve_query, values = self._create_retrieve_query(vector, query_options)
+        return await self._fetch_records(retrieve_query, *values)
 
     @traceable
     async def list(
@@ -302,5 +330,5 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        list_query = self._create_list_query(where, limit, offset)
-        return await self._fetch_records(list_query)
+        list_query, values = self._create_list_query(where, limit, offset)
+        return await self._fetch_records(list_query, *values)
