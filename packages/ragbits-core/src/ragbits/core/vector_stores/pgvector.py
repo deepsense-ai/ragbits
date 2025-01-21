@@ -1,6 +1,6 @@
 import json
 import re
-from typing import get_type_hints, Tuple, Any
+from typing import Any, get_type_hints
 
 import asyncpg
 from pydantic.json import pydantic_encoder
@@ -88,7 +88,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
     def _create_retrieve_query(
         self, vector: list[float], query_options: VectorStoreOptions | None = None
-    ) -> Tuple[str, list[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create sql query for retrieving entries from the pgVector collection.
 
@@ -132,7 +132,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
     def _create_list_query(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    ) -> Tuple[str, list[Any]]:
+    ) -> tuple[str, list[Any]]:
         """
         Create sql query for listing entries from the pgVector collection.
 
@@ -156,13 +156,13 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         if limit is not None:
             query += f" LIMIT ${i}"
-            values.append(limit) # type: ignore
+            values.append(limit)  # type: ignore
             i += 1
 
         if offset is None:
             offset = 0
         query += f" OFFSET ${i}"
-        values.append(offset) # type: ignore
+        values.append(offset)  # type: ignore
         query += ";"
         return query, values
 
