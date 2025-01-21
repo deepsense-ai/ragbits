@@ -31,7 +31,9 @@ class DummyLLM(LLM[DummyOptions]):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
     ) -> AsyncGenerator[str, None]:
-        yield "test response"
+        async def generate() -> AsyncGenerator[str, None]:
+            yield "test response"
+        return generate()
 
 
 class CustomOutputType(BaseModel):
