@@ -8,7 +8,13 @@ from pydantic import BaseModel
 
 from ragbits.core import llms
 from ragbits.core.options import Options
-from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.base import (
+    BasePrompt,
+    BasePromptWithParser,
+    ChatFormat,
+    OutputT,
+    SimplePrompt,
+)
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
@@ -112,28 +118,48 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT | None = None,
     ) -> OutputT: ...
 
+    @overload
     async def generate(
         self,
-        prompt: BasePrompt,
+        prompt: str,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> str: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: ChatFormat,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> str: ...
+
+    async def generate(
+        self,
+        prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
     ) -> OutputT:
         """
-        Prepares and sends a prompt to the LLM and returns response parsed to the
-        output type of the prompt (if available).
+        Prepares and sends a prompt to the LLM and returns the parsed response.
 
         Args:
-            prompt: Formatted prompt template with conversation and optional response parsing configuration.
+            prompt: Can be one of:
+                - BasePrompt instance: Formatted prompt template with conversation
+                - str: Simple text prompt that will be sent as a user message
+                - ChatFormat: List of message dictionaries in OpenAI chat format
             options: Options to use for the LLM client.
 
         Returns:
-            Text response from LLM.
+            Parsed response from LLM.
         """
-        response = await self.generate_raw(prompt, options=options)
-        content = response.pop("response")
+        if isinstance(prompt, (str, list)):
+            prompt = SimplePrompt(prompt)
+
+        raw_response = await self.generate_raw(prompt, options=options)
         if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(content)
-        return cast(OutputT, content)
+            return prompt.parse_response(raw_response["content"])
+        return cast(OutputT, raw_response["content"])
 
     @overload
     async def generate_with_metadata(
