@@ -1,0 +1,7 @@
+ranked_retrieval:
+  type: ragbits.evaluate.metrics.document_search:DocumentSearchRankedRetrievalMetrics
+  config:
+    matching_strategy:
+      type: RougeChunkMatch
+      config:
+        threshold: 0.5

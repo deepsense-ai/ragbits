@@ -5,7 +5,7 @@ Ragbits provides a feature that allows users to automatically configure hyperpar
 - The optimized pipeline must inherit from `ragbits.evaluate.pipelines.base.EvaluationPipeline`.
 - The definition of optimized metrics must adhere to the `ragbits.evaluate.metrics.base.Metric` interface.
 - These metrics should be gathered into an instance of `ragbits.evaluate.metrics.base.MetricSet`.
-- An instance of a class inheriting from `ragbits.evaluate.metrics.loader.base.DataLoader` must be provided as the data source for optimization.
+- An instance of a class inheriting from `ragbits.evaluate.dataloaders.base.DataLoader` must be provided as the data source for optimization.
 
 ## Supported Parameter Types
 
@@ -69,7 +69,7 @@ Next, we define the data loader. We'll use Ragbits generation stack to create an
 
 
 ```python
-from ragbits.evaluate.loaders.base import DataLoader, DataT
+from ragbits.evaluate.dataloaders.base import DataLoader, DataT
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 from pydantic import BaseModel

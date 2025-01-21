@@ -1,3 +1,4 @@
+import httpx
 from chromadb import ClientAPI
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
@@ -61,7 +62,7 @@ def test_subclass_from_config_chroma_client():
     assert store.default_options.max_distance == 0.22
 
 
-def test_subclass_from_config_drant_client():
+def test_subclass_from_config_qdrant_client():
     config = ObjectContructionConfig.model_validate(
         {
             "type": "ragbits.core.vector_stores.qdrant:QdrantVectorStore",
@@ -70,6 +71,7 @@ def test_subclass_from_config_drant_client():
                     "type": "AsyncQdrantClient",
                     "config": {
                         "location": ":memory:",
+                        "limits": {"keepalive_expiry": 20, "max_keepalive_connections": 0},
                     },
                 },
                 "index_name": "some_index",
@@ -84,6 +86,9 @@ def test_subclass_from_config_drant_client():
     assert isinstance(store, QdrantVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, AsyncQdrantClient)
+    assert isinstance(store._client.init_options["limits"], httpx.Limits)
+    assert store._client.init_options["limits"].keepalive_expiry == 20
+    assert store._client.init_options["limits"].max_keepalive_connections == 0
     assert isinstance(store._client._client, AsyncQdrantLocal)
     assert store.default_options.k == 10
     assert store.default_options.max_distance == 0.22

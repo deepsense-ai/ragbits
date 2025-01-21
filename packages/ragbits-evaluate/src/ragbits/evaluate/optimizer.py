@@ -1,132 +1,184 @@
 import asyncio
 import warnings
+from collections.abc import Callable
 from copy import deepcopy
-from typing import Any
 
 import optuna
-from omegaconf import DictConfig, ListConfig
+from optuna import Trial
+from pydantic import BaseModel
 
-from .callbacks.base import CallbackConfigurator
-from .evaluator import Evaluator
-from .loaders.base import DataLoader
-from .metrics.base import MetricSet
-from .pipelines.base import EvaluationPipeline
+from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
+from ragbits.evaluate.dataloaders.base import DataLoader
+from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
+from ragbits.evaluate.metrics.base import MetricSet
+from ragbits.evaluate.pipelines.base import EvaluationPipeline
+from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 
-class Optimizer:
+class OptimizerConfig(BaseModel):
     """
-    Class for optimization
+    Schema for for the dict taken by `Optimizer.run_from_config` method.
     """
 
-    INFINITY = 1e16
+    experiment: EvaluatorConfig
+    optimizer: dict | None = None
+    neptune_callback: bool = False
 
-    def __init__(self, cfg: DictConfig):
-        self.config = cfg
+
+class Optimizer(WithConstructionConfig):
+    """
+    Optimizer class.
+    """
+
+    def __init__(self, direction: str = "maximize", n_trials: int = 10, max_retries_for_trial: int = 1) -> None:
+        """
+        Initializes the pipeline optimizer.
+
+        Args:
+            direction: Direction of optimization.
+            n_trials: The number of trials for each process.
+            max_retries_for_trial: The number of retires for single process.
+        """
+        self.direction = direction
+        self.n_trials = n_trials
+        self.max_retries_for_trial = max_retries_for_trial
         # workaround for optuna not allowing different choices for different trials
         # TODO check how optuna handles parallelism. discuss if we want to have parallel studies
-        self._choices_cache: dict[str, list[Any]] = {}
+        self._choices_cache: dict[str, list] = {}
+
+    @classmethod
+    def run_from_config(cls, config: dict) -> list[tuple[dict, float, dict[str, float]]]:
+        """
+        Runs the optimization process configured with a config object.
+
+        Args:
+            config: Optimizer config.
+
+        Returns:
+            List of tested configs with associated scores and metrics.
+        """
+        optimizer_config = OptimizerConfig.model_validate(config)
+        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.experiment)
+
+        dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.dataloader)
+        metrics: MetricSet = MetricSet.from_config(evaluator_config.metrics)
+
+        pipeline_class = import_by_path(evaluator_config.pipeline.type)
+        pipeline_config = dict(optimizer_config.experiment.pipeline.config)
+        callbacks = [setup_optuna_neptune_callback()] if optimizer_config.neptune_callback else []
+
+        optimizer = cls.from_config(config.get("optimizer", {}))
+        return optimizer.optimize(
+            pipeline_class=pipeline_class,
+            pipeline_config=pipeline_config,
+            metrics=metrics,
+            dataloader=dataloader,
+            callbacks=callbacks,
+        )
 
     def optimize(
         self,
         pipeline_class: type[EvaluationPipeline],
-        config_with_params: DictConfig,
+        pipeline_config: dict,
         dataloader: DataLoader,
         metrics: MetricSet,
-        callback_configurators: list[CallbackConfigurator] | None = None,
-    ) -> list[tuple[DictConfig, float, dict[str, float]]]:
+        callbacks: list[Callable] | None = None,
+    ) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        A method for running the optimization process for given parameters
-        Args:
-            pipeline_class - a type of pipeline to be optimized
-            config_with_params - a configuration defining the optimization process
-            dataloader - a dataloader
-            metrics - object representing the metrics to be optimized
-            log_to_neptune - indicator whether the results should be logged to neptune
-        Returns:
-            list of tuples with configs and their scores
-        """
-        # TODO check details on how to parametrize optuna
-        optimization_kwargs = {"n_trials": self.config.n_trials}
-        if callback_configurators:
-            optimization_kwargs["callbacks"] = [configurator.get_callback() for configurator in callback_configurators]
+        Runs the optimization process for given parameters.
 
-        def objective(trial: optuna.Trial) -> float:
+        Args:
+            pipeline_class: Pipeline to be optimized.
+            pipeline_config: Configuration defining the optimization process.
+            dataloader: Data loader.
+            metrics: Metrics to be optimized.
+            callbacks: Experiment callbacks.
+
+        Returns:
+            List of tested configs with associated scores and metrics.
+        """
+
+        def objective(trial: Trial) -> float:
             return self._objective(
                 trial=trial,
                 pipeline_class=pipeline_class,
-                config_with_params=config_with_params,
+                pipeline_config=pipeline_config,
                 dataloader=dataloader,
                 metrics=metrics,
             )
 
-        study = optuna.create_study(direction=self.config.direction)
-
-        study.optimize(objective, **optimization_kwargs)
-        configs_with_scores = [
-            (trial.user_attrs["cfg"], trial.user_attrs["score"], trial.user_attrs["all_metrics"])
-            for trial in study.get_trials()
-        ]
-
-        def sorting_key(results: tuple[DictConfig, float, dict[str, float]]) -> float:
-            if self.config.direction == "maximize":
-                return -results[1]
-            else:
-                return results[1]
-
-        return sorted(configs_with_scores, key=sorting_key)
+        study = optuna.create_study(direction=self.direction)
+        study.optimize(
+            func=objective,
+            n_trials=self.n_trials,
+            callbacks=callbacks,
+        )
+        return sorted(
+            [
+                (
+                    trial.user_attrs["config"],
+                    trial.user_attrs["score"],
+                    trial.user_attrs["metrics"],
+                )
+                for trial in study.get_trials()
+            ],
+            key=lambda x: -x[1] if self.direction == "maximize" else x[1],
+        )
 
     def _objective(
         self,
+        trial: Trial,
         pipeline_class: type[EvaluationPipeline],
-        trial: optuna.Trial,
-        config_with_params: DictConfig,
+        pipeline_config: dict,
         dataloader: DataLoader,
         metrics: MetricSet,
     ) -> float:
-        max_retries = getattr(self.config, "max_retries_for_trial", 1)
-        config_for_trial = None
-        for attempt_idx in range(max_retries):
-            try:
-                config_for_trial = deepcopy(config_with_params)
-                self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
-                pipeline = pipeline_class(config_for_trial)
-                metrics_values = self._score(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
-                score = sum(metrics_values.values())
-                break
-            except Exception as e:
-                if attempt_idx < max_retries - 1:
-                    warnings.warn(
-                        message=f"Execution of the trial failed: {e}. A retry will be initiated.", category=UserWarning
-                    )
-                else:
-                    score = self.INFINITY
-                    if self.config.direction == "maximize":
-                        score *= -1
-                    metrics_values = {}
-                    warnings.warn(
-                        message=f"Execution of the trial failed: {e}. Setting the score to {score}",
-                        category=UserWarning,
-                    )
-        trial.set_user_attr("score", score)
-        trial.set_user_attr("cfg", config_for_trial)
-        trial.set_user_attr("all_metrics", metrics_values)
-        return score
-
-    @staticmethod
-    def _score(pipeline: EvaluationPipeline, dataloader: DataLoader, metrics: MetricSet) -> dict[str, float]:
+        """
+        Runs a single experiment.
+        """
         evaluator = Evaluator()
         event_loop = asyncio.get_event_loop()
-        results = event_loop.run_until_complete(
-            evaluator.compute(pipeline=pipeline, dataloader=dataloader, metrics=metrics)
-        )
-        return results["metrics"]
 
-    def _set_values_for_optimized_params(self, cfg: DictConfig, trial: optuna.Trial, ancestors: list[str]) -> None:  # noqa: PLR0912
+        score = 1e16 if self.direction == "maximize" else -1e16
+        metrics_values = None
+        config_for_trial = None
+
+        for attempt in range(1, self.max_retries_for_trial + 1):
+            try:
+                config_for_trial = deepcopy(pipeline_config)
+                self._set_values_for_optimized_params(cfg=config_for_trial, trial=trial, ancestors=[])
+                pipeline = pipeline_class.from_config(config_for_trial)
+
+                results = event_loop.run_until_complete(
+                    evaluator.compute(
+                        pipeline=pipeline,
+                        dataloader=dataloader,
+                        metrics=metrics,
+                    )
+                )
+                score = sum(results["metrics"].values())
+                metrics_values = results["metrics"]
+                break
+            except Exception as exc:
+                message = (
+                    f"Execution of the trial failed: {exc}. A retry will be initiated"
+                    if attempt < self.max_retries_for_trial
+                    else f"Execution of the trial failed: {exc}. Setting the score to {score}"
+                )
+                warnings.warn(message=message, category=UserWarning)
+
+        trial.set_user_attr("score", score)
+        trial.set_user_attr("metrics", metrics_values)
+        trial.set_user_attr("config", config_for_trial)
+
+        return score
+
+    def _set_values_for_optimized_params(self, cfg: dict, trial: Trial, ancestors: list[str]) -> None:  # noqa: PLR0912
         """
-        Recursive method for sampling parameter values for optuna.Trial
+        Recursive method for sampling parameter values for optuna trial.
         """
         for key, value in cfg.items():
-            if isinstance(value, DictConfig):
+            if isinstance(value, dict):
                 if value.get("optimize"):
                     param_id = f"{'.'.join(ancestors)}.{key}"  # type: ignore
                     choices = value.get("choices")
@@ -147,12 +199,12 @@ class Optimizer:
                             raise ValueError("Either choices or range must be specified")
                         choice_idx = trial.suggest_categorical(name=param_id, choices=choices_index)  # type: ignore
                         choice = choices[choice_idx]
-                        if isinstance(choice, DictConfig):
+                        if isinstance(choice, dict):
                             self._set_values_for_optimized_params(choice, trial, ancestors + [key, str(choice_idx)])  # type: ignore
                         cfg[key] = choice
                 else:
                     self._set_values_for_optimized_params(value, trial, ancestors + [key])  # type: ignore
-            elif isinstance(value, ListConfig):
+            elif isinstance(value, list):
                 for param in value:
-                    if isinstance(param, DictConfig):
+                    if isinstance(param, dict):
                         self._set_values_for_optimized_params(param, trial, ancestors + [key])  # type: ignore

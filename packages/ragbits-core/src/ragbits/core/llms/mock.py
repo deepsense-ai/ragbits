@@ -2,11 +2,10 @@ from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
+from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-from .base import LLM
 
 
 class MockLLMOptions(Options):
@@ -42,14 +41,14 @@ class MockLLM(LLM[MockLLMOptions]):
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> str:
+    ) -> dict:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(conversation)
         if not isinstance(options.response, NotGiven):
-            return options.response
-        return "mocked response"
+            return {"response": options.response}
+        return {"response": "mocked response"}
 
     async def _call_streaming(  # noqa: PLR6301
         self,

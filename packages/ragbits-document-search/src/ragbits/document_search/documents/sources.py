@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 from abc import ABC, abstractmethod
 from contextlib import suppress
@@ -272,6 +273,29 @@ class HuggingFaceSource(Source):
                 file.write(data["content"])
 
         return path
+
+    @classmethod
+    async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
+        """
+        List all sources in the given Hugging Face repository.
+
+        Args:
+            path: Path or name of the dataset.
+            split: Dataset split.
+
+        Returns:
+            List of source objects.
+        """
+        sources = load_dataset(path, split=split)  # type: ignore
+        cleaned_split = re.sub(r"\[.*?\]", "", split)
+        return [
+            cls(
+                path=path,
+                split=cleaned_split,
+                row=row,
+            )
+            for row in range(len(sources))  # type: ignore
+        ]
 
 
 def get_local_storage_dir() -> Path:
