@@ -14,7 +14,7 @@ class AnswerDotAIRerankersReranker(Reranker[RerankerOptions]):
 
     options_cls = RerankerOptions
 
-    def __init__(self, model: str, default_options: RerankerOptions, **options: str) -> None:
+    def __init__(self, model: str, default_options: RerankerOptions | None = None, **options: str) -> None:
         """
         Constructs a new AnswerDotAIRerankersReranker instance.
 
@@ -26,7 +26,6 @@ class AnswerDotAIRerankersReranker(Reranker[RerankerOptions]):
         super().__init__(default_options=default_options)
         self.model = model
         self.ranker = AnswerReranker(self.model, **options)
-        self.default_options = default_options
 
     @traceable
     async def rerank(
