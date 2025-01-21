@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, get_type_hints
+from typing import Any
 
 import asyncpg
 from pydantic.json import pydantic_encoder
@@ -63,29 +63,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         self._distance_method = distance_method
         self._hnsw_params = hnsw_params
 
-    def _create_table_command(self) -> str:
-        """
-        Create sql query for creating a pgVector table.
-
-        Returns:
-              str: sql query.
-        """
-        type_mapping = {
-            str: "TEXT",
-            list: f"VECTOR({self._vector_size})",
-            dict: "JSONB",
-        }
-        columns = []
-        type_hints = get_type_hints(VectorStoreEntry)
-        for column, column_type in type_hints.items():
-            if column_type == list[float]:
-                columns.append(f"{column} {type_mapping[list]}")
-            else:
-                sql_type = type_mapping.get(column_type)
-                columns.append(f"{column} {sql_type}")
-
-        return f"CREATE TABLE {self._table_name} (" + ", ".join(columns) + ");"
-
     def _create_retrieve_query(
         self, vector: list[float], query_options: VectorStoreOptions | None = None
     ) -> tuple[str, list[Any]]:
@@ -106,25 +83,22 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT * FROM {self._table_name}"  # noqa S608
 
-        values = []
-        index = 1
+        values: list[Any] = []
 
         if query_options.max_distance and self._distance_method == "ip":
-            query += f""" WHERE vector ${index} '${index + 1}'
-            BETWEEN ${index + 2} AND ${index + 3}"""
+            query += f""" WHERE vector ${len(values) + 1} '${len(values) + 2}'
+            BETWEEN ${len(values) + 3} AND ${len(values) + 4}"""
             values.extend([distance_operator, vector, (-1) * query_options.max_distance, query_options.max_distance])
-            index += 4
+
         elif query_options.max_distance:
-            query += f" WHERE vector ${index} '${index + 1}' < ${index + 2}"
-            index += 3
+            query += f" WHERE vector ${len(values) + 1} '${len(values) + 2}' < ${len(values) + 3}"
             values.extend([distance_operator, vector, query_options.max_distance])
 
-        query += f" ORDER BY vector ${index} '${index + 1}'"
+        query += f" ORDER BY vector ${len(values) + 1} '${len(values) + 2}'"
         values.extend([distance_operator, vector])
-        index += 2
 
         if query_options.k:
-            query += f" LIMIT ${index}"
+            query += f" LIMIT ${len(values) + 1}"
             values.append(query_options.k)
         query += ";"
 
@@ -147,22 +121,20 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT * FROM {self._table_name}"  # noqa S608
-        i = 1
-        values = []
+
+        values: list[Any] = []
         if where:
-            query += f" WHERE metadata @> ${i}"
+            query += f" WHERE metadata @> ${len(values) + 1}"
             values.append(json.dumps(where))
-            i += 1
 
         if limit is not None:
-            query += f" LIMIT ${i}"
-            values.append(limit)  # type: ignore
-            i += 1
+            query += f" LIMIT ${len(values) + 1}"
+            values.append(limit)
 
         if offset is None:
             offset = 0
-        query += f" OFFSET ${i}"
-        values.append(offset)  # type: ignore
+        query += f" OFFSET ${len(values) + 1}"
+        values.append(offset)
         query += ";"
         return query, values
 
@@ -178,6 +150,11 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         distance = DISTANCE_OPS[self._distance_method][0]
         create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
         # _table_name has been validated in the class constructor, and it is a valid table name.
+        create_table_query = f"""
+        CREATE TABLE {self._table_name}
+        (id TEXT, key TEXT, vector VECTOR($1), metadata JSONB);
+        """
+
         create_index_query = f"""
                 CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
                 USING hnsw (vector $1)
@@ -189,10 +166,9 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             exists = await conn.fetchval(check_table_existence, self._table_name)
 
             if not exists:
-                create_table_query = self._create_table_command()
                 try:
                     async with conn.transaction():
-                        await conn.execute(create_table_query)
+                        await conn.execute(create_table_query, self._vector_size)
                         await conn.execute(
                             create_index_query, distance, self._hnsw_params["m"], self._hnsw_params["ef_construction"]
                         )

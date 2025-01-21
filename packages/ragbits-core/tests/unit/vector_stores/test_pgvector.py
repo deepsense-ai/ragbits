@@ -51,12 +51,6 @@ async def test_invalid_table_name_raises_error(mock_db_pool: tuple[MagicMock, As
             PgVectorStore(client=mock_pool, table_name=table_name, vector_size=3)
 
 
-def test_create_table_command(mock_pgvector_store: PgVectorStore) -> None:
-    result = mock_pgvector_store._create_table_command()
-    expected_query = f"""CREATE TABLE {TEST_TABLE_NAME} (id TEXT, key TEXT, vector VECTOR(3), metadata JSONB);"""  # noqa S608
-    assert result == expected_query
-
-
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
     expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} ORDER BY vector $1 '$2' LIMIT $3;"""  # noqa S608
@@ -101,18 +95,13 @@ async def test_create_table_when_table_exist(
     mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
 ) -> None:
     _, mock_conn = mock_db_pool
-    with patch.object(
-        mock_pgvector_store, "_create_table_command", wraps=mock_pgvector_store._create_table_command
-    ) as mock_create_table_command:
-        mock_conn.fetchval = AsyncMock(return_value=True)
-        await mock_pgvector_store.create_table()
-        mock_conn.fetchval.assert_called_once()
-        mock_create_table_command.assert_not_called()
-
-        calls = mock_conn.execute.mock_calls
-        assert any("CREATE EXTENSION" in str(call) for call in calls)
-        assert not any("CREATE TABLE" in str(call) for call in calls)
-        assert not any("CREATE INDEX" in str(call) for call in calls)
+    mock_conn.fetchval = AsyncMock(return_value=True)
+    await mock_pgvector_store.create_table()
+    mock_conn.fetchval.assert_called_once()
+    calls = mock_conn.execute.mock_calls
+    assert any("CREATE EXTENSION" in str(call) for call in calls)
+    assert not any("CREATE TABLE" in str(call) for call in calls)
+    assert not any("CREATE INDEX" in str(call) for call in calls)
 
 
 # TODO: correct test below
