@@ -7,29 +7,13 @@ from typing import Any
 from datasets import Dataset
 from hydra.core.hydra_config import HydraConfig
 from neptune import Run
+from neptune.types import File
 from neptune.utils import stringify_unsupported
-from omegaconf import DictConfig, OmegaConf
+from neptune_optuna import NeptuneCallback
+from omegaconf import DictConfig
 
 
-def _save(file_path: Path, **data: Any) -> None:  # noqa: ANN401
-    """
-    Save the data to a file. Add the current timestamp and Python version to the data.
-
-    Args:
-        file_path: The path to the file.
-        data: The data to be saved.
-    """
-    current_time = datetime.now()
-
-    data["_timestamp"] = current_time.isoformat()
-    data["_python_version"] = sys.version
-    data["_interpreter_path"] = sys.executable
-
-    with open(file_path, "w", encoding="utf-8") as file:
-        json.dump(data, file, indent=4)
-
-
-def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path:
+def log_evaluation_to_file(results: dict, output_dir: Path | None = None) -> Path:
     """
     Log the evaluation results locally.
 
@@ -44,10 +28,26 @@ def log_to_file(results: dict[str, Any], output_dir: Path | None = None) -> Path
     metrics_file = output_dir / "metrics.json"
     results_file = output_dir / "results.json"
 
-    _save(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
-    _save(results_file, results=results["results"])
+    _save_json(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
+    _save_json(results_file, results=results["results"])
 
     return output_dir
+
+
+def log_evaluation_to_neptune(results: dict, config: DictConfig, tags: str | list[str] | None = None) -> None:
+    """
+    Log the evaluation results to Neptune.
+
+    Args:
+        results: Evaluation results.
+        config: Evaluation configuration.
+        tags: Experiment tags.
+    """
+    run = Run(tags=tags)
+    run["config"] = stringify_unsupported(config)
+    run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
+    run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
+    run["evaluation/results"].upload(File.from_content(json.dumps(results["results"], indent=4), extension="json"))
 
 
 def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Path:
@@ -68,7 +68,7 @@ def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Pat
 
 
 def log_optimization_to_file(
-    results: list[tuple[DictConfig, float, dict[str, float]]], output_dir: Path | None = None
+    results: list[tuple[dict, float, dict[str, float]]], output_dir: Path | None = None
 ) -> Path:
     """
     Log the evaluation results locally.
@@ -81,53 +81,46 @@ def log_optimization_to_file(
         The output directory.
     """
     output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
+
     scores = {}
-    for idx, (cfg, score, all_metrics) in enumerate(results):
-        trial_name = f"trial_{idx}"
-        OmegaConf.save(cfg, output_dir / f"{trial_name}.yaml")
+    for i, (config, score, all_metrics) in enumerate(results):
+        trial_name = f"trial-{i}"
         scores[trial_name] = {"score": score, "all_metrics": all_metrics}
+        trial_config_file = output_dir / f"{trial_name}.json"
+        _save_json(trial_config_file, config=config)
+
     scores_file = output_dir / "scores.json"
-    _save(scores_file, scores=scores)
+    _save_json(scores_file, scores=scores)
+
     return output_dir
 
 
-def setup_neptune(config: DictConfig) -> Run | None:
+def _save_json(file_path: Path, **data: Any) -> None:  # noqa: ANN401
     """
-    Setup the Neptune run.
+    Save the data to a file. Add the current timestamp and Python version to the data.
 
     Args:
-        config: The Hydra configuration.
-
-    Returns:
-        The Neptune run.
+        file_path: The path to the file.
+        data: The data to be saved.
     """
-    if config.neptune.run:
-        run = Run(
-            project=config.neptune.project,
-            tags=[
-                config.task.type,
-                config.task.name,
-                config.data.name,
-            ],
-        )
-        run["config"] = stringify_unsupported(config)
-        return run
-    return None
+    current_time = datetime.now()
+
+    data["_timestamp"] = current_time.isoformat()
+    data["_python_version"] = sys.version
+    data["_interpreter_path"] = sys.executable
+
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(file_path, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=4)
 
 
-def log_to_neptune(run: Run, results: dict[str, Any], output_dir: Path | None = None) -> None:
+def setup_optuna_neptune_callback(tags: str | list[str] | None = None) -> NeptuneCallback:
     """
-    Log the evaluation results to Neptune.
+    Log the optimization process to Neptune.
 
     Args:
-        run: The Neptune run.
-        results: The evaluation results.
-        output_dir: The output directory.
+        tags: Experiment tags.
     """
-    output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
-
-    run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
-    run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
-    run["evaluation/results"] = stringify_unsupported(results["results"])
-    run["evaluation/metrics.json"].upload((output_dir / "metrics.json").as_posix())
-    run["evaluation/results.json"].upload((output_dir / "results.json").as_posix())
+    run = Run(tags=tags)
+    return NeptuneCallback(run)

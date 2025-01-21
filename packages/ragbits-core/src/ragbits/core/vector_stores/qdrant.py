@@ -1,6 +1,7 @@
 import json
 import typing
 
+import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, Filter, VectorParams
@@ -59,6 +60,9 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         """
         client_options = ObjectContructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, qdrant_client)
+        if "limits" in client_options.config:
+            limits = httpx.Limits(**client_options.config["limits"])
+            client_options.config["limits"] = limits
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 

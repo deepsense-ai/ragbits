@@ -1,0 +1,21 @@
+# @package _global_
+
+task:
+  name: chunking-250
+
+pipeline:
+  config:
+    providers:
+      txt:
+        config:
+          chunking_kwargs:
+            max_characters: 250
+            new_after_n_chars: 50
+      md:
+        config:
+          chunking_kwargs:
+            max_characters: 250
+            new_after_n_chars: 50
+    vector_store:
+      config:
+        index_name: chunk-250
