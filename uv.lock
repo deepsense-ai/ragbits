@@ -3979,6 +3979,7 @@ source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "pdf2image" },
     { name = "ragbits-core" },
+    { name = "rerankers" },
     { name = "unstructured" },
     { name = "unstructured-client" },
 ]
@@ -4011,6 +4012,7 @@ requires-dist = [
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", marker = "extra == 'distributed'", specifier = ">=2.39.0" },
+    { name = "rerankers", specifier = ">=0.6.1" },
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
@@ -4118,7 +4120,6 @@ dependencies = [
     { name = "ragbits-document-search", extra = ["distributed", "gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
-    { name = "rerankers" },
 ]
 
 [package.dev-dependencies]
@@ -4149,7 +4150,6 @@ requires-dist = [
     { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
-    { name = "rerankers", specifier = ">=0.6.1" },
 ]
 
 [package.metadata.requires-dev]
