@@ -40,7 +40,7 @@ async def test_litellm_cohere_reranker_rerank() -> None:
     assert len(results) == 2
 
 
-async def test_answerdotai_gpt_reranker_rerank() -> None:
+async def test_answerdotai_reranker_rerank() -> None:
     options = RerankerOptions(top_n=2)
     reranker = AnswerDotAIRerankersReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",
