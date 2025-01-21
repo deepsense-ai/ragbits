@@ -1,8 +1,12 @@
+import json
 import sys
 from pathlib import Path
 
 from typer.testing import CliRunner
 
+from ragbits.cli import app as root_app
+from ragbits.cli import autoregister
+from ragbits.cli.state import CliState, cli_state
 from ragbits.document_search.cli import ds_app
 
 projects_dir = Path(__file__).parent.parent / "unit" / "testprojects"
@@ -48,3 +52,62 @@ def test_search_limit():
     assert "Foo document" in result.stdout
     assert "Bar document" in result.stdout
     assert "Baz document" not in result.stdout
+
+
+def test_search_columns():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        ds_app,
+        ["--factory-path", factory_path, "search", "example query", "--columns", "document_meta,location"],
+    )
+    assert result.exit_code == 0
+    assert "Foo document" not in result.stdout
+    assert "Bar document" not in result.stdout
+    assert "Baz document" not in result.stdout
+    assert "page_number=" in result.stdout
+    assert "coordinates=" in result.stdout
+    assert "<DocumentType.TXT: 'txt'>" in result.stdout
+
+
+def test_search_columns_non_existent():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        ds_app,
+        [
+            "--factory-path",
+            factory_path,
+            "search",
+            "example query",
+            "--columns",
+            "document_meta,location,non_existent",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Unknown column: non_existent" in result.stderr
+
+
+def test_search_json():
+    autoregister()
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        root_app,
+        [
+            "--output",
+            "json",
+            "document-search",
+            "--factory-path",
+            factory_path,
+            "search",
+            "example query",
+        ],
+    )
+    print(result.stderr)
+    assert result.exit_code == 0
+    elements = json.loads(result.stdout)
+    assert len(elements) == 3
+    assert elements[0]["key"] == "Foo document"
+    assert elements[1]["key"] == "Bar document"
+    assert elements[2]["key"] == "Baz document"
+
+    # Reset the output type to the default value so it doesn't affect other tests
+    cli_state.output_type = CliState.output_type

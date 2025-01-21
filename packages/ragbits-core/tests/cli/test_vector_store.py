@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 
 from ragbits.cli import app as root_app
 from ragbits.cli import autoregister
+from ragbits.cli.state import CliState, cli_state
 from ragbits.core.embeddings.base import Embeddings
 from ragbits.core.embeddings.noop import NoopEmbeddings
 from ragbits.core.vector_stores import InMemoryVectorStore, VectorStore
@@ -214,3 +215,6 @@ def test_vector_store_list_json():
     dicts = json.loads(result.stdout)
     entries = [VectorStoreEntry.model_validate(entry) for entry in dicts]
     assert entries == example_entries
+
+    # Reset the output type to the default value so it doesn't affect other tests
+    cli_state.output_type = CliState.output_type
