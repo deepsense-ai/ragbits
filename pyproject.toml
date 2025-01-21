@@ -11,6 +11,7 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
+    "rerankers>=0.6.1",
 ]
 
 [tool.uv]
