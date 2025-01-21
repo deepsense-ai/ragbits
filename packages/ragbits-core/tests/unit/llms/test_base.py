@@ -33,6 +33,7 @@ class DummyLLM(LLM[DummyOptions]):
     ) -> AsyncGenerator[str, None]:
         async def generate() -> AsyncGenerator[str, None]:
             yield "test response"
+
         return generate()
 
 
