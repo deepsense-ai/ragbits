@@ -87,7 +87,7 @@ def test_vector_store_cli_no_store():
     """
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(vector_stores_app, ["list"])
-    assert "You need to provide the vector store instance be used" in result.stderr
+    assert "You need to provide the vector store instance to be used" in result.stderr
 
 
 def test_vector_store_list():

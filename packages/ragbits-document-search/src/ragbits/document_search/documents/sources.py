@@ -87,7 +87,10 @@ class SourceDiscriminator:
         return source_subclass(**fields)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:  # noqa: ANN401
-        create_instance_validator = core_schema.no_info_plain_validator_function(self._create_instance)
+        create_instance_validator = core_schema.no_info_plain_validator_function(
+            self._create_instance,
+            serialization=core_schema.model_ser_schema(Source, Source.__pydantic_core_schema__),
+        )
 
         return core_schema.json_or_python_schema(
             json_schema=create_instance_validator,
