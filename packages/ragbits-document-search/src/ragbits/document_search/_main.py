@@ -16,6 +16,7 @@ from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.documents.source_resolver import SourceResolver
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import (
@@ -197,19 +198,27 @@ class DocumentSearch(WithConstructionConfig):
     @traceable
     async def ingest(
         self,
-        documents: Sequence[DocumentMeta | Document | Source],
+        documents: str | Sequence[DocumentMeta | Document | Source],
         document_processor: BaseProvider | None = None,
     ) -> None:
-        """
-        Ingest multiple documents.
+        """Ingest documents into the search index.
 
         Args:
-            documents: The documents or metadata of the documents to ingest.
+            documents: Either:
+                - A sequence of `Document`, `DocumentMetadata`, or `Source` objects
+                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example:
+                    - "file:///path/to/files/*.txt"
+                    - "gcs://bucket/folder/*"
+                    - "huggingface://dataset/split/row"
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
+        if isinstance(documents, str):
+            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
+        else:
+            sources = documents
         elements = await self.processing_strategy.process_documents(
-            documents, self.document_processor_router, document_processor
+            sources, self.document_processor_router, document_processor
         )
         await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
