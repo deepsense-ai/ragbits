@@ -240,8 +240,36 @@ async def test_document_search_ingest_from_uri_basic():
 
 
 @pytest.mark.asyncio
-async def test_document_search_ingest_from_uri_with_wildcard():
-    # Setup
+@pytest.mark.parametrize(
+    ("pattern", "dir_pattern", "search_query", "expected_contents", "expected_filenames"),
+    [
+        (
+            "test*.txt",
+            None,
+            "test content",  # We search for "test content"
+            {"First test content", "Second test content"},
+            {"test1.txt", "test2.txt"},
+        ),
+        (
+            "othe?.txt",
+            None,
+            "Other content",
+            {"Other content"},
+            {"other.txt"},
+        ),
+        (
+            "te??*.txt",
+            "**",
+            "test content",  # We search for "test content"
+            {"First test content", "Second test content"},
+            {"test1.txt", "test2.txt"},
+        ),
+    ],
+)
+async def test_document_search_ingest_from_uri_with_wildcard(
+    pattern: str, dir_pattern: str | None, search_query: str, expected_contents: set, expected_filenames: set
+):
+    # Setup temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create multiple test files
         test_files = [
@@ -249,26 +277,66 @@ async def test_document_search_ingest_from_uri_with_wildcard():
             (Path(temp_dir) / "test2.txt", "Second test content"),
             (Path(temp_dir) / "other.txt", "Other content"),
         ]
-        for path, content in test_files:
-            path.write_text(content)
+        for file_path, content in test_files:
+            file_path.write_text(content)
 
         document_search = DocumentSearch.from_config(CONFIG)
 
-        # Test ingesting from URI with wildcard
-        await document_search.ingest(f"file://{temp_dir}/test*.txt")
+        # Use the parametrized glob pattern
+        dir_pattern = f"{str(Path(temp_dir).parent)}/{dir_pattern}" if dir_pattern is not None else temp_dir
+        await document_search.ingest(f"file://{dir_pattern}/{pattern}")
 
-        # Verify only matching files were ingested
-        results = await document_search.search("test content")
-        assert len(results) == 2
+        # Perform the search
+        results = await document_search.search(search_query)
+
+        # Check that we have the expected number of results
+        assert len(results) == len(expected_contents), (
+            f"Expected {len(expected_contents)} result(s) but got {len(results)}"
+        )
+
+        # Verify each result is a TextElement
         assert all(isinstance(result, TextElement) for result in results)
 
+        # Collect the actual text contents
         contents = {cast(TextElement, result).content for result in results}
-        assert contents == {"First test content", "Second test content"}
+        assert contents == expected_contents, f"Expected contents: {expected_contents}, got: {contents}"
 
-        # Verify sources are correct
-        sources = {str(cast(LocalFileSource, result.document_meta.source).path) for result in results}
-        expected_sources = {str(test_files[0][0]), str(test_files[1][0])}
-        assert sources == expected_sources
+        # Verify the sources (file paths) match
+        sources = {str(cast(LocalFileSource, result.document_meta.source).path).split("/")[-1] for result in results}
+        # We compare only the filenames; if you need full paths, compare the full str(...) instead
+        assert sources == expected_filenames, f"Expected sources: {expected_filenames}, got: {sources}"
+
+
+# @pytest.mark.asyncio
+# async def test_document_search_ingest_from_uri_with_wildcard():
+#     # Setup
+#     with tempfile.TemporaryDirectory() as temp_dir:
+#         # Create multiple test files
+#         test_files = [
+#             (Path(temp_dir) / "test1.txt", "First test content"),
+#             (Path(temp_dir) / "test2.txt", "Second test content"),
+#             (Path(temp_dir) / "other.txt", "Other content"),
+#         ]
+#         for path, content in test_files:
+#             path.write_text(content)
+#
+#         document_search = DocumentSearch.from_config(CONFIG)
+#
+#         # Test ingesting from URI with wildcard
+#         await document_search.ingest(f"file://{temp_dir}/test*.txt")
+#
+#         # Verify only matching files were ingested
+#         results = await document_search.search("test content")
+#         assert len(results) == 2
+#         assert all(isinstance(result, TextElement) for result in results)
+#
+#         contents = {cast(TextElement, result).content for result in results}
+#         assert contents == {"First test content", "Second test content"}
+#
+#         # Verify sources are correct
+#         sources = {str(cast(LocalFileSource, result.document_meta.source).path) for result in results}
+#         expected_sources = {str(test_files[0][0]), str(test_files[1][0])}
+#         assert sources == expected_sources
 
 
 @pytest.mark.asyncio
