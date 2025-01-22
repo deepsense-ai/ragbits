@@ -16,6 +16,7 @@ from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.documents.source_resolver import SourceResolver
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import (
@@ -205,7 +206,7 @@ class DocumentSearch(WithConstructionConfig):
         Args:
             documents: Either:
                 - A sequence of `Document`, `DocumentMetadata`, or `Source` objects
-                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example: 
+                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example:
                     - "file:///path/to/files/*.txt"
                     - "gcs://bucket/folder/*"
                     - "huggingface://dataset/split/row"
@@ -213,12 +214,9 @@ class DocumentSearch(WithConstructionConfig):
                 determined based on the document metadata.
         """
         if isinstance(documents, str):
-            from ragbits.document_search.documents.source_resolver import SourceResolver
-
-            sources = await SourceResolver.resolve(documents)
+            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
         else:
-            sources = documents  # type: ignore[assignment]
-
+            sources = documents
         elements = await self.processing_strategy.process_documents(
             sources, self.document_processor_router, document_processor
         )

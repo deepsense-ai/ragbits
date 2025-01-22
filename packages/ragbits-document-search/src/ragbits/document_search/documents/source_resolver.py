@@ -52,7 +52,7 @@ class SourceResolver:
 
         if protocol not in cls._protocol_handlers:
             supported = ", ".join(sorted(cls._protocol_handlers.keys()))
-            raise ValueError(f"Unsupported protocol: {protocol}. " f"Supported protocols are: {supported}")
+            raise ValueError(f"Unsupported protocol: {protocol}. Supported protocols are: {supported}")
 
         handler_class = cls._protocol_handlers[protocol]
         return await handler_class.from_uri(path)

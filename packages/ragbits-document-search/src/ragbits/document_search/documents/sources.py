@@ -241,19 +241,22 @@ class LocalFileSource(Source):
         Returns:
             A sequence of LocalFileSource objects
         """
-        # Handle absolute paths
         path_obj: Path = Path(path)
-        if not path_obj.is_absolute():
-            # For relative paths, use current directory as base
-            path_obj = Path.cwd() / path_obj
+        base_path, pattern = cls._split_path_and_pattern(path=path_obj)
+        if base_path.is_file():
+            return [cls(path=path_obj)]
+        return [cls(path=f) for f in base_path.glob(pattern) if f.is_file()]
 
-        if "*" in str(path_obj):
-            # If path contains wildcards, use its parent as base
-            base_path = path_obj.parent
-            pattern = path_obj.name
-            return [cls(path=file_path) for file_path in base_path.glob(pattern)]
-
-        return [cls(path=path_obj)]
+    @staticmethod
+    def _split_path_and_pattern(path: Path) -> tuple[Path, str]:
+        parts = path.parts
+        # Find the first part containing '*' or '?'
+        for i, part in enumerate(parts):
+            if "*" in part or "?" in part:
+                base_path = Path(*parts[:i])
+                pattern = str(Path(*parts[i:]))
+                return base_path, pattern
+        return path, "*"
 
 
 class GCSSource(Source):
@@ -368,7 +371,7 @@ class GCSSource(Source):
         """
         if "**" in path or "?" in path:
             raise ValueError(
-                "GCSSource only supports '*' at the end of path. " "Patterns like '**' or '?' are not supported."
+                "GCSSource only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
             )
 
         # Split into bucket and prefix
@@ -376,7 +379,7 @@ class GCSSource(Source):
 
         if "*" in prefix:
             if not prefix.endswith("*"):
-                raise ValueError("GCSSource only supports '*' at the end of path. " f"Invalid pattern: {prefix}")
+                raise ValueError(f"GCSSource only supports '*' at the end of path. Invalid pattern: {prefix}")
             # Remove the trailing * for GCS prefix listing
             prefix = prefix[:-1]
             return await cls.list_sources(bucket=bucket, prefix=prefix)
@@ -458,14 +461,14 @@ class HuggingFaceSource(Source):
         """
         if "*" in path or "?" in path:
             raise ValueError(
-                "HuggingFaceSource does not support patterns. " "Path must be in format: dataset_path/split/row"
+                "HuggingFaceSource does not support patterns. Path must be in format: dataset_path/split/row"
             )
 
         try:
             dataset_path, split, row = path.split("/")
             return [cls(path=dataset_path, split=split, row=int(row))]
         except ValueError as err:
-            raise ValueError("Invalid HuggingFace path format. " "Expected: dataset_path/split/row") from err
+            raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err
 
     @classmethod
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
