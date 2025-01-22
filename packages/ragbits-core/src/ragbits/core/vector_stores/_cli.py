@@ -31,7 +31,7 @@ def common_args(
     factory_path: Annotated[
         str | None,
         typer.Option(
-            help="Python path to a function that creates a vector store, ina format 'module.submodule:function'"
+            help="Python path to a function that creates a vector store, in a 'module.submodule:function' format"
         ),
     ] = None,
     yaml_path: Annotated[

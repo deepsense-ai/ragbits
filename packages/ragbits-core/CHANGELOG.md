@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.7.0 (2025-01-21)
+
+### Added
+
+- Add nice-looking CLI logging for audit module (#273).
+- Add support for returning metadata from LLMs (#274).
+
+### Changed
+
+- Fix: limiting in qdrant vector store (#282).
+- Refactor: remove LLM client abstraction and lift it up to LLM (#270).
+
 ## 0.6.0 (2024-12-27)
 
 ### Added
