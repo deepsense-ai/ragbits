@@ -86,16 +86,16 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         values: list[Any] = []
 
         if query_options.max_distance and self._distance_method == "ip":
-            query += f""" WHERE vector ${len(values) + 1} '${len(values) + 2}'
-            BETWEEN ${len(values) + 3} AND ${len(values) + 4}"""
-            values.extend([distance_operator, vector, (-1) * query_options.max_distance, query_options.max_distance])
+            query += f""" WHERE vector {distance_operator} ${len(values) + 1}
+            BETWEEN ${len(values) + 2} AND ${len(values) + 3}"""
+            values.extend([str(vector), (-1) * query_options.max_distance, query_options.max_distance])
 
         elif query_options.max_distance:
-            query += f" WHERE vector ${len(values) + 1} '${len(values) + 2}' < ${len(values) + 3}"
-            values.extend([distance_operator, vector, query_options.max_distance])
+            query += f" WHERE vector {distance_operator} ${len(values) + 1} < ${len(values) + 2}"
+            values.extend([str(vector), query_options.max_distance])
 
-        query += f" ORDER BY vector ${len(values) + 1} '${len(values) + 2}'"
-        values.extend([distance_operator, vector])
+        query += f" ORDER BY vector {distance_operator} ${len(values) + 1}"
+        values.append(str(vector))
 
         if query_options.k:
             query += f" LIMIT ${len(values) + 1}"
@@ -120,22 +120,13 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             sql query.
         """
         # _table_name has been validated in the class constructor, and it is a valid table name.
-        query = f"SELECT * FROM {self._table_name}"  # noqa S608
 
-        values: list[Any] = []
-        if where:
-            query += f" WHERE metadata @> ${len(values) + 1}"
-            values.append(json.dumps(where))
-
-        if limit is not None:
-            query += f" LIMIT ${len(values) + 1}"
-            values.append(limit)
-
-        if offset is None:
-            offset = 0
-        query += f" OFFSET ${len(values) + 1}"
-        values.append(offset)
-        query += ";"
+        query = f"SELECT * FROM {self._table_name} WHERE metadata @> $1 LIMIT $2 OFFSET $3;"  # noqa S608
+        values = [
+            json.dumps(where) if where else "{}",
+            limit,
+            offset or 0,
+        ]
         return query, values
 
     async def create_table(self) -> None:
@@ -255,7 +246,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         """
         try:
             async with self._client.acquire() as conn:
-                results = await conn.fetch(query, values)
+                results = await conn.fetch(query, *values)
 
             return [
                 VectorStoreEntry(
@@ -288,7 +279,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         query_options = (self.default_options | options) if options else self.default_options
         retrieve_query, values = self._create_retrieve_query(vector, query_options)
-        return await self._fetch_records(retrieve_query, *values)
+        return await self._fetch_records(retrieve_query, values)
 
     @traceable
     async def list(
@@ -307,4 +298,4 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             The entries.
         """
         list_query, values = self._create_list_query(where, limit, offset)
-        return await self._fetch_records(list_query, *values)
+        return await self._fetch_records(list_query, values)

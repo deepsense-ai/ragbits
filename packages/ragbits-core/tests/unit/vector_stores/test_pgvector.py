@@ -53,8 +53,8 @@ async def test_invalid_table_name_raises_error(mock_db_pool: tuple[MagicMock, As
 
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} ORDER BY vector $1 '$2' LIMIT $3;"""  # noqa S608
-    expected_values = ["<=>", [0.1, 0.2, 0.3], 5]
+    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} ORDER BY vector <=> $1 LIMIT $2;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", 5]
     assert result == expected_query
     assert values == expected_values
 
@@ -63,8 +63,8 @@ def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) 
     result, values = mock_pgvector_store._create_retrieve_query(
         vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
     )
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector $1 '$2' < $3 ORDER BY vector $4 '$5' LIMIT $6;"""  # noqa S608
-    expected_values = ["<=>", [0.1, 0.2, 0.3], 0.1, "<=>", [0.1, 0.2, 0.3], 10]
+    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector <=> $1 < $2 ORDER BY vector <=> $3 LIMIT $4;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", 0.1, "[0.1, 0.2, 0.3]", 10]
     assert result == expected_query
     assert values == expected_values
 
@@ -74,9 +74,9 @@ def test_create_retrieve_query_with_options_for_ip_distance(mock_pgvector_store:
     result, values = mock_pgvector_store._create_retrieve_query(
         vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
     )
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector $1 '$2'
-            BETWEEN $3 AND $4 ORDER BY vector $5 '$6' LIMIT $7;"""  # noqa S608
-    expected_values = ["<#>", [0.1, 0.2, 0.3], -0.1, 0.1, "<#>", [0.1, 0.2, 0.3], 10]
+    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector <#> $1
+            BETWEEN $2 AND $3 ORDER BY vector <#> $4 LIMIT $5;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", -0.1, 0.1, "[0.1, 0.2, 0.3]", 10]
     assert result == expected_query
     assert values == expected_values
 
@@ -86,6 +86,14 @@ def test_create_list_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_list_query(where, limit=5, offset=2)
     expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE metadata @> $1 LIMIT $2 OFFSET $3;"""  # noqa S608
     expected_values = ['{"id": "test_id", "document.title": "test title"}', 5, 2]
+    assert result == expected_query
+    assert values == expected_values
+
+
+def test_create_list_query_without_options(mock_pgvector_store: PgVectorStore) -> None:
+    result, values = mock_pgvector_store._create_list_query()
+    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE metadata @> $1 LIMIT $2 OFFSET $3;"""  # noqa S608
+    expected_values = ["{}", None, 0]
     assert result == expected_query
     assert values == expected_values
 
