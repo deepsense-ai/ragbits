@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+## 0.7.0 (2025-01-21)
+
+### Changed
+
+- ragbits-cli updated to version v0.7.0
+- ragbits-conversations updated to version v0.7.0
+  - Added last message recontextualization (#271).
+- ragbits-document-search updated to version v0.7.0
+  - Add CLI command to perform search on DocumentSearch instance (#290).
+  - New way to initialize DocumentSearch instances (#277).
+  - ragbits-core updated to version v0.7.0
+- ragbits-evaluate updated to version v0.7.0
+  - Simplified interface to document-search evaluation (#258).
+- ragbits-guardrails updated to version v0.7.0
+- ragbits-core updated to version v0.7.0
+  - Add nice-looking CLI logging for audit module (#273).
+  - Add support for returning metadata from LLMs (#274).
+  - Fix: limiting in qdrant vector store (#282).
+  - Refactor: remove LLM client abstraction and lift it up to LLM (#270).
+
 ## 0.6.0 (2024-12-27)
 
 ### Changed
