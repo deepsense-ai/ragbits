@@ -71,7 +71,7 @@ class CLISpan:
         # TODO: Remove truncating after implementing better CLI formatting.
         attrs = [
             f"[{key_color}]{k}:[/{key_color}] "
-            f"[{text_color}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{text_color}]"# noqa: PLR2004
+            f"[{text_color}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{text_color}]"  # noqa: PLR2004
             for k, v in self.attributes.items()
         ]
         self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
