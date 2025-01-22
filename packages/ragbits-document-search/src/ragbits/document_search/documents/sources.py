@@ -5,8 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from contextlib import suppress
 from pathlib import Path
-from types import TracebackType
-from typing import Any, ClassVar, Protocol, runtime_checkable
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
@@ -19,55 +18,12 @@ with suppress(ImportError):
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 
-from aiohttp import ClientSession
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.document_search.documents.source_resolver import SourceResolver
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
-
-
-@runtime_checkable
-class StorageProtocol(Protocol):
-    """Protocol for storage clients."""
-
-    async def download(
-        self,
-        bucket: str,
-        object_name: str,
-        *,
-        headers: dict[str, Any] | None = None,
-        timeout: int = 60,
-        session: ClientSession | None = None,
-    ) -> bytes:
-        """Download a file from storage."""
-        ...
-
-    async def list_objects(
-        self,
-        bucket: str,
-        *,
-        params: dict[str, str] | None = None,
-        headers: dict[str, Any] | None = None,
-        session: ClientSession | None = None,
-        timeout: int = 60,
-    ) -> dict[str, Any]:
-        """List objects in storage."""
-        ...
-
-    async def __aenter__(self) -> "StorageProtocol":
-        """Enter async context."""
-        ...
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Exit async context."""
-        ...
 
 
 class Source(BaseModel, ABC):
@@ -266,10 +222,10 @@ class GCSSource(Source):
     bucket: str
     object_name: str
     protocol: ClassVar[str] = "gcs"
-    _storage: "StorageProtocol | None" = None  # Storage client for dependency injection
+    _storage: "StorageClient | None" = None  # Storage client for dependency injection
 
     @classmethod
-    def set_storage(cls, storage: "StorageProtocol | None") -> None:
+    def set_storage(cls, storage: "StorageClient | None") -> None:
         """Set the storage client for all instances.
 
         Args:
@@ -279,7 +235,7 @@ class GCSSource(Source):
 
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
-    async def _get_storage(cls) -> "StorageProtocol":
+    async def _get_storage(cls) -> "StorageClient":
         """Get the storage client.
 
         Returns:

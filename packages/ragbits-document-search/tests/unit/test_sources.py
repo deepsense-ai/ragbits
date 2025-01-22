@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Protocol, TypeVar, runtime_checkable
+from typing import Any, TypeVar
 from unittest.mock import MagicMock, patch
 
 from aiohttp import ClientSession
@@ -21,49 +21,7 @@ except ImportError:
     StorageClient = TypeVar("StorageClient")  # type: ignore
 
 
-@runtime_checkable
-class MockStorageProtocol(Protocol):
-    """Protocol for mocking GCS storage client in tests."""
-
-    async def download(
-        self,
-        bucket: str,
-        object_name: str,
-        *,
-        headers: dict[str, Any] | None = None,
-        timeout: int = 60,
-        session: ClientSession | None = None,
-    ) -> bytes:
-        """Download a file from storage."""
-        ...
-
-    async def list_objects(
-        self,
-        bucket: str,
-        *,
-        params: dict[str, str] | None = None,
-        headers: dict[str, Any] | None = None,
-        session: ClientSession | None = None,
-        timeout: int = 60,
-    ) -> dict[str, Any]:
-        """List objects in storage."""
-        ...
-
-    async def __aenter__(self) -> "MockStorageProtocol":
-        """Enter async context."""
-        ...
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Exit async context."""
-        ...
-
-
-class MockStorage(MockStorageProtocol):
+class MockStorage(StorageClient):
     """Mock GCS storage client."""
 
     def __init__(self) -> None:
