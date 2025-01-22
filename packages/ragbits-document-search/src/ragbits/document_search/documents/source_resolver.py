@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import ClassVar, TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from ragbits.document_search.documents.sources import Source
