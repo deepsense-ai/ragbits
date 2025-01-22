@@ -7,25 +7,25 @@ from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class AnswerDotAIRerankersReranker(Reranker[RerankerOptions]):
+class AnswerAIReranker(Reranker[RerankerOptions]):
     """
     A [rerankers](https://github.com/AnswerDotAI/rerankers) re-ranker covering most popular re-ranking methods.
     """
 
     options_cls = RerankerOptions
 
-    def __init__(self, model: str, default_options: RerankerOptions | None = None, **options: str) -> None:
+    def __init__(self, model: str, default_options: RerankerOptions | None = None, **rerankers_kwargs: str) -> None:
         """
         Constructs a new AnswerDotAIRerankersReranker instance.
 
         Args:
             model: The reranker model to use.
             default_options: The default options for reranking.
-            **options: Additional keyword arguments native to rerankers lib.
+            **rerankers_kwargs: Additional keyword arguments native to rerankers lib.
         """
         super().__init__(default_options=default_options)
         self.model = model
-        self.ranker = AnswerReranker(self.model, **options)
+        self.ranker = AnswerReranker(self.model, **rerankers_kwargs)
 
     @traceable
     async def rerank(

@@ -4,7 +4,7 @@ from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
-from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerDotAIRerankersReranker
+from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
 from ..helpers import env_vars_not_set
 
@@ -42,7 +42,7 @@ async def test_litellm_cohere_reranker_rerank() -> None:
 
 async def test_answerdotai_reranker_rerank() -> None:
     options = RerankerOptions(top_n=2)
-    reranker = AnswerDotAIRerankersReranker(
+    reranker = AnswerAIReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",
         default_options=options,
         model_type="cross-encoder",

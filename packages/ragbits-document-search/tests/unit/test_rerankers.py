@@ -8,7 +8,7 @@ from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
-from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerDotAIRerankersReranker
+from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
 
 class CustomReranker(Reranker):
@@ -45,7 +45,7 @@ def test_litellm_reranker_from_config() -> None:
 
 
 def test_aswerdotai_reranker_from_config() -> None:
-    reranker = AnswerDotAIRerankersReranker.from_config(
+    reranker = AnswerAIReranker.from_config(
         {
             "model": "cross-encoder",
             "default_options": {
@@ -98,7 +98,7 @@ async def test_litellm_reranker_rerank() -> None:
 
 
 async def test_answerdotai_reranker_rerank() -> None:
-    reranker = AnswerDotAIRerankersReranker(
+    reranker = AnswerAIReranker(
         model="cross-encoder",
     )
     documents = [
