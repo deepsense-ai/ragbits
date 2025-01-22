@@ -307,38 +307,6 @@ async def test_document_search_ingest_from_uri_with_wildcard(
         assert sources == expected_filenames, f"Expected sources: {expected_filenames}, got: {sources}"
 
 
-# @pytest.mark.asyncio
-# async def test_document_search_ingest_from_uri_with_wildcard():
-#     # Setup
-#     with tempfile.TemporaryDirectory() as temp_dir:
-#         # Create multiple test files
-#         test_files = [
-#             (Path(temp_dir) / "test1.txt", "First test content"),
-#             (Path(temp_dir) / "test2.txt", "Second test content"),
-#             (Path(temp_dir) / "other.txt", "Other content"),
-#         ]
-#         for path, content in test_files:
-#             path.write_text(content)
-#
-#         document_search = DocumentSearch.from_config(CONFIG)
-#
-#         # Test ingesting from URI with wildcard
-#         await document_search.ingest(f"file://{temp_dir}/test*.txt")
-#
-#         # Verify only matching files were ingested
-#         results = await document_search.search("test content")
-#         assert len(results) == 2
-#         assert all(isinstance(result, TextElement) for result in results)
-#
-#         contents = {cast(TextElement, result).content for result in results}
-#         assert contents == {"First test content", "Second test content"}
-#
-#         # Verify sources are correct
-#         sources = {str(cast(LocalFileSource, result.document_meta.source).path) for result in results}
-#         expected_sources = {str(test_files[0][0]), str(test_files[1][0])}
-#         assert sources == expected_sources
-
-
 @pytest.mark.asyncio
 async def test_document_search_ingest_from_gcs_uri_basic():
     # Create mock storage client
