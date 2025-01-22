@@ -1,7 +1,8 @@
 from collections.abc import Sequence
-from typing import ClassVar
+from typing import ClassVar, TYPE_CHECKING
 
-from ragbits.document_search.documents.sources import Source
+if TYPE_CHECKING:
+    from ragbits.document_search.documents.sources import Source
 
 
 class SourceResolver:
@@ -15,10 +16,10 @@ class SourceResolver:
         >>> sources = await SourceResolver.resolve("gcs://my-bucket/path/to/files/*")
     """
 
-    _protocol_handlers: ClassVar[dict[str, type[Source]]] = {}
+    _protocol_handlers: ClassVar[dict[str, type["Source"]]] = {}
 
     @classmethod
-    def register_protocol(cls, protocol: str, source_class: type[Source]) -> None:
+    def register_protocol(cls, protocol: str, source_class: type["Source"]) -> None:
         """Register a source class for a specific protocol.
 
         Args:
@@ -28,7 +29,7 @@ class SourceResolver:
         cls._protocol_handlers[protocol] = source_class
 
     @classmethod
-    async def resolve(cls, uri: str) -> Sequence[Source]:
+    async def resolve(cls, uri: str) -> Sequence["Source"]:
         """Resolve a URI into a sequence of Source objects.
 
         The URI format should be: protocol://path

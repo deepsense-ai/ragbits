@@ -23,6 +23,7 @@ from aiohttp import ClientSession
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
+from ragbits.document_search.documents.source_resolver import SourceResolver
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
@@ -138,8 +139,6 @@ class Source(BaseModel, ABC):
         super().__init_subclass__(**kwargs)
         Source._registry[cls.class_identifier()] = cls
         if cls.protocol is not None:
-            from ragbits.document_search.documents.source_resolver import SourceResolver
-
             SourceResolver.register_protocol(cls.protocol, cls)
 
 
@@ -244,7 +243,9 @@ class LocalFileSource(Source):
         path_obj: Path = Path(path)
         base_path, pattern = cls._split_path_and_pattern(path=path_obj)
         if base_path.is_file():
-            return [cls(path=path_obj)]
+            return [cls(path=base_path)]
+        if not pattern:
+            return []
         return [cls(path=f) for f in base_path.glob(pattern) if f.is_file()]
 
     @staticmethod
@@ -256,7 +257,7 @@ class LocalFileSource(Source):
                 base_path = Path(*parts[:i])
                 pattern = str(Path(*parts[i:]))
                 return base_path, pattern
-        return path, "*"
+        return path, ""
 
 
 class GCSSource(Source):
