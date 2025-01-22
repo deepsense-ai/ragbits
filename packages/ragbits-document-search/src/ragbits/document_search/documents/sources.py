@@ -229,7 +229,8 @@ class GCSSource(Source):
         """Set the storage client for all instances.
 
         Args:
-            storage: The storage client to use (in tests, this can be a mock)
+            storage: The `gcloud-aio-storage` `Storage` object to use as the storage client.
+                By default, the object will be created automatically.
         """
         cls._storage = storage
 
