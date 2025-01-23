@@ -32,7 +32,7 @@ def example_factory() -> ExampleClassWithConfigMixin:
     return ExampleSubclass("aligator", 42)
 
 
-def test_defacult_from_config():
+def test_default_from_config():
     config = {"foo": "foo", "bar": 1}
     instance = ExampleClassWithConfigMixin.from_config(config)
     assert instance.foo == "foo"
