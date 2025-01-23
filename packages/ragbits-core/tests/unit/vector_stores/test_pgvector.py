@@ -57,7 +57,7 @@ async def test_invalid_vector_size_raises_error(mock_db_pool: tuple[MagicMock, A
     vector_size_values = ["546", -23.0, 0, 46.5, [2, 3, 4], {"vector_size": 6}]
     for vector_size in vector_size_values:
         with pytest.raises(ValueError, match="Vector size must be a positive integer."):
-            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=vector_size) # type: ignore
+            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=vector_size)  # type: ignore
 
 
 @pytest.mark.asyncio
