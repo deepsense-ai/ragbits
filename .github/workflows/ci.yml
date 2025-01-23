@@ -86,7 +86,7 @@ jobs:
           uv pip freeze > requirements-freeze.txt
 
       - name: Publish Artefacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
@@ -98,7 +98,7 @@ jobs:
           retention-days: 30
 
       - name: Publish Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
@@ -108,11 +108,10 @@ jobs:
 
       - name: Validate package build
         run: |
-          source .venv/bin/activate
           for dir in packages/*/; do uv build "$dir" --out-dir dist; done
 
       - name: Publish Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: true
         if: success()
         with:
@@ -175,7 +174,7 @@ jobs:
           report_paths: 'report.xml'
 
       - name: Publish Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: true
         if: always()
         with:
