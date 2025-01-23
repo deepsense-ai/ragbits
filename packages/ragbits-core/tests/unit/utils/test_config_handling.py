@@ -113,7 +113,6 @@ def test_subclass_from_defaults_instance_yaml():
         subproject="core",
         current_dir=projects_dir / "project_with_instances_yaml",
     )
-    print(config)
     instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
     assert isinstance(instance, ExampleSubclass)
     assert instance.foo == "I am a foo"
