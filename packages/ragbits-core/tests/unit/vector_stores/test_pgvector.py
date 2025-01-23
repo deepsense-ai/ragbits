@@ -51,6 +51,24 @@ async def test_invalid_table_name_raises_error(mock_db_pool: tuple[MagicMock, As
             PgVectorStore(client=mock_pool, table_name=table_name, vector_size=3)
 
 
+@pytest.mark.asyncio
+async def test_invalid_vector_size_raises_error(mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    mock_pool, _ = mock_db_pool
+    vector_size_values = ["546", -23.0, 0, 46.5, [2, 3, 4], {"vector_size": 6}]
+    for vector_size in vector_size_values:
+        with pytest.raises(ValueError, match="Vector size must be a positive integer."):
+            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=vector_size) # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    mock_pool, _ = mock_db_pool
+    hnsw_values = ["546", 0, [5, 10], {"m": 2}, {"m": "-23", "ef_construction": 12}, {"m": 23, "ef_construction": -12}]
+    for hnsw in hnsw_values:
+        with pytest.raises(ValueError):
+            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=3, hnsw_params=hnsw)  # type: ignore
+
+
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
     expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} ORDER BY vector <=> $1 LIMIT $2;"""  # noqa S608

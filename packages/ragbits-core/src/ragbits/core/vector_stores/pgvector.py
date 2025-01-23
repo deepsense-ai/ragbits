@@ -32,7 +32,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         self,
         client: asyncpg.Pool,
         table_name: str,
-        vector_size: int = 512,
+        vector_size: int,
         distance_method: str = "cosine",
         hnsw_params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
@@ -54,9 +54,20 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
             raise ValueError(f"Invalid table name: {table_name}")
+        if not isinstance(vector_size, int) or vector_size <= 0:
+            raise ValueError("Vector size must be a positive integer.")
 
         if hnsw_params is None:
             hnsw_params = {"m": 4, "ef_construction": 10}
+        elif not isinstance(hnsw_params, dict):
+            raise ValueError("hnsw_params must be a dictionary.")
+        elif "m" not in hnsw_params or "ef_construction" not in hnsw_params:
+            raise ValueError("hnsw_params must contain 'm' and 'ef_construction' keys.")
+        elif not isinstance(hnsw_params["m"], int) or hnsw_params["m"] <= 0:
+            raise ValueError("m must be a positive integer.")
+        elif not isinstance(hnsw_params["ef_construction"], int) or hnsw_params["ef_construction"] <= 0:
+            raise ValueError("ef_construction must be a positive integer.")
+
         self._client = client
         self._table_name = table_name
         self._vector_size = vector_size
@@ -140,16 +151,18 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             ); """
         distance = DISTANCE_OPS[self._distance_method][0]
         create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
-        # _table_name has been validated in the class constructor, and it is a valid table name.
+        # _table_name and has been validated in the class constructor, and it is a valid table name.
+        # _vector_size has been validated in the class constructor, and it is a valid vector size.
+
         create_table_query = f"""
         CREATE TABLE {self._table_name}
-        (id TEXT, key TEXT, vector VECTOR($1), metadata JSONB);
+        (id TEXT, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
         """
-
+        # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
         create_index_query = f"""
                 CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
-                USING hnsw (vector $1)
-                WITH (m = $2, ef_construction = $3);
+                USING hnsw (vector {distance})
+                WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
                 """
 
         async with self._client.acquire() as conn:
@@ -159,10 +172,8 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             if not exists:
                 try:
                     async with conn.transaction():
-                        await conn.execute(create_table_query, self._vector_size)
-                        await conn.execute(
-                            create_index_query, distance, self._hnsw_params["m"], self._hnsw_params["ef_construction"]
-                        )
+                        await conn.execute(create_table_query)
+                        await conn.execute(create_index_query)
 
                     print("Table and index created!")
                 except Exception as e:
