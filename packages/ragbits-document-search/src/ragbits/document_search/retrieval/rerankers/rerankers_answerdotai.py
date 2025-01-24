@@ -44,6 +44,11 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
 
         Returns:
             The reranked elements.
+
+        Raises:
+            ValueError: Raised if the input query is empty or if the list of candidate documents is empty.
+            TypeError: Raised if the input types are incorrect, such as if the query is not a string, or List[str].
+            IndexError: Raised if docs is an empty List.
         """
         merged_options = (self.default_options | options) if options else self.default_options
         documents = [element.text_representation for element in elements]
