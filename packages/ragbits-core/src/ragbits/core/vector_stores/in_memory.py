@@ -5,7 +5,13 @@ import numpy as np
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, VectorStoreResult, WhereQuery
+from ragbits.core.vector_stores.base import (
+    VectorStore,
+    VectorStoreEntry,
+    VectorStoreOptions,
+    VectorStoreResult,
+    WhereQuery,
+)
 
 
 class InMemoryVectorStore(VectorStore[VectorStoreOptions]):

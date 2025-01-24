@@ -107,7 +107,9 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
+    async def retrieve(
+        self, vector: list[float], options: VectorStoreOptionsT | None = None
+    ) -> list[VectorStoreResult]:
         """
         Retrieve entries from the vector store.
 

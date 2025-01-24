@@ -8,7 +8,13 @@ from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, VectorStoreResult, WhereQuery
+from ragbits.core.vector_stores.base import (
+    VectorStore,
+    VectorStoreEntry,
+    VectorStoreOptions,
+    VectorStoreResult,
+    WhereQuery,
+)
 
 
 class ChromaVectorStore(VectorStore[VectorStoreOptions]):
@@ -137,22 +143,24 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
         for collection in collections:
             if not collection.name.startswith(self._index_name):
                 continue
-            
-            embedding_type = collection.name[len(self._index_name) + 1:]
+
+            embedding_type = collection.name[len(self._index_name) + 1 :]
             query_results = collection.query(
                 query_embeddings=[vector],
                 n_results=merged_options.k,
                 include=["metadatas", "documents", "distances", "embeddings"],
             )
 
-            for i, (id, metadata, document, distance, embedding) in enumerate(zip(
-                query_results["ids"][0],
-                query_results["metadatas"][0],
-                query_results["documents"][0],
-                query_results["distances"][0],
-                query_results["embeddings"][0],
-                strict=True,
-            )):
+            for i, (id, metadata, document, distance, embedding) in enumerate(
+                zip(
+                    query_results["ids"][0],
+                    query_results["metadatas"][0],
+                    query_results["documents"][0],
+                    query_results["distances"][0],
+                    query_results["embeddings"][0],
+                    strict=True,
+                )
+            ):
                 if merged_options.max_distance is not None and distance > merged_options.max_distance:
                     continue
 
@@ -171,7 +179,7 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
 
         # Sort by score and return top k
         results.sort(key=lambda x: x.score or float("inf"))
-        return results[:merged_options.k]
+        return results[: merged_options.k]
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -208,7 +216,7 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
         for collection in collections:
             if not collection.name.startswith(self._index_name):
                 continue
-            
+
             where_clause = where if where else {}
             results = collection.get(
                 where=where_clause,  # type: ignore

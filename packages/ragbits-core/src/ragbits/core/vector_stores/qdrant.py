@@ -148,7 +148,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             if not collection.name.startswith(self._index_name):
                 continue
 
-            embedding_type = collection.name[len(self._index_name) + 1:]
+            embedding_type = collection.name[len(self._index_name) + 1 :]
             query_results = await self._client.search(
                 collection_name=collection.name,
                 query_vector=vector,
@@ -175,7 +175,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
 
         # Sort by score and return top k
         results.sort(key=lambda x: x.score or float("inf"))
-        return results[:merged_options.k]
+        return results[: merged_options.k]
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -243,9 +243,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
                 VectorStoreEntry(
                     id=str(point.id),
                     key=point.payload["document"],
-                    metadata=json.loads(point.payload["metadata"])
-                    if self._metadata_store is None
-                    else point.payload,
+                    metadata=json.loads(point.payload["metadata"]) if self._metadata_store is None else point.payload,
                 )
                 for point in points
             ]

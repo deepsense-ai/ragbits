@@ -67,10 +67,7 @@ class MockVectorStore(VectorStore):
             self._storage[entry.id][1][entry.metadata["embedding_type"]] = entry.metadata.pop("vector")
 
     async def retrieve(self, vector: list[float], options: Any | None = None) -> list[VectorStoreResult]:
-        return [
-            VectorStoreResult(entry=entry, vectors=vectors, score=1.0)
-            for entry, vectors in self._storage.values()
-        ]
+        return [VectorStoreResult(entry=entry, vectors=vectors, score=1.0) for entry, vectors in self._storage.values()]
 
     async def remove(self, ids: list[str]) -> None:
         for id in ids:
