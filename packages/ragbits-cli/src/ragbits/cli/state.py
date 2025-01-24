@@ -2,7 +2,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypeVar
+from typing import TypeVar, get_args
 
 import typer
 from pydantic import BaseModel
@@ -64,21 +64,52 @@ def print_output_table(
     elif isinstance(columns, Sequence):
         columns = {key: Column() for key in columns}
 
-    # Add headers to columns if not provided
-    for key in columns:
-        if key not in fields:
-            Console(stderr=True).print(f"Unknown column: {key}")
-            raise typer.Exit(1)
-
-        column = columns[key]
+    # check if columns are correct
+    for column_name in columns:
+        check_column_name_correctness(column_name, fields)
+        column = columns[column_name]
         if column.header == "":
-            column.header = titles.get(key, key)
+            column.header = titles.get(column_name, column_name).replace("_", " ").replace(".", " ").title()
 
     # Create and print the table
     table = Table(*columns.values(), show_header=True, header_style="bold magenta")
+
     for row in data:
-        table.add_row(*[str(getattr(row, key)) for key in columns])
+        row_to_add = []
+        for key in columns:
+            *path_fragments, field_name = key.strip().split(".")
+            base_row = row
+            for fragment in path_fragments:
+                base_row = getattr(base_row, fragment)
+            z = getattr(base_row, field_name)
+            row_to_add.append(str(z))
+        table.add_row(*row_to_add)
+
     console.print(table)
+
+
+def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
+    """
+    Check if column name exists in the model schema.
+
+    Args:
+        column_name: name of the column to check
+        base_fields: model fields
+    """
+    fields = base_fields
+    *path_fragments, field_name = column_name.strip().split(".")
+    for fragment in path_fragments:
+        if fragment not in fields:
+            Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
+            raise typer.Exit(1)
+        model = fields[fragment].annotation
+        types = get_args(model)
+        model_class = next((t for t in types if t is not type(None)), None)
+        if model_class and issubclass(model_class, BaseModel):
+            fields = {**model_class.model_fields, **model_class.model_computed_fields}
+    if field_name not in fields:
+        Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
+        raise typer.Exit(1)
 
 
 def print_output_json(data: Sequence[ModelT]) -> None:
