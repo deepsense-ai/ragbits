@@ -62,13 +62,16 @@ class CLISpan:
             SpanStatus.ERROR: PrintColor.ERROR_COLOR,
             SpanStatus.STARTED: PrintColor.RUNNING_COLOR,
             SpanStatus.COMPLETED: PrintColor.END_COLOR,
-        }[self.status]
-        name = f"[{color}]{self.name}[/{color}][{PrintColor.TEXT_COLOR}]{elapsed}[/{PrintColor.TEXT_COLOR}]"
+        }[self.status].value
+        text_color = PrintColor.TEXT_COLOR.value
+        key_color = PrintColor.KEY_COLOR.value
+
+        name = f"[{color}]{self.name}[/{color}][{text_color}]{elapsed}[/{text_color}]"
 
         # TODO: Remove truncating after implementing better CLI formatting.
         attrs = [
-            f"[{PrintColor.KEY_COLOR}]{k}:[/{PrintColor.KEY_COLOR}] "
-            f"[{PrintColor.TEXT_COLOR}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{PrintColor.TEXT_COLOR}]"  # noqa: PLR2004
+            f"[{key_color}]{k}:[/{key_color}] "
+            f"[{text_color}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{text_color}]"  # noqa: PLR2004
             for k, v in self.attributes.items()
         ]
         self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
