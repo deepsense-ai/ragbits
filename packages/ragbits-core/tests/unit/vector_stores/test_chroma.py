@@ -14,6 +14,29 @@ def mock_chromadb_store() -> ChromaVectorStore:
     )
 
 
+@pytest.fixture
+def vector_store(chroma_client) -> ChromaVectorStore:
+    return ChromaVectorStore(client=chroma_client, index_name="test")
+
+
+@pytest.fixture
+def entries() -> list[VectorStoreEntry]:
+    return [
+        VectorStoreEntry(
+            id="1",
+            key="test1",
+            text="test1",
+            metadata={"embedding_type": "text", "vector": [1.0, 0.0]},
+        ),
+        VectorStoreEntry(
+            id="2",
+            key="test2",
+            text="test2",
+            metadata={"embedding_type": "text", "vector": [0.0, 1.0]},
+        ),
+    ]
+
+
 async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
     data = [
         VectorStoreEntry(
@@ -194,3 +217,84 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
     retrieved_metadata = retrieved_entries[0].metadata
     # Verify the nested structure is restored correctly
     assert retrieved_metadata == original_metadata
+
+
+async def test_store_and_retrieve(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0])
+    assert len(results) == 2
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+    assert results[1].entry.id == "2"
+    assert results[1].entry.key == "test2"
+    assert results[1].vectors["text"] == [0.0, 1.0]
+    assert results[1].score == pytest.approx(1.4142135623730951)
+
+
+async def test_store_and_retrieve_with_max_distance(
+    vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]
+) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0], options=vector_store.options_cls(max_distance=1.0))
+    assert len(results) == 1
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+
+
+async def test_store_and_retrieve_with_k(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0], options=vector_store.options_cls(k=1))
+    assert len(results) == 1
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+
+
+async def test_store_and_list(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list()
+    assert len(results) == 2
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+    assert results[1].id == "2"
+    assert results[1].key == "test2"
+
+
+async def test_store_and_list_with_limit(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(limit=1)
+    assert len(results) == 1
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+
+
+async def test_store_and_list_with_offset(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(offset=1)
+    assert len(results) == 1
+    assert results[0].id == "2"
+    assert results[0].key == "test2"
+
+
+async def test_store_and_list_with_where(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(where={"embedding_type": "text"})
+    assert len(results) == 2
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+    assert results[1].id == "2"
+    assert results[1].key == "test2"
+
+
+async def test_store_and_remove(vector_store: ChromaVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    await vector_store.remove(["1"])
+    results = await vector_store.list()
+    assert len(results) == 1
+    assert results[0].id == "2"
+    assert results[0].key == "test2"

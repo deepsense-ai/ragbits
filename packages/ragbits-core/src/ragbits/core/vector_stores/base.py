@@ -14,13 +14,24 @@ WhereQuery = dict[str, str | int | float | bool]
 
 class VectorStoreEntry(BaseModel):
     """
-    An object representing a vector database entry.
+    An object representing data to be stored in a vector database.
     """
 
     id: str
     key: str
-    vector: list[float]
+    text: str | None = None
+    image_bytes: bytes | None = None
     metadata: dict
+
+
+class VectorStoreResult(BaseModel):
+    """
+    An object representing a result from a vector database query.
+    """
+
+    entry: VectorStoreEntry
+    vectors: dict[str, list[float]]  # maps embedding type to vector
+    score: float | None = None
 
 
 class VectorStoreOptions(Options):
@@ -96,7 +107,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
         Retrieve entries from the vector store.
 
@@ -105,7 +116,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
             options: The options for querying the vector store.
 
         Returns:
-            The entries.
+            The entries with their scores.
         """
 
     @abstractmethod

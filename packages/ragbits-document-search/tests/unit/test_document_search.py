@@ -2,13 +2,16 @@ import os
 import tempfile
 from collections.abc import Callable, Mapping
 from pathlib import Path
-from typing import cast
+from typing import cast, Any
 from unittest import mock
 from unittest.mock import AsyncMock
 
 import pytest
+from pydantic import BaseModel
 
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.embeddings import Embeddings
+from ragbits.core.vector_stores import VectorStore
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreResult
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
 from ragbits.document_search.documents.document import (
@@ -16,15 +19,13 @@ from ragbits.document_search.documents.document import (
     DocumentMeta,
     DocumentType,
 )
-from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.documents.element import TextElement, Element
 from ragbits.document_search.documents.sources import (
     GCSSource,
     LocalFileSource,
 )
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.batched import (
-    BatchedAsyncProcessing,
-)
+from ragbits.document_search.ingestion.processor_strategies import ProcessingExecutionStrategy
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
@@ -35,6 +36,125 @@ CONFIG = {
     "providers": {"txt": {"type": "DummyProvider"}},
     "processing_strategy": {"type": "SequentialProcessing"},
 }
+
+
+class MockEmbeddings(Embeddings):
+    def __init__(self) -> None:
+        super().__init__()
+        self._image_support = False
+
+    async def embed_text(self, texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] for _ in texts]
+
+    async def embed_image(self, images: list[bytes]) -> list[list[float]]:
+        raise NotImplementedError
+
+    def image_support(self) -> bool:
+        return self._image_support
+
+
+class MockVectorStore(VectorStore):
+    def __init__(self) -> None:
+        super().__init__()
+        self._storage: dict[str, tuple[VectorStoreEntry, dict[str, list[float]]]] = {}
+
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
+        for entry in entries:
+            if "embedding_type" not in entry.metadata:
+                raise ValueError("Entry must have embedding_type in metadata")
+            if entry.id not in self._storage:
+                self._storage[entry.id] = (entry, {})
+            self._storage[entry.id][1][entry.metadata["embedding_type"]] = entry.metadata.pop("vector")
+
+    async def retrieve(self, vector: list[float], options: Any | None = None) -> list[VectorStoreResult]:
+        return [
+            VectorStoreResult(entry=entry, vectors=vectors, score=1.0)
+            for entry, vectors in self._storage.values()
+        ]
+
+    async def remove(self, ids: list[str]) -> None:
+        for id in ids:
+            del self._storage[id]
+
+    async def list(self, where: Any | None = None, limit: int | None = None, offset: int = 0) -> list[VectorStoreEntry]:
+        entries = iter(entry for entry, _ in self._storage.values())
+        return list(entries)
+
+
+class MockProcessingStrategy(ProcessingExecutionStrategy):
+    async def process_documents(
+        self,
+        documents: list[Any],
+        document_processor_router: DocumentProcessorRouter,
+        document_processor: Any | None = None,
+    ) -> list[Element]:
+        return [
+            TextElement(
+                content="test",
+                document_meta=DocumentMeta(
+                    document_type=DocumentType.TXT,
+                    source=LocalFileSource(path=Path("test.txt")),
+                ),
+            )
+        ]
+
+
+@pytest.fixture
+def document_search() -> DocumentSearch:
+    return DocumentSearch(
+        vector_store=MockVectorStore(),
+        embedder=MockEmbeddings(),
+        processing_strategy=MockProcessingStrategy(),
+    )
+
+
+async def test_search(document_search: DocumentSearch) -> None:
+    with tempfile.NamedTemporaryFile(suffix=".txt") as f:
+        f.write(b"test")
+        f.seek(0)
+
+        source = LocalFileSource(path=Path(f.name))
+        await document_search.ingest([source])
+
+        results = await document_search.search("test")
+        assert len(results) == 1
+        assert isinstance(results[0], TextElement)
+        assert results[0].content == "test"
+
+
+async def test_ingest_with_custom_processor(document_search: DocumentSearch) -> None:
+    with tempfile.NamedTemporaryFile(suffix=".txt") as f:
+        f.write(b"test")
+        f.seek(0)
+
+        source = LocalFileSource(path=Path(f.name))
+        await document_search.ingest([source], document_processor=DummyProvider())
+
+        results = await document_search.search("test")
+        assert len(results) == 1
+        assert isinstance(results[0], TextElement)
+        assert results[0].content == "test"
+
+
+async def test_ingest_with_empty_list(document_search: DocumentSearch) -> None:
+    await document_search.ingest([])
+    results = await document_search.search("test")
+    assert len(results) == 0
+
+
+async def test_ingest_with_same_source(document_search: DocumentSearch) -> None:
+    with tempfile.NamedTemporaryFile(suffix=".txt") as f:
+        f.write(b"test")
+        f.seek(0)
+
+        source = LocalFileSource(path=Path(f.name))
+        await document_search.ingest([source])
+        await document_search.ingest([source])
+
+        results = await document_search.search("test")
+        assert len(results) == 1
+        assert isinstance(results[0], TextElement)
+        assert results[0].content == "test"
 
 
 @pytest.mark.parametrize(

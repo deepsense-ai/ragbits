@@ -6,7 +6,7 @@ from typing import Any, ClassVar
 from pydantic import BaseModel, computed_field
 
 from ragbits.core.embeddings import EmbeddingType
-from ragbits.core.vector_stores.base import VectorStoreEntry
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreResult
 from ragbits.document_search.documents.document import DocumentMeta
 
 
@@ -121,8 +121,15 @@ class Element(BaseModel, ABC):
         vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
         metadata = self.model_dump(exclude={"id", "key"})
         metadata["embedding_type"] = str(embedding_type)
+        metadata["vector"] = vector
         metadata["document_meta"]["source"]["id"] = self.document_meta.source.id
-        return VectorStoreEntry(id=vector_store_entry_id, key=str(self.key), vector=vector, metadata=metadata)
+        return VectorStoreEntry(
+            id=vector_store_entry_id,
+            key=str(self.key),
+            text=self.text_representation,
+            image_bytes=getattr(self, "image_bytes", None),
+            metadata=metadata,
+        )
 
 
 class TextElement(Element):

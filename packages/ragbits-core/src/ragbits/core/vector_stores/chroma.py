@@ -7,8 +7,8 @@ from typing_extensions import Self
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
-from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
+from ragbits.core.utils.dict_transformations import flatten_dict
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, VectorStoreResult, WhereQuery
 
 
 class ChromaVectorStore(VectorStore[VectorStoreOptions]):
@@ -78,11 +78,10 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
 
         ids = [entry.id for entry in entries]
         documents = [entry.key for entry in entries]
-        embeddings = [entry.vector for entry in entries]
         metadatas = [entry.metadata for entry in entries]
 
         # Flatten metadata
-        flattened_metadatas = [self._flatten_metadata(metadata) for metadata in metadatas]
+        flattened_metadatas = [flatten_dict(metadata) for metadata in metadatas]
 
         metadatas = (
             flattened_metadatas
@@ -90,10 +89,33 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
             else await self._metadata_store.store(ids, flattened_metadatas)  # type: ignore
         )
 
-        self._collection.add(ids=ids, embeddings=embeddings, metadatas=metadatas, documents=documents)  # type: ignore
+        # Group entries by embedding type
+        embedding_groups: dict[str, list[tuple[str, list[float]]]] = {}
+        for entry in entries:
+            if "embedding_type" not in entry.metadata:
+                raise ValueError("Entry must have embedding_type in metadata")
+            embedding_type = entry.metadata["embedding_type"]
+            vector = entry.metadata.pop("vector")
+            if embedding_type not in embedding_groups:
+                embedding_groups[embedding_type] = []
+            embedding_groups[embedding_type].append((entry.id, vector))
+
+        # Store each embedding type in a separate collection
+        for embedding_type, group in embedding_groups.items():
+            collection_name = f"{self._index_name}_{embedding_type}"
+            collection = self._client.get_or_create_collection(
+                name=collection_name,
+                metadata={"hnsw:space": self._distance_method},
+            )
+            collection.add(
+                ids=[id for id, _ in group],
+                embeddings=[vector for _, vector in group],
+                metadatas=metadatas,  # type: ignore
+                documents=documents,
+            )
 
     @traceable
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreResult]:
         """
         Retrieves entries from the ChromaDB collection.
 
@@ -102,40 +124,54 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
             options: The options for querying the vector store.
 
         Returns:
-            The retrieved entries.
+            The entries with their scores.
 
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
         merged_options = (self.default_options | options) if options else self.default_options
 
-        results = self._collection.query(
-            query_embeddings=vector,
-            n_results=merged_options.k,
-            include=["metadatas", "embeddings", "distances", "documents"],
-        )
-
-        ids = results.get("ids") or []
-        embeddings = results.get("embeddings") or []
-        distances = results.get("distances") or []
-        documents = results.get("documents") or []
-        metadatas = [
-            [metadata for batch in results.get("metadatas", []) for metadata in batch]  # type: ignore
-            if self._metadata_store is None
-            else await self._metadata_store.get(*ids)
-        ]
-
-        return [
-            VectorStoreEntry(
-                id=id,
-                key=document,
-                vector=list(embeddings),
-                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
+        # Query each embedding type collection
+        collections = self._client.list_collections()
+        results = []
+        for collection in collections:
+            if not collection.name.startswith(self._index_name):
+                continue
+            
+            embedding_type = collection.name[len(self._index_name) + 1:]
+            query_results = collection.query(
+                query_embeddings=[vector],
+                n_results=merged_options.k,
+                include=["metadatas", "documents", "distances", "embeddings"],
             )
-            for batch in zip(ids, metadatas, embeddings, distances, documents, strict=True)
-            for id, metadata, embeddings, distance, document in zip(*batch, strict=True)
-            if merged_options.max_distance is None or distance <= merged_options.max_distance
-        ]
+
+            for i, (id, metadata, document, distance, embedding) in enumerate(zip(
+                query_results["ids"][0],
+                query_results["metadatas"][0],
+                query_results["documents"][0],
+                query_results["distances"][0],
+                query_results["embeddings"][0],
+                strict=True,
+            )):
+                if merged_options.max_distance is not None and distance > merged_options.max_distance:
+                    continue
+
+                entry = VectorStoreEntry(
+                    id=id,
+                    key=document,
+                    metadata=metadata,
+                )
+                results.append(
+                    VectorStoreResult(
+                        entry=entry,
+                        vectors={embedding_type: embedding},
+                        score=distance,
+                    )
+                )
+
+        # Sort by score and return top k
+        results.sort(key=lambda x: x.score or float("inf"))
+        return results[:merged_options.k]
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -145,7 +181,11 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
         Args:
             ids: The list of entries' IDs to remove.
         """
-        self._collection.delete(ids=ids)
+        collections = self._client.list_collections()
+        for collection in collections:
+            if not collection.name.startswith(self._index_name):
+                continue
+            collection.delete(ids=ids)
 
     @traceable
     async def list(
@@ -162,38 +202,33 @@ class ChromaVectorStore(VectorStore[VectorStoreOptions]):
 
         Returns:
             The entries.
-
-        Raises:
-            MetadataNotFoundError: If the metadata is not found.
         """
-        # Cast `where` to chromadb's Where type
-        where_chroma: chromadb.Where | None = dict(where) if where else None
-
-        results = self._collection.get(
-            where=where_chroma,
-            limit=limit,
-            offset=offset,
-            include=["metadatas", "embeddings", "documents"],
-        )
-
-        ids = results.get("ids") or []
-        embeddings = results.get("embeddings") or []
-        documents = results.get("documents") or []
-        metadatas = (
-            results.get("metadatas") or [] if self._metadata_store is None else await self._metadata_store.get(ids)
-        )
-
-        return [
-            VectorStoreEntry(
-                id=id,
-                key=document,
-                vector=list(embedding),
-                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
+        # Get entries from the first collection (they should be the same in all collections)
+        collections = self._client.list_collections()
+        for collection in collections:
+            if not collection.name.startswith(self._index_name):
+                continue
+            
+            where_clause = where if where else {}
+            results = collection.get(
+                where=where_clause,  # type: ignore
+                limit=limit,
+                offset=offset,
+                include=["metadatas", "documents"],
             )
-            for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
-        ]
 
-    @staticmethod
-    def _flatten_metadata(metadata: dict) -> dict:
-        """Flattens the metadata dictionary. Removes any None values as they are not supported by ChromaDB."""
-        return {k: v for k, v in flatten_dict(metadata).items() if v is not None}
+            return [
+                VectorStoreEntry(
+                    id=id,
+                    key=document,
+                    metadata=metadata,
+                )
+                for id, document, metadata in zip(
+                    results["ids"],
+                    results["documents"],
+                    results["metadatas"],
+                    strict=True,
+                )
+            ]
+
+        return []

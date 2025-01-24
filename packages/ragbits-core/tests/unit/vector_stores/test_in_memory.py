@@ -4,7 +4,7 @@ import pytest
 from pydantic import computed_field
 
 from ragbits.core.embeddings import EmbeddingType
-from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.base import VectorStoreOptions, VectorStoreEntry
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
@@ -56,6 +56,110 @@ async def store_fixture() -> InMemoryVectorStore:
     store = InMemoryVectorStore()
     await store.store(entries)
     return store
+
+
+@pytest.fixture
+def vector_store() -> InMemoryVectorStore:
+    return InMemoryVectorStore()
+
+
+@pytest.fixture
+def entries() -> list[VectorStoreEntry]:
+    return [
+        VectorStoreEntry(
+            id="1",
+            key="test1",
+            text="test1",
+            metadata={"embedding_type": "text", "vector": [1.0, 0.0]},
+        ),
+        VectorStoreEntry(
+            id="2",
+            key="test2",
+            text="test2",
+            metadata={"embedding_type": "text", "vector": [0.0, 1.0]},
+        ),
+    ]
+
+
+async def test_store_and_retrieve(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0])
+    assert len(results) == 2
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+    assert results[1].entry.id == "2"
+    assert results[1].entry.key == "test2"
+    assert results[1].vectors["text"] == [0.0, 1.0]
+    assert results[1].score == pytest.approx(1.4142135623730951)
+
+
+async def test_store_and_retrieve_with_max_distance(
+    vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]
+) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0], options=vector_store.options_cls(max_distance=1.0))
+    assert len(results) == 1
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+
+
+async def test_store_and_retrieve_with_k(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.retrieve([1.0, 0.0], options=vector_store.options_cls(k=1))
+    assert len(results) == 1
+    assert results[0].entry.id == "1"
+    assert results[0].entry.key == "test1"
+    assert results[0].vectors["text"] == [1.0, 0.0]
+    assert results[0].score == 0.0
+
+
+async def test_store_and_list(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list()
+    assert len(results) == 2
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+    assert results[1].id == "2"
+    assert results[1].key == "test2"
+
+
+async def test_store_and_list_with_limit(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(limit=1)
+    assert len(results) == 1
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+
+
+async def test_store_and_list_with_offset(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(offset=1)
+    assert len(results) == 1
+    assert results[0].id == "2"
+    assert results[0].key == "test2"
+
+
+async def test_store_and_list_with_where(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    results = await vector_store.list(where={"embedding_type": "text"})
+    assert len(results) == 2
+    assert results[0].id == "1"
+    assert results[0].key == "test1"
+    assert results[1].id == "2"
+    assert results[1].key == "test2"
+
+
+async def test_store_and_remove(vector_store: InMemoryVectorStore, entries: list[VectorStoreEntry]) -> None:
+    await vector_store.store(entries)
+    await vector_store.remove(["1"])
+    results = await vector_store.list()
+    assert len(results) == 1
+    assert results[0].id == "2"
+    assert results[0].key == "test2"
 
 
 @pytest.mark.parametrize(

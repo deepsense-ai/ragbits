@@ -53,45 +53,50 @@ class DocumentSearchConfig(BaseModel):
     providers: dict[str, ObjectContructionConfig] = {}
 
 
+class DocumentSearchOptions(BaseModel):
+    """
+    Options for document search.
+    """
+
+    k: int = 5
+    max_distance: float | None = None
+    rerank: bool = False
+
+
 class DocumentSearch(WithConstructionConfig):
     """
-    A main entrypoint to the DocumentSearch functionality.
-
-    It provides methods for both ingestion and retrieval.
-
-    Retrieval:
-
-        1. Uses QueryRephraser to rephrase the query.
-        2. Uses VectorStore to retrieve the most relevant chunks.
-        3. Uses Reranker to rerank the chunks.
+    A class for searching through documents.
     """
 
-    # WithConstructionConfig configuration
     default_module: ClassVar = document_search
     configuration_key: ClassVar = "document_search"
 
-    embedder: Embeddings
-    vector_store: VectorStore
-    query_rephraser: QueryRephraser
-    reranker: Reranker
-    document_processor_router: DocumentProcessorRouter
-    processing_strategy: ProcessingExecutionStrategy
-
     def __init__(
         self,
-        embedder: Embeddings,
         vector_store: VectorStore,
-        query_rephraser: QueryRephraser | None = None,
-        reranker: Reranker | None = None,
+        embedder: Embeddings,
         document_processor_router: DocumentProcessorRouter | None = None,
         processing_strategy: ProcessingExecutionStrategy | None = None,
+        source_resolver: SourceResolver | None = None,
+        default_options: DocumentSearchOptions | None = None,
     ) -> None:
-        self.embedder = embedder
+        """
+        Constructs a new DocumentSearch instance.
+
+        Args:
+            vector_store: The vector store to use.
+            embedder: The embedder to use.
+            document_processor_router: The document processor router to use.
+            processing_strategy: The processing strategy to use.
+            source_resolver: The source resolver to use.
+            default_options: The default options for searching.
+        """
         self.vector_store = vector_store
-        self.query_rephraser = query_rephraser or NoopQueryRephraser()
-        self.reranker = reranker or NoopReranker()
-        self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
+        self.embedder = embedder
+        self.document_processor_router = document_processor_router or DocumentProcessorRouter()
         self.processing_strategy = processing_strategy or SequentialProcessing()
+        self.source_resolver = source_resolver or SourceResolver()
+        self.default_options = default_options or DocumentSearchOptions()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -99,124 +104,105 @@ class DocumentSearch(WithConstructionConfig):
         Creates and returns an instance of the DocumentSearch class from the given configuration.
 
         Args:
-            config: A configuration object containing the configuration for initializing the DocumentSearch instance.
+            config: A dictionary containing the configuration for initializing the DocumentSearch instance.
 
         Returns:
-            DocumentSearch: An initialized instance of the DocumentSearch class.
+            An initialized instance of the DocumentSearch class.
 
         Raises:
-            ValidationError: If the configuration doesn't follow the expected format.
-            InvalidConfigError: If one of the specified classes can't be found or is not the correct type.
+            ValidationError: The configuration doesn't follow the expected format.
+            InvalidConfigError: The class can't be found or is not the correct type.
         """
-        model = DocumentSearchConfig.model_validate(config)
+        vector_store = VectorStore.subclass_from_config(ObjectContructionConfig.model_validate(config["vector_store"]))
+        embedder = Embeddings.subclass_from_config(ObjectContructionConfig.model_validate(config["embedder"]))
 
-        embedder: Embeddings = Embeddings.subclass_from_config(model.embedder)
-        query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
-        reranker: Reranker = Reranker.subclass_from_config(model.reranker)
-        vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
-        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(model.processing_strategy)
+        document_processor_router = None
+        if "document_processor_router" in config:
+            document_processor_router = DocumentProcessorRouter.from_config(config["document_processor_router"])
 
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
-        document_processor_router = DocumentProcessorRouter.from_config(providers_config)
+        processing_strategy = None
+        if "processing_strategy" in config:
+            processing_strategy = ProcessingExecutionStrategy.subclass_from_config(
+                ObjectContructionConfig.model_validate(config["processing_strategy"])
+            )
 
-        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        source_resolver = None
+        if "source_resolver" in config:
+            source_resolver = SourceResolver.from_config(config["source_resolver"])
+
+        default_options = None
+        if "default_options" in config:
+            default_options = DocumentSearchOptions(**config["default_options"])
+
+        return cls(
+            vector_store=vector_store,
+            embedder=embedder,
+            document_processor_router=document_processor_router,
+            processing_strategy=processing_strategy,
+            source_resolver=source_resolver,
+            default_options=default_options,
+        )
 
     @classmethod
-    def subclass_from_defaults(
-        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
-    ) -> Self:
+    def from_yaml(cls, path: Path) -> Self:
         """
-        Tries to create an instance by looking at default configuration file, and default factory function.
-        Takes optional overrides for both, which takes a higher precedence.
+        Creates and returns an instance of the DocumentSearch class from the given YAML configuration file.
 
         Args:
-            defaults: The CoreConfig instance containing default factory and configuration details.
-            factory_path_override: A string representing the path to the factory function
-                in the format of "module.submodule:factory_name".
-            yaml_path_override: A string representing the path to the YAML file containing
-                the Ragstack instance configuration. Looks for the configuration under the key "document_search",
-                and if not found, instantiates the class with the default configuration for each component.
+            path: The path to the YAML configuration file.
+
+        Returns:
+            An initialized instance of the DocumentSearch class.
 
         Raises:
-            InvalidConfigError: If the default factory or configuration can't be found.
+            ValidationError: The configuration doesn't follow the expected format.
+            InvalidConfigError: The class can't be found or is not the correct type.
         """
-        if yaml_path_override:
-            config = get_config_from_yaml(yaml_path_override)
-
-            # Look for explicit document search configuration
-            if type_config := config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
-
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(config)
-
-        if factory_path_override:
-            return cls.subclass_from_factory(factory_path_override)
-
-        if default_factory := defaults.default_factories.get(cls.configuration_key):
-            return cls.subclass_from_factory(default_factory)
-
-        if defaults.default_instaces_config_path is not None:
-            # Look for explicit document search configuration
-            if default_config := defaults.default_instances_config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
-
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(defaults.default_instances_config)
-
-        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        config = get_config_from_yaml(path)
+        if not config:
+            raise NoDefaultConfigError("No configuration found in YAML file")
+        return cls.from_config(config)
 
     @traceable
-    async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
+    async def search(self, query: str, options: DocumentSearchOptions | None = None) -> list[Element]:
         """
-        Search for the most relevant chunks for a query.
+        Search for elements matching the query.
 
         Args:
             query: The query to search for.
-            config: The search configuration.
+            options: The options for searching.
 
         Returns:
-            A list of chunks.
+            The matching elements.
         """
-        config = config or SearchConfig()
-        queries = await self.query_rephraser.rephrase(query)
-        elements = []
-        for rephrased_query in queries:
-            search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(
-                vector=search_vector[0],
-                options=VectorStoreOptions(**config.vector_store_kwargs),
-            )
-            elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
-
-        return await self.reranker.rerank(
-            elements=elements,
-            query=query,
-            options=RerankerOptions(**config.reranker_kwargs),
-        )
+        merged_options = (self.default_options | options) if options else self.default_options
+        vector = (await self.embedder.embed_text([query]))[0]
+        vector_store_options = VectorStoreOptions(k=merged_options.k, max_distance=merged_options.max_distance)
+        results = await self.vector_store.retrieve(vector=vector, options=vector_store_options)
+        return [Element.from_vector_db_entry(result.entry) for result in results]
 
     @traceable
     async def ingest(
         self,
-        documents: str | Sequence[DocumentMeta | Document | Source],
+        documents: Sequence[Document | Source],
         document_processor: BaseProvider | None = None,
     ) -> None:
-        """Ingest documents into the search index.
+        """
+        Ingest documents into the vector store.
 
         Args:
-            documents: Either:
-                - A sequence of `Document`, `DocumentMetadata`, or `Source` objects
-                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example:
-                    - "file:///path/to/files/*.txt"
-                    - "gcs://bucket/folder/*"
-                    - "huggingface://dataset/split/row"
-            document_processor: The document processor to use. If not provided, the document processor will be
-                determined based on the document metadata.
+            documents: The documents to ingest.
+            document_processor: The document processor to use.
         """
-        if isinstance(documents, str):
-            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
-        else:
-            sources = documents
+        if not documents:
+            return
+
+        sources = []
+        for document in documents:
+            if isinstance(document, Document):
+                sources.append(await document.to_source())
+            else:
+                sources = documents
         elements = await self.processing_strategy.process_documents(
             sources, self.document_processor_router, document_processor
         )
@@ -250,8 +236,8 @@ class DocumentSearch(WithConstructionConfig):
         """
         elements_with_text = [element for element in elements if element.key]
         images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
-        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])  # type: ignore
 
+        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])  # type: ignore
         image_elements = [element for element in elements if isinstance(element, ImageElement)]
 
         entries = [
