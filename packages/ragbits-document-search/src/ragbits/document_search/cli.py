@@ -82,3 +82,19 @@ def search(
         print_output(entries, columns=columns)
 
     asyncio.run(run())
+
+
+@ds_app.command()
+def ingest(
+    source: Annotated[str, typer.Argument(help="Source pattern")],
+) -> None:
+    """
+    Ingest the elements from a given source to vector store.
+    """
+
+    async def run() -> None:
+        if state.document_search is None:
+            raise ValueError("Document search not initialized")
+        await state.document_search.ingest(source)
+
+    asyncio.run(run())
