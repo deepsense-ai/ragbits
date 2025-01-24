@@ -44,4 +44,4 @@ def test_ingest(pattern: str, num_expected: int) -> None:
             ["--factory-path", factory_path, "ingest", source_pattern],
         )
     assert result.exit_code == 0
-    assert len(asyncio.run(state.document_search.vector_store.list())) == num_expected # type: ignore
+    assert len(asyncio.run(state.document_search.vector_store.list())) == num_expected  # type: ignore
