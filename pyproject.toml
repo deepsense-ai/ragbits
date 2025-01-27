@@ -5,6 +5,7 @@ description = "Ragbits development workspace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "asyncpg>=0.30.0",
     "ragbits-cli",
     "ragbits-core[chroma,lab,local,otel,qdrant]",
     "ragbits-document-search[gcs,huggingface,distributed]",
