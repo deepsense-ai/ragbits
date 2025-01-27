@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from pydantic import BaseModel
 
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import print_output
@@ -31,6 +32,12 @@ state: _CLIState = _CLIState()
 
 # Default columns for commands that list entries
 _default_columns = "element_type,key"
+
+
+class IngestedItem(BaseModel):
+    """Model describing ingested source"""
+
+    source: str
 
 
 @ds_app.callback()
@@ -80,5 +87,22 @@ def search(
         search_config = SearchConfig(vector_store_kwargs={"k": k})
         entries = await state.document_search.search(query, config=search_config)
         print_output(entries, columns=columns)
+
+    asyncio.run(run())
+
+
+@ds_app.command()
+def ingest(
+    source: Annotated[str, typer.Argument(help="Source pattern")],
+) -> None:
+    """
+    Ingest the elements from a given source to vector store.
+    """
+
+    async def run() -> None:
+        if state.document_search is None:
+            raise ValueError("Document search not initialized")
+        await state.document_search.ingest(source)
+        print_output(IngestedItem(source=source))
 
     asyncio.run(run())

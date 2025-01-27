@@ -13,7 +13,7 @@ class DocumentTypeNotSupportedError(Exception):
     """
 
     def __init__(self, provider_name: str, document_type: DocumentType) -> None:
-        message = f"Document type {document_type} is not supported by the {provider_name}"
+        message = f"Document type {document_type.value} is not supported by the {provider_name}"
         super().__init__(message)
 
 
