@@ -103,7 +103,9 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
 
     for fragment in path_fragments:
         if fragment not in fields:
-            Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
+            Console(stderr=True).print(
+                f"Unknown column: {'.'.join(path_fragments + [field_name])} ({fragment} not found)"
+            )
             raise typer.Exit(1)
         model_class = fields[fragment].annotation
         if get_origin(model_class) in [UnionType, Optional, Union]:
@@ -112,7 +114,9 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
         if model_class and issubclass(model_class, BaseModel):
             fields = {**model_class.model_fields, **model_class.model_computed_fields}
     if field_name not in fields:
-        Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
+        Console(stderr=True).print(
+            f"Unknown column: {'.'.join(path_fragments + [field_name])} ({field_name} not found)"
+        )
         raise typer.Exit(1)
 
 
@@ -141,7 +145,7 @@ def print_output(
     """
     if not isinstance(data, Sequence):
         data = [data]
-    print("HAHAHA ", cli_state.output_type)
+
     match cli_state.output_type:
         case OutputType.text:
             print_output_table(data, columns)

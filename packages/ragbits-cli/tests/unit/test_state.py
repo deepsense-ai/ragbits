@@ -97,16 +97,16 @@ def test_check_column_name_correctness():
 
 def test_check_column_name_correctness_wrong_field():
     column_names = [
-        "model.location.wrong_field",
-        "model.wrong_path.location.path",
-        "wrong_path.location.location.path",
-        "model.location.path",
-        "model.location.location.path.additional_field",
+        ("model.location.wrong_field", "wrong_field"),
+        ("model.wrong_path.location.path", "wrong_path"),
+        ("wrong_path.location.location.path", "wrong_path"),
+        ("model.location.path", "path"),
+        ("model.location.location.path.additional_field", "additional_field"),
     ]
     fields = {"name": FieldInfo(annotation=str), "model": FieldInfo(annotation=OtherTestModel)}
 
-    for wrong_column in column_names:
+    for wrong_column, wrong_fragment in column_names:
         with patch("rich.console.Console.print") as mock_print:
             with pytest.raises(typer.Exit, match="1"):
                 check_column_name_correctness(wrong_column, fields)
-            mock_print.assert_called_once_with(f"Unknown column: {wrong_column}")
+            mock_print.assert_called_once_with(f"Unknown column: {wrong_column} ({wrong_fragment} not found)")
