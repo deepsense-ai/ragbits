@@ -34,9 +34,9 @@ state: _CLIState = _CLIState()
 _default_columns = "element_type,key"
 
 
-
 class IngestedItem(BaseModel):
     """Model describing ingested source"""
+
     source: str
 
 
