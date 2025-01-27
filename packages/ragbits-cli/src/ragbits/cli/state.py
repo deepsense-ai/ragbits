@@ -51,12 +51,6 @@ def print_output_table(
 
     fields = {**data[0].model_fields, **data[0].model_computed_fields}
 
-    # Human-readable titles for columns
-    titles = {
-        key: value.get("title", key)
-        for key, value in data[0].model_json_schema(mode="serialization")["properties"].items()
-    }
-
     # Normalize the list of columns
     if columns is None:
         columns = {key: Column() for key in fields}
@@ -70,7 +64,7 @@ def print_output_table(
         check_column_name_correctness(column_name, fields)
         column = columns[column_name]
         if column.header == "":
-            column.header = titles.get(column_name, column_name).replace("_", " ").replace(".", " ").title()
+            column.header = column_name.replace("_", " ").replace(".", " ").title()
 
     # Create and print the table
     table = Table(*columns.values(), show_header=True, header_style="bold magenta")
@@ -98,7 +92,6 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
         base_fields: model fields
     """
     fields = base_fields
-
     *path_fragments, field_name = column_name.strip().split(".")
 
     for fragment in path_fragments:
