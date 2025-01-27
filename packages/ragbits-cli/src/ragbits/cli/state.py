@@ -2,7 +2,8 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from typing import TypeVar, get_args
+from types import UnionType
+from typing import TypeVar, get_args, get_origin
 
 import typer
 from pydantic import BaseModel
@@ -97,16 +98,20 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
         base_fields: model fields
     """
     fields = base_fields
+
     *path_fragments, field_name = column_name.strip().split(".")
     for fragment in path_fragments:
         if fragment not in fields:
             Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
             raise typer.Exit(1)
         model = fields[fragment].annotation
-        types = get_args(model)
-        model_class = next((t for t in types if t is not type(None)), None)
+        model_class = get_origin(model)
+        if model_class is UnionType:
+            types = get_args(model)
+            model_class = next((t for t in types if t is not type(None)), None)
         if model_class and issubclass(model_class, BaseModel):
             fields = {**model_class.model_fields, **model_class.model_computed_fields}
+
     if field_name not in fields:
         Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
         raise typer.Exit(1)
