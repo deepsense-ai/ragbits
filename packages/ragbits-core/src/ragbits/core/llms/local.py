@@ -61,10 +61,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
             api_key: The API key for Hugging Face authentication.
 
         Raises:
-            ImportError: If additional libraries need to be installed.
+            ImportError: If the 'local' extra requirements are not installed.
         """
         if not HAS_LOCAL_LLM:
-            raise ImportError("You need the following libraries to use the local LLM: accelerate, torch, transformers")
+            raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
         super().__init__(model_name, default_options)
         self.model = AutoModelForCausalLM.from_pretrained(

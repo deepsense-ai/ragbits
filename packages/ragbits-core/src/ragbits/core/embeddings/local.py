@@ -42,10 +42,10 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
             default_options: Default options for the embedding model.
 
         Raises:
-            ImportError: If additional libraries need to be installed.
+            ImportError: If the 'local' extra requirements are not installed.
         """
         if not HAS_LOCAL_EMBEDDINGS:
-            raise ImportError("You need the following libraries to use the local embedding models: torch, transformers")
+            raise ImportError("You need to install the 'local' extra requirements to use local embeddings models")
 
         super().__init__(default_options=default_options)
 
