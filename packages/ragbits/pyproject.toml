@@ -52,11 +52,6 @@ gcs = [
 lab = [
     "gradio~=4.44.0",
 ]
-local = [
-    "torch~=2.2.1",
-    "transformers~=4.44.2",
-    "numpy~=1.26.0"
-]
 openai = [
     "openai~=1.57.3",
 ]
