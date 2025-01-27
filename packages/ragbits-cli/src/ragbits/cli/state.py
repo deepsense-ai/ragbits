@@ -3,7 +3,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from types import UnionType
-from typing import TypeVar, get_args, get_origin
+from typing import Optional, TypeVar, Union, get_args, get_origin
 
 import typer
 from pydantic import BaseModel
@@ -100,18 +100,17 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
     fields = base_fields
 
     *path_fragments, field_name = column_name.strip().split(".")
+
     for fragment in path_fragments:
         if fragment not in fields:
             Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
             raise typer.Exit(1)
-        model = fields[fragment].annotation
-        model_class = get_origin(model)
-        if model_class is UnionType:
-            types = get_args(model)
+        model_class = fields[fragment].annotation
+        if get_origin(model_class) in [UnionType, Optional, Union]:
+            types = get_args(model_class)
             model_class = next((t for t in types if t is not type(None)), None)
         if model_class and issubclass(model_class, BaseModel):
             fields = {**model_class.model_fields, **model_class.model_computed_fields}
-
     if field_name not in fields:
         Console(stderr=True).print(f"Unknown column: {'.'.join(path_fragments + [field_name])}")
         raise typer.Exit(1)
@@ -142,7 +141,7 @@ def print_output(
     """
     if not isinstance(data, Sequence):
         data = [data]
-
+    print("HAHAHA ", cli_state.output_type)
     match cli_state.output_type:
         case OutputType.text:
             print_output_table(data, columns)
