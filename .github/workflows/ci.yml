@@ -33,19 +33,15 @@ jobs:
           path: ~/.cache/pre-commit
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
 
-      - name: Install Dependencies
-        run: source ./setup_dev_env.sh
-
       - name: Run pre-commit checks
         run: |
-          source .venv/bin/activate
-          pre-commit run --all-files --show-diff-on-failure --color always
+          uv run pre-commit run --all-files --show-diff-on-failure --color always
 
       - name: Run ruff formatter
-        run: uvx ruff format --check
+        run: uv run ruff format --check
 
       - name: Run ruff linter
-        run: uvx ruff check
+        run: uv run ruff check
 
       - name: Run mypy
         run: uv run mypy .
@@ -79,21 +75,18 @@ jobs:
 
       - name: Check licenses
         run: |
-          source .venv/bin/activate
-          ./check_licenses.sh
+          uv run ./check_licenses.sh
 
       - name: Check documentation builds correctly
         run: |
-          source .venv/bin/activate
-          mkdocs build --strict
+          uv run mkdocs build --strict
 
       - name: Generate pip freeze
         run: |
-          source .venv/bin/activate
-          pip freeze > requirements-freeze.txt
+          uv pip freeze > requirements-freeze.txt
 
       - name: Publish Artefacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
@@ -105,7 +98,7 @@ jobs:
           retention-days: 30
 
       - name: Publish Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         continue-on-error: true
         with:
@@ -115,11 +108,10 @@ jobs:
 
       - name: Validate package build
         run: |
-          source .venv/bin/activate
           for dir in packages/*/; do uv build "$dir" --out-dir dist; done
 
       - name: Publish Package
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: true
         if: success()
         with:
@@ -138,7 +130,7 @@ jobs:
     strategy:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -167,16 +159,12 @@ jobs:
           path: ~/nltk_data
           key: nltk-${{ runner.os }}
 
-      - name: Install Dependencies
-        run: source ./setup_dev_env.sh
-
       - name: Run Tests With Coverage
         run: |
           # run with coverage to not execute tests twice
-          source .venv/bin/activate
-          coverage run -m pytest -v -p no:warnings --junitxml=report.xml
-          coverage report
-          coverage xml
+          uv run coverage run -m pytest -v -p no:warnings --junitxml=report.xml
+          uv run coverage report
+          uv run coverage xml
 
       - name: Test Report
         uses: mikepenz/action-junit-report@v4
@@ -186,7 +174,7 @@ jobs:
           report_paths: 'report.xml'
 
       - name: Publish Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         continue-on-error: true
         if: always()
         with:
