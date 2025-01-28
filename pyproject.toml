@@ -12,6 +12,7 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
+    "ragbits-integration-servers",
 ]
 
 [tool.uv]
@@ -41,6 +42,7 @@ ragbits-document-search = { workspace = true }
 ragbits-evaluate = {workspace = true}
 ragbits-guardrails = {workspace = true}
 ragbits-conversations = {workspace = true}
+ragbits-integration-servers = {workspace = true}
 
 [tool.uv.workspace]
 members = [
@@ -50,6 +52,7 @@ members = [
     "packages/ragbits-evaluate",
     "packages/ragbits-guardrails",
     "packages/ragbits-conversations",
+    "packages/ragbits-integration-servers",
 ]
 
 [tool.pytest]
@@ -98,6 +101,7 @@ mypy_path = [
     "packages/ragbits-evaluate/src",
     "packages/ragbits-guardrails/src",
     "packages/ragbits-conversations/src",
+    "packages/ragbits-integration-servers/src",
 ]
 exclude = ["scripts", "examples"]
 
