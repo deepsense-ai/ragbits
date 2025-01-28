@@ -49,11 +49,11 @@ def print_output_table(
         console.print("No results")
         return
 
-    fields = {**data[0].model_fields, **data[0].model_computed_fields}
+    base_fields = {**data[0].model_fields, **data[0].model_computed_fields}
 
     # Normalize the list of columns
     if columns is None:
-        columns = {key: Column() for key in fields}
+        columns = {key: Column() for key in base_fields}
     elif isinstance(columns, str):
         columns = {key: Column() for key in columns.split(",")}
     elif isinstance(columns, Sequence):
@@ -61,10 +61,11 @@ def print_output_table(
 
     # check if columns are correct
     for column_name in columns:
-        check_column_name_correctness(column_name, fields)
+        final_fields, field_name = check_column_name_correctness(column_name, base_fields)
+        field = final_fields[field_name]
         column = columns[column_name]
         if column.header == "":
-            column.header = column_name.replace("_", " ").replace(".", " ").title()
+            column.header = field.title if field.title else column_name.replace("_", " ").replace(".", " ").title()
 
     # Create and print the table
     table = Table(*columns.values(), show_header=True, header_style="bold magenta")
@@ -83,17 +84,19 @@ def print_output_table(
     console.print(table)
 
 
-def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
+def check_column_name_correctness(column_name: str, base_fields: dict) -> tuple[dict, str]:
     """
     Check if column name exists in the model schema.
 
     Args:
         column_name: name of the column to check
         base_fields: model fields
+    Returns:
+        fields: nested model fields
+        field_name: name of the field
     """
     fields = base_fields
     *path_fragments, field_name = column_name.strip().split(".")
-
     for fragment in path_fragments:
         if fragment not in fields:
             Console(stderr=True).print(
@@ -111,6 +114,7 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> None:
             f"Unknown column: {'.'.join(path_fragments + [field_name])} ({field_name} not found)"
         )
         raise typer.Exit(1)
+    return fields, field_name
 
 
 def print_output_json(data: Sequence[ModelT]) -> None:

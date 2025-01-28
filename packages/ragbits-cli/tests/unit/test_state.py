@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import typer
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
+from pydantic.fields import Field, FieldInfo
 from rich.table import Column, Table
 
 from ragbits.cli.state import OutputType, check_column_name_correctness, print_output, print_output_table
@@ -13,7 +13,8 @@ from ragbits.document_search.documents.sources import LocalFileSource
 
 class InnerTestModel(BaseModel):
     id: int
-    location: LocalFileSource | None
+    name: str = Field(title="Name of the inner model", description="Name of the inner model")
+    location: LocalFileSource
 
 
 class OtherTestModel(BaseModel):
@@ -33,14 +34,18 @@ data = [
         id=1,
         name="A",
         model=OtherTestModel(
-            id=11, name="aa", location=InnerTestModel(id=111, location=LocalFileSource(path=Path("test_location")))
+            id=11,
+            name="aa",
+            location=InnerTestModel(id=111, name="aa1", location=LocalFileSource(path=Path("folder_1"))),
         ),
     ),
     MainTestModel(
         id=2,
         name="B",
         model=OtherTestModel(
-            id=22, name="bb", location=InnerTestModel(id=222, location=LocalFileSource(path=Path("test_location")))
+            id=22,
+            name="bb",
+            location=InnerTestModel(id=222, name="aa2", location=LocalFileSource(path=Path("folder_2"))),
         ),
     ),
 ]
@@ -76,7 +81,7 @@ def test_print_output_unsupported_output_type():
 
 def test_print_output_table():
     with patch("rich.console.Console.print") as mock_print:
-        columns = {"id": Column(), "model.location.location.path": Column()}
+        columns = {"id": Column(), "model.location.location.path": Column(), "model.location.name": Column()}
         print_output_table(data, columns)
         mock_print.assert_called_once()
         args, _ = mock_print.call_args_list[0]
@@ -84,13 +89,19 @@ def test_print_output_table():
         assert isinstance(printed_table, Table)
         assert printed_table.columns[0].header == "Id"
         assert printed_table.columns[1].header == "Model Location Location Path"
+        assert printed_table.columns[2].header == "Name of the inner model"
+        assert printed_table.row_count == 2
 
 
 def test_check_column_name_correctness():
     column = "model.location.location.path"
     fields = {"name": FieldInfo(annotation=str), "model": FieldInfo(annotation=OtherTestModel)}
+
     try:
-        check_column_name_correctness(column, fields)
+        result = check_column_name_correctness(column, fields)
+        assert isinstance(result[0], dict)
+        assert set(result[0].keys()) == {"path", "source_type"}
+        assert result[1] == "path"
     except typer.Exit:
         pytest.fail("typer.Exit was raised unexpectedly")
 
