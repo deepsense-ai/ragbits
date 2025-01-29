@@ -88,3 +88,10 @@ async def main():
 if __name__ == "__main__":
     print(asyncio.run(main()))
 ```
+
+## How ragbits documentation is organized
+
+- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with ragbits in a few minutes
+- [How-to guides](https://ragbits.deepsense.ai/how-to/use_prompting/) - Learn how to use ragbits in your projects
+- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run ragbits in your terminal
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying API of ragbits
