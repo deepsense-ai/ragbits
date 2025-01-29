@@ -27,10 +27,6 @@ class LoremPromptOutput(BaseModel):
 
 
 class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
-    """
-    A prompt that generates Lorem Ipsum text.
-    """
-
     system_prompt = """
     You are a helpful Lorem Ipsum generator. The kind of vocablurary that you use besides "Lorem Ipsum" depends
     on the theme provided by the user. Make sure it is latin and not too long. {% if not nsfw_allowed %}Also, make sure

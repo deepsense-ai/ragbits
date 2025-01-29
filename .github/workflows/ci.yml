@@ -41,7 +41,7 @@ jobs:
         run: uv run ruff format --check
 
       - name: Run ruff linter
-        run: uv run ruff check
+        run: uv run ruff check --output-format=github
 
       - name: Run mypy
         run: uv run mypy .
