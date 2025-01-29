@@ -1,20 +1,17 @@
 # How to use tracing in ragbits
 
-Ragbits provides two options for trace handling: [**OpenTelemetry**](https://www.ibm.com/products/instana/opentelemetry)
-and **CLI**.
+Each component of ragbits includes built-in tracing, enabling users to collect detailed telemetry data
+without additional configuration. These traces provide visibility into execution flow, performance characteristics, 
+and potential bottlenecks. 
+
+
+## How to trace your own code
 To use either of these trace handlers, you need to import the traceable decorator from ragbits.core.audit
 and apply it (@traceable) to the code you wish to trace.
 
 You can enable the desired trace handler in your script using the following method:
-```audit.set_trace_handlers(trace_handler_name)```
-
-Here, trace_handler_name should be set to:
-
-- `"cli"` for the CLI trace handler, which prints the processing tree to the console
-
-- `"otel"` for the OpenTelemetry trace handler.
-
-Keep in mind that you can use both methods in one script. Below are examples of how to configure and use each handler.
+```audit.set_trace_handlers(trace_handler_name)``` 
+Keep in mind that you can use more than one trace handling both methods in one script.
 
 ## CLI Trace Handler
 You can enable the CLI trace handler in one of the following ways:
@@ -103,4 +100,5 @@ docker run -d --rm --name jaeger \
 ```
 http://localhost:16686
 ```
-To check the OpenTelemetry trace handler you can also run our example:  ```examples/document-search/otel.py```
+To check the OpenTelemetry trace handler you can also run our example: 
+[```examples/document-search/otel.py```](https://github.com/deepsense-ai/ragbits/blob/main/examples/document-search/otel.py)
