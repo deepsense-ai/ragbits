@@ -69,6 +69,29 @@ def test_search_columns():
     assert "<DocumentType.TXT: 'txt'>" in result.stdout
 
 
+def test_search_nested_columns():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        ds_app,
+        [
+            "--factory-path",
+            factory_path,
+            "search",
+            "example query",
+            "--columns",
+            "location,location.coordinates,location.page_number",
+        ],
+    )
+    assert result.exit_code == 0
+    print(result.stdout)
+    assert "Foo document" not in result.stdout
+    assert "Bar document" not in result.stdout
+    assert "Baz document" not in result.stdout
+    assert "Location" in result.stdout
+    assert "Location Coordinates" in result.stdout
+    assert "Location Page Number" in result.stdout
+
+
 def test_search_columns_non_existent():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
@@ -86,6 +109,23 @@ def test_search_columns_non_existent():
     assert "Unknown column: non_existent" in result.stderr
 
 
+def test_search_nested_columns_non_existent():
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        ds_app,
+        [
+            "--factory-path",
+            factory_path,
+            "search",
+            "example query",
+            "--columns",
+            "document_meta,location,location.non_existent",
+        ],
+    )
+    assert result.exit_code == 1
+    assert "Unknown column: location.non_existent" in result.stderr
+
+
 def test_search_json():
     autoregister()
     runner = CliRunner(mix_stderr=False)
@@ -101,7 +141,6 @@ def test_search_json():
             "example query",
         ],
     )
-    print(result.stderr)
     assert result.exit_code == 0
     elements = json.loads(result.stdout)
     assert len(elements) == 3
