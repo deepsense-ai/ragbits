@@ -4,6 +4,10 @@
 
 ## 0.8.0 (2025-01-29)
 
+### Added
+
+- Add support for pgvector as VectorStore (#267).
+
 ## 0.7.0 (2025-01-21)
 
 ### Added
