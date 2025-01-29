@@ -77,10 +77,10 @@ print(f"Generated dog name: {response}")
 
 ## How Ragbits documentation is organized
 
-- [Quickstart](quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
-- [How-to guides](how-to/use_prompting/) - Learn how to use Ragbits in your projects
-- [CLI](cli/main/) - Learn how to manage Ragbits from the command line
-- [API reference](api_reference/core/prompt/) - Explore the underlying API of Ragbits
+- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
+- [How-to guides](https://ragbits.deepsense.ai/how-to/use_prompting/) - Learn how to use Ragbits in your projects
+- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run Ragbits in your terminal
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying API of Ragbits
 
 
 ## License

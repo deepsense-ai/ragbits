@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
 ## How Ragbits documentation is organized
 
-- [Quickstart](quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
-- [How-to guides](how-to/use_prompting/) - Learn how to use Ragbits in your projects
-- [CLI](cli/main/) - Learn how to manage Ragbits from the command line
-- [API reference](api_reference/core/prompt/) - Explore the underlying API of Ragbits
+- [Quickstart](quickstart/quickstart1_prompts.md) - Get started with Ragbits in a few minutes
+- [How-to guides](how-to/use_prompting.md) - Learn how to use Ragbits in your projects
+- [CLI](cli/main.md) - Learn how to manage Ragbits from the command line
+- [API reference](api_reference/core/prompt.md) - Explore the underlying API of Ragbits
