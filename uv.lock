@@ -4026,6 +4026,7 @@ source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "pdf2image" },
     { name = "ragbits-core" },
+    { name = "rerankers" },
     { name = "unstructured" },
     { name = "unstructured-client" },
 ]
@@ -4058,6 +4059,7 @@ requires-dist = [
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", marker = "extra == 'distributed'", specifier = ">=2.39.0" },
+    { name = "rerankers", specifier = ">=0.6.1" },
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
@@ -4447,6 +4449,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f3/61/d7545dafb7ac2230c70d38d31cbfe4cc64f7144dc41f6e4e4b78ecd9f5bb/requests-toolbelt-1.0.0.tar.gz", hash = "sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6", size = 206888 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl", hash = "sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06", size = 54481 },
+]
+
+[[package]]
+name = "rerankers"
+version = "0.6.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/26/26/17d3e803472963893f8ee77cb56e9a908e65bf5cafd56164ef400674a93e/rerankers-0.6.1.tar.gz", hash = "sha256:36569dbb4499eaf1ba52b3fb6bf0781f2259e28acc2b58d8a68986e0dd2a88e0", size = 40715 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/c8/5683740eafb3c429c8af63e6775bfdfe2b85d26c4f774923337325393a19/rerankers-0.6.1-py3-none-any.whl", hash = "sha256:d13ce36ef18d68b7ee06a5c6e74822b4e0be45660d0963c15a5f2be312030732", size = 41496 },
 ]
 
 [[package]]
