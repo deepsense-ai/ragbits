@@ -1,6 +1,6 @@
 from argparse import Namespace
 from collections.abc import Sequence
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
@@ -8,6 +8,7 @@ from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
+from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
 
 class CustomReranker(Reranker):
@@ -41,6 +42,20 @@ def test_litellm_reranker_from_config() -> None:
 
     assert reranker.model == "test-provder/test-model"  # type: ignore
     assert reranker.default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
+
+
+def test_aswerdotai_reranker_from_config() -> None:
+    reranker = AnswerAIReranker.from_config(
+        {
+            "model": "cross-encoder",
+            "default_options": {
+                "top_n": 2,
+            },
+        }
+    )
+
+    assert reranker.model == "cross-encoder"  # type: ignore
+    assert reranker.default_options == RerankerOptions(top_n=2)
 
 
 async def test_litellm_reranker_rerank() -> None:
@@ -79,6 +94,42 @@ async def test_litellm_reranker_rerank() -> None:
         documents=["Element 1", "Element 2", "Element 3"],
         top_n=2,
         max_chunks_per_doc=None,
+    )
+
+
+async def test_answerdotai_reranker_rerank() -> None:
+    reranker = AnswerAIReranker(
+        model="cross-encoder",
+    )
+    documents = [
+        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
+        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
+        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
+    ]
+    elements = [
+        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1]),
+        TextElement(content="Element 3", document_meta=documents[2]),
+    ]
+    reranked_elements = [
+        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 3", document_meta=documents[2]),
+    ]
+    query = "Test query"
+
+    mock_ranker_instance = Mock()
+    mock_ranker_instance.rank.return_value = [
+        Namespace(document=Namespace(doc_id=0)),  # Corresponds to Element 2
+        Namespace(document=Namespace(doc_id=2)),  # Corresponds to Element 3
+    ]
+
+    reranker.ranker = mock_ranker_instance
+    results = await reranker.rerank(elements, query)
+    assert results == reranked_elements
+
+    mock_ranker_instance.rank.assert_called_once_with(
+        query=query,
+        docs=["Element 1", "Element 2", "Element 3"],
     )
 
 
