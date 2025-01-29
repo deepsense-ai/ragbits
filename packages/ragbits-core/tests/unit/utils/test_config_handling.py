@@ -32,7 +32,7 @@ def example_factory() -> ExampleClassWithConfigMixin:
     return ExampleSubclass("aligator", 42)
 
 
-def test_defacult_from_config():
+def test_default_from_config():
     config = {"foo": "foo", "bar": 1}
     instance = ExampleClassWithConfigMixin.from_config(config)
     assert instance.foo == "foo"
@@ -113,7 +113,6 @@ def test_subclass_from_defaults_instance_yaml():
         subproject="core",
         current_dir=projects_dir / "project_with_instances_yaml",
     )
-    print(config)
     instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
     assert isinstance(instance, ExampleSubclass)
     assert instance.foo == "I am a foo"
