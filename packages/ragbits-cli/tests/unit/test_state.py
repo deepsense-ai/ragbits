@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from pydantic.fields import Field, FieldInfo
 from rich.table import Column, Table
 
-from ragbits.cli.state import OutputType, check_column_name_correctness, print_output, print_output_table
+from ragbits.cli.state import OutputType, _get_nested_field, print_output, print_output_table
 from ragbits.document_search.documents.sources import LocalFileSource
 
 
@@ -93,20 +93,18 @@ def test_print_output_table():
         assert printed_table.row_count == 2
 
 
-def test_check_column_name_correctness():
+def test_get_nested_field():
     column = "model.location.location.path"
     fields = {"name": FieldInfo(annotation=str), "model": FieldInfo(annotation=OtherTestModel)}
 
     try:
-        result = check_column_name_correctness(column, fields)
-        assert isinstance(result[0], dict)
-        assert set(result[0].keys()) == {"path", "source_type"}
-        assert result[1] == "path"
+        result = _get_nested_field(column, fields)
+        assert result.annotation == Path
     except typer.Exit:
         pytest.fail("typer.Exit was raised unexpectedly")
 
 
-def test_check_column_name_correctness_wrong_field():
+def test_get_nested_field_wrong_field():
     column_names = [
         ("model.location.wrong_field", "wrong_field"),
         ("model.wrong_path.location.path", "wrong_path"),
@@ -119,5 +117,5 @@ def test_check_column_name_correctness_wrong_field():
     for wrong_column, wrong_fragment in column_names:
         with patch("rich.console.Console.print") as mock_print:
             with pytest.raises(typer.Exit, match="1"):
-                check_column_name_correctness(wrong_column, fields)
+                _get_nested_field(wrong_column, fields)
             mock_print.assert_called_once_with(f"Unknown column: {wrong_column} ({wrong_fragment} not found)")

@@ -7,6 +7,7 @@ from typing import Optional, TypeVar, Union, get_args, get_origin
 
 import typer
 from pydantic import BaseModel
+from pydantic.fields import FieldInfo
 from rich.console import Console
 from rich.table import Column, Table
 
@@ -61,8 +62,7 @@ def print_output_table(
 
     # check if columns are correct
     for column_name in columns:
-        final_fields, field_name = check_column_name_correctness(column_name, base_fields)
-        field = final_fields[field_name]
+        field = _get_nested_field(column_name, base_fields)
         column = columns[column_name]
         if column.header == "":
             column.header = field.title if field.title else column_name.replace("_", " ").replace(".", " ").title()
@@ -84,7 +84,7 @@ def print_output_table(
     console.print(table)
 
 
-def check_column_name_correctness(column_name: str, base_fields: dict) -> tuple[dict, str]:
+def _get_nested_field(column_name: str, base_fields: dict) -> FieldInfo:
     """
     Check if column name exists in the model schema.
 
@@ -92,8 +92,7 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> tuple[
         column_name: name of the column to check
         base_fields: model fields
     Returns:
-        fields: nested model fields
-        field_name: name of the field
+        field: nested field
     """
     fields = base_fields
     *path_fragments, field_name = column_name.strip().split(".")
@@ -114,7 +113,7 @@ def check_column_name_correctness(column_name: str, base_fields: dict) -> tuple[
             f"Unknown column: {'.'.join(path_fragments + [field_name])} ({field_name} not found)"
         )
         raise typer.Exit(1)
-    return fields, field_name
+    return fields[field_name]
 
 
 def print_output_json(data: Sequence[ModelT]) -> None:
