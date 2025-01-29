@@ -100,5 +100,5 @@ docker run -d --rm --name jaeger \
 ```
 http://localhost:16686
 ```
-To check the OpenTelemetry trace handler you can also run our 
-[```example```](https://github.com/deepsense-ai/ragbits/blob/main/examples/document-search/otel.py).
+To check the OpenTelemetry trace handler you can also run our
+[`example`](https://github.com/deepsense-ai/ragbits/blob/main/examples/document-search/otel.py).
