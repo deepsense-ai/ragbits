@@ -3,7 +3,7 @@ hide:
   - navigation
 ---
 
-# ragbits docs
+# Ragbits docs
 
 <style>
 .md-content .md-typeset h1 { display: none; }
@@ -35,22 +35,22 @@ hide:
 </div>
 ---
 
-**ragbits** is a Python package that offers essential "bits" for building powerful Retrieval-Augmented Generation (RAG)
+**Ragbits** is a Python package that offers essential "bits" for building powerful Retrieval-Augmented Generation (RAG)
 applications.
 
-**ragbits** prioritizes an exceptional developer experience by providing a simple and intuitive API.
+**Ragbits** prioritizes an exceptional developer experience by providing a simple and intuitive API.
 It also includes a comprehensive set of tools for seamlessly building, testing, and deploying your RAG applications
 efficiently.
 
 ## Installation
 
-You can install the latest version of **ragbits** using pip:
+You can install the latest version of **Ragbits** using pip:
 
 ```bash
 pip install ragbits
 ```
 
-Additionally, you can install one of the extensions to **ragbits**:
+Additionally, you can install one of the extensions to **Ragbits**:
 
 - `ragbits[document-search]` - provides tools for building document search applications.
 
@@ -89,9 +89,9 @@ if __name__ == "__main__":
     print(asyncio.run(main()))
 ```
 
-## How ragbits documentation is organized
+## How Ragbits documentation is organized
 
-- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with ragbits in a few minutes
-- [How-to guides](https://ragbits.deepsense.ai/how-to/use_prompting/) - Learn how to use ragbits in your projects
-- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run ragbits in your terminal
-- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying API of ragbits
+- [Quickstart](quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
+- [How-to guides](how-to/use_prompting/) - Learn how to use Ragbits in your projects
+- [CLI](cli/main/) - Learn how to manage Ragbits from the command line
+- [API reference](api_reference/core/prompt/) - Explore the underlying API of Ragbits
