@@ -139,3 +139,8 @@ extra:
       link: https://medium.com/deepsense-ai
     - icon: fontawesome/solid/globe
       link: https://deepsense.ai
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
