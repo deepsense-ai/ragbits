@@ -3908,7 +3908,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-cli"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -3923,7 +3923,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-conversations"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-conversations" }
 dependencies = [
     { name = "ragbits-core" },
@@ -3952,7 +3952,7 @@ dev = [
 
 [[package]]
 name = "ragbits-core"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "jinja2" },
@@ -4021,7 +4021,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "pdf2image" },
@@ -4076,7 +4076,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "distilabel" },
@@ -4121,7 +4121,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
