@@ -33,6 +33,25 @@ class LLMResponseWithMetadata(BaseModel, Generic[OutputT]):
     metadata: dict
 
 
+# TODO: To be removed once PR #286 is merged
+class SimplePrompt(BasePrompt):
+    """
+    A simple prompt class that can handle bare strings or chat format dictionaries.
+    """
+
+    def __init__(self, content: str | ChatFormat) -> None:
+        self._content = content
+
+    @property
+    def chat(self) -> ChatFormat:
+        """
+        Returns the chat format of the prompt.
+        """
+        if isinstance(self._content, str):
+            return [{"role": "user", "content": self._content}]
+        return self._content
+
+
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     """
     Abstract class for interaction with Large Language Model.
@@ -176,7 +195,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
     async def generate_streaming(
         self,
-        prompt: BasePrompt,
+        prompt: BasePrompt | ChatFormat | str,
         *,
         options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str, None]:
@@ -190,6 +209,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Response stream from LLM.
         """
+        if not isinstance(prompt, BasePrompt):
+            prompt = SimplePrompt(prompt)
+
         merged_options = (self.default_options | options) if options else self.default_options
         response = await self._call_streaming(
             conversation=self._format_chat_for_llm(prompt),
