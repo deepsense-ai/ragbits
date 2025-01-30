@@ -3,7 +3,7 @@
 Prompts Lab is a GUI tool that automatically detects prompts in your project and allows you to interact with them. You can use it to test your prompts with Large Language Models and see how the model responds to different prompts.
 
 !!! note
-    To follow this guide, ensure that you have installed the `ragbits` package and are in a directory with Python files that define some ragbits prompts (usually, this would be the root directory of your project) in your command line terminal. If you haven't defined any prompts yet, you can use the `SongPrompt` example from [Ragbit's Quickstart Guide](../quickstart/quickstart1_prompts.md) and save it in a Python file with a name starting with "prompt_" in your project directory.
+    To follow this guide, ensure that you have installed the `ragbits` package and are in a directory with Python files that define some ragbits prompts (usually, this would be the root directory of your project) in your command line terminal. If you haven't defined any prompts yet, you can use the `SongPrompt` example from [Ragbit's Quickstart Guide](../../quickstart/quickstart1_prompts.md) and save it in a Python file with a name starting with "prompt_" in your project directory.
 
 ## Starting Prompts Lab
 
