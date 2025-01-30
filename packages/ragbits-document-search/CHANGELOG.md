@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.8.0 (2025-01-29)
+
+### Added
+
+- DocumentSearch ingest accepts now a simple string format to determine sources; for example gcs://bucket/* (#264).
+- New CLI command to ingest documents (#305).
+- Add support for rerankers library (#284).
+
+### Changed
+
+- ragbits-core updated to version v0.8.0
+
 ## 0.7.0 (2025-01-21)
 
 ### Added
