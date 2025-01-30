@@ -1,13 +1,46 @@
-# How to use tracing in ragbits
+# How to use tracing in Ragbits
 
-Each component of ragbits includes built-in tracing, enabling users to collect detailed telemetry data
+Each component of Ragbits includes built-in tracing, enabling users to collect detailed telemetry data
 without additional configuration. These traces provide visibility into execution flow, performance characteristics,
 and potential bottlenecks.
 
 
 ## How to trace your own code
-To use either of these trace handlers, you need to import the traceable decorator from ragbits.core.audit
-and apply it (@traceable) to the code you wish to trace.
+
+There are two ways you can use Ragbits tracing in your code:
+
+1. using **@traceable**:
+   import the traceable decorator from ragbits.core.audit and apply it (@traceable) to the method you wish to trace.
+```python
+from ragbits.core.audit import traceable
+
+@traceable
+def add_numbers(a: int, b: int) -> int:
+    if a % 2 == 0:
+        return add_numbers(a + 1, b)
+    if a % 3 == 0:
+        return add_numbers(a + 2, b)
+    return a + b
+```
+   In the tracing tree, inputs and outputs are provided by inputs and outputs of the traced method.
+2. using **with trace()**:
+   import trace from ragbits.core.audit and run a part of code you wish to trace within `with trace()` context:
+```python
+from ragbits.core.audit import trace
+
+def add_more_numbers(a: int, b: int, c: int) -> int:
+    with trace(name='check a', first_number=a) as outputs:
+        if a % 2 == 0:
+           result = a + 1 +c
+           outputs.first_result = result
+        with trace(name='check b', second_number=b) as outputs:
+            if b % 3 == 0:
+                result = a + 2 + c
+                outputs.second_result = result
+```
+   In the tracing tree, inputs are provided as keyword arguments when initializing the trace context,
+   while outputs must be explicitly assigned within the traced block.
+
 
 You can enable the desired trace handler in your script using the following method:
 ```audit.set_trace_handlers(trace_handler_name)```
@@ -18,19 +51,16 @@ You can enable the CLI trace handler in one of the following ways:
 
 1. **Using an environment variable**:
    Set the `RAGBITS_VERBOSE` environment variable to `1`.
-   Example:
 ```bash
 export RAGBITS_VERBOSE=1
 ```
 2. **Using the `--verbose flag`**:
    Add the --verbose option to your command.
-   Example:
 ```bash
 uv run ragbits --verbose vector-store --factory-path PATH_TO_FACTORY list
 ```
 3. **Programmatically inside the python script**:
    Use the audit.set_trace_handlers("cli") method to explicitly set the CLI trace handler.
-   Example:
 ```python
 from ragbits.core import audit
 from ragbits.core.audit import traceable
@@ -49,7 +79,6 @@ def add_numbers(a: int, b: int) -> int:
 if __name__ == "__main__":
     add_numbers(2, 2)
 ```
-These options allow you to easily enable trace handling for debugging or monitoring purposes.
 
 ## OpenTelemetry Trace Handler
 To export traces to an OpenTelemetry collector, configure the OpenTelemetry provider
