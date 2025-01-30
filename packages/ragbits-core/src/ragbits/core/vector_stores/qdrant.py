@@ -209,14 +209,14 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
                 )
 
                 # Create vectors map
-                vectors = {}
+                vectors: dict[str, list[float]] = {}
                 result_embedding_type = result.payload.get("embedding_type", str(EmbeddingType.TEXT))
-                vectors[result_embedding_type] = result.vector
+                vectors[result_embedding_type] = list(map(float, result.vector))
 
                 results.append(VectorStoreResult(entry=entry, vectors=vectors, score=result.score))
 
         # Deduplicate results by entry id, keeping the highest score
-        unique_results = {}
+        unique_results: dict[str, VectorStoreResult] = {}
         for result in results:
             if result.entry.id not in unique_results or result.score > unique_results[result.entry.id].score:
                 unique_results[result.entry.id] = result

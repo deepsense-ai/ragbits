@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from itertools import islice
 
 import numpy as np
@@ -186,7 +187,7 @@ class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        entries = iter(entry for entry, _ in self._storage.values())
+        entries: Iterator[VectorStoreEntry] = iter(entry for entry, _ in self._storage.values())
 
         if where:
             entries = (

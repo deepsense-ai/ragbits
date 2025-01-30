@@ -9,6 +9,9 @@ from ragbits.core.utils._pyproject import get_config_instance
 from ragbits.core.utils.config_handling import NoDefaultConfigError
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search._main import DocumentSearch
+from ragbits.document_search.processing_strategy import SequentialProcessing
+from ragbits.document_search.query_rephraser import NoopQueryRephraser
+from ragbits.document_search.reranker import NoopReranker
 
 projects_dir = Path(__file__).parent / "testprojects"
 
@@ -131,3 +134,52 @@ def test_subclass_from_defaults_factory_no_configuration():
     )
     with pytest.raises(NoDefaultConfigError):
         DocumentSearch.subclass_from_defaults(config)
+
+
+@pytest.mark.asyncio
+async def test_from_config_with_minimal_config() -> None:
+    """Test creating a DocumentSearch instance from a minimal config."""
+    config = {
+        "vector_store": {
+            "type": "InMemoryVectorStore",
+            "config": {
+                "default_embedder": {
+                    "type": "DummyEmbeddings",
+                    "config": {},
+                },
+            },
+        },
+    }
+
+    document_search = await DocumentSearch.from_config(config)
+
+    assert isinstance(document_search.vector_store, InMemoryVectorStore)
+    assert isinstance(document_search.query_rephraser, NoopQueryRephraser)
+    assert isinstance(document_search.reranker, NoopReranker)
+    assert isinstance(document_search.processing_strategy, SequentialProcessing)
+
+
+@pytest.mark.asyncio
+async def test_from_config_with_full_config() -> None:
+    """Test creating a DocumentSearch instance from a full config."""
+    config = {
+        "vector_store": {
+            "type": "InMemoryVectorStore",
+            "config": {
+                "default_embedder": {
+                    "type": "DummyEmbeddings",
+                    "config": {},
+                },
+            },
+        },
+        "rephraser": {"type": "NoopQueryRephraser"},
+        "reranker": {"type": "NoopReranker"},
+        "processing_strategy": {"type": "SequentialProcessing"},
+    }
+
+    document_search = await DocumentSearch.from_config(config)
+
+    assert isinstance(document_search.vector_store, InMemoryVectorStore)
+    assert isinstance(document_search.query_rephraser, NoopQueryRephraser)
+    assert isinstance(document_search.reranker, NoopReranker)
+    assert isinstance(document_search.processing_strategy, SequentialProcessing)

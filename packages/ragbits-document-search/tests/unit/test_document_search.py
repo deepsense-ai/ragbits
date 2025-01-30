@@ -27,6 +27,9 @@ from ragbits.document_search.ingestion.processor_strategies.batched import (
 )
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.processing_strategy.sequential import SequentialProcessing
+from ragbits.rephraser.noop import NoopQueryRephraser
+from ragbits.reranker.noop import NoopReranker
 
 CONFIG = {
     "embedder": {"type": "NoopEmbeddings"},
@@ -505,3 +508,19 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             assert len(results) == 1
             assert isinstance(results[0], TextElement)
             assert results[0].content == "HuggingFace test content"
+
+
+@pytest.fixture
+def document_search(
+    vector_store: InMemoryVectorStore,
+    rephraser: NoopQueryRephraser,
+    reranker: NoopReranker,
+    processing_strategy: SequentialProcessing,
+) -> DocumentSearch:
+    """Create a document search instance."""
+    return DocumentSearch(
+        vector_store=vector_store,
+        rephraser=rephraser,
+        reranker=reranker,
+        processing_strategy=processing_strategy,
+    )

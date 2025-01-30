@@ -5,6 +5,7 @@ from pydantic import computed_field
 
 from ragbits.core.embeddings import EmbeddingType
 from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.entry import VectorStoreEntry
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
@@ -58,6 +59,17 @@ async def store_fixture() -> InMemoryVectorStore:
     return store
 
 
+@pytest.fixture
+def entry() -> VectorStoreEntry:
+    """Create a test entry."""
+    return VectorStoreEntry(
+        id="test_id",
+        key="test_key",
+        text="test text",
+        metadata={"test_key": "test_value"},
+    )
+
+
 @pytest.mark.parametrize(
     ("k", "max_distance", "results"),
     [
@@ -76,14 +88,50 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
         assert entry.metadata["name"] == result
 
 
-async def test_remove(store: InMemoryVectorStore) -> None:
+@pytest.mark.asyncio
+async def test_store_and_retrieve(store: InMemoryVectorStore, entry: VectorStoreEntry):
+    """Test storing and retrieving entries."""
+    # Store entry
+    await store.store([entry])
+
+    # Retrieve entry
+    results = await store.retrieve(entry)
+    assert len(results) == 1
+    result = results[0]
+    assert result.entry.id == entry.id
+    assert result.entry.key == entry.key
+    assert result.entry.metadata == entry.metadata
+    assert len(result.vectors) == 1
+    assert str(EmbeddingType.TEXT) in result.vectors
+    assert isinstance(result.score, float)
+
+
+@pytest.mark.asyncio
+async def test_list(store: InMemoryVectorStore, entry: VectorStoreEntry):
+    """Test listing entries."""
+    # Store entry
+    await store.store([entry])
+
+    # List entries
     entries = await store.list()
-    entry_number = len(entries)
+    assert len(entries) == 1
+    assert entries[0].id == entry.id
+    assert entries[0].key == entry.key
+    assert entries[0].metadata == entry.metadata
 
-    ids_to_remove = [entries[0].id]
-    await store.remove(ids_to_remove)
 
-    assert len(await store.list()) == entry_number - 1
+@pytest.mark.asyncio
+async def test_remove(store: InMemoryVectorStore, entry: VectorStoreEntry):
+    """Test removing entries."""
+    # Store entry
+    await store.store([entry])
+
+    # Remove entry
+    await store.remove([entry.id])
+
+    # List entries
+    entries = await store.list()
+    assert len(entries) == 0
 
 
 async def test_list_all(store: InMemoryVectorStore) -> None:

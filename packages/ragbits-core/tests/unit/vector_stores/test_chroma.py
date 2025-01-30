@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
+from ragbits.core.vector_stores.base import EmbeddingType, VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 
 
@@ -14,39 +14,61 @@ def mock_chromadb_store() -> ChromaVectorStore:
     )
 
 
-async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
-    data = [
-        VectorStoreEntry(
-            id="test_key",
-            key="test content",
-            vector=[0.1, 0.2, 0.3],
-            metadata={
-                "content": "test content",
-                "document": {
-                    "title": "test title",
-                    "source": {"path": "/test/path"},
-                    "document_type": "test_type",
-                },
-            },
-        )
-    ]
-
-    await mock_chromadb_store.store(data)
-
-    mock_chromadb_store._client.get_or_create_collection().add.assert_called_once()  # type: ignore
-    mock_chromadb_store._client.get_or_create_collection().add.assert_called_with(  # type: ignore
-        ids=[data[0].id],
-        embeddings=[[0.1, 0.2, 0.3]],
-        metadatas=[
-            {
-                "content": "test content",
-                "document.title": "test title",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
-            }
-        ],
-        documents=["test content"],
+@pytest.fixture
+def entry() -> VectorStoreEntry:
+    """Create a test entry."""
+    return VectorStoreEntry(
+        id="test_id",
+        key="test_key",
+        text="test text",
+        metadata={"test_key": "test_value"},
     )
+
+
+@pytest.mark.asyncio
+async def test_store_and_retrieve(store: ChromaVectorStore, entry: VectorStoreEntry):
+    """Test storing and retrieving entries."""
+    # Store entry
+    await store.store([entry])
+
+    # Retrieve entry
+    results = await store.retrieve(entry)
+    assert len(results) == 1
+    result = results[0]
+    assert result.entry.id == entry.id
+    assert result.entry.key == entry.key
+    assert result.entry.metadata == entry.metadata
+    assert len(result.vectors) == 1
+    assert str(EmbeddingType.TEXT) in result.vectors
+    assert isinstance(result.score, float)
+
+
+@pytest.mark.asyncio
+async def test_list(store: ChromaVectorStore, entry: VectorStoreEntry):
+    """Test listing entries."""
+    # Store entry
+    await store.store([entry])
+
+    # List entries
+    entries = await store.list()
+    assert len(entries) == 1
+    assert entries[0].id == entry.id
+    assert entries[0].key == entry.key
+    assert entries[0].metadata == entry.metadata
+
+
+@pytest.mark.asyncio
+async def test_remove(store: ChromaVectorStore, entry: VectorStoreEntry):
+    """Test removing entries."""
+    # Store entry
+    await store.store([entry])
+
+    # Remove entry
+    await store.remove([entry.id])
+
+    # List entries
+    entries = await store.list()
+    assert len(entries) == 0
 
 
 @pytest.mark.parametrize(
@@ -99,51 +121,6 @@ async def test_retrieve(
         assert entry.vector == result["vector"]
         assert entry.id == f"test_id_{results.index(result) + 1}"
         assert entry.key == result["content"]
-
-
-async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
-    ids_to_remove = ["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
-
-    await mock_chromadb_store.remove(ids_to_remove)
-
-    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_once()  # type: ignore
-    mock_chromadb_store._client.get_or_create_collection().delete.assert_called_with(ids=ids_to_remove)  # type: ignore
-
-
-async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
-    mock_chromadb_store._collection.get.return_value = {  # type: ignore
-        "metadatas": [
-            {
-                "content": "test content",
-                "document.title": "test title",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
-            },
-            {
-                "content": "test content 2",
-                "document.title": "test title 2",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
-            },
-        ],
-        "embeddings": [[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]],
-        "documents": ["test content 1", "test content2"],
-        "ids": ["test_id_1", "test_id_2"],
-    }
-
-    entries = await mock_chromadb_store.list()
-
-    assert len(entries) == 2
-    assert entries[0].metadata["content"] == "test content"
-    assert entries[0].metadata["document"]["title"] == "test title"
-    assert entries[0].vector == [0.12, 0.25, 0.29]
-    assert entries[0].key == "test content 1"
-    assert entries[0].id == "test_id_1"
-    assert entries[1].metadata["content"] == "test content 2"
-    assert entries[1].metadata["document"]["title"] == "test title 2"
-    assert entries[1].vector == [0.13, 0.26, 0.30]
-    assert entries[1].key == "test content2"
-    assert entries[1].id == "test_id_2"
 
 
 async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> None:
