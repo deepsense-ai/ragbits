@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
+from ragbits.core.embeddings import Embeddings
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
@@ -15,12 +16,25 @@ WhereQuery = dict[str, str | int | float | bool]
 class VectorStoreEntry(BaseModel):
     """
     An object representing a vector database entry.
+    Contains text and/or image for embedding + metadata.
     """
 
     id: str
     key: str
-    vector: list[float]
+    text: str | None = None
+    image_bytes: bytes | None = None
     metadata: dict
+
+
+class VectorStoreResult(BaseModel):
+    """
+    An object representing a query result from the vector store.
+    Contains the entry, its vectors, and the similarity score.
+    """
+
+    entry: VectorStoreEntry
+    vectors: dict[str, list[float]]  # Maps embedding type to vector
+    score: float
 
 
 class VectorStoreOptions(Options):
@@ -48,6 +62,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         self,
         default_options: VectorStoreOptionsT | None = None,
         metadata_store: MetadataStore | None = None,
+        default_embedder: Embeddings | None = None,
     ) -> None:
         """
         Constructs a new VectorStore instance.
@@ -55,9 +70,13 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         Args:
             default_options: The default options for querying the vector store.
             metadata_store: The metadata store to use.
+            default_embedder: The default embedder to use for converting entries to vectors.
+                            This is optional and specific implementations may choose to use
+                            their own embedding approach.
         """
         super().__init__(default_options=default_options)
         self._metadata_store = metadata_store
+        self._default_embedder = default_embedder
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -84,7 +103,14 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
             else None
         )
 
-        return cls(**config, default_options=options, metadata_store=store)
+        embedder_config = config.pop("default_embedder", None)
+        embedder = (
+            Embeddings.subclass_from_config(ObjectContructionConfig.model_validate(embedder_config))
+            if embedder_config
+            else None
+        )
+
+        return cls(**config, default_options=options, metadata_store=store, default_embedder=embedder)
 
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -92,20 +118,24 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         Store entries in the vector store.
 
         Args:
-            entries: The entries to store.
+            entries: The entries to store. The implementation is responsible for converting
+                    these entries to vectors using appropriate embedding approach.
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(
+        self, query: VectorStoreEntry, options: VectorStoreOptionsT | None = None
+    ) -> list[VectorStoreResult]:
         """
         Retrieve entries from the vector store.
 
         Args:
-            vector: The vector to search for.
+            query: The query entry to search for. The implementation is responsible for converting
+                  this entry to vector(s) using appropriate embedding approach.
             options: The options for querying the vector store.
 
         Returns:
-            The entries.
+            The results, containing entries, their vectors and similarity scores.
         """
 
     @abstractmethod
