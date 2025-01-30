@@ -4,9 +4,8 @@ Ragbits Core is a collection of utilities and tools that are used across all Rag
 
 ## Installation
 
-```bash
+```sh
 pip install ragbits-core
-from ragbits.core.llms.litellm import LiteLLM
 ```
 
 ## Quick Start
@@ -14,6 +13,8 @@ from ragbits.core.llms.litellm import LiteLLM
 ```python
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
+from ragbits.core.llms.litellm import LiteLLM
+
 
 class Dog(BaseModel):
     breed: str
