@@ -1,103 +1,148 @@
 # How to use pgVector database with Ragbits
 
-sudo docker pull pgvector/pgvector:pg16
+## How to set up pgVector database locally
+To run a local instance of pgVector, use Docker to pull and start the database container.
 
-```
+1. **Pull the pgVector Docker image**
+```bash
+sudo docker pull pgvector/pgvector:pg16
+ ```
+
+2. **Run the PostgreSQL container with pgVector**
+```bash
 sudo docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d pgvector/pgvector:pg16
 ```
+    * `--name` postgres assigns the container a name (postgres).
+    * `-p` 5432:5432 maps the default PostgreSQL port to the local machine.
+    * `-e` POSTGRES_PASSWORD=mysecretpassword sets the database password.
+    * `-d` runs the container in detached mode.
 
-DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
+The local instance of pgVector is accessible using the following connection string:
+```DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"```
 
+The database connection string (DB) may vary depending on the deployment setup.
+If the database is hosted remotely, in the cloud, or configured differently,
+update the connection string accordingly to match the appropriate host, port, credentials, and database name.
 
+## How to connect to pgVector database with Ragbits
+To connect to PostgreSQL, establish a connection pool using asyncpg.
+The connection string can be provided directly or specified using individual parameters.
+
+```python
 import asyncpg
-from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-    connection = await asyncpg.create_pool(DB)
-    vector_store = PgVectorStore(connection, "test_index9831")
-
-
+DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
+async def main() -> None:
+    pool = await asyncpg.create_pool(DB)
+    vector_store = PgVectorStore(client=pool, table_name="test_table", vector_size=1536)
+```
+Alternatively, the connection pool can be created explicitly:
+```python
+import asyncpg
+from ragbits.core.vector_stores.pgvector import PgVectorStore
+async def main() -> None:
     pool = await asyncpg.create_pool(
         user="postgres",
         password="mysecretpassword",
         database="postgres",
         host="localhost",
     )
-    vector_store = PgVectorStore(client=pool, table_name="my_vector_store444", vector_size=1536)
-
-
-1. need data base for example as here:
+    vector_store = PgVectorStore(client=pool, table_name="test_table", vector_size=1536)
 ```
-sudo docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d pgvector/pgvector:pg16
+**Note**: Ensure that the vector size is correctly configured when initializing PgVectorStore,
+as it must match the expected dimensions of the stored embeddings.
+
+## pgVectorStore in Ragbits
+Example:
+```python
+import asyncpg
+import asyncio
+from ragbits.core.vector_stores.base import VectorStoreEntry
+from ragbits.core.vector_stores.pgvector import PgVectorStore
+
+DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
+
+async def main() -> None:
+    pool = await asyncpg.create_pool(DB)
+    vector_store = PgVectorStore(client=pool, table_name="test_tableZXXX", vector_size=3)
+    data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=[0.1, 0.2, 0.3],
+            metadata={"key1": "value1", "content": "test 1"}),
+            VectorStoreEntry(id="test_id_2", key="test_key_2", vector=[0.4, 0.5, 0.6],
+                              metadata={"key2": "value2", "content": "test 2"})]
+
+    await vector_store.store(data)
+    all_entries = await vector_store.list()
+    print("All entries ", all_entries)
+    list_result = await vector_store.list({"content": "test 1"})
+    print("Entries with  {content: test 1}", list_result)
+    retrieve_result = await vector_store.retrieve(vector=[0.39, 0.55, 0.6])
+    print("Entries similar to [0.17, 0.23, 0.314] ", retrieve_result)
+    await vector_store.remove(["test_id_1", "test_id_2"])
+    after_remove = await vector_store.list()
+    print("Entries after remove ", after_remove)
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
-2. the data base  DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
-3. Create connecrtion_pool
-4. and then inittaie the vectre_store
-5. Rememeber about vector_size
+### PgVectorStore Parameters
+The PgVectorStore class is initialized with the following parameters:
 
+* client: asyncpg.Pool – An instance of asyncpg.Pool used for database connections.
+* table_name: str – The name of the table where vectors are stored.
+* vector_size: int – The dimensionality of the vectors. This must match the stored embeddings.
+* distance_method: str (default: `"cosine"") – The similarity metric used for vector comparisons.
+Supported values include:
+    - "cosine" (<=>) – Cosine distance
+    - "l2" (<->) – Euclidean (L2) distance
+    - "l1" (<+>) – Manhattan (L1) distance
+    - "ip" (<#>) – Inner product
+    - "bit_hamming" (<~>) – Hamming distance
+    - "bit_jaccard" (<%>) – Jaccard distance
+    - "sparsevec_l2" (<->) – Sparse vector L2 distance
+    - "halfvec_l2" (<->) – Half precision vector L2 distance
+* hnsw_params: dict | None (default: {"m": 4, "ef_construction": 10}) – HNSW indexing parameters.
+If not specified, the default values are used.
+* default_options: VectorStoreOptions | None (default: VectorStoreOptions(k=5, max_distance=None)) –
+Default search options, including:
+    - k: int = 5 – Number of nearest neighbors to retrieve.
+    - max_distance: float | None = None – Maximum distance threshold for retrieval.
+* metadata_store: MetadataStore | None – An optional metadata store for additional data management.
 
-initiate the pgVector store:
-        self._client = client
-        self._table_name = table_name
-        self._vector_size = vector_size
-        self._distance_method = distance_method
-        self._hnsw_params = hnsw_params
+### VectoreStoreEntry
+Entries stored in the database are represented by the VectorStoreEntry class, which consists of:
 
-        client: asyncpg.Pool,
-        table_name: str,
-        vector_size: int,
-        distance_method: str = "cosine",
-        hnsw_params: dict | None = None,
-        default_options: VectorStoreOptions | None = None,
-        metadata_store: MetadataStore | None = None,
-        if hnsw_params is None:
-            hnsw_params = {"m": 4, "ef_construction": 10}
-        super().__init__(default_options=default_options, metadata_store=metadata_store)
-class VectorStoreOptions(Options):
-    """
-    An object representing the options for the vector store.
-    """
+* id: str – A unique identifier for the entry.
+* key: str – A key associated with the vector.
+* vector: list[float] – The vector representation of the entry.
+* metadata: dict – Additional metadata associated with the entry.
 
-    k: int = 5
-    max_distance: float | None = None
-In the code we have methods:
+### pgVectorStore methods
+The PgVectorStore class provides the following methods for managing and querying vector data:
 
-store     async def store(self, entries: list[VectorStoreEntry]) -> None:
-        """
-        Stores entries in the pgVector collection.
+#### store
+store(entries: list[VectorStoreEntry]) -> None
+Stores a list of VectorStoreEntry objects in the database.
+Each entry consists of an ID, key, vector, and optional metadata.
+#### remove
+remove(ids: list[str]) -> None
+Removes entries from the database based on a list of entry IDs.
+#### list
+list(where: dict, limit: int | None = None, offset: int | None = None) -> list[VectorStoreEntry]
 
-        Args:
-            entries: The entries to store.
-        """
-retrieve def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) 
-       """
-        Retrieves entries from the pgVector collection.
+Retrieves a list of entries that match the specified metadata filter.
 
-        Args:
-            vector: The vector to query.
-            options: The options for querying the vector store.
+* where: dict – A dictionary specifying metadata conditions for filtering entries.
+* limit: int | None – The maximum number of entries to return (default is unlimited).
+* offset: int | None – The number of entries to skip before returning results (default is 0).
 
-        Returns:
-            The retrieved entries.
-        """
-list async def list(
-        self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
-    )
-        """
-        List entries from the vector store. The entries can be filtered, limited and offset.
+#### retrieve
+retrieve(vector: list[float], options: VectorStoreOptions) -> list[VectorStoreEntry]
 
-        Args:
-            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
-                Not specifying the key means no filtering.
-            limit: The maximum number of entries to return.
-            offset: The number of entries to skip.
+Finds entries similar to the provided query vector based on the configured distance metric.
 
-        Returns:
-            The entries.
-        """
-remove     async def remove(self, ids: list[str]) -> None:
-        """
-        Remove entries from the vector store.
-
-        Args:
-            ids: The list of entries' IDs to remove.
-        """
+* vector: list[float] – The query vector.
+* options: VectorStoreOptions – Query options, including:
+     - k – Number of nearest neighbors to return.
+     - max_distance – Maximum allowable distance for retrieval.
+   The retrieve method searches for the closest entries using the specified distance metric defined in the table
+   and applies the max_distance constraint from VectorStoreOptions.
