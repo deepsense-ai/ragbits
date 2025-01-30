@@ -40,4 +40,4 @@ $ ragbits prompts exec song_prompt:SongPrompt --payload '{"subject": "unicorns",
 ```
 
 ## Documentation
-* [Documentation of the `ragbit` CLI](https://ragbits.deepsense.ai/cli/main/)
+* [Documentation of the `ragbits` CLI](https://ragbits.deepsense.ai/cli/main/)
