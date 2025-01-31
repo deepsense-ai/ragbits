@@ -12,6 +12,7 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
+    "azure-storage-blob>=12.24.1",
 ]
 
 [tool.uv]
