@@ -55,6 +55,7 @@ jobs:
           ignore-unfixed: true
           exit-code: 0 # change if you want to fail build on vulnerabilities
           severity: "CRITICAL,HIGH,MEDIUM"
+          skip-dirs: .venv,.ruff_cache,.mypy_cache
           format: "table"
           output: "trivy-scanning-results.txt"
 
