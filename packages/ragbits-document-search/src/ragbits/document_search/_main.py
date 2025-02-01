@@ -10,6 +10,7 @@ from ragbits import document_search
 from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
 from ragbits.core.embeddings import Embeddings, EmbeddingType
+from ragbits.core.tools import Tool
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import NoDefaultConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
@@ -42,7 +43,7 @@ class SearchConfig(BaseModel):
 
 class DocumentSearchConfig(BaseModel):
     """
-    Schema for for the dict taken by DocumentSearch.from_config method.
+    Schema for the dict taken by DocumentSearch.from_config method.
     """
 
     embedder: ObjectContructionConfig
@@ -53,7 +54,7 @@ class DocumentSearchConfig(BaseModel):
     providers: dict[str, ObjectContructionConfig] = {}
 
 
-class DocumentSearch(WithConstructionConfig):
+class DocumentSearch(WithConstructionConfig, Tool):
     """
     A main entrypoint to the DocumentSearch functionality.
 
@@ -147,7 +148,7 @@ class DocumentSearch(WithConstructionConfig):
             if type_config := config.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
 
-            # Instantate the class with the default configuration for each component
+            # Instantiate the class with the default configuration for each component
             return cls.from_config(config)
 
         if factory_path_override:
@@ -161,7 +162,7 @@ class DocumentSearch(WithConstructionConfig):
             if default_config := defaults.default_instances_config.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
 
-            # Instantate the class with the default configuration for each component
+            # Instantiate the class with the default configuration for each component
             return cls.from_config(defaults.default_instances_config)
 
         raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
@@ -276,3 +277,17 @@ class DocumentSearch(WithConstructionConfig):
             warnings.warn(f"Image: {image_element.id} could not be embedded")
 
         await self.vector_store.store(entries)
+
+    @Tool.define(name="search", description="Search a knowledge database with a given query.")
+    async def tool_run_search(self, query: str) -> list[Element]:
+        """
+        Search a knowledge database with a given query.
+
+        Args:
+            query: The query to search for.
+
+        Returns:
+            A list of elements.
+        """
+        results = await self.search(query)
+        return list(results)
