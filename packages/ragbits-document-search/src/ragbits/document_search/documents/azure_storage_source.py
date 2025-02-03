@@ -51,9 +51,7 @@ class AzureBlobStorage(Source):
                 cls._blob_service = BlobServiceClient(account_url=account_url, credential=credential)
                 return cls._blob_service
             except Exception as e:
-                print(
-                    f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}"
-                )
+                print(f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}")
 
         # If DefaultAzureCredential fails or account_name is not provided, try the connection string
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -114,7 +112,7 @@ class AzureBlobStorage(Source):
         # if parsed.scheme != "azure":
         #     raise ValueError("Invalid scheme, expected 'azure://'")
         path_parts = parsed.path.lstrip("/").split("/", 1)
-        if len(path_parts) != 2: # noqa PLR2004
+        if len(path_parts) != 2:  # noqa PLR2004
             raise ValueError("URI must include both container and blob name (azure://container/blob)")
 
         container_name, blob_name = path_parts
