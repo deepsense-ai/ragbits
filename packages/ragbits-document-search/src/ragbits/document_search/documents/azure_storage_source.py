@@ -21,7 +21,7 @@ class AzureBlobStorage(Source):
     container_name: str
     blob_name: str
     _blob_service: BlobServiceClient | None = None
-    account_name: Optional[str] = None
+    account_name: str | None = None
 
     @property
     def id(self) -> str:
