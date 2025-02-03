@@ -1,7 +1,7 @@
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import ClassVar, Optional
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from azure.core.exceptions import ResourceNotFoundError
