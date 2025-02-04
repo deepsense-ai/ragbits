@@ -44,7 +44,7 @@ def add_more_numbers(a: int, b: int, c: int) -> int:
 
 You can enable the desired trace handler in your script using the following method:
 ```audit.set_trace_handlers(trace_handler_name)```
-Keep in mind that you can use more than one trace handling both methods in one script.
+Keep in mind that you can use more than one trace handling method simultaneously.
 
 ## CLI Trace Handler
 You can enable the CLI trace handler in one of the following ways:
