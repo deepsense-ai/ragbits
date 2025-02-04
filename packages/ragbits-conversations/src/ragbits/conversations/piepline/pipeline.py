@@ -1,12 +1,32 @@
 from collections.abc import Sequence
 
-from ragbits.conversations.piepline.plugins import ConversationPipelinePlugin
 from ragbits.conversations.piepline.state import ConversationPipelineResult, ConversationPipelineState
-from ragbits.conversations.piepline.state_to_chat import DefaultStateToChatConverter, StateToChatConverter
+from ragbits.conversations.piepline.state_to_chat import DefaultStateToChatStep
+from ragbits.conversations.piepline.steps import StrToStateStep
 from ragbits.core.llms.base import LLM
+from ragbits.core.pipelines.pipeline import Pipeline, Step
+from ragbits.core.prompt.prompt import ChatFormat
 
 
-class ConversationPiepline:
+class RunLLMStep(Step):
+    """
+    A plugin that runs the LLM on the conversation pipeline state.
+    """
+
+    def __init__(self, llm: LLM, state_to_chat: Step[ConversationPipelineState, ChatFormat]) -> None:
+        self.llm = llm
+        self.state_to_chat = state_to_chat
+
+    async def run(self, state: ConversationPipelineState) -> ConversationPipelineResult:
+        """
+        Processes the conversation pipeline state and returns the updated result.
+        """
+        chat = await self.state_to_chat.run(state)
+        stream = self.llm.generate_streaming(chat)
+        return ConversationPipelineResult(plugin_metadata=state.plugin_metadata, output_stream=stream)
+
+
+class ConversationPiepline(Step):
     """
     Class that runs a conversation pipeline with the given plugins
     """
@@ -14,21 +34,23 @@ class ConversationPiepline:
     def __init__(
         self,
         llm: LLM,
-        plugins: Sequence[ConversationPipelinePlugin] = [],
-        state_to_chat: StateToChatConverter | None = None,
+        preprocessors: Sequence[Step[ConversationPipelineState, ConversationPipelineState]] = [],
+        postprocessors: Sequence[Step[ConversationPipelineResult, ConversationPipelineResult]] = [],
+        state_to_chat: Step[ConversationPipelineState, ChatFormat] | None = None,
     ) -> None:
         self.llm = llm
-        self.plugins = plugins
-        self.state_to_chat = state_to_chat or DefaultStateToChatConverter()
+        self.preprocessors = preprocessors
+        self.state_to_chat = state_to_chat or DefaultStateToChatStep()
+        self.postprocessors = postprocessors
 
     async def _process_state(self, state: ConversationPipelineState) -> ConversationPipelineState:
-        for plugin in self.plugins:
-            state = await plugin.process_state(state)
+        for preprocess in self.preprocessors:
+            state = await preprocess.run(state)
         return state
 
     async def _process_result(self, result: ConversationPipelineResult) -> ConversationPipelineResult:
-        for plugin in reversed(self.plugins):
-            result = await plugin.process_result(result)
+        for postprocess in self.postprocessors:
+            result = await postprocess.run(result)
         return result
 
     async def run(
@@ -38,18 +60,11 @@ class ConversationPiepline:
         """
         Runs the conversation pipeline with the given input.
         """
-        # Create and the state to proccess it
-        state = ConversationPipelineState(user_question=input) if isinstance(input, str) else input
-        state = await self._process_state(state)
+        pipeline = Pipeline[str | ConversationPipelineState, ConversationPipelineResult](
+            StrToStateStep(),
+            *self.preprocessors,
+            RunLLMStep(self.llm, self.state_to_chat),
+            *self.postprocessors,
+        )
 
-        # Convert the state to chat conversation
-        chat = await self.state_to_chat.convert(state)
-
-        # Create output stream from the LLM
-        stream = self.llm.generate_streaming(chat)
-
-        # Create the result and apply plugins
-        result = ConversationPipelineResult(plugin_metadata=state.plugin_metadata, output_stream=stream)
-        result = await self._process_result(result)
-
-        return result
+        return await pipeline.run(input)

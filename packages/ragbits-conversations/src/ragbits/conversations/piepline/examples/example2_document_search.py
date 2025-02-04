@@ -3,7 +3,7 @@ import asyncio
 from rich import print as pprint
 
 from ragbits.conversations.piepline.pipeline import ConversationPiepline
-from ragbits.conversations.piepline.plugins import DocumentSearchRAGPlugin
+from ragbits.conversations.piepline.steps import DocumentSearchRAGStep
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -47,8 +47,8 @@ async def main() -> None:
 
     pipeline = ConversationPiepline(
         llm,
-        plugins=[
-            DocumentSearchRAGPlugin(document_search),
+        preprocessors=[
+            DocumentSearchRAGStep(document_search),
         ],
     )
     question = "What is my favorite fruit?"

@@ -1,6 +1,5 @@
-import abc
-
 from ragbits.conversations.piepline.state import ConversationPipelineState
+from ragbits.core.pipelines.pipeline import Step
 from ragbits.core.prompt.prompt import ChatFormat, Prompt
 
 
@@ -28,19 +27,7 @@ class DefaultConversationPrompt(Prompt[ConversationPipelineState]):
     """
 
 
-class StateToChatConverter(abc.ABC):
-    """
-    Abstract class for state to chat converters.
-    """
-
-    @abc.abstractmethod
-    async def convert(self, state: ConversationPipelineState) -> ChatFormat:
-        """
-        Function that takes the state of the conversation pipeline and returns the chat format for the LLM.
-        """
-
-
-class DefaultStateToChatConverter(StateToChatConverter):
+class DefaultStateToChatStep(Step):
     """
     Default implementation of the state to chat converter.
     """
@@ -48,7 +35,7 @@ class DefaultStateToChatConverter(StateToChatConverter):
     def __init__(self, prompt_cls: type[Prompt[ConversationPipelineState]] = DefaultConversationPrompt):
         self.prompt_cls = prompt_cls
 
-    async def convert(self, state: ConversationPipelineState) -> ChatFormat:
+    async def run(self, state: ConversationPipelineState) -> ChatFormat:
         """
         Converts the state to chat format.
         """

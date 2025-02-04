@@ -1,33 +1,27 @@
-import abc
 from collections.abc import AsyncGenerator
 
 from ragbits.conversations.history.compressors.base import ConversationHistoryCompressor
 from ragbits.conversations.history.compressors.llm import StandaloneMessageCompressor
 from ragbits.conversations.piepline.state import ConversationPipelineResult, ConversationPipelineState
 from ragbits.core.llms.base import LLM
+from ragbits.core.pipelines.pipeline import Step
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.document_search import DocumentSearch
 
 
-class ConversationPipelinePlugin(abc.ABC):
+class StrToStateStep(Step):
     """
-    Abstract class for conversation pipeline plugins.
+    A plugin that converts a string to a conversation pipeline state.
     """
 
-    async def process_state(self, state: ConversationPipelineState) -> ConversationPipelineState:  # noqa: PLR6301
+    async def run(self, input: str | ConversationPipelineState) -> ConversationPipelineState:  # noqa: PLR6301
         """
-        Processes the conversation pipeline state and returns the updated state.
+        Processes the input and returns the conversation pipeline state.
         """
-        return state
-
-    async def process_result(self, result: ConversationPipelineResult) -> ConversationPipelineResult:  # noqa: PLR6301
-        """
-        Processes the conversation pipeline result and returns the updated result.
-        """
-        return result
+        return ConversationPipelineState(user_question=input) if isinstance(input, str) else input
 
 
-class DocumentSearchRAGPlugin(ConversationPipelinePlugin):
+class DocumentSearchRAGStep(Step):
     """
     A plugin that searches for documents using RAG.
     """
@@ -35,7 +29,7 @@ class DocumentSearchRAGPlugin(ConversationPipelinePlugin):
     def __init__(self, document_search: DocumentSearch) -> None:
         self.document_search = document_search
 
-    async def process_state(self, state: ConversationPipelineState) -> ConversationPipelineState:
+    async def run(self, state: ConversationPipelineState) -> ConversationPipelineState:
         """
         Processes the conversation pipeline state and returns the updated state.
         """
@@ -48,7 +42,7 @@ class DocumentSearchRAGPlugin(ConversationPipelinePlugin):
         return state
 
 
-class AddHistoryPlugin(ConversationPipelinePlugin):
+class AddHistoryStep(Step):
     """
     A plugin that adds history to the conversation pipeline state.
     """
@@ -56,7 +50,7 @@ class AddHistoryPlugin(ConversationPipelinePlugin):
     def __init__(self, history: ChatFormat) -> None:
         self.history = history
 
-    async def process_state(self, state: ConversationPipelineState) -> ConversationPipelineState:
+    async def run(self, state: ConversationPipelineState) -> ConversationPipelineState:
         """
         Processes the conversation pipeline state and returns the updated state.
         """
@@ -64,7 +58,7 @@ class AddHistoryPlugin(ConversationPipelinePlugin):
         return state
 
 
-class HistoryCompressionPlugin(ConversationPipelinePlugin):
+class HistoryCompressionStep(Step):
     """
     A plugin that removes history from the conversation pipeline state
     and adds any nesseseaty context from history to the user question.
@@ -73,7 +67,7 @@ class HistoryCompressionPlugin(ConversationPipelinePlugin):
     def __init__(self, llm: LLM, compressor: ConversationHistoryCompressor | None = None) -> None:
         self.compressor = compressor or StandaloneMessageCompressor(llm)
 
-    async def process_state(self, state: ConversationPipelineState) -> ConversationPipelineState:
+    async def run(self, state: ConversationPipelineState) -> ConversationPipelineState:
         """
         Processes the conversation pipeline state and returns the updated state.
         """
@@ -86,12 +80,12 @@ class HistoryCompressionPlugin(ConversationPipelinePlugin):
         return state
 
 
-class CensorCreamPlugin(ConversationPipelinePlugin):
+class CensorCreamStep(Step):
     """
     A plugin that censors the word "cream" from the conversation pipeline state.
     """
 
-    async def process_result(self, result: ConversationPipelineResult) -> ConversationPipelineResult:
+    async def run(self, result: ConversationPipelineResult) -> ConversationPipelineResult:
         """
         Processes the conversation pipeline result and returns the updated result.
         """

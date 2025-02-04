@@ -3,11 +3,11 @@ import asyncio
 from rich import print as pprint
 
 from ragbits.conversations.piepline.pipeline import ConversationPiepline
-from ragbits.conversations.piepline.plugins import (
-    AddHistoryPlugin,
-    CensorCreamPlugin,
-    DocumentSearchRAGPlugin,
-    HistoryCompressionPlugin,
+from ragbits.conversations.piepline.steps import (
+    AddHistoryStep,
+    CensorCreamStep,
+    DocumentSearchRAGStep,
+    HistoryCompressionStep,
 )
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.llms.litellm import LiteLLM
@@ -58,11 +58,13 @@ async def main() -> None:
 
     pipeline = ConversationPiepline(
         llm,
-        plugins=[
-            DocumentSearchRAGPlugin(document_search),
-            AddHistoryPlugin(history),
-            HistoryCompressionPlugin(llm),
-            CensorCreamPlugin(),
+        preprocessors=[
+            DocumentSearchRAGStep(document_search),
+            AddHistoryStep(history),
+            HistoryCompressionStep(llm),
+        ],
+        postprocessors=[
+            CensorCreamStep(),
         ],
     )
     question = "What is my favorite fruit?"
