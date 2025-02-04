@@ -2,6 +2,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
+from itertools import chain
 from types import UnionType
 from typing import Optional, TypeVar, Union, get_args, get_origin
 

@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from itertools import chain
 
 from ragbits.core.audit import traceable
 from ragbits.document_search.documents.element import Element
@@ -30,4 +31,4 @@ class NoopReranker(Reranker[RerankerOptions]):
         Returns:
             The reranked elements.
         """
-        return elements
+        return list(chain.from_iterable(elements))

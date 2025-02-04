@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from itertools import chain
 
 from rerankers import Reranker as AnswerReranker
 
@@ -51,7 +52,7 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
             IndexError: Raised if docs is an empty List.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        documents = [element.text_representation for element in elements]
+        documents = [element.text_representation for element in list(chain.from_iterable(elements))]
 
         response = self.ranker.rank(
             query=query,

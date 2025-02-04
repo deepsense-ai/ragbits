@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from itertools import chain
 
 import litellm
 
@@ -44,7 +45,8 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
             The reranked elements.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        documents = [element.text_representation for element in elements]
+        element_list = list(chain.from_iterable(elements))
+        documents = [element.text_representation for element in element_list]
 
         response = await litellm.arerank(
             model=self.model,
@@ -54,4 +56,4 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
             max_chunks_per_doc=merged_options.max_chunks_per_doc,
         )
 
-        return [elements[result["index"]] for result in response.results]  # type: ignore
+        return [element_list[result["index"]] for result in response.results]  # type: ignore

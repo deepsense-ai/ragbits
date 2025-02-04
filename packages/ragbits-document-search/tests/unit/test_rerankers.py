@@ -69,11 +69,11 @@ async def test_litellm_reranker_rerank() -> None:
         DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
         DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
     ]
-    elements = [
+    elements = [[
         TextElement(content="Element 1", document_meta=documents[0]),
         TextElement(content="Element 2", document_meta=documents[1]),
         TextElement(content="Element 3", document_meta=documents[2]),
-    ]
+    ]]
     reranked_elements = [
         TextElement(content="Element 2", document_meta=documents[1]),
         TextElement(content="Element 3", document_meta=documents[2]),
