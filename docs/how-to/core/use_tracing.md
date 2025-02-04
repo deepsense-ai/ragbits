@@ -29,14 +29,14 @@ def add_numbers(a: int, b: int) -> int:
 from ragbits.core.audit import trace
 
 def add_more_numbers(a: int, b: int, c: int) -> int:
-    with trace(name='check a', first_number=a) as outputs:
+    with trace(name='check a', first_number=a) as outputs_a:
         if a % 2 == 0:
            result = a + 1 +c
-           outputs.first_result = result
-        with trace(name='check b', second_number=b) as outputs:
+           outputs_a.result = result
+        with trace(name='check b', second_number=b) as outputs_b:
             if b % 3 == 0:
                 result = a + 2 + c
-                outputs.second_result = result
+                outputs_b.result = result
 ```
    In the tracing tree, inputs are provided as keyword arguments when initializing the trace context,
    while outputs must be explicitly assigned within the traced block.
