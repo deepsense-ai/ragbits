@@ -29,7 +29,7 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
     @traceable
     async def rerank(
         self,
-        elements: Sequence[Element],
+        elements: Sequence[Sequence[Element]],
         query: str,
         options: RerankerOptions | None = None,
     ) -> Sequence[Element]:

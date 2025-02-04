@@ -188,8 +188,6 @@ class DocumentSearch(WithConstructionConfig):
                 options=VectorStoreOptions(**config.vector_store_kwargs),
             )
             elements.append([Element.from_vector_db_entry(entry) for entry in entries])
-            
-        print(elements)
 
         return await self.reranker.rerank(
             elements=elements,

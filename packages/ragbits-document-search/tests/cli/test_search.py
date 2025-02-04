@@ -1,12 +1,8 @@
-import json
 import sys
 from pathlib import Path
 
 from typer.testing import CliRunner
 
-from ragbits.cli import app as root_app
-from ragbits.cli import autoregister
-from ragbits.cli.state import CliState, cli_state
 from ragbits.document_search.cli import ds_app
 
 projects_dir = Path(__file__).parent.parent / "unit" / "testprojects"
@@ -28,6 +24,7 @@ def test_no_object():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(ds_app, ["search"])
     assert "You need to provide the document search instance to be used" in result.stderr
+
 
 """
 def test_search():
@@ -54,6 +51,7 @@ def test_search_limit():
     assert "Baz document" not in result.stdout
 """
 
+
 def test_search_columns():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
@@ -67,6 +65,7 @@ def test_search_columns():
     assert "page_number=" in result.stdout
     assert "coordinates=" in result.stdout
     assert "<DocumentType.TXT: 'txt'>" in result.stdout
+
 
 """
 def test_search_nested_columns():
