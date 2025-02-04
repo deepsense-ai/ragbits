@@ -102,23 +102,28 @@ class AzureBlobStorage(Source):
         """
         if "**" in path or "?" in path:
             raise ValueError(
-                "AzureSource only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
+                "AzureBlobStorage only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
             )
         parsed = urlparse(path)
-
         if not parsed.netloc or not parsed.path:
-            raise ValueError("Invalid Azure Blob Storage URI format")
+            raise ValueError("Invalid Azure Blob Storage URI format.")
 
-        # if parsed.scheme != "azure":
-        #     raise ValueError("Invalid scheme, expected 'azure://'")
+        if parsed.scheme == "https":
+            if not parsed.netloc.endswith("blob.core.windows.net"):
+                raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
+        else:
+            raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
+
         path_parts = parsed.path.lstrip("/").split("/", 1)
         if len(path_parts) != 2:  # noqa PLR2004
-            raise ValueError("URI must include both container and blob name (azure://container/blob)")
+            raise ValueError("URI must include both container and blob name.")
 
         container_name, blob_name = path_parts
         if "*" in blob_name:
             if not blob_name.endswith("*"):
-                raise ValueError(f"AzureSource only supports '*' at the end of path. Invalid pattern: {blob_name}")
+                raise ValueError(
+                    f"AzureBlobStorage only supports '*' at the end of path. Invalid pattern: {blob_name}."
+                )
             blob_name = blob_name[:-1]
             return await cls.list_sources(container=container_name, blob_name=blob_name)
 
