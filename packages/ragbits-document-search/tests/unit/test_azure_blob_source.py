@@ -61,9 +61,8 @@ async def test_from_uri_listing():
 @pytest.mark.asyncio
 async def test_get_blob_service_no_credentials():
     """Test that ValueError is raised when no credentials are set."""
-    with patch("os.getenv", return_value=None), \
-        pytest.raises(ValueError, match="No authentication method available"):
-            await AzureBlobStorage._get_blob_service()
+    with patch("os.getenv", return_value=None), pytest.raises(ValueError, match="No authentication method available"):
+        await AzureBlobStorage._get_blob_service()
 
 
 @pytest.mark.asyncio
