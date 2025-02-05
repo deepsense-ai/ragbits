@@ -40,9 +40,16 @@ class AzureBlobStorage(Source):
         2. Connection string (if authentication with DefaultAzureCredential fails).
 
         If neither method works, an error is raised.
-        """
-        # Try DefaultAzureCredential first if account_name is provided
 
+        Args:
+            account_name: The name of the Azure Blob Storage account.
+
+        Returns:
+            BlobServiceClient: The authenticated Blob Storage client.
+
+        Raises:
+            ValueError: If the authentication fails.
+        """
         account_name = account_name if account_name else os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
         if account_name:
             try:
@@ -53,7 +60,6 @@ class AzureBlobStorage(Source):
             except Exception as e:
                 print(f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}")
 
-        # If DefaultAzureCredential fails or account_name is not provided, try the connection string
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if connection_string:
             try:
@@ -71,6 +77,13 @@ class AzureBlobStorage(Source):
     async def fetch(self) -> Path:
         """
         Downloads the blob to a temporary local file and returns the file path.
+
+        Returns:
+            Path to the downloaded file.
+
+        Raises:
+            SourceNotFoundError: If the blob source is not available.
+            SourceConnectionError: If the blob service connection is not available.
         """
         container_local_dir = get_local_storage_dir() / self.container_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
@@ -99,6 +112,15 @@ class AzureBlobStorage(Source):
     async def from_uri(cls, path: str) -> Sequence["AzureBlobStorage"]:
         """
         Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorage.
+
+        Args:
+            path (str): The Azure Blob Storage URI.
+
+        Returns:
+            Sequence["AzureBlobStorage"]: The parsed Azure Blob Storage URI.
+
+        Raises:
+            ValueError: If the Azure Blob Storage URI is invalid.
         """
         if "**" in path or "?" in path:
             raise ValueError(
