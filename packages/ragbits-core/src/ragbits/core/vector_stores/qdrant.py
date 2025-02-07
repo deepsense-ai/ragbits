@@ -140,7 +140,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         return [
             VectorStoreEntry(
                 id=str(id),
-                key=document,  # type: ignore
+                key=document,
                 vector=vector,  # type: ignore
                 metadata=metadata,  # type: ignore
             )
@@ -168,7 +168,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
     @traceable
     async def list(  # type: ignore
         self,
-        where: Filter | None = None,  # type: ignore
+        where: Filter | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[VectorStoreEntry]:
