@@ -57,6 +57,48 @@ class QueryRephraserPrompt(Prompt[QueryRephraserInput, str]):
 ```
 You should only change the `system_prompt` as the `user_prompt` will contain a query passed to `DocumentSearch.search()` later.
 
+### Multi-query rephraser usage
+The `MultiQueryRephraser` generates multiple rephrasings for a single query, controlled by the `n` parameter.  You can use it to diversify the search queries sent to the document search module, which can help find better matches by exploring different phrasing variations.
+
+To use a multi-query rephraser within the retrieval pipeline, provide it during `DocumentSearch` construction:
+```python
+import asyncio
+from ragbits.core.llms.litellm import LiteLLM
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.retrieval.rephrasers.multi import MultiQueryRephraser
+from ragbits.document_search.retrieval.rephrasers.prompts import MultiQueryRephraserPrompt
+
+async def main():
+    document_search = DocumentSearch(
+        query_rephraser=MultiQueryRephraser(LiteLLM("gpt-3.5-turbo"), MultiQueryRephraserPrompt, n=2),
+        ...
+    )
+    results = await document_search.search("<query>")
+
+asyncio.run(main())
+```
+
+The next example will show how to use the same multi-query rephraser as an independent component:
+
+```python
+import asyncio
+from ragbits.document_search.retrieval.rephrasers.multi import MultiQueryRephraser
+from ragbits.core.llms.litellm import LiteLLM
+
+async def main():
+    rephraser = MultiQueryRephraser(LiteLLM("gpt-3.5-turbo"), n=2)
+    rephrased = await rephraser.rephrase("What time is it?")
+    print(rephrased)
+
+asyncio.run(main())
+```
+
+The console should print multiple variations:
+
+```python
+["What time is it?", "Can you tell me the time?", "What's the current time?"]
+```
+
 ## Custom rephraser
 It is possible to create a custom rephraser by extending the base class:
 ```python

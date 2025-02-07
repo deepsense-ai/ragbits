@@ -56,6 +56,7 @@ To use the defined prompt with a Large Language Model in Python, you need to cre
 ```python
 from ragbits.core.llms.litellm import LiteLLM
 
+prompt = SongPrompt()
 llm = LiteLLM("gpt-4")
 response = await llm.generate(prompt)
 print(f"Generated song: {response}")

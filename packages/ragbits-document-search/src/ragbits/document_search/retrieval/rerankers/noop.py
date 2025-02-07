@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from itertools import chain
 
 from ragbits.core.audit import traceable
 from ragbits.document_search.documents.element import Element
@@ -15,7 +16,7 @@ class NoopReranker(Reranker[RerankerOptions]):
     @traceable
     async def rerank(  # noqa: PLR6301
         self,
-        elements: Sequence[Element],
+        elements: Sequence[Sequence[Element]],
         query: str,
         options: RerankerOptions | None = None,
     ) -> Sequence[Element]:
@@ -30,4 +31,6 @@ class NoopReranker(Reranker[RerankerOptions]):
         Returns:
             The reranked elements.
         """
-        return elements
+        element_list = [*{element.key: element for element in chain.from_iterable(elements)}.values()]
+
+        return element_list

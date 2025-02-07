@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add MultiQueryRetrieval (#311).
+
 ## 0.8.0 (2025-01-29)
 
 ### Added
