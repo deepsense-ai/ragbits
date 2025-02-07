@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.metadata_stores.exceptions import MetadataNotFoundError
@@ -24,7 +26,7 @@ class InMemoryMetadataStore(MetadataStore):
             metadatas: list of dicts with metadata.
         """
         for _id, metadata in zip(ids, metadatas, strict=True):
-            self._storage[_id] = metadata
+            self._storage[_id] = deepcopy(metadata)
 
     @traceable
     async def get(self, ids: list[str]) -> list[dict]:
@@ -41,6 +43,6 @@ class InMemoryMetadataStore(MetadataStore):
             MetadataNotFoundError: If the metadata is not found.
         """
         try:
-            return [self._storage[_id] for _id in ids]
+            return [deepcopy(self._storage[_id]) for _id in ids]
         except KeyError as exc:
             raise MetadataNotFoundError(*exc.args) from exc
