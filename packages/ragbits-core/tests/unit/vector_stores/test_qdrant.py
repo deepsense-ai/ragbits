@@ -43,9 +43,8 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
         vectors=[[0.1, 0.2, 0.3]],
         payload=[
             {
-                "document": "test_key",
-                "metadata": '{"content": "test content", '
-                '"document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
+                "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"},
+                "content": "test content",
             }
         ],
         ids=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"],
@@ -63,9 +62,12 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                 score=0.9,
                 payload={
                     "document": "test_key 1",
-                    "metadata": '{"content": "test content 1",'
-                    '"document": {"title": "test title 1", '
-                    '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
+                    "content": "test content 1",
+                    "document_meta": {
+                        "title": "test title 1",
+                        "source": {"path": "/test/path-1"},
+                        "document_type": "txt",
+                    },
                 },
             ),
             models.ScoredPoint(
@@ -75,9 +77,12 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                 score=0.9,
                 payload={
                     "document": "test_key 2",
-                    "metadata": '{"content": "test content 2", '
-                    '"document": {"title": "test title 2", '
-                    '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
+                    "content": "test content 2",
+                    "document_meta": {
+                        "title": "test title 2",
+                        "source": {"path": "/test/path-2"},
+                        "document_type": "txt",
+                    },
                 },
             ),
         ]
@@ -93,7 +98,7 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
     assert len(entries) == len(results)
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document"]["title"] == result["title"]
+        assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.vector == result["vector"]
 
 
@@ -122,9 +127,12 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 score=0.9,
                 payload={
                     "document": "test_key 1",
-                    "metadata": '{"content": "test content 1",'
-                    '"document": {"title": "test title 1", '
-                    '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
+                    "content": "test content 1",
+                    "document_meta": {
+                        "title": "test title 1",
+                        "source": {"path": "/test/path-1"},
+                        "document_type": "txt",
+                    },
                 },
             ),
             models.ScoredPoint(
@@ -134,9 +142,12 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 score=0.9,
                 payload={
                     "document": "test_key 2",
-                    "metadata": '{"content": "test content 2", '
-                    '"document": {"title": "test title 2", '
-                    '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
+                    "content": "test content 2",
+                    "document_meta": {
+                        "title": "test title 2",
+                        "source": {"path": "/test/path-2"},
+                        "document_type": "txt",
+                    },
                 },
             ),
         ]
@@ -152,5 +163,5 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
     assert len(entries) == len(results)
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document"]["title"] == result["title"]
+        assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.vector == result["vector"]
