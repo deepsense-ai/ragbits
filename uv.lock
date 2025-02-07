@@ -4118,6 +4118,10 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+azure = [
+    { name = "azure-identity" },
+    { name = "azure-storage-blob" },
+]
 distributed = [
     { name = "ray" },
 ]
@@ -4140,6 +4144,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0" },
+    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = "~=3.0.1" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "pdf2image", specifier = ">=1.17.0" },
@@ -4248,8 +4254,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "asyncpg" },
-    { name = "azure-identity" },
-    { name = "azure-storage-blob" },
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "lab", "local", "otel", "qdrant"] },
@@ -4281,8 +4285,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
-    { name = "azure-identity", specifier = ">=1.19.0" },
-    { name = "azure-storage-blob", specifier = ">=12.24.1" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "local", "otel", "qdrant"], editable = "packages/ragbits-core" },

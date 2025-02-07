@@ -11,9 +11,7 @@ dependencies = [
     "ragbits-document-search[gcs,huggingface,distributed]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
-    "ragbits-conversations",
-    "azure-storage-blob>=12.24.1",
-    "azure-identity>=1.19.0",
+    "ragbits-conversations"
 ]
 
 [tool.uv]
