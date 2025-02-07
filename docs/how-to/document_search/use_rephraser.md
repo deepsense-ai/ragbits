@@ -96,7 +96,7 @@ asyncio.run(main())
 The console should print multiple variations:
 
 ```python
-['What time is it?', 'Can you tell me the time?', 'What's the current time?']
+["What time is it?", "Can you tell me the time?", "What's the current time?"]
 ```
 
 ## Custom rephraser
