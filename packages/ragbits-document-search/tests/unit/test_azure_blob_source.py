@@ -1,8 +1,24 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from azure.identity import DefaultAzureCredential
 
 from ragbits.document_search.documents.azure_storage_source import AzureBlobStorage
+
+
+def test_set_account_name(monkeypatch: MonkeyPatch):
+    """Tests the Value Error when no account name is provided."""
+    monkeypatch.delenv("AZURE_STORAGE_ACCOUNT_NAME", raising=False)
+    with pytest.raises(ValueError, match="Account name must be provided"):
+        AzureBlobStorage(container_name="test_container", blob_name="test_blob")
+
+
+def test_id():
+    """Tests source id pattern"""
+    expected_id = "azure://AA/CC/BB"
+    storage = AzureBlobStorage(container_name="CC", blob_name="BB", account_name="AA")
+    assert expected_id == storage.id
 
 
 @pytest.mark.asyncio
@@ -41,7 +57,7 @@ async def test_from_uri_parsing_error():
 
 @pytest.mark.asyncio
 async def test_from_uri():
-    """Test creatin an Azure Blob Storage from URI."""
+    """Test creating an Azure Blob Storage from URI."""
     good_path = "https://account_name.blob.core.windows.net/container_name/blob_name"
     sources = await AzureBlobStorage.from_uri(good_path)
     assert len(sources) == 1
@@ -55,24 +71,31 @@ async def test_from_uri_listing():
     good_path_to_folder = "https://account_name.blob.core.windows.net/container_name/blob_name*"
     with patch.object(AzureBlobStorage, "list_sources", new_callable=AsyncMock) as mock_list_sources:
         await AzureBlobStorage.from_uri(good_path_to_folder)
-        mock_list_sources.assert_called_once_with(container="container_name", blob_name="blob_name")
+        mock_list_sources.assert_called_once_with(
+            container="container_name", blob_name="blob_name", account_name="account_name"
+        )
 
 
 @pytest.mark.asyncio
 async def test_get_blob_service_no_credentials():
     """Test that ValueError is raised when no credentials are set."""
-    with patch("os.getenv", return_value=None), pytest.raises(ValueError, match="No authentication method available"):
-        await AzureBlobStorage._get_blob_service()
+    with (
+        patch.object(DefaultAzureCredential, "__init__", side_effect=Exception("Authentication failed")),
+        patch("os.getenv", return_value=None),
+        pytest.raises(ValueError, match="No authentication method available"),
+    ):
+        await AzureBlobStorage._get_blob_service(account_name="account_name")
 
 
 @pytest.mark.asyncio
 async def test_get_blob_service_with_connection_string():
     """Test that connection string is used when AZURE_STORAGE_ACCOUNT_NAME is not set."""
     with (
-        patch("os.getenv", side_effect=[None, "mock_connection_string"]),
+        patch.object(DefaultAzureCredential, "__init__", side_effect=Exception("Authentication failed")),
+        patch("os.getenv", return_value="mock_connection_string"),
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,
     ):
-        await AzureBlobStorage._get_blob_service()
+        await AzureBlobStorage._get_blob_service(account_name="account_name")
         mock_from_connection_string.assert_called_once_with(conn_str="mock_connection_string")
 
 
@@ -83,7 +106,6 @@ async def test_get_blob_service_with_default_credentials():
     account_url = f"https://{account_name}.blob.core.windows.net"
 
     with (
-        patch("os.getenv", return_value=account_name),
         patch("ragbits.document_search.documents.azure_storage_source.DefaultAzureCredential") as mock_credential,
         patch("ragbits.document_search.documents.azure_storage_source.BlobServiceClient") as mock_blob_client,
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,

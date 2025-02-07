@@ -7,6 +7,8 @@ from urllib.parse import urlparse
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
+from pydantic import model_validator
+from typing_extensions import Self
 
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.document_search.documents.sources import Source, get_local_storage_dir
@@ -18,20 +20,33 @@ class AzureBlobStorage(Source):
     """
 
     protocol: ClassVar[str] = "azure"
+    account_name: str | None = None
     container_name: str
     blob_name: str
     _blob_service: BlobServiceClient | None = None
-    account_name: str | None = None
+
+    @model_validator(mode="after")
+    def set_account_name(self) -> Self:
+        """
+        Validates that the account name is set.
+        """
+        self.account_name = self.account_name or os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
+        if not self.account_name:
+            raise ValueError(
+                "Account name must be provided either as an argument or through the "
+                "AZURE_STORAGE_ACCOUNT_NAME environment variable."
+            )
+        return self
 
     @property
     def id(self) -> str:
         """
         Get the source ID, which is the full blob URL.
         """
-        return f"{self.container_name}/{self.blob_name}"
+        return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @classmethod
-    async def _get_blob_service(cls, account_name: str | None = None) -> BlobServiceClient:
+    async def _get_blob_service(cls, account_name: str) -> BlobServiceClient:
         """
         Returns an authenticated BlobServiceClient instance.
 
@@ -50,15 +65,13 @@ class AzureBlobStorage(Source):
         Raises:
             ValueError: If the authentication fails.
         """
-        account_name = account_name if account_name else os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
-        if account_name:
-            try:
-                credential = DefaultAzureCredential()
-                account_url = f"https://{account_name}.blob.core.windows.net"
-                cls._blob_service = BlobServiceClient(account_url=account_url, credential=credential)
-                return cls._blob_service
-            except Exception as e:
-                print(f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}")
+        try:
+            credential = DefaultAzureCredential()
+            account_url = f"https://{account_name}.blob.core.windows.net"
+            cls._blob_service = BlobServiceClient(account_url=account_url, credential=credential)
+            return cls._blob_service
+        except Exception as e:
+            print(f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}")
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if connection_string:
@@ -88,6 +101,11 @@ class AzureBlobStorage(Source):
         container_local_dir = get_local_storage_dir() / self.container_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / self.blob_name
+        if self.account_name is None:
+            raise ValueError(
+                "Account name must be provided either as an argument or through the "
+                "AZURE_STORAGE_ACCOUNT_NAME environment variable."
+            )
         try:
             blob_service = await self._get_blob_service(account_name=self.account_name)
             blob_client = blob_service.get_blob_client(container=self.container_name, blob=self.blob_name)
@@ -130,9 +148,11 @@ class AzureBlobStorage(Source):
         if not parsed.netloc or not parsed.path:
             raise ValueError("Invalid Azure Blob Storage URI format.")
 
-        if parsed.scheme == "https":
-            if not parsed.netloc.endswith("blob.core.windows.net"):
-                raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
+        if parsed.scheme != "https":
+            raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
+
+        if parsed.netloc.endswith("blob.core.windows.net"):
+            account_name = parsed.netloc.replace(".blob.core.windows.net", "")
         else:
             raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
 
@@ -147,16 +167,17 @@ class AzureBlobStorage(Source):
                     f"AzureBlobStorage only supports '*' at the end of path. Invalid pattern: {blob_name}."
                 )
             blob_name = blob_name[:-1]
-            return await cls.list_sources(container=container_name, blob_name=blob_name)
+            return await cls.list_sources(container=container_name, blob_name=blob_name, account_name=account_name)
 
         # Return a single-element list (consistent with other sources)
-        return [cls(container_name=container_name, blob_name=blob_name)]
+        return [cls(account_name=account_name, container_name=container_name, blob_name=blob_name)]
 
     @classmethod
-    async def list_sources(cls, container: str, blob_name: str = "") -> list["AzureBlobStorage"]:
+    async def list_sources(cls, account_name: str, container: str, blob_name: str = "") -> list["AzureBlobStorage"]:
         """List all sources in the given Azure container, matching the prefix.
 
         Args:
+            account_name (str): The Azure storage account name.
             container: The Azure container name.
             blob_name: The prefix to match.
 
@@ -167,10 +188,13 @@ class AzureBlobStorage(Source):
             ImportError: If the required 'azure-storage-blob' package is not installed
             SourceConnectionError: If there's an error connecting to Azure
         """
-        blob_service = await cls._get_blob_service()
+        blob_service = await cls._get_blob_service(account_name=account_name)
         try:
             container_client = blob_service.get_container_client(container)
             blobs = container_client.list_blobs(name_starts_with=blob_name)
-            return [AzureBlobStorage(container_name=container, blob_name=blob.name) for blob in blobs]
+            return [
+                AzureBlobStorage(container_name=container, blob_name=blob.name, account_name=account_name)
+                for blob in blobs
+            ]
         except Exception as e:
             raise SourceConnectionError() from e
