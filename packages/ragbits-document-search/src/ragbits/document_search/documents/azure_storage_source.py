@@ -165,7 +165,7 @@ class AzureBlobStorage(Source):
 
         container_name, blob_name = path_parts
         if "*" in blob_name:
-            if not blob_name.endswith("*"):
+            if not blob_name.endswith("*") or "*" in blob_name[:-1]:
                 raise ValueError(
                     f"AzureBlobStorage only supports '*' at the end of path. Invalid pattern: {blob_name}."
                 )
