@@ -37,6 +37,8 @@ dependencies = [
     "typer~=0.12.5",
     "tomli~=2.0.2",
     "litellm~=1.55.0",
+    "typing_utils>=0.1.0",
+    "python-generics>=0.2.3",
 ]
 
 [project.urls]

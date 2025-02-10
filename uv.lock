@@ -3755,6 +3755,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-generics"
+version = "0.2.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/fd/63a19568c103cfb8fa8c193f162ba5d5e50fc0ac98d8ca8925fe02536a0c/python_generics-0.2.3.tar.gz", hash = "sha256:33c9c48c5d86df3bfc4a319e27cb7bcf3fdce1d28d89bdd3f7a15fe02d31a01e", size = 12828 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/38/1e31c8d849820de23d2ed7aa5e65902264fff5fe6547d8589194ad94b55f/python_generics-0.2.3-py3-none-any.whl", hash = "sha256:7dd0bdcd33eb874954eb580562bd6f2adb7f4c1d79d644a010efe59bb3fe186f", size = 7321 },
+]
+
+[[package]]
 name = "python-iso639"
 version = "2024.4.27"
 source = { registry = "https://pypi.org/simple" }
@@ -3958,8 +3967,10 @@ dependencies = [
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
+    { name = "python-generics" },
     { name = "tomli" },
     { name = "typer" },
+    { name = "typing-utils" },
 ]
 
 [package.optional-dependencies]
@@ -4002,12 +4013,14 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'local'", specifier = "~=1.26.0" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = "~=1.27.0" },
     { name = "pydantic", specifier = ">=2.9.1" },
+    { name = "python-generics", specifier = ">=0.2.3" },
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = "~=6.0.2" },
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = "~=1.12.1" },
     { name = "tomli", specifier = "~=2.0.2" },
     { name = "torch", marker = "extra == 'local'", specifier = "~=2.2.1" },
     { name = "transformers", marker = "extra == 'local'", specifier = "~=4.44.2" },
     { name = "typer", specifier = "~=0.12.5" },
+    { name = "typing-utils", specifier = ">=0.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -5295,6 +5308,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/dc/74/1789779d91f1961fa9438e9a8710cdae6bd138c80d7303996933d117264a/typing_inspect-0.9.0.tar.gz", hash = "sha256:b23fc42ff6f6ef6954e4852c1fb512cdd18dbea03134f91f856a95ccc9461f78", size = 13825 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/65/f3/107a22063bf27bdccf2024833d3445f4eea42b2e598abfbd46f6a63b6cb0/typing_inspect-0.9.0-py3-none-any.whl", hash = "sha256:9ee6fc59062311ef8547596ab6b955e1b8aa46242d854bfc78f4f6b0eff35f9f", size = 8827 },
+]
+
+[[package]]
+name = "typing-utils"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/9f/ddc5ed9182f49d6ca5d87a7629dea81ca076db54f30f78d057a081f5ec50/typing_utils-0.1.0.tar.gz", hash = "sha256:8ff6b6705414b82575ad5ae0925ac414a9650fb8c5718289b1327dec61252f65", size = 9576 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/66/6e/99fe160a19676051070aa1da4ca44aac2a213e79ba1a492b5f03facf6447/typing_utils-0.1.0-py3-none-any.whl", hash = "sha256:6bd26f3d38a5dd526ca3a59f0a451ccb59bcee9dc829c872dd6c0aae4ec8bbef", size = 10161 },
 ]
 
 [[package]]
