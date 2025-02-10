@@ -48,7 +48,6 @@ async def test_from_uri_parsing_error():
             "https://account_name.blob.core.windows.net/container_name/blob_name_*.json",
             "AzureBlobStorage only supports '*' at the end of path. Invalid pattern: blob_name_*.json.",
         ),
-
         (
             "https://account_name.blob.core.windows.net/container_name/blob*_name_*.json",
             "AzureBlobStorage only supports '*' at the end of path. Invalid pattern: blob*_name_*.json.",
