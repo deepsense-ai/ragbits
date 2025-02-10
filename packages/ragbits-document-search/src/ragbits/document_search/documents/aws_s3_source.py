@@ -1,14 +1,15 @@
+from collections.abc import Sequence
+from pathlib import Path
 from typing import ClassVar
-from pydantic import BaseModel, PrivateAttr
-from azure.core.exceptions import ResourceNotFoundError
-from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
-from ragbits.document_search.documents.sources import Source, get_local_storage_dir
+from urllib.parse import urlparse
+
 import boto3
 from botocore.client import BaseClient
-import botocore
-from pathlib import Path
-from typing import Sequence
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+
+from ragbits.document_search.documents.sources import Source, get_local_storage_dir
+
+
 class AWSSource(Source):
     """
     An object representing an AWS S3 Storage dataset source.
@@ -22,22 +23,26 @@ class AWSSource(Source):
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is the full blob URL.
+        Get the source ID, which is the full URL to the file in s3.
         """
         return f"s3://{self.bucket_name}/{self.key}"
-
 
     @classmethod
     def _set_client(cls, bucket_name: str) -> None:
         """
-       Set the boto3 S3 client if it hasn't been initialized yet.
-        """
+        Set the boto3 S3 client if it hasn't been initialized yet.
 
+        Arguments:
+            bucket_name: The name of the S3 bucket to use.
+
+        Raises:
+             NoCredentialsError: If no credentials are available.
+             PartialCredentialsError: If credentials are incomplete.
+             Exception: If another error occurs.
+        """
         if cls._s3_client is None:
             try:
                 cls._s3_client = boto3.client("s3")
-
-
                 cls._s3_client.head_bucket(Bucket=bucket_name)  # This triggers a credentials check
             except (NoCredentialsError, PartialCredentialsError) as e:
                 raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
@@ -45,194 +50,129 @@ class AWSSource(Source):
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
 
-
-
-
-
-
-
-# def _download_file(self, s3_key: str, local_path: str) -> None:
-#     """
-#     Download a single file from S3.
-#
-#     :param s3_key: The key (path) of the file in the S3 bucket.
-#     :param local_path: The local path where the file will be saved.
-#     """
-#     if self._s3_client is None:
-#         self._set_client()
-#
-#     if self._s3_client:
-#         try:
-#             # Ensure the directory exists
-#             os.makedirs(os.path.dirname(local_path), exist_ok=True)
-#
-#             # Download the file
-#             self._s3_client.download_file(self.bucket_name, s3_key, local_path)
-#             print(f"Downloaded: s3://{self.bucket_name}/{s3_key} -> {local_path}")
-#         except Exception as e:
-#             print(f"Error downloading file {s3_key}: {e}")
-#
-#     def _list_files(self, prefix: str) -> List[str]:
-#         """
-#         List all files in the S3 bucket under the given prefix.
-#
-#         :param prefix: The prefix (path) in the S3 bucket to list files from.
-#         :return: List of file keys (paths) in the specified S3 prefix.
-#         """
-#         if self._s3_client is None:
-#             self._set_client()
-#
-#         file_keys = []
-#         if self._s3_client:
-#             try:
-#                 # Paginate through all objects in the bucket under the given prefix
-#                 paginator = self._s3_client.get_paginator("list_objects_v2")
-#                 for page in paginator.paginate(Bucket=self.bucket_name, Prefix=prefix):
-#                     if "Contents" in page:
-#                         for obj in page["Contents"]:
-#                             file_keys.append(obj["Key"])
-#             except Exception as e:
-#                 print(f"Error listing files: {e}")
-#
-#         return file_keys
-#
-#     def fetch(self, local_dir: str = "./downloads") -> str:
-#         """
-#         Download all files in the given bucket_name and key.
-#         If the key is a file, download the file.
-#         If the key is a directory, download all files recursively.
-#
-#         :param local_dir: The local directory where files will be downloaded.
-#         :return: Path to the downloaded file or directory.
-#         """
-#         if self._s3_client is None:
-#             self._set_client()
-#
-#         if self._s3_client is None:
-#             raise RuntimeError("S3 client is not initialized.")
-#
-#         # Normalize the key (remove leading/trailing slashes)
-#         normalized_key = self.key.strip("/")
-#
-#         # Check if the key points to a file or directory
-#         try:
-#             # Try to fetch the object metadata
-#             self._s3_client.head_object(Bucket=self.bucket_name, Key=normalized_key)
-#             is_file = True
-#         except self._s3_client.exceptions.ClientError:
-#             # If the object doesn't exist, assume it's a directory
-#             is_file = False
-#
-#         if is_file:
-#             # Key points to a file
-#             local_path = os.path.join(local_dir, os.path.basename(normalized_key))
-#             self._download_file(normalized_key, local_path)
-#             return local_path
-#         else:
-#             # Key points to a directory
-#             files = self._list_files(normalized_key)
-#             if not files:
-#                 print(f"No files found under s3://{self.bucket_name}/{normalized_key}/")
-#                 return local_dir
-#
-#             for file_key in files:
-#                 # Construct the local path for each file
-#                 relative_path = os.path.relpath(file_key, normalized_key)
-#                 local_path = os.path.join(local_dir, relative_path)
-#                 self._download_file(file_key, local_path)
-#
-#             return local_dir
-#
-    @classmethod
-    async def from_uri(cls, path: str) -> Sequence["AWSSource"]:
-        pass
-
     async def fetch(self) -> Path:
-        pass
-
-#         """
-#         Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorage.
-#
-#         Args:
-#             path (str): The Azure Blob Storage URI.
-#
-#         Returns:
-#             Sequence["AzureBlobStorage"]: The parsed Azure Blob Storage URI.
-#
-#         Raises:
-#             ValueError: If the Azure Blob Storage URI is invalid.
-#         """
-#         pass
-#         # if "**" in path or "?" in path:
-#         #     raise ValueError(
-#         #         "AzureBlobStorage only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
-#         #     )
-#         # parsed = urlparse(path)
-#         # if not parsed.netloc or not parsed.path:
-#         #     raise ValueError("Invalid Azure Blob Storage URI format.")
-#         #
-#         # if parsed.scheme == "https":
-#         #     if not parsed.netloc.endswith("blob.core.windows.net"):
-#         #         raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
-#         # else:
-#         #     raise ValueError("Invalid scheme, expected 'https://account_name.blob.core.windows.net'.")
-#         #
-#         # path_parts = parsed.path.lstrip("/").split("/", 1)
-#         # if len(path_parts) != 2:  # noqa PLR2004
-#         #     raise ValueError("URI must include both container and blob name.")
-#         #
-#         # container_name, blob_name = path_parts
-#         # if "*" in blob_name:
-#         #     if not blob_name.endswith("*"):
-#         #         raise ValueError(
-#         #             f"AzureBlobStorage only supports '*' at the end of path. Invalid pattern: {blob_name}."
-#         #         )
-#         #     blob_name = blob_name[:-1]
-#         #     return await cls.list_sources(container=container_name, blob_name=blob_name)
-#         #
-#         # # Return a single-element list (consistent with other sources)
-#         # return [cls(container_name=container_name, blob_name=blob_name)]
-#
-#     @classmethod
-#     async def list_sources(cls, container: str, blob_name: str = "") -> list["AWSSource"]:
-#         pass
-#
-#
-    def download(self, destination: Path) -> Path:
         """
-        Download an S3 object or an entire prefix (folder) to the specified destination.
-
-        Args:
-            destination: The local file or directory where the object(s) will be saved.
+        Download a file in the given bucket_name with the given key.
 
         Returns:
-            The path to the downloaded file or directory.
+            Path: The local path to the downloaded file.
+
+        Raises:
+            ClientError: If the file doesn't exist or credentials are incomplete.
+            NoCredentialsError: If no credentials are available.
         """
-        if self.s3_client is None:
-            raise RuntimeError("S3 client is not initialized. Call _set_client() first.")
+        if self._s3_client is None:
+            self._set_client(self.bucket_name)
 
-        # Check if the key is a folder (prefix)
-        response = self.s3_client.list_objects_v2(Bucket=self.bucket_name, Prefix=self.key)
-        objects = response.get("Contents", [])
+        if self._s3_client is None:
+            raise RuntimeError("S3 client is not initialized.")
 
-        if not objects:
-            raise FileNotFoundError(f"No objects found for key '{self.key}' in bucket '{self.bucket_name}'")
+        local_dir = get_local_storage_dir()
+        container_local_dir = local_dir / self.bucket_name
+        container_local_dir.mkdir(parents=True, exist_ok=True)
+        normalized_key = self.key.replace("/", "_")
+        path = container_local_dir / normalized_key
 
-        if len(objects) == 1 and objects[0]["Key"] == self.key:
-            # Single file case
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            self.s3_client.download_file(self.bucket_name, self.key, str(destination))
-            return destination
+        try:
+            self._s3_client.download_file(self.bucket_name, self.key, path)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                print(f"The object does not exist: {self.key}")
+            elif e.response["Error"]["Code"] == "403":
+                print(f"Access denied. No permission to download: {self.key}")
+            else:
+                print(f"S3 Client Error: {e}")
+        except NoCredentialsError as e:
+            print("NoCredentialsError", e)
 
-        # Folder case - ensure destination is a directory
-        destination.mkdir(parents=True, exist_ok=True)
+        return path
 
-        for obj in objects:
-            obj_key = obj["Key"]
-            relative_path = obj_key[len(self.key):].lstrip("/")  # Remove prefix
-            local_file_path = destination / relative_path
+    @classmethod
+    async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["AWSSource"]:
+        """
+        List all files under the given bucket name and with the given prefix.
 
-            local_file_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure subdirectory exists
-            self.s3_client.download_file(self.bucket_name, obj_key, str(local_file_path))
+        Arguments:
+            bucket_name: The name of the S3 bucket to use.
+            prefix: The path to the files and prefix to look for.
 
-        return destination
+        Returns:
+            Sequence: The Sequence of AWS S3 sources.
+
+        Raises:
+            ClientError: If the source doesn't exist.
+            NoCredentialsError: If no credentials are available.
+            PartialCredentialsError: If credentials are incomplete.
+        """
+        cls._set_client(bucket_name)
+        if cls._s3_client is None:
+            raise RuntimeError("S3 client is not initialized.")
+
+        try:
+            aws_sources_list = []
+            paginator = cls._s3_client.get_paginator("list_objects_v2")
+            for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
+                for obj in page.get("Contents", []):
+                    key = obj["Key"]
+                    aws_sources_list.append(cls(bucket_name=bucket_name, key=key))
+            return aws_sources_list
+        except (NoCredentialsError, PartialCredentialsError) as e:
+            raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
+        except ClientError as e:
+            raise RuntimeError(f"Failed to list files in bucket {bucket_name}: {e}") from e
+
+    @classmethod
+    async def from_uri(cls, path: str) -> Sequence["AWSSource"]:
+        """
+        Create AWSSource instances from a URI path.
+        The supported paths formats are:
+        s3://<bucket-name>/<key>
+        https://<bucket-name>s3.<region>.amazonaws.com/<key>
+        https://s3.<region>.amazonaws.com/<bucket-name>/<key>
+        Pattern matching is supported only with '*'.
+
+        Args:
+            path: The URI path.
+
+        Returns:
+            A sequence containing a AWSSource instances.
+
+        Raises:
+            ValueError: If the path has invalid format
+
+        """
+        if "**" in path or "?" in path:
+            raise ValueError(
+                "AWSSource only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
+            )
+
+        parsed = urlparse(path)
+        if not parsed.netloc or not parsed.path:
+            raise ValueError("Invalid AWS Source URI format.")
+        if parsed.scheme not in {"s3", "https"}:
+            raise ValueError("Invalid AWS Source URI format.")
+
+        if parsed.scheme == "s3":
+            bucket_name = parsed.netloc
+            path_to_file = parsed.path.lstrip("/")
+        elif parsed.scheme == "https":
+            if not parsed.netloc.endswith("amazonaws.com"):
+                raise ValueError("Invalid AWS Source URI format.")
+            elif parsed.netloc.startswith("s3"):
+                parts = parsed.path.split("/")
+                bucket_name = parts[0]
+                path_to_file = "/".join(parts[2:])
+            else:
+                bucket_name = parsed.netloc.split(".")[0]
+                path_to_file = parsed.path.lstrip("/")
+
+        else:
+            raise ValueError("Invalid AWS Source URI format.")
+
+        if "*" in path_to_file:
+            if not path_to_file.endswith("*"):
+                raise ValueError(f"AWS Source only supports '*' at the end of path. Invalid pattern: {[path_to_file]}.")
+            path_to_file = path_to_file[:-1]
+            return await cls.list_sources(bucket_name=bucket_name, prefix=path_to_file)
+
+        return [cls(bucket_name=bucket_name, key=path_to_file)]
