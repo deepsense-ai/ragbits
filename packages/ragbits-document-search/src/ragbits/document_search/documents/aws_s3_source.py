@@ -7,6 +7,7 @@ import boto3
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
+from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.sources import Source, get_local_storage_dir
 
 
@@ -28,6 +29,7 @@ class AWSSource(Source):
         return f"s3://{self.bucket_name}/{self.key}"
 
     @classmethod
+    @requires_dependencies(["boto3"], "s3")
     def _set_client(cls, bucket_name: str) -> None:
         """
         Set the boto3 S3 client if it hasn't been initialized yet.
@@ -50,6 +52,7 @@ class AWSSource(Source):
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
 
+    @requires_dependencies(["boto3"], "s3")
     async def fetch(self) -> Path:
         """
         Download a file in the given bucket_name with the given key.
@@ -88,6 +91,7 @@ class AWSSource(Source):
         return path
 
     @classmethod
+    @requires_dependencies(["boto3"], "s3")
     async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["AWSSource"]:
         """
         List all files under the given bucket name and with the given prefix.
