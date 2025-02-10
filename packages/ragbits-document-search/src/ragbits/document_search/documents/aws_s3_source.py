@@ -48,7 +48,8 @@ class AWSSource(Source):
                 cls._s3_client.head_bucket(Bucket=bucket_name)  # This triggers a credentials check
             except (NoCredentialsError, PartialCredentialsError) as e:
                 raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
-
+            except ClientError as e:
+                raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
 
@@ -164,7 +165,7 @@ class AWSSource(Source):
                 raise ValueError("Invalid AWS Source URI format.")
             elif parsed.netloc.startswith("s3"):
                 parts = parsed.path.split("/")
-                bucket_name = parts[0]
+                bucket_name = parts[1]
                 path_to_file = "/".join(parts[2:])
             else:
                 bucket_name = parsed.netloc.split(".")[0]
@@ -174,7 +175,7 @@ class AWSSource(Source):
             raise ValueError("Invalid AWS Source URI format.")
 
         if "*" in path_to_file:
-            if not path_to_file.endswith("*"):
+            if not path_to_file.endswith("*") or "*" in path_to_file[:-1]:
                 raise ValueError(f"AWS Source only supports '*' at the end of path. Invalid pattern: {[path_to_file]}.")
             path_to_file = path_to_file[:-1]
             return await cls.list_sources(bucket_name=bucket_name, prefix=path_to_file)
