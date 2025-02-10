@@ -10,6 +10,7 @@ from azure.storage.blob import BlobServiceClient
 from pydantic import model_validator
 from typing_extensions import Self
 
+from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.document_search.documents.sources import Source, get_local_storage_dir
 
@@ -46,6 +47,7 @@ class AzureBlobStorage(Source):
         return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @classmethod
+    @requires_dependencies(["azure.storage.blob", "azure.identity"], "azure")
     async def _get_blob_service(cls, account_name: str) -> BlobServiceClient:
         """
         Returns an authenticated BlobServiceClient instance.
@@ -87,6 +89,7 @@ class AzureBlobStorage(Source):
             "Provide an account_name for identity-based authentication or a connection string."
         )
 
+    @requires_dependencies(["azure.storage.blob", "azure.core.exceptions"], "azure")
     async def fetch(self) -> Path:
         """
         Downloads the blob to a temporary local file and returns the file path.
@@ -173,6 +176,7 @@ class AzureBlobStorage(Source):
         return [cls(account_name=account_name, container_name=container_name, blob_name=blob_name)]
 
     @classmethod
+    @requires_dependencies(["azure.storage.blob"], "azure")
     async def list_sources(cls, account_name: str, container: str, blob_name: str = "") -> list["AzureBlobStorage"]:
         """List all sources in the given Azure container, matching the prefix.
 

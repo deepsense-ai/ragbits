@@ -4119,6 +4119,7 @@ dependencies = [
 
 [package.optional-dependencies]
 azure = [
+    { name = "azure-core" },
     { name = "azure-identity" },
     { name = "azure-storage-blob" },
 ]
@@ -4144,6 +4145,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0" },
     { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = "~=3.0.1" },
@@ -4257,7 +4259,7 @@ dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "lab", "local", "otel", "qdrant"] },
-    { name = "ragbits-document-search", extra = ["distributed", "gcs", "huggingface"] },
+    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4288,7 +4290,7 @@ requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "local", "otel", "qdrant"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
