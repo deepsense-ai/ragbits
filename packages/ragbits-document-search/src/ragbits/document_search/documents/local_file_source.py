@@ -5,8 +5,6 @@ from typing import ClassVar
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources import Source
 
-LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
-
 
 class LocalFileSource(Source):
     """

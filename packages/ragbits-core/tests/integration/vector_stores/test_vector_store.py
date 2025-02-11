@@ -10,7 +10,7 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.documents.local_file_source import LocalFileSource
 
 
 @pytest.mark.parametrize(

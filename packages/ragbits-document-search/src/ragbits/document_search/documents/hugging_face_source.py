@@ -12,8 +12,6 @@ with suppress(ImportError):
     from datasets import load_dataset
     from datasets.exceptions import DatasetNotFoundError
 
-LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
-
 
 class HuggingFaceSource(Source):
     """

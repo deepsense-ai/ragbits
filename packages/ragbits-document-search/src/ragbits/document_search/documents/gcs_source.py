@@ -10,8 +10,6 @@ with suppress(ImportError):
 
 from ragbits.core.utils.decorators import requires_dependencies
 
-LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
-
 
 class GCSSource(Source):
     """An object representing a GCS file source."""

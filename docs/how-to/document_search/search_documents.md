@@ -14,7 +14,7 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources import GCSSource
+from ragbits.document_search.documents.gcs_source import GCSSource
 
 async def main() -> None:
     # Load documents (there are multiple possible sources)

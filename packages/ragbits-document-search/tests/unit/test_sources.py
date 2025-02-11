@@ -6,11 +6,9 @@ from unittest.mock import MagicMock, patch
 
 from aiohttp import ClientSession
 
-from ragbits.document_search.documents.sources import (
-    LOCAL_STORAGE_DIR_ENV,
-    GCSSource,
-    HuggingFaceSource,
-)
+from ragbits.document_search.documents.gcs_source import GCSSource
+from ragbits.document_search.documents.hugging_face_source import HuggingFaceSource
+from ragbits.document_search.documents.sources import LOCAL_STORAGE_DIR_ENV
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 

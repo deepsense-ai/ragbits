@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.document_search.documents.local_file_source import LocalFileSource
 
 TEST_FILE_PATH = Path(__file__)
 
