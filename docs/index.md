@@ -62,7 +62,7 @@ To build the simplest documents search, you can use the following code snippet:
 import asyncio
 
 from ragbits.core.embeddings import LiteLLMEmbeddings
-from ragbits.core.vector_store import InMemoryVectorStore
+from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 

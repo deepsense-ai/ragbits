@@ -51,11 +51,14 @@ class QuestionRespondPrompt(Prompt[QuestionRespondPromptInput]):
 
 
 class RandomQuestionRespondPipeline(EvaluationPipeline):
+    def __init__(self, system_prompt_content: str):
+        self.system_prompt_content = system_prompt_content
+
     async def __call__(self, data: dict[str, str]) -> RandomQuestionPipelineResult:
         llm = LiteLLM()
         input_prompt = QuestionRespondPrompt(
             QuestionRespondPromptInput(
-                system_prompt_content=self.config.system_prompt_content,
+                system_prompt_content=self.system_prompt_content,
                 question=data["question"],
             )
         )
@@ -73,7 +76,6 @@ from ragbits.evaluate.dataloaders.base import DataLoader, DataT
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 from pydantic import BaseModel
-from omegaconf import OmegaConf
 
 
 class DatasetGenerationPromptInput(BaseModel):
@@ -86,21 +88,19 @@ class DatasetGenerationPrompt(Prompt[DatasetGenerationPromptInput]):
 
 
 class RandomQuestionsDataLoader(DataLoader):
+    def __init__(self, num_questions: int, question_topic: str):
+        self.num_questions = num_questions
+        self.question_topic = question_topic
+
     async def load(self) -> list[dict[str, str]]:
         questions = []
         llm = LiteLLM()
-        for _ in range(self.config.num_questions):
+        for _ in range(self.num_questions):
             question = await llm.generate(
-                DatasetGenerationPrompt(DatasetGenerationPromptInput(topic=self.config.question_topic))
+                DatasetGenerationPrompt(DatasetGenerationPromptInput(topic=self.question_topic))
             )
             questions.append({"question": question})
         return questions
-
-
-dataloader_config = OmegaConf.create(
-    {"num_questions": 10, "question_topic": "conspiracy theories"}
-)
-dataloader = RandomQuestionsDataLoader(dataloader_config)
 ```
 
 ### Define the Metrics and Run the Experiment
@@ -110,7 +110,6 @@ from pprint import pp as pprint
 import tiktoken
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.metrics.base import Metric, MetricSet, ResultT
-from omegaconf import OmegaConf
 
 
 class TokenCountMetric(Metric):
@@ -119,34 +118,42 @@ class TokenCountMetric(Metric):
         num_tokens = [len(encoding.encode(out.answer)) for out in results]
         return {"num_tokens": sum(num_tokens) / len(num_tokens)}
 
+config = {
+    "optimizer": {
+        "direction": "minimize",
+        "n_trials": 5,
+        "max_retries_for_trial": 1,
+    },
+    "experiment": {
+        "dataloader": {
+            "type": f"{__name__}:RandomQuestionsDataLoader",
+            "config": {"num_questions": 10, "question_topic": "conspiracy theories"},
+        },
+        "pipeline": {
+            "type": f"{__name__}:RandomQuestionRespondPipeline",
+            "config": {
+                "system_prompt_content": {
+                    "optimize": True,
+                    "choices": [
+                        "Be a friendly bot answering user questions. Be as concise as possible",
+                        "Be a silly bot answering user questions. Use as few tokens as possible",
+                        "Be informative and straight to the point",
+                        "Respond to user questions in as few words as possible",
+                    ],
+                }
+            },
+        },
+        "metrics": {
+            "precision_recall_f1": {
+                "type": f"{__name__}:TokenCountMetric",
+                "config": {},
+            },
+        },
+    },
+}
 
-metrics = MetricSet(TokenCountMetric())
-
-optimization_cfg = OmegaConf.create(
-    {"direction": "minimize", "n_trials": 4, "max_retries_for_trial": 3}
-)
-optimizer = Optimizer(optimization_cfg)
-
-optimized_params = OmegaConf.create(
-    {
-        "system_prompt_content": {
-            "optimize": True,
-            "choices": [
-                "Be a friendly bot answering user questions. Be as concise as possible",
-                "Be a silly bot answering user questions. Use as few tokens as possible",
-                "Be informative and straight to the point",
-                "Respond to user questions in as few words as possible",
-            ],
-        }
-    }
-)
-configs_with_scores = optimizer.optimize(
-    pipeline_class=RandomQuestionRespondPipeline,
-    config_with_params=optimized_params,
-    metrics=metrics,
-    dataloader=dataloader,
-)
-pprint(configs_with_scores)
+experiment_results = Optimizer.run_from_config(config=config)
+pprint(experiment_results)
 ```
 
 After executing the code, your console should display an output structure similar to this:

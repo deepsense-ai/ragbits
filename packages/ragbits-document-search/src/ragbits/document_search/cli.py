@@ -72,7 +72,7 @@ def search(
         str,
         typer.Option(
             help="Comma-separated list of columns to display, "
-            "aviailable: id, element_type, key, location, text_representation, document_meta"
+            "available: id, element_type, key, location, text_representation, document_meta"
         ),
     ] = _default_columns,
 ) -> None:
