@@ -460,7 +460,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
 
         def __iter__(self):
             if self.current_index < len(self.data):
-                return iter(self.data[self.current_index: self.current_index + 1])
+                return iter(self.data[self.current_index : self.current_index + 1])
             return iter([])
 
     # Mock dataset loading and embeddings
