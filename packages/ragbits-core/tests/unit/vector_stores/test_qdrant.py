@@ -165,3 +165,15 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.vector == result["vector"]
+
+
+def test_create_qdrant_filter() -> None:
+    where = {"a": "A", "b": 3, "c": True}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where) # type: ignore
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="b", match=models.MatchValue(value=3)),
+        models.FieldCondition(key="c", match=models.MatchValue(value=True))
+    ]
+    assert qdrant_filter.must == expected_conditions

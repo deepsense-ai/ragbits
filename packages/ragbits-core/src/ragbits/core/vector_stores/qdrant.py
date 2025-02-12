@@ -3,7 +3,7 @@ import typing
 import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
-from qdrant_client.grpc import ScoredPoint
+from qdrant_client.http.models import QueryResponse
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
 from typing_extensions import Self
 
@@ -81,13 +81,10 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             return
 
         if not await self._client.collection_exists(self._index_name):
-            print("Collection does not exist")
             await self._client.create_collection(
                 collection_name=self._index_name,
                 vectors_config=VectorParams(size=len(entries[0].vector), distance=self._distance_method),
             )
-        else:
-            print("Collection already exists")
 
         ids = [entry.id for entry in entries]
         embeddings = [entry.vector for entry in entries]
@@ -105,7 +102,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             wait=True,
         )
 
-    async def _to_vector_store_entries(self, results: ScoredPoint) -> list[VectorStoreEntry]:
+    async def _to_vector_store_entries(self, results: QueryResponse) -> list[VectorStoreEntry]:
         """
         Converts a query point into a vector store entry list.
 
