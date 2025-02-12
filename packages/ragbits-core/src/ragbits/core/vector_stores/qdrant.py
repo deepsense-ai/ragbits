@@ -8,6 +8,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.vector_stores.base import WhereQuery
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 
@@ -168,7 +169,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
     @traceable
     async def list(  # type: ignore
         self,
-        where: Filter | None = None,
+        where: WhereQuery | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[VectorStoreEntry]:
