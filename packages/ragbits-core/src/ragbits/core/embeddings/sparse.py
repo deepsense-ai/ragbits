@@ -1,10 +1,18 @@
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass
+from typing import ClassVar, TypeVar
 
+import numpy as np
 import tiktoken
 
-from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.core import embeddings
+from ragbits.core.options import Options
+from ragbits.core.utils.config_handling import WithConstructionConfig, ConfigurableComponent
+from ragbits.core.types import NOT_GIVEN, NotGiven
+
+
+SparseEmbeddingsOptionsT = TypeVar("SparseEmbeddingsOptionsT", bound=Options)
 
 
 @dataclass
@@ -25,24 +33,40 @@ class SparseVector:
         return f"SparseVector(non_zero_dims={self.non_zero_dims}, non_zero_vals={self.non_zero_vals}, dim={self.dim})"
 
 
-class SparseEmbedding(WithConstructionConfig, ABC):
+class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
     """Sparse embedding interface"""
+
+    options_cls = type[SparseEmbeddingsOptionsT]
+    default_module: ClassVar = embeddings
+    configuration_key: ClassVar = "embedder"
 
     @abstractmethod
     def embed_text(self, texts: list[str]) -> list[SparseVector]:
         """Transforms a list of texts into sparse vectors"""
 
 
-class BagofTokens(SparseEmbedding):
+class BagOfTokensOptions(Options):
+    get_from_model_name: bool | None | NotGiven = NOT_GIVEN
+    min_token_count: int | None | NotGiven = NOT_GIVEN
+
+
+class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
     """BagofTokens implementations of sparse Embeddings interface"""
 
-    def __init__(self, encoding_name: str):
+    options_cls = BagOfTokensOptions
+
+    def __init__(self, encoding_or_model_name: str, default_options: BagOfTokensOptions | None = None):
         """
         Initializes the BagOfTokens embedding
         Args:
             encoding_name: Name of encoding to be used. Needs to be supported by tiktoken library.
         """
-        self.encoder = tiktoken.get_encoding(encoding_name=encoding_name)
+        super().__init__(default_options=default_options)
+        self.encoder = (
+            tiktoken.get_encoding(encoding_name=encoding_or_model_name)
+            if not self.default_options.get_from_model_name
+            else tiktoken.encoding_for_model(model_name=encoding_or_model_name)
+        )
         self.dim = self.encoder.n_vocab
 
     def embed_text(self, texts: list[str]) -> list[SparseVector]:
@@ -56,6 +80,7 @@ class BagofTokens(SparseEmbedding):
             list of SparseVector instances.
         """
         vectors = []
+        min_token_count = self.default_options.min_token_count or -np.inf
         for text in texts:
             tokens = self.encoder.encode(text)
             token_counts = Counter(tokens)
@@ -63,6 +88,8 @@ class BagofTokens(SparseEmbedding):
             non_zero_vals = []
 
             for token, count in token_counts.items():
+                if count < min_token_count:
+                    continue
                 non_zero_dims.append(token)
                 non_zero_vals.append(count)
 

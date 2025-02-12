@@ -1,10 +1,11 @@
 from ragbits.core.embeddings import Embeddings, NoopEmbeddings
+from ragbits.core.embeddings.sparse import BagOfTokens, SparseEmbeddings, BagOfTokensOptions
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings, LiteLLMEmbeddingsOptions
 from ragbits.core.types import NOT_GIVEN
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 
 
-def test_subclass_from_config():
+def test_subclass_from_config_litellm():
     config = ObjectContructionConfig.model_validate(
         {
             "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
@@ -30,7 +31,32 @@ def test_subclass_from_config():
     )  # type: ignore
 
 
-def test_subclass_from_config_default_path():
+def test_subclass_from_config_default_path_litellm():
     config = ObjectContructionConfig.model_validate({"type": "NoopEmbeddings"})
     embedding: Embeddings = Embeddings.subclass_from_config(config)
     assert isinstance(embedding, NoopEmbeddings)
+
+
+def test_subclass_from_config_bag_of_tokens():
+    config = ObjectContructionConfig.model_validate(
+        {
+            "type": "ragbits.core.embeddings.sparse:BagOfTokens",
+            "config": {
+                "encoding_or_model_name": "gpt-4o",
+                "default_options": {
+                    "get_from_model_name": True,
+                    "option1": "value1",
+                    "option2": "value2",
+                },
+            },
+        }
+    )
+    embedding: SparseEmbeddings = SparseEmbeddings.subclass_from_config(config)
+    assert isinstance(embedding, BagOfTokens)
+    assert embedding.default_options == BagOfTokensOptions(
+        get_from_model_name=True,
+        min_token_count=NOT_GIVEN,
+        option1="value1",
+        option2="value2",
+    )  # type: ignore
+
