@@ -46,9 +46,7 @@ class AWSSource(Source):
             try:
                 cls._s3_client = boto3.client("s3")
                 cls._s3_client.head_bucket(Bucket=bucket_name)  # This triggers a credentials check
-            except (NoCredentialsError, PartialCredentialsError) as e:
-                raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
-            except ClientError as e:
+            except (NoCredentialsError, PartialCredentialsError, ClientError) as e:
                 raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
