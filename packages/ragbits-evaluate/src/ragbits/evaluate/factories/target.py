@@ -1,7 +1,6 @@
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.evaluate.evaluation_target import EvaluationTarget
 
-
 DEFAULT_EVAL_TARGET_CONFIG = {
     "metrics_config": {
         "precision_recall_f1": ObjectContructionConfig.model_validate(
