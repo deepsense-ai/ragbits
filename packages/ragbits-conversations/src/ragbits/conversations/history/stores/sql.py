@@ -1,14 +1,60 @@
-import hashlib
-import json
+import uuid
 
 import sqlalchemy
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, func
+from sqlalchemy.orm import DeclarativeBase
 
+from ragbits.conversations.history.stores.base import BaseHistoryStore
 from ragbits.core.prompt import ChatFormat
 
-from .models import Conversation, Message
+
+class _Base(DeclarativeBase):
+    pass
 
 
-class ConversationHistoryStore:
+class Conversation(_Base):
+    """
+    Represents a conversation in the database.
+
+    Attributes:
+        id: The unique identifier for the conversation.
+        created_at: The timestamp when the conversation was created.
+
+    Table:
+        conversations: Stores conversation records.
+    """
+
+    __tablename__ = "conversations"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+
+class Message(_Base):
+    """
+    Represents a message in a conversation.
+
+    Attributes:
+        id: The unique identifier for the message.
+        conversation_id: The ID of the conversation to which the message belongs.
+        role: The role of the sender (e.g., 'user', 'assistant').
+        content: The content of the message.
+        created_at: The timestamp when the message was created.
+
+    Table:
+        messages: Stores message records.
+    """
+
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    conversation_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False)
+    content = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+
+
+class SQLHistoryStore(BaseHistoryStore):
     """
     A class to manage storing, retrieving, and updating conversation histories.
 
@@ -26,37 +72,21 @@ class ConversationHistoryStore:
         """
         self.sqlalchemy_engine = sqlalchemy_engine
 
-    @staticmethod
-    def generate_conversation_id(messages: ChatFormat) -> str:
-        """
-        Generates a unique conversation ID based on the provided messages.
-
-        Args:
-            messages: A list of message objects in the chat format.
-
-        Returns:
-            A unique string representing the conversation ID.
-        """
-        json_obj = json.dumps(messages, separators=(",", ":"))
-        return hashlib.sha256(json_obj.encode()).hexdigest()
-
     def create_conversation(self, messages: ChatFormat) -> str:
         """
-        Creates a new conversation in the database or returns an existing one.
+        Creates a new conversation in the database with an auto-generated ID.
 
         Args:
-            messages: A list of dictionaries, where each dictionary represents a message with 'role' and 'content' keys.
+            messages: A list of dictionaries, where each dictionary represents a message
+            with 'role' and 'content' keys.
 
         Returns:
-            The ID of the conversation.
+            The database-generated ID of the conversation.
         """
-        conversation_id = self.generate_conversation_id(messages)
-
         with self.sqlalchemy_engine.connect() as connection:
-            if connection.execute(sqlalchemy.select(Conversation).filter_by(id=conversation_id)).fetchone():
-                return conversation_id
+            rows = connection.execute(sqlalchemy.insert(Conversation).returning(Conversation.id))
+            conversation_id = rows.scalar()
 
-            connection.execute(sqlalchemy.insert(Conversation).values(id=conversation_id))
             connection.execute(
                 sqlalchemy.insert(Message).values(
                     [
@@ -67,7 +97,7 @@ class ConversationHistoryStore:
             )
             connection.commit()
 
-        return conversation_id
+            return conversation_id
 
     def fetch_conversation(self, conversation_id: str) -> ChatFormat:
         """
@@ -107,4 +137,4 @@ class ConversationHistoryStore:
             )
             connection.commit()
 
-        return conversation_id
+            return conversation_id
