@@ -11,7 +11,7 @@ from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.sources import Source, get_local_storage_dir
 
 
-class AWSSource(Source):
+class S3Source(Source):
     """
     An object representing an AWS S3 Storage dataset source.
     """
@@ -40,6 +40,7 @@ class AWSSource(Source):
         Raises:
              NoCredentialsError: If no credentials are available.
              PartialCredentialsError: If credentials are incomplete.
+             ClientError: If credentials are incomplete.
              Exception: If another error occurs.
         """
         if cls._s3_client is None:
@@ -47,7 +48,7 @@ class AWSSource(Source):
                 cls._s3_client = boto3.client("s3")
                 cls._s3_client.head_bucket(Bucket=bucket_name)  # This triggers a credentials check
             except (NoCredentialsError, PartialCredentialsError, ClientError) as e:
-                raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
+                raise ValueError("AWS credentials are missing or incomplete. Please configure them.") from e
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
 
@@ -79,19 +80,19 @@ class AWSSource(Source):
             self._s3_client.download_file(self.bucket_name, self.key, path)
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
-                print(f"The object does not exist: {self.key}")
+                raise FileNotFoundError(f"The object does not exist: {self.key}") from e
             elif e.response["Error"]["Code"] == "403":
-                print(f"Access denied. No permission to download: {self.key}")
+                raise PermissionError(f"Access denied. No permission to download: {self.key}") from e
             else:
-                print(f"S3 Client Error: {e}")
-        except NoCredentialsError as e:
-            print("NoCredentialsError", e)
+                raise RuntimeError(f"S3 Client Error: {e}") from e
+        except (NoCredentialsError, PartialCredentialsError) as e:
+            raise ValueError("AWS credentials are missing or invalid.") from e
 
         return path
 
     @classmethod
     @requires_dependencies(["boto3"], "s3")
-    async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["AWSSource"]:
+    async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["S3Source"]:
         """
         List all files under the given bucket name and with the given prefix.
 
@@ -120,14 +121,14 @@ class AWSSource(Source):
                     aws_sources_list.append(cls(bucket_name=bucket_name, key=key))
             return aws_sources_list
         except (NoCredentialsError, PartialCredentialsError) as e:
-            raise RuntimeError("AWS credentials are missing or incomplete. Please configure them.") from e
+            raise ValueError("AWS credentials are missing or incomplete. Please configure them.") from e
         except ClientError as e:
             raise RuntimeError(f"Failed to list files in bucket {bucket_name}: {e}") from e
 
     @classmethod
-    async def from_uri(cls, path: str) -> Sequence["AWSSource"]:
+    async def from_uri(cls, path: str) -> Sequence["S3Source"]:
         """
-        Create AWSSource instances from a URI path.
+        Create S3Source instances from a URI path.
         The supported paths formats are:
         s3://<bucket-name>/<key>
         https://<bucket-name>s3.<region>.amazonaws.com/<key>
@@ -138,7 +139,7 @@ class AWSSource(Source):
             path: The URI path.
 
         Returns:
-            A sequence containing a AWSSource instances.
+            A sequence containing a S3Source instances.
 
         Raises:
             ValueError: If the path has invalid format
@@ -146,7 +147,7 @@ class AWSSource(Source):
         """
         if "**" in path or "?" in path:
             raise ValueError(
-                "AWSSource only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
+                "S3Source only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
             )
 
         parsed = urlparse(path)

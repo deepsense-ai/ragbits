@@ -4057,7 +4057,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42" },
+    { name = "boto3", marker = "extra == 's3'", specifier = "~=1.35.42" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = "~=3.0.1" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "pdf2image", specifier = ">=1.17.0" },
