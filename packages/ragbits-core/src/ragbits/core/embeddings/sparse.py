@@ -37,7 +37,7 @@ class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
 
     options_cls: type[SparseEmbeddingsOptionsT]
     default_module: ClassVar = embeddings
-    configuration_key: ClassVar = "embedder"
+    configuration_key: ClassVar = "sparse_embedder"
 
     @abstractmethod
     def embed_text(self, texts: list[str]) -> list[SparseVector]:
