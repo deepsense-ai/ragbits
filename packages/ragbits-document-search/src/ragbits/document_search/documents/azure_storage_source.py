@@ -15,7 +15,7 @@ from ragbits.document_search.documents.exceptions import SourceConnectionError, 
 from ragbits.document_search.documents.sources import Source, get_local_storage_dir
 
 
-class AzureBlobStorage(Source):
+class AzureBlobStorageSource(Source):
     """
     An object representing an Azure Blob Storage dataset source.
     """
@@ -130,22 +130,23 @@ class AzureBlobStorage(Source):
         return path
 
     @classmethod
-    async def from_uri(cls, path: str) -> Sequence["AzureBlobStorage"]:
+    async def from_uri(cls, path: str) -> Sequence["AzureBlobStorageSource"]:
         """
-        Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorage.
+        Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorageSource.
 
         Args:
             path (str): The Azure Blob Storage URI.
 
         Returns:
-            Sequence["AzureBlobStorage"]: The parsed Azure Blob Storage URI.
+            Sequence["AzureBlobStorageSource"]: The parsed Azure Blob Storage URI.
 
         Raises:
             ValueError: If the Azure Blob Storage URI is invalid.
         """
         if "**" in path or "?" in path:
             raise ValueError(
-                "AzureBlobStorage only supports '*' at the end of path. Patterns like '**' or '?' are not supported."
+                "AzureBlobStorageSource only supports '*' at the end of path. "
+                "Patterns like '**' or '?' are not supported."
             )
         parsed = urlparse(path)
         if not parsed.netloc or not parsed.path:
@@ -167,7 +168,7 @@ class AzureBlobStorage(Source):
         if "*" in blob_name:
             if not blob_name.endswith("*") or "*" in blob_name[:-1]:
                 raise ValueError(
-                    f"AzureBlobStorage only supports '*' at the end of path. Invalid pattern: {blob_name}."
+                    f"AzureBlobStorageSource only supports '*' at the end of path. Invalid pattern: {blob_name}."
                 )
             blob_name = blob_name[:-1]
             return await cls.list_sources(container=container_name, blob_name=blob_name, account_name=account_name)
@@ -177,7 +178,9 @@ class AzureBlobStorage(Source):
 
     @classmethod
     @requires_dependencies(["azure.storage.blob"], "azure")
-    async def list_sources(cls, account_name: str, container: str, blob_name: str = "") -> list["AzureBlobStorage"]:
+    async def list_sources(
+        cls, account_name: str, container: str, blob_name: str = ""
+    ) -> list["AzureBlobStorageSource"]:
         """List all sources in the given Azure container, matching the prefix.
 
         Args:
@@ -197,7 +200,7 @@ class AzureBlobStorage(Source):
             container_client = blob_service.get_container_client(container)
             blobs = container_client.list_blobs(name_starts_with=blob_name)
             return [
-                AzureBlobStorage(container_name=container, blob_name=blob.name, account_name=account_name)
+                AzureBlobStorageSource(container_name=container, blob_name=blob.name, account_name=account_name)
                 for blob in blobs
             ]
         except Exception as e:

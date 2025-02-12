@@ -51,9 +51,9 @@ distributed = [
     "ray>=2.39.0",
 ]
 azure=[
-    "azure-storage-blob>=12.24.1",
-    "azure-identity>=1.19.0",
-    "azure-core>=1.32.0"
+    "azure-storage-blob~=12.24.1",
+    "azure-identity~=1.19.0",
+    "azure-core~=1.32.0"
 ]
 [tool.uv]
 dev-dependencies = [
