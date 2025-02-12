@@ -7,6 +7,7 @@ from ragbits.evaluate.metrics.base import MetricSet
 
 class EvaluationTarget(WithConstructionConfig):
     """A class defining an evaluation target"""
+
     configuration_key: ClassVar = "evaluation_target"
 
     def __init__(self, metrics_config: dict, dataloader_config: dict):
