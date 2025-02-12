@@ -26,6 +26,7 @@ def get_instance_or_exit(
     type_name: str | None = None,
     yaml_path: Path | None = None,
     factory_path: str | None = None,
+    config_override: CoreConfig | None = None,
     yaml_path_argument_name: str = "--yaml-path",
     factory_path_argument_name: str = "--factory-path",
 ) -> WithConstructionConfigT_co:
@@ -47,7 +48,7 @@ def get_instance_or_exit(
     type_name = type_name or to_snake(cls.__name__).replace("_", " ")
     try:
         return cls.subclass_from_defaults(
-            core_config,
+            config_override or core_config,
             factory_path_override=factory_path,
             yaml_path_override=yaml_path,
         )
