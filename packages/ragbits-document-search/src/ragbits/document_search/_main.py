@@ -156,7 +156,7 @@ class DocumentSearch(WithConstructionConfig):
         if default_factory := defaults.default_factories.get(cls.configuration_key):
             return cls.subclass_from_factory(default_factory)
 
-        if defaults.default_instaces_config_path is not None:
+        if defaults.default_instances_config_path is not None:
             # Look for explicit document search configuration
             if default_config := defaults.default_instances_config.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
