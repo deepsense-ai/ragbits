@@ -39,6 +39,7 @@ def get_instance_or_exit(
         yaml_path: Path to a YAML configuration file to use for initialization.
         factory_path: Python path to a factory function to use for initialization.
         yaml_path_argument_name: The name of the argument to use in error messages for the YAML path.
+        config_override: A config instance to be used
         factory_path_argument_name: The name of the argument to use in error messages for the factory path.
     """
     if not isinstance(cls, type):
