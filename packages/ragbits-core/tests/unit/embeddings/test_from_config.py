@@ -1,6 +1,6 @@
 from ragbits.core.embeddings import Embeddings, NoopEmbeddings
-from ragbits.core.embeddings.sparse import BagOfTokens, SparseEmbeddings, BagOfTokensOptions
 from ragbits.core.embeddings.litellm import LiteLLMEmbeddings, LiteLLMEmbeddingsOptions
+from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbeddings
 from ragbits.core.types import NOT_GIVEN
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 
@@ -59,4 +59,3 @@ def test_subclass_from_config_bag_of_tokens():
         option1="value1",
         option2="value2",
     )  # type: ignore
-

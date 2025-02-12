@@ -8,9 +8,8 @@ import tiktoken
 
 from ragbits.core import embeddings
 from ragbits.core.options import Options
-from ragbits.core.utils.config_handling import WithConstructionConfig, ConfigurableComponent
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
+from ragbits.core.utils.config_handling import ConfigurableComponent
 
 SparseEmbeddingsOptionsT = TypeVar("SparseEmbeddingsOptionsT", bound=Options)
 
@@ -36,7 +35,7 @@ class SparseVector:
 class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
     """Sparse embedding interface"""
 
-    options_cls = type[SparseEmbeddingsOptionsT]
+    options_cls: type[SparseEmbeddingsOptionsT]
     default_module: ClassVar = embeddings
     configuration_key: ClassVar = "embedder"
 
@@ -46,6 +45,8 @@ class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
 
 
 class BagOfTokensOptions(Options):
+    """A dataclass with definition of BOT options"""
+
     get_from_model_name: bool | None | NotGiven = NOT_GIVEN
     min_token_count: int | None | NotGiven = NOT_GIVEN
 
