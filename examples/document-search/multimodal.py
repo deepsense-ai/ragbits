@@ -38,7 +38,7 @@ from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbeddin
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.local_file_source import LocalFileSource
+from ragbits.document_search.documents.sources.local_file_source import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.dummy import DummyImageProvider
 

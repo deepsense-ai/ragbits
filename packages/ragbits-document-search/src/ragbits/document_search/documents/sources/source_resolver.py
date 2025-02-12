@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
-    from ragbits.document_search.documents.sources import Source
+    from ragbits.document_search.documents.sources.sources import Source
 
 
 class SourceResolver:

@@ -6,6 +6,7 @@
 3. Do the search
 
 This guide will walk you through all those steps and explain the details. Let's start with a minimalistic example to get the main idea:
+
 ```python
 import asyncio
 from pathlib import Path
@@ -14,7 +15,8 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.gcs_source import GCSSource
+from ragbits.document_search.documents.sources.gcs_source import GCSSource
+
 
 async def main() -> None:
     # Load documents (there are multiple possible sources)
@@ -47,10 +49,12 @@ if __name__ == "__main__":
 Before doing any search we need to have some documents that will build our knowledge base. Ragbits offers a handy class `Document` that stores all the information needed for document loading.
 Objects of this class are usually instantiated using `DocumentMeta` helper class that supports loading files from your local storage, GCS or HuggingFace.
 You can easily add support for your custom sources by extending the `Source` class and implementing the abstract methods:
+
 ```python
 from pathlib import Path
 
-from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources.sources import Source
+
 
 class CustomSource(Source):
     @property

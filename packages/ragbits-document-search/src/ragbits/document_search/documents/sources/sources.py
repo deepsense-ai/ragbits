@@ -17,7 +17,7 @@ with suppress(ImportError):
     pass
 
 
-from ragbits.document_search.documents.source_resolver import SourceResolver
+from ragbits.document_search.documents.sources.source_resolver import SourceResolver
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 

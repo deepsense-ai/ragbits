@@ -10,7 +10,7 @@ except ImportError:
 
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.base import ProcessingExecutionStrategy
 from ragbits.document_search.ingestion.providers.base import BaseProvider
