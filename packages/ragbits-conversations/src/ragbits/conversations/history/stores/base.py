@@ -19,7 +19,7 @@ class HistoryStore(ConfigurableComponent[HistoryStoreOptionsT], ABC):
     configuration_key: ClassVar = "store"
 
     @abstractmethod
-    def create_conversation(self, messages: ChatFormat) -> str:
+    async def create_conversation(self, messages: ChatFormat) -> str:
         """
         Creates a new conversation and stores the given messages.
 
@@ -31,7 +31,7 @@ class HistoryStore(ConfigurableComponent[HistoryStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    def fetch_conversation(self, conversation_id: str) -> ChatFormat:
+    async def fetch_conversation(self, conversation_id: str) -> ChatFormat:
         """
         Retrieves a conversation by its unique identifier.
 
@@ -43,7 +43,7 @@ class HistoryStore(ConfigurableComponent[HistoryStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    def update_conversation(self, conversation_id: str, new_messages: ChatFormat) -> str:
+    async def update_conversation(self, conversation_id: str, new_messages: ChatFormat) -> str:
         """
         Updates an existing conversation with new messages.
 

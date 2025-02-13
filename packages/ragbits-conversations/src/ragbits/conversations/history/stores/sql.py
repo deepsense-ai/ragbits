@@ -106,7 +106,7 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         async with self.sqlalchemy_engine.begin() as conn:
             await conn.run_sync(_Base.metadata.create_all)
 
-    async def create_conversation(self, messages: ChatFormat) -> str | None:
+    async def create_conversation(self, messages: ChatFormat) -> str:
         """
         Creates a new conversation in the database with an auto-generated ID.
 
@@ -116,11 +116,17 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
 
         Returns:
             The database-generated ID of the conversation.
+
+        Raises:
+            ValueError: If the conversation could not be generated.
         """
         async with self.session() as session:
             async with session.begin():
                 result = await session.execute(sqlalchemy.insert(Conversation).returning(Conversation.id))
                 conversation_id = result.scalar()
+
+                if not conversation_id:
+                    raise ValueError("Failed to generate conversation.")
 
                 await session.execute(
                     sqlalchemy.insert(Message).values(
