@@ -1,17 +1,9 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from azure.identity import DefaultAzureCredential
 
 from ragbits.document_search.documents.azure_storage_source import AzureBlobStorageSource
-
-
-def test_set_account_name(monkeypatch: MonkeyPatch):
-    """Tests the Value Error when no account name is provided."""
-    monkeypatch.delenv("AZURE_STORAGE_ACCOUNT_NAME", raising=False)
-    with pytest.raises(ValueError, match="Account name must be provided"):
-        AzureBlobStorageSource(container_name="test_container", blob_name="test_blob")
 
 
 def test_id():

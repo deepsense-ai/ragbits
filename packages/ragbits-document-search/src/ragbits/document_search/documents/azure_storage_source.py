@@ -7,8 +7,6 @@ from urllib.parse import urlparse
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
-from pydantic import model_validator
-from typing_extensions import Self
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
@@ -21,23 +19,10 @@ class AzureBlobStorageSource(Source):
     """
 
     protocol: ClassVar[str] = "azure"
-    account_name: str | None = None
+    account_name: str
     container_name: str
     blob_name: str
     _blob_service: BlobServiceClient | None = None
-
-    @model_validator(mode="after")
-    def set_account_name(self) -> Self:
-        """
-        Validates that the account name is set.
-        """
-        self.account_name = self.account_name or os.getenv("AZURE_STORAGE_ACCOUNT_NAME")
-        if not self.account_name:
-            raise ValueError(
-                "Account name must be provided either as an argument or through the "
-                "AZURE_STORAGE_ACCOUNT_NAME environment variable."
-            )
-        return self
 
     @property
     def id(self) -> str:
@@ -104,11 +89,6 @@ class AzureBlobStorageSource(Source):
         container_local_dir = get_local_storage_dir() / self.container_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / self.blob_name
-        if self.account_name is None:
-            raise ValueError(
-                "Account name must be provided either as an argument or through the "
-                "AZURE_STORAGE_ACCOUNT_NAME environment variable."
-            )
         try:
             blob_service = await self._get_blob_service(account_name=self.account_name)
             blob_client = blob_service.get_blob_client(container=self.container_name, blob=self.blob_name)
