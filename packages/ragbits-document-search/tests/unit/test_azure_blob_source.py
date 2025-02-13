@@ -1,5 +1,5 @@
 from pathlib import Path, PosixPath
-from unittest.mock import AsyncMock, patch, MagicMock, mock_open
+from unittest.mock import AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
