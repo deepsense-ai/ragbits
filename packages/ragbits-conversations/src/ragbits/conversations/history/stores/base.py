@@ -1,21 +1,25 @@
 from abc import ABC, abstractmethod
-from typing import ClassVar
+from typing import ClassVar, TypeVar
 
 from ragbits.conversations.history import stores
+from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
-from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.core.utils.config_handling import ConfigurableComponent
+
+HistoryStoreOptionsT = TypeVar("HistoryStoreOptionsT", bound=Options)
 
 
-class HistoryStore(WithConstructionConfig, ABC):
+class HistoryStore(ConfigurableComponent[HistoryStoreOptionsT], ABC):
     """
     Abstract base class for conversation history stores.
     """
 
+    options_cls: type[HistoryStoreOptionsT]
     default_module: ClassVar = stores
     configuration_key: ClassVar = "store"
 
     @abstractmethod
-    def create_conversation(self, messages: ChatFormat) -> str | None:
+    def create_conversation(self, messages: ChatFormat) -> str:
         """
         Creates a new conversation and stores the given messages.
 

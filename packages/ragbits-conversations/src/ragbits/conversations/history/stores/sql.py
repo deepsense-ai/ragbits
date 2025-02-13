@@ -1,16 +1,22 @@
 import uuid
+from typing import TypeVar
 
 import sqlalchemy
-from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, create_engine, func
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, func
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from ragbits.conversations.history.stores.base import HistoryStore
+from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 
 
 class _Base(DeclarativeBase):
-    pass
+    @classmethod
+    def set_table_name(cls, name: str) -> None:
+        cls.__tablename__ = name
 
 
 class Conversation(_Base):
@@ -26,7 +32,6 @@ class Conversation(_Base):
     """
 
     __tablename__ = "conversations"
-
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = Column(TIMESTAMP, server_default=func.now())
 
@@ -47,7 +52,6 @@ class Message(_Base):
     """
 
     __tablename__ = "messages"
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
     role = Column(String, nullable=False)
@@ -55,7 +59,19 @@ class Message(_Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 
-class SQLHistoryStore(HistoryStore):
+class SQLHistoryStoreOptions(Options):
+    """
+    Stores table names for the database models in SQLHistoryStore.
+    """
+
+    conversations_table: str = "conversations"
+    messages_table: str = "messages"
+
+
+SQLHistoryStoreOptionsT = TypeVar("SQLHistoryStoreOptionsT", bound=SQLHistoryStoreOptions)
+
+
+class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
     """
     A class to manage storing, retrieving, and updating conversation histories.
 
@@ -64,16 +80,33 @@ class SQLHistoryStore(HistoryStore):
     database, and a unique conversation ID is generated based on the message contents.
     """
 
-    def __init__(self, sqlalchemy_engine: sqlalchemy.Engine):
+    options_cls = SQLHistoryStoreOptions
+
+    def __init__(self, sqlalchemy_engine: AsyncEngine, default_options: SQLHistoryStoreOptionsT | None = None) -> None:
         """
         Initializes the ConversationHistoryStore with a SQLAlchemy engine.
 
         Args:
             sqlalchemy_engine: The SQLAlchemy engine used to interact with the database.
+            default_options: An optional SQLHistoryStoreOptions specifying table names.
         """
+        super().__init__(default_options=default_options)
         self.sqlalchemy_engine = sqlalchemy_engine
+        self.session = async_sessionmaker(sqlalchemy_engine, expire_on_commit=False)
 
-    def create_conversation(self, messages: ChatFormat) -> str | None:
+        Conversation.set_table_name(self.default_options.conversations_table)
+        Message.set_table_name(self.default_options.messages_table)
+
+    async def init_db(self) -> None:
+        """
+        Initializes the database tables by creating them in the database.
+        Conditional by default, will not attempt to recreate tables already
+        present in the target database.
+        """
+        async with self.sqlalchemy_engine.begin() as conn:
+            await conn.run_sync(_Base.metadata.create_all)
+
+    async def create_conversation(self, messages: ChatFormat) -> str | None:
         """
         Creates a new conversation in the database with an auto-generated ID.
 
@@ -84,23 +117,23 @@ class SQLHistoryStore(HistoryStore):
         Returns:
             The database-generated ID of the conversation.
         """
-        with self.sqlalchemy_engine.connect() as connection:
-            rows = connection.execute(sqlalchemy.insert(Conversation).returning(Conversation.id))
-            conversation_id = rows.scalar()
+        async with self.session() as session:
+            async with session.begin():
+                result = await session.execute(sqlalchemy.insert(Conversation).returning(Conversation.id))
+                conversation_id = result.scalar()
 
-            connection.execute(
-                sqlalchemy.insert(Message).values(
-                    [
-                        {"conversation_id": conversation_id, "role": msg["role"], "content": msg["content"]}
-                        for msg in messages
-                    ]
+                await session.execute(
+                    sqlalchemy.insert(Message).values(
+                        [
+                            {"conversation_id": conversation_id, "role": msg["role"], "content": msg["content"]}
+                            for msg in messages
+                        ]
+                    )
                 )
-            )
-            connection.commit()
-
+                await session.commit()
             return conversation_id
 
-    def fetch_conversation(self, conversation_id: str) -> ChatFormat:
+    async def fetch_conversation(self, conversation_id: str) -> ChatFormat:
         """
         Fetches a conversation by its ID.
 
@@ -110,13 +143,14 @@ class SQLHistoryStore(HistoryStore):
         Returns:
             A list of message dictionaries, each containing 'role' and 'content'.
         """
-        with self.sqlalchemy_engine.connect() as connection:
-            rows = connection.execute(
+        async with self.session() as session:
+            result = await session.execute(
                 sqlalchemy.select(Message).filter_by(conversation_id=conversation_id).order_by(Message.created_at)
-            ).fetchall()
+            )
+            rows = result.scalars().all()
             return [{"role": row.role, "content": row.content} for row in rows] if rows else []
 
-    def update_conversation(self, conversation_id: str, new_messages: ChatFormat) -> str:
+    async def update_conversation(self, conversation_id: str, new_messages: ChatFormat) -> str:
         """
         Updates a conversation with new messages.
 
@@ -127,17 +161,17 @@ class SQLHistoryStore(HistoryStore):
         Returns:
             The ID of the updated conversation.
         """
-        with self.sqlalchemy_engine.connect() as connection:
-            connection.execute(
-                sqlalchemy.insert(Message).values(
-                    [
-                        {"conversation_id": conversation_id, "role": msg["role"], "content": msg["content"]}
-                        for msg in new_messages
-                    ]
+        async with self.session() as session:
+            async with session.begin():
+                await session.execute(
+                    sqlalchemy.insert(Message).values(
+                        [
+                            {"conversation_id": conversation_id, "role": msg["role"], "content": msg["content"]}
+                            for msg in new_messages
+                        ]
+                    )
                 )
-            )
-            connection.commit()
-
+                await session.commit()
             return conversation_id
 
     @classmethod
@@ -151,6 +185,6 @@ class SQLHistoryStore(HistoryStore):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        engine_options = config["sqlalchemy_engine"]["config"]
-        config["sqlalchemy_engine"] = create_engine(**engine_options)
+        engine_options = ObjectContructionConfig.model_validate(config["sqlalchemy_engine"])
+        config["sqlalchemy_engine"] = create_async_engine(engine_options.config["url"])
         return super().from_config(config)
