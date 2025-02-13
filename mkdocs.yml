@@ -12,7 +12,7 @@ nav:
   - How-to Guides:
       - Core:
         - how-to/core/use_prompting.md
-        - how-to/core/configuration.md
+        - how-to/core/component_preferrences.md
         - how-to/core/prompts_lab.md
         - how-to/core/promptfoo.md
         - how-to/core/use_tracing.md

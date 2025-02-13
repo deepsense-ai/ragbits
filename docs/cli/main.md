@@ -1,8 +1,8 @@
 # Ragbits CLI
 
-Ragbits comes with a command line interface (CLI) that provides a number of commands for working with the Ragbits platform. It can be accessed by running the `ragbits` command in your terminal.
+Ragbits comes with a command-line interface (CLI) that provides several commands for working with the Ragbits platform. It can be accessed by running the `ragbits` command in your terminal.
 
-Functions that operate on Ragbits components (like [`ragbits vector-store`](#ragbits-vector-store)) try to use default values for the components if they are not provided explicitly. To learn how to set these defaults in your project, see the [How to Set Default Configuration for Components](../how-to/core/configuration.md) guide.
+Commands that operate on Ragbits components, such as [`ragbits vector-store`](#ragbits-vector-store), use the project's preferred component implementations if a component configuration is not explicitly provided. To learn how to set component preferences in your project, see the [How to Set Preferred Components for Your Project](../how-to/core/component_preferrences.md) guide.
 
 ::: mkdocs-click
     :module: ragbits.cli

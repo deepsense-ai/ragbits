@@ -86,8 +86,8 @@ def test_subclass_from_factory_incorrect_class():
         ExampleWithNoDefaultModule.subclass_from_factory("unit.utils.test_config_handling:example_factory")
 
 
-def test_subclass_from_defaults_factory_override():
-    instance = ExampleClassWithConfigMixin.subclass_from_defaults(
+def test_preferred_subclass_factory_override():
+    instance = ExampleClassWithConfigMixin.preferred_subclass(
         core_config, factory_path_override="unit.utils.test_config_handling:example_factory"
     )
     assert isinstance(instance, ExampleSubclass)
@@ -95,25 +95,25 @@ def test_subclass_from_defaults_factory_override():
     assert instance.bar == 42
 
 
-def test_subclass_from_defaults_pyproject_factory():
+def test_preferred_subclass_pyproject_factory():
     config = get_config_instance(
         CoreConfig,
         subproject="core",
         current_dir=projects_dir / "project_with_instance_factory",
     )
-    instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
+    instance = ExampleClassWithConfigMixin.preferred_subclass(config)
     assert isinstance(instance, ExampleSubclass)
     assert instance.foo == "aligator"
     assert instance.bar == 42
 
 
-def test_subclass_from_defaults_instance_yaml():
+def test_preferred_subclass_instance_yaml():
     config = get_config_instance(
         CoreConfig,
         subproject="core",
         current_dir=projects_dir / "project_with_instances_yaml",
     )
-    instance = ExampleClassWithConfigMixin.subclass_from_defaults(config)
+    instance = ExampleClassWithConfigMixin.preferred_subclass(config)
     assert isinstance(instance, ExampleSubclass)
     assert instance.foo == "I am a foo"
     assert instance.bar == 122
