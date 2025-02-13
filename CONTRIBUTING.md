@@ -2,25 +2,22 @@
 
 ## Build from source
 
-To build and run Ragbits from the source code:
+Dependencies needed to build and run Ragbits from the source code:
 
-1. Requirements: [**uv**](https://docs.astral.sh/uv/getting-started/installation/) & [**python**](https://docs.astral.sh/uv/guides/install-python/) 3.10 or higher
-2. Install dependencies and run venv in editable mode:
+1. [**uv**](https://docs.astral.sh/uv/getting-started/installation/)
+2. [**python**](https://docs.astral.sh/uv/guides/install-python/) 3.10
 
-```bash
-$ source ./setup_dev_env.sh
-```
 
 ## Linting and formatting
 We use `ruff` for linting and formatting our code. To format your code, run:
 
 ```bash
-$ uvx ruff format
+$ uv run ruff format
 ```
 
 To lint the code, run:
 ```bash
-$ uvx ruff check --fix
+$ uv run ruff check --fix
 ```
 
 ## Type checking

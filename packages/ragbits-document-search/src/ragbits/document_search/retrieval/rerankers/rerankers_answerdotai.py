@@ -1,30 +1,32 @@
 from collections.abc import Sequence
 from itertools import chain
 
-import litellm
+from rerankers import Reranker as AnswerReranker
 
 from ragbits.core.audit import traceable
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class LiteLLMReranker(Reranker[RerankerOptions]):
+class AnswerAIReranker(Reranker[RerankerOptions]):
     """
-    A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
+    A [rerankers](https://github.com/AnswerDotAI/rerankers) re-ranker covering most popular re-ranking methods.
     """
 
     options_cls = RerankerOptions
 
-    def __init__(self, model: str, default_options: RerankerOptions | None = None) -> None:
+    def __init__(self, model: str, default_options: RerankerOptions | None = None, **rerankers_kwargs: str) -> None:
         """
-        Constructs a new LiteLLMReranker instance.
+        Constructs a new AnswerDotAIRerankersReranker instance.
 
         Args:
             model: The reranker model to use.
             default_options: The default options for reranking.
+            **rerankers_kwargs: Additional keyword arguments native to rerankers lib.
         """
         super().__init__(default_options=default_options)
         self.model = model
+        self.ranker = AnswerReranker(self.model, **rerankers_kwargs)
 
     @traceable
     async def rerank(
@@ -34,7 +36,7 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
         options: RerankerOptions | None = None,
     ) -> Sequence[Element]:
         """
-        Rerank elements with LiteLLM API.
+        Rerank elements .
 
         Args:
             elements: The elements to rerank.
@@ -43,17 +45,20 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
 
         Returns:
             The reranked elements.
+
+        Raises:
+            ValueError: Raised if the input query is empty or if the list of candidate documents is empty.
+            TypeError: Raised if the input types are incorrect, such as if the query is not a string, or List[str].
+            IndexError: Raised if docs is an empty List.
         """
         merged_options = (self.default_options | options) if options else self.default_options
         element_list = list(chain.from_iterable(elements))
         documents = [element.text_representation for element in element_list]
 
-        response = await litellm.arerank(
-            model=self.model,
+        response = self.ranker.rank(
             query=query,
-            documents=documents,  # type: ignore
-            top_n=merged_options.top_n,
-            max_chunks_per_doc=merged_options.max_chunks_per_doc,
+            docs=documents,
         )
-
-        return [element_list[result["index"]] for result in response.results]  # type: ignore
+        if merged_options.top_n:
+            response = response.top_k(merged_options.top_n)
+        return [element_list[result.document.doc_id] for result in response]

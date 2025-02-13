@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.8.0 (2025-01-29)
+
+### Changed
+
+- ragbits-core updated to version v0.8.0
+
+## 0.7.0 (2025-01-21)
+
+### Added
+
+- Simplified interface to document-search evaluation (#258).
+
+### Changed
+
+- ragbits-core updated to version v0.7.0
+
 ## 0.6.0 (2024-12-27)
 
 ### Changed

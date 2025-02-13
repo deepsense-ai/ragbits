@@ -1,5 +1,5 @@
 import copy
-from collections.abc import Callable
+from collections.abc import Callable, Mapping, MutableMapping
 from typing import cast
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig
@@ -10,10 +10,10 @@ from ragbits.document_search.ingestion.providers.unstructured.images import Unst
 from ragbits.document_search.ingestion.providers.unstructured.pdf import UnstructuredPdfProvider
 
 # TODO consider defining with some defined schema
-ProvidersConfig = dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]
+ProvidersConfig = Mapping[DocumentType, Callable[[], BaseProvider] | BaseProvider]
 
 
-DEFAULT_PROVIDERS_CONFIG: ProvidersConfig = {
+DEFAULT_PROVIDERS_CONFIG: MutableMapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {
     DocumentType.TXT: UnstructuredDefaultProvider,
     DocumentType.MD: UnstructuredDefaultProvider,
     DocumentType.PDF: UnstructuredPdfProvider,
@@ -43,7 +43,7 @@ class DocumentProcessorRouter:
     metadata such as the document type.
     """
 
-    def __init__(self, providers: dict[DocumentType, Callable[[], BaseProvider] | BaseProvider]):
+    def __init__(self, providers: ProvidersConfig):
         self._providers = providers
 
     @staticmethod
@@ -71,7 +71,7 @@ class DocumentProcessorRouter:
         return providers_config
 
     @classmethod
-    def from_config(cls, providers_config: ProvidersConfig | None = None) -> "DocumentProcessorRouter":
+    def from_config(cls, providers: ProvidersConfig | None = None) -> "DocumentProcessorRouter":
         """
         Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
         configuration will be used. If the configuration is provided, it will be merged with the default configuration,
@@ -83,14 +83,16 @@ class DocumentProcessorRouter:
         }
 
         Args:
-            providers_config: The dictionary with the providers configuration, mapping the document types to the
+            providers: The dictionary with the providers configuration, mapping the document types to the
                 provider class.
 
         Returns:
             The DocumentProcessorRouter.
         """
-        config = copy.deepcopy(DEFAULT_PROVIDERS_CONFIG)
-        config.update(providers_config if providers_config is not None else {})
+        config: MutableMapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = copy.deepcopy(
+            DEFAULT_PROVIDERS_CONFIG
+        )
+        config.update(providers if providers is not None else {})
 
         return cls(providers=config)
 

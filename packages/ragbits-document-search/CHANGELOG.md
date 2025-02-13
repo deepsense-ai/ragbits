@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- Add MultiQueryRetrieval (#311).
+
+## 0.8.0 (2025-01-29)
+
+### Added
+
+- DocumentSearch ingest accepts now a simple string format to determine sources; for example gcs://bucket/* (#264).
+- New CLI command to ingest documents (#305).
+- Add support for rerankers library (#284).
+
+### Changed
+
+- ragbits-core updated to version v0.8.0
+
+## 0.7.0 (2025-01-21)
+
+### Added
+- Add CLI command to perform search on DocumentSearch instance (#290).
+
+### Changed
+
+- New way to initialize DocumentSearch instances (#277).
+- ragbits-core updated to version v0.7.0
+
 ## 0.6.0 (2024-12-27)
 
 ### Changed

@@ -54,7 +54,7 @@ def get_instance_or_exit(
     except NoDefaultConfigError as e:
         Console(
             stderr=True
-        ).print(f"""You need to provide the [b]{type_name}[/b] instance be used. You can do this by either:
+        ).print(f"""You need to provide the [b]{type_name}[/b] instance to be used. You can do this by either:
 - providing a path to a YAML configuration file with the [b]{yaml_path_argument_name}[/b] option
 - providing a Python path to a function that creates a vector store with the [b]{factory_path_argument_name}[/b] option
 - setting the default configuration or factory function in your project's [b]pyproject.toml[/b] file""")

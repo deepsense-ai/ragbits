@@ -75,11 +75,13 @@ response = await llm.generate(prompt)
 print(f"Generated dog name: {response}")
 ```
 
-<!--
-TODO:
-Add links to quickstart guides for individual packages, demonstrating how to extend this with their functionality.
-Add a link to the full tutorial.
--->
+## How Ragbits documentation is organized
+
+- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
+- [How-to guides](https://ragbits.deepsense.ai/how-to/core/use_prompting/) - Learn how to use Ragbits in your projects
+- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run Ragbits in your terminal
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying API of Ragbits
+
 
 ## License
 

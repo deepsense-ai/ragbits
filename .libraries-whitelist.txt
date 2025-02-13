@@ -4,3 +4,4 @@ chardet
 chroma-hnswlib
 rouge
 distilabel
+rerankers
