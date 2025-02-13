@@ -80,7 +80,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
     async def generate_raw(
         self,
-        prompt: BasePrompt,
+        prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
     ) -> dict:
@@ -88,13 +88,20 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
 
         Args:
-            prompt: Formatted prompt template with conversation.
+            prompt: Can be one of:
+                - BasePrompt instance: Formatted prompt template with conversation
+                - str: Simple text prompt that will be sent as a user message
+                - ChatFormat: List of message dictionaries in OpenAI chat format
             options: Options to use for the LLM client.
 
         Returns:
             Raw response from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+
+        if isinstance(prompt, str | list):
+            prompt = SimplePrompt(prompt)
+
         return await self._call(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
@@ -153,9 +160,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        if isinstance(prompt, str | list):
-            prompt = SimplePrompt(prompt)
-
         raw_response = await self.generate_raw(prompt, options=options)
         if isinstance(prompt, BasePromptWithParser):
             return prompt.parse_response(raw_response["response"])
@@ -177,9 +181,26 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[OutputT]: ...
 
+    @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePrompt,
+        prompt: str,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
+
+    @overload
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: ChatFormat,
+        *,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[OutputT]: ...
+
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[OutputT]:
@@ -202,7 +223,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
     async def generate_streaming(
         self,
-        prompt: BasePrompt,
+        prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str, None]:
@@ -217,6 +238,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Response stream from LLM.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+
+        if isinstance(prompt, str | list):
+            prompt = SimplePrompt(prompt)
+
         response = await self._call_streaming(
             conversation=self._format_chat_for_llm(prompt),
             options=merged_options,
