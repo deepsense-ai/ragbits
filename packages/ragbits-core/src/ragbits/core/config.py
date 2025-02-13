@@ -29,20 +29,20 @@ class CoreConfig(BaseModel):
     default_factories: dict[str, str] = {}
 
     # Path to a YAML file with default configuration of varius Ragbits objects
-    default_instaces_config_path: Path | None = None
+    default_instances_config_path: Path | None = None
 
     @cached_property
     def default_instances_config(self) -> dict:
         """
-        Get the configuration from the file specified in default_instaces_config_path.
+        Get the configuration from the file specified in default_instances_config_path.
 
         Returns:
             dict: The configuration from the file.
         """
-        if self.default_instaces_config_path is None or not self.project_base_path:
+        if self.default_instances_config_path is None or not self.project_base_path:
             return {}
 
-        return get_config_from_yaml(self.project_base_path / self.default_instaces_config_path)
+        return get_config_from_yaml(self.project_base_path / self.default_instances_config_path)
 
 
 core_config = get_config_instance(CoreConfig, subproject="core")
