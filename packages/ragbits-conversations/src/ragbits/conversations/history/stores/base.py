@@ -15,7 +15,7 @@ class HistoryStore(WithConstructionConfig, ABC):
     configuration_key: ClassVar = "store"
 
     @abstractmethod
-    def create_conversation(self, messages: ChatFormat) -> str:
+    def create_conversation(self, messages: ChatFormat) -> str | None:
         """
         Creates a new conversation and stores the given messages.
 
