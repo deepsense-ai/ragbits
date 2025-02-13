@@ -1,4 +1,4 @@
-from .base import BaseHistoryStore
+from .base import HistoryStore
 from .sql import SQLHistoryStore
 
-__all__ = ["BaseHistoryStore", "SQLHistoryStore"]
+__all__ = ["HistoryStore", "SQLHistoryStore"]

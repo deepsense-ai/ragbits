@@ -1,10 +1,11 @@
 import uuid
 
 import sqlalchemy
-from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, func
+from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, create_engine, func
 from sqlalchemy.orm import DeclarativeBase
+from typing_extensions import Self
 
-from ragbits.conversations.history.stores.base import BaseHistoryStore
+from ragbits.conversations.history.stores.base import HistoryStore
 from ragbits.core.prompt import ChatFormat
 
 
@@ -54,7 +55,7 @@ class Message(_Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
 
-class SQLHistoryStore(BaseHistoryStore):
+class SQLHistoryStore(HistoryStore):
     """
     A class to manage storing, retrieving, and updating conversation histories.
 
@@ -72,7 +73,7 @@ class SQLHistoryStore(BaseHistoryStore):
         """
         self.sqlalchemy_engine = sqlalchemy_engine
 
-    def create_conversation(self, messages: ChatFormat) -> str:
+    def create_conversation(self, messages: ChatFormat) -> str | None:
         """
         Creates a new conversation in the database with an auto-generated ID.
 
@@ -138,3 +139,18 @@ class SQLHistoryStore(BaseHistoryStore):
             connection.commit()
 
             return conversation_id
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        engine_options = config["sqlalchemy_engine"]["config"]
+        config["sqlalchemy_engine"] = create_engine(**engine_options)
+        return super().from_config(config)
