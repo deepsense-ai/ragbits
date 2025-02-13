@@ -1,15 +1,23 @@
-from unittest.mock import AsyncMock, patch
+from pathlib import Path, PosixPath
+from unittest.mock import AsyncMock, patch, MagicMock, mock_open
 
 import pytest
+from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
 from ragbits.document_search.documents.azure_storage_source import AzureBlobStorageSource
+from ragbits.document_search.documents.exceptions import SourceNotFoundError
+
+ACCOUNT_NAME = "test_account"
+BLOB_NAME = "test_blob.txt"
+CONTAINER_NAME = "test_container"
+SOURCE_ID = "azure://test_account/test_container/test_blob.txt"
 
 
 def test_id():
     """Tests source id pattern"""
-    expected_id = "azure://AA/CC/BB"
-    storage = AzureBlobStorageSource(container_name="CC", blob_name="BB", account_name="AA")
+    expected_id = SOURCE_ID
+    storage = AzureBlobStorageSource(container_name=CONTAINER_NAME, blob_name=BLOB_NAME, account_name=ACCOUNT_NAME)
     assert expected_id == storage.id
 
 
@@ -54,21 +62,22 @@ async def test_from_uri_parsing_error():
 @pytest.mark.asyncio
 async def test_from_uri():
     """Test creating an Azure Blob Storage from URI."""
-    good_path = "https://account_name.blob.core.windows.net/container_name/blob_name"
+    good_path = f"https://{ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER_NAME}/{BLOB_NAME}"
     sources = await AzureBlobStorageSource.from_uri(good_path)
     assert len(sources) == 1
-    assert sources[0].container_name == "container_name"
-    assert sources[0].blob_name == "blob_name"
+    assert sources[0].account_name == ACCOUNT_NAME
+    assert sources[0].blob_name == BLOB_NAME
+    assert sources[0].container_name == CONTAINER_NAME
 
 
 @pytest.mark.asyncio
 async def test_from_uri_listing():
     """Test creating an Azure Blob Storage from a list of paths."""
-    good_path_to_folder = "https://account_name.blob.core.windows.net/container_name/blob_name*"
+    good_path_to_folder = f"https://{ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER_NAME}/blob_name*"
     with patch.object(AzureBlobStorageSource, "list_sources", new_callable=AsyncMock) as mock_list_sources:
         await AzureBlobStorageSource.from_uri(good_path_to_folder)
         mock_list_sources.assert_called_once_with(
-            container="container_name", blob_name="blob_name", account_name="account_name"
+            container=CONTAINER_NAME, blob_name="blob_name", account_name=ACCOUNT_NAME
         )
 
 
@@ -80,7 +89,7 @@ async def test_get_blob_service_no_credentials():
         patch("os.getenv", return_value=None),
         pytest.raises(ValueError, match="No authentication method available"),
     ):
-        await AzureBlobStorageSource._get_blob_service(account_name="account_name")
+        await AzureBlobStorageSource._get_blob_service(account_name=ACCOUNT_NAME)
 
 
 @pytest.mark.asyncio
@@ -98,16 +107,67 @@ async def test_get_blob_service_with_connection_string():
 @pytest.mark.asyncio
 async def test_get_blob_service_with_default_credentials():
     """Test that default credentials are used when the account_name and credentials are available."""
-    account_name = "test_account"
-    account_url = f"https://{account_name}.blob.core.windows.net"
+    account_url = f"https://{ACCOUNT_NAME}.blob.core.windows.net"
 
     with (
         patch("ragbits.document_search.documents.azure_storage_source.DefaultAzureCredential") as mock_credential,
         patch("ragbits.document_search.documents.azure_storage_source.BlobServiceClient") as mock_blob_client,
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,
     ):
-        await AzureBlobStorageSource._get_blob_service(account_name)
+        await AzureBlobStorageSource._get_blob_service(ACCOUNT_NAME)
 
         mock_credential.assert_called_once()
         mock_blob_client.assert_called_once_with(account_url=account_url, credential=mock_credential.return_value)
         mock_from_connection_string.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_fetch():
+    blob_content = b"Sample blob content"
+
+    mock_blob_service_client = MagicMock()
+    mock_blob_client = mock_blob_service_client.get_blob_client.return_value
+    mock_blob_client.download_blob.return_value.readall = MagicMock(return_value=blob_content)
+
+    with (
+        patch.object(AzureBlobStorageSource, "_get_blob_service", return_value=mock_blob_service_client),
+        patch(
+            "ragbits.document_search.documents.azure_storage_source.get_local_storage_dir",
+            return_value=Path("/test_path"),
+        ),
+        patch("pathlib.Path.mkdir"),
+        patch("builtins.open", mock_open()) as mocked_file,
+    ):
+        storage = AzureBlobStorageSource(account_name=ACCOUNT_NAME, container_name=CONTAINER_NAME, blob_name=BLOB_NAME)
+        downloaded_path = await storage.fetch()
+
+        expected_path = PosixPath("/test_path/test_account/test_container/test_blob.txt")
+        assert downloaded_path == expected_path
+        mocked_file.assert_called_once_with(expected_path, "wb")
+        mocked_file().write.assert_called_once_with(blob_content)
+
+
+@pytest.mark.asyncio
+async def test_fetch_raises_error():
+    non_existing_blob_name = "non_existent_blob.txt"
+
+    mock_blob_service_client = MagicMock()
+    mock_blob_client = mock_blob_service_client.get_blob_client.return_value
+    mock_blob_client.download_blob.side_effect = ResourceNotFoundError
+
+    with (
+        patch.object(AzureBlobStorageSource, "_get_blob_service", return_value=mock_blob_service_client),
+        patch(
+            "ragbits.document_search.documents.azure_storage_source.get_local_storage_dir",
+            return_value=Path("/test_path"),
+        ),
+        patch("pathlib.Path.mkdir"),
+    ):
+        storage = AzureBlobStorageSource(
+            account_name=ACCOUNT_NAME, container_name=CONTAINER_NAME, blob_name=non_existing_blob_name
+        )
+
+        with pytest.raises(
+            SourceNotFoundError, match=f"Blob {non_existing_blob_name} not found in container {CONTAINER_NAME}"
+        ):
+            await storage.fetch()

@@ -86,17 +86,13 @@ class AzureBlobStorageSource(Source):
             SourceNotFoundError: If the blob source is not available.
             SourceConnectionError: If the blob service connection is not available.
         """
-        container_local_dir = get_local_storage_dir() / self.container_name
+        container_local_dir = get_local_storage_dir() / self.account_name / self.container_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / self.blob_name
         try:
             blob_service = await self._get_blob_service(account_name=self.account_name)
             blob_client = blob_service.get_blob_client(container=self.container_name, blob=self.blob_name)
-
-            # Ensure parent directory exists
             Path(path).parent.mkdir(parents=True, exist_ok=True)
-
-            # Download and write blob content to a file
             stream = blob_client.download_blob()
             content = stream.readall()
             with open(path, "wb") as file:
