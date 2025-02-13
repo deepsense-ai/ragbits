@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- cli for document search evaluation added (#356)
+
 - Add local data loader (#334).
 
 ## 0.8.0 (2025-01-29)
