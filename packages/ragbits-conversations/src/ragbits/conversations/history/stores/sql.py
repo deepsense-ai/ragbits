@@ -193,4 +193,4 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         """
         engine_options = ObjectContructionConfig.model_validate(config["sqlalchemy_engine"])
         config["sqlalchemy_engine"] = create_async_engine(engine_options.config["url"])
-        return super().from_config(config)
+        return cls(**config)
