@@ -197,7 +197,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         )
 
     @traceable
-    async def list(  # type: ignore
+    async def list(
         self,
         where: WhereQuery | None = None,
         limit: int | None = None,
