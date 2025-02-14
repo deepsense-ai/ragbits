@@ -3,7 +3,7 @@ from typing import TypeVar
 
 import sqlalchemy
 from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, func
-from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -31,7 +31,7 @@ class Conversation(_Base):
         conversations: Stores conversation records.
     """
 
-    __tablename__ = "conversations"
+    __tablename__ = "ragbits_conversations"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     created_at = Column(TIMESTAMP, server_default=func.now())
 
@@ -51,9 +51,9 @@ class Message(_Base):
         messages: Stores message records.
     """
 
-    __tablename__ = "messages"
+    __tablename__ = "ragbits_messages"
     id = Column(Integer, primary_key=True, autoincrement=True)
-    conversation_id = Column(String, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(String, ForeignKey("ragbits_conversations.id", ondelete="CASCADE"), nullable=False)
     role = Column(String, nullable=False)
     content = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -120,7 +120,7 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         Raises:
             ValueError: If the conversation could not be generated.
         """
-        async with self.session() as session:
+        async with AsyncSession(self.sqlalchemy_engine) as session:
             async with session.begin():
                 result = await session.execute(sqlalchemy.insert(Conversation).returning(Conversation.id))
                 conversation_id = result.scalar()
@@ -149,7 +149,7 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         Returns:
             A list of message dictionaries, each containing 'role' and 'content'.
         """
-        async with self.session() as session:
+        async with AsyncSession(self.sqlalchemy_engine) as session:
             result = await session.execute(
                 sqlalchemy.select(Message).filter_by(conversation_id=conversation_id).order_by(Message.created_at)
             )
@@ -167,7 +167,7 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         Returns:
             The ID of the updated conversation.
         """
-        async with self.session() as session:
+        async with AsyncSession(self.sqlalchemy_engine) as session:
             async with session.begin():
                 await session.execute(
                     sqlalchemy.insert(Message).values(
