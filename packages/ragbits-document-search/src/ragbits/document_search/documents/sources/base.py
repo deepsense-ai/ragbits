@@ -2,20 +2,12 @@ import os
 import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from contextlib import suppress
 from pathlib import Path
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
-
-with suppress(ImportError):
-    pass
-
-with suppress(ImportError):
-    pass
-
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
