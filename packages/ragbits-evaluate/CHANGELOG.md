@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add local data loader (#334).
+
 ## 0.8.0 (2025-01-29)
 
 ### Changed
