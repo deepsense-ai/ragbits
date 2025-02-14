@@ -2,6 +2,7 @@ import typing
 
 import httpx
 import qdrant_client
+from pydantic import ValidationError
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.models import QueryResponse
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
@@ -189,12 +190,16 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The created filter.
         """
-        return Filter(
-            must=[
-                FieldCondition(key=key, match=MatchValue(value=typing.cast(bool | int | str, value)))
-                for key, value in where.items()
-            ]
-        )
+        try:
+            return Filter(
+                must=[
+                    FieldCondition(key=key, match=MatchValue(value=typing.cast(str | int | bool, value)))
+                    for key, value in where.items()
+                ]
+            )
+        except ValidationError:
+            print("ERROR: WhereQuery dictionary must contain only str | int | bool values")
+            raise
 
     @traceable
     async def list(
