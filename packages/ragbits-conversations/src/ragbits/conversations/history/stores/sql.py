@@ -3,7 +3,7 @@ from typing import TypeVar
 
 import sqlalchemy
 from sqlalchemy import TIMESTAMP, Column, ForeignKey, Integer, String, func
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
@@ -92,7 +92,6 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         """
         super().__init__(default_options=default_options)
         self.sqlalchemy_engine = sqlalchemy_engine
-        self.session = async_sessionmaker(sqlalchemy_engine, expire_on_commit=False)
 
         Conversation.set_table_name(self.default_options.conversations_table)
         Message.set_table_name(self.default_options.messages_table)
