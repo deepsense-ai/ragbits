@@ -75,7 +75,7 @@ async def main() -> None:
         model="text-embedding-3-small",
     )
     vector_store = QdrantVectorStore(
-        client=AsyncQdrantClient(":memory:"),
+        client=AsyncQdrantClient(location=":memory:"),
         index_name="jokes",
     )
     document_search = DocumentSearch(

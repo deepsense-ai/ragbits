@@ -41,14 +41,12 @@ Where `path.within.your.project` is the path to the Python module where the prom
 ragbits prompts exec song_prompt:SongPrompt
 ```
 
-This command will send the prompt to the default Large Language Model and display the generated response in the terminal.
+This command will send the prompt to [the project's preffered LLM implementation](../how-to/core/component_preferrences.md) and display the generated response in the terminal.
 
 !!! note
-    If there is no default LLM configured for your project, Ragbits will use OpenAI's gpt-3.5-turbo. Ensure that the `OPENAI_API_KEY` environment variable is set and contains your OpenAI API key.
+    If there is no preferred LLM configured for your project, Ragbits will use OpenAI's gpt-3.5-turbo. Ensure that the `OPENAI_API_KEY` environment variable is set and contains your OpenAI API key.
 
     Alternatively, you can use your custom LLM factory (a function that creates an instance of [Ragbits's LLM class][ragbits.core.llms.LLM]) by specifying the path to the factory function using the `--llm-factory` option with the `ragbits prompts exec` command.
-
-    <!-- TODO: link to the how-to on configuring default LLMs in pyproject.toml -->
 
 ## Using the Prompt in Python Code
 To use the defined prompt with a Large Language Model in Python, you need to create an instance of the model and pass the prompt to it. For instance:

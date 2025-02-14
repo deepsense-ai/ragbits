@@ -3,19 +3,19 @@ from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.litellm import LiteLLM
 
 
-def get_default_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
+def get_preferred_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
     """
-    Get an instance of the default LLM using the factory function
+    Get an instance of the preferred LLM using the factory function
     specified in the configuration.
 
     Args:
         llm_type: type of the LLM to get, defaults to text
 
     Returns:
-        LLM: An instance of the default LLM.
+        LLM: An instance of the preferred LLM.
 
     """
-    factory = core_config.default_llm_factories[llm_type]
+    factory = core_config.llm_preference_factories[llm_type]
     return LLM.subclass_from_factory(factory)
 
 

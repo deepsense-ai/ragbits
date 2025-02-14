@@ -6,7 +6,7 @@ from pydantic.alias_generators import to_snake
 from rich.console import Console
 
 from ragbits.core.config import CoreConfig, core_config
-from ragbits.core.utils.config_handling import InvalidConfigError, NoDefaultConfigError, WithConstructionConfig
+from ragbits.core.utils.config_handling import InvalidConfigError, NoPreferredConfigError, WithConstructionConfig
 
 WithConstructionConfigT_co = TypeVar("WithConstructionConfigT_co", bound=WithConstructionConfig, covariant=True)
 
@@ -16,8 +16,8 @@ WithConstructionConfigT_co = TypeVar("WithConstructionConfigT_co", bound=WithCon
 # to be used as types: https://github.com/python/mypy/issues/4717
 class WithConstructionConfigProtocol(Protocol[WithConstructionConfigT_co]):
     @classmethod
-    def subclass_from_defaults(
-        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    def preferred_subclass(
+        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
     ) -> WithConstructionConfigT_co: ...
 
 
@@ -30,7 +30,7 @@ def get_instance_or_exit(
     factory_path_argument_name: str = "--factory-path",
 ) -> WithConstructionConfigT_co:
     """
-    Returns an instance of the provided class, initialized using its `subclass_from_defaults` method.
+    Returns an instance of the provided class, initialized using its `preferred_subclass` method.
     If the instance can't be created, prints an error message and exits the program.
 
     Args:
@@ -46,18 +46,19 @@ def get_instance_or_exit(
 
     type_name = type_name or to_snake(cls.__name__).replace("_", " ")
     try:
-        return cls.subclass_from_defaults(
+        return cls.preferred_subclass(
             core_config,
             factory_path_override=factory_path,
             yaml_path_override=yaml_path,
         )
-    except NoDefaultConfigError as e:
+    except NoPreferredConfigError as e:
         Console(
             stderr=True
         ).print(f"""You need to provide the [b]{type_name}[/b] instance to be used. You can do this by either:
 - providing a path to a YAML configuration file with the [b]{yaml_path_argument_name}[/b] option
 - providing a Python path to a function that creates a vector store with the [b]{factory_path_argument_name}[/b] option
-- setting the default configuration or factory function in your project's [b]pyproject.toml[/b] file""")
+- setting the preferred {type_name} configuration in your project's [b]pyproject.toml[/b] file
+  (see https://ragbits.deepsense.ai/how-to/core/component_preferrences/ for more information)""")
         raise typer.Exit(1) from e
     except InvalidConfigError as e:
         Console(stderr=True).print(e)
