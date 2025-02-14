@@ -16,8 +16,7 @@ from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement
-from ragbits.document_search.documents.sources.source_resolver import SourceResolver
-from ragbits.document_search.documents.sources.sources import Source
+from ragbits.document_search.documents.sources.base import Source, SourceResolver
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,

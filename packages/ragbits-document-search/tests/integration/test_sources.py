@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources.hugging_face_source import HuggingFaceSource
-from ragbits.document_search.documents.sources.sources import LOCAL_STORAGE_DIR_ENV
+from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
+from ragbits.document_search.documents.sources.hf import HuggingFaceSource
 
 from ..helpers import env_vars_not_set
 

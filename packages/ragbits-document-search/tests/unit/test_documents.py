@@ -6,7 +6,7 @@ from ragbits.document_search.documents.document import (
     DocumentType,
     TextDocument,
 )
-from ragbits.document_search.documents.sources.local_file_source import LocalFileSource
+from ragbits.document_search.documents.sources.local import LocalFileSource
 
 
 async def test_loading_local_file_source():

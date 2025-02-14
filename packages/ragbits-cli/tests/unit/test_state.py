@@ -8,7 +8,7 @@ from pydantic.fields import Field, FieldInfo
 from rich.table import Column, Table
 
 from ragbits.cli.state import OutputType, _get_nested_field, print_output, print_output_table
-from ragbits.document_search.documents.sources.local_file_source import LocalFileSource
+from ragbits.document_search.documents.sources.local import LocalFileSource
 
 
 class InnerTestModel(BaseModel):

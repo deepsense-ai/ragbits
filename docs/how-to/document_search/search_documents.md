@@ -15,7 +15,7 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources.gcs_source import GCSSource
+from ragbits.document_search.documents.sources.gcs import GCSSource
 
 
 async def main() -> None:
@@ -53,7 +53,7 @@ You can easily add support for your custom sources by extending the `Source` cla
 ```python
 from pathlib import Path
 
-from ragbits.document_search.documents.sources.sources import Source
+from ragbits.document_search.documents.sources.base import Source
 
 
 class CustomSource(Source):

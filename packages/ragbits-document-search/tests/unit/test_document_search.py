@@ -17,8 +17,8 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources.gcs_source import GCSSource
-from ragbits.document_search.documents.sources.local_file_source import LocalFileSource
+from ragbits.document_search.documents.sources.gcs import GCSSource
+from ragbits.document_search.documents.sources.local import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.batched import (
     BatchedAsyncProcessing,
@@ -288,9 +288,9 @@ async def test_document_search_ingest_from_uri_with_wildcard(
         results = await document_search.search(search_query)
 
         # Check that we have the expected number of results
-        assert len(results) == len(expected_contents), (
-            f"Expected {len(expected_contents)} result(s) but got {len(results)}"
-        )
+        assert len(results) == len(
+            expected_contents
+        ), f"Expected {len(expected_contents)} result(s) but got {len(results)}"
 
         # Verify each result is a TextElement
         assert all(isinstance(result, TextElement) for result in results)
@@ -488,11 +488,9 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
+            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
             mock.patch(
-                "ragbits.document_search.documents.sources.hugging_face_source.load_dataset", return_value=dataset
-            ),
-            mock.patch(
-                "ragbits.document_search.documents.sources.sources.get_local_storage_dir", return_value=storage_dir
+                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
             ),
         ):
             document_search = DocumentSearch(

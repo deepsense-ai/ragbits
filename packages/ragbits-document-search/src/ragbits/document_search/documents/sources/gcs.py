@@ -3,7 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
-from ragbits.document_search.documents.sources.sources import Source, get_local_storage_dir
+from ragbits.document_search.documents.sources.base import Source, get_local_storage_dir
 
 with suppress(ImportError):
     from gcloud.aio.storage import Storage as StorageClient
