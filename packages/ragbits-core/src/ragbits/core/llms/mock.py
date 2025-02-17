@@ -47,8 +47,8 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         self.calls.append(conversation)
         if not isinstance(options.response, NotGiven):
-            return {"response": options.response}
-        return {"response": "mocked response"}
+            return {"response": options.response, "is_mocked": True}
+        return {"response": "mocked response", "is_mocked": True}
 
     async def _call_streaming(  # noqa: PLR6301
         self,
