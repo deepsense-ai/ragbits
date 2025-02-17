@@ -2,6 +2,7 @@ import typing
 from unittest.mock import AsyncMock
 
 import pytest
+from pydantic import ValidationError
 from qdrant_client.http import models
 
 from ragbits.core.vector_stores.base import VectorStoreEntry
@@ -158,10 +159,30 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
         {"content": "test content 2", "title": "test title 2", "vector": [0.13, 0.26, 0.30]},
     ]
 
-    entries = await mock_qdrant_store.list()
+    entries = await mock_qdrant_store.list(where={"document_type": "txt"})
 
     assert len(entries) == len(results)
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.vector == result["vector"]
+
+
+def test_create_qdrant_filter() -> None:
+    where = {"a": "A", "b": 3, "c": True}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="b", match=models.MatchValue(value=3)),
+        models.FieldCondition(key="c", match=models.MatchValue(value=True)),
+    ]
+    assert qdrant_filter.must == expected_conditions
+
+
+def test_create_qdrant_filter_raises_error() -> None:
+    wrong_where_query = [{"a": "A", "b": {"c": "d"}}, {"a": "A", "b": [1, 2, 3]}, {"a": "A", "b": 1.345}]
+
+    for wh in wrong_where_query:
+        with pytest.raises(ValidationError):
+            QdrantVectorStore._create_qdrant_filter(where=wh)  # type: ignore
