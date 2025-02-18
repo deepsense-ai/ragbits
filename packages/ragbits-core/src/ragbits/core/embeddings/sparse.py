@@ -81,7 +81,7 @@ class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
             list of SparseVector instances.
         """
         vectors = []
-        min_token_count = self.default_options.min_token_count or -np.inf
+        min_token_count = self.default_options.min_token_count or float("-inf")
         for text in texts:
             tokens = self.encoder.encode(text)
             token_counts = Counter(tokens)
