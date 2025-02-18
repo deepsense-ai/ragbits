@@ -222,7 +222,7 @@ class GCSSource(Source):
     bucket: str
     object_name: str
     protocol: ClassVar[str] = "gcs"
-    _storage: "StorageClient | None" = None  # Storage client for dependency injection
+    _storage: ClassVar["StorageClient | None"] = None  # Storage client for dependency injection
 
     @classmethod
     def set_storage(cls, storage: "StorageClient | None") -> None:
