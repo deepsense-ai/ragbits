@@ -3,7 +3,6 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import ClassVar, TypeVar
 
-import numpy as np
 import tiktoken
 
 from ragbits.core import embeddings
@@ -40,14 +39,15 @@ class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
     configuration_key: ClassVar = "sparse_embedder"
 
     @abstractmethod
-    def embed_text(self, texts: list[str]) -> list[SparseVector]:
+    def embed_text(self, texts: list[str], options: SparseEmbeddingsOptionsT | None = None) -> list[SparseVector]:
         """Transforms a list of texts into sparse vectors"""
 
 
 class BagOfTokensOptions(Options):
     """A dataclass with definition of BOT options"""
 
-    get_from_model_name: bool | None | NotGiven = NOT_GIVEN
+    model_name: str | None | NotGiven = "gpt-4o"
+    encoding_name: str | None | NotGiven = NOT_GIVEN
     min_token_count: int | None | NotGiven = NOT_GIVEN
 
 
@@ -56,34 +56,32 @@ class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
 
     options_cls = BagOfTokensOptions
 
-    def __init__(self, encoding_or_model_name: str, default_options: BagOfTokensOptions | None = None):
-        """
-        Initializes the BagOfTokens embedding
-        Args:
-            encoding_name: Name of encoding to be used. Needs to be supported by tiktoken library.
-        """
-        super().__init__(default_options=default_options)
-        self.encoder = (
-            tiktoken.get_encoding(encoding_name=encoding_or_model_name)
-            if not self.default_options.get_from_model_name
-            else tiktoken.encoding_for_model(model_name=encoding_or_model_name)
-        )
-        self.dim = self.encoder.n_vocab
-
-    def embed_text(self, texts: list[str]) -> list[SparseVector]:
+    def embed_text(self, texts: list[str], options: BagOfTokensOptions | None = None) -> list[SparseVector]:
         """
         Transforms a list of texts into sparse vectors using bag-of-tokens representation.
 
         Args:
             texts: list of input texts.
+            options: optional embedding options
 
         Returns:
             list of SparseVector instances.
         """
         vectors = []
-        min_token_count = self.default_options.min_token_count or float("-inf")
+        merged_options = self.default_options | options if options else self.default_options
+        if merged_options.encoding_name and merged_options.model_name:
+            raise ValueError("Please specify only one of encoding_name or model_name")
+        if not (merged_options.encoding_name or merged_options.model_name):
+            raise ValueError("Either encoding_name or model_name needs to be specified")
+        if merged_options.encoding_name:
+            encoder = tiktoken.get_encoding(encoding_name=merged_options.encoding_name)
+        if merged_options.model_name:
+            encoder = tiktoken.encoding_for_model(model_name=merged_options.model_name)
+
+        dim = encoder.n_vocab
+        min_token_count = merged_options.min_token_count or float("-inf")
         for text in texts:
-            tokens = self.encoder.encode(text)
+            tokens = encoder.encode(text)
             token_counts = Counter(tokens)
             non_zero_dims = []
             non_zero_vals = []
@@ -94,5 +92,5 @@ class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
                 non_zero_dims.append(token)
                 non_zero_vals.append(count)
 
-            vectors.append(SparseVector(non_zero_dims, non_zero_vals, self.dim))
+            vectors.append(SparseVector(non_zero_dims, non_zero_vals, dim))
         return vectors

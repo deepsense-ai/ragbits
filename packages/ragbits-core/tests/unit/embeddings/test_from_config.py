@@ -42,9 +42,7 @@ def test_subclass_from_config_bag_of_tokens():
         {
             "type": "ragbits.core.embeddings.sparse:BagOfTokens",
             "config": {
-                "encoding_or_model_name": "gpt-4o",
                 "default_options": {
-                    "get_from_model_name": True,
                     "option1": "value1",
                     "option2": "value2",
                 },
@@ -54,7 +52,8 @@ def test_subclass_from_config_bag_of_tokens():
     embedding: SparseEmbeddings = SparseEmbeddings.subclass_from_config(config)
     assert isinstance(embedding, BagOfTokens)
     assert embedding.default_options == BagOfTokensOptions(
-        get_from_model_name=True,
+        model_name="gpt-4o",
+        encoding_name=NOT_GIVEN,
         min_token_count=NOT_GIVEN,
         option1="value1",
         option2="value2",
