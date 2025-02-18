@@ -24,7 +24,7 @@ class SparseVector:
 
     def __post_init__(self) -> None:
         if len(self.non_zero_dims) != len(self.non_zero_vals):
-            raise ValueError("It should be same number of non zero values and non zero positions")
+            raise ValueError("There should be the same number of non-zero values as non-zero positions")
         if any(dim >= self.dim or dim < 0 for dim in self.non_zero_dims):
             raise ValueError("Indexes should be in the range of the vector dim")
 
