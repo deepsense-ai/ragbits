@@ -16,7 +16,7 @@ class HistoryStore(ConfigurableComponent[HistoryStoreOptionsT], ABC):
 
     options_cls: type[HistoryStoreOptionsT]
     default_module: ClassVar = stores
-    configuration_key: ClassVar = "store"
+    configuration_key: ClassVar = "history_store"
 
     @abstractmethod
     async def create_conversation(self, messages: ChatFormat) -> str:
