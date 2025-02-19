@@ -102,12 +102,10 @@ class RandomQuestionsDataLoader(DataLoader):
         return questions
 ```
 
-### Define the Metrics and Run the Experiment
+### Define the Metrics
 
 ```python
-from pprint import pp as pprint
 import tiktoken
-from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.metrics.base import Metric, MetricSet, ResultT
 
 
@@ -116,43 +114,55 @@ class TokenCountMetric(Metric):
         encoding = tiktoken.get_encoding("cl100k_base")
         num_tokens = [len(encoding.encode(out.answer)) for out in results]
         return {"num_tokens": sum(num_tokens) / len(num_tokens)}
+```
 
-config = {
-    "optimizer": {
-        "direction": "minimize",
-        "n_trials": 5,
-        "max_retries_for_trial": 1,
-    },
-    "experiment": {
-        "dataloader": {
-            "type": f"{__name__}:RandomQuestionsDataLoader",
-            "config": {"num_questions": 10, "question_topic": "conspiracy theories"},
+### Run the experiment
+
+```python
+from pprint import pp as pprint
+from ragbits.evaluate.optimizer import Optimizer
+
+
+def main():
+    config = {
+        "optimizer": {
+            "direction": "minimize",
+            "n_trials": 5,
+            "max_retries_for_trial": 1,
         },
-        "pipeline": {
-            "type": f"{__name__}:RandomQuestionRespondPipeline",
-            "config": {
-                "system_prompt_content": {
-                    "optimize": True,
-                    "choices": [
-                        "Be a friendly bot answering user questions. Be as concise as possible",
-                        "Be a silly bot answering user questions. Use as few tokens as possible",
-                        "Be informative and straight to the point",
-                        "Respond to user questions in as few words as possible",
-                    ],
-                }
+        "experiment": {
+            "dataloader": {
+                "type": f"{__name__}:RandomQuestionsDataLoader",
+                "config": {"num_questions": 10, "question_topic": "conspiracy theories"},
+            },
+            "pipeline": {
+                "type": f"{__name__}:RandomQuestionRespondPipeline",
+                "config": {
+                    "system_prompt_content": {
+                        "optimize": True,
+                        "choices": [
+                            "Be a friendly bot answering user questions. Be as concise as possible",
+                            "Be a silly bot answering user questions. Use as few tokens as possible",
+                            "Be informative and straight to the point",
+                            "Respond to user questions in as few words as possible",
+                        ],
+                    }
+                },
+            },
+            "metrics": {
+                "precision_recall_f1": {
+                    "type": f"{__name__}:TokenCountMetric",
+                    "config": {},
+                },
             },
         },
-        "metrics": {
-            "precision_recall_f1": {
-                "type": f"{__name__}:TokenCountMetric",
-                "config": {},
-            },
-        },
-    },
-}
+    }
 
-experiment_results = Optimizer.run_from_config(config=config)
-pprint(experiment_results)
+    experiment_results = Optimizer.run_from_config(config=config)
+    pprint(experiment_results)
+    return experiment_results
+
+main()
 ```
 
 After executing the code, your console should display an output structure similar to this:

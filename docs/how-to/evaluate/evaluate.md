@@ -5,7 +5,7 @@ Ragbits provides an interface for evaluating pipelines using specified metrics. 
 Before running the evaluation, ensure the following prerequisites are met:
 
 1. Define the `EvaluationPipeline` structure class ([Example](optimize.md#define-the-optimized-pipeline-structure))
-2. Define the `Metrics` and organize them into a `MetricSet` ([Example](optimize.md#define-the-metrics-and-run-the-experiment))
+2. Define the `Metrics` and organize them into a `MetricSet` ([Example](optimize.md#define-the-metrics))
 3. Define the `DataLoader` ([Example](optimize.md#define-the-data-loader))
 
 The evaluation interface is very similar to the one used in [optimization](optimize.md) though we would use the same implementations
