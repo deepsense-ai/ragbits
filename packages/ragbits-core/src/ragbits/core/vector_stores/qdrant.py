@@ -2,7 +2,6 @@ import typing
 
 import httpx
 import qdrant_client
-from pydantic import ValidationError
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.http.models import QueryResponse
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
@@ -11,6 +10,7 @@ from typing_extensions import Self
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
+from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
@@ -190,16 +190,14 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The created filter.
         """
-        try:
-            return Filter(
-                must=[
-                    FieldCondition(key=key, match=MatchValue(value=typing.cast(str | int | bool, value)))
-                    for key, value in where.items()
-                ]
-            )
-        except ValidationError:
-            print("ERROR: WhereQuery dictionary must contain only str | int | bool values")
-            raise
+        where = flatten_dict(where)
+
+        return Filter(
+            must=[
+                FieldCondition(key=key, match=MatchValue(value=typing.cast(str | int | bool, value)))
+                for key, value in where.items()
+            ]
+        )
 
     @traceable
     async def list(

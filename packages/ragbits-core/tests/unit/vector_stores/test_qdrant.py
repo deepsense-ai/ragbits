@@ -180,9 +180,31 @@ def test_create_qdrant_filter() -> None:
     assert qdrant_filter.must == expected_conditions
 
 
-def test_create_qdrant_filter_raises_error() -> None:
-    wrong_where_query = [{"a": "A", "b": {"c": "d"}}, {"a": "A", "b": [1, 2, 3]}, {"a": "A", "b": 1.345}]
+def test_create_qdrant_filter_nested_dict() -> None:
+    where = {"a": "A", "b": {"c": "d"}}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="b.c", match=models.MatchValue(value="d")),
+    ]
+    assert qdrant_filter.must == expected_conditions
 
-    for wh in wrong_where_query:
-        with pytest.raises(ValidationError):
-            QdrantVectorStore._create_qdrant_filter(where=wh)  # type: ignore
+
+def test_create_qdrant_filter_with_list() -> None:
+    where = {"a": "A", "b": ["c", "d"]}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    print(qdrant_filter)
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="b[0]", match=models.MatchValue(value="c")),
+        models.FieldCondition(key="b[1]", match=models.MatchValue(value="d")),
+    ]
+    assert qdrant_filter.must == expected_conditions
+
+
+def test_create_qdrant_filter_raises_error() -> None:
+    wrong_where_query = {"a": "A", "b": 1.345}
+    with pytest.raises(ValidationError):
+        QdrantVectorStore._create_qdrant_filter(where=wrong_where_query)  # type: ignore
