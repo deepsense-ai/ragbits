@@ -82,7 +82,7 @@ options = LiteLLMOptions(
     stop=["\n"]
 )
 
-llm = LiteLLM(model_name="gpt-4", default_options=options)
+llm = LiteLLM(model_name="gpt-4o-2024-08-06", default_options=options)
 response = llm.generate("Write a short story about a robot learning to paint.")
 print(response)
 ```
@@ -95,8 +95,6 @@ Ragbits provides a flexible way to interact with LLMs by allowing you to use [`P
 ## Using prompts with LLMs
 
 Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/).
-
-In this example, we define a `RAGPrompt` that takes a query and context as input and generates a response based on the provided context.
 
 ```python
 from ragbits.core.prompt import Prompt
@@ -116,8 +114,7 @@ class JokePrompt(Prompt):
 
 Passing the prompt to a model is then as simple as:
 
-```
-python
+```python
 import asyncio
 from ragbits.core.llms.litellm import LiteLLM
 
