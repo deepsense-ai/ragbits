@@ -190,8 +190,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The created filter.
         """
-
-        where = flatten_dict(where) # type: ignore
+        where = flatten_dict(where)  # type: ignore
 
         return Filter(
             must=[
