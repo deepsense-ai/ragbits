@@ -15,6 +15,7 @@ nav:
         - how-to/core/prompts_lab.md
         - how-to/core/promptfoo.md
         - how-to/core/use_tracing.md
+        - how-to/core/use_llms.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
