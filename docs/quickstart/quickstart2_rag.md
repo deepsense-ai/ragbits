@@ -44,7 +44,7 @@ We first need to direct Ragbits to the location of the documents to load them. T
 
 ```python
 from pathlib import Path
-from ragbits.document_search.documents.sources.local import LocalFileSource
+from ragbits.document_search.documents.sources import LocalFileSource
 
 # Path to the directory with markdown files to ingest
 documents_path = Path(__file__).parent / "pb-source/en"

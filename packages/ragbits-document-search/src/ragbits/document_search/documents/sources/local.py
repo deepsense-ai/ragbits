@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources.base import Source
+from ragbits.document_search.documents.sources import Source
 
 
 class LocalFileSource(Source):

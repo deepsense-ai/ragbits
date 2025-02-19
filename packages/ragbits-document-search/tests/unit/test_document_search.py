@@ -17,8 +17,7 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources.gcs import GCSSource
-from ragbits.document_search.documents.sources.local import LocalFileSource
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.batched import (
     BatchedAsyncProcessing,
@@ -288,9 +287,9 @@ async def test_document_search_ingest_from_uri_with_wildcard(
         results = await document_search.search(search_query)
 
         # Check that we have the expected number of results
-        assert len(results) == len(
-            expected_contents
-        ), f"Expected {len(expected_contents)} result(s) but got {len(results)}"
+        assert len(results) == len(expected_contents), (
+            f"Expected {len(expected_contents)} result(s) but got {len(results)}"
+        )
 
         # Verify each result is a TextElement
         assert all(isinstance(result, TextElement) for result in results)
