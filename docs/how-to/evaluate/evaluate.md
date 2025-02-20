@@ -8,9 +8,8 @@ Before running the evaluation, ensure the following prerequisites are met:
 2. Define the `Metrics` and organize them into a `MetricSet` ([Example](optimize.md#define-the-metrics))
 3. Define the `DataLoader` ([Example](optimize.md#define-the-data-loader))
 
-The evaluation interface is very similar to the one used in [optimization](optimize.md) though we would use the same implementations
-of required classes - the only difference is a structure of the configuration file as it does not need to define optimizer options and
-parameters to be optimized.
+The evaluation example is very similar to the one used in [optimization](optimize.md), and it utilizes the same implementations of the required classes.
+The only difference is in the structure of the configuration file, as it does not need to include optimizer options or the parameters to be optimized.
 
 ```python
 import asyncio
@@ -41,6 +40,5 @@ async def main():
 
 asyncio.run(main())
 ```
-
-After the succesful execution your console should print a dictionary with keys corresponding to components of each metric and values
+'After the successful execution, your console should print a dictionary with keys corresponding to components of each metric and values
 equal to results aggregated over the defined dataloader.
