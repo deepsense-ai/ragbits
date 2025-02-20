@@ -8,10 +8,10 @@ dependencies = [
     "asyncpg>=0.30.0",
     "ragbits-cli",
     "ragbits-core[chroma,lab,local,otel,qdrant]",
-    "ragbits-document-search[gcs,huggingface,distributed]",
+    "ragbits-document-search[gcs,huggingface,distributed,azure]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
-    "ragbits-conversations",
+    "ragbits-conversations"
 ]
 
 [tool.uv]
