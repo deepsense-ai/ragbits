@@ -5,8 +5,8 @@ import pytest
 from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
-from ragbits.document_search.documents.azure_storage_source import AzureBlobStorageSource
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.document_search.documents.sources import AzureBlobStorageSource
 
 ACCOUNT_NAME = "test_account"
 BLOB_NAME = "test_blob.txt"
@@ -110,8 +110,8 @@ async def test_get_blob_service_with_default_credentials():
     account_url = f"https://{ACCOUNT_NAME}.blob.core.windows.net"
 
     with (
-        patch("ragbits.document_search.documents.azure_storage_source.DefaultAzureCredential") as mock_credential,
-        patch("ragbits.document_search.documents.azure_storage_source.BlobServiceClient") as mock_blob_client,
+        patch("ragbits.document_search.documents.sources.azure.DefaultAzureCredential") as mock_credential,
+        patch("ragbits.document_search.documents.sources.azure.BlobServiceClient") as mock_blob_client,
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,
     ):
         await AzureBlobStorageSource._get_blob_service(ACCOUNT_NAME)
@@ -132,7 +132,7 @@ async def test_fetch():
     with (
         patch.object(AzureBlobStorageSource, "_get_blob_service", return_value=mock_blob_service_client),
         patch(
-            "ragbits.document_search.documents.azure_storage_source.get_local_storage_dir",
+            "ragbits.document_search.documents.sources.azure.get_local_storage_dir",
             return_value=Path("/test_path"),
         ),
         patch("pathlib.Path.mkdir"),
@@ -158,7 +158,7 @@ async def test_fetch_raises_error():
     with (
         patch.object(AzureBlobStorageSource, "_get_blob_service", return_value=mock_blob_service_client),
         patch(
-            "ragbits.document_search.documents.azure_storage_source.get_local_storage_dir",
+            "ragbits.document_search.documents.sources.azure.get_local_storage_dir",
             return_value=Path("/test_path"),
         ),
         patch("pathlib.Path.mkdir"),
