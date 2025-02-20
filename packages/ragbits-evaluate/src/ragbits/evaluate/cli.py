@@ -6,12 +6,15 @@ from typing import Annotated
 import typer
 from pydantic import BaseModel
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import print_output
-from ragbits.document_search._main import DocumentSearch
+from ragbits.document_search import DocumentSearch
 from ragbits.evaluate.config import eval_config
+from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.evaluation_target import EvaluationTarget
 from ragbits.evaluate.evaluator import Evaluator
+from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 
 eval_app = typer.Typer(no_args_is_help=True)
@@ -29,8 +32,10 @@ def register(app: typer.Typer) -> None:
 
 @dataclass
 class _CLIState:
-    document_search: DocumentSearch | None = None
-    evaluation_target: EvaluationTarget | None = None
+    evaluation_target: WithConstructionConfig | None = None
+    metrics: MetricSet | None = None
+    dataloader: DataLoader | None = None
+
 
 
 class EvaluationResult(BaseModel):
@@ -44,24 +49,10 @@ state: _CLIState = _CLIState()
 
 @eval_app.callback()
 def common_args(
-    ds_factory_path: Annotated[
-        str | None,
-        typer.Option(
-            help="Path to a factory of the document search pipeline in format: python.path:function_name",
-            exists=True,
-            resolve_path=True,
-        ),
-    ] = None,
-    ds_yaml_path: Annotated[
-        Path | None,
-        typer.Option(
-            help="Path to a YAML configuration file of the document search pipeline", exists=True, resolve_path=True
-        ),
-    ] = None,
     target_factory_path: Annotated[
         str | None,
         typer.Option(
-            help="Path to a factory of the evaluation target in format: python.path:function_name",
+            help="Path to a factory of the document search pipeline in format: python.path:function_name",
             exists=True,
             resolve_path=True,
         ),
@@ -78,8 +69,8 @@ def common_args(
     """
     state.document_search = get_instance_or_exit(
         DocumentSearch,
-        factory_path=ds_factory_path,
-        yaml_path=ds_yaml_path,
+        factory_path=target_factory_path,
+        yaml_path=target_yaml_path,
     )
     state.evaluation_target = get_instance_or_exit(
         EvaluationTarget, factory_path=target_factory_path, yaml_path=target_yaml_path, config_override=eval_config
