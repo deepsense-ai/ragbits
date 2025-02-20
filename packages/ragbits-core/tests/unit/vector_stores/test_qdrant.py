@@ -25,7 +25,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",
-                "document": {
+                "document_meta": {
                     "title": "test title",
                     "source": {"path": "/test/path"},
                     "document_type": "test_type",
@@ -44,7 +44,12 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
         vectors=[[0.1, 0.2, 0.3]],
         payload=[
             {
-                "document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"},
+                "document": "test_key",
+                "document_meta": {
+                    "title": "test title",
+                    "source": {"path": "/test/path"},
+                    "document_type": "test_type",
+                },
                 "content": "test content",
             }
         ],
