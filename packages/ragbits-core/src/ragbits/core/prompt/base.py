@@ -67,3 +67,18 @@ class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):
         Raises:
             ResponseParsingError: If the response cannot be parsed.
         """
+
+
+class SimplePrompt(BasePrompt):
+    """
+    A simple prompt class that can handle bare strings or chat format dictionaries.
+    """
+
+    def __init__(self, content: str | ChatFormat) -> None:
+        self._content = content
+
+    @property
+    def chat(self) -> ChatFormat:
+        if isinstance(self._content, str):
+            return [{"role": "user", "content": self._content}]
+        return self._content
