@@ -8,7 +8,8 @@ from botocore.client import BaseClient
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
 from ragbits.core.utils.decorators import requires_dependencies
-from ragbits.document_search.documents.sources import Source, get_local_storage_dir
+from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
 
 class S3Source(Source):
