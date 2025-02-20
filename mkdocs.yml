@@ -12,6 +12,7 @@ nav:
   - How-to Guides:
       - Core:
         - how-to/core/use_prompting.md
+        - how-to/core/component_preferrences.md
         - how-to/core/prompts_lab.md
         - how-to/core/promptfoo.md
         - how-to/core/use_tracing.md
@@ -41,12 +42,16 @@ nav:
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
           - api_reference/core/vector-stores.md
+          - api_reference/core/metadata-stores.md
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
           - Ingestion:
             - api_reference/document_search/processing.md
             - api_reference/document_search/execution_strategies.md
+          - Retrieval:
+            - api_reference/document_search/retrieval/rephrasers.md
+            - api_reference/document_search/retrieval/rerankers.md
       - Conversations:
           - api_reference/conversations/compressors/base.md
           - api_reference/conversations/compressors/llm.md
