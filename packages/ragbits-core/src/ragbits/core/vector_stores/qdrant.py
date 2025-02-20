@@ -3,13 +3,15 @@ import typing
 import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
-from qdrant_client.models import Distance, Filter, VectorParams
+from qdrant_client.http.models import QueryResponse
+from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
 from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
+from ragbits.core.utils.dict_transformations import flatten_dict
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
 class QdrantVectorStore(VectorStore[VectorStoreOptions]):
@@ -101,6 +103,36 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             wait=True,
         )
 
+    async def _to_vector_store_entries(self, results: QueryResponse) -> list[VectorStoreEntry]:
+        """
+        Converts a query point into a vector store entry list.
+
+        Args:
+            results: The query point as a ScoredPoint.
+
+        Returns:
+            A list of VectorStoreEntry objects.
+        """
+        ids = [point.id for point in results.points]
+        vectors = [point.vector for point in results.points]
+
+        metadatas = (
+            [point.payload for point in results.points]
+            if self._metadata_store is None
+            else await self._metadata_store.get(ids)  # type: ignore
+        )
+        documents = [metadata.pop("document") for metadata in metadatas]  # type: ignore
+
+        return [
+            VectorStoreEntry(
+                id=str(id),
+                key=document,
+                vector=vector,  # type: ignore
+                metadata=metadata,  # type: ignore
+            )
+            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
+        ]
+
     @traceable
     async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
         """
@@ -127,25 +159,7 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             with_payload=True,
             with_vectors=True,
         )
-        ids = [point.id for point in results.points]
-        vectors = [point.vector for point in results.points]
-
-        metadatas = (
-            [point.payload for point in results.points]
-            if self._metadata_store is None
-            else await self._metadata_store.get(ids)  # type: ignore
-        )
-        documents = [metadata.pop("document") for metadata in metadatas]  # type: ignore
-
-        return [
-            VectorStoreEntry(
-                id=str(id),
-                key=document,
-                vector=vector,  # type: ignore
-                metadata=metadata,  # type: ignore
-            )
-            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
-        ]
+        return await self._to_vector_store_entries(results)
 
     @traceable
     async def remove(self, ids: list[str]) -> None:
@@ -165,10 +179,30 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             ),
         )
 
+    @staticmethod
+    def _create_qdrant_filter(where: WhereQuery) -> Filter:
+        """
+        Creates the QdrantFilter from the given WhereQuery.
+
+        Args:
+            where: The WhereQuery to filter.
+
+        Returns:
+            The created filter.
+        """
+        where = flatten_dict(where)  # type: ignore
+
+        return Filter(
+            must=[
+                FieldCondition(key=key, match=MatchValue(value=typing.cast(str | int | bool, value)))
+                for key, value in where.items()
+            ]
+        )
+
     @traceable
-    async def list(  # type: ignore
+    async def list(
         self,
-        where: Filter | None = None,
+        where: WhereQuery | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[VectorStoreEntry]:
@@ -193,30 +227,14 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
 
         limit = limit or (await self._client.count(collection_name=self._index_name)).count
 
+        qdrant_filter = self._create_qdrant_filter(where) if where else None
+
         results = await self._client.query_points(
             collection_name=self._index_name,
-            query_filter=where,
+            query_filter=qdrant_filter,
             limit=limit,
             offset=offset,
             with_payload=True,
             with_vectors=True,
         )
-        ids = [point.id for point in results.points]
-        vectors = [point.vector for point in results.points]
-
-        metadatas = (
-            [point.payload for point in results.points]
-            if self._metadata_store is None
-            else await self._metadata_store.get(ids)  # type: ignore
-        )
-        documents = [metadata.pop("document") for metadata in metadatas]  # type: ignore
-
-        return [
-            VectorStoreEntry(
-                id=str(id),
-                key=document,
-                vector=vector,  # type: ignore
-                metadata=metadata,  # type: ignore
-            )
-            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
-        ]
+        return await self._to_vector_store_entries(results)

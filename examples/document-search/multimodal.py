@@ -49,7 +49,7 @@ IMAGES_PATH = Path(__file__).parent / "images"
 
 def jpg_example(file_name: str) -> DocumentMeta:
     """
-    Create a document from a JPG file in the images directory.
+    Create a document from a JPG file in the image's directory.
     """
     return DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / file_name))
 
