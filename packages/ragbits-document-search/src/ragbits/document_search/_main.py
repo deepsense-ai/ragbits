@@ -11,7 +11,7 @@ from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
 from ragbits.core.embeddings import Embeddings, EmbeddingType
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import NoDefaultConfigError, ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -122,49 +122,49 @@ class DocumentSearch(WithConstructionConfig):
         return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
 
     @classmethod
-    def subclass_from_defaults(
-        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    def preferred_subclass(
+        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
     ) -> Self:
         """
-        Tries to create an instance by looking at default configuration file, and default factory function.
-        Takes optional overrides for both, which takes a higher precedence.
+        Tries to create an instance by looking at project's component prefferences, either from YAML
+        or from the factory. Takes optional overrides for both, which takes a higher precedence.
 
         Args:
-            defaults: The CoreConfig instance containing default factory and configuration details.
+            config: The CoreConfig instance containing preferred factory and configuration details.
             factory_path_override: A string representing the path to the factory function
                 in the format of "module.submodule:factory_name".
             yaml_path_override: A string representing the path to the YAML file containing
                 the Ragstack instance configuration. Looks for the configuration under the key "document_search",
-                and if not found, instantiates the class with the default configuration for each component.
+                and if not found, instantiates the class with the preferred configuration for each component.
 
         Raises:
             InvalidConfigError: If the default factory or configuration can't be found.
         """
         if yaml_path_override:
-            config = get_config_from_yaml(yaml_path_override)
+            preferrences = get_config_from_yaml(yaml_path_override)
 
             # Look for explicit document search configuration
-            if type_config := config.get(cls.configuration_key):
+            if type_config := preferrences.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
 
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(config)
+            # Instantate the class with the preferred configuration for each component
+            return cls.from_config(preferrences)
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
 
-        if default_factory := defaults.default_factories.get(cls.configuration_key):
-            return cls.subclass_from_factory(default_factory)
+        if preferred_factory := config.component_preference_factories.get(cls.configuration_key):
+            return cls.subclass_from_factory(preferred_factory)
 
-        if defaults.default_instaces_config_path is not None:
+        if config.component_preference_config_path is not None:
             # Look for explicit document search configuration
-            if default_config := defaults.default_instances_config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
+            if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
 
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(defaults.default_instances_config)
+            # Instantate the class with the prefereed configuration for each component
+            return cls.from_config(config.preferred_instances_config)
 
-        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
     @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
