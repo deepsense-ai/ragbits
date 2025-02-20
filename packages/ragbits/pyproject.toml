@@ -52,6 +52,11 @@ s3 = [
 gcs = [
     "gcloud-aio-storage~=9.3.0"
 ]
+azure=[
+    "azure-storage-blob>=12.24.1",
+    "azure-identity>=1.19.0",
+    "azure-core>=1.32.0"
+]
 lab = [
     "gradio~=4.44.0",
 ]

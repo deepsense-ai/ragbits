@@ -41,6 +41,11 @@ dependencies = ["unstructured>=0.16.9", "unstructured-client>=0.26.0", "pdf2imag
 "Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
+azure=[
+    "azure-storage-blob~=12.24.1",
+    "azure-identity~=1.19.0",
+    "azure-core~=1.32.0"
+]
 gcs = [
     "gcloud-aio-storage~=9.3.0"
 ]
@@ -53,6 +58,7 @@ distributed = [
 s3 = [
     "boto3~=1.35.42",
 ]
+
 [tool.uv]
 dev-dependencies = [
     "pre-commit~=3.8.0",
