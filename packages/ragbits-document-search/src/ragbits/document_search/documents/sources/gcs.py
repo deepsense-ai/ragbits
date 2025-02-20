@@ -38,9 +38,10 @@ class GCSSource(Source):
         Returns:
             The storage client to use. If none was injected, creates a new one.
         """
-        if cls._storage is None:
-            cls._storage = StorageClient()
-        return cls._storage
+        if cls._storage is not None:
+            return cls._storage
+
+        return StorageClient()
 
     @property
     def id(self) -> str:
@@ -101,7 +102,7 @@ class GCSSource(Source):
         async with await cls._get_storage() as storage:
             result = await storage.list_objects(bucket, params={"prefix": prefix})
             items = result.get("items", [])
-            return [cls(bucket=bucket, object_name=item["name"]) for item in items]
+            return [cls(bucket=bucket, object_name=item["name"]) for item in items if not item["name"].endswith("/")]
 
     @classmethod
     async def from_uri(cls, path: str) -> Sequence["GCSSource"]:

@@ -1,11 +1,13 @@
 from collections.abc import Sequence
+from contextlib import suppress
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
-import boto3
-from botocore.client import BaseClient
-from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+with suppress(ImportError):
+    import boto3
+    from botocore.client import BaseClient
+    from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.sources import Source
@@ -20,7 +22,7 @@ class S3Source(Source):
     protocol: ClassVar[str] = "s3"
     bucket_name: str
     key: str
-    _s3_client: ClassVar[BaseClient | None] = None
+    _s3_client: ClassVar[Optional["BaseClient"]] = None
 
     @property
     def id(self) -> str:
