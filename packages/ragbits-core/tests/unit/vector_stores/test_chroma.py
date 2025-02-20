@@ -140,7 +140,7 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert entries[0].key == "test content 1"
     assert entries[0].id == "test_id_1"
     assert entries[1].metadata["content"] == "test content 2"
-    assert entries[1].metadata["document"]["title"] == "test title 2"
+    assert entries[1].metadata["document_meta"]["title"] == "test title 2"
     assert entries[1].vector == [0.13, 0.26, 0.30]
     assert entries[1].key == "test content2"
     assert entries[1].id == "test_id_2"
