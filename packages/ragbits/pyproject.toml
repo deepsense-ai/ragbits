@@ -46,6 +46,9 @@ chroma = [
 huggingface = [
     "datasets~=3.0.1",
 ]
+s3 = [
+    "boto3>=1.35.42",
+]
 gcs = [
     "gcloud-aio-storage~=9.3.0"
 ]

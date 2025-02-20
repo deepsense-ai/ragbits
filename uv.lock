@@ -4143,6 +4143,9 @@ gcs = [
 huggingface = [
     { name = "datasets" },
 ]
+s3 = [
+    { name = "boto3" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -4159,6 +4162,7 @@ requires-dist = [
     { name = "azure-core", marker = "extra == 'azure'", specifier = "~=1.32.0" },
     { name = "azure-identity", marker = "extra == 'azure'", specifier = "~=1.19.0" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = "~=12.24.1" },
+    { name = "boto3", marker = "extra == 's3'", specifier = "~=1.35.42" },
     { name = "datasets", marker = "extra == 'huggingface'", specifier = "~=3.0.1" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
     { name = "pdf2image", specifier = ">=1.17.0" },
@@ -4270,7 +4274,7 @@ dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "lab", "local", "otel", "qdrant"] },
-    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface"] },
+    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface", "s3"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4302,7 +4306,7 @@ requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "local", "otel", "qdrant"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
