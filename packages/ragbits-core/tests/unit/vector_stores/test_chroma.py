@@ -22,7 +22,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
             vector=[0.1, 0.2, 0.3],
             metadata={
                 "content": "test content",
-                "document": {
+                "document_meta": {
                     "title": "test title",
                     "source": {"path": "/test/path"},
                     "document_type": "test_type",
@@ -40,9 +40,9 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
         metadatas=[
             {
                 "content": "test content",
-                "document.title": "test title",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
+                "document_meta.title": "test title",
+                "document_meta.source.path": "/test/path",
+                "document_meta.document_type": "test_type",
             }
         ],
         documents=["test content"],
@@ -72,15 +72,15 @@ async def test_retrieve(
             [
                 {
                     "content": "test content 1",
-                    "document.title": "test title 1",
-                    "document.source.path": "/test/path-1",
-                    "document.document_type": "txt",
+                    "document_meta.title": "test title 1",
+                    "document_meta.source.path": "/test/path-1",
+                    "document_meta.document_type": "txt",
                 },
                 {
                     "content": "test content 2",
-                    "document.title": "test title 2",
-                    "document.source.path": "/test/path-2",
-                    "document.document_type": "txt",
+                    "document_meta.title": "test title 2",
+                    "document_meta.source.path": "/test/path-2",
+                    "document_meta.document_type": "txt",
                 },
             ]
         ],
@@ -95,7 +95,7 @@ async def test_retrieve(
     assert len(entries) == len(results)
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document"]["title"] == result["title"]
+        assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.vector == result["vector"]
         assert entry.id == f"test_id_{results.index(result) + 1}"
         assert entry.key == result["content"]
@@ -115,15 +115,15 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
         "metadatas": [
             {
                 "content": "test content",
-                "document.title": "test title",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
+                "document_meta.title": "test title",
+                "document_meta.source.path": "/test/path",
+                "document_meta.document_type": "test_type",
             },
             {
                 "content": "test content 2",
-                "document.title": "test title 2",
-                "document.source.path": "/test/path",
-                "document.document_type": "test_type",
+                "document_meta.title": "test title 2",
+                "document_meta.source.path": "/test/path",
+                "document_meta.document_type": "test_type",
             },
         ],
         "embeddings": [[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]],
@@ -135,12 +135,12 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
 
     assert len(entries) == 2
     assert entries[0].metadata["content"] == "test content"
-    assert entries[0].metadata["document"]["title"] == "test title"
+    assert entries[0].metadata["document_meta"]["title"] == "test title"
     assert entries[0].vector == [0.12, 0.25, 0.29]
     assert entries[0].key == "test content 1"
     assert entries[0].id == "test_id_1"
     assert entries[1].metadata["content"] == "test content 2"
-    assert entries[1].metadata["document"]["title"] == "test title 2"
+    assert entries[1].metadata["document_meta"]["title"] == "test title 2"
     assert entries[1].vector == [0.13, 0.26, 0.30]
     assert entries[1].key == "test content2"
     assert entries[1].id == "test_id_2"
@@ -150,7 +150,7 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
     # Prepare nested metadata structure
     original_metadata = {
         "content": "test content",
-        "document": {
+        "document_meta": {
             "title": "test title",
             "source": {"path": "/test/path", "type": "pdf"},
             "metadata": {"author": "Test Author", "tags": ["test", "metadata"], "pages": 42},
@@ -172,11 +172,11 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
     mock_collection.add.assert_called_once()  # type: ignore
     stored_metadata = mock_collection.add.call_args[1]["metadatas"][0]  # type: ignore
     assert stored_metadata["content"] == "test content"
-    assert stored_metadata["document.title"] == "test title"
-    assert stored_metadata["document.source.path"] == "/test/path"
-    assert stored_metadata["document.source.type"] == "pdf"
-    assert stored_metadata["document.metadata.author"] == "Test Author"
-    assert stored_metadata["document.metadata.pages"] == 42
+    assert stored_metadata["document_meta.title"] == "test title"
+    assert stored_metadata["document_meta.source.path"] == "/test/path"
+    assert stored_metadata["document_meta.source.type"] == "pdf"
+    assert stored_metadata["document_meta.metadata.author"] == "Test Author"
+    assert stored_metadata["document_meta.metadata.pages"] == 42
 
     # Mock query response with flattened metadata
     mock_collection.query.return_value = {  # type: ignore
