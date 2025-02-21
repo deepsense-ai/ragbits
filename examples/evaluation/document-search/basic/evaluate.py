@@ -18,7 +18,7 @@ config = {
     "dataloader": {
         "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
         "config": {
-            "path": "micpst/hf-docs-retrieval",
+            "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
             "split": "train",
         },
     },
