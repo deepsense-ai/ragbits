@@ -81,6 +81,6 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
         predicted_passages = [element.text_representation for element in elements if element.text_representation]
         return DocumentSearchResult(
             question=data["question"],
-            reference_passages=data["passages"],
+            reference_passages=data["passage"],
             predicted_passages=predicted_passages,
         )

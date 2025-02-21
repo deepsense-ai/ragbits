@@ -69,3 +69,16 @@ ragbits evaluate run-evaluation \
 * The `--target-factory-path` and `--target-yaml-path` are interchangeable, as are `--metrics-factory-path` and `--metrics-yaml-path`.
 Use one or the other based on your configuration preference.
 * Non-required parameters (those with [default: None]) will be sourced from the project configuration if not provided.
+
+
+Pleae see the working example:
+
+```bash
+ragbits evaluate \
+  --target-cls ragbits.document_search:DocumentSearch \
+  --target-factory-path ragbits.evaluate.factories:basic_document_search_factory \
+  --dataloader-args deepsense-ai/synthetic-rag-dataset_v1.0,train \
+  run-evaluation
+```
+
+Please note that it uses openai embedding API so before running it set `OPENAI_API_KEY` environmental variable.
