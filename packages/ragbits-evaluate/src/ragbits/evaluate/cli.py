@@ -115,6 +115,7 @@ def common_args(
     state.metrics = get_instance_or_exit(
         MetricSet, factory_path=metrics_factory_path, yaml_path=metrics_yaml_path, config_override=eval_config
     )
+    # TODO validate if given dataloader is suitable for evaluation target
     state.dataloader = get_dataloader_instance(
         config=eval_config, dataloader_args=dataloader_args, dataloader_cls_override=dataloader_cls
     )
