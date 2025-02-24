@@ -7,11 +7,11 @@ requires-python = ">=3.10"
 dependencies = [
     "asyncpg>=0.30.0",
     "ragbits-cli",
-    "ragbits-core[chroma,lab,local,otel,qdrant]",
+    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant]",
     "ragbits-document-search[gcs,huggingface,distributed,azure,s3]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
-    "ragbits-conversations"
+    "ragbits-conversations",
 ]
 
 [tool.uv]

@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from dataclasses import dataclass
 from typing import ClassVar, TypeVar
 
 import tiktoken
+from pydantic import BaseModel
 
 from ragbits.core import embeddings
 from ragbits.core.options import Options
@@ -13,22 +13,18 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 SparseEmbeddingsOptionsT = TypeVar("SparseEmbeddingsOptionsT", bound=Options)
 
 
-@dataclass
-class SparseVector:
+class SparseVector(BaseModel):
     """Sparse Vector representation"""
 
-    non_zero_dims: list[int]
-    non_zero_vals: list[int]
-    dim: int
+    indices: list[int]
+    values: list[float]
 
     def __post_init__(self) -> None:
-        if len(self.non_zero_dims) != len(self.non_zero_vals):
+        if len(self.indices) != len(self.values):
             raise ValueError("There should be the same number of non-zero values as non-zero positions")
-        if any(dim >= self.dim or dim < 0 for dim in self.non_zero_dims):
-            raise ValueError("Indexes should be in the range of the vector dim")
 
     def __repr__(self) -> str:
-        return f"SparseVector(non_zero_dims={self.non_zero_dims}, non_zero_vals={self.non_zero_vals}, dim={self.dim})"
+        return f"SparseVector(indices={self.indices}, values={self.values})"
 
 
 class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
@@ -39,7 +35,7 @@ class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
     configuration_key: ClassVar = "sparse_embedder"
 
     @abstractmethod
-    def embed_text(self, texts: list[str], options: SparseEmbeddingsOptionsT | None = None) -> list[SparseVector]:
+    async def embed_text(self, texts: list[str], options: SparseEmbeddingsOptionsT | None = None) -> list[SparseVector]:
         """Transforms a list of texts into sparse vectors"""
 
 
@@ -52,11 +48,11 @@ class BagOfTokensOptions(Options):
 
 
 class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
-    """BagofTokens implementations of sparse Embeddings interface"""
+    """BagOfTokens implementations of sparse Embeddings interface"""
 
     options_cls = BagOfTokensOptions
 
-    def embed_text(self, texts: list[str], options: BagOfTokensOptions | None = None) -> list[SparseVector]:
+    async def embed_text(self, texts: list[str], options: BagOfTokensOptions | None = None) -> list[SparseVector]:
         """
         Transforms a list of texts into sparse vectors using bag-of-tokens representation.
 
@@ -73,12 +69,14 @@ class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
             raise ValueError("Please specify only one of encoding_name or model_name")
         if not (merged_options.encoding_name or merged_options.model_name):
             raise ValueError("Either encoding_name or model_name needs to be specified")
+
         if merged_options.encoding_name:
             encoder = tiktoken.get_encoding(encoding_name=merged_options.encoding_name)
-        if merged_options.model_name:
+        elif merged_options.model_name:
             encoder = tiktoken.encoding_for_model(model_name=merged_options.model_name)
+        else:
+            raise ValueError("Either encoding_name or model_name needs to be specified")
 
-        dim = encoder.n_vocab
         min_token_count = merged_options.min_token_count or float("-inf")
         for text in texts:
             tokens = encoder.encode(text)
@@ -90,7 +88,7 @@ class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
                 if count < min_token_count:
                     continue
                 non_zero_dims.append(token)
-                non_zero_vals.append(count)
+                non_zero_vals.append(float(count))
 
-            vectors.append(SparseVector(non_zero_dims, non_zero_vals, dim))
+            vectors.append(SparseVector(indices=non_zero_dims, values=non_zero_vals))
         return vectors
