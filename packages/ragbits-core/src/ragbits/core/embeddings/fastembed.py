@@ -9,6 +9,7 @@ class FastEmbedOptions(Options):
     """
     Dataclass that represents available call options for the LocalEmbeddings client.
     """
+
     batch_size: int = 256
     parallel: int | None = None
 
@@ -18,6 +19,7 @@ class FastEmbedEmbeddings(Embeddings[FastEmbedOptions]):
     Class for creating dense text embeddings using FastEmbed library.
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
     """
+
     _model: TextEmbedding
 
     def __init__(self, model_name: str, default_options: FastEmbedOptions | None = None):
@@ -46,6 +48,7 @@ class FastEmbedSparseEmbeddings(SparseEmbeddings[FastEmbedOptions]):
     Class for creating sparse text embeddings using FastEmbed library.
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
     """
+
     _model: SparseTextEmbedding
 
     def __init__(self, model_name: str, default_options: FastEmbedOptions | None = None):
