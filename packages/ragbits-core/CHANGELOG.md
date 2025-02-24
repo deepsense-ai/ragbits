@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add support to fastembed dense & sparse embeddings.
 - Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
 
 ## 0.8.0 (2025-01-29)
