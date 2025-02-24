@@ -24,7 +24,7 @@ class SparseVector(BaseModel):
             raise ValueError("There should be the same number of non-zero values as non-zero positions")
 
     def __repr__(self) -> str:
-        return f"SparseVector(non_zero_dims={self.indices}, non_zero_vals={self.values})"
+        return f"SparseVector(indices={self.indices}, values={self.values})"
 
 
 class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):

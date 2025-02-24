@@ -20,6 +20,7 @@ class FastEmbedEmbeddings(Embeddings[FastEmbedOptions]):
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
     """
 
+    options_cls = FastEmbedOptions
     _model: TextEmbedding
 
     def __init__(self, model_name: str, default_options: FastEmbedOptions | None = None):
@@ -49,6 +50,7 @@ class FastEmbedSparseEmbeddings(SparseEmbeddings[FastEmbedOptions]):
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
     """
 
+    options_cls = FastEmbedOptions
     _model: SparseTextEmbedding
 
     def __init__(self, model_name: str, default_options: FastEmbedOptions | None = None):
