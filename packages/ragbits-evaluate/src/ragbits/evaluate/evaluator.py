@@ -42,7 +42,7 @@ class Evaluator(WithConstructionConfig):
         """
         model = EvaluatorConfig.model_validate(config)
         dataloader: DataLoader = DataLoader.subclass_from_config(model.dataloader)
-        pipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
+        pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
         metrics: MetricSet = MetricSet.from_config(model.metrics)
 
         return await cls().compute(
