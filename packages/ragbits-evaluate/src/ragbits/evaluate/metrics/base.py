@@ -42,6 +42,8 @@ class MetricSet(WithConstructionConfig, Generic[ResultT]):
     Represents a set of metrics.
     """
 
+    configuration_key = "metrics"
+
     def __init__(self, *metrics: Metric[ResultT]) -> None:
         """
         Initializes the metric set.
