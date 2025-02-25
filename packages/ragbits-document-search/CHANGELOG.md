@@ -7,8 +7,9 @@
 ### Changed
 
 - ragbits-core updated to version v0.9.0
-
 - Add MultiQueryRetrieval (#311).
+- Add AWS S3 source integration (#339).
+- Add Azure BlobStorage source integration (#340).
 
 ## 0.8.0 (2025-01-29)
 

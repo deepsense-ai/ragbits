@@ -8,10 +8,20 @@
 
 - ragbits-cli updated to version v0.9.0
 - ragbits-conversations updated to version v0.9.0
+  - Add support to persisting history of conversations using sqlalchemy (#354).
 - ragbits-document-search updated to version v0.9.0
+  - Add MultiQueryRetrieval (#311).
+  - Add AWS S3 source integration (#339).
+  - Add Azure BlobStorage source integration (#340).
 - ragbits-evaluate updated to version v0.9.0
+  - Add cli for document search evaluation added (#356)
+  - Add local data loader (#334).
 - ragbits-guardrails updated to version v0.9.0
 - ragbits-core updated to version v0.9.0
+  - Rename "default configuration" to "preferred configuration" (#361).
+  - Allow to pass str or dict to LLM.generate() (#286)
+  - Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
+
 
 ## 0.8.0 (2025-01-29)
 
