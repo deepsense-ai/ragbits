@@ -3,7 +3,7 @@
 Ragbits Document Search can ingest documents in a distributed fashion if it's installed with `distributed` extra. This can be set up by specifying the `DistributedProcessing` execution strategy when creating the `DocumentSearch` instance.
 
 ```python
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -14,7 +14,7 @@ documents = [
     DocumentMeta.create_text_document_from_literal("Example document 2"),
 ]
 
-embedder = LiteLLMEmbeddings(
+embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 

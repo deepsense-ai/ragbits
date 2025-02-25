@@ -9,7 +9,7 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
-from ragbits.core.embeddings import Embeddings, EmbeddingType
+from ragbits.core.embeddings import Embedder, EmbeddingType
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
@@ -70,7 +70,7 @@ class DocumentSearch(WithConstructionConfig):
     default_module: ClassVar = document_search
     configuration_key: ClassVar = "document_search"
 
-    embedder: Embeddings
+    embedder: Embedder
     vector_store: VectorStore
     query_rephraser: QueryRephraser
     reranker: Reranker
@@ -79,7 +79,7 @@ class DocumentSearch(WithConstructionConfig):
 
     def __init__(
         self,
-        embedder: Embeddings,
+        embedder: Embedder,
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
@@ -110,7 +110,7 @@ class DocumentSearch(WithConstructionConfig):
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        embedder: Embeddings = Embeddings.subclass_from_config(model.embedder)
+        embedder: Embedder = Embedder.subclass_from_config(model.embedder)
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)

@@ -12,7 +12,7 @@ pip install ragbits-document-search
 
 ## Quickstart
 ```python
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
@@ -20,7 +20,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbeddings(
+    embedder = LiteLLMEmbedder(
         model="text-embedding-3-small",
     )
     vector_store = InMemoryVectorStore()

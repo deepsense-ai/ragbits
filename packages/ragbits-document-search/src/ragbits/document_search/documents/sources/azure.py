@@ -1,12 +1,14 @@
 import os
 from collections.abc import Sequence
+from contextlib import suppress
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
-from azure.core.exceptions import ResourceNotFoundError
-from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+with suppress(ImportError):
+    from azure.core.exceptions import ResourceNotFoundError
+    from azure.identity import DefaultAzureCredential
+    from azure.storage.blob import BlobServiceClient
 
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
@@ -23,7 +25,7 @@ class AzureBlobStorageSource(Source):
     account_name: str
     container_name: str
     blob_name: str
-    _blob_service: BlobServiceClient | None = None
+    _blob_service: Optional["BlobServiceClient"] = None
 
     @property
     def id(self) -> str:
@@ -34,7 +36,7 @@ class AzureBlobStorageSource(Source):
 
     @classmethod
     @requires_dependencies(["azure.storage.blob", "azure.identity"], "azure")
-    async def _get_blob_service(cls, account_name: str) -> BlobServiceClient:
+    async def _get_blob_service(cls, account_name: str) -> "BlobServiceClient":
         """
         Returns an authenticated BlobServiceClient instance.
 

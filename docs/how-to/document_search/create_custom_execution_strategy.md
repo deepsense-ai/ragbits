@@ -71,7 +71,7 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
 To use your custom execution strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance:
 
 ```python
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -82,7 +82,7 @@ documents = [
     DocumentMeta.create_text_document_from_literal("Example document 2"),
 ]
 
-embedder = LiteLLMEmbeddings(
+embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 vector_store = InMemoryVectorStore()
