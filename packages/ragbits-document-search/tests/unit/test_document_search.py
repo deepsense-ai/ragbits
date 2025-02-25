@@ -26,7 +26,7 @@ from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
-    "embedder": {"type": "NoopEmbeddings"},
+    "embedder": {"type": "NoopEmbedder"},
     "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},

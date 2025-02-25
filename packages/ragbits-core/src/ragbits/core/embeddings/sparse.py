@@ -10,7 +10,7 @@ from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-SparseEmbeddingsOptionsT = TypeVar("SparseEmbeddingsOptionsT", bound=Options)
+SparseEmbedderOptionsT = TypeVar("SparseEmbedderOptionsT", bound=Options)
 
 
 class SparseVector(BaseModel):
@@ -27,15 +27,15 @@ class SparseVector(BaseModel):
         return f"SparseVector(indices={self.indices}, values={self.values})"
 
 
-class SparseEmbeddings(ConfigurableComponent[SparseEmbeddingsOptionsT], ABC):
+class SparseEmbedder(ConfigurableComponent[SparseEmbedderOptionsT], ABC):
     """Sparse embedding interface"""
 
-    options_cls: type[SparseEmbeddingsOptionsT]
+    options_cls: type[SparseEmbedderOptionsT]
     default_module: ClassVar = embeddings
     configuration_key: ClassVar = "sparse_embedder"
 
     @abstractmethod
-    async def embed_text(self, texts: list[str], options: SparseEmbeddingsOptionsT | None = None) -> list[SparseVector]:
+    async def embed_text(self, texts: list[str], options: SparseEmbedderOptionsT | None = None) -> list[SparseVector]:
         """Transforms a list of texts into sparse vectors"""
 
 
@@ -47,8 +47,8 @@ class BagOfTokensOptions(Options):
     min_token_count: int | None | NotGiven = NOT_GIVEN
 
 
-class BagOfTokens(SparseEmbeddings[BagOfTokensOptions]):
-    """BagOfTokens implementations of sparse Embeddings interface"""
+class BagOfTokens(SparseEmbedder[BagOfTokensOptions]):
+    """BagOfTokens implementations of sparse Embedder interface"""
 
     options_cls = BagOfTokensOptions
 

@@ -1,6 +1,6 @@
-from ragbits.core.embeddings import Embeddings, NoopEmbeddings
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings, LiteLLMEmbeddingsOptions
-from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbeddings
+from ragbits.core.embeddings import Embedder, NoopEmbedder
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
+from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
 from ragbits.core.types import NOT_GIVEN
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 
@@ -8,7 +8,7 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig
 def test_subclass_from_config_litellm():
     config = ObjectContructionConfig.model_validate(
         {
-            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
             "config": {
                 "model": "some_model",
                 "default_options": {
@@ -18,10 +18,10 @@ def test_subclass_from_config_litellm():
             },
         }
     )
-    embedding: Embeddings = Embeddings.subclass_from_config(config)
-    assert isinstance(embedding, LiteLLMEmbeddings)
-    assert embedding.model == "some_model"
-    assert embedding.default_options == LiteLLMEmbeddingsOptions(
+    embedder: Embedder = Embedder.subclass_from_config(config)
+    assert isinstance(embedder, LiteLLMEmbedder)
+    assert embedder.model == "some_model"
+    assert embedder.default_options == LiteLLMEmbedderOptions(
         dimensions=NOT_GIVEN,
         timeout=NOT_GIVEN,
         user=NOT_GIVEN,
@@ -32,9 +32,9 @@ def test_subclass_from_config_litellm():
 
 
 def test_subclass_from_config_default_path_litellm():
-    config = ObjectContructionConfig.model_validate({"type": "NoopEmbeddings"})
-    embedding: Embeddings = Embeddings.subclass_from_config(config)
-    assert isinstance(embedding, NoopEmbeddings)
+    config = ObjectContructionConfig.model_validate({"type": "NoopEmbedder"})
+    embedder: Embedder = Embedder.subclass_from_config(config)
+    assert isinstance(embedder, NoopEmbedder)
 
 
 def test_subclass_from_config_bag_of_tokens():
@@ -49,9 +49,9 @@ def test_subclass_from_config_bag_of_tokens():
             },
         }
     )
-    embedding: SparseEmbeddings = SparseEmbeddings.subclass_from_config(config)
-    assert isinstance(embedding, BagOfTokens)
-    assert embedding.default_options == BagOfTokensOptions(
+    embedder: SparseEmbedder = SparseEmbedder.subclass_from_config(config)
+    assert isinstance(embedder, BagOfTokens)
+    assert embedder.default_options == BagOfTokensOptions(
         model_name="gpt-4o",
         encoding_name=NOT_GIVEN,
         min_token_count=NOT_GIVEN,

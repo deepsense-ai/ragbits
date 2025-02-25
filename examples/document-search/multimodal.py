@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: Multimodal Embeddings
+Ragbits Document Search Example: Multimodal Embedder
 
 This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
 
@@ -8,7 +8,7 @@ logged in to Google Cloud (using the `gcloud auth login` command) and that you h
 
 The script performs the following steps:
     1. Create a list of example documents.
-    2. Initialize the `VertexAIMultimodelEmbeddings` class (which uses the VertexAI multimodal embeddings).
+    2. Initialize the `VertexAIMultimodelEmbedder` class (which uses the VertexAI multimodal embeddings).
     3. Initialize the `InMemoryVectorStore` class, which stores the embeddings for the duration of the script.
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
@@ -34,7 +34,7 @@ import asyncio
 from pathlib import Path
 
 from ragbits.core import audit
-from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbeddings
+from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -67,7 +67,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = VertexAIMultimodelEmbeddings()
+    embedder = VertexAIMultimodelEmbedder()
     vector_store = InMemoryVectorStore()
     router = DocumentProcessorRouter.from_config(
         {

@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from ragbits.core.embeddings import Embeddings
+from ragbits.core.embeddings import Embedder
 from ragbits.core.options import Options
 
 try:
@@ -13,26 +13,26 @@ except ImportError:
     HAS_LOCAL_EMBEDDINGS = False
 
 
-class LocalEmbeddingsOptions(Options):
+class LocalEmbedderOptions(Options):
     """
-    Dataclass that represents available call options for the LocalEmbeddings client.
+    Dataclass that represents available call options for the LocalEmbedder client.
     """
 
     batch_size: int = 1
 
 
-class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
+class LocalEmbedder(Embedder[LocalEmbedderOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
     """
 
-    options_cls = LocalEmbeddingsOptions
+    options_cls = LocalEmbedderOptions
 
     def __init__(
         self,
         model_name: str,
         api_key: str | None = None,
-        default_options: LocalEmbeddingsOptions | None = None,
+        default_options: LocalEmbedderOptions | None = None,
     ) -> None:
         """Constructs a new local LLM instance.
 
@@ -56,7 +56,7 @@ class LocalEmbeddings(Embeddings[LocalEmbeddingsOptions]):
         self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
-    async def embed_text(self, data: list[str], options: LocalEmbeddingsOptions | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
         """Calls the appropriate encoder endpoint with the given data and options.
 
         Args:

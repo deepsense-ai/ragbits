@@ -7,8 +7,8 @@ from typer.testing import CliRunner
 from ragbits.cli import app as root_app
 from ragbits.cli import autoregister
 from ragbits.cli.state import CliState, cli_state
-from ragbits.core.embeddings.base import Embeddings
-from ragbits.core.embeddings.noop import NoopEmbeddings
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores import InMemoryVectorStore, VectorStore
 from ragbits.core.vector_stores._cli import vector_stores_app
 from ragbits.core.vector_stores.base import VectorStoreEntry
@@ -69,14 +69,14 @@ def vector_store_factory_for_remove() -> VectorStore:
     return _vector_store_for_remove
 
 
-def embedder_factory() -> Embeddings:
+def embedder_factory() -> Embedder:
     """
-    A factory function that creates an instance of no-op Embeddings.
+    A factory function that creates an instance of no-op Embedder.
 
     Returns:
-        Embeddings: An instance of the Embeddings.
+        Embedder: An instance of the Embedder.
     """
-    return NoopEmbeddings()
+    return NoopEmbedder()
 
 
 def test_vector_store_cli_no_store():

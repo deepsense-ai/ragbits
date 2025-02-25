@@ -1,16 +1,16 @@
-from .base import Embeddings, EmbeddingsOptionsT, EmbeddingType
-from .litellm import LiteLLMEmbeddings
-from .noop import NoopEmbeddings
-from .sparse import BagOfTokens, SparseEmbeddings, SparseEmbeddingsOptionsT
+from .base import Embedder, EmbedderOptionsT, EmbeddingType
+from .litellm import LiteLLMEmbedder
+from .noop import NoopEmbedder
+from .sparse import BagOfTokens, SparseEmbedder, SparseEmbedderOptionsT
 
 __all__ = [
     "BagOfTokens",
     "BagOfTokens",
+    "Embedder",
+    "EmbedderOptionsT",
     "EmbeddingType",
-    "Embeddings",
-    "EmbeddingsOptionsT",
-    "LiteLLMEmbeddings",
-    "NoopEmbeddings",
-    "SparseEmbeddings",
-    "SparseEmbeddingsOptionsT",
+    "LiteLLMEmbedder",
+    "NoopEmbedder",
+    "SparseEmbedder",
+    "SparseEmbedderOptionsT",
 ]

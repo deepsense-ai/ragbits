@@ -2,7 +2,7 @@ import asyncio
 
 from datasets import load_dataset
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
@@ -39,6 +39,6 @@ async def _add_example_documents(document_search: DocumentSearch) -> None:
 
 def basic_document_search_factory() -> DocumentSearch:
     """A factory for basic example document search instance"""
-    document_search = DocumentSearch(embedder=LiteLLMEmbeddings(), vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(embedder=LiteLLMEmbedder(), vector_store=InMemoryVectorStore())
     asyncio.run(_add_example_documents(document_search))
     return document_search

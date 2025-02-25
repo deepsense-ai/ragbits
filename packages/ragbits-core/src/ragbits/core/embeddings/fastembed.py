@@ -1,20 +1,20 @@
 from fastembed import SparseTextEmbedding, TextEmbedding
 
-from ragbits.core.embeddings import Embeddings, EmbeddingsOptionsT, SparseEmbeddings
+from ragbits.core.embeddings import Embedder, EmbedderOptionsT, SparseEmbedder
 from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.options import Options
 
 
 class FastEmbedOptions(Options):
     """
-    Dataclass that represents available call options for the LocalEmbeddings client.
+    Dataclass that represents available call options for the LocalEmbedder client.
     """
 
     batch_size: int = 256
     parallel: int | None = None
 
 
-class FastEmbedEmbeddings(Embeddings[FastEmbedOptions]):
+class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
     """
     Class for creating dense text embeddings using FastEmbed library.
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
@@ -28,7 +28,7 @@ class FastEmbedEmbeddings(Embeddings[FastEmbedOptions]):
         self.model_name = model_name
         self._model = TextEmbedding(model_name)
 
-    async def embed_text(self, data: list[str], options: EmbeddingsOptionsT | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[list[float]]:
         """
         Embeds a list of strings into a list of embeddings.
 
@@ -44,7 +44,7 @@ class FastEmbedEmbeddings(Embeddings[FastEmbedOptions]):
         return [[float(x) for x in result] for result in self._model.embed(data, **merged_options.dict())]
 
 
-class FastEmbedSparseEmbeddings(SparseEmbeddings[FastEmbedOptions]):
+class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
     """
     Class for creating sparse text embeddings using FastEmbed library.
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).
@@ -58,7 +58,7 @@ class FastEmbedSparseEmbeddings(SparseEmbeddings[FastEmbedOptions]):
         self.model_name = model_name
         self._model = SparseTextEmbedding(model_name)
 
-    async def embed_text(self, data: list[str], options: EmbeddingsOptionsT | None = None) -> list[SparseVector]:
+    async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[SparseVector]:
         """
         Embeds a list of strings into a list of sparse embeddings.
 

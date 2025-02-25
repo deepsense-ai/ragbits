@@ -1,11 +1,11 @@
 from ragbits.core.audit import traceable
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
 
 
-class NoopEmbeddings(Embeddings[Options]):
+class NoopEmbedder(Embedder[Options]):
     """
-    A no-op implementation of the Embeddings class.
+    A no-op implementation of the Embedder class.
 
     This class provides a simple embedding method that returns a fixed
     embedding vector for each input text. It's mainly useful for testing
@@ -21,7 +21,7 @@ class NoopEmbeddings(Embeddings[Options]):
 
         Args:
             data: A list of input text strings to embed.
-            options: Additional settings used by the Embeddings model.
+            options: Additional settings used by the Embedder model.
 
         Returns:
             A list of embedding vectors, where each vector
