@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+## 0.9.0 (2025-02-25)
+
 - Add support to fastembed dense & sparse embeddings.
+- Rename "default configuration" to "preferred configuration" (#361).
+- Allow to pass str or dict to LLM.generate() (#286)
 - Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
 
 ## 0.8.0 (2025-01-29)
