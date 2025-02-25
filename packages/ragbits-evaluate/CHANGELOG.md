@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.9.0 (2025-02-25)
+
+### Changed
+
+- ragbits-core updated to version v0.9.0
+
 - cli for document search evaluation added (#356)
 
 - Add local data loader (#334).
