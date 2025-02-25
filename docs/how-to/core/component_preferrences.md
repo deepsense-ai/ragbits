@@ -86,7 +86,7 @@ vector_store:
     index_name: my_index
 
 embedder:
-  type: LiteLLMEmbeddings
+  type: LiteLLMEmbedder
   config:
     model: text-embedding-3-small
 ```
@@ -102,7 +102,7 @@ embedder:
       type: DocumentSearch
       config:
         embedder:
-          type: NoopEmbeddings
+          type: NoopEmbedder
         vector_store:
           type: InMemoryVectorStore
     ```
@@ -111,12 +111,12 @@ embedder:
 
     ```yaml
     embedder:
-      type: NoopEmbeddings
+      type: NoopEmbedder
     vector_store:
       type: InMemoryVectorStore
     ```
 
-    In both cases, `DocumentSearch` will use `NoopEmbeddings` as the preferred embedder and `InMemoryVectorStore` as the preferred vector store.
+    In both cases, `DocumentSearch` will use `NoopEmbedder` as the preferred embedder and `InMemoryVectorStore` as the preferred vector store.
 
 ## Using the Preferred Components
 Preferred components are used automatically by the [Ragbits CLI](../../cli/main.md). The `ragbits` commands that work on components (like [`ragbits vector-store`](../../cli/main.md#ragbits-vector-store), [`ragbits document-search`](../../cli/main.md#ragbits-document-search), etc.) will use the component preferred for the given type unless instructed otherwise.
@@ -148,7 +148,7 @@ This is the list of component types for which you can set a preferred configurat
 
 | Key                  | Package                   | Base class                                        | Notes                                        |
 |----------------------|---------------------------|---------------------------------------------------|----------------------------------------------|
-| `embedder`           | `ragbits-core`            | [`Embeddings`][ragbits.core.embeddings.Embeddings]|                                              |
+| `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.Embedder]    |                                              |
 | `llm`                | `ragbits-core`            | [`LLM`][ragbits.core.llms.LLM]                    | Specifics: [Configuration](#llm-configuration), [Usage](#llm-usage)|
 | `metadata_store`     | `ragbits-core`            | [`MetadataStore`][ragbits.core.metadata_stores.base.MetadataStore]|                                          |
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |

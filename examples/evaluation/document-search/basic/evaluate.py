@@ -26,7 +26,7 @@ config = {
         "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
         "config": {
             "embedder": {
-                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
                 "config": {
                     "model": "text-embedding-3-small",
                 },

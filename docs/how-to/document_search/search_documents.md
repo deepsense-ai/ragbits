@@ -11,7 +11,7 @@ This guide will walk you through all those steps and explain the details. Let's 
 import asyncio
 from pathlib import Path
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -26,7 +26,7 @@ async def main() -> None:
         DocumentMeta.from_source(GCSSource(bucket="<your_bucket>", object_name="<your_object_name>"))
     ]
 
-    embedder = LiteLLMEmbeddings()
+    embedder = LiteLLMEmbedder()
     vector_store = InMemoryVectorStore()
     document_search = DocumentSearch(
         embedder=embedder,
@@ -66,8 +66,7 @@ class CustomSource(Source):
 ```
 
 ## Processing, embedding and storing
-Having the documents loaded we can proceed with the pipeline. The next step covers the processing, embedding and storing. Embeddings and Vector Stores have their own sections in the documentation,
-here we will focus on the processing.
+Having the documents loaded we can proceed with the pipeline. The next step covers the processing, embedding and storing. Embedders and Vector Stores have their own sections in the documentation, here we will focus on the processing.
 
 Before a document can be ingested into the system it needs to be processed into a collection of elements that the system supports. Right now there are two supported elements:
 `TextElement` and `ImageElement`. You can introduce your own elements by simply extending the `Element` class.

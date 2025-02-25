@@ -2,13 +2,13 @@
 Ragbits Document Search Example: OpenTelemetry
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
+We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `ChromaVectorStore` class to store
 the embeddings, and the OpenTelemetry SDK to trace the operations.
 
 The script performs the following steps:
 
     1. Create a list of documents.
-    2. Initialize the `LiteLLMEmbeddings` class with the OpenAI `text-embedding-3-small` embedding model.
+    2. Initialize the `LiteLLMEmbedder` class with the OpenAI `text-embedding-3-small` embedding model.
     3. Initialize the `ChromaVectorStore` class with a `PersistentClient` instance and an index name.
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
@@ -59,7 +59,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from ragbits.core import audit
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
@@ -98,7 +98,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbeddings(
+    embedder = LiteLLMEmbedder(
         model="text-embedding-3-small",
     )
     vector_store = ChromaVectorStore(

@@ -8,6 +8,7 @@
 - Rename "default configuration" to "preferred configuration" (#361).
 - Allow to pass str or dict to LLM.generate() (#286)
 - Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
+- Rename all embedders to have `Embedder` in their name (instead of `Embeddings`).
 
 ## 0.8.0 (2025-01-29)
 
@@ -96,7 +97,7 @@
 ### Added
 
 - Initial release of the package.
-- Introduce core components: Prompts, LLMs, Embeddings and VectorStores.
+- Introduce core components: Prompts, LLMs, Embedder and VectorStores.
 - `Prompt` class integration with promptfoo.
 - LiteLLM integration.
 - ChromaDB integration.
