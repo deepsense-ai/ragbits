@@ -1,12 +1,14 @@
 import asyncio
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 from ragbits.core.audit import _get_function_inputs, set_trace_handlers, trace, traceable
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import TraceHandler, format_attributes, max_string_length
+from ragbits.core.vector_stores import VectorStoreEntry
 
 
 class MockTraceHandler(TraceHandler):
@@ -166,7 +168,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
     [
         # Empty dict
         ({}, None, {}),
-        ({}, "test", {}),
+        ({}, "prefix", {}),
         # Simple types
         (
             {"str": "value", "int": 42, "float": 3.14, "bool": True},
@@ -181,15 +183,51 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
         ({"list": [1, 2, 3], "tuple": ("a", "b", "c")}, None, {"list": "[1, 2, 3]", "tuple": "['a', 'b', 'c']"}),
         # Complex objects in lists
         (
-            {"objects": [{"a": 1}, datetime(2023, 1, 1)]},
-            None,
-            {"objects": "[\"{'a': 1}\", 'datetime.datetime(2023, 1, 1, 0, 0)']"},
+            {
+                "objects": [
+                    {"a": 1},
+                    datetime(2023, 1, 1),
+                    Path("/path/to/file"),
+                    ["short", "list"],
+                    "LongString" + "A" * (max_string_length + 50),
+                ]
+            },
+            "test",
+            {
+                "test.objects[0].a": 1,
+                "test.objects[1].datetime": "datetime.datetime(2023, 1, 1, 0, 0)",
+                "test.objects[2].PosixPath": "PosixPath('/path/to/file')",
+                "test.objects[3]": "['short', 'list']",
+                "test.objects[4]": "LongString" + "A" * (max_string_length - 10) + "...",
+            },
         ),
         # Mixed nested structure
         (
             {"level1": {"level2": {"string": "value", "list": [1, {"x": "y"}]}}},
             "test",
-            {"test.level1.level2.string": "value", "test.level1.level2.list": "[1, \"{'x': 'y'}\"]"},
+            {"test.level1.level2.string": "value", "test.level1.level2.list": "[1, {'x': 'y'}]"},
+        ),
+        # Empty dict and list
+        ({"a": [], "b": {}, "c": ""}, "empty", {"empty.a": "[]", "empty.b": "{}", "empty.c": ""}),
+        # Long list and long string
+        (
+            {
+                "vector": [0.01, 0.02, 0.03, 0.04] * 1534,
+                "vcs": VectorStoreEntry(
+                    id="uniq",
+                    key="21",
+                    vector=[0.01, 0.02, 0.03, 0.04] * 1534,
+                    metadata={"content": "A" * max_string_length + "B" * max_string_length},
+                ),
+            },
+            "test",
+            {
+                "test.vector": "[0.01, 0.02, '...', 0.04]",
+                "test.vcs.VectorStoreEntry.id": "uniq",
+                "test.vcs.VectorStoreEntry.key": "21",
+                "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, '...', 0.04]",
+                "test.vcs.VectorStoreEntry.metadata.content": "A" * max_string_length + "...",
+            },
         ),
     ],
 )

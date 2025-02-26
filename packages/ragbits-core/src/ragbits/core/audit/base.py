@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
-from typing import Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar
 
 SpanT = TypeVar("SpanT")
 
@@ -124,6 +124,11 @@ def format_attributes_1(data: dict, prefix: str | None = None) -> dict:
     return flattened
 
 
+max_string_length = 150
+max_list_length = 15
+opt_list_length = 3
+
+
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
     Args:
@@ -133,9 +138,6 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
     Returns:
         The formatted attributes.
     """
-    max_string_length = 150
-    max_list_length = 15
-    opt_list_lenght = 3
 
     def shorten_list(lst: list | tuple) -> list:
         """
@@ -145,8 +147,8 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
         Returns: shortened list.
         """
         lst = [shorten_string(item) if isinstance(item, str) else item for item in lst]
-        if len(lst) > opt_list_lenght:
-            return lst[: opt_list_lenght - 1] + ["..."] + [lst[-1]]
+        if len(lst) > opt_list_length:
+            return lst[: opt_list_length - 1] + ["..."] + [lst[-1]]
 
         return lst
 
@@ -160,16 +162,6 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
             return string[:max_string_length] + "..."
         return string
 
-    def format_value(val: object) -> str:
-        """
-        Shortens a string and returns string representation of value.
-        Args: val: The value to shorten.
-        Returns: string representation.
-        """
-        if isinstance(value, str):
-            return shorten_string(cast(str, val))
-        return repr(val)
-
     def process_item(item: object, curr_key: str, attr_dict: dict) -> None:
         """
         Process any type of item.
@@ -180,11 +172,17 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
             attr_dict: Flattened dictionary of attributes.
         """
         if isinstance(item, str | int | float | bool) or item is None:
-            attr_dict[curr_key] = format_value(item)
+            attr_dict[curr_key] = shorten_string(item) if isinstance(item, str) else item
         elif isinstance(item, list | tuple):
-            attr_dict.update(process_list(item, curr_key))
+            if item == []:
+                attr_dict[curr_key] = repr(item)
+            else:
+                attr_dict.update(process_list(item, curr_key))
         elif isinstance(item, dict):
-            attr_dict.update(format_attributes(item, curr_key))
+            if item == {}:
+                attr_dict[curr_key] = repr(item)
+            else:
+                attr_dict.update(format_attributes(item, curr_key))
         else:
             attr_dict.update(process_object(item, curr_key))
 
@@ -216,9 +214,9 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
         """
         lst_attr = {}
         if all(isinstance(item, str | float | int | bool) for item in lst):
-            lst_attr[curr_key] = shorten_list(lst)
+            lst_attr[curr_key] = repr(shorten_list(lst))
         elif len(lst) < max_list_length and len(repr(lst)) < max_string_length:
-            lst_attr[curr_key] = cast(Any, format_value(repr(lst)))
+            lst_attr[curr_key] = repr(lst)
         else:
             for idx, item in enumerate(lst):
                 position_key = f"{curr_key}[{idx}]"
