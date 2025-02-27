@@ -4,7 +4,7 @@ from enum import Enum
 from rich.live import Live
 from rich.tree import Tree
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import TraceHandler, AttributeFormatter
 
 
 class SpanStatus(Enum):
@@ -105,7 +105,10 @@ class CLITraceHandler(TraceHandler[CLISpan]):
         Returns:
             The updated current trace span.
         """
-        attributes = format_attributes(inputs, prefix="inputs")
+        formatter = AttributeFormatter(data=inputs, prefix="inputs")
+        formatter.format_attributes()
+        attributes=formatter.flattened
+
         span = CLISpan(
             name=name,
             attributes=attributes,
@@ -129,7 +132,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             outputs: The output data.
             current_span: The current trace span.
         """
-        attributes = format_attributes(outputs, prefix="outputs")
+        formatter = AttributeFormatter(data=outputs, prefix="outputs")
+        formatter.format_attributes()
+        attributes=formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.COMPLETED
         current_span.end()
@@ -148,7 +153,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             error: The error that occurred.
             current_span: The current trace span.
         """
-        attributes = format_attributes({"message": str(error), **vars(error)}, prefix="error")
+        formatter = AttributeFormatter({"message": str(error), **vars(error)}, prefix="error")
+        formatter.format_attributes()
+        attributes=formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.ERROR
         current_span.end()

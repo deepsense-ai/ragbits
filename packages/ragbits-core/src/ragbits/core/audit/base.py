@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
 SpanT = TypeVar("SpanT")
 
@@ -108,7 +108,7 @@ def format_attributes_1(data: dict, prefix: str | None = None) -> dict:
         current_key = f"{prefix}.{key}" if prefix else key
 
         if isinstance(value, dict):
-            flattened.update(format_attributes(value, current_key))
+            flattened.update(format_attributes_1(value, current_key))
         elif isinstance(value, list | tuple):
             flattened[current_key] = repr(
                 [
@@ -123,46 +123,37 @@ def format_attributes_1(data: dict, prefix: str | None = None) -> dict:
 
     return flattened
 
+class AttributeFormatter():
+    max_string_length = 150
+    max_list_length = 15
+    opt_list_length = 4
+    def __init__(self, data, prefix):
 
-max_string_length = 150
-max_list_length = 15
-opt_list_length = 3
+        self.data = data
+        self.prefix = prefix
+        self.flattened: dict[str, str | float | int | bool] = {}
 
 
-def format_attributes(data: dict, prefix: str | None = None) -> dict:
-    """
-    Args:
-    data: The data to format.
-    prefix: The prefix to use for the keys.
-
-    Returns:
-        The formatted attributes.
-    """
-
-    def shorten_list(lst: list | tuple) -> list:
+    def format_attributes(self, attr_dict: object = None, prefix: str= "") -> None:
         """
-        Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
+        Args:
+        attr_dict: The data to format.
+        prefix: The prefix to use for the keys.
 
-        Args: lst: The list to shorten.
-        Returns: shortened list.
+        Returns:
+            The formatted attributes.
         """
-        lst = [shorten_string(item) if isinstance(item, str) else item for item in lst]
-        if len(lst) > opt_list_length:
-            return lst[: opt_list_length - 1] + ["..."] + [lst[-1]]
 
-        return lst
+        if prefix == "" and self.prefix:
+            prefix = self.prefix
+        if attr_dict is None:
+            attr_dict = self.data
+        for key, value in attr_dict.items():
+            prefix = f"{prefix}.{key}"
+            self.process_item(value, prefix)
 
-    def shorten_string(string: str) -> str:
-        """
-        Shortens strinf if it's longer than max_string_length.
-        Args: string: The string to shorten.
-        Returns: shortened string.
-        """
-        if len(string) > max_string_length:
-            return string[:max_string_length] + "..."
-        return string
 
-    def process_item(item: object, curr_key: str, attr_dict: dict) -> None:
+    def process_item(self, item: object, curr_key: str) -> None:
         """
         Process any type of item.
 
@@ -172,21 +163,22 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
             attr_dict: Flattened dictionary of attributes.
         """
         if isinstance(item, str | int | float | bool) or item is None:
-            attr_dict[curr_key] = shorten_string(item) if isinstance(item, str) else item
+            self.flattened[curr_key] = self.shorten_string(item) if isinstance(item, str) else item
         elif isinstance(item, list | tuple):
             if item == []:
-                attr_dict[curr_key] = repr(item)
+                self.flattened[curr_key] = repr(item)
             else:
-                attr_dict.update(process_list(item, curr_key))
+                self.process_list(item, curr_key)
         elif isinstance(item, dict):
-            if item == {}:
-                attr_dict[curr_key] = repr(item)
+            if item != {}:
+                self.format_attributes(item, curr_key)
             else:
-                attr_dict.update(format_attributes(item, curr_key))
+                self.flattened[curr_key] = repr(item)
         else:
-            attr_dict.update(process_object(item, curr_key))
+            self.process_object(item, curr_key)
 
-    def process_object(obj: object, curr_key: str) -> dict:
+
+    def process_object(self, obj: object, curr_key: str) -> None:
         """
         Process any object and it's attributes.
 
@@ -195,37 +187,69 @@ def format_attributes(data: dict, prefix: str | None = None) -> dict:
             curr_key: the prefix of the key in flattened dictionary.
         Returns: flattened dictionary.
         """
-        obj_attr = {}
+
         curr_key = curr_key + "." + str(type(obj).__name__)
         if not hasattr(obj, "__dict__"):
-            obj_attr[curr_key] = repr(obj)
-            return obj_attr
+            self.flattened[curr_key] = repr(obj)
+            return
         for k, v in obj.__dict__.items():
             sub_key = curr_key + "." + k
-            process_item(v, sub_key, obj_attr)
-        return obj_attr
+            self.process_item(v, sub_key)
 
-    def process_list(lst: list | tuple, curr_key: str) -> dict:
+
+    def process_list(self, lst: list | tuple, curr_key: str) -> None:
         """
         Process lists by elements.
         Args: lst: The list to process.
         curr_key: the prefix of the key in flattened dictionary.
         Returns: flattened dictionary.
         """
-        lst_attr = {}
+
         if all(isinstance(item, str | float | int | bool) for item in lst):
-            lst_attr[curr_key] = repr(shorten_list(lst))
-        elif len(lst) < max_list_length and len(repr(lst)) < max_string_length:
-            lst_attr[curr_key] = repr(lst)
+            self.flattened[curr_key] = repr(self.shorten_list(lst))
+        elif len(lst) < self.max_list_length and len(repr(lst)) < self.max_string_length:
+            self.flattened[curr_key] = repr(lst)
         else:
+            is_too_long = False
+            if len(lst) > self.max_list_length:
+                is_too_long = True
+                length=len(lst)
+
+                last = lst[-1]
+                print("ZZZZZZZZZ ", length, last)
+                lst = lst[:self.opt_list_length]
+
             for idx, item in enumerate(lst):
                 position_key = f"{curr_key}[{idx}]"
-                process_item(item, position_key, lst_attr)
-        return lst_attr
+                self.process_item(item, position_key)
 
-    flattened: dict[str, str | float | int | bool] = {}
+            if is_too_long:
+                position_key = f"{curr_key}[{self.opt_list_length}:{length-1}]"
+                self.flattened[position_key] = f"...{length-self.opt_list_length-1} more elements..."
+                position_key = f"{curr_key}[{length-1  }]"
+                self.process_item(last, position_key)
 
-    for key, value in data.items():
-        current_key = f"{prefix}.{key}" if prefix else key
-        process_item(value, current_key, flattened)
-    return flattened
+
+    def shorten_list(self, lst: list | tuple) -> list:
+        """
+        Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
+
+        Args: lst: The list to shorten.
+        Returns: shortened list.
+        """
+        lst = [self.shorten_string(item) if isinstance(item, str) else item for item in lst]
+        if len(lst) > self.opt_list_length:
+            return lst[: self.opt_list_length - 1] + ["..."] + [lst[-1]]
+
+        return lst
+
+
+    def shorten_string(self, string: str) -> str:
+        """
+        Shortens string if it's longer than max_string_length.
+        Args: string: The string to shorten.
+        Returns: shortened string.
+        """
+        if len(string) > self.max_string_length:
+            return string[:self.max_string_length] + "..."
+        return string
