@@ -219,12 +219,12 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                     vector=[0.01, 0.02, 0.03, 0.04] * 1534,
                     metadata={
                         "for_shortening": "A" * AttributeFormatter.max_string_length
-                                          + "B" * AttributeFormatter.max_string_length
+                        + "B" * AttributeFormatter.max_string_length
                     },
                 ),
                 "response": {
                     "not_for_shortening": "A" * AttributeFormatter.max_string_length
-                                          + "B" * AttributeFormatter.max_string_length
+                    + "B" * AttributeFormatter.max_string_length
                 },
             },
             "test",
@@ -235,7 +235,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                 "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
                 "test.response.not_for_shortening": "A" * AttributeFormatter.max_string_length
-                                                    + "B" * AttributeFormatter.max_string_length,
+                + "B" * AttributeFormatter.max_string_length,
             },
         ),
     ],
