@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ragbits.core.audit import _get_function_inputs, set_trace_handlers, trace, traceable
-from ragbits.core.audit.base import TraceHandler, AttributeFormatter
+from ragbits.core.audit.base import AttributeFormatter, TraceHandler
 from ragbits.core.vector_stores import VectorStoreEntry
 
 
@@ -217,9 +217,15 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                     id="uniq",
                     key="21",
                     vector=[0.01, 0.02, 0.03, 0.04] * 1534,
-                    metadata={"for_shortening": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length},
+                    metadata={
+                        "for_shortening": "A" * AttributeFormatter.max_string_length
+                                          + "B" * AttributeFormatter.max_string_length
+                    },
                 ),
-                "response": {"not_for_shortening": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length}
+                "response": {
+                    "not_for_shortening": "A" * AttributeFormatter.max_string_length
+                                          + "B" * AttributeFormatter.max_string_length
+                },
             },
             "test",
             {
@@ -228,12 +234,12 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                 "test.vcs.VectorStoreEntry.key": "21",
                 "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
-                "test.response.not_for_shortening":  "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length
+                "test.response.not_for_shortening": "A" * AttributeFormatter.max_string_length
+                                                    + "B" * AttributeFormatter.max_string_length,
             },
         ),
     ],
 )
-
 def test_format_attributes(input_data: dict, prefix: str, expected: dict) -> None:
     formatter = AttributeFormatter(input_data, prefix)
     formatter.format_attributes()

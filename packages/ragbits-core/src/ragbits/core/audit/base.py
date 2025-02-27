@@ -91,7 +91,7 @@ class TraceHandler(Generic[SpanT], ABC):
 # TODO: check do we need this method.
 
 
-def format_attributes_1(data: dict, prefix: str | None = None) -> dict:
+def simple_format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
     Format attributes for CLI.
 
@@ -108,7 +108,7 @@ def format_attributes_1(data: dict, prefix: str | None = None) -> dict:
         current_key = f"{prefix}.{key}" if prefix else key
 
         if isinstance(value, dict):
-            flattened.update(format_attributes_1(value, current_key))
+            flattened.update(simple_format_attributes(value, current_key))
         elif isinstance(value, list | tuple):
             flattened[current_key] = repr(
                 [
@@ -128,33 +128,31 @@ class AttributeFormatter:
     """
     Class for formatting attributes.
     """
+
     max_string_length = 150
     max_list_length = 15
     opt_list_length = 4
     prompt_keywords = ["messages", "response", "conversation"]
 
-    def __init__(self, data: dict[str, any], prefix: str | None = None) -> None:
-
+    def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
         """
-            Initialize the attribute formatter.
-            Args:
-                data: The data to format.
-                prefix: The prefix to use for the keys.
+        Initialize the attribute formatter.
+
+        Args:
+            data: The data to format.
+            prefix: The prefix to use for the keys.
         """
         self.data = data
         self.prefix = prefix
         self.flattened: dict[str, str | float | int | bool | None] = {}
 
-
-
-    def format_attributes(self, attr_dict: object = None, curr_key: str | None = None) -> None:
+    def format_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
         """
         Format attributes for CLI
         Args:
         attr_dict: The data to format.
         curr_key: The prefix to use for the keys.
         """
-
         if not curr_key and self.prefix:
             curr_key = self.prefix
         if attr_dict is None:
@@ -196,7 +194,6 @@ class AttributeFormatter:
             obj: The object to process.
             curr_key: the prefix of the key in flattened dictionary.
         """
-
         curr_key = curr_key + "." + str(type(obj).__name__)
         if not hasattr(obj, "__dict__"):
             self.flattened[curr_key] = repr(obj)
@@ -208,11 +205,11 @@ class AttributeFormatter:
     def process_list(self, lst: list | tuple, curr_key: str) -> None:
         """
         Process list by elements. If the list is too long, it will be truncated.
+
         Args:
             lst: The list to process.
             curr_key: the prefix of the key in flattened dictionary.
         """
-
         if all(isinstance(item, str | float | int | bool) for item in lst):
             self.flattened[curr_key] = repr(self.shorten_list(lst))
         elif len(lst) < self.max_list_length and len(repr(lst)) < self.max_string_length:
@@ -223,7 +220,7 @@ class AttributeFormatter:
                 is_too_long = True
                 length = len(lst)
                 last = lst[-1]
-                lst = lst[:self.opt_list_length]
+                lst = lst[: self.opt_list_length]
 
             for idx, item in enumerate(lst):
                 position_key = f"{curr_key}[{idx}]"
@@ -238,8 +235,10 @@ class AttributeFormatter:
     def shorten_list(self, lst: list | tuple) -> list:
         """
         Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
+
         Args:
             lst: The list to shorten.
+
         Returns:
             shortened list.
         """
@@ -252,13 +251,15 @@ class AttributeFormatter:
     def shorten_string(self, string: str) -> str:
         """
         Shortens string if it's longer than max_string_length.
+
         Args:
             string: The string to shorten.
+
         Returns:
             shortened string.
         """
         if len(string) > self.max_string_length:
-            return string[:self.max_string_length] + "..."
+            return string[: self.max_string_length] + "..."
         return string
 
     def is_key_excluded(self, curr_key: str) -> bool:
@@ -266,10 +267,8 @@ class AttributeFormatter:
         Check if a key belongs to the prompt keywords list - which means that the string should not be truncated
         Args:
             curr_key: The current key in flattened dictionary.
+
         Returns:
             bool: True if the key is excluded.
         """
-        for keyword in self.prompt_keywords:
-            if keyword in curr_key:
-                return True
-        return False
+        return any(keyword in curr_key for keyword in self.prompt_keywords)

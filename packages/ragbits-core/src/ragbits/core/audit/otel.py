@@ -1,7 +1,7 @@
 from opentelemetry import trace
 from opentelemetry.trace import Span, StatusCode, TracerProvider
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import TraceHandler, simple_format_attributes
 
 
 class OtelTraceHandler(TraceHandler[Span]):
@@ -34,7 +34,7 @@ class OtelTraceHandler(TraceHandler[Span]):
         context = trace.set_span_in_context(current_span) if current_span else None
 
         with self._tracer.start_as_current_span(name, context=context, end_on_exit=False) as span:
-            attributes = format_attributes(inputs, prefix="inputs")
+            attributes = simple_format_attributes(inputs, prefix="inputs")
             span.set_attributes(attributes)
 
         return span
@@ -47,7 +47,7 @@ class OtelTraceHandler(TraceHandler[Span]):
             outputs: The output data.
             current_span: The current trace span.
         """
-        attributes = format_attributes(outputs, prefix="outputs")
+        attributes = simple_format_attributes(outputs, prefix="outputs")
         current_span.set_attributes(attributes)
         current_span.set_status(StatusCode.OK)
         current_span.end()
@@ -60,7 +60,7 @@ class OtelTraceHandler(TraceHandler[Span]):
             error: The error that occurred.
             current_span: The current trace span.
         """
-        attributes = format_attributes({"message": str(error), **vars(error)}, prefix="error")
+        attributes = simple_format_attributes({"message": str(error), **vars(error)}, prefix="error")
         current_span.set_attributes(attributes)
         current_span.set_status(StatusCode.ERROR)
         current_span.end()
