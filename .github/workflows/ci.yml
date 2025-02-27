@@ -121,7 +121,7 @@ jobs:
           retention-days: 3
 
   changelog-update-checker:
-    name: Check Changelog Update  
+    name: Check Changelog Update
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -129,7 +129,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify changelog updates  
+      - name: Verify changelog updates
         run: |
           ./.github/scripts/check_changelog_update.sh
 

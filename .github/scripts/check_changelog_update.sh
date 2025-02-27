@@ -24,7 +24,7 @@ for PACKAGE in $CHANGED_PACKAGES; do
   CHANGELOG="packages/$PACKAGE/CHANGELOG.md"
   echo "Checking changelog for package: $PACKAGE"
 
-  if ! diff -u <(git show origin/main:$CHANGELOG | grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' | tr -d '\0') <(grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' $CHANGELOG | tr -d '\0') | grep -q '^\+'; then 
+  if ! diff -u <(git show origin/main:$CHANGELOG | grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' | tr -d '\0') <(grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' $CHANGELOG | tr -d '\0') | grep -q '^\+'; then
     echo "No updates detected in changelog for package $PACKAGE. Please add an entry under '## Unreleased'."
     exit 1
   fi
