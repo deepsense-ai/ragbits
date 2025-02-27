@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ragbits.core.audit import _get_function_inputs, set_trace_handlers, trace, traceable
-from ragbits.core.audit.base import TraceHandler, format_attributes, max_string_length
+from ragbits.core.audit.base import TraceHandler, AttributeFormatter
 from ragbits.core.vector_stores import VectorStoreEntry
 
 
@@ -166,7 +166,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
 @pytest.mark.parametrize(
     ("input_data", "prefix", "expected"),
     [
-        # Empty dict
+        # # Empty dict
         ({}, None, {}),
         ({}, "prefix", {}),
         # Simple types
@@ -175,11 +175,11 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             None,
             {"str": "value", "int": 42, "float": 3.14, "bool": True},
         ),
-        # With prefix
+        # # With prefix
         ({"str": "value", "int": 42}, "prefix", {"prefix.str": "value", "prefix.int": 42}),
-        # Nested dict
+        # # Nested dict
         ({"nested": {"key1": "value1", "key2": 42}}, None, {"nested.key1": "value1", "nested.key2": 42}),
-        # Lists and tuples
+        # # Lists and tuples
         ({"list": [1, 2, 3], "tuple": ("a", "b", "c")}, None, {"list": "[1, 2, 3]", "tuple": "['a', 'b', 'c']"}),
         # Complex objects in lists
         (
@@ -189,7 +189,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                     datetime(2023, 1, 1),
                     Path("/path/to/file"),
                     ["short", "list"],
-                    "LongString" + "A" * (max_string_length + 50),
+                    "LongString" + "A" * (AttributeFormatter.max_string_length + 50),
                 ]
             },
             "test",
@@ -198,7 +198,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                 "test.objects[1].datetime": "datetime.datetime(2023, 1, 1, 0, 0)",
                 "test.objects[2].PosixPath": "PosixPath('/path/to/file')",
                 "test.objects[3]": "['short', 'list']",
-                "test.objects[4]": "LongString" + "A" * (max_string_length - 10) + "...",
+                "test.objects[4]": "LongString" + "A" * (AttributeFormatter.max_string_length - 10) + "...",
             },
         ),
         # Mixed nested structure
@@ -217,20 +217,25 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                     id="uniq",
                     key="21",
                     vector=[0.01, 0.02, 0.03, 0.04] * 1534,
-                    metadata={"content": "A" * max_string_length + "B" * max_string_length},
+                    metadata={"for_shortening": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length},
                 ),
+                "response": {"not_for_shortening": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length}
             },
             "test",
             {
-                "test.vector": "[0.01, 0.02, '...', 0.04]",
+                "test.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
                 "test.vcs.VectorStoreEntry.id": "uniq",
                 "test.vcs.VectorStoreEntry.key": "21",
-                "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, '...', 0.04]",
-                "test.vcs.VectorStoreEntry.metadata.content": "A" * max_string_length + "...",
+                "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
+                "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
+                "test.response.not_for_shortening":  "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length
             },
         ),
     ],
 )
+
 def test_format_attributes(input_data: dict, prefix: str, expected: dict) -> None:
-    result = format_attributes(input_data, prefix)
+    formatter = AttributeFormatter(input_data, prefix)
+    formatter.format_attributes()
+    result = formatter.flattened
     assert result == expected

@@ -145,20 +145,22 @@ class AttributeFormatter:
         self.prefix = prefix
         self.flattened: dict[str, str | float | int | bool | None] = {}
 
-    def format_attributes(self, attr_dict: object = None, prefix: str | None = None) -> None:
+
+
+    def format_attributes(self, attr_dict: object = None, curr_key: str | None = None) -> None:
         """
         Format attributes for CLI
         Args:
         attr_dict: The data to format.
-        prefix: The prefix to use for the keys.
+        curr_key: The prefix to use for the keys.
         """
 
-        if not prefix and self.prefix:
-            prefix = self.prefix
+        if not curr_key and self.prefix:
+            curr_key = self.prefix
         if attr_dict is None:
             attr_dict = self.data
         for key, value in attr_dict.items():
-            prefix = f"{prefix}.{key}"
+            prefix = f"{curr_key}.{key}" if curr_key else key
             self.process_item(value, prefix)
 
     def process_item(self, item: object, curr_key: str) -> None:
