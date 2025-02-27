@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
@@ -88,42 +88,6 @@ class TraceHandler(Generic[SpanT], ABC):
         self.stop(outputs=vars(outputs), current_span=span)
 
 
-# TODO: check do we need this method.
-
-
-def simple_format_attributes(data: dict, prefix: str | None = None) -> dict:
-    """
-    Format attributes for CLI.
-
-    Args:
-        data: The data to format.
-        prefix: The prefix to use for the keys.
-
-    Returns:
-        The formatted attributes.
-    """
-    flattened = {}
-
-    for key, value in data.items():
-        current_key = f"{prefix}.{key}" if prefix else key
-
-        if isinstance(value, dict):
-            flattened.update(simple_format_attributes(value, current_key))
-        elif isinstance(value, list | tuple):
-            flattened[current_key] = repr(
-                [
-                    item if isinstance(item, str | float | int | bool) else repr(item)
-                    for item in value  # type: ignore
-                ]
-            )
-        elif isinstance(value, str | float | int | bool):
-            flattened[current_key] = value
-        else:
-            flattened[current_key] = repr(value)
-
-    return flattened
-
-
 class AttributeFormatter:
     """
     Class for formatting attributes.
@@ -144,7 +108,9 @@ class AttributeFormatter:
         """
         self.data = data
         self.prefix = prefix
-        self.flattened: dict[str, str | float | int | bool | None] = {}
+        self.flattened: dict[
+            str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
+        ] = {}
 
     def format_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
         """
@@ -169,10 +135,12 @@ class AttributeFormatter:
             item: The item to process.
             curr_key: The prefix of the current item in flattened dictionary.
         """
-        if isinstance(item, int | float | bool) or item is None:
+        if isinstance(item, int | float | bool):
             self.flattened[curr_key] = item
         elif isinstance(item, str):
             self.flattened[curr_key] = self.shorten_string(item) if not self.is_key_excluded(curr_key) else item
+        elif item is None:
+            self.flattened[curr_key] = repr(None)
         elif isinstance(item, list | tuple):
             if item == []:
                 self.flattened[curr_key] = repr(item)
