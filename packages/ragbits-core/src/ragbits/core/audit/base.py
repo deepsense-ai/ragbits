@@ -96,7 +96,7 @@ class AttributeFormatter:
     max_string_length = 150
     max_list_length = 15
     opt_list_length = 4
-    prompt_keywords = ["messages", "response", "conversation"]
+    prompt_keywords = ["content", "response", "query"]
 
     def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
         """
@@ -163,7 +163,7 @@ class AttributeFormatter:
             curr_key: the prefix of the key in flattened dictionary.
         """
         curr_key = curr_key + "." + str(type(obj).__name__)
-        if not hasattr(obj, "__dict__"):
+        if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
             self.flattened[curr_key] = repr(obj)
             return
         for k, v in obj.__dict__.items():
@@ -230,7 +230,8 @@ class AttributeFormatter:
             return string[: self.max_string_length] + "..."
         return string
 
-    def is_key_excluded(self, curr_key: str) -> bool:
+    @classmethod
+    def is_key_excluded(cls, curr_key: str) -> bool:
         """
         Check if a key belongs to the prompt keywords list - which means that the string should not be truncated
         Args:
@@ -239,4 +240,4 @@ class AttributeFormatter:
         Returns:
             bool: True if the key is excluded.
         """
-        return any(keyword in curr_key for keyword in self.prompt_keywords)
+        return any(keyword in curr_key.split(".") for keyword in cls.prompt_keywords)

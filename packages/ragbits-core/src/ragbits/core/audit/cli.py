@@ -1,7 +1,11 @@
 import time
 from enum import Enum
 
+from rich.console import Group
 from rich.live import Live
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.text import Text
 from rich.tree import Tree
 
 from ragbits.core.audit.base import AttributeFormatter, TraceHandler
@@ -63,16 +67,38 @@ class CLISpan:
             SpanStatus.STARTED: PrintColor.RUNNING_COLOR,
             SpanStatus.COMPLETED: PrintColor.END_COLOR,
         }[self.status].value
-        text_color = PrintColor.TEXT_COLOR.value
-        key_color = PrintColor.KEY_COLOR.value
 
+        text_color = PrintColor.TEXT_COLOR.value
         name = f"[{color}]{self.name}[/{color}][{text_color}]{elapsed}[/{text_color}]"
 
-        attrs = [
-            f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"  # noqa: PLR2004
-            for k, v in self.attributes.items()
-        ]
-        self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
+        attrs = self.render_attributes()
+
+        if len(attrs) > 0:
+            self.tree.label = Group(name, *attrs)
+        else:
+            self.tree.label = name
+
+    def render_attributes(self) -> list[Text | Panel]:
+        """
+        Renders attributes - uses markdown for prompts.
+
+        Returns:
+            list: List of formated attribute names and values.
+
+        """
+        key_color = PrintColor.KEY_COLOR.value
+        text_color = PrintColor.TEXT_COLOR.value
+        attrs: list[Text | Panel] = []
+        for k, v in self.attributes.items():
+            if isinstance(v, str) and AttributeFormatter.is_key_excluded(curr_key=k):
+                syntax = Syntax(v, lexer="markdown", theme="monokai", word_wrap=True, background_color="default")
+
+                panel = Panel(syntax, title=f"[{key_color}]{k}[/{key_color}]", title_align="left")
+                attrs.append(panel)
+            else:
+                attrs.append(Text.from_markup(f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"))
+
+        return attrs
 
     def end(self) -> None:
         """
