@@ -1,10 +1,14 @@
 import time
 from enum import Enum
 
+from rich.console import Group
 from rich.live import Live
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.text import Text
 from rich.tree import Tree
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import AttributeFormatter, TraceHandler
 
 
 class SpanStatus(Enum):
@@ -63,18 +67,38 @@ class CLISpan:
             SpanStatus.STARTED: PrintColor.RUNNING_COLOR,
             SpanStatus.COMPLETED: PrintColor.END_COLOR,
         }[self.status].value
-        text_color = PrintColor.TEXT_COLOR.value
-        key_color = PrintColor.KEY_COLOR.value
 
+        text_color = PrintColor.TEXT_COLOR.value
         name = f"[{color}]{self.name}[/{color}][{text_color}]{elapsed}[/{text_color}]"
 
-        # TODO: Remove truncating after implementing better CLI formatting.
-        attrs = [
-            f"[{key_color}]{k}:[/{key_color}] "
-            f"[{text_color}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{text_color}]"  # noqa: PLR2004
-            for k, v in self.attributes.items()
-        ]
-        self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
+        attrs = self.render_attributes()
+
+        if len(attrs) > 0:
+            self.tree.label = Group(name, *attrs)
+        else:
+            self.tree.label = name
+
+    def render_attributes(self) -> list[Text | Panel]:
+        """
+        Renders attributes - uses markdown for prompts.
+
+        Returns:
+            list: List of formated attribute names and values.
+
+        """
+        key_color = PrintColor.KEY_COLOR.value
+        text_color = PrintColor.TEXT_COLOR.value
+        attrs: list[Text | Panel] = []
+        for k, v in self.attributes.items():
+            if isinstance(v, str) and AttributeFormatter.is_key_excluded(curr_key=k):
+                syntax = Syntax(v, lexer="markdown", theme="monokai", word_wrap=True, background_color="default")
+
+                panel = Panel(syntax, title=f"[{key_color}]{k}[/{key_color}]", title_align="left")
+                attrs.append(panel)
+            else:
+                attrs.append(Text.from_markup(f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"))
+
+        return attrs
 
     def end(self) -> None:
         """
@@ -107,7 +131,10 @@ class CLITraceHandler(TraceHandler[CLISpan]):
         Returns:
             The updated current trace span.
         """
-        attributes = format_attributes(inputs, prefix="inputs")
+        formatter = AttributeFormatter(data=inputs, prefix="inputs")
+        formatter.process_attributes()
+        attributes = formatter.flattened
+
         span = CLISpan(
             name=name,
             attributes=attributes,
@@ -131,7 +158,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             outputs: The output data.
             current_span: The current trace span.
         """
-        attributes = format_attributes(outputs, prefix="outputs")
+        formatter = AttributeFormatter(data=outputs, prefix="outputs")
+        formatter.process_attributes()
+        attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.COMPLETED
         current_span.end()
@@ -150,7 +179,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             error: The error that occurred.
             current_span: The current trace span.
         """
-        attributes = format_attributes({"message": str(error), **vars(error)}, prefix="error")
+        formatter = AttributeFormatter({"message": str(error), **vars(error)}, prefix="error")
+        formatter.process_attributes()
+        attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.ERROR
         current_span.end()

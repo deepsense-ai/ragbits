@@ -1,5 +1,7 @@
 from unittest.mock import MagicMock, patch
 
+from rich.console import Group
+
 from ragbits.core.audit.cli import CLISpan, CLITraceHandler, PrintColor, SpanStatus
 
 TEST_NAME_1 = "process_1"
@@ -59,12 +61,15 @@ def test_cli_span_to_tree() -> None:
         second_instance.update()
         third_instance.update()
 
-        assert "process_1" in str(parent_instance.tree.label)
-        assert PrintColor.RUNNING_COLOR in str(parent_instance.tree.label)
-        assert "process_2" in str(second_instance.tree.label)
-        assert PrintColor.TEXT_COLOR in str(second_instance.tree.label)
-        assert "process_3" in str(third_instance.tree.label)
-        assert PrintColor.ERROR_COLOR in str(third_instance.tree.label)
+        assert isinstance(parent_instance.tree.label, Group)
+        assert "process_1" in str(parent_instance.tree.label._renderables[0])
+        assert PrintColor.RUNNING_COLOR in str(parent_instance.tree.label._renderables[0])
+        assert isinstance(second_instance.tree.label, str)
+        assert "process_2" in second_instance.tree.label
+        assert PrintColor.TEXT_COLOR in second_instance.tree.label
+        assert isinstance(third_instance.tree.label, str)
+        assert "process_3" in third_instance.tree.label
+        assert PrintColor.ERROR_COLOR in third_instance.tree.label
 
 
 def test_cli_trace_start() -> None:
@@ -73,7 +78,8 @@ def test_cli_trace_start() -> None:
 
     assert trace_handler.live is not None
     assert trace_handler.tree is not None
-    assert TEST_NAME_1 in str(trace_handler.tree.label)
+    assert isinstance(trace_handler.tree.label, Group)
+    assert TEST_NAME_1 in str(trace_handler.tree.label._renderables[0])
     assert parent_span.name == TEST_NAME_1
     assert parent_span.parent is None
     assert parent_span.start_time is not None
