@@ -242,6 +242,6 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
 )
 def test_format_attributes(input_data: dict, prefix: str, expected: dict) -> None:
     formatter = AttributeFormatter(input_data, prefix)
-    formatter.format_attributes()
+    formatter.process_attributes()
     result = formatter.flattened
     assert result == expected

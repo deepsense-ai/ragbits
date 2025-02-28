@@ -132,7 +132,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             The updated current trace span.
         """
         formatter = AttributeFormatter(data=inputs, prefix="inputs")
-        formatter.format_attributes()
+        formatter.process_attributes()
         attributes = formatter.flattened
 
         span = CLISpan(
@@ -159,7 +159,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             current_span: The current trace span.
         """
         formatter = AttributeFormatter(data=outputs, prefix="outputs")
-        formatter.format_attributes()
+        formatter.process_attributes()
         attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.COMPLETED
@@ -180,7 +180,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             current_span: The current trace span.
         """
         formatter = AttributeFormatter({"message": str(error), **vars(error)}, prefix="error")
-        formatter.format_attributes()
+        formatter.process_attributes()
         attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.ERROR

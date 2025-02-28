@@ -112,7 +112,7 @@ class AttributeFormatter:
             str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
         ] = {}
 
-    def format_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
+    def process_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
         """
         Format attributes for CLI
         Args:
@@ -148,7 +148,7 @@ class AttributeFormatter:
                 self.process_list(item, curr_key)
         elif isinstance(item, dict):
             if item != {}:
-                self.format_attributes(item, curr_key)
+                self.process_attributes(item, curr_key)
             else:
                 self.flattened[curr_key] = repr(item)
         else:
@@ -241,3 +241,36 @@ class AttributeFormatter:
             bool: True if the key is excluded.
         """
         return any(keyword in curr_key.split(".") for keyword in cls.prompt_keywords)
+
+
+def format_attributes(data: dict, prefix: str | None = None) -> dict:
+    """
+    Format attributes for open telemetry tracing.
+
+    Args:
+        data: The data to format.
+        prefix: The prefix to use for the keys.
+
+    Returns:
+        The formatted attributes.
+    """
+    flattened = {}
+
+    for key, value in data.items():
+        current_key = f"{prefix}.{key}" if prefix else key
+
+        if isinstance(value, dict):
+            flattened.update(format_attributes(value, current_key))
+        elif isinstance(value, list | tuple):
+            flattened[current_key] = repr(
+                [
+                    item if isinstance(item, str | float | int | bool) else repr(item)
+                    for item in value  # type: ignore
+                ]
+            )
+        elif isinstance(value, str | float | int | bool):
+            flattened[current_key] = value
+        else:
+            flattened[current_key] = repr(value)
+
+    return flattened
