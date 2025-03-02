@@ -171,6 +171,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
                 outputs.total_tokens = response.usage.total_tokens  # type: ignore
 
+            if response.citations:  # type: ignore
+                outputs.citations = response.citations  # type: ignore
+
             if options.logprobs:
                 outputs.logprobs = response.choices[0].logprobs["content"]  # type: ignore
 
