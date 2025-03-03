@@ -223,7 +223,6 @@ class DocumentSearch(WithConstructionConfig):
         await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
 
-    @traceable
     async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
         """
         Remove entries from the vector store whose source id is present in the elements' metadata.

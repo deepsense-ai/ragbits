@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 
-from ragbits.core.audit import traceable
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
@@ -15,7 +14,6 @@ class SequentialProcessing(ProcessingExecutionStrategy):
     A processing execution strategy that processes documents in sequence, one at a time.
     """
 
-    @traceable
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
