@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
+from ragbits.core.audit import traceable
+
 with suppress(ImportError):
     import boto3
     from botocore.client import BaseClient
@@ -32,6 +34,7 @@ class S3Source(Source):
         return f"s3://{self.bucket_name}/{self.key}"
 
     @classmethod
+    @traceable
     @requires_dependencies(["boto3"], "s3")
     def _set_client(cls, bucket_name: str) -> None:
         """
@@ -55,6 +58,7 @@ class S3Source(Source):
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize AWS S3 client: {e}") from e
 
+    @traceable
     @requires_dependencies(["boto3"], "s3")
     async def fetch(self) -> Path:
         """
@@ -94,6 +98,7 @@ class S3Source(Source):
         return path
 
     @classmethod
+    @traceable
     @requires_dependencies(["boto3"], "s3")
     async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["S3Source"]:
         """
@@ -129,6 +134,7 @@ class S3Source(Source):
             raise RuntimeError(f"Failed to list files in bucket {bucket_name}: {e}") from e
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["S3Source"]:
         """
         Create S3Source instances from a URI path.

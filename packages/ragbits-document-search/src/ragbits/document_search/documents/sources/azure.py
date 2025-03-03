@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
+from ragbits.core.audit import traceable
+
 with suppress(ImportError):
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential
@@ -35,6 +37,7 @@ class AzureBlobStorageSource(Source):
         return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @classmethod
+    @traceable
     @requires_dependencies(["azure.storage.blob", "azure.identity"], "azure")
     async def _get_blob_service(cls, account_name: str) -> "BlobServiceClient":
         """
@@ -77,6 +80,7 @@ class AzureBlobStorageSource(Source):
             "Provide an account_name for identity-based authentication or a connection string."
         )
 
+    @traceable
     @requires_dependencies(["azure.storage.blob", "azure.core.exceptions"], "azure")
     async def fetch(self) -> Path:
         """
@@ -109,6 +113,7 @@ class AzureBlobStorageSource(Source):
         return path
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["AzureBlobStorageSource"]:
         """
         Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorageSource.
@@ -156,6 +161,7 @@ class AzureBlobStorageSource(Source):
         return [cls(account_name=account_name, container_name=container_name, blob_name=blob_name)]
 
     @classmethod
+    @traceable
     @requires_dependencies(["azure.storage.blob"], "azure")
     async def list_sources(
         cls, account_name: str, container: str, blob_name: str = ""

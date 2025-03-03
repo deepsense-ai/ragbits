@@ -4,6 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
+from ragbits.core.audit import traceable
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.document_search.documents.sources import Source
@@ -34,6 +35,7 @@ class HuggingFaceSource(Source):
         """
         return f"huggingface:{self.path}/{self.split}/{self.row}"
 
+    @traceable
     @requires_dependencies(["datasets"], "huggingface")
     async def fetch(self) -> Path:
         """
@@ -71,6 +73,7 @@ class HuggingFaceSource(Source):
         return path
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
         """Create HuggingFaceSource instances from a URI path.
 
@@ -98,6 +101,7 @@ class HuggingFaceSource(Source):
             raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err
 
     @classmethod
+    @traceable
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
         """
         List all sources in the given Hugging Face repository.
