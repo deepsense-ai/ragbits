@@ -2,6 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 
@@ -11,6 +12,7 @@ def mock_chromadb_store() -> ChromaVectorStore:
     return ChromaVectorStore(
         client=MagicMock(),
         index_name="test_index",
+        embedder=NoopEmbedder(),
     )
 
 
@@ -18,8 +20,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
     data = [
         VectorStoreEntry(
             id="test_key",
-            key="test content",
-            vector=[0.1, 0.2, 0.3],
+            text="test content",
             metadata={
                 "content": "test content",
                 "document_meta": {
@@ -66,7 +67,6 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
 async def test_retrieve(
     mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
 ) -> None:
-    vector = [0.1, 0.2, 0.3]
     mock_chromadb_store._collection.query.return_value = {  # type: ignore
         "metadatas": [
             [
@@ -90,15 +90,15 @@ async def test_retrieve(
         "ids": [["test_id_1", "test_id_2"]],
     }
 
-    entries = await mock_chromadb_store.retrieve(vector, options=VectorStoreOptions(max_distance=max_distance))
+    query_results = await mock_chromadb_store.retrieve("query", options=VectorStoreOptions(max_distance=max_distance))
 
-    assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=True):
-        assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document_meta"]["title"] == result["title"]
-        assert entry.vector == result["vector"]
-        assert entry.id == f"test_id_{results.index(result) + 1}"
-        assert entry.key == result["content"]
+    assert len(query_results) == len(results)
+    for query_result, result in zip(query_results, results, strict=True):
+        assert query_result.entry.metadata["content"] == result["content"]
+        assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
+        assert query_result.vectors["text"] == result["vector"]
+        assert query_result.entry.id == f"test_id_{results.index(result) + 1}"
+        assert query_result.entry.text == result["content"]
 
 
 async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
@@ -136,13 +136,11 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert len(entries) == 2
     assert entries[0].metadata["content"] == "test content"
     assert entries[0].metadata["document_meta"]["title"] == "test title"
-    assert entries[0].vector == [0.12, 0.25, 0.29]
-    assert entries[0].key == "test content 1"
+    assert entries[0].text == "test content 1"
     assert entries[0].id == "test_id_1"
     assert entries[1].metadata["content"] == "test content 2"
     assert entries[1].metadata["document_meta"]["title"] == "test title 2"
-    assert entries[1].vector == [0.13, 0.26, 0.30]
-    assert entries[1].key == "test content2"
+    assert entries[1].text == "test content2"
     assert entries[1].id == "test_id_2"
 
 
@@ -158,9 +156,7 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
     }
 
     # Create and store entry
-    input_entry = VectorStoreEntry(
-        id="test_doc_1", key="test content", vector=[0.1, 0.2, 0.3], metadata=original_metadata
-    )
+    input_entry = VectorStoreEntry(id="test_doc_1", text="test content", metadata=original_metadata)
 
     # Mock the collection's behavior for both store and retrieve
     mock_collection = mock_chromadb_store._collection
@@ -188,9 +184,9 @@ async def test_metadata_roundtrip(mock_chromadb_store: ChromaVectorStore) -> Non
     }
 
     # Retrieve the entry
-    retrieved_entries = await mock_chromadb_store.retrieve([0.1, 0.2, 0.3])
+    retrieved_entries = await mock_chromadb_store.retrieve("query")
     assert len(retrieved_entries) == 1
 
-    retrieved_metadata = retrieved_entries[0].metadata
+    retrieved_metadata = retrieved_entries[0].entry.metadata
     # Verify the nested structure is restored correctly
     assert retrieved_metadata == original_metadata

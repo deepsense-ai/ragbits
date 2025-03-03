@@ -78,7 +78,7 @@ documents = [
 
 
 async def main():
-    document_search = DocumentSearch(embedder=LiteLLMEmbedder(), vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=LiteLLMEmbedder()))
 
     await document_search.ingest(documents)
 

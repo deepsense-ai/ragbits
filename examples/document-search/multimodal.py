@@ -68,7 +68,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = VertexAIMultimodelEmbedder()
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     router = DocumentProcessorRouter.from_config(
         {
             # For this example, we want to skip OCR and make sure
@@ -78,7 +78,6 @@ async def main() -> None:
     )
 
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
         document_processor_router=router,
     )

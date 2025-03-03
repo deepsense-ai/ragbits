@@ -86,9 +86,9 @@ async def main() -> None:
             k=10,
             max_distance=0.22,
         ),
+        embedder=embedder,
     )
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 

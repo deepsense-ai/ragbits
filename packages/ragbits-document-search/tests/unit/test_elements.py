@@ -18,8 +18,7 @@ def test_resolving_element_type() -> None:
     element = Element.from_vector_db_entry(
         db_entry=VectorStoreEntry(
             id="test id",
-            key="test content",
-            vector=[0.1, 0.2],
+            text="test content",
             metadata={
                 "element_type": "custom_element",
                 "foo": "bar",

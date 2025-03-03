@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import computed_field
 
-from ragbits.core.embeddings import EmbeddingType
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -38,22 +38,17 @@ class AnimalElement(Element):
 async def store_fixture() -> InMemoryVectorStore:
     document_meta = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
     elements = [
-        (AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=document_meta), [0.5, 0.5]),
-        (AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=document_meta), [0.6, 0.6]),
-        (AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=document_meta), [0.7, 0.7]),
-        (AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=document_meta), [0.8, 0.8]),
-        (AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=document_meta), [0.9, 0.9]),
-        (
-            AnimalElement(name="spotty", species="ladybug", type="insect", age=1, document_meta=document_meta),
-            [0.1, 0.1],
-        ),
+        AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=document_meta),
+        AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=document_meta),
+        AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=document_meta),
+        AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=document_meta),
+        AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=document_meta),
+        AnimalElement(name="spotty", species="ladybug", type="insect", age=1, document_meta=document_meta),
     ]
 
-    entries = [
-        element[0].to_vector_db_entry(vector=element[1], embedding_type=EmbeddingType.TEXT) for element in elements
-    ]
+    entries = [element.to_vector_db_entry() for element in elements]
 
-    store = InMemoryVectorStore()
+    store = InMemoryVectorStore(embedder=NoopEmbedder())
     await store.store(entries)
     return store
 
@@ -67,13 +62,11 @@ async def store_fixture() -> InMemoryVectorStore:
     ],
 )
 async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float | None, results: list[str]) -> None:
-    search_vector = [0.4, 0.4]
+    query_results = await store.retrieve("query", options=VectorStoreOptions(k=k, max_distance=max_distance))
 
-    entries = await store.retrieve(search_vector, options=VectorStoreOptions(k=k, max_distance=max_distance))
-
-    assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=True):
-        assert entry.metadata["name"] == result
+    assert len(query_results) == len(results)
+    for query_result, result in zip(query_results, results, strict=True):
+        assert query_result.entry.metadata["name"] == result
 
 
 async def test_remove(store: InMemoryVectorStore) -> None:

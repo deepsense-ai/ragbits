@@ -104,9 +104,9 @@ async def main() -> None:
     vector_store = ChromaVectorStore(
         client=EphemeralClient(),
         index_name="jokes",
+        embedder=embedder,
     )
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 

@@ -5,24 +5,21 @@ import pytest
 from pydantic import ValidationError
 from qdrant_client.http import models
 
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
 
 @pytest.fixture
 def mock_qdrant_store() -> QdrantVectorStore:
-    return QdrantVectorStore(
-        client=AsyncMock(),
-        index_name="test_collection",
-    )
+    return QdrantVectorStore(client=AsyncMock(), index_name="test_collection", embedder=NoopEmbedder())
 
 
 async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     data = [
         VectorStoreEntry(
             id="1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-            key="test_key",
-            vector=[0.1, 0.2, 0.3],
+            text="test_key",
             metadata={
                 "content": "test content",
                 "document_meta": {
@@ -99,13 +96,13 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
         {"content": "test content 2", "title": "test title 2", "vector": [0.13, 0.26, 0.30]},
     ]
 
-    entries = await mock_qdrant_store.retrieve([0.12, 0.25, 0.29])
+    query_results = await mock_qdrant_store.retrieve("query")
 
-    assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=True):
-        assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document_meta"]["title"] == result["title"]
-        assert entry.vector == result["vector"]
+    assert len(query_results) == len(results)
+    for query_result, result in zip(query_results, results, strict=True):
+        assert query_result.entry.metadata["content"] == result["content"]
+        assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
+        assert query_result.vectors["text"] == result["vector"]
 
 
 async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
@@ -170,7 +167,6 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
     for entry, result in zip(entries, results, strict=True):
         assert entry.metadata["content"] == result["content"]
         assert entry.metadata["document_meta"]["title"] == result["title"]
-        assert entry.vector == result["vector"]
 
 
 def test_create_qdrant_filter() -> None:

@@ -60,9 +60,6 @@ documents = [
 ]
 
 config = {
-    "embedder": {
-        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
-    },
     "vector_store": {
         "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
         "config": {
@@ -78,8 +75,8 @@ config = {
                 "k": 3,
                 "max_distance": 1.2,
             },
-            "metadata_store": {
-                "type": "InMemoryMetadataStore",
+            "embedder": {
+                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
             },
         },
     },

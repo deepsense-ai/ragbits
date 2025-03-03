@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import asyncpg
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores import WhereQuery
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.pgvector import PgVectorStore
@@ -39,7 +40,7 @@ def mock_db_pool() -> tuple[MagicMock, AsyncMock]:
 def mock_pgvector_store(mock_db_pool: tuple[MagicMock, AsyncMock]) -> PgVectorStore:
     """Fixture to create a PgVectorStore instance with mocked connection pool."""
     mock_pool, _ = mock_db_pool
-    return PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=3)
+    return PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=3, embedder=NoopEmbedder())
 
 
 @pytest.mark.asyncio
@@ -48,7 +49,7 @@ async def test_invalid_table_name_raises_error(mock_db_pool: tuple[MagicMock, As
     invalid_table_names = ["123table", "table-name!", "", "table name", "@table"]
     for table_name in invalid_table_names:
         with pytest.raises(ValueError, match=f"Invalid table name: {table_name}"):
-            PgVectorStore(client=mock_pool, table_name=table_name, vector_size=3)
+            PgVectorStore(client=mock_pool, table_name=table_name, vector_size=3, embedder=NoopEmbedder())
 
 
 @pytest.mark.asyncio
@@ -57,7 +58,12 @@ async def test_invalid_vector_size_raises_error(mock_db_pool: tuple[MagicMock, A
     vector_size_values = ["546", -23.0, 0, 46.5, [2, 3, 4], {"vector_size": 6}]
     for vector_size in vector_size_values:
         with pytest.raises(ValueError, match="Vector size must be a positive integer."):
-            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=vector_size)  # type: ignore
+            PgVectorStore(
+                client=mock_pool,
+                table_name=TEST_TABLE_NAME,
+                vector_size=vector_size,  # type: ignore
+                embedder=NoopEmbedder(),
+            )
 
 
 @pytest.mark.asyncio
@@ -66,7 +72,13 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
     hnsw_values = ["546", 0, [5, 10], {"m": 2}, {"m": "-23", "ef_construction": 12}, {"m": 23, "ef_construction": -12}]
     for hnsw in hnsw_values:
         with pytest.raises(ValueError):
-            PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, vector_size=3, hnsw_params=hnsw)  # type: ignore
+            PgVectorStore(
+                client=mock_pool,
+                table_name=TEST_TABLE_NAME,
+                vector_size=3,
+                hnsw_params=hnsw,  # type: ignore
+                embedder=NoopEmbedder(),
+            )
 
 
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
@@ -146,7 +158,7 @@ async def test_create_table_when_table_exist(
 @pytest.mark.asyncio
 async def test_store(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=VECTOR_EXAMPLE, metadata={})]
+    data = [VectorStoreEntry(id="test_id_1", text="test_key_1", metadata={})]
     await mock_pgvector_store.store(data)
     mock_conn.execute.assert_called()
     calls = mock_conn.execute.mock_calls
@@ -167,7 +179,7 @@ async def test_store_no_entries(mock_pgvector_store: PgVectorStore, mock_db_pool
 async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
     mock_conn.execute.side_effect = [asyncpg.exceptions.UndefinedTableError, None]
-    data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=VECTOR_EXAMPLE, metadata={})]
+    data = [VectorStoreEntry(id="test_id_1", text="test_key_1", metadata={})]
 
     with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
         await mock_pgvector_store.store(data)
@@ -215,12 +227,10 @@ async def test_fetch_records(mock_pgvector_store: PgVectorStore, mock_db_pool: t
     assert any("SELECT * FROM" in str(call) for call in calls)
     assert len(results) == 2
     assert results[0].id == "test_id_1"
-    assert results[0].key == "test_key_1"
-    assert results[0].vector == [0.1, 0.2, 0.3]
+    assert results[0].text == "test_key_1"
     assert results[0].metadata == {"key1": "value1"}
     assert results[1].id == "test_id_2"
-    assert results[1].key == "test_key_2"
-    assert results[1].vector == [0.4, 0.5, 0.6]
+    assert results[1].text == "test_key_2"
     assert results[1].metadata == {"key2": "value2"}
 
 
@@ -240,14 +250,13 @@ async def test_fetch_records_no_table(
 
 @pytest.mark.asyncio
 async def test_retrieve(mock_pgvector_store: PgVectorStore) -> None:
-    vector = VECTOR_EXAMPLE
     options = VectorStoreOptions()
     with (
         patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
         patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
     ):
         mock_create_retrieve_query.return_value = ("query_string", ["param1", "param2"])
-        await mock_pgvector_store.retrieve(vector, options=options)
+        await mock_pgvector_store.retrieve("query", options=options)
 
         mock_create_retrieve_query.assert_called_once()
         mock_fetch_records.assert_called_once()
