@@ -74,6 +74,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         self._distance_method = distance_method
         self._hnsw_params = hnsw_params
 
+    @traceable
     def _create_retrieve_query(
         self, vector: list[float], query_options: VectorStoreOptions | None = None
     ) -> tuple[str, list[Any]]:
@@ -115,6 +116,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
 
         return query, values
 
+    @traceable
     def _create_list_query(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> tuple[str, list[Any]]:
@@ -140,6 +142,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         ]
         return query, values
 
+    @traceable
     async def create_table(self) -> None:
         """
         Create a pgVector table with an HNSW index for given similarity.
