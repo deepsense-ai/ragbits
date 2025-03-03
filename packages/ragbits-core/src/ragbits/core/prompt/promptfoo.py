@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from ragbits.core.audit import traceable
+
 try:
     import yaml
 
@@ -14,6 +16,7 @@ from ragbits.core.config import core_config
 from ragbits.core.prompt.discovery import PromptDiscovery
 
 
+@traceable
 def generate_configs(
     file_pattern: str = core_config.prompt_path_pattern,
     root_path: Path | None = None,

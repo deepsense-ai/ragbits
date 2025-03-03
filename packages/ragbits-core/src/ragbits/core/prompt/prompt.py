@@ -7,8 +7,9 @@ from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
-from .base import BasePromptWithParser, ChatFormat, OutputT
-from .parsers import DEFAULT_PARSERS, build_pydantic_parser
+from ragbits.core.audit import traceable
+from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
@@ -40,6 +41,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     user_prompt_template: Template
     image_input_fields: list[str] | None = None
 
+    @traceable
     @classmethod
     def _get_io_types(cls) -> tuple:
         bases = get_original_bases(cls)
@@ -56,6 +58,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 return (input_type, output_type)
         return (None, str)
 
+    @traceable
     @classmethod
     def _parse_template(cls, template: str) -> Template:
         env = Environment(autoescape=True)
@@ -76,6 +79,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             context = input_data.model_dump(serialize_as_any=True)
         return template.render(**context)
 
+    @traceable
     @classmethod
     def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
         images: list[bytes | str] = []
@@ -94,6 +98,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     def _format_message(cls, message: str) -> str:
         return textwrap.dedent(message).strip()
 
+    @traceable
     @classmethod
     def _detect_response_parser(cls) -> Callable[[str], OutputT]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
@@ -175,6 +180,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self._instace_few_shots.append((user_message, assistant_message))
         return self
 
+    @traceable
     def list_few_shots(self) -> ChatFormat:
         """
         Returns the few shot examples in the standard OpenAI chat format.
