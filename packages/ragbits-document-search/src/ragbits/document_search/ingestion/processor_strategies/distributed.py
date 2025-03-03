@@ -1,6 +1,8 @@
 import asyncio
 from collections.abc import Sequence
 
+from ragbits.core.audit import traceable
+
 try:
     import ray
 
@@ -39,6 +41,7 @@ class DistributedProcessing(ProcessingExecutionStrategy):
 
         self.batch_size = batch_size
 
+    @traceable
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],

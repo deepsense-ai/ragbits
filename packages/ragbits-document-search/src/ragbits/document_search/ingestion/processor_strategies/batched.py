@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Sequence
 
+from ragbits.core.audit import traceable
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
@@ -34,6 +35,7 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
         async with semaphore:
             return await self.process_document(document, processor_router, processor_overwrite)
 
+    @traceable
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
