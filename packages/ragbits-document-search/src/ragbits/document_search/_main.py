@@ -242,6 +242,7 @@ class DocumentSearch(WithConstructionConfig):
         if ids_to_delete:
             await self.vector_store.remove(ids_to_delete)
 
+    @traceable
     async def insert_elements(self, elements: list[Element]) -> None:
         """
         Insert Elements into the vector store.

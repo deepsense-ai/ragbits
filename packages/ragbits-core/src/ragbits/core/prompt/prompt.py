@@ -41,8 +41,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     user_prompt_template: Template
     image_input_fields: list[str] | None = None
 
-    @traceable
     @classmethod
+    @traceable
     def _get_io_types(cls) -> tuple:
         bases = get_original_bases(cls)
         for base in bases:
@@ -58,8 +58,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 return (input_type, output_type)
         return (None, str)
 
-    @traceable
     @classmethod
+    @traceable
     def _parse_template(cls, template: str) -> Template:
         env = Environment(autoescape=True)
         ast = env.parse(template)
@@ -79,8 +79,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             context = input_data.model_dump(serialize_as_any=True)
         return template.render(**context)
 
-    @traceable
     @classmethod
+    @traceable
     def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
         images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
@@ -98,8 +98,8 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     def _format_message(cls, message: str) -> str:
         return textwrap.dedent(message).strip()
 
-    @traceable
     @classmethod
+    @traceable
     def _detect_response_parser(cls) -> Callable[[str], OutputT]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
