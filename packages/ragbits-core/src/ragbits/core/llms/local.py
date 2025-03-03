@@ -4,6 +4,8 @@ from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
+from ragbits.core.audit import traceable
+
 try:
     import accelerate  # noqa: F401
     import torch  # noqa: F401
@@ -86,6 +88,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         input_ids = self.tokenizer.apply_chat_template(prompt.chat)
         return len(input_ids)
 
+    @traceable
     async def _call(
         self,
         conversation: ChatFormat,
@@ -118,6 +121,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         return {"response": decoded_response}
 
+    @traceable
     async def _call_streaming(
         self,
         conversation: ChatFormat,
