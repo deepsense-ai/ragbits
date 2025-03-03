@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from ragbits.conversations.history.compressors import ConversationHistoryCompressor
+from ragbits.core.audit import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import ChatFormat, Prompt
 
@@ -56,6 +57,7 @@ class StandaloneMessageCompressor(ConversationHistoryCompressor):
         self._history_len = history_len
         self._prompt = prompt or StandaloneMessageCompressorPrompt
 
+    @traceable
     async def compress(self, conversation: ChatFormat) -> str:
         """
         Contextualize the last message in the conversation history.
