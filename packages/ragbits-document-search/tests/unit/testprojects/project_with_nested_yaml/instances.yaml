@@ -1,5 +1,5 @@
 embedder:
-  type: NoopEmbeddings
+  type: NoopEmbedder
 vector_store:
   type: InMemoryVectorStore
   config:
@@ -9,7 +9,7 @@ document_search:
   type: DocumentSearch
   config:
     embedder:
-      type: NoopEmbeddings
+      type: NoopEmbedder
     vector_store:
       type: InMemoryVectorStore
       config:

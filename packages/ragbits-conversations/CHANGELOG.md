@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.9.0 (2025-02-25)
+
+
+### Changed
+
+- ragbits-core updated to version v0.9.0
+- Add support to persisting history of conversations using sqlalchemy (#354).
+
 ## 0.8.0 (2025-01-29)
 
 ### Changed

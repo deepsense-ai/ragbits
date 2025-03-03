@@ -1,7 +1,7 @@
 import asyncio
 import base64
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddingsOptions
+from ragbits.core.embeddings.litellm import LiteLLMEmbedderOptions
 
 try:
     import litellm
@@ -13,19 +13,19 @@ except ImportError:
     HAS_LITELLM = False
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embeddings
+from ragbits.core.embeddings import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
     EmbeddingStatusError,
 )
 
 
-class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
+class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """
 
-    options_cls = LiteLLMEmbeddingsOptions
+    options_cls = LiteLLMEmbedderOptions
     VERTEX_AI_PREFIX = "vertex_ai/"
 
     def __init__(
@@ -34,7 +34,7 @@ class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         api_base: str | None = None,
         api_key: str | None = None,
         concurency: int = 10,
-        default_options: LiteLLMEmbeddingsOptions | None = None,
+        default_options: LiteLLMEmbedderOptions | None = None,
     ) -> None:
         """
         Constructs the embedding client for multimodal VertexAI models.
@@ -66,7 +66,7 @@ class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         if model not in supported_models:
             raise ValueError(f"Model {model} is not supported by VertexAI multimodal embeddings")
 
-    async def _embed(self, data: list[dict], options: LiteLLMEmbeddingsOptions | None = None) -> list[dict]:
+    async def _embed(self, data: list[dict], options: LiteLLMEmbedderOptions | None = None) -> list[dict]:
         """
         Creates embeddings for the given data. The format is defined in the VertexAI API:
         https://cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-multimodal-embeddings
@@ -107,7 +107,7 @@ class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
             return outputs.embeddings
 
     async def _call_litellm(
-        self, instance: dict, semaphore: asyncio.Semaphore, options: LiteLLMEmbeddingsOptions
+        self, instance: dict, semaphore: asyncio.Semaphore, options: LiteLLMEmbedderOptions
     ) -> litellm.EmbeddingResponse:
         """
         Calls the LiteLLM API to get embeddings for the given data.
@@ -131,7 +131,7 @@ class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
 
         return response
 
-    async def embed_text(self, data: list[str], options: LiteLLMEmbeddingsOptions | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
@@ -159,7 +159,7 @@ class VertexAIMultimodelEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         return True
 
     async def embed_image(
-        self, images: list[bytes], options: LiteLLMEmbeddingsOptions | None = None
+        self, images: list[bytes], options: LiteLLMEmbedderOptions | None = None
     ) -> list[list[float]]:
         """
         Creates embeddings for the given images.

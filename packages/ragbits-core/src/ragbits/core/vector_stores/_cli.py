@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from ragbits.cli import cli_state, print_output
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import OutputType
-from ragbits.core.embeddings.base import Embeddings
+from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 
 vector_stores_app = typer.Typer(no_args_is_help=True)
@@ -121,7 +121,7 @@ def query(
             raise ValueError("Vector store not initialized")
 
         embedder = get_instance_or_exit(
-            Embeddings,
+            Embedder,
             factory_path=embedder_factory_path,
             yaml_path=embedder_yaml_path,
             factory_path_argument_name="--embedder_factory_path",

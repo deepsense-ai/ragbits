@@ -4,4 +4,4 @@
 on your data, however you are not limited to this. In order to implement custom ones for your specific use case you would need to inherit from `ragbits.evaluate.metrics.base.Metric`
 abstract class and implement `compute` method.
 
-Please find the [working example](optimize.md#define-the-metrics-and-run-the-experiment) here.
+Please find the [working example](optimize.md#define-the-metrics) here.

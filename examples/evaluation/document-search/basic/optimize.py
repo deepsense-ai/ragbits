@@ -25,7 +25,7 @@ config = {
         "dataloader": {
             "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
             "config": {
-                "path": "micpst/hf-docs-retrieval",
+                "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
                 "split": "train",
             },
         },
@@ -33,7 +33,7 @@ config = {
             "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
             "config": {
                 "embedder": {
-                    "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
+                    "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
                     "config": {
                         "model": "text-embedding-3-small",
                         "default_options": {

@@ -6,7 +6,7 @@ from ragbits.core import embeddings
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-EmbeddingsOptionsT = TypeVar("EmbeddingsOptionsT", bound=Options)
+EmbedderOptionsT = TypeVar("EmbedderOptionsT", bound=Options)
 
 
 class EmbeddingType(Enum):
@@ -24,23 +24,23 @@ class EmbeddingType(Enum):
     IMAGE = "image"
 
 
-class Embeddings(ConfigurableComponent[EmbeddingsOptionsT], ABC):
+class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
     """
     Abstract client for communication with embedding models.
     """
 
-    options_cls: type[EmbeddingsOptionsT]
+    options_cls: type[EmbedderOptionsT]
     default_module: ClassVar = embeddings
     configuration_key: ClassVar = "embedder"
 
     @abstractmethod
-    async def embed_text(self, data: list[str], options: EmbeddingsOptionsT | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
         Args:
             data: List of strings to get embeddings for.
-            options: Additional settings used by the Embeddings model.
+            options: Additional settings used by the Embedder model.
 
         Returns:
             List of embeddings for the given strings.
@@ -55,13 +55,13 @@ class Embeddings(ConfigurableComponent[EmbeddingsOptionsT], ABC):
         """
         return False
 
-    async def embed_image(self, images: list[bytes], options: EmbeddingsOptionsT | None = None) -> list[list[float]]:
+    async def embed_image(self, images: list[bytes], options: EmbedderOptionsT | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given images.
 
         Args:
             images: List of images to get embeddings for.
-            options: Additional settings used by the Embeddings model.
+            options: Additional settings used by the Embedder model.
 
         Returns:
             List of embeddings for the given images.

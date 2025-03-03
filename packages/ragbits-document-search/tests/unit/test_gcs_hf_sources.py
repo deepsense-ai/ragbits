@@ -6,11 +6,8 @@ from unittest.mock import MagicMock, patch
 
 from aiohttp import ClientSession
 
-from ragbits.document_search.documents.sources import (
-    LOCAL_STORAGE_DIR_ENV,
-    GCSSource,
-    HuggingFaceSource,
-)
+from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource
+from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
@@ -96,7 +93,7 @@ async def test_huggingface_source_fetch() -> None:
     data = MagicMock(skip=skip)
     source = HuggingFaceSource(path="org/docs", split="train", row=1)
 
-    with patch("ragbits.document_search.documents.sources.load_dataset", return_value=data):
+    with patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=data):
         path = await source.fetch()
 
     assert source.id == "huggingface:org/docs/train/1"

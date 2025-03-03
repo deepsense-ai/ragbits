@@ -17,10 +17,7 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import (
-    GCSSource,
-    LocalFileSource,
-)
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.batched import (
     BatchedAsyncProcessing,
@@ -29,7 +26,7 @@ from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
-    "embedder": {"type": "NoopEmbeddings"},
+    "embedder": {"type": "NoopEmbedder"},
     "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
@@ -490,8 +487,10 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.document_search.documents.sources.load_dataset", return_value=dataset),
-            mock.patch("ragbits.document_search.documents.sources.get_local_storage_dir", return_value=storage_dir),
+            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
+            mock.patch(
+                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
+            ),
         ):
             document_search = DocumentSearch(
                 embedder=embeddings_mock,

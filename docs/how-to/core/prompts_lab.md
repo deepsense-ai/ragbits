@@ -33,11 +33,10 @@ To work with a specific prompt, select it from the list. The "Inputs" pane allow
 Then, click "Render prompt" to view the final prompt content, with all placeholders replaced with the values you provided. To check how the Large Language Model responds to the prompt, click "Send to LLM".
 
 !!! note
-    If there is no default LLM configured for your project, Prompts Lab will use OpenAI's gpt-3.5-turbo. Ensure that the OPENAI_API_KEY environment variable is set and contains your OpenAI API key.
+    If there is no [preferred LLM configured for your project](../core/component_preferrences.md), Prompts Lab will use OpenAI's gpt-3.5-turbo. Ensure that the OPENAI_API_KEY environment variable is set and contains your OpenAI API key.
 
     Alternatively, you can use your own custom LLM factory (a function that creates an instance of [ragbit's LLM class][ragbits.core.llms.LLM]) by specifying the path to the factory function using the `--llm-factory` option with the `ragbits prompts lab` command.
 
-    <!-- TODO: link to the how-to on configuring default LLMs in pyproject.toml -->
 
 ## Conclusion
 
