@@ -7,6 +7,7 @@ from distilabel.steps.base import Step
 from omegaconf import DictConfig, OmegaConf
 from pydantic import BaseModel
 
+from ragbits.core.audit import traceable
 from ragbits.core.utils.config_handling import import_by_path
 
 module = sys.modules[__name__]
@@ -116,6 +117,7 @@ class DatasetGenerationPipeline:
         result = result.remove_columns(["distilabel_metadata", "model_name"])
         return result
 
+    @traceable
     def _parse_pipeline_steps(self) -> list[Step]:
         tasks = []
         for task_config in self.config.tasks:
@@ -131,6 +133,7 @@ class DatasetGenerationPipeline:
                 tasks.append(filter)
         return tasks
 
+    @traceable
     def _instantiate_pipeline(self) -> None:
         with Pipeline(self.config.name) as self.pipeline:
             tasks = self._parse_pipeline_steps()

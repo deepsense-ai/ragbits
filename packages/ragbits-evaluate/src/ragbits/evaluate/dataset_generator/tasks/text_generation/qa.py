@@ -2,8 +2,9 @@ from typing import Any
 
 from distilabel.llms.base import LLM
 
-from ...utils import get_closest_substring, get_passages_list
-from .base import BaseDistilabelTask
+from ragbits.core.audit import traceable
+from ragbits.evaluate.dataset_generator.tasks.text_generation.base import BaseDistilabelTask
+from ragbits.evaluate.dataset_generator.utils import get_closest_substring, get_passages_list
 
 
 class QueryGenTask(BaseDistilabelTask):
@@ -43,6 +44,7 @@ class PassagesGenTask(BaseDistilabelTask):
             prompt_class=prompt_class,
         )
 
+    @traceable
     def format_output(self, output: str, input: dict[str, Any] | None = None) -> dict[str, str | list[str]]:
         """
         Formats the model's output into a structured dictionary with "question", "chunk", and "passages".

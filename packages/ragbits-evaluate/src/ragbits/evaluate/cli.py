@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import print_output
+from ragbits.core.audit import traceable
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.config import eval_config
 from ragbits.evaluate.dataloaders import DataLoader, get_dataloader_instance
@@ -45,6 +46,7 @@ state: _CLIState = _CLIState()
 
 
 @eval_app.callback()
+@traceable
 def common_args(
     target_cls: Annotated[
         str,
@@ -122,9 +124,10 @@ def common_args(
 
 
 @eval_app.command()
+@traceable
 def run_evaluation() -> None:
     """
-    Evaluate the set up pipeline.
+    Evaluate the set-up pipeline.
     """
 
     async def run() -> None:

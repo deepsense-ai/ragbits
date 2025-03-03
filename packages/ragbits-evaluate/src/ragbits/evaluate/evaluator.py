@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
+from ragbits.core.audit import traceable
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
@@ -51,6 +52,7 @@ class Evaluator(WithConstructionConfig):
             metrics=metrics,
         )
 
+    @traceable
     async def compute(
         self,
         pipeline: EvaluationPipeline,
@@ -81,6 +83,7 @@ class Evaluator(WithConstructionConfig):
             **processed_results,
         }
 
+    @traceable
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline,
