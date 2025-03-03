@@ -12,7 +12,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragbits.core.audit import trace
+from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
@@ -131,6 +131,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
         return response
 
+    @traceable
     async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
@@ -158,6 +159,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         """
         return True
 
+    @traceable
     async def embed_image(
         self, images: list[bytes], options: LiteLLMEmbedderOptions | None = None
     ) -> list[list[float]]:

@@ -1,5 +1,6 @@
 from fastembed import SparseTextEmbedding, TextEmbedding
 
+from ragbits.core.audit import traceable
 from ragbits.core.embeddings import Embedder, EmbedderOptionsT, SparseEmbedder
 from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.options import Options
@@ -28,6 +29,7 @@ class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
         self.model_name = model_name
         self._model = TextEmbedding(model_name)
 
+    @traceable
     async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[list[float]]:
         """
         Embeds a list of strings into a list of embeddings.
@@ -58,6 +60,7 @@ class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
         self.model_name = model_name
         self._model = SparseTextEmbedding(model_name)
 
+    @traceable
     async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[SparseVector]:
         """
         Embeds a list of strings into a list of sparse embeddings.
