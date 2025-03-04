@@ -5,7 +5,7 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbedderOptions
 
 try:
     import litellm
-    from litellm.llms.vertex_ai_and_google_ai_studio.common_utils import VertexAIError
+    from litellm.llms.vertex_ai.common_utils import VertexAIError
     from litellm.main import VertexMultimodalEmbedding
 
     HAS_LITELLM = True
@@ -147,7 +147,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             EmbeddingResponseError: If the embedding API response is invalid.
         """
         response = await self._embed([{"text": text} for text in data], options=options)
-        return [embedding["textEmbedding"] for embedding in response]
+        return [embedding["embedding"] for embedding in response]
 
     def image_support(self) -> bool:  # noqa: PLR6301
         """
@@ -179,5 +179,4 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         response = await self._embed(
             [{"image": {"bytesBase64Encoded": image}} for image in images_b64], options=options
         )
-
-        return [embedding["imageEmbedding"] for embedding in response]
+        return [embedding["embedding"] for embedding in response]

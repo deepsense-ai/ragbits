@@ -81,22 +81,14 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         return super().from_config(config)
 
     @staticmethod
-    def _get_vector_names_and_sizes(vectors: Iterable[Mapping[str, list[float]]]) -> dict[str, int]:
+    def _detect_vector_size(vectors: Iterable[Mapping[str, list[float]]]) -> int:
         """
-        Get the names and sizes of the vector types.
-
-        Args:
-            vectors: The vectors to get the names and sizes of.
-
-        Returns:
-            The names and sizes of the vectors.
+        Detects the size of the vectors from the input. Assumes all vectors have the same size.
         """
-        result = {}
         for vector_map in vectors:
-            for name, vector in vector_map.items():
-                if name not in result:
-                    result[name] = len(vector)
-        return result
+            for vector in vector_map.values():
+                return len(vector)
+        raise ValueError("No vectors found in the input")
 
     @traceable
     async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
@@ -115,12 +107,12 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         embeddings: dict = await self._create_embeddings(entries)
 
         if not await self._client.collection_exists(self._index_name):
-            vector_names_and_sizes = self._get_vector_names_and_sizes(embeddings.values())
+            vector_size = self._detect_vector_size(embeddings.values())
             await self._client.create_collection(
                 collection_name=self._index_name,
                 vectors_config={
-                    name: VectorParams(size=size, distance=self._distance_method)
-                    for name, size in vector_names_and_sizes.items()
+                    name: VectorParams(size=vector_size, distance=self._distance_method)
+                    for name in [self._embedding_name_text, self._embedding_name_image]
                 },
             )
 

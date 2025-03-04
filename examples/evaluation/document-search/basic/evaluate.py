@@ -25,12 +25,6 @@ config = {
     "pipeline": {
         "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
         "config": {
-            "embedder": {
-                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
-                "config": {
-                    "model": "text-embedding-3-small",
-                },
-            },
             "vector_store": {
                 "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
                 "config": {
@@ -42,6 +36,12 @@ config = {
                     "default_options": {
                         "k": 3,
                         "max_distance": 1.2,
+                    },
+                    "embedder": {
+                        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                        "config": {
+                            "model": "text-embedding-3-small",
+                        },
                     },
                 },
             },

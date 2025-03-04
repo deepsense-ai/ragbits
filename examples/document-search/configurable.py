@@ -100,7 +100,9 @@ config = {
                     "model_name": "gpt-4-turbo",
                 },
             },
-            "prompt": "QueryRephraserPrompt",
+            "prompt": {
+                "type": "QueryRephraserPrompt",
+            },
         },
     },
 }
