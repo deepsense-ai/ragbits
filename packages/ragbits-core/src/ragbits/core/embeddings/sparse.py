@@ -6,6 +6,7 @@ import tiktoken
 from pydantic import BaseModel
 
 from ragbits.core import embeddings
+from ragbits.core.audit import traceable
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -52,6 +53,7 @@ class BagOfTokens(SparseEmbedder[BagOfTokensOptions]):
 
     options_cls = BagOfTokensOptions
 
+    @traceable
     async def embed_text(self, texts: list[str], options: BagOfTokensOptions | None = None) -> list[SparseVector]:
         """
         Transforms a list of texts into sparse vectors using bag-of-tokens representation.

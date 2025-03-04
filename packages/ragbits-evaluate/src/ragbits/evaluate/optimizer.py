@@ -7,6 +7,7 @@ import optuna
 from optuna import Trial
 from pydantic import BaseModel
 
+from ragbits.core.audit import traceable
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
@@ -17,7 +18,7 @@ from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 class OptimizerConfig(BaseModel):
     """
-    Schema for for the dict taken by `Optimizer.run_from_config` method.
+    Schema for the dict taken by `Optimizer.run_from_config` method.
     """
 
     experiment: EvaluatorConfig
@@ -76,6 +77,7 @@ class Optimizer(WithConstructionConfig):
             callbacks=callbacks,
         )
 
+    @traceable
     def optimize(
         self,
         pipeline_class: type[EvaluationPipeline],

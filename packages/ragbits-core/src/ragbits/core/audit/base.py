@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
@@ -88,9 +88,164 @@ class TraceHandler(Generic[SpanT], ABC):
         self.stop(outputs=vars(outputs), current_span=span)
 
 
+class AttributeFormatter:
+    """
+    Class for formatting attributes.
+    """
+
+    max_string_length = 150
+    max_list_length = 15
+    opt_list_length = 4
+    prompt_keywords = ["content", "response", "query"]
+
+    def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
+        """
+        Initialize the attribute formatter.
+
+        Args:
+            data: The data to format.
+            prefix: The prefix to use for the keys.
+        """
+        self.data = data
+        self.prefix = prefix
+        self.flattened: dict[
+            str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
+        ] = {}
+
+    def process_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
+        """
+        Format attributes for CLI
+        Args:
+        attr_dict: The data to format.
+        curr_key: The prefix to use for the keys.
+        """
+        if not curr_key and self.prefix:
+            curr_key = self.prefix
+        if attr_dict is None:
+            attr_dict = self.data
+        for key, value in attr_dict.items():
+            prefix = f"{curr_key}.{key}" if curr_key else key
+            self.process_item(value, prefix)
+
+    def process_item(self, item: object, curr_key: str) -> None:
+        """
+        Process any type of item.
+
+        Args:
+            item: The item to process.
+            curr_key: The prefix of the current item in flattened dictionary.
+        """
+        if isinstance(item, int | float | bool):
+            self.flattened[curr_key] = item
+        elif isinstance(item, str):
+            self.flattened[curr_key] = self.shorten_string(item) if not self.is_key_excluded(curr_key) else item
+        elif item is None:
+            self.flattened[curr_key] = repr(None)
+        elif isinstance(item, list | tuple):
+            if item == []:
+                self.flattened[curr_key] = repr(item)
+            else:
+                self.process_list(item, curr_key)
+        elif isinstance(item, dict):
+            if item != {}:
+                self.process_attributes(item, curr_key)
+            else:
+                self.flattened[curr_key] = repr(item)
+        else:
+            self.process_object(item, curr_key)
+
+    def process_object(self, obj: object, curr_key: str) -> None:
+        """
+        Process any object and it's attributes.
+
+        Args:
+            obj: The object to process.
+            curr_key: the prefix of the key in flattened dictionary.
+        """
+        curr_key = curr_key + "." + str(type(obj).__name__)
+        if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
+            self.flattened[curr_key] = repr(obj)
+            return
+        for k, v in obj.__dict__.items():
+            sub_key = curr_key + "." + k
+            self.process_item(v, sub_key)
+
+    def process_list(self, lst: list | tuple, curr_key: str) -> None:
+        """
+        Process list by elements. If the list is too long, it will be truncated.
+
+        Args:
+            lst: The list to process.
+            curr_key: the prefix of the key in flattened dictionary.
+        """
+        if all(isinstance(item, str | float | int | bool) for item in lst):
+            self.flattened[curr_key] = repr(self.shorten_list(lst))
+        elif len(lst) < self.max_list_length and len(repr(lst)) < self.max_string_length:
+            self.flattened[curr_key] = repr(lst)
+        else:
+            is_too_long = False
+            if len(lst) > self.max_list_length:
+                is_too_long = True
+                length = len(lst)
+                last = lst[-1]
+                lst = lst[: self.opt_list_length]
+
+            for idx, item in enumerate(lst):
+                position_key = f"{curr_key}[{idx}]"
+                self.process_item(item, position_key)
+
+            if is_too_long:
+                position_key = f"{curr_key}[{self.opt_list_length}:{length - 1}]"
+                self.flattened[position_key] = f"...{length - self.opt_list_length - 1} more elements..."
+                position_key = f"{curr_key}[{length - 1}]"
+                self.process_item(last, position_key)
+
+    def shorten_list(self, lst: list | tuple) -> list:
+        """
+        Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
+
+        Args:
+            lst: The list to shorten.
+
+        Returns:
+            shortened list.
+        """
+        lst = [self.shorten_string(item) if isinstance(item, str) else item for item in lst]
+        if len(lst) > self.opt_list_length:
+            return lst[: self.opt_list_length - 1] + ["..."] + [lst[-1]]
+
+        return lst
+
+    def shorten_string(self, string: str) -> str:
+        """
+        Shortens string if it's longer than max_string_length.
+
+        Args:
+            string: The string to shorten.
+
+        Returns:
+            shortened string.
+        """
+        if len(string) > self.max_string_length:
+            return string[: self.max_string_length] + "..."
+        return string
+
+    @classmethod
+    def is_key_excluded(cls, curr_key: str) -> bool:
+        """
+        Check if a key belongs to the prompt keywords list - which means that the string should not be truncated
+        Args:
+            curr_key: The current key in flattened dictionary.
+
+        Returns:
+            bool: True if the key is excluded.
+        """
+        return any(keyword in curr_key.split(".") for keyword in cls.prompt_keywords)
+
+
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
-    Format attributes for CLI.
+    Format attributes for open telemetry tracing.
 
     Args:
         data: The data to format.

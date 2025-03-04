@@ -7,8 +7,9 @@ from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
-from .base import BasePromptWithParser, ChatFormat, OutputT
-from .parsers import DEFAULT_PARSERS, build_pydantic_parser
+from ragbits.core.audit import traceable
+from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
@@ -175,6 +176,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self._instace_few_shots.append((user_message, assistant_message))
         return self
 
+    @traceable
     def list_few_shots(self) -> ChatFormat:
         """
         Returns the few shot examples in the standard OpenAI chat format.

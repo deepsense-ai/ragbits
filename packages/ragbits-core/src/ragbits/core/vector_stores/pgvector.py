@@ -140,6 +140,7 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
         ]
         return query, values
 
+    @traceable
     async def create_table(self) -> None:
         """
         Create a pgVector table with an HNSW index for given similarity.
@@ -243,7 +244,6 @@ class PgVectorStore(VectorStore[VectorStoreOptions]):
             print(f"Table {self._table_name} does not exist.")
             return
 
-    @traceable
     async def _fetch_records(self, query: str, values: list[Any]) -> list[VectorStoreEntry]:
         """
         Fetch records from the pgVector collection.
