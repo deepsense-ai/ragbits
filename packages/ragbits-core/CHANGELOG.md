@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
+
 ## 0.9.0 (2025-02-25)
 
 - Add support to fastembed dense & sparse embeddings.
