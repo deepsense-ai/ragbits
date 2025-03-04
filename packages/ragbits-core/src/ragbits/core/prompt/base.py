@@ -37,14 +37,11 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return None
 
-    # ruff: noqa
-    def list_images(self) -> list[bytes | str]:
+    def has_images(self) -> bool:  # noqa: PLR6301
         """
-        Returns the schema of the list of images compatible with LLM APIs
-        Returns:
-            list of dictionaries
+        Returns whether the prompt has images.
         """
-        return []
+        return False
 
 
 class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):
@@ -79,6 +76,12 @@ class SimplePrompt(BasePrompt):
 
     @property
     def chat(self) -> ChatFormat:
+        """
+        Returns the conversation in the chat format.
+
+        Returns:
+            ChatFormat: A list of dictionaries, each containing the role and content of a message.
+        """
         if isinstance(self._content, str):
             return [{"role": "user", "content": self._content}]
         return self._content

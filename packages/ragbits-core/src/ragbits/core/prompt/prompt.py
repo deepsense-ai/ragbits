@@ -77,7 +77,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
+    def _get_images_from_input_data(cls, input_data: InputT | None | str) -> list[bytes | str]:
         images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
@@ -137,7 +137,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instace_few_shots: list[FewShotExample[InputT, OutputT]] = []
+        self._instance_few_shots: list[FewShotExample[InputT, OutputT]] = []
         super().__init__()
 
     @property
@@ -156,6 +156,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ),
             *self.list_few_shots(),
             {"role": "user", "content": self.rendered_user_prompt},
+            *({"role": "image", "content": image} for image in self.images),
         ]
         return chat
 
@@ -172,7 +173,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
-        self._instace_few_shots.append((user_message, assistant_message))
+        self._instance_few_shots.append((user_message, assistant_message))
         return self
 
     def list_few_shots(self) -> ChatFormat:
@@ -183,7 +184,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
         result: ChatFormat = []
-        for user_message, assistant_message in self.few_shots + self._instace_few_shots:
+        for user_message, assistant_message in self.few_shots + self._instance_few_shots:
             if not isinstance(user_message, str):
                 user_content = self._render_template(self.user_prompt_template, user_message)
             else:
@@ -195,16 +196,19 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 assistant_content = str(assistant_message)
 
             result.append({"role": "user", "content": user_content})
+            for image in self._get_images_from_input_data(user_message):
+                result.append({"role": "image", "content": image})
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def list_images(self) -> list[bytes | str]:
+    def has_images(self) -> bool:
         """
-        Returns the schema of the list of images compatible with LLM APIs
+        Returns whether the prompt has images.
+
         Returns:
-            list of dictionaries
+            bool: Whether the prompt has images.
         """
-        return self.images
+        return any(message["role"] == "image" for message in self.chat)
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """

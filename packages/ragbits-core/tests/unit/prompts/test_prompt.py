@@ -136,7 +136,7 @@ def test_image_prompt(field_value: bytes | str, image_present: bool):
         image_input_fields = ["image"]
 
     prompt = ImagePrompt(_ImagePromptInput(image=field_value))
-    assert (len(prompt.list_images()) > 0) == image_present
+    assert prompt.has_images() == image_present
 
 
 @pytest.mark.parametrize(
@@ -156,7 +156,7 @@ def test_images_prompt(field_value: list[bytes | str], expected_number: int):
         image_input_fields = ["images"]
 
     prompt = ImagesPrompt(_ImagesPromptInput(images=field_value))
-    assert len(prompt.list_images()) == expected_number
+    assert prompt.has_images() == (expected_number > 0)
 
 
 def test_prompt_with_no_input_type():

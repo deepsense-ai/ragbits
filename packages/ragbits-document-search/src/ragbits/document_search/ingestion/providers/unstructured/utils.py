@@ -118,6 +118,6 @@ class ImageDescriber:
         Returns:
             summary of the image
         """
-        if not prompt.list_images():
+        if not prompt.has_images():
             wrngs.warn(message="Image data not provided", category=UserWarning)
         return await self.llm.generate(prompt=prompt)

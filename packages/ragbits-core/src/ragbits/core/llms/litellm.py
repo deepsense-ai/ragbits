@@ -94,31 +94,36 @@ class LiteLLM(LLM[LiteLLMOptions]):
         return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
 
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
-        images = prompt.list_images()
         chat = prompt.chat
-        if images:
+        if prompt.has_images():
             if not litellm.supports_vision(self.model_name):
                 warnings.warn(
                     message=f"Model {self.model_name} does not support vision. Image input would be ignored",
                     category=UserWarning,
                 )
-                return chat
-            user_message_content = [
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"
-                        if isinstance(im, bytes)
-                        else im,
-                    },
-                }
-                for im in images
-            ]
-            last_message = chat[-1]
-            if last_message["role"] == "user":
-                user_message_content = [{"type": "text", "text": last_message["content"]}] + user_message_content
-                chat = chat[:-1]
-            chat.append({"role": "user", "content": user_message_content})
+                return [message for message in chat if message["role"] != "image"]
+            chat_with_images = []
+            for message in chat:
+                if message["role"] == "image":
+                    im = message["content"]
+                    chat_with_images.append(
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"
+                                        if isinstance(im, bytes)
+                                        else im,
+                                    },
+                                },
+                            ],
+                        }
+                    )
+                else:
+                    chat_with_images.append(message)
+            return chat_with_images
         return chat
 
     async def _call(

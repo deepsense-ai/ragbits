@@ -252,9 +252,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             yield text_piece
 
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
-        if prompt.list_images():
+        chat = prompt.chat
+        if prompt.has_images():
             wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
-        return prompt.chat
+            chat = [message for message in chat if message["role"] != "image"]
+        return chat
 
     @abstractmethod
     async def _call(
