@@ -37,7 +37,6 @@ class AzureBlobStorageSource(Source):
         return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @classmethod
-    @traceable
     @requires_dependencies(["azure.storage.blob", "azure.identity"], "azure")
     async def _get_blob_service(cls, account_name: str) -> "BlobServiceClient":
         """

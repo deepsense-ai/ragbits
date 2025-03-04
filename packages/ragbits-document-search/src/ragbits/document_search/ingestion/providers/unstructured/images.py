@@ -6,7 +6,6 @@ from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.audit import traceable
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.prompt import Prompt
@@ -68,7 +67,6 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         self.image_describer: ImageDescriber | None = None
         self._llm = llm
 
-    @traceable
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
     ) -> list[Element]:
@@ -83,7 +81,6 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             await self._to_image_element(element, document_meta, document_path) for element in image_elements
         ]
 
-    @traceable
     async def _to_image_element(
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
     ) -> ImageElement:

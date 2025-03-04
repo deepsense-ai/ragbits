@@ -127,7 +127,6 @@ class Optimizer(WithConstructionConfig):
             key=lambda x: -x[1] if self.direction == "maximize" else x[1],
         )
 
-    @traceable
     def _objective(
         self,
         trial: Trial,
@@ -176,7 +175,6 @@ class Optimizer(WithConstructionConfig):
 
         return score
 
-    @traceable
     def _set_values_for_optimized_params(self, cfg: dict, trial: Trial, ancestors: list[str]) -> None:  # noqa: PLR0912
         """
         Recursive method for sampling parameter values for optuna trial.

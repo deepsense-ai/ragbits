@@ -83,7 +83,6 @@ class Evaluator(WithConstructionConfig):
             **processed_results,
         }
 
-    @traceable
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline,

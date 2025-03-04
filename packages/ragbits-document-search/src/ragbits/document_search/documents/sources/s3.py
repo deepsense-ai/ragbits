@@ -34,7 +34,6 @@ class S3Source(Source):
         return f"s3://{self.bucket_name}/{self.key}"
 
     @classmethod
-    @traceable
     @requires_dependencies(["boto3"], "s3")
     def _set_client(cls, bucket_name: str) -> None:
         """
