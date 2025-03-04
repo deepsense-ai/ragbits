@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- improve cli trace handler
+- added traceable to some method
+
 ## 0.9.0 (2025-02-25)
 
 - Add support to fastembed dense & sparse embeddings.
