@@ -12,6 +12,7 @@ nav:
   - How-to Guides:
       - Core:
         - how-to/core/use_prompting.md
+        - how-to/core/use_images_in_prompts.md
         - how-to/core/component_preferrences.md
         - how-to/core/prompts_lab.md
         - how-to/core/promptfoo.md
