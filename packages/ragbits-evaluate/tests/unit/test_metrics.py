@@ -136,17 +136,21 @@ def test_mixed_results_with_multiple_queries(matching_strategy):
 
 def test_metric_set_with_different_strategies():
     config = {
-        "exact_chunk": ObjectContructionConfig.model_validate({
-            "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-            "config": {"matching_strategy": {"type": "ExactChunkMatch", "config": {}}, "weight": 0.6},
-        }),
-        "rouge_sentence": ObjectContructionConfig.model_validate({
-            "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-            "config": {
-                "matching_strategy": {"type": "RougeSentenceMatch", "config": {"threshold": 0.6}},
-                "weight": 0.4,
-            },
-        })
+        "exact_chunk": ObjectContructionConfig.model_validate(
+            {
+                "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
+                "config": {"matching_strategy": {"type": "ExactChunkMatch", "config": {}}, "weight": 0.6},
+            }
+        ),
+        "rouge_sentence": ObjectContructionConfig.model_validate(
+            {
+                "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
+                "config": {
+                    "matching_strategy": {"type": "RougeSentenceMatch", "config": {"threshold": 0.6}},
+                    "weight": 0.4,
+                },
+            }
+        ),
     }
 
     metric_set = MetricSet.from_config(config)
