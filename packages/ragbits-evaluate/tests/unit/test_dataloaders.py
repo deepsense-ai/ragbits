@@ -1,14 +1,10 @@
 import pytest
 import pytest_asyncio
-from unittest.mock import patch, MagicMock
 import pandas as pd
 import json
 from pathlib import Path
-from datasets import Dataset, DatasetDict, load_from_disk
-import tempfile
+from datasets import Dataset
 
-# Import your classes here
-from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.dataloaders.hf import HFDataLoader
 from ragbits.evaluate.dataloaders.local import LocalDataLoader
 
