@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- ragbits-conversation added traceable
+- ragbits-conversations added traceable
 - ragbits-core added traceable
 - ragbits-document-search added traceable
 - ragbits-evaluate added traceable
