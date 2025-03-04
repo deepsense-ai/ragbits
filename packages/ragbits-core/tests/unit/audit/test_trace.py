@@ -229,10 +229,8 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             },
             "test",
             {
-                "test.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
                 "test.vcs.VectorStoreEntry.id": "uniq",
                 "test.vcs.VectorStoreEntry.key": "21",
-                "test.vcs.VectorStoreEntry.vector": "[0.01, 0.02, 0.03, '...', 0.04]",
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
                 "test.response.not_for_shortening": "A" * AttributeFormatter.max_string_length
                 + "B" * AttributeFormatter.max_string_length,

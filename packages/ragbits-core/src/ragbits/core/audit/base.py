@@ -97,6 +97,7 @@ class AttributeFormatter:
     max_list_length = 15
     opt_list_length = 4
     prompt_keywords = ["content", "response", "query"]
+    excluded = ["vector"]
 
     def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
         """
@@ -135,10 +136,12 @@ class AttributeFormatter:
             item: The item to process.
             curr_key: The prefix of the current item in flattened dictionary.
         """
+        if self.is_special_key(curr_key, self.excluded):
+            return
         if isinstance(item, int | float | bool):
             self.flattened[curr_key] = item
         elif isinstance(item, str):
-            self.flattened[curr_key] = self.shorten_string(item) if not self.is_key_excluded(curr_key) else item
+            self.flattened[curr_key] = self.shorten_string(item) if not self.is_special_key(curr_key, self.prompt_keywords) else item
         elif item is None:
             self.flattened[curr_key] = repr(None)
         elif isinstance(item, list | tuple):
@@ -231,16 +234,17 @@ class AttributeFormatter:
         return string
 
     @classmethod
-    def is_key_excluded(cls, curr_key: str) -> bool:
+    def is_special_key(cls, curr_key: str, key_list: list[str]) -> bool:
         """
         Check if a key belongs to the prompt keywords list - which means that the string should not be truncated
         Args:
             curr_key: The current key in flattened dictionary.
+            key_list: The list of keys to check.
 
         Returns:
             bool: True if the key is excluded.
         """
-        return any(keyword in curr_key.split(".") for keyword in cls.prompt_keywords)
+        return any(keyword in curr_key.split(".") for keyword in key_list)
 
 
 def format_attributes(data: dict, prefix: str | None = None) -> dict:

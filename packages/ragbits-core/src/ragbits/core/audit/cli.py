@@ -90,7 +90,7 @@ class CLISpan:
         text_color = PrintColor.TEXT_COLOR.value
         attrs: list[Text | Panel] = []
         for k, v in self.attributes.items():
-            if isinstance(v, str) and AttributeFormatter.is_key_excluded(curr_key=k):
+            if isinstance(v, str) and AttributeFormatter.is_special_key(curr_key=k, key_list=AttributeFormatter.prompt_keywords):
                 syntax = Syntax(v, lexer="markdown", theme="monokai", word_wrap=True, background_color="default")
 
                 panel = Panel(syntax, title=f"[{key_color}]{k}[/{key_color}]", title_align="left")
