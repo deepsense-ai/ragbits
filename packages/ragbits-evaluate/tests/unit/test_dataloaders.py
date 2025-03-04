@@ -45,10 +45,9 @@ async def test_local_data_loader(temp_data_file):
     loader = LocalDataLoader(
         path=temp_data_file,
         split="train",
-        builder=Path(temp_data_file).suffix[1:]  # Extract format from extension
+        builder=Path(temp_data_file).suffix[1:],  # Extract format from extension
     )
 
     result = await loader.load()
     assert isinstance(result, Dataset)
     assert len(result) == 2
-

@@ -17,9 +17,7 @@ class MockEvaluationResult(EvaluationResult):
     is_correct: bool
 
 
-
 class MockEvaluationTarget(WithConstructionConfig):
-
     def __init__(self, model_name: str = "default"):
         super().__init__()
         self.model_name = model_name
@@ -32,7 +30,7 @@ class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget]):
         return MockEvaluationResult(
             input_data=data["input"],
             processed_output=f"{self.evaluation_target.model_name}_{data['input']}",
-            is_correct=data["input"] % 2 == 0
+            is_correct=data["input"] % 2 == 0,
         )
 
     @classmethod
@@ -49,10 +47,7 @@ class MockDataLoader(DataLoader):
         self.dataset_size = dataset_size
 
     async def load(self):
-        return Dataset.from_dict({
-            "input": list(range(1, self.dataset_size + 1))
-        })
-
+        return Dataset.from_dict({"input": list(range(1, self.dataset_size + 1))})
 
 
 class MockMetric(Metric):
@@ -63,10 +58,9 @@ class MockMetric(Metric):
         return {"accuracy": accuracy}
 
 
-
 # Test cases
 @pytest.mark.asyncio
-async def test_pipeline_with_mock_result():
+async def test_run_evaluation():
     target = MockEvaluationTarget(model_name="test_model")
     pipeline = MockEvaluationPipeline(target)
     loader = MockDataLoader()
@@ -90,31 +84,24 @@ async def test_result_structure():
     assert "2" in result.processed_output
 
 
-
 @pytest.mark.asyncio
-async def test_config_loading_with_mock_result():
+async def test_run_from_config():
     config = {
-        "dataloader": ObjectContructionConfig.model_validate({
-            "type": f"{__name__}:MockDataLoader",
-            "config": {"dataset_size": 3}
-        }),
+        "dataloader": ObjectContructionConfig.model_validate(
+            {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 3}}
+        ),
         "pipeline": {
             "type": f"{__name__}:MockEvaluationPipeline",
             "config": {
-                "evaluation_target": ObjectContructionConfig.model_validate({
-                    "type": f"{__name__}:MockEvaluationTarget",
-                    "config": {"model_name": "config_model"}
-                })
-            }
+                "evaluation_target": ObjectContructionConfig.model_validate(
+                    {"type": f"{__name__}:MockEvaluationTarget", "config": {"model_name": "config_model"}}
+                )
+            },
         },
         "metrics": {
-            "main_metric": ObjectContructionConfig.model_validate({
-                "type": f"{__name__}:MockMetric",
-                "config": {}
-            })
-        }
+            "main_metric": ObjectContructionConfig.model_validate({"type": f"{__name__}:MockMetric", "config": {}})
+        },
     }
-
 
     results = await MockEvaluationPipeline.run_from_config(config)
     assert len(results["results"]) == 3
