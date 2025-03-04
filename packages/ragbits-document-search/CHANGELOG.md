@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add support for images in few shot prompts (#155)
+
 ## 0.9.0 (2025-02-25)
 
 ### Changed
