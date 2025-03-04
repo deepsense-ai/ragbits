@@ -6,7 +6,7 @@ import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 
-from ragbits.core.audit import trace, traceable
+from ragbits.core.audit import trace
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -93,7 +93,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
 
-    @traceable
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
         images = prompt.list_images()
         chat = prompt.chat
@@ -229,7 +228,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         return outputs.response  # type: ignore
 
-    @traceable
     async def _get_litellm_response(
         self,
         conversation: ChatFormat,
@@ -258,7 +256,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMResponseError() from exc
         return response
 
-    @traceable
     def _get_response_format(
         self, output_schema: type[BaseModel] | dict | None, json_mode: bool
     ) -> type[BaseModel] | dict | None:

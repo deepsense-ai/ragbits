@@ -103,7 +103,6 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
             wait=True,
         )
 
-    @traceable
     async def _to_vector_store_entries(self, results: QueryResponse) -> list[VectorStoreEntry]:
         """
         Converts a query point into a vector store entry list.

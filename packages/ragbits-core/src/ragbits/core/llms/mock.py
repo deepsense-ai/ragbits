@@ -2,7 +2,6 @@ from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
-from ragbits.core.audit import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
@@ -36,7 +35,6 @@ class MockLLM(LLM[MockLLMOptions]):
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
 
-    @traceable
     async def _call(  # noqa: PLR6301
         self,
         conversation: ChatFormat,
@@ -52,7 +50,6 @@ class MockLLM(LLM[MockLLMOptions]):
             return {"response": options.response, "is_mocked": True}
         return {"response": "mocked response", "is_mocked": True}
 
-    @traceable
     async def _call_streaming(  # noqa: PLR6301
         self,
         conversation: ChatFormat,
