@@ -1,5 +1,4 @@
 import enum
-import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import ClassVar, Generic, TypeVar, cast, overload
@@ -7,6 +6,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
+from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -254,8 +254,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
         chat = prompt.chat
         if prompt.has_images():
-            wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
-            chat = [message for message in chat if message["role"] != "image"]
+            raise LLMNotSupportingImagesError(f"Image input support not implemented for {self.__class__.__name__}")
         return chat
 
     @abstractmethod

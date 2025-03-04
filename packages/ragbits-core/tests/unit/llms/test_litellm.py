@@ -1,5 +1,7 @@
+import pytest
 from pydantic import BaseModel
 
+from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
@@ -66,6 +68,18 @@ class MockPromptWithParser(BasePromptWithParser[int]):
             Parser for the prompt.
         """
         return 42
+
+
+class MockPromptWithImage(MockPrompt):
+    """
+    Mock prompt for testing LiteLLM.
+    """
+
+    def has_images(self) -> bool:  # noqa: PLR6301
+        """
+        Returns whether the prompt has images.
+        """
+        return True
 
 
 async def test_generation():
@@ -154,3 +168,11 @@ async def test_generation_with_metadata():
         "prompt_tokens": 10,
         "total_tokens": 30,
     }
+
+
+async def test_generation_without_image_support():
+    """Test generation of a response without image support."""
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPromptWithImage("Hello, what is on this image?")
+    with pytest.raises(LLMNotSupportingImagesError):
+        await llm.generate(prompt)

@@ -1,5 +1,3 @@
-import base64
-import warnings
 from collections.abc import AsyncGenerator
 
 import litellm
@@ -11,6 +9,7 @@ from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
+    LLMNotSupportingImagesError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -95,35 +94,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
         chat = prompt.chat
-        if prompt.has_images():
-            if not litellm.supports_vision(self.model_name):
-                warnings.warn(
-                    message=f"Model {self.model_name} does not support vision. Image input would be ignored",
-                    category=UserWarning,
-                )
-                return [message for message in chat if message["role"] != "image"]
-            chat_with_images = []
-            for message in chat:
-                if message["role"] == "image":
-                    im = message["content"]
-                    chat_with_images.append(
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"
-                                        if isinstance(im, bytes)
-                                        else im,
-                                    },
-                                },
-                            ],
-                        }
-                    )
-                else:
-                    chat_with_images.append(message)
-            return chat_with_images
+        if prompt.has_images() and not litellm.supports_vision(self.model_name):
+            raise LLMNotSupportingImagesError()
         return chat
 
     async def _call(

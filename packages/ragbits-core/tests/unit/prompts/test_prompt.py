@@ -139,6 +139,21 @@ def test_image_prompt(field_value: bytes | str, image_present: bool):
     assert prompt.has_images() == image_present
 
 
+def test_image_prompt_format():
+    """Tests the prompt format using an image"""
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
+    chat = prompt.chat
+    assert len(chat) == 1
+    assert chat[0]["role"] == "user"
+    assert chat[0]["content"][0]["text"] == "What is on this image?"
+    assert chat[0]["content"][1]["type"] == "image_url"
+
+
 @pytest.mark.parametrize(
     ("field_value", "expected_number"),
     [

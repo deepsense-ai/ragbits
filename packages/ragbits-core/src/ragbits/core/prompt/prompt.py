@@ -1,3 +1,4 @@
+import base64
 import textwrap
 from abc import ABCMeta
 from collections.abc import Callable
@@ -148,6 +149,12 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
+        user_content = (
+            [{"type": "text", "text": self.rendered_user_prompt}]
+            + [self._create_message_with_image(image) for image in self.images]
+            if self.images
+            else self.rendered_user_prompt
+        )
         chat = [
             *(
                 [{"role": "system", "content": self.rendered_system_prompt}]
@@ -155,8 +162,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": self.rendered_user_prompt},
-            *({"role": "image", "content": image} for image in self.images),
+            {"role": "user", "content": user_content},
         ]
         return chat
 
@@ -184,9 +190,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
         result: ChatFormat = []
+        user_content: str | list[dict[str, Any]]
         for user_message, assistant_message in self.few_shots + self._instance_few_shots:
             if not isinstance(user_message, str):
-                user_content = self._render_template(self.user_prompt_template, user_message)
+                rendered_text_message = self._render_template(self.user_prompt_template, user_message)
+                images_in_input_data = self._get_images_from_input_data(user_message)
+                if images_in_input_data:
+                    user_content = [{"type": "text", "text": rendered_text_message}] + [
+                        self._create_message_with_image(image) for image in images_in_input_data
+                    ]
+                else:
+                    user_content = rendered_text_message
             else:
                 user_content = user_message
 
@@ -196,8 +210,6 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 assistant_content = str(assistant_message)
 
             result.append({"role": "user", "content": user_content})
-            for image in self._get_images_from_input_data(user_message):
-                result.append({"role": "image", "content": image})
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
@@ -208,7 +220,23 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             bool: Whether the prompt has images.
         """
-        return any(message["role"] == "image" for message in self.chat)
+        return any(
+            content["type"] == "image_url"
+            for message in self.chat
+            for content in message["content"]
+            if isinstance(message["content"], list)
+        )
+
+    @staticmethod
+    def _create_message_with_image(image: str | bytes) -> dict:
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:image/jpeg;base64,{base64.b64encode(image).decode('utf-8')}"
+                if isinstance(image, bytes)
+                else image,
+            },
+        }
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """
