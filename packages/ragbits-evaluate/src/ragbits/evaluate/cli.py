@@ -11,7 +11,6 @@ from ragbits.cli.state import print_output
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.config import eval_config
 from ragbits.evaluate.dataloaders import DataLoader, get_dataloader_instance
-from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines import get_evaluation_pipeline_for_target
 
@@ -135,9 +134,7 @@ def run_evaluation() -> None:
         if state.dataloader is None:
             raise ValueError("Dataloader not initialized")
         evaluation_pipeline = get_evaluation_pipeline_for_target(evaluation_target=state.evaluation_target)
-        evaluator = Evaluator()
-        metric_results = await evaluator.compute(
-            pipeline=evaluation_pipeline,
+        metric_results = await evaluation_pipeline.run_evaluation(
             metrics=state.metrics,
             dataloader=state.dataloader,
         )

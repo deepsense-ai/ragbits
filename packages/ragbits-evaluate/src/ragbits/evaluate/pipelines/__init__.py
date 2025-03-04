@@ -10,6 +10,8 @@ _target_to_evaluation_pipeline: dict[type[WithConstructionConfig], type[Evaluati
 __all__ = ["DocumentSearchPipeline", "EvaluationPipeline", "EvaluationResult"]
 
 
+
+
 def get_evaluation_pipeline_for_target(evaluation_target: WithConstructionConfig) -> EvaluationPipeline:
     """
     A function instantiating evaluation pipeline for given WithConstructionConfig object

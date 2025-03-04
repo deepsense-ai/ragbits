@@ -9,7 +9,7 @@
 import asyncio
 import logging
 
-from ragbits.evaluate.evaluator import Evaluator
+from ragbits.evaluate.pipelines import EvaluationPipeline
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -87,7 +87,7 @@ async def evaluate() -> None:
     """
     print("Starting evaluation...")
 
-    results = await Evaluator.run_from_config(config)
+    results = await EvaluationPipeline.run_from_config(config)
 
     print("Computed metrics:")
     print("\n".join(f"{key}: {value}" for key, value in results["metrics"].items()))

@@ -9,9 +9,8 @@ from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.dataloaders.base import DataLoader
-from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationConfig
 from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 
@@ -20,7 +19,7 @@ class OptimizerConfig(BaseModel):
     Schema for the dict taken by `Optimizer.run_from_config` method.
     """
 
-    experiment: EvaluatorConfig
+    experiment: EvaluationConfig
     optimizer: dict | None = None
     neptune_callback: bool = False
 
@@ -58,7 +57,7 @@ class Optimizer(WithConstructionConfig):
             List of tested configs with associated scores and metrics.
         """
         optimizer_config = OptimizerConfig.model_validate(config)
-        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.experiment)
+        evaluator_config = EvaluationConfig.model_validate(optimizer_config.experiment)
 
         dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.dataloader)
         metrics: MetricSet = MetricSet.from_config(evaluator_config.metrics)
@@ -136,7 +135,6 @@ class Optimizer(WithConstructionConfig):
         """
         Runs a single experiment.
         """
-        evaluator = Evaluator()
         event_loop = asyncio.get_event_loop()
 
         score = 1e16 if self.direction == "maximize" else -1e16
@@ -150,8 +148,7 @@ class Optimizer(WithConstructionConfig):
                 pipeline = pipeline_class.from_config(config_for_trial)
 
                 results = event_loop.run_until_complete(
-                    evaluator.compute(
-                        pipeline=pipeline,
+                    pipeline.run_evaluation(
                         dataloader=dataloader,
                         metrics=metrics,
                     )
