@@ -128,7 +128,7 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             models.PointStruct(
                 id=entry.id,
                 vector=embeddings[entry.id],
-                payload=entry.model_dump(),
+                payload=entry.model_dump(exclude_none=True),
             )
             for entry in entries
         )

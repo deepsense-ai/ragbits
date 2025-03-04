@@ -25,7 +25,7 @@ class VectorStoreEntry(BaseModel):
     id: str
     text: str | None = None
     image_bytes: bytes | None = None
-    metadata: dict
+    metadata: dict = {}
 
     @pydantic.model_validator(mode="after")
     def text_or_image_required(self) -> Self:
@@ -203,7 +203,7 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         default_options = config.pop("default_options", None)
         options = cls.options_cls(**default_options) if default_options else None
 
-        embedder_config = config.pop("default_embedder")
+        embedder_config = config.pop("embedder")
         embedder: Embedder = Embedder.subclass_from_config(ObjectContructionConfig.model_validate(embedder_config))
 
         return cls(**config, default_options=options, embedder=embedder)

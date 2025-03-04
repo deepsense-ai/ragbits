@@ -12,7 +12,7 @@ def mock_chromadb_store() -> ChromaVectorStore:
     return ChromaVectorStore(
         client=MagicMock(),
         index_name="test_index",
-        embedder=NoopEmbedder(),
+        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]]),
     )
 
 
@@ -44,6 +44,9 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.title": "test title",
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
+                "__embeddings.text[0]": 0.1,
+                "__embeddings.text[1]": 0.2,
+                "__embeddings.text[2]": 0.3,
             }
         ],
         documents=["test content"],
@@ -75,12 +78,18 @@ async def test_retrieve(
                     "document_meta.title": "test title 1",
                     "document_meta.source.path": "/test/path-1",
                     "document_meta.document_type": "txt",
+                    "__embeddings.text[0]": 0.12,
+                    "__embeddings.text[1]": 0.25,
+                    "__embeddings.text[2]": 0.29,
                 },
                 {
                     "content": "test content 2",
                     "document_meta.title": "test title 2",
                     "document_meta.source.path": "/test/path-2",
                     "document_meta.document_type": "txt",
+                    "__embeddings.text[0]": 0.13,
+                    "__embeddings.text[1]": 0.26,
+                    "__embeddings.text[2]": 0.30,
                 },
             ]
         ],
@@ -96,6 +105,7 @@ async def test_retrieve(
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
+        print(query_result.vectors)
         assert query_result.vectors["text"] == result["vector"]
         assert query_result.entry.id == f"test_id_{results.index(result) + 1}"
         assert query_result.entry.text == result["content"]

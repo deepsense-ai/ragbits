@@ -30,7 +30,9 @@ def vector_store_factory() -> VectorStore:
     async def add_examples(store: VectorStore) -> None:
         await store.store(example_entries)
 
-    store = InMemoryVectorStore(embedder=NoopEmbedder())
+    store = InMemoryVectorStore(
+        embedder=NoopEmbedder(return_values=[[[4.0, 5.0], [1.0, 2.0], [7.0, 8.0]], [[1.0, 1.0]]])
+    )
     asyncio.new_event_loop().run_until_complete(add_examples(store))
     return store
 
@@ -108,7 +110,7 @@ def test_vector_store_list_columns():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         vector_stores_app,
-        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key,metadata"],
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,text,metadata"],
     )
     assert result.exit_code == 0
     assert "entry 1" in result.stdout
@@ -116,13 +118,13 @@ def test_vector_store_list_columns():
     assert "entry 3" in result.stdout
     assert "Vector" not in result.stdout
     assert "Id" in result.stdout
-    assert "Key" in result.stdout
+    assert "Text" in result.stdout
     assert "Metadata" in result.stdout
     assert "another_key" in result.stdout
 
     result = runner.invoke(
         vector_stores_app,
-        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key"],
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,text"],
     )
     assert result.exit_code == 0
     assert "entry 1" in result.stdout
@@ -130,7 +132,7 @@ def test_vector_store_list_columns():
     assert "entry 3" in result.stdout
     assert "Vector" not in result.stdout
     assert "Id" in result.stdout
-    assert "Key" in result.stdout
+    assert "Text" in result.stdout
     assert "Metadata" not in result.stdout
     assert "another_key" not in result.stdout
 
@@ -139,7 +141,7 @@ def test_vector_store_list_columns_non_existent():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         vector_stores_app,
-        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,key,non_existent"],
+        ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,text,non_existent"],
     )
     assert result.exit_code == 1
     assert "Unknown column: non_existent" in result.stderr
@@ -200,9 +202,35 @@ def test_vector_store_list_json():
     print(result.stderr)
     assert result.exit_code == 0
     dicts = json.loads(result.stdout)
+    entries = [VectorStoreEntry.model_validate(result) for result in dicts]
+    assert entries == example_entries
+
+    # Reset the output type to the default value so it doesn't affect other tests
+    cli_state.output_type = CliState.output_type
+
+
+def test_vector_store_query_json():
+    autoregister()
+    runner = CliRunner(mix_stderr=False)
+    result = runner.invoke(
+        root_app,
+        [
+            "--output",
+            "json",
+            "vector-store",
+            "--factory-path",
+            "cli.test_vector_store:vector_store_factory",
+            "query",
+            "example query",
+        ],
+    )
+    assert result.exit_code == 0
+    dicts = json.loads(result.stdout)
     results = [VectorStoreResult.model_validate(result) for result in dicts]
     entries = [result.entry for result in results]
-    assert entries == example_entries
+    entries_order = [1, 0, 2]  # by vector similarity
+    example_entries_ordered = [example_entries[i] for i in entries_order]
+    assert entries == example_entries_ordered
 
     # Reset the output type to the default value so it doesn't affect other tests
     cli_state.output_type = CliState.output_type

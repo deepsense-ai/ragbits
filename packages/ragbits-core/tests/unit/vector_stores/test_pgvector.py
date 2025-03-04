@@ -83,7 +83,7 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
 
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} ORDER BY vector <=> $1 LIMIT $2;"""  # noqa S608
+    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} ORDER BY distance LIMIT $2;"""  # noqa S608
     expected_values = ["[0.1, 0.2, 0.3]", 5]
     assert result == expected_query
     assert values == expected_values
@@ -93,8 +93,8 @@ def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) 
     result, values = mock_pgvector_store._create_retrieve_query(
         vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
     )
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector <=> $1 < $2 ORDER BY vector <=> $3 LIMIT $4;"""  # noqa S608
-    expected_values = ["[0.1, 0.2, 0.3]", 0.1, "[0.1, 0.2, 0.3]", 10]
+    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance < $2 ORDER BY distance LIMIT $3;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", 0.1, 10]
     assert result == expected_query
     assert values == expected_values
 
@@ -104,9 +104,8 @@ def test_create_retrieve_query_with_options_for_ip_distance(mock_pgvector_store:
     result, values = mock_pgvector_store._create_retrieve_query(
         vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
     )
-    expected_query = f"""SELECT * FROM {TEST_TABLE_NAME} WHERE vector <#> $1
-            BETWEEN $2 AND $3 ORDER BY vector <#> $4 LIMIT $5;"""  # noqa S608
-    expected_values = ["[0.1, 0.2, 0.3]", -0.1, 0.1, "[0.1, 0.2, 0.3]", 10]
+    expected_query = f"""SELECT *, vector <#> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance BETWEEN $2 AND $3 ORDER BY distance LIMIT $4;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", -0.1, 0.1, 10]
     assert result == expected_query
     assert values == expected_values
 
@@ -246,20 +245,6 @@ async def test_fetch_records_no_table(
         assert results == []
         mock_conn.fetch.assert_called_once()
         mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
-
-
-@pytest.mark.asyncio
-async def test_retrieve(mock_pgvector_store: PgVectorStore) -> None:
-    options = VectorStoreOptions()
-    with (
-        patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
-        patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
-    ):
-        mock_create_retrieve_query.return_value = ("query_string", ["param1", "param2"])
-        await mock_pgvector_store.retrieve("query", options=options)
-
-        mock_create_retrieve_query.assert_called_once()
-        mock_fetch_records.assert_called_once()
 
 
 @pytest.mark.asyncio

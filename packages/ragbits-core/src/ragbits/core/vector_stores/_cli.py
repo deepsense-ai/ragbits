@@ -22,7 +22,10 @@ class CLIState:
 state: CLIState = CLIState()
 
 # Default columns for commands that list entries
-_default_columns = "id,key,metadata"
+_default_entry_columns = "id,text,metadata"
+
+# Default columns for commands that lists results
+_default_result_columns = "score,entry.id,entry.text,entry.metadata"
 
 
 @vector_stores_app.callback()
@@ -50,8 +53,9 @@ def list_entries(
     limit: Annotated[int, typer.Option(help="Maximum number of entries to list")] = 10,
     offset: Annotated[int, typer.Option(help="How many entries to skip")] = 0,
     columns: Annotated[
-        str, typer.Option(help="Comma-separated list of columns to display, aviailable: id, key, vector, metadata")
-    ] = _default_columns,
+        str,
+        typer.Option(help="Comma-separated list of columns to display, aviailable: id, text, image_bytes, metadata"),
+    ] = _default_entry_columns,
 ) -> None:
     """
     List all objects in the chosen vector store.
@@ -98,8 +102,12 @@ def query(
     k: Annotated[int, typer.Option(help="Number of entries to retrieve")] = 5,
     max_distance: Annotated[float | None, typer.Option(help="Maximum distance to the query vector")] = None,
     columns: Annotated[
-        str, typer.Option(help="Comma-separated list of columns to display, aviailable: id, key, vector, metadata")
-    ] = _default_columns,
+        str,
+        typer.Option(
+            help="Comma-separated list of columns to display, "
+            "aviailable: score, entry.id, entry.text, entry.image_bytes, entry.metadata"
+        ),
+    ] = _default_result_columns,
 ) -> None:
     """
     Query the chosen vector store.

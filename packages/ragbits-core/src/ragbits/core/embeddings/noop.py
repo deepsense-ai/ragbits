@@ -1,6 +1,6 @@
 from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embedder
-from ragbits.core.options import Options
+from ragbits.core.options import Options, OptionsT
 
 
 class NoopEmbedder(Embedder[Options]):
@@ -14,6 +14,22 @@ class NoopEmbedder(Embedder[Options]):
 
     options_cls = Options
 
+    def __init__(
+        self, default_options: OptionsT | None = None, return_values: list[list[list[float]]] | None = None
+    ) -> None:
+        """
+        Constructs a new NoopEmbedder instance.
+
+        Args:
+            default_options: The default options for the component.
+            return_values: The embeddings to return for text input. Each time the embed_text method is called,
+                the next list of embeddings is returned, after being trimmed / repeated to match the number of inputs.
+                After all return_values have been used, the cycle starts again. Default is a single vector of [0.1, 0.1]
+        """
+        super().__init__(default_options=default_options)
+        self.return_values = return_values or [[[0.1, 0.1]]]
+        self.return_cycle = 0
+
     @traceable
     async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:  # noqa: PLR6301
         """
@@ -24,7 +40,15 @@ class NoopEmbedder(Embedder[Options]):
             options: Additional settings used by the Embedder model.
 
         Returns:
-            A list of embedding vectors, where each vector
-            is a fixed value of [0.1, 0.1] for each input string.
+            A list of embedding vectors, one for each input text.
         """
-        return [[0.1, 0.1]] * len(data)
+        # Get the right values for the current cycle
+        values = self.return_values[self.return_cycle]
+
+        # Expand the values to at least match the number of inputs
+        values = values * (len(data) // len(values) + 1)
+
+        # Update the cycle counter
+        self.return_cycle = (self.return_cycle + 1) % len(self.return_values)
+
+        return values[: len(data)]

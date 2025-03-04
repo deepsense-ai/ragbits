@@ -38,17 +38,23 @@ class AnimalElement(Element):
 async def store_fixture() -> InMemoryVectorStore:
     document_meta = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
     elements = [
-        AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=document_meta),
-        AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=document_meta),
-        AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=document_meta),
-        AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=document_meta),
-        AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=document_meta),
-        AnimalElement(name="spotty", species="ladybug", type="insect", age=1, document_meta=document_meta),
+        (AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=document_meta), [0.5, 0.5]),
+        (AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=document_meta), [0.6, 0.6]),
+        (AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=document_meta), [0.7, 0.7]),
+        (AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=document_meta), [0.8, 0.8]),
+        (AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=document_meta), [0.9, 0.9]),
+        (
+            AnimalElement(name="spotty", species="ladybug", type="insect", age=1, document_meta=document_meta),
+            [0.1, 0.1],
+        ),
     ]
 
-    entries = [element.to_vector_db_entry() for element in elements]
+    entries = [element[0].to_vector_db_entry() for element in elements]
 
-    store = InMemoryVectorStore(embedder=NoopEmbedder())
+    embeddings = [element[1] for element in elements]
+    search_vector = [0.4, 0.4]
+
+    store = InMemoryVectorStore(embedder=NoopEmbedder(return_values=[embeddings, [search_vector]]))
     await store.store(entries)
     return store
 
@@ -66,6 +72,7 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
 
     assert len(query_results) == len(results)
     for query_result, result in zip(query_results, results, strict=True):
+        print(query_result.vectors)
         assert query_result.entry.metadata["name"] == result
 
 

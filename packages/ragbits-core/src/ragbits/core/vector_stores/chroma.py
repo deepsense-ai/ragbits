@@ -105,7 +105,9 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
             self._embedding_name_image if not self.default_options.prefer_image else self._embedding_name_text
         )
         return {
-            key: entry.get(default_embedding_key, entry[fallback_embedding_key]) for key, entry in embeddings.items()
+            key: (entry.get(default_embedding_key) or entry[fallback_embedding_key])
+            for key, entry in embeddings.items()
+            if entry.get(default_embedding_key) or entry.get(fallback_embedding_key)
         }
 
     @traceable
@@ -131,7 +133,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         raw_embeddings = await self._create_embeddings(entries)
         ids_to_embeddings = await self._flatten_embeddings(raw_embeddings)
         for entry in entries:
-            if entry not in ids_to_embeddings:
+            if entry.id not in ids_to_embeddings:
                 continue
             embeddings.append(ids_to_embeddings[entry.id])
             ids.append(entry.id)
@@ -193,11 +195,12 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         documents = [document for batch in results.get("documents") or [] for document in batch]
 
         metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
-        raw_embeddings: list[dict] = [cast(dict, metadata.pop("__embeddings", {})) for metadata in metadatas]
-        images: list[bytes | None] = [metadata.pop("__image") for metadata in metadatas]
+        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in metadatas]
 
         # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
         unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+
+        embeddings: list[dict] = [cast(dict, metadata.pop("__embeddings", {})) for metadata in unflattened_metadatas]
 
         return [
             VectorStoreResult(
@@ -211,7 +214,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
                 ),
             )
             for id, metadata, distance, document, image, vectors in zip(
-                ids, unflattened_metadatas, distances, documents, images, raw_embeddings, strict=True
+                ids, unflattened_metadatas, distances, documents, images, embeddings, strict=True
             )
             if merged_options.max_distance is None or distance <= merged_options.max_distance
         ]
@@ -252,22 +255,23 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
             where=where_chroma,
             limit=limit,
             offset=offset,
-            include=["metadatas", "embeddings", "documents"],
+            include=["metadatas", "documents"],
         )
 
         ids = results.get("ids") or []
-        embeddings = results.get("embeddings") or []
         documents = results.get("documents") or []
-        metadatas = results.get("metadatas") or []
+        metadatas: Sequence = results.get("metadatas") or []
+
+        # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
+        unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
 
         return [
             VectorStoreEntry(
                 id=id,
-                key=document,
-                vector=list(embedding),
-                metadata=unflatten_dict(metadata) if metadata else {},  # type: ignore
+                text=document,
+                metadata=metadata,
             )
-            for id, metadata, embedding, document in zip(ids, metadatas, embeddings, documents, strict=True)
+            for id, metadata, document in zip(ids, unflattened_metadatas, documents, strict=True)
         ]
 
     @staticmethod

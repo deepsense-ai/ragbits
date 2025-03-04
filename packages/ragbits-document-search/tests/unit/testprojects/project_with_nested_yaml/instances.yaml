@@ -13,11 +13,11 @@ vector_store:
 document_search:
   type: DocumentSearch
   config:
-  reranker:
-    type: NoopReranker
-    config:
-      default_options:
-        top_n: 17
+    reranker:
+      type: NoopReranker
+      config:
+        default_options:
+          top_n: 17
     vector_store:
       type: InMemoryVectorStore
       config:

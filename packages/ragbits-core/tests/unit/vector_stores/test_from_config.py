@@ -19,6 +19,9 @@ def test_subclass_from_config():
                     "k": 10,
                     "max_distance": 0.22,
                 },
+                "embedder": {
+                    "type": "ragbits.core.embeddings.noop:NoopEmbedder",
+                },
             },
         }
     )
@@ -30,7 +33,14 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "InMemoryVectorStore"})
+    config = ObjectContructionConfig.model_validate(
+        {
+            "type": "InMemoryVectorStore",
+            "config": {
+                "embedder": {"type": "NoopEmbedder"},
+            },
+        }
+    )
     store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
 
@@ -46,6 +56,7 @@ def test_subclass_from_config_chroma_client():
                     "k": 10,
                     "max_distance": 0.22,
                 },
+                "embedder": {"type": "NoopEmbedder"},
             },
         }
     )
@@ -74,6 +85,7 @@ def test_subclass_from_config_qdrant_client():
                     "k": 10,
                     "max_distance": 0.22,
                 },
+                "embedder": {"type": "NoopEmbedder"},
             },
         }
     )

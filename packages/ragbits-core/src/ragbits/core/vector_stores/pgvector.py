@@ -121,7 +121,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         if query_options.max_distance and self._distance_method == "ip":
             query += """ WHERE distance BETWEEN $2 AND $3"""
-            values.extend([query_options.max_distance, query_options.max_distance])
+            values.extend([-1 * query_options.max_distance, query_options.max_distance])
 
         elif query_options.max_distance:
             query += " WHERE distance < $2"
