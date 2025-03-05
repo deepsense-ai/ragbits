@@ -49,8 +49,8 @@ hide:
 
 ### 📚 RAGs in hours - not days
 
-- 📃 **Ingest 20+ document formats**: PDF, HTML, spreadsheets, presentations, and many other formats are supported natively. Effortlessly ingest your data without worrying about compatibility issues.
-- 🖼 **Understands complex data**: Built-in support for tables, images, and more. Process data using [unstructured](https://unstructured.io) or create a custom provider. 
+- 📃 **Ingest 20+ document formats**: PDF, HTML, spreadsheets, presentations, and many other formats are supported natively. Process data using [unstructured](https://unstructured.io) or create a custom provider. 
+- 🖼 **Understands complex data**: Built-in support for tables, images, and more. Agentic document processing using VLM. 
 - 🔌 **Easily connect data sources**: Quickly integrate your data sources using built-in connectors with native support for [S3, GCS, Azure](), and more. If your particular source isn't included, simply implement a straightforward interface.
 - 🚄 **Rapid ingestion of massive payloads**: Leverage Ray-based parallel ingestion to [process massive datasets fast](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
