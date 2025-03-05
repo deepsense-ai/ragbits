@@ -6,13 +6,15 @@ hide:
 # Ragbits docs
 
 <style>
-.md-content .md-typeset h1 { display: none; }
+.md-content .md-typeset #ragbits-docs { display: none; }
+
+#main-header {
+    font-size: 3em;
+    margin-bottom: 0;
+}
 </style>
 
-<div align="center" markdown="span">
-  <!-- TODO: Shouldn't custom assets live in this repo too? -->
-  <img alt="ragbits logo" src="./assets/ragbits.png" width="50%">
-</div>
+<h1 align="center" id="main-header">🐰 ragbits</h1>
 
 <p align="center">
   <em size="">Building blocks for rapid development of GenAI applications.</em>
@@ -35,16 +37,33 @@ hide:
 </div>
 ---
 
-**Ragbits** is a Python package that offers essential "bits" for building powerful Retrieval-Augmented Generation (RAG)
-applications.
+## Features
 
-**Ragbits** prioritizes an exceptional developer experience by providing a simple and intuitive API.
-It also includes a comprehensive set of tools for seamlessly building, testing, and deploying your RAG applications
-efficiently.
+### 🔨 Build future-proof, consistent, and production-ready GenAI applications
+
+- 🔮 **Hot-swappable LLMs**: Future-proof your applications by easily swapping out the underlying LLMs. ragbits supports [over 100+ LLMs through LiteLLM](https://ragbits.deepsense.ai/how-to/core/use_llms/) or allows you to run [local models](https://ragbits.deepsense.ai/how-to/core/use_llms/#using-local-llms).
+- 🎯 **Type-safe LLM calls**: Ensure your LLM calls remain type-safe and consistent, no matter the model. [Leverage Python generics for guaranteed correctness](https://ragbits.deepsense.ai/how-to/core/use_prompting/#how-to-configure-prompts-output-data-type).
+- 💾 **Bring your favorite VectorStore**: ragbits supports various vector stores out-of-the-box, including [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), and more. Easily switch between VectorStores to match your requirements.
+- 🛠 **Powerful CLI**: Effortlessly execute commands, browse vector stores, run queries against RAG pipelines, and [test prompts directly](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli) from your terminal.
+- 🤏 **Install only what you need**: ragbits is designed to be modular, allowing you to install only the components you actually require. Say goodbye to unnecessary, bulky dependencies that degrade application performance.
+
+### 📚 RAGs in hours - not days
+
+- 📃 **Ingest 20+ document formats**: PDF, HTML, spreadsheets, presentations, and many other formats are supported natively. Effortlessly ingest your data without worrying about compatibility issues.
+- 🖼 **Understands complex data**: Built-in support for tables, images, and more. Process data using unstructured or 
+- 🔌 **Easily connect data sources**: Quickly integrate your data sources using built-in connectors with native support for [S3, GCS, Azure](), and more. If your particular source isn't included, simply implement a straightforward interface.
+- 🚄 **Rapid ingestion of massive payloads**: Leverage Ray-based parallel ingestion to [process massive datasets fast](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
+
+### 🚀 Deploy with ease and confidence
+
+- 👀 **Built-in observability**: Monitor your applications effortlessly with integrated observability tools. ragbits incorporates integrations [with OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler), complemented by [beautiful CLI outputs](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
+- ✅ **Integrated testing & evaluation**: Built-in [integration with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) to facilitate comprehensive prompt testing and evaluation.
+- ♻️ **Evaluation and auto-optimization**: Automatically evaluate and optimize components of your application, ensuring continuous improvement in performance.
+- ✨ **Coming soon—intuitive testing UI**: Visualize, test, and optimize your entire application through an intuitive, user-friendly interface (coming soon).
 
 ## Installation
 
-You can install the latest version of **Ragbits** using pip:
+You can install the latest version of **ragbits** using pip:
 
 ```bash
 pip install ragbits
