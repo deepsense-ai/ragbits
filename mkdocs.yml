@@ -5,7 +5,7 @@ repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
 copyright: Copyright &copy; 2024 deepsense.ai
 nav:
-  - rabgbits: index.md
+  - ragbits: index.md
   - Quick Start:
       - quickstart/quickstart1_prompts.md
       - quickstart/quickstart2_rag.md
