@@ -5,6 +5,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, computed_field
 
+from ragbits.core.utils.pydantic import SerializableBytes
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -160,7 +161,7 @@ class ImageElement(Element):
     element_type: str = "image"
     description: str
     ocr_extracted_text: str
-    image_bytes: bytes
+    image_bytes: SerializableBytes
 
     @computed_field  # type: ignore[prop-decorator]
     @property

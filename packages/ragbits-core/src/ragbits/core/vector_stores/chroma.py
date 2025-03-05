@@ -140,7 +140,13 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
             documents.append(entry.text or "")
             metadatas.append(
                 self._flatten_metadata(
-                    {**entry.metadata, **{"__embeddings": raw_embeddings[entry.id], "__image": entry.image_bytes}}
+                    {
+                        **entry.metadata,
+                        **{
+                            "__embeddings": raw_embeddings[entry.id],
+                            "__image": entry.image_bytes.hex() if entry.image_bytes else None,
+                        },
+                    }
                 )
             )
 

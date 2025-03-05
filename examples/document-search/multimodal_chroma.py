@@ -20,7 +20,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run python examples/document-search/multimodal.py
+    uv run python examples/document-search/multimodal_chroma.py
     ```
 """
 
@@ -90,6 +90,7 @@ async def main() -> None:
 
     all_entries = await vector_store.list()
     for entry in all_entries:
+        print(f"ID: {entry.id}")
         print(f"Document: {entry.metadata['document_meta']}")
         print()
 

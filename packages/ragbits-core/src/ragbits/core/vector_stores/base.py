@@ -12,6 +12,7 @@ from ragbits.core import vector_stores
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
+from ragbits.core.utils.pydantic import SerializableBytes
 
 WhereQuery = dict[str, str | int | float | bool]
 
@@ -24,7 +25,7 @@ class VectorStoreEntry(BaseModel):
 
     id: str
     text: str | None = None
-    image_bytes: bytes | None = None
+    image_bytes: SerializableBytes | None = None
     metadata: dict = {}
 
     @pydantic.model_validator(mode="after")

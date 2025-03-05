@@ -1,7 +1,8 @@
 """
-Ragbits Document Search Example: Multimodal Embedder
+Ragbits Document Search Example: Multimodal Embedder with Qdrant Vector Store
 
-This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
+This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents,
+when using the Qdrant vector store.
 
 It employes the "multimodalembedding" from VertexAI. In order to use it, make sure that you are
 logged in to Google Cloud (using the `gcloud auth login` command) and that you have the necessary permissions.
@@ -9,7 +10,7 @@ logged in to Google Cloud (using the `gcloud auth login` command) and that you h
 The script performs the following steps:
     1. Create a list of example documents.
     2. Initialize the `VertexAIMultimodelEmbedder` class (which uses the VertexAI multimodal embeddings).
-    3. Initialize the `InMemoryVectorStore` class, which stores the embeddings for the duration of the script.
+    3. Initialize the `QdrantVectorStore` class, which stores the embeddings for the duration of the script.
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
     6. List all embeddings in the vector store.
@@ -19,7 +20,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run python examples/document-search/multimodal_basic.py
+    uv run python examples/document-search/multimodal_qdrant.py
     ```
 """
 
@@ -27,14 +28,16 @@ To run the script, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core",
+#     "ragbits-core[qdrant]",
 # ]
 # ///
 import asyncio
 from pathlib import Path
 
+from qdrant_client import AsyncQdrantClient
+
 from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.sources import LocalFileSource
@@ -65,7 +68,11 @@ async def main() -> None:
     Run the example.
     """
     embedder = VertexAIMultimodelEmbedder()
-    vector_store = InMemoryVectorStore(embedder=embedder)
+    vector_store = QdrantVectorStore(
+        client=AsyncQdrantClient(location=":memory:"),
+        index_name="multimodal",
+        embedder=embedder,
+    )
     router = DocumentProcessorRouter.from_config(
         {
             # For this example, we want to skip OCR and make sure
