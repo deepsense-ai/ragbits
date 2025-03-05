@@ -4,19 +4,18 @@ import json
 import pytest
 from typer.testing import CliRunner
 
+from ragbits.cli import app, autoregister
 from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.cli import app, autoregister
-from ragbits.evaluate.cli import eval_app, EvaluationResult
-
+from ragbits.evaluate.cli import EvaluationResult, eval_app
 
 factory_path = f"{__name__}:create_document_search_instance_with_documents"
 target_cls = "ragbits.document_search:DocumentSearch"
 
 
-@pytest.fixture()
+@pytest.fixture
 def dataloader_args() -> str:
     """Arguments for dataloader"""
     return "deepsense-ai/synthetic-rag-dataset_v1.0,train"
@@ -31,7 +30,7 @@ async def _add_example_documents(document_search: DocumentSearch) -> None:
     await document_search.ingest(documents)
 
 
-def create_document_search_instance_with_documents():
+def create_document_search_instance_with_documents() -> DocumentSearch:
     document_search = DocumentSearch(embedder=NoopEmbedder(), vector_store=InMemoryVectorStore())
     asyncio.run(_add_example_documents(document_search))
     return document_search
