@@ -75,11 +75,11 @@ class MockPromptWithImage(MockPrompt):
     Mock prompt for testing LiteLLM.
     """
 
-    def has_images(self) -> bool:  # noqa: PLR6301
+    def list_images(self) -> list[str]:  # noqa: PLR6301
         """
         Returns whether the prompt has images.
         """
-        return True
+        return ["fake_image_url"]
 
 
 async def test_generation():

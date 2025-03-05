@@ -1,4 +1,5 @@
 import base64
+import imghdr
 import textwrap
 from abc import ABCMeta
 from collections.abc import Callable
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
 from .base import BasePromptWithParser, ChatFormat, OutputT
+from .exceptions import PromptWithImagesOfInvalidFormat
 from .parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
@@ -213,28 +215,33 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def has_images(self) -> bool:
+    def list_images(self) -> list[str]:
         """
-        Returns whether the prompt has images.
+        Returns the images in form of URLs or base64 encoded strings.
 
         Returns:
-            bool: Whether the prompt has images.
+            list of images
         """
-        return any(
-            content["type"] == "image_url"
+        return [
+            content["image_url"]["url"]
             for message in self.chat
             for content in message["content"]
-            if isinstance(message["content"], list)
-        )
+            if isinstance(message["content"], list) and content["type"] == "image_url"
+        ]
 
     @staticmethod
     def _create_message_with_image(image: str | bytes) -> dict:
+        if isinstance(image, bytes):
+            image_type = imghdr.what(None, image)
+            if not image_type:
+                raise PromptWithImagesOfInvalidFormat()
+            image_url = f"data:image/{image_type};base64,{base64.b64encode(image).decode('utf-8')}"
+        else:
+            image_url = image
         return {
             "type": "image_url",
             "image_url": {
-                "url": f"data:image/jpeg;base64,{base64.b64encode(image).decode('utf-8')}"
-                if isinstance(image, bytes)
-                else image,
+                "url": image_url,
             },
         }
 

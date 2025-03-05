@@ -37,11 +37,14 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return None
 
-    def has_images(self) -> bool:  # noqa: PLR6301
+    def list_images(self) -> list[str]:  # noqa: PLR6301
         """
-        Returns whether the prompt has images.
+        Returns the images in form of URLs or base64 encoded strings.
+
+        Returns:
+            list of images
         """
-        return False
+        return []
 
 
 class BasePromptWithParser(Generic[OutputT], BasePrompt, metaclass=ABCMeta):

@@ -145,4 +145,4 @@ def test_output_schema():
 
 def test_has_images():
     prompt = SimplePrompt("Hello")
-    assert prompt.has_images() is False
+    assert len(prompt.list_images()) == 0
