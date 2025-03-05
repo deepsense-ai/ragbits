@@ -56,7 +56,7 @@ class MockDataLoader(DataLoader):
 class MockMetric(Metric):
     configuration_key = "mock_metrics"
 
-    def compute(self, results: list[MockEvaluationResult]) -> dict:
+    def compute(self, results: list[MockEvaluationResult]) -> dict:  # noqa: PLR6301
         accuracy = sum(1 for r in results if r.is_correct) / len(results)
         return {"accuracy": accuracy}
 
@@ -94,18 +94,22 @@ def test_optimization(direction: str, eval_pipeline_config: dict) -> None:
         dataloader=MockDataLoader(dataset_size=30),
         metrics=MetricSet(*[MockMetric()]),
     )
-    worse_val = ordered_results[1][1]
-    better_val = ordered_results[0][1]
-    if direction == "maximize":
-        assert worse_val <= better_val
-    else:
-        assert better_val <= worse_val
     assert MockEvaluationTargetConfig.model_validate(ordered_results[0][0]["evaluation_target"])
     assert MockEvaluationTargetConfig.model_validate(ordered_results[1][0]["evaluation_target"])
+    worse_val = ordered_results[1][0]["evaluation_target"]["threshold"]
+    better_val = ordered_results[0][0]["evaluation_target"]["threshold"]
+    if direction == "maximize":
+        assert better_val <= worse_val
+    else:
+        assert worse_val <= better_val
 
 
 def test_optimization_from_config(experiment_config: dict) -> None:
     ordered_resuls = Optimizer.run_from_config(experiment_config)
     assert len(ordered_resuls) == 5
-    for res in ordered_resuls:
+    best_val = float("inf")
+    for res in ordered_resuls[::-1]:
         assert MockEvaluationTargetConfig.model_validate(res[0]["evaluation_target"])
+        val = res[0]["evaluation_target"]["threshold"]
+        assert val <= best_val
+        best_val = val

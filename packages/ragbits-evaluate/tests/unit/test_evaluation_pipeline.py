@@ -25,8 +25,6 @@ class MockEvaluationTarget(WithConstructionConfig):
 
 
 class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget]):
-    CONCURRENCY = 2
-
     async def __call__(self, data: dict) -> MockEvaluationResult:
         return MockEvaluationResult(
             input_data=data["input"],
@@ -41,52 +39,22 @@ class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget]):
 
 
 class MockDataLoader(DataLoader):
-    configuration_key = "mock_loader"
-
     def __init__(self, dataset_size: int = 4):
         super().__init__()
         self.dataset_size = dataset_size
 
-    async def load(self):
+    async def load(self) -> Dataset:
         return Dataset.from_dict({"input": list(range(1, self.dataset_size + 1))})
 
 
 class MockMetric(Metric):
-    configuration_key = "mock_metrics"
-
-    def compute(self, results: list[MockEvaluationResult]) -> dict:
+    def compute(self, results: list[MockEvaluationResult]) -> dict:  # noqa: PLR6301
         accuracy = sum(1 for r in results if r.is_correct) / len(results)
         return {"accuracy": accuracy}
 
 
-# Test cases
-@pytest.mark.asyncio
-async def test_run_evaluation():
-    target = MockEvaluationTarget(model_name="test_model")
-    pipeline = MockEvaluationPipeline(target)
-    loader = MockDataLoader()
-    metrics = MetricSet(*[MockMetric()])
-
-    results = await pipeline.run_evaluation(loader, metrics)
-
-    assert len(results["results"]) == 4
-    assert 0 <= results["metrics"]["accuracy"] <= 1
-    assert all("test_model_" in r["processed_output"] for r in results["results"])
-
-
-@pytest.mark.asyncio
-async def test_result_structure():
-    target = MockEvaluationTarget()
-    pipeline = MockEvaluationPipeline(target)
-    result = await pipeline({"input": 2})
-
-    assert isinstance(result, MockEvaluationResult)
-    assert result.is_correct is True
-    assert "2" in result.processed_output
-
-
-@pytest.mark.asyncio
-async def test_run_from_config():
+@pytest.fixture
+def experiment_config() -> dict:
     config = {
         "dataloader": ObjectContructionConfig.model_validate(
             {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 3}}
@@ -103,7 +71,36 @@ async def test_run_from_config():
             "main_metric": ObjectContructionConfig.model_validate({"type": f"{__name__}:MockMetric", "config": {}})
         },
     }
+    return config
 
-    results = await MockEvaluationPipeline.run_from_config(config)
+
+@pytest.mark.asyncio
+async def test_run_evaluation() -> None:
+    target = MockEvaluationTarget(model_name="test_model")
+    pipeline = MockEvaluationPipeline(target)
+    loader = MockDataLoader()
+    metrics = MetricSet(*[MockMetric()])
+
+    results = await pipeline.run_evaluation(loader, metrics)
+
+    assert len(results["results"]) == 4
+    assert 0 <= results["metrics"]["accuracy"] <= 1
+    assert all("test_model_" in r["processed_output"] for r in results["results"])
+
+
+@pytest.mark.asyncio
+async def test_result_structure() -> None:
+    target = MockEvaluationTarget()
+    pipeline = MockEvaluationPipeline(target)
+    result = await pipeline({"input": 2})
+
+    assert isinstance(result, MockEvaluationResult)
+    assert result.is_correct is True
+    assert "2" in result.processed_output
+
+
+@pytest.mark.asyncio
+async def test_run_from_config(experiment_config: dict) -> None:
+    results = await MockEvaluationPipeline.run_from_config(experiment_config)
     assert len(results["results"]) == 3
     assert all("config_model_" in r["processed_output"] for r in results["results"])
