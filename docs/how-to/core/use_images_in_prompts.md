@@ -6,7 +6,7 @@ This guide will walk you through defining and using prompts in Ragbits that acce
 
 ### Using a single image as input
 
-To define a prompt that takes a single image as input, create a Pydantic model representing the input structure. The model should include an image field, which is either a **URL pointing to the image** or a **base64-encoded string**.
+To define a prompt that takes a single image as input, create a Pydantic model representing the input structure. The model should include a field for the image, which can be a **URL pointing to the image** or a **base64-encoded string**.
 
 ```python
 import asyncio
@@ -15,25 +15,25 @@ from ragbits.core.prompt import Prompt
 from ragbits.core.llms.litellm import LiteLLM
 
 
-class ImagePromptInput(BaseModel):
+class AnimalPhotoInput(BaseModel):
     """
-    Input model containing a single image.
+    Input model containing a single animal photo.
     """
-    image: bytes | str
+    photo: bytes | str
 
 
-class ImagePrompt(Prompt):
+class AnimalPhotoPrompt(Prompt):
     """
-    A prompt for generating a caption from an image.
+    A prompt for identifying an animal in a photo.
     """
 
-    user_prompt = "What is on this image?"
-    image_input_fields = ["image"]
+    user_prompt = "What animal do you see in this photo?"
+    image_input_fields = ["photo"]
 
 
 async def main():
     llm = LiteLLM("gpt-4o")
-    prompt = ImagePrompt(ImagePromptInput(image="<your_image_here>"))
+    prompt = AnimalPhotoPrompt(AnimalPhotoInput(photo="<your_photo_here>"))
     response = await llm.generate(prompt)
     print(response)
 
@@ -43,32 +43,32 @@ asyncio.run(main())
 
 ### Using multiple images as input
 
-If you need a prompt that accepts multiple images, define an input model containing a list of image strings.
+If you need a prompt that accepts multiple images, define an input model containing a list of image fields.
 
 ```python
-class ImagesPromptInput(BaseModel):
+class AnimalGalleryInput(BaseModel):
     """
-    Input model containing multiple images.
+    Input model containing multiple animal photos.
     """
-    images: list[bytes | str]
+    photos: list[bytes | str]
 
 
-class ImagesPrompt(Prompt):
+class AnimalGalleryPrompt(Prompt):
     """
-    A prompt for generating descriptions from multiple images.
+    A prompt for identifying animals in multiple photos.
     """
 
-    user_prompt = "What is on these images?"
-    image_input_fields = ["images"]
+    user_prompt = "What animals do you see in these photos?"
+    image_input_fields = ["photos"]
 
 
 async def main():
     llm = LiteLLM("gpt-4o")
-    images = [
-        "<your_image_1_here>",
-        "<your_image_2_here>",
+    photos = [
+        "<your_photo_1_here>",
+        "<your_photo_2_here>",
     ]
-    prompt = ImagesPrompt(ImagesPromptInput(images=images))
+    prompt = AnimalGalleryPrompt(AnimalGalleryInput(photos=photos))
     response = await llm.generate(prompt)
     print(response)
 
@@ -81,43 +81,43 @@ asyncio.run(main())
 Sometimes, you may want to modify the prompt based on whether an image is provided. Jinja conditionals can help achieve this.
 
 ```python
-class OptionalImagePromptInput(BaseModel):
+class QuestionWithOptionalPhotoInput(BaseModel):
     """
-    Input model that optionally includes an image.
+    Input model that optionally includes a photo.
     """
-    query: str
-    image: bytes | str | None = None
+    question: str
+    reference_photo: bytes | str | None = None
 
 
-class OptionalImagePrompt(Prompt[OptionalImagePromptInput]):
+class QuestionWithPhotoPrompt(Prompt[QuestionWithOptionalPhotoInput]):
     """
-    A prompt that considers whether an image is provided.
+    A prompt that considers whether a photo is provided.
     """
 
     system_prompt = """
-    You are a knowledgeable assistant that answers queries.
-    If an image is provided, consider its content in your response.
+    You are a knowledgeable assistant providing detailed answers.
+    If a photo is provided, use it as a reference for your response.
     """
 
     user_prompt = """
-    User asked: {{ query }}
-    {% if image %}
-    Here is an image that may help: {{ image }}
+    User asked: {{ question }}
+    {% if reference_photo %}
+    Here is a reference photo: {{ reference_photo }}
     {% else %}
-    No image was provided.
+    No photo was provided.
     {% endif %}
     """
 
-    image_input_fields = ["image"]
+    image_input_fields = ["reference_photo"]
 
 
 async def main():
     llm = LiteLLM("gpt-4o")
-    input_with_image = OptionalImageInput(query="What is in this image?", image="<your_image_here>")
-    input_without_image = OptionalImageInput(query="What is the capital of France?")
+    input_with_photo = QuestionWithOptionalPhotoInput(question="What animal do you see in this photo?", reference_photo="<your_photo_here>")
+    input_without_photo = QuestionWithOptionalPhotoInput(question="What is the capital of France?")
 
-    print(await llm.generate(OptionalImagePrompt(input_with_image)))
-    print(await llm.generate(OptionalImagePrompt(input_without_image)))
+    print(await llm.generate(QuestionWithPhotoPrompt(input_with_photo)))
+    print(await llm.generate(QuestionWithPhotoPrompt(input_without_photo)))
 
 
 asyncio.run(main())
