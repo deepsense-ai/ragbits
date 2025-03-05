@@ -1,11 +1,9 @@
-from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
-
-
 import asyncio
 import time
+from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from dataclasses import asdict
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
@@ -14,7 +12,6 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, WithCons
 from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
-
 
 EvaluationTargetT = TypeVar("EvaluationTargetT", bound=WithConstructionConfig)
 
@@ -27,8 +24,6 @@ class EvaluationConfig(BaseModel):
     dataloader: ObjectContructionConfig
     pipeline: ObjectContructionConfig
     metrics: dict[str, ObjectContructionConfig]
-
-
 
 
 class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC):
