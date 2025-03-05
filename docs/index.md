@@ -39,7 +39,7 @@ hide:
 
 ## Features
 
-### 🔨 Build future-proof, consistent, and production-ready GenAI applications
+### 🔨 Build future-proof, consistent GenAI applications
 
 - 🔮 **Hot-swappable LLMs**: Future-proof your applications by easily swapping out the underlying LLMs. ragbits supports [over 100+ LLMs through LiteLLM](https://ragbits.deepsense.ai/how-to/core/use_llms/) or allows you to run [local models](https://ragbits.deepsense.ai/how-to/core/use_llms/#using-local-llms).
 - 🎯 **Type-safe LLM calls**: Ensure your LLM calls remain type-safe and consistent, no matter the model. [Leverage Python generics for guaranteed correctness](https://ragbits.deepsense.ai/how-to/core/use_prompting/#how-to-configure-prompts-output-data-type).
