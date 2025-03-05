@@ -8,7 +8,6 @@ from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.evaluate.cli import eval_app
 
-
 factory_path = f"{__name__}:create_document_search_instance_with_documents"
 target_cls = "ragbits.document_search:DocumentSearch"
 
