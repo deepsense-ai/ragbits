@@ -43,7 +43,7 @@ asyncio.run(main())
 
 ### Using multiple images as input
 
-If you need a prompt that accepts multiple images, define an input model containing a list of image fields.
+If you need a prompt that accepts multiple images, define an input model containing a list of image fields, which can be a list of URLs pointing to the images or a list of base64-encoded strings representing the images.
 
 ```python
 class AnimalGalleryInput(BaseModel):
