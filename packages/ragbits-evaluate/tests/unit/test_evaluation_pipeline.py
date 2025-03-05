@@ -3,11 +3,12 @@ from typing import cast
 
 import pytest
 from datasets import Dataset
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+
+from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import Metric, MetricSet
-from ragbits.evaluate import EvaluationResult
-from ragbits.core.utils.config_handling import WithConstructionConfig, ObjectContructionConfig
+from ragbits.evaluate.pipelines.base import EvaluationPipeline
 
 
 @dataclass
