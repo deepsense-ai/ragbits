@@ -59,7 +59,7 @@ hide:
 - 👀 **Built-in observability**: Monitor your applications effortlessly with integrated observability tools. Ragbits incorporates integrations [with OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler), complemented by [beautiful CLI outputs](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
 - ✅ **Integrated testing & evaluation**: Built-in [integration with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) to facilitate comprehensive prompt testing and evaluation.
 - ♻️ **Evaluation and auto-optimization**: Automatically evaluate and optimize components of your application, ensuring continuous improvement in performance.
-- ✨ **Coming soon—intuitive testing UI**: Visualize, test, and optimize your entire application through an intuitive, user-friendly interface (coming soon).
+- ✨ **Intuitive testing UI**: Visualize, test, and optimize your entire application through an intuitive, user-friendly interface (coming soon).
 
 ## Installation
 
