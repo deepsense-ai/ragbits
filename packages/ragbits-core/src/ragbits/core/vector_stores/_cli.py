@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from ragbits.cli import cli_state, print_output
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import OutputType
-from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 
 vector_stores_app = typer.Typer(no_args_is_help=True)
@@ -23,7 +22,10 @@ class CLIState:
 state: CLIState = CLIState()
 
 # Default columns for commands that list entries
-_default_columns = "id,key,metadata"
+_default_entry_columns = "id,text,metadata"
+
+# Default columns for commands that lists results
+_default_result_columns = "score,entry.id,entry.text,entry.metadata"
 
 
 @vector_stores_app.callback()
@@ -51,8 +53,9 @@ def list_entries(
     limit: Annotated[int, typer.Option(help="Maximum number of entries to list")] = 10,
     offset: Annotated[int, typer.Option(help="How many entries to skip")] = 0,
     columns: Annotated[
-        str, typer.Option(help="Comma-separated list of columns to display, aviailable: id, key, vector, metadata")
-    ] = _default_columns,
+        str,
+        typer.Option(help="Comma-separated list of columns to display, aviailable: id, text, image_bytes, metadata"),
+    ] = _default_entry_columns,
 ) -> None:
     """
     List all objects in the chosen vector store.
@@ -98,19 +101,13 @@ def query(
     text: Annotated[str, typer.Argument(help="Text to query the vector store with")],
     k: Annotated[int, typer.Option(help="Number of entries to retrieve")] = 5,
     max_distance: Annotated[float | None, typer.Option(help="Maximum distance to the query vector")] = None,
-    embedder_factory_path: Annotated[
-        str | None,
-        typer.Option(
-            help="Python path to a function that creates an embedder, in a format 'module.submodule:function'"
-        ),
-    ] = None,
-    embedder_yaml_path: Annotated[
-        Path | None,
-        typer.Option(help="Path to a YAML configuration file for the embedder", exists=True, resolve_path=True),
-    ] = None,
     columns: Annotated[
-        str, typer.Option(help="Comma-separated list of columns to display, aviailable: id, key, vector, metadata")
-    ] = _default_columns,
+        str,
+        typer.Option(
+            help="Comma-separated list of columns to display, "
+            "aviailable: score, entry.id, entry.text, entry.image_bytes, entry.metadata"
+        ),
+    ] = _default_result_columns,
 ) -> None:
     """
     Query the chosen vector store.
@@ -119,20 +116,10 @@ def query(
     async def run() -> None:
         if state.vector_store is None:
             raise ValueError("Vector store not initialized")
-
-        embedder = get_instance_or_exit(
-            Embedder,
-            factory_path=embedder_factory_path,
-            yaml_path=embedder_yaml_path,
-            factory_path_argument_name="--embedder_factory_path",
-            yaml_path_argument_name="--embedder_yaml_path",
-            type_name="embedder",
-        )
-        search_vector = await embedder.embed_text([text])
-
         options = VectorStoreOptions(k=k, max_distance=max_distance)
+
         entries = await state.vector_store.retrieve(
-            vector=search_vector[0],
+            text=text,
             options=options,
         )
         print_output(entries, columns=columns)

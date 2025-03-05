@@ -28,7 +28,7 @@ you can use Jeager. The recommended way to run it is using the official Docker i
     1. Run Jaeger Docker container:
 
         ```bash
-        docker run -d --rm --name jaeger \
+        docker run --rm --name jaeger \
             -p 16686:16686 \
             -p 4317:4317 \
             jaegertracing/all-in-one:1.62.0
@@ -104,9 +104,9 @@ async def main() -> None:
     vector_store = ChromaVectorStore(
         client=EphemeralClient(),
         index_name="jokes",
+        embedder=embedder,
     )
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 

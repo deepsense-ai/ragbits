@@ -25,10 +25,9 @@ documents = [
 embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
-vector_store = InMemoryVectorStore()
+vector_store = InMemoryVectorStore(embedder=embedder)
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
 )
 
@@ -56,11 +55,10 @@ documents = [
 embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
-vector_store = InMemoryVectorStore()
+vector_store = InMemoryVectorStore(embedder=embedder)
 processing_strategy = BatchedAsyncProcessing()
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
     processing_strategy=processing_strategy
 )

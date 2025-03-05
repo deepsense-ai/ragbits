@@ -12,18 +12,23 @@ from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.sources import LocalFileSource
 
+embedder = AsyncMock()
+embedder.embed_text.return_value = [[0.0], [0.0]]
+
 
 @pytest.mark.parametrize(
     "vector_store",
     [
-        InMemoryVectorStore(),
+        InMemoryVectorStore(embedder=embedder),
         ChromaVectorStore(
             client=EphemeralClient(),
             index_name="test_index_name",
+            embedder=embedder,
         ),
         QdrantVectorStore(
             client=AsyncQdrantClient(":memory:"),
             index_name="test_index_name",
+            embedder=embedder,
         ),
     ],
 )
@@ -37,10 +42,7 @@ async def test_handling_document_ingestion_with_different_content_and_verifying_
     document_1 = DocumentMeta.create_text_document_from_literal(document_1_content)
     document_2 = DocumentMeta.create_text_document_from_literal(document_2_content)
 
-    embedder = AsyncMock()
-    embedder.embed_text.return_value = [[0.0], [0.0]]
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
     await document_search.ingest([document_1, document_2])
@@ -52,7 +54,7 @@ async def test_handling_document_ingestion_with_different_content_and_verifying_
 
     await document_search.ingest([document_2])
 
-    document_contents = {entry.key for entry in await vector_store.list()}
+    document_contents = {entry.text for entry in await vector_store.list()}
 
     assert document_1_content in document_contents
     assert document_2_new_content in document_contents

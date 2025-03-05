@@ -69,6 +69,9 @@ otel = [
 qdrant = [
     "qdrant-client~=1.12.1",
 ]
+pgvector = [
+    "asyncpg>=0.30.0",
+]
 
 [tool.uv]
 dev-dependencies = [

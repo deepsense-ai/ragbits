@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 
 from ragbits.core.config import CoreConfig
-from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.utils._pyproject import get_config_instance
 from ragbits.core.utils.config_handling import NoPreferredConfigError
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search._main import DocumentSearch
+from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 projects_dir = Path(__file__).parent / "testprojects"
 
@@ -27,7 +27,8 @@ def test_preferred_subclass_instance_yaml():
     )
     instance = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 17
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 147
 
@@ -44,7 +45,8 @@ def test_preferred_subclass_instance_nested_yaml():
     )
     instance = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 17
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 12
 
@@ -62,7 +64,8 @@ def test_preferred_subclass_yaml_override():
         config, yaml_path_override=projects_dir / "project_with_instances_yaml" / "instances.yaml"
     )
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 17
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 147
 
@@ -81,7 +84,8 @@ def test_preferred_subclass_instance_nested_yaml_ovverride():
         config, yaml_path_override=projects_dir / "project_with_nested_yaml" / "instances.yaml"
     )
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 17
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 12
 
@@ -97,7 +101,8 @@ def test_preferred_subclass_factory():
     )
     instance = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 223
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 223
 
@@ -115,7 +120,8 @@ def test_preferred_subclass_factory_override():
         config, factory_path_override="project_with_instance_factory.factories:create_document_search_instance_825"
     )
     assert isinstance(instance, DocumentSearch)
-    assert isinstance(instance.embedder, NoopEmbedder)
+    assert isinstance(instance.reranker, NoopReranker)
+    assert instance.reranker.default_options.top_n == 825
     assert isinstance(instance.vector_store, InMemoryVectorStore)
     assert instance.vector_store.default_options.k == 825
 

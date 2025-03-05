@@ -1,6 +1,5 @@
 defaults:
-  - embedder@config.embedder: litellm_optimization
-  - vector_store@config.vector_store: chroma
+  - vector_store@config.vector_store: chroma_optimization
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop
   - providers@config.providers: unstructured_optimization
