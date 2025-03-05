@@ -77,4 +77,3 @@ def test_run_evaluation_json_output(dataloader_args: str) -> None:
     assert isinstance(parsed_result, list)
     assert len(parsed_result) == 1
     assert EvaluationResult.model_validate(parsed_result[0])
-
