@@ -34,7 +34,7 @@ required setup, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core",
+#     "ragbits-core[pgvector]",
 # ]
 # ///
 

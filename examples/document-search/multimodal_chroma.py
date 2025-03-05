@@ -1,7 +1,8 @@
 """
-Ragbits Document Search Example: Multimodal Embedder
+Ragbits Document Search Example: Multimodal Embedder with Chroma Vector Store
 
-This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
+This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents,
+when using the Chroma vector store.
 
 It employes the "multimodalembedding" from VertexAI. In order to use it, make sure that you are
 logged in to Google Cloud (using the `gcloud auth login` command) and that you have the necessary permissions.
@@ -27,22 +28,21 @@ To run the script, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core",
+#     "ragbits-core[chroma]",
 # ]
 # ///
 import asyncio
 from pathlib import Path
 
-from ragbits.core import audit
+from chromadb import EphemeralClient
+
 from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.dummy import DummyImageProvider
-
-audit.set_trace_handlers("cli")
 
 IMAGES_PATH = Path(__file__).parent / "images"
 
@@ -68,7 +68,11 @@ async def main() -> None:
     Run the example.
     """
     embedder = VertexAIMultimodelEmbedder()
-    vector_store = InMemoryVectorStore(embedder=embedder)
+    vector_store = ChromaVectorStore(
+        client=EphemeralClient(),
+        index_name="multimodal",
+        embedder=embedder,
+    )
     router = DocumentProcessorRouter.from_config(
         {
             # For this example, we want to skip OCR and make sure
@@ -84,9 +88,9 @@ async def main() -> None:
 
     await document_search.ingest(documents)
 
-    all_embeddings = await vector_store.list()
-    for embedding in all_embeddings:
-        print(f"Embedding: {embedding.metadata['document_meta']}")
+    all_entries = await vector_store.list()
+    for entry in all_entries:
+        print(f"Document: {entry.metadata['document_meta']}")
         print()
 
     results = await document_search.search("Fluffy teady bear")

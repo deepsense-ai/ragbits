@@ -195,12 +195,12 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         documents = [document for batch in results.get("documents") or [] for document in batch]
 
         metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
-        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in metadatas]
 
         # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
         unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
 
         embeddings: list[dict] = [cast(dict, metadata.pop("__embeddings", {})) for metadata in unflattened_metadatas]
+        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
         return [
             VectorStoreResult(
@@ -265,13 +265,16 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
         unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
 
+        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+
         return [
             VectorStoreEntry(
                 id=id,
                 text=document,
                 metadata=metadata,
+                image_bytes=image,
             )
-            for id, metadata, document in zip(ids, unflattened_metadatas, documents, strict=True)
+            for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
         ]
 
     @staticmethod
