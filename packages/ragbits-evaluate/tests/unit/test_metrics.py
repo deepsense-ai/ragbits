@@ -155,7 +155,7 @@ def test_metric_set_with_different_strategies() -> None:
         ),
     }
 
-    metric_set = MetricSet.from_config(config)
+    metric_set: MetricSet = MetricSet.from_config(config)
     assert len(metric_set.metrics) == 2
     assert isinstance(metric_set.metrics[0], DocumentSearchPrecisionRecallF1)
     assert isinstance(metric_set.metrics[1], DocumentSearchPrecisionRecallF1)
