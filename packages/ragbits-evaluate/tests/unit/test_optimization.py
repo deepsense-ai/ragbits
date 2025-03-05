@@ -3,12 +3,13 @@ from dataclasses import dataclass
 import pytest
 from datasets import Dataset
 from pydantic import BaseModel
-from ragbits.evaluate.optimizer import Optimizer
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+
+from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import Metric, MetricSet
-from ragbits.evaluate import EvaluationResult
-from ragbits.core.utils.config_handling import WithConstructionConfig, ObjectContructionConfig
+from ragbits.evaluate.optimizer import Optimizer
+from ragbits.evaluate.pipelines.base import EvaluationPipeline
 
 
 @dataclass
@@ -48,7 +49,7 @@ class MockDataLoader(DataLoader):
         super().__init__()
         self.dataset_size = dataset_size
 
-    async def load(self):
+    async def load(self) -> Dataset:
         return Dataset.from_dict({"input": list(range(1, self.dataset_size + 1))})
 
 
@@ -60,29 +61,51 @@ class MockMetric(Metric):
         return {"accuracy": accuracy}
 
 
-@pytest.fixture()
-def optimization_config():
+@pytest.fixture
+def eval_pipeline_config() -> dict:
     return {
         "evaluation_target": {"threshold": {"optimize": True, "range": [5, 20]}},
     }
 
 
+@pytest.fixture
+def experiment_config(eval_pipeline_config: dict) -> dict:
+    config = {
+        "optimizer": {
+            "direction": "maximize",
+            "n_trials": 5,
+            "max_retries_for_trial": 1,
+        },
+        "experiment": {
+            "pipeline": {"type": f"{__name__}:MockEvaluationPipeline", "config": eval_pipeline_config},
+            "dataloader": {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 30}},
+            "metrics": {"test": {"type": f"{__name__}:MockMetric", "config": {}}},
+        },
+    }
+    return config
+
+
 @pytest.mark.parametrize(("direction"), ["maximize", "minimize"])
-def test_optimization(direction, optimization_config):
+def test_optimization(direction: str, eval_pipeline_config: dict) -> None:
     optimizer = Optimizer(direction=direction, n_trials=2)
-    ordered_configs = optimizer.optimize(
+    ordered_results = optimizer.optimize(
         pipeline_class=MockEvaluationPipeline,
-        pipeline_config=optimization_config,
+        pipeline_config=eval_pipeline_config,
         dataloader=MockDataLoader(dataset_size=30),
         metrics=MetricSet(*[MockMetric()]),
     )
-    worse_val = ordered_configs[1][1]
-    better_val = ordered_configs[0][1]
+    worse_val = ordered_results[1][1]
+    better_val = ordered_results[0][1]
     if direction == "maximize":
         assert worse_val <= better_val
     else:
         assert better_val <= worse_val
-    assert MockEvaluationTargetConfig.model_validate(ordered_configs[0][0]["evaluation_target"])
-    assert MockEvaluationTargetConfig.model_validate(ordered_configs[1][0]["evaluation_target"])
+    assert MockEvaluationTargetConfig.model_validate(ordered_results[0][0]["evaluation_target"])
+    assert MockEvaluationTargetConfig.model_validate(ordered_results[1][0]["evaluation_target"])
 
 
+def test_optimization_from_config(experiment_config: dict) -> None:
+    ordered_resuls = Optimizer.run_from_config(experiment_config)
+    assert len(ordered_resuls) == 5
+    for res in ordered_resuls:
+        assert MockEvaluationTargetConfig.model_validate(res[0]["evaluation_target"])

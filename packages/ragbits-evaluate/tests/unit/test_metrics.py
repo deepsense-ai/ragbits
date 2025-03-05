@@ -1,17 +1,17 @@
-import pytest
-from typing import List
-import numpy as np
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
-from ragbits.evaluate.metrics.document_search import DocumentSearchPrecisionRecallF1
-from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
+import numpy as np
+import pytest
 from continuous_eval.metrics.retrieval.matching_strategy import (
     ExactChunkMatch,
     ExactSentenceMatch,
     RougeChunkMatch,
     RougeSentenceMatch,
 )
+
+from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.evaluate.metrics.base import MetricSet
+from ragbits.evaluate.metrics.document_search import DocumentSearchPrecisionRecallF1
+from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
 
 
 @pytest.fixture(
@@ -27,7 +27,7 @@ def matching_strategy(request):
 
 
 @pytest.fixture
-def exact_match_results() -> List[DocumentSearchResult]:
+def exact_match_results() -> list[DocumentSearchResult]:
     return [
         DocumentSearchResult(
             question="Q1",
@@ -43,7 +43,7 @@ def exact_match_results() -> List[DocumentSearchResult]:
 
 
 @pytest.fixture
-def partial_match_results() -> List[DocumentSearchResult]:
+def partial_match_results() -> list[DocumentSearchResult]:
     return [
         DocumentSearchResult(
             question="Q1",
@@ -59,7 +59,7 @@ def partial_match_results() -> List[DocumentSearchResult]:
 
 
 @pytest.fixture
-def no_match_results() -> List[DocumentSearchResult]:
+def no_match_results() -> list[DocumentSearchResult]:
     return [
         DocumentSearchResult(
             question="Q1",
