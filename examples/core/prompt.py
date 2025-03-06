@@ -32,7 +32,7 @@ class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
     system_prompt = """
-    You are a helpful Lorem Ipsum generator. The kind of vocablurary that you use besides "Lorem Ipsum" depends
+    You are a helpful Lorem Ipsum generator. The kind of vocabulary that you use besides "Lorem Ipsum" depends
     on the theme provided by the user. Make sure it is latin and not too long. {% if not nsfw_allowed %}Also, make sure
     that the text is safe for work.{% else %}You can use any text, even if it is not safe for work.{% endif %}
     """

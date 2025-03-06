@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
@@ -37,7 +38,7 @@ class MockLLM(LLM[MockLLMOptions]):
 
     async def _call(  # noqa: PLR6301
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -45,14 +46,14 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
-        self.calls.append(conversation)
+        self.calls.append(prompt.chat)
         if not isinstance(options.response, NotGiven):
             return {"response": options.response, "is_mocked": True}
         return {"response": "mocked response", "is_mocked": True}
 
     async def _call_streaming(  # noqa: PLR6301
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -60,7 +61,7 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
-        self.calls.append(conversation)
+        self.calls.append(prompt.chat)
 
         async def generator() -> AsyncGenerator[str, None]:
             if not isinstance(options.response_stream, NotGiven):
