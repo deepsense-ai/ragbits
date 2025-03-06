@@ -161,14 +161,14 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        with trace(prompt=prompt, options=repr(options)) as outputs:
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             raw_response = await self.generate_raw(prompt, options=options)
             if isinstance(prompt, BasePromptWithParser):
                 response = prompt.parse_response(raw_response["response"])
-                outputs.response = raw_response["response"]
+                outputs.response = response
                 return response
             response = cast(OutputT, raw_response["response"])
-            outputs.response = raw_response["response"]
+            outputs.response = response
         return response
 
     @overload
