@@ -54,8 +54,8 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         """
         pass
 
-    @staticmethod
-    async def run_from_config(config: dict) -> dict:
+    @classmethod
+    async def run_from_config(cls, config: dict) -> dict:
         """
         Runs the evaluation based on configuration.
 
@@ -67,7 +67,7 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         """
         model = EvaluationConfig.model_validate(config)
         dataloader: DataLoader = DataLoader.subclass_from_config(model.dataloader)
-        pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
+        pipeline: EvaluationPipeline = cls.subclass_from_config(model.pipeline)
         metrics: MetricSet = MetricSet.from_config(model.metrics)
 
         return await pipeline.run_evaluation(
