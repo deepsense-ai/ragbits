@@ -1,13 +1,15 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import "./globals.css";
-import App from "./App.tsx";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { HeroUIProvider } from "@heroui/react";
+import App from "./App";
+import "./globals.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
     <HeroUIProvider>
-      <App />
+      <div className="flex h-screen w-screen items-start justify-center">
+        <App />
+      </div>
     </HeroUIProvider>
-  </StrictMode>,
+  </React.StrictMode>,
 );

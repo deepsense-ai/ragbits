@@ -1,9 +1,10 @@
 import asyncio
 import importlib
 from pathlib import Path
-from fastapi import FastAPI
+import random
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import uvicorn
@@ -11,9 +12,13 @@ import uvicorn
 
 async def word_streamer(text: str):
     words = text.split()
-    for word in words:
-        yield f"data: {word}\n\n"
-        await asyncio.sleep(1)
+    i = 0
+    while i < len(words):
+        batch_size = random.randint(10, 25)
+        chunk = words[i:i + batch_size]
+        yield f"data: {' '.join(chunk)}\n\n"
+        i += batch_size
+        await asyncio.sleep(0.15)
 
 
 class RagbitsAPI:
@@ -32,7 +37,7 @@ class RagbitsAPI:
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["http://localhost:8000"],
+            allow_origins=["http://localhost:8000", "http://localhost:5173"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -47,23 +52,27 @@ class RagbitsAPI:
     def setup_routes(self):
         """Defines API routes."""
         @self.app.get("/", response_class=HTMLResponse) 
-        def root() -> HTMLResponse:
+        async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
             return open(str(index_file)).read()
 
-        @self.app.post("/api/chat", response_class=StreamingResponse)
-        def chat() -> StreamingResponse:
-            # message = "Hello, this is test message"
-            # history = []
-            # self.chat_module(message, history)
-
-            lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-            return StreamingResponse(word_streamer(lorem), media_type="text/event-stream")
+        @self.app.get("/api/chat/{id}", response_class=StreamingResponse)
+        async def chat() -> StreamingResponse:
+            response = await self.chat_module(question="Tell me statistics about capital of poland, like geographicaly, demographicaly etc. as much as you can")
+            return StreamingResponse(word_streamer(response), media_type="text/event-stream")
+        
+        # TODO: read data send by frontend
+        @self.app.post("/api/chat", response_class=JSONResponse)
+        async def chat() -> JSONResponse:
+            id = str(random.randint(1000, 9999))
+            return JSONResponse(content={id: id})
         
     
-    def initialize_chat_module(self, chat_path: str, chat_name: str):
-        module = importlib.import_module(chat_path)
-        self.chat_module = getattr(module, chat_name)
+    def initialize_chat_module(self, chat_path: str):
+        module_stringified, object_stringified = chat_path.split(":")
+        print(module_stringified, object_stringified)
+        module = importlib.import_module(module_stringified)
+        self.chat_module = getattr(module, object_stringified)
         
 
     def run(self, host="127.0.0.1", port=8000):
