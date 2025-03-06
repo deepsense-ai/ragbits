@@ -13,7 +13,7 @@ from typing import cast
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
-from ragbits.evaluate.evaluator import Evaluator
+from ragbits.evaluate.pipelines.base import EvaluationPipeline
 from ragbits.evaluate.utils import log_evaluation_to_file, log_evaluation_to_neptune
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
@@ -30,7 +30,7 @@ async def evaluate(config: DictConfig) -> None:
     print("Starting evaluation...")
 
     evaluator_config = cast(dict, OmegaConf.to_container(config))
-    results = await Evaluator.run_from_config(evaluator_config)
+    results = await EvaluationPipeline.run_from_config(evaluator_config)
 
     if config.logger.local:
         output_dir = log_evaluation_to_file(results)
