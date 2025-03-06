@@ -1,5 +1,6 @@
 import asyncio
 import json
+from uuid import UUID
 
 import pytest
 from typer.testing import CliRunner
@@ -13,9 +14,13 @@ from ragbits.core.vector_stores._cli import vector_stores_app
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreResult
 
 example_entries = [
-    VectorStoreEntry(id="1", text="entry 1", metadata={"key": "value"}),
-    VectorStoreEntry(id="2", text="entry 2", metadata={"another_key": "another_value"}),
-    VectorStoreEntry(id="3", text="entry 3", metadata={"foo": "bar", "baz": "qux"}),
+    VectorStoreEntry(id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"), text="entry 1", metadata={"key": "value"}),
+    VectorStoreEntry(
+        id=UUID("367cd073-6a6b-47fe-a032-4bb3a754f6fe"), text="entry 2", metadata={"another_key": "another_value"}
+    ),
+    VectorStoreEntry(
+        id=UUID("d9d11902-f26a-409b-967b-46c30f0b65de"), text="entry 3", metadata={"foo": "bar", "baz": "qux"}
+    ),
 ]
 
 
@@ -151,10 +156,19 @@ def test_vector_store_remove():
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         vector_stores_app,
-        ["--factory-path", "cli.test_vector_store:vector_store_factory_for_remove", "remove", "1", "3"],
+        [
+            "--factory-path",
+            "cli.test_vector_store:vector_store_factory_for_remove",
+            "remove",
+            "48183d3f-61c6-4ef3-bf62-e45d9389acee",
+            "d9d11902-f26a-409b-967b-46c30f0b65de",
+        ],
     )
     assert result.exit_code == 0
-    assert "Removed entries with IDs: 1, 3" in result.stdout
+    assert (
+        "Removed entries with IDs: 48183d3f-61c6-4ef3-bf62-e45d9389acee, d9d11902-f26a-409b-967b-46c30f0b65de"
+        in result.stdout
+    )
 
     result = runner.invoke(
         vector_stores_app, ["--factory-path", "cli.test_vector_store:vector_store_factory_for_remove", "list"]

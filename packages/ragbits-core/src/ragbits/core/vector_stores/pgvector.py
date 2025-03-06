@@ -1,8 +1,8 @@
 import json
 import re
 import warnings
-from collections.abc import Iterable
 from typing import Any
+from uuid import UUID
 
 import asyncpg
 from pydantic.json import pydantic_encoder
@@ -30,6 +30,7 @@ DISTANCE_OPS = {
 }
 
 
+# TODO: Add support for image embeddings
 class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
@@ -177,7 +178,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         create_table_query = f"""
         CREATE TABLE {self._table_name}
-        (id TEXT, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
+        (id UUID, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
         """
         # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
         create_index_query = f"""
@@ -204,7 +205,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                 print("Table already exists!")
 
     @traceable
-    async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the pgVector collection.
 
@@ -224,11 +225,13 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         try:
             async with self._client.acquire() as conn:
                 for entry in entries:
-                    if entry.image_bytes is not None:
-                        warnings.warn(f"Image embeddings are not supported yet. Ignoring the image for {entry.id}")
+                    if entry.id not in embeddings or self._embedding_name_text not in embeddings[entry.id]:
+                        warnings.warn(f"Skipping entry {entry.id} as it has no text embeddings.")
+                        continue
+
                     await conn.execute(
                         insert_query,
-                        entry.id,
+                        str(entry.id),
                         entry.text,
                         str(embeddings[entry.id][self._embedding_name_text]),
                         json.dumps(entry.metadata, default=pydantic_encoder),
@@ -245,7 +248,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             await self.store(entries)
 
     @traceable
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 

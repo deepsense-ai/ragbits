@@ -1,5 +1,6 @@
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from typing import Literal, cast
+from uuid import UUID
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -86,17 +87,10 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 
-    async def _flatten_embeddings(self, embeddings: dict[str, dict[str, list[float]]]) -> dict[str, list[float]]:
+    async def _preffered_embeddings(self, embeddings: dict[UUID, dict[str, list[float]]]) -> dict[UUID, list[float]]:
         """
-        Creates embeddings for the provided entries, similar to `_create_embeddings`,
-        but only returns one embedding per entry. If both text and image embeddings are
-        available, chooses text unless `prefer_image` is set to True.
-
-        Args:
-            embeddings: The embeddings to flatten.
-
-        Returns:
-            The embeddings.
+        Returns the preferred embedding type (text or image) for each entry. If the preferred type is not available,
+        the other type is returned.
         """
         default_embedding_key = (
             self._embedding_name_text if not self.default_options.prefer_image else self._embedding_name_image
@@ -111,7 +105,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         }
 
     @traceable
-    async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
 
@@ -131,12 +125,12 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         embeddings: list[Sequence[float]] = []
 
         raw_embeddings = await self._create_embeddings(entries)
-        ids_to_embeddings = await self._flatten_embeddings(raw_embeddings)
+        ids_to_embeddings = await self._preffered_embeddings(raw_embeddings)
         for entry in entries:
             if entry.id not in ids_to_embeddings:
                 continue
             embeddings.append(ids_to_embeddings[entry.id])
-            ids.append(entry.id)
+            ids.append(str(entry.id))
             documents.append(entry.text or "")
             metadatas.append(
                 self._flatten_metadata(
@@ -226,14 +220,14 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         ]
 
     @traceable
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
         Args:
             ids: The list of entries' IDs to remove.
         """
-        self._collection.delete(ids=ids)
+        self._collection.delete(ids=[str(id) for id in ids])
 
     @traceable
     async def list(
@@ -273,9 +267,13 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
 
         images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
+        # remove embeddings from metadata
+        for metadata in unflattened_metadatas:
+            metadata.pop("__embeddings", None)
+
         return [
             VectorStoreEntry(
-                id=id,
+                id=UUID(id),
                 text=document,
                 metadata=metadata,
                 image_bytes=image,

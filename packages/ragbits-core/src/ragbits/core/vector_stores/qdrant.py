@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import Coroutine, Iterable, Mapping
 from typing import Any, cast
+from uuid import UUID
 
 import httpx
 import qdrant_client
@@ -91,7 +92,7 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         raise ValueError("No vectors found in the input")
 
     @traceable
-    async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
 
@@ -118,11 +119,12 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         points = (
             models.PointStruct(
-                id=entry.id,
+                id=str(entry.id),
                 vector=embeddings[entry.id],
                 payload=entry.model_dump(exclude_none=True),
             )
             for entry in entries
+            if entry.id in embeddings
         )
 
         self._client.upload_points(
@@ -160,6 +162,9 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         query_vectors = await asyncio.gather(*vector_coroutines)
 
+        # TODO: Come up with a better way to query both image and text vectors
+        # FusionQuery boosts entries that appear in both lists, i.e. those
+        # that contain both text and image, which is probably not what we want.
         query_results = await self._client.query_points(
             prefetch=[
                 models.Prefetch(
@@ -170,7 +175,7 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                 for name in [self._embedding_name_text, self._embedding_name_image]
             ],
             collection_name=self._index_name,
-            query=models.FusionQuery(fusion=models.Fusion.RRF),
+            query=models.FusionQuery(fusion=models.Fusion.DBSF),
             limit=merged_options.k,
             score_threshold=score_threshold,
             with_payload=True,
@@ -194,7 +199,7 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         return results
 
     @traceable
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
@@ -207,7 +212,7 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         await self._client.delete(
             collection_name=self._index_name,
             points_selector=models.PointIdsList(
-                points=cast(list[int | str], ids),
+                points=[str(id) for id in ids],
             ),
         )
 

@@ -1,5 +1,6 @@
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID
 
 import asyncpg
 import pytest
@@ -12,13 +13,13 @@ from ragbits.core.vector_stores.pgvector import PgVectorStore
 VECTOR_EXAMPLE = [0.1, 0.2, 0.3]
 DATA_JSON_EXAMPLE = [
     {
-        "id": "test_id_1",
+        "id": "8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
         "key": "test_key_1",
         "vector": "[0.1, 0.2, 0.3]",
         "metadata": '{"key1": "value1"}',
     },
     {
-        "id": "test_id_2",
+        "id": "9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
         "key": "test_key_2",
         "vector": "[0.4, 0.5, 0.6]",
         "metadata": '{"key2": "value2"}',
@@ -157,7 +158,7 @@ async def test_create_table_when_table_exist(
 @pytest.mark.asyncio
 async def test_store(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    data = [VectorStoreEntry(id="test_id_1", text="test_key_1", metadata={})]
+    data = [VectorStoreEntry(id=UUID("64144806-e080-4f9c-b46d-682fe4871497"), text="test_key_1", metadata={})]
     await mock_pgvector_store.store(data)
     mock_conn.execute.assert_called()
     calls = mock_conn.execute.mock_calls
@@ -178,7 +179,7 @@ async def test_store_no_entries(mock_pgvector_store: PgVectorStore, mock_db_pool
 async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
     mock_conn.execute.side_effect = [asyncpg.exceptions.UndefinedTableError, None]
-    data = [VectorStoreEntry(id="test_id_1", text="test_key_1", metadata={})]
+    data = [VectorStoreEntry(id=UUID("eeb67aa6-0411-4dc3-9647-c7b3182e0594"), text="test_key_1", metadata={})]
 
     with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
         await mock_pgvector_store.store(data)
@@ -189,7 +190,7 @@ async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: 
 @pytest.mark.asyncio
 async def test_remove(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    ids_to_remove = ["test_id_1"]
+    ids_to_remove = [UUID("6edae3b9-087b-4e09-a452-ab2235e023c8")]
     await mock_pgvector_store.remove(ids_to_remove)
     mock_conn.execute.assert_called_once()
     calls = mock_conn.execute.mock_calls
@@ -208,7 +209,7 @@ async def test_remove_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool:
     _, mock_conn = mock_db_pool
     mock_conn.execute.side_effect = asyncpg.exceptions.UndefinedTableError
     with patch("builtins.print") as mock_print:
-        await mock_pgvector_store.remove(ids=["test_id"])
+        await mock_pgvector_store.remove(ids=[UUID("6edae3b9-087b-4e09-a452-ab2235e023c8")])
         mock_conn.execute.assert_called_once()
         mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
@@ -225,10 +226,10 @@ async def test_fetch_records(mock_pgvector_store: PgVectorStore, mock_db_pool: t
     calls = mock_conn.fetch.mock_calls
     assert any("SELECT * FROM" in str(call) for call in calls)
     assert len(results) == 2
-    assert results[0].id == "test_id_1"
+    assert results[0].id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
     assert results[0].text == "test_key_1"
     assert results[0].metadata == {"key1": "value1"}
-    assert results[1].id == "test_id_2"
+    assert results[1].id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
     assert results[1].text == "test_key_2"
     assert results[1].metadata == {"key2": "value2"}
 

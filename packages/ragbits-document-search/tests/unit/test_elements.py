@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import computed_field
 
 from ragbits.core.vector_stores.base import VectorStoreEntry
@@ -17,7 +19,7 @@ def test_resolving_element_type() -> None:
 
     element = Element.from_vector_db_entry(
         db_entry=VectorStoreEntry(
-            id="test id",
+            id=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             text="test content",
             metadata={
                 "element_type": "custom_element",

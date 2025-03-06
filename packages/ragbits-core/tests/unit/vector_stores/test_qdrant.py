@@ -1,5 +1,5 @@
-import typing
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
 from pydantic import ValidationError
@@ -20,7 +20,7 @@ def mock_qdrant_store() -> QdrantVectorStore:
 async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     data = [
         VectorStoreEntry(
-            id="1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+            id=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             text="test_key",
             metadata={
                 "content": "test content",
@@ -47,7 +47,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     assert call_points[0].id == "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"
     assert call_points[0].vector == {"text": [0.1, 0.2, 0.3]}
     assert call_points[0].payload == {
-        "id": "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+        "id": UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
         "text": "test_key",
         "metadata": {
             "content": "test content",
@@ -117,7 +117,7 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
 
 
 async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
-    ids_to_remove = ["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
+    ids_to_remove = [UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")]
 
     await mock_qdrant_store.remove(ids_to_remove)
 
@@ -125,7 +125,7 @@ async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
     mock_qdrant_store._client.delete.assert_called_with(  # type: ignore
         collection_name="test_collection",
         points_selector=models.PointIdsList(
-            points=typing.cast(list[int | str], ids_to_remove),
+            points=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"],
         ),
     )
 

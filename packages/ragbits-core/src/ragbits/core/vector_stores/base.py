@@ -1,8 +1,8 @@
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Iterable
 from typing import ClassVar, TypeVar
+from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
@@ -23,7 +23,7 @@ class VectorStoreEntry(BaseModel):
     Contains text and/or image for embedding + metadata.
     """
 
-    id: str
+    id: UUID
     text: str | None = None
     image_bytes: SerializableBytes | None = None
     metadata: dict = {}
@@ -74,7 +74,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
     configuration_key: ClassVar = "vector_store"
 
     @abstractmethod
-    async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -103,7 +103,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
@@ -156,7 +156,9 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         self._embedding_name_text = embedding_name_text
         self._embedding_name_image = embedding_name_image
 
-    async def _create_embeddings(self, entries: Iterable[VectorStoreEntry]) -> dict[str, dict[str, list[float]]]:
+    async def _create_embeddings(
+        self, entries: list[VectorStoreEntry] | list[VectorStoreEntry]
+    ) -> dict[UUID, dict[str, list[float]]]:
         """
         Create embeddings for the given entry.
 
@@ -170,7 +172,7 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         text_entries = {e.id: e.text for e in entries if e.text}
         image_entries = {e.id: e.image_bytes for e in entries if e.image_bytes}
 
-        embeddings: defaultdict[str, dict[str, list[float]]] = defaultdict(dict)
+        embeddings: defaultdict[UUID, dict[str, list[float]]] = defaultdict(dict)
         if text_entries:
             embedded = await self._embedder.embed_text(list(text_entries.values()))
             for i, id in enumerate(text_entries.keys()):

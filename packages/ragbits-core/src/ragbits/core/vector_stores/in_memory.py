@@ -1,5 +1,5 @@
-from collections.abc import Iterable
 from itertools import islice
+from uuid import UUID
 
 import numpy as np
 
@@ -43,11 +43,11 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             embedding_name_text=embedding_name_text,
             embedding_name_image=embedding_name_image,
         )
-        self._entries: dict[str, VectorStoreEntry] = {}
-        self._embeddings: dict[str, dict[str, list[float]]] = {}
+        self._entries: dict[UUID, VectorStoreEntry] = {}
+        self._embeddings: dict[UUID, dict[str, list[float]]] = {}
 
     @traceable
-    async def store(self, entries: Iterable[VectorStoreEntry]) -> None:
+    async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
 
@@ -105,7 +105,7 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         return results[: merged_options.k]
 
     @traceable
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 

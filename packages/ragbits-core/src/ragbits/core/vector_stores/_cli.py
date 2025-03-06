@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Annotated
+from uuid import UUID
 
 import typer
 from pydantic import BaseModel
@@ -72,12 +73,12 @@ def list_entries(
 
 
 class RemovedItem(BaseModel):
-    id: str
+    id: UUID
 
 
 @vector_stores_app.command()
 def remove(
-    ids: Annotated[list[str], typer.Argument(help="IDs of the entries to remove from the vector store")],
+    ids: Annotated[list[UUID], typer.Argument(help="IDs of the entries to remove from the vector store")],
 ) -> None:
     """
     Remove objects from the chosen vector store.
@@ -89,7 +90,7 @@ def remove(
 
         await state.vector_store.remove(ids)
         if cli_state.output_type == OutputType.text:
-            typer.echo(f"Removed entries with IDs: {', '.join(ids)}")
+            typer.echo(f"Removed entries with IDs: {', '.join(str(id) for id in ids)}")
         else:
             print_output([RemovedItem(id=id) for id in ids])
 

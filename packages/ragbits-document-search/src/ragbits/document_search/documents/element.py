@@ -124,7 +124,7 @@ class Element(BaseModel, ABC):
         id_components = [
             self.id,
         ]
-        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        vector_store_entry_id = uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components))
         metadata = self.model_dump(exclude={"id", "key"})
         metadata["document_meta"]["source"]["id"] = self.document_meta.source.id
 
