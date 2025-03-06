@@ -8,6 +8,7 @@ import asyncio
 
 from pydantic import BaseModel
 
+from ragbits.core import audit
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -52,6 +53,7 @@ async def main() -> None:
     """
     Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
     """
+    audit.set_trace_handlers("cli")
     llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
     prompt = JokePrompt(LoremPromptInput(theme="software developers", pun_allowed=True))
     response = await llm.generate(prompt)

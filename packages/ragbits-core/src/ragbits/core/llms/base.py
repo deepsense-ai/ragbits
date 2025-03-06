@@ -7,6 +7,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
+from ragbits.core.audit import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -160,10 +161,15 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        raw_response = await self.generate_raw(prompt, options=options)
-        if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(raw_response["response"])
-        return cast(OutputT, raw_response["response"])
+        with trace(prompt=prompt, options=repr(options)) as outputs:
+            raw_response = await self.generate_raw(prompt, options=options)
+            if isinstance(prompt, BasePromptWithParser):
+                response = prompt.parse_response(raw_response["response"])
+                outputs.response = raw_response["response"]
+                return response
+            response = cast(OutputT, raw_response["response"])
+            outputs.response = raw_response["response"]
+        return response
 
     @overload
     async def generate_with_metadata(
