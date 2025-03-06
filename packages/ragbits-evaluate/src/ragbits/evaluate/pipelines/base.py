@@ -84,7 +84,6 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         Compute the evaluation results for the given pipeline and data.
 
         Args:
-            pipeline: The pipeline to be evaluated.
             dataloader: The dataloader to load the data.
             metrics: The metrics to be computed.
 
