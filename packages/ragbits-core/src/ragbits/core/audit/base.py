@@ -175,7 +175,6 @@ class AttributeFormatter:
         else:
             self.process_object(item, curr_key, recurrence)
 
-
     def process_object(self, obj: object, curr_key: str, recurrence: int) -> None:
         """
         Process any object and it's attributes.
@@ -283,19 +282,20 @@ class AttributeFormatter:
         return any(keyword == curr_key.split(".")[-1] for keyword in key_list)
 
     @staticmethod
-    def human_readable_size(size_in_bytes: int) -> str:
+    def human_readable_size(size_in_bytes: float) -> str:
         """
         Convert a size in bytes to a human-readable format.
         """
-
         units = ["bytes", "KB", "MB", "GB", "TB"]
         unit_index = 0
+        binary_base = 1024
 
-        while size_in_bytes >= 1024 and unit_index < len(units) - 1:
-            size_in_bytes /= 1024
+        while size_in_bytes >= binary_base and unit_index < len(units) - 1:
+            size_in_bytes /= binary_base
             unit_index += 1
 
         return f"{size_in_bytes:.2f} {units[unit_index]}"
+
 
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
