@@ -72,7 +72,6 @@ async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float 
 
     assert len(query_results) == len(results)
     for query_result, result in zip(query_results, results, strict=True):
-        print(query_result.vectors)
         assert query_result.entry.metadata["name"] == result
 
 

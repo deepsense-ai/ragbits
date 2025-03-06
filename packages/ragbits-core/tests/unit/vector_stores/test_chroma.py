@@ -107,7 +107,6 @@ async def test_retrieve(
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
-        print(query_result.vectors)
         assert query_result.vectors["text"] == result["vector"]
         assert query_result.entry.id == uuid.uuid5(uuid.NAMESPACE_OID, f"test id {results.index(result) + 1}")
         assert query_result.entry.text == result["content"]
