@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
+from ragbits.core.audit.base import AttributeFormatter
 from ragbits.core.metadata_stores.base import MetadataStore
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
@@ -21,6 +22,15 @@ class VectorStoreEntry(BaseModel):
     key: str
     vector: list[float]
     metadata: dict
+
+    def __repr__(self) -> str:
+        if len(self.vector) > AttributeFormatter.max_list_length:
+            shorten_vector = AttributeFormatter.shorten_list(self.vector)
+        else:
+            shorten_vector = str(self.vector)
+        return (
+            f"{self.__class__.__name__}(id={self.id} key={self.key} vector={shorten_vector} metadata={self.metadata})"
+        )
 
 
 class VectorStoreOptions(Options):

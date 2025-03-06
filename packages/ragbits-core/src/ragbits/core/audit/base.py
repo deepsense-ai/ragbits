@@ -95,9 +95,12 @@ class AttributeFormatter:
 
     max_string_length = 150
     max_list_length = 15
-    opt_list_length = 4
-    prompt_keywords = ["content", "response", "query"]
-    excluded = ["vector"]
+    opt_list_length = 2
+    max_recurrence_depth = 4
+
+    user_prompt_keywords = ["system_prompt", "rendered_system_prompt"]
+    system_prompt_keywords = ["user_prompt", "rendered_user_prompt"]
+    response_keywords = ["response"]
 
     def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
         """
@@ -113,7 +116,9 @@ class AttributeFormatter:
             str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
         ] = {}
 
-    def process_attributes(self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None) -> None:
+    def process_attributes(
+        self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None, recurrence: int = 0
+    ) -> None:
         """
         Format attributes for CLI
         Args:
@@ -124,86 +129,112 @@ class AttributeFormatter:
             curr_key = self.prefix
         if attr_dict is None:
             attr_dict = self.data
+
         for key, value in attr_dict.items():
             prefix = f"{curr_key}.{key}" if curr_key else key
-            self.process_item(value, prefix)
+            self.process_item(value, prefix, recurrence)
 
-    def process_item(self, item: object, curr_key: str) -> None:
+    def process_item(self, item: object, curr_key: str, recurrence: int) -> None:
         """
         Process any type of item.
 
         Args:
             item: The item to process.
             curr_key: The prefix of the current item in flattened dictionary.
+            recurrence: The level of recursion.
         """
-        if self.is_special_key(curr_key, self.excluded):
+        # if self.is_special_key(curr_key, self.excluded):
+        #     return
+        special_keywords = self.user_prompt_keywords + self.system_prompt_keywords + self.response_keywords
+        recurrence += 1
+
+        if recurrence > self.max_recurrence_depth:
+            self.flattened[curr_key] = repr(item)
             return
+
         if isinstance(item, int | float | bool):
             self.flattened[curr_key] = item
         elif isinstance(item, str):
-            self.flattened[curr_key] = self.shorten_string(item) if not self.is_special_key(curr_key, self.prompt_keywords) else item
+            self.flattened[curr_key] = (
+                self.shorten_string(item) if not self.is_special_key(curr_key, special_keywords) else item
+            )
         elif item is None:
             self.flattened[curr_key] = repr(None)
-        elif isinstance(item, list | tuple):
+        elif isinstance(item, list | tuple | set):
             if item == []:
                 self.flattened[curr_key] = repr(item)
             else:
-                self.process_list(item, curr_key)
+                self.process_list(item, curr_key, recurrence)
         elif isinstance(item, dict):
             if item != {}:
                 self.process_attributes(item, curr_key)
             else:
                 self.flattened[curr_key] = repr(item)
         else:
-            self.process_object(item, curr_key)
+            self.process_object(item, curr_key, recurrence)
 
-    def process_object(self, obj: object, curr_key: str) -> None:
+    def process_object(self, obj: object, curr_key: str, recurrence: int) -> None:
         """
         Process any object and it's attributes.
 
         Args:
             obj: The object to process.
             curr_key: the prefix of the key in flattened dictionary.
+            recurrence: the level of depth for recursion.
         """
+        recurrence += 1
+        if recurrence > self.max_recurrence_depth:
+            self.flattened[curr_key] = repr(obj)
+            return
         curr_key = curr_key + "." + str(type(obj).__name__)
+
         if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
             self.flattened[curr_key] = repr(obj)
             return
         for k, v in obj.__dict__.items():
-            sub_key = curr_key + "." + k
-            self.process_item(v, sub_key)
+            if k.startswith("__"):
+                pass
+            elif k.startswith("_"):
+                self.flattened[curr_key] = repr(v)
+            else:
+                sub_key = curr_key + "." + k
+                self.process_item(v, sub_key, recurrence)
 
-    def process_list(self, lst: list | tuple, curr_key: str) -> None:
+    def process_list(self, lst: list | tuple | set, curr_key: str, recurrence: int) -> None:
         """
         Process list by elements. If the list is too long, it will be truncated.
 
         Args:
             lst: The list to process.
             curr_key: the prefix of the key in flattened dictionary.
+            recurrence: the depth level of iterating over the objects.
         """
+        if isinstance(lst, set):
+            lst = list(lst)
+        list_length = len(lst)
         if all(isinstance(item, str | float | int | bool) for item in lst):
-            self.flattened[curr_key] = repr(self.shorten_list(lst))
-        elif len(lst) < self.max_list_length and len(repr(lst)) < self.max_string_length:
+            self.flattened[curr_key] = self.shorten_list(lst)
+        elif list_length < self.max_list_length and len(repr(lst)) < self.max_string_length:
             self.flattened[curr_key] = repr(lst)
         else:
             is_too_long = False
-            if len(lst) > self.max_list_length:
+            if list_length > self.max_list_length:
                 is_too_long = True
-                length = len(lst)
                 last = lst[-1]
                 lst = lst[: self.opt_list_length]
 
             for idx, item in enumerate(lst):
                 position_key = f"{curr_key}[{idx}]"
-                self.process_item(item, position_key)
+                self.process_item(item, position_key, recurrence)
 
             if is_too_long:
-                position_key = f"{curr_key}[{self.opt_list_length}:{length - 1}]"
-                self.flattened[position_key] = f"...{length - self.opt_list_length - 1} more elements..."
-                position_key = f"{curr_key}[{length - 1}]"
-                self.process_item(last, position_key)
+                position_key = f"{curr_key}[{self.opt_list_length}:{list_length - 1}]"
+                self.flattened[position_key] = f"...{list_length - self.opt_list_length - 1} more elements..."
+                position_key = f"{curr_key}[{list_length - 1}]"
+                self.process_item(last, position_key, recurrence)
 
-    def shorten_list(self, lst: list | tuple) -> list:
+    @classmethod
+    def shorten_list(cls, lst: list | tuple | set) -> str:
         """
         Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
 
@@ -211,15 +242,17 @@ class AttributeFormatter:
             lst: The list to shorten.
 
         Returns:
-            shortened list.
+            string representation of shortened list.
         """
-        lst = [self.shorten_string(item) if isinstance(item, str) else item for item in lst]
-        if len(lst) > self.opt_list_length:
-            return lst[: self.opt_list_length - 1] + ["..."] + [lst[-1]]
+        lst = [cls.shorten_string(item) if isinstance(item, str) else item for item in lst]
+        list_length = len(lst)
+        if list_length > cls.max_list_length:
+            return str(lst[: cls.opt_list_length - 1] + ["..."] + [lst[-1]]) + f"(total {list_length} elements)"
 
-        return lst
+        return str(lst)
 
-    def shorten_string(self, string: str) -> str:
+    @classmethod
+    def shorten_string(cls, string: str) -> str:
         """
         Shortens string if it's longer than max_string_length.
 
@@ -229,8 +262,8 @@ class AttributeFormatter:
         Returns:
             shortened string.
         """
-        if len(string) > self.max_string_length:
-            return string[: self.max_string_length] + "..."
+        if len(string) > cls.max_string_length:
+            return string[: cls.max_string_length] + "..."
         return string
 
     @classmethod
@@ -244,7 +277,7 @@ class AttributeFormatter:
         Returns:
             bool: True if the key is excluded.
         """
-        return any(keyword in curr_key.split(".") for keyword in key_list)
+        return any(keyword == curr_key.split(".")[-1] for keyword in key_list)
 
 
 def format_attributes(data: dict, prefix: str | None = None) -> dict:

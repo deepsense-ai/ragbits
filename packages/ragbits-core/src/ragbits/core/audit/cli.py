@@ -31,6 +31,9 @@ class PrintColor(str, Enum):
     ERROR_COLOR = "bold red"
     TEXT_COLOR = "grey50"
     KEY_COLOR = "plum4"
+    SYSTEM_PROMPT_COLOR = "blue3"
+    USER_PROMPT_COLOR = "dark_blue"
+    RESPONSE_PROMPT_COLOR = "dark_green"
 
 
 class CLISpan:
@@ -90,9 +93,17 @@ class CLISpan:
         text_color = PrintColor.TEXT_COLOR.value
         attrs: list[Text | Panel] = []
         for k, v in self.attributes.items():
-            if isinstance(v, str) and AttributeFormatter.is_special_key(curr_key=k, key_list=AttributeFormatter.prompt_keywords):
-                syntax = Syntax(v, lexer="markdown", theme="monokai", word_wrap=True, background_color="default")
+            background_color = None
+            if isinstance(v, str):
+                if AttributeFormatter.is_special_key(curr_key=k, key_list=AttributeFormatter.system_prompt_keywords):
+                    background_color = PrintColor.SYSTEM_PROMPT_COLOR.value
+                elif AttributeFormatter.is_special_key(curr_key=k, key_list=AttributeFormatter.user_prompt_keywords):
+                    background_color = PrintColor.USER_PROMPT_COLOR.value
+                elif AttributeFormatter.is_special_key(curr_key=k, key_list=AttributeFormatter.response_keywords):
+                    background_color = PrintColor.RESPONSE_PROMPT_COLOR.value
 
+            if background_color:
+                syntax = Syntax(v, lexer="markdown", theme="monokai", word_wrap=True, background_color=background_color)
                 panel = Panel(syntax, title=f"[{key_color}]{k}[/{key_color}]", title_align="left")
                 attrs.append(panel)
             else:

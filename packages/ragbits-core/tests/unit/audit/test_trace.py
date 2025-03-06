@@ -166,7 +166,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
 @pytest.mark.parametrize(
     ("input_data", "prefix", "expected"),
     [
-        # # Empty dict
+        # Empty dict
         ({}, None, {}),
         ({}, "prefix", {}),
         # Simple types
@@ -179,7 +179,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
         ({"str": "value", "int": 42}, "prefix", {"prefix.str": "value", "prefix.int": 42}),
         # # Nested dict
         ({"nested": {"key1": "value1", "key2": 42}}, None, {"nested.key1": "value1", "nested.key2": 42}),
-        # # Lists and tuples
+        # Lists and tuples
         ({"list": [1, 2, 3], "tuple": ("a", "b", "c")}, None, {"list": "[1, 2, 3]", "tuple": "['a', 'b', 'c']"}),
         # Complex objects in lists
         (
@@ -222,17 +222,18 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                         + "B" * AttributeFormatter.max_string_length
                     },
                 ),
-                "response": {
-                    "not_for_shortening": "A" * AttributeFormatter.max_string_length
-                    + "B" * AttributeFormatter.max_string_length
+                "not_for_shortening": {
+                    "response": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length
                 },
             },
             "test",
             {
+                "test.vector": "[0.01, '...', 0.04](total 6136 elements)",
                 "test.vcs.VectorStoreEntry.id": "uniq",
                 "test.vcs.VectorStoreEntry.key": "21",
+                "test.vcs.VectorStoreEntry.vector": "[0.01, '...', 0.04](total 6136 elements)",
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
-                "test.response.not_for_shortening": "A" * AttributeFormatter.max_string_length
+                "test.not_for_shortening.response": "A" * AttributeFormatter.max_string_length
                 + "B" * AttributeFormatter.max_string_length,
             },
         ),
