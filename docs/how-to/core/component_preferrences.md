@@ -15,12 +15,14 @@ For example, to designate `QdrantVectorStore` (with an in-memory `AsyncQdrantCli
 
 ```python
 from ragbits.core.vector_stores import QdrantVectorStore
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from qdrant_client import AsyncQdrantClient
 
 def get_qdrant_vector_store():
     return QdrantVectorStore(
         client=AsyncQdrantClient(location=":memory:"),
         index_name="my_index",
+        embedder=LiteLLMEmbedder(),
     )
 ```
 
@@ -64,6 +66,8 @@ vector_store:
     client:
       location: ":memory:"
     index_name: my_index
+    embedder:
+      type: LiteLLMEmbedder
 ```
 
 Then, you set the path to this file as `component_preference_config_path` in the `[tool.ragbits.core]` section of your project's `pyproject.toml` file:
@@ -72,6 +76,8 @@ Then, you set the path to this file as `component_preference_config_path` in the
 [tool.ragbits.core]
 component_preference_config_path = "preferred_instances.yaml"
 ```
+
+Each key in the YAML configuration file corresponds to a different [component type](#list-of-component-types). The value of each key is a dictionary with up to two keys: `type` and `config`. The `type` key is the name of the preferred component implementation, and the optional `config` key is the configuration to be used with the component. The configuration is specific to each component type and implementation and corresponds to the arguments of the component's constructor.
 
 When using subclasses built into Ragbits, you can use either the name of the class alone (like the `QdrantVectorStore` in the example above) or the full Python path to the class (like `ragbits.core.vector_stores.QdrantVectorStore`). For other classes (like your own custom implementations of Ragbits components), you must use the full Python path.
 
@@ -84,11 +90,11 @@ vector_store:
     client:
       location: ":memory:"
     index_name: my_index
+    embedder:
+      type: LiteLLMEmbedder
 
-embedder:
-  type: LiteLLMEmbedder
-  config:
-    model: text-embedding-3-small
+rephraser:
+  type: NoopQueryRephraser
 ```
 
 <a name="ds-configuration"></a>
@@ -101,19 +107,25 @@ embedder:
     document_search:
       type: DocumentSearch
       config:
-        embedder:
-          type: NoopEmbedder
+        rephraser:
+          type: NoopQueryRephraser
         vector_store:
           type: InMemoryVectorStore
+          config:
+            embedder:
+              type: NoopEmbedder
     ```
 
     This is an example of a YAML configuration file that sets the preferred configuration for `DocumentSearch` implicitly:
 
     ```yaml
-    embedder:
-      type: NoopEmbedder
+    rephraser:
+      type: NoopQueryRephraser
     vector_store:
       type: InMemoryVectorStore
+      config:
+        embedder:
+          type: NoopEmbedder
     ```
 
     In both cases, `DocumentSearch` will use `NoopEmbedder` as the preferred embedder and `InMemoryVectorStore` as the preferred vector store.
