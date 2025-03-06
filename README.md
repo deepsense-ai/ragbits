@@ -23,7 +23,7 @@
 - **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
 - **Modular installation** – Install only what you need, reducing dependencies and improving performance.
 
-### 📚 Fast & Flexible RAG Processing
+### 📚 Fast & Flexible RAG Processing_
 - **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [unstructured](https://unstructured.io/) or create a custom provider.
 - **Handle complex data** – Extract tables, images, and structured content with built-in VLM support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
@@ -33,7 +33,7 @@
 - **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
 - **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
-- **Visual testing UI (Coming Soon)** – Test and optimize applications with an intuitive interface.
+- **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
 
 
 ## What's Included?

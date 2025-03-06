@@ -57,7 +57,7 @@ hide:
 - **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
 - **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
-- **Visual testing UI (Coming Soon)** – Test and optimize applications with an intuitive interface.
+- **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
 
 ## Installation
 
