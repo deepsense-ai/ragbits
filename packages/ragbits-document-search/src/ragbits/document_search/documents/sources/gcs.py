@@ -3,6 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
+from ragbits.core.audit import traceable
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
@@ -53,6 +54,7 @@ class GCSSource(Source):
         """
         return f"gcs:gs://{self.bucket}/{self.object_name}"
 
+    @traceable
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def fetch(self) -> Path:
         """
@@ -85,6 +87,7 @@ class GCSSource(Source):
         return path
 
     @classmethod
+    @traceable
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
         """List all sources in the given GCS bucket, matching the prefix.
@@ -105,6 +108,7 @@ class GCSSource(Source):
             return [cls(bucket=bucket, object_name=item["name"]) for item in items if not item["name"].endswith("/")]
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["GCSSource"]:
         """Create GCSSource instances from a URI path.
 

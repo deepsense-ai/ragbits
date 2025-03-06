@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, get_origin
 
+from ragbits.core.audit import traceable
 from ragbits.core.config import core_config
 from ragbits.core.prompt import Prompt
 
@@ -36,6 +37,7 @@ class PromptDiscovery:
         # in order to avoid generic type aliases (which `isclass` sees as classes, but `issubclass` don't).
         return inspect.isclass(obj) and not get_origin(obj) and issubclass(obj, Prompt) and obj != Prompt
 
+    @traceable
     def discover(self) -> set[type[Prompt]]:
         """
         Discovers Prompt objects within the specified file paths.

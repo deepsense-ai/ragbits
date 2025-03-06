@@ -42,7 +42,7 @@ class SearchConfig(BaseModel):
 
 class DocumentSearchConfig(BaseModel):
     """
-    Schema for for the dict taken by DocumentSearch.from_config method.
+    Schema for the dict taken by DocumentSearch.from_config method.
     """
 
     embedder: ObjectContructionConfig
@@ -241,6 +241,7 @@ class DocumentSearch(WithConstructionConfig):
         if ids_to_delete:
             await self.vector_store.remove(ids_to_delete)
 
+    @traceable
     async def insert_elements(self, elements: list[Element]) -> None:
         """
         Insert Elements into the vector store.

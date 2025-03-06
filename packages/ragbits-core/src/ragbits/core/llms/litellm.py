@@ -153,8 +153,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             model=self.model_name,
             base_url=self.base_url,
             api_version=self.api_version,
-            response_format=response_format,
-            options=options.dict(),
+            response_format=repr(response_format),
+            options=repr(options.dict()),
         ) as outputs:
             response = await self._get_litellm_response(
                 conversation=conversation,

@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 
+from ragbits.core.audit import traceable
 from ragbits.core.embeddings import Embedder
 from ragbits.core.options import Options
 
@@ -56,6 +57,7 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
+    @traceable
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
         """Calls the appropriate encoder endpoint with the given data and options.
 

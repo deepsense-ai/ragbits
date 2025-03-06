@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
@@ -88,9 +88,218 @@ class TraceHandler(Generic[SpanT], ABC):
         self.stop(outputs=vars(outputs), current_span=span)
 
 
+class AttributeFormatter:
+    """
+    Class for formatting attributes.
+    """
+
+    max_string_length = 150
+    max_list_length = 15
+    opt_list_length = 2
+    max_recurrence_depth = 4
+
+    user_prompt_keywords = ["system_prompt", "rendered_system_prompt"]
+    system_prompt_keywords = ["user_prompt", "rendered_user_prompt"]
+    response_keywords = ["response"]
+
+    def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
+        """
+        Initialize the attribute formatter.
+
+        Args:
+            data: The data to format.
+            prefix: The prefix to use for the keys.
+        """
+        self.data = data
+        self.prefix = prefix
+        self.flattened: dict[
+            str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
+        ] = {}
+
+    def process_attributes(
+        self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None, recurrence: int = 0
+    ) -> None:
+        """
+        Format attributes for CLI
+        Args:
+        attr_dict: The data to format.
+        curr_key: The prefix to use for the keys.
+        """
+        if not curr_key and self.prefix:
+            curr_key = self.prefix
+        if attr_dict is None:
+            attr_dict = self.data
+
+        for key, value in attr_dict.items():
+            prefix = f"{curr_key}.{key}" if curr_key else key
+            self.process_item(value, prefix, recurrence)
+
+    def process_item(self, item: object, curr_key: str, recurrence: int) -> None:
+        """
+        Process any type of item.
+
+        Args:
+            item: The item to process.
+            curr_key: The prefix of the current item in flattened dictionary.
+            recurrence: The level of recursion.
+        """
+        # if self.is_special_key(curr_key, self.excluded):
+        #     return
+        special_keywords = self.user_prompt_keywords + self.system_prompt_keywords + self.response_keywords
+        recurrence += 1
+
+        if recurrence > self.max_recurrence_depth:
+            self.flattened[curr_key] = repr(item)
+            return
+
+        if isinstance(item, int | float | bool):
+            self.flattened[curr_key] = item
+        elif isinstance(item, str):
+            self.flattened[curr_key] = (
+                self.shorten_string(item) if not self.is_special_key(curr_key, special_keywords) else item
+            )
+        elif item is None:
+            self.flattened[curr_key] = repr(None)
+        elif isinstance(item, list | tuple | set):
+            if item == []:
+                self.flattened[curr_key] = repr(item)
+            else:
+                self.process_list(item, curr_key, recurrence)
+        elif isinstance(item, dict):
+            if item != {}:
+                self.process_attributes(item, curr_key)
+            else:
+                self.flattened[curr_key] = repr(item)
+        elif isinstance(item, bytes | bytearray):
+            self.flattened[curr_key] = f"Byte object of size {self.human_readable_size(len(item))}"
+        else:
+            self.process_object(item, curr_key, recurrence)
+
+    def process_object(self, obj: object, curr_key: str, recurrence: int) -> None:
+        """
+        Process any object and it's attributes.
+
+        Args:
+            obj: The object to process.
+            curr_key: the prefix of the key in flattened dictionary.
+            recurrence: the level of depth for recursion.
+        """
+        recurrence += 1
+        if recurrence > self.max_recurrence_depth:
+            self.flattened[curr_key] = repr(obj)
+            return
+        curr_key = curr_key + "." + str(type(obj).__name__)
+
+        if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
+            self.flattened[curr_key] = repr(obj)
+            return
+        for k, v in obj.__dict__.items():
+            if k.startswith("__"):
+                pass
+            elif k.startswith("_"):
+                self.flattened[curr_key] = repr(v)
+            else:
+                sub_key = curr_key + "." + k
+                self.process_item(v, sub_key, recurrence)
+
+    def process_list(self, lst: list | tuple | set, curr_key: str, recurrence: int) -> None:
+        """
+        Process list by elements. If the list is too long, it will be truncated.
+
+        Args:
+            lst: The list to process.
+            curr_key: the prefix of the key in flattened dictionary.
+            recurrence: the depth level of iterating over the objects.
+        """
+        if isinstance(lst, set):
+            lst = list(lst)
+        list_length = len(lst)
+        if all(isinstance(item, str | float | int | bool) for item in lst):
+            self.flattened[curr_key] = self.shorten_list(lst)
+        elif list_length < self.max_list_length and len(repr(lst)) < self.max_string_length:
+            self.flattened[curr_key] = repr(lst)
+        else:
+            is_too_long = False
+            if list_length > self.max_list_length:
+                is_too_long = True
+                last = lst[-1]
+                lst = lst[: self.opt_list_length]
+
+            for idx, item in enumerate(lst):
+                position_key = f"{curr_key}[{idx}]"
+                self.process_item(item, position_key, recurrence)
+
+            if is_too_long:
+                position_key = f"{curr_key}[{self.opt_list_length}:{list_length - 1}]"
+                self.flattened[position_key] = f"...{list_length - self.opt_list_length - 1} more elements..."
+                position_key = f"{curr_key}[{list_length - 1}]"
+                self.process_item(last, position_key, recurrence)
+
+    @classmethod
+    def shorten_list(cls, lst: list | tuple | set) -> str:
+        """
+        Shortens a list if it's longer than 3 elements. Shortens list elements if it's long string.
+
+        Args:
+            lst: The list to shorten.
+
+        Returns:
+            string representation of shortened list.
+        """
+        lst = [cls.shorten_string(item) if isinstance(item, str) else item for item in lst]
+        list_length = len(lst)
+        if list_length > cls.max_list_length:
+            return str(lst[: cls.opt_list_length - 1] + ["..."] + [lst[-1]]) + f"(total {list_length} elements)"
+
+        return str(lst)
+
+    @classmethod
+    def shorten_string(cls, string: str) -> str:
+        """
+        Shortens string if it's longer than max_string_length.
+
+        Args:
+            string: The string to shorten.
+
+        Returns:
+            shortened string.
+        """
+        if len(string) > cls.max_string_length:
+            return string[: cls.max_string_length] + "..."
+        return string
+
+    @classmethod
+    def is_special_key(cls, curr_key: str, key_list: list[str]) -> bool:
+        """
+        Check if a key belongs to the prompt keywords list - which means that the string should not be truncated
+        Args:
+            curr_key: The current key in flattened dictionary.
+            key_list: The list of keys to check.
+
+        Returns:
+            bool: True if the key is excluded.
+        """
+        return any(keyword == curr_key.split(".")[-1] for keyword in key_list)
+
+    @staticmethod
+    def human_readable_size(size_in_bytes: float) -> str:
+        """
+        Convert a size in bytes to a human-readable format.
+        """
+        units = ["bytes", "KB", "MB", "GB", "TB"]
+        unit_index = 0
+        binary_base = 1024
+
+        while size_in_bytes >= binary_base and unit_index < len(units) - 1:
+            size_in_bytes /= binary_base
+            unit_index += 1
+
+        return f"{size_in_bytes:.2f} {units[unit_index]}"
+
+
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
-    Format attributes for CLI.
+    Format attributes for open telemetry tracing.
 
     Args:
         data: The data to format.
