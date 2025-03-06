@@ -13,6 +13,11 @@ from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
 
+
+class EvaluationDatapointSchema(ABC, BaseModel):
+    """Abstraction for evaluation datapoint schema definition"""
+
+EvaluationDatapointSchemaT = TypeVar("DatapointSchemaT", bound=EvaluationDatapointSchema)
 EvaluationTargetT = TypeVar("EvaluationTargetT", bound=WithConstructionConfig)
 
 
@@ -27,7 +32,7 @@ class EvaluationConfig(BaseModel):
     batch_size: int = 10
 
 
-class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC):
+class EvaluationPipeline(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithConstructionConfig, ABC):
     """
     Collection evaluation pipeline.
     """
@@ -38,12 +43,13 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         self.evaluation_target = evaluation_target
 
     @abstractmethod
-    async def __call__(self, data: dict) -> EvaluationResult:
+    async def __call__(self, data: dict, schema: EvaluationDatapointSchemaT) -> EvaluationResult:
         """
         Runs the evaluation pipeline.
 
         Args:
             data: The evaluation data.
+            schema: a schema of a datapoint
 
         Returns:
             The evaluation result.
