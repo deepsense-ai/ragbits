@@ -1,13 +1,13 @@
 # How-To: Use Rephraser
-`ragbits-document-search` contains a [`QueryRephraser`](ragbits.document_search.retrieval.rephrasers.QueryRephraser) module that could be used for creating an additional query that
+`ragbits-document-search` contains a [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.QueryRephraser] module that could be used for creating an additional query that
 improves the original user query (fixes typos, handles abbreviations etc.). Those two queries are then sent to the document search
 module that can use them to find better matches.
 
-This guide will show you how to use [`QueryRephraser`](ragbits.document_search.retrieval.rephrasers.QueryRephraser) and how to create your custom implementation.
+This guide will show you how to use [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.QueryRephraser] and how to create your custom implementation.
 
 ## LLM rephraser usage
-To use a rephraser within retrival pipeline you need to provide it during [`DocumentSearch`](ragbits.document_search.DocumentSearch) construction. In the following example we will use
-[`LLMQueryRephraser`](ragbits.document_search.retrieval.rephrasers.LLMQueryRephraser) and default `QueryRephraserPrompt`.
+To use a rephraser within retrival pipeline you need to provide it during [`DocumentSearch`][ragbits.document_search.DocumentSearch] construction. In the following example we will use
+[`LLMQueryRephraser`][ragbits.document_search.retrieval.rephrasers.LLMQueryRephraser] and default `QueryRephraserPrompt`.
 ```python
 import asyncio
 from ragbits.core.llms.litellm import LiteLLM
@@ -55,12 +55,12 @@ class QueryRephraserPrompt(Prompt[QueryRephraserInput, str]):
     user_prompt = "{{ query }}"
     system_prompt = ("<your_prompt>")
 ```
-You should only change the `system_prompt` as the `user_prompt` will contain a query passed to [`DocumentSearch.search()`](ragbits.document_search.DocumentSearch.search) later.
+You should only change the `system_prompt` as the `user_prompt` will contain a query passed to [`DocumentSearch.search()`][ragbits.document_search.DocumentSearch.search] later.
 
 ### Multi-query rephraser usage
-The [`MultiQueryRephraser`](ragbits.document_search.retrieval.rephrasers.MultiQueryRephraser) generates multiple rephrasings for a single query, controlled by the `n` parameter.  You can use it to diversify the search queries sent to the document search module, which can help find better matches by exploring different phrasing variations.
+The [`MultiQueryRephraser`][ragbits.document_search.retrieval.rephrasers.MultiQueryRephraser] generates multiple rephrasings for a single query, controlled by the `n` parameter.  You can use it to diversify the search queries sent to the document search module, which can help find better matches by exploring different phrasing variations.
 
-To use a multi-query rephraser within the retrieval pipeline, provide it during [`DocumentSearch`](ragbits.document_search.DocumentSearch) construction:
+To use a multi-query rephraser within the retrieval pipeline, provide it during [`DocumentSearch`][ragbits.document_search.DocumentSearch] construction:
 ```python
 import asyncio
 from ragbits.core.llms.litellm import LiteLLM

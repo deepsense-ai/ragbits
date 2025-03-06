@@ -18,7 +18,7 @@ The short stories are in Markdown format. Ragbits supports [various document for
 
 ## Defining the Document Search Object
 
-The [`DocumentSearch`](ragbits.document_search.DocumentSearch) class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the [`LiteLLMEmbedder`](ragbits.core.embeddings.litellm.LiteLLMEmbedder) embedder and the [`InMemoryVectorStore`](ragbits.core.vector_stores.in_memory.InMemoryVectorStore) vector store:
+The [`DocumentSearch`][ragbits.document_search.DocumentSearch] class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the [`LiteLLMEmbedder`][ragbits.core.embeddings.litellm.LiteLLMEmbedder] embedder and the [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] vector store:
 
 ```python
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
@@ -36,7 +36,7 @@ document_search = DocumentSearch(
 ```
 
 !!! note
-    [`InMemoryVectorStore`](ragbits.core.vector_stores.in_memory.InMemoryVectorStore) is a simple in-memory vector store suitable for demonstration purposes. In real-world scenarios, you would typically use one of the persistent vector stores like [`ChromaVectorStore`][ragbits.core.vector_stores.chroma.ChromaVectorStore] or [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore].
+    [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] is a simple in-memory vector store suitable for demonstration purposes. In real-world scenarios, you would typically use one of the persistent vector stores like [`ChromaVectorStore`][ragbits.core.vector_stores.chroma.ChromaVectorStore] or [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore].
 
 ## Defining the Source of the Documents
 
@@ -55,7 +55,7 @@ Because the documents are stored locally, we are using `LocalFileSource` here. R
 
 ## Ingesting the Documents
 
-Having established the documents and the [`DocumentSearch`](ragbits.document_search.DocumentSearch) object, we can now ingest the documents:
+Having established the documents and the [`DocumentSearch`][ragbits.document_search.DocumentSearch] object, we can now ingest the documents:
 
 ```python
 import asyncio

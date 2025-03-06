@@ -24,7 +24,7 @@ class SongPrompt(Prompt):
     """
 ```
 
-In this case, all you had to do was set the [`user_prompt`](ragbits.core.prompt.Prompt.user_prompt) property to the desired prompt. That's it! This prompt can now be used anytime you want to pass a prompt to Ragbits.
+In this case, all you had to do was set the [`user_prompt`][ragbits.core.prompt.Prompt.user_prompt] property to the desired prompt. That's it! This prompt can now be used anytime you want to pass a prompt to Ragbits.
 
 Next, we'll learn how to make this prompt more dynamic (e.g., by adding placeholders for user inputs). But first, let's see how to use this prompt with a Large Language Model.
 
@@ -60,7 +60,7 @@ response = await llm.generate(prompt)
 print(f"Generated song: {response}")
 ```
 
-In this code snippet, we first created an instance of the [`LiteLLM`](ragbits.core.llms.litellm.LiteLLM) class and configured it to use OpenAI's `gpt-4` model. We then generated a response by passing the prompt to the model. As a result, the model will generate a song about Ragbits based on the provided prompt.
+In this code snippet, we first created an instance of the [`LiteLLM`][ragbits.core.llms.litellm.LiteLLM] class and configured it to use OpenAI's `gpt-4` model. We then generated a response by passing the prompt to the model. As a result, the model will generate a song about Ragbits based on the provided prompt.
 
 ## Making the Prompt Dynamic
 You can make the prompt dynamic by declaring a Pydantic model that serves as the prompt's input schema (i.e., declares the shape of the data that you will be able to use in the prompt). Here's an example:

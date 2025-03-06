@@ -22,7 +22,7 @@ With LiteLLM, you can switch between different LLM providers by changing the `mo
 
 ## Configuring LLM Options
 
-LLMs in Ragbits allow you to customize the behavior of the model using various options. These options are passed during initialization or when calling the [`generate`](ragbits.core.llms.LLM.generate) method.
+LLMs in Ragbits allow you to customize the behavior of the model using various options. These options are passed during initialization or when calling the [`generate`][ragbits.core.llms.LLM.generate] method.
 
 ### LiteLLM Options
 
@@ -50,12 +50,12 @@ For guidance on setting up and using local models in Ragbits, refer to the [Loca
 
 # Calling LLM Classes with prompts, raw strings and conversations
 
-Ragbits provides a flexible way to interact with LLMs by allowing you to use [`Prompt`](https://ragbits.deepsense.ai/api_reference/core/prompt/#ragbits.core.prompt.Prompt) instances, raw strings, or conversation formats (like OpenAI's chat format) when calling the [`generate`](ragbits.core.llms.LLM.generate) method. This section explains how to use these different input types effectively.
+Ragbits provides a flexible way to interact with LLMs by allowing you to use [`Prompt`][ragbits.core.prompt.Prompt] instances, raw strings, or conversation formats (like OpenAI's chat format) when calling the [`generate`][ragbits.core.llms.LLM.generate] method. This section explains how to use these different input types effectively.
 
 
 ## Using prompts with LLMs
 
-Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../how-to/core/use_images_in_prompts.md).
+Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../core/use_images_in_prompts.md).
 
 ```python
 from ragbits.core.prompt import Prompt
@@ -89,7 +89,7 @@ asyncio.run(main())
 
 ## Using Raw Strings with LLMs
 
-For simpler use cases, you can directly pass a raw string to the [`generate`](ragbits.core.llms.LLM.generate) method. This is useful when you don't need the additional structure provided by prompts.
+For simpler use cases, you can directly pass a raw string to the [`generate`][ragbits.core.llms.LLM.generate] method. This is useful when you don't need the additional structure provided by prompts.
 
 ```python
 import asyncio
@@ -105,7 +105,7 @@ asyncio.run(main())
 
 ## Using Chat Format with LLMs
 
-Ragbits also supports OpenAI-style chat formats, where you can pass a list of message dictionaries to the [`generate`](ragbits.core.llms.LLM.generate) method. This is useful for conversational applications.
+Ragbits also supports OpenAI-style chat formats, where you can pass a list of message dictionaries to the [`generate`][ragbits.core.llms.LLM.generate] method. This is useful for conversational applications.
 
 ```python
 import asyncio

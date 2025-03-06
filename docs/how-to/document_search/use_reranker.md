@@ -1,14 +1,14 @@
 # How-To: Use Reranker
-`ragbits-document-search` contains a [`Reranker`](ragbits.document_search.retrieval.rerankers.base.Reranker) module that could be used to select the most relevant and high-quality information from a set of retrieved documents.
+`ragbits-document-search` contains a [`Reranker`][ragbits.document_search.retrieval.rerankers.base.Reranker] module that could be used to select the most relevant and high-quality information from a set of retrieved documents.
 
-This guide will show you how to use [`LiteLLMReranker`](ragbits.document_search.retrieval.rerankers.litellm.LiteLLMReranker) and how to create your custom implementation.
+This guide will show you how to use [`LiteLLMReranker`][ragbits.document_search.retrieval.rerankers.litellm.LiteLLMReranker] and how to create your custom implementation.
 
 
 ## LLM Reranker
 `LiteLLMReranker` is based on [litellm.rerank()](https://docs.litellm.ai/docs/rerank) that supports three providers: Cohere, Azure AI, Together AI.
 You will need to set a proper API key to use the reranking functionality.
 
-To use a [`LiteLLMReranker`](ragbits.document_search.retrieval.rerankers.litellm.LiteLLMReranker) within retrival pipeline you simply need to provide it as an argument to [`DocumentSearch`](ragbits.document_search.DocumentSearch).
+To use a [`LiteLLMReranker`][ragbits.document_search.retrieval.rerankers.litellm.LiteLLMReranker] within retrival pipeline you simply need to provide it as an argument to [`DocumentSearch`][ragbits.document_search.DocumentSearch].
 ```python
 import os
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
@@ -68,7 +68,7 @@ The artificial inteligence development is a milestone for global information acc
 ```
 
 ## Custom Reranker
-To create a custom Reranker you need to extend the [`Reranker`](ragbits.document_search.retrieval.rerankers.base.Reranker) class:
+To create a custom Reranker you need to extend the [`Reranker`][ragbits.document_search.retrieval.rerankers.base.Reranker] class:
 ```python
 from collections.abc import Sequence
 

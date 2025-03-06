@@ -6,8 +6,8 @@ In this guide we will show you how to use guardrail based on OpenAI moderation a
 
 
 ## Using existing guardrail
-To use one of the existing guardrails you need to import it together with [`GuardrailManager`](ragbits.guardrails.base.GuardrailManager). Next you simply pass a list of guardrails to the manager
-and call [`verify()`](ragbits.guardrails.base.GuardrailManager.verify) function that will check the input (`str` or `Prompt`) against all provided guardrails asynchronously.
+To use one of the existing guardrails you need to import it together with [`GuardrailManager`][ragbits.guardrails.base.GuardrailManager]. Next you simply pass a list of guardrails to the manager
+and call [`verify()`][ragbits.guardrails.base.GuardrailManager.verify] function that will check the input (`str` or `Prompt`) against all provided guardrails asynchronously.
 
 ```python
 import asyncio
@@ -33,7 +33,7 @@ The expected output is an object with the following properties:
 It allows you to see which guardrail was used, whether the check was successful and optionally a fail reason.
 
 ## Implementing custom guardrail
-We need to create a new class that inherits from [`Guardrail`](ragbits.guardrails.base.Guardrail) and implements abstract method [`verify`](ragbits.guardrails.base.Guardrail.verify).
+We need to create a new class that inherits from [`Guardrail`][ragbits.guardrails.base.Guardrail] and implements abstract method [`verify`][ragbits.guardrails.base.Guardrail.verify].
 
 ```python
 from ragbits.core.prompt import Prompt
@@ -45,4 +45,4 @@ class CustomGuardrail(Guardrail):
         pass
 ```
 
-With that you can pass your `CustomGuardrail` to the [`GuardrailManager`](ragbits.guardrails.base.GuardrailManager) as shown in [using existing guardrails section](#using-existing-guardrail).
+With that you can pass your `CustomGuardrail` to the [`GuardrailManager`][ragbits.guardrails.base.GuardrailManager] as shown in [using existing guardrails section](#using-existing-guardrail).
