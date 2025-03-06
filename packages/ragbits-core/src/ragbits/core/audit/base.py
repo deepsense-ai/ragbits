@@ -170,8 +170,11 @@ class AttributeFormatter:
                 self.process_attributes(item, curr_key)
             else:
                 self.flattened[curr_key] = repr(item)
+        elif isinstance(item, bytes | bytearray):
+            self.flattened[curr_key] = f"Byte object of size {self.human_readable_size(len(item))}"
         else:
             self.process_object(item, curr_key, recurrence)
+
 
     def process_object(self, obj: object, curr_key: str, recurrence: int) -> None:
         """
@@ -279,6 +282,20 @@ class AttributeFormatter:
         """
         return any(keyword == curr_key.split(".")[-1] for keyword in key_list)
 
+    @staticmethod
+    def human_readable_size(size_in_bytes: int) -> str:
+        """
+        Convert a size in bytes to a human-readable format.
+        """
+
+        units = ["bytes", "KB", "MB", "GB", "TB"]
+        unit_index = 0
+
+        while size_in_bytes >= 1024 and unit_index < len(units) - 1:
+            size_in_bytes /= 1024
+            unit_index += 1
+
+        return f"{size_in_bytes:.2f} {units[unit_index]}"
 
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
     """
