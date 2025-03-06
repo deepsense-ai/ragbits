@@ -24,6 +24,7 @@ class EvaluationConfig(BaseModel):
     dataloader: ObjectContructionConfig
     pipeline: ObjectContructionConfig
     metrics: dict[str, ObjectContructionConfig]
+    batch_size: int = 10
 
 
 class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC):
@@ -70,22 +71,16 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         pipeline: EvaluationPipeline = cls.subclass_from_config(model.pipeline)
         metrics: MetricSet = MetricSet.from_config(model.metrics)
 
-        return await pipeline.run_evaluation(
-            dataloader=dataloader,
-            metrics=metrics,
-        )
+        return await pipeline.run_evaluation(dataloader=dataloader, metrics=metrics, batch_size=model.batch_size)
 
-    async def run_evaluation(
-        self,
-        dataloader: DataLoader,
-        metrics: MetricSet,
-    ) -> dict:
+    async def run_evaluation(self, dataloader: DataLoader, metrics: MetricSet, batch_size: int = 10) -> dict:
         """
         Compute the evaluation results for the given pipeline and data.
 
         Args:
             dataloader: The dataloader to load the data.
             metrics: The metrics to be computed.
+            batch_size: evaluation batch size
 
         Returns:
             The evaluation results.
@@ -93,7 +88,7 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         dataset = await dataloader.load()
         await self.prepare()
 
-        results, perf_results = await self._compute(dataset)
+        results, perf_results = await self._compute(dataset=dataset, batch_size=batch_size)
         computed_metrics = self._compute_metrics(metrics, results)
         processed_results = self._results_processor(results)
 
@@ -103,21 +98,19 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
             **processed_results,
         }
 
-    async def _compute(
-        self,
-        dataset: Iterable[dict],
-    ) -> tuple[list[EvaluationResult], dict]:
+    async def _compute(self, dataset: Iterable[dict], batch_size: int = 10) -> tuple[list[EvaluationResult], dict]:
         """
         Call the pipeline with the given data.
 
         Args:
             pipeline: The pipeline to be called.
             dataset: The dataset to be processed.
+            batch_size: evaluation batch size
 
         Returns:
             The evaluation results and performance metrics.
         """
-        semaphore = asyncio.Semaphore(self.CONCURRENCY)
+        semaphore = asyncio.Semaphore(batch_size)
 
         async def _call_pipeline_with_semaphore(data: dict) -> EvaluationResult:
             async with semaphore:
