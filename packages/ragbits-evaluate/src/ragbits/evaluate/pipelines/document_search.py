@@ -6,7 +6,12 @@ from typing_extensions import Self
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.sources import HuggingFaceSource
 from ragbits.evaluate import EvaluationResult
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationDatapointSchema
+
+
+class DocumentSearchDatapointSchema(EvaluationDatapointSchema):
+    question_col: str
+    reference_passage_col: str
 
 
 @dataclass
@@ -20,7 +25,7 @@ class DocumentSearchResult(EvaluationResult):
     predicted_passages: list[str]
 
 
-class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
+class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDatapointSchema]):
     """
     Document search evaluation pipeline.
     """
@@ -68,7 +73,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
             )
             await self.evaluation_target.ingest(sources)
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: dict, schema: DocumentSearchDatapointSchema) -> DocumentSearchResult:
         """
         Runs the document search evaluation pipeline.
 
@@ -78,10 +83,10 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
         Returns:
             The evaluation result.
         """
-        elements = await self.evaluation_target.search(data["question"])
+        elements = await self.evaluation_target.search(data[schema.question_col])
         predicted_passages = [element.text_representation for element in elements if element.text_representation]
         return DocumentSearchResult(
-            question=data["question"],
-            reference_passages=data["passage"],
+            question=data[schema.question_col],
+            reference_passages=data[schema.reference_passage_col],
             predicted_passages=predicted_passages,
         )
