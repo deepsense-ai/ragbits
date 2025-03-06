@@ -1,3 +1,4 @@
+import os
 import typer
 
 from ragbits.api._main import RagbitsAPI
@@ -16,15 +17,13 @@ def register(app: typer.Typer) -> None:
 
 
 @ds_app.command()
-def run(chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function"), chat_name: str = typer.Option(..., "--chat-name", help="Name of the chat function")):
+def run(chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function")):
     """
     Run API service with UI demo
     """
 
-    print(chat_name, chat_path)
-
     api = RagbitsAPI()
-    # api.initialize_chat_module(chat_path=chat_path, chat_name=chat_name)
+    api.initialize_chat_module(chat_path=chat_path)
     api.run()
     
 
