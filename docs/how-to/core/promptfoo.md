@@ -1,11 +1,11 @@
 # How to integrate Promptfoo with Ragbits
 
-Ragbits' `Prompt` abstraction can be seamlessly integrated with the `promptfoo` tool. After installing `promptfoo` as
+Ragbits' [`Prompt`][ragbits.core.prompt.Prompt] abstraction can be seamlessly integrated with the `promptfoo` tool. After installing `promptfoo` as
 specified in the [promptfoo documentation](https://www.promptfoo.dev/docs/installation/), you can generate promptfoo
 configuration files for all the prompts discovered by our autodiscover mechanism by running the following command:
 
 ```bash
-rbts prompts generate-promptfoo-configs
+ragbits prompts generate-promptfoo-configs
 ```
 
 This command will generate a YAML files in the directory specified by `--target-path` (`promptfooconfigs` by

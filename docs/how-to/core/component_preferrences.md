@@ -11,7 +11,7 @@ You can specify the component preferences in two different ways: either by provi
 ### By a Factory Function
 To set the preferred component using a factory function, you need to create a function that takes no arguments and returns an instance of the component. You then set the full Python path to this function in the `[tool.ragbits.core.component_preference_factories]` section of your project's `pyproject.toml` file.
 
-For example, to designate `QdrantVectorStore` (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a factory function like this:
+For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a factory function like this:
 
 ```python
 from ragbits.core.vector_stores import QdrantVectorStore
@@ -57,7 +57,7 @@ embedder = "my_project.get_litellm_embedder"
 ### By a YAML Configuration File
 To set the preferred components using a YAML configuration file, you need to create a YAML file that contains the preferred configuration for different types of components. You then set the path to this file in the `[tool.ragbits.core]` section of your project's `pyproject.toml` file.
 
-For example, to designate `QdrantVectorStore` (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a YAML file like this:
+For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a YAML file like this:
 
 ```yaml
 vector_store:
@@ -79,7 +79,8 @@ component_preference_config_path = "preferred_instances.yaml"
 
 Each key in the YAML configuration file corresponds to a different [component type](#list-of-component-types). The value of each key is a dictionary with up to two keys: `type` and `config`. The `type` key is the name of the preferred component implementation, and the optional `config` key is the configuration to be used with the component. The configuration is specific to each component type and implementation and corresponds to the arguments of the component's constructor.
 
-When using subclasses built into Ragbits, you can use either the name of the class alone (like the `QdrantVectorStore` in the example above) or the full Python path to the class (like `ragbits.core.vector_stores.QdrantVectorStore`). For other classes (like your own custom implementations of Ragbits components), you must use the full Python path.
+When using subclasses built into Ragbits, you can use either the name of the class alone (like the [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] in the example above) or the full Python path to the class (like `ragbits.core.vector_stores.QdrantVectorStore`). For other classes (like your own custom implementations of Ragbits components), you must use the full Python path.
+
 
 In the example, the `vector_store` key is the name of the component type for which you are setting the preferred component. To see all possible component types, refer to the [List of Component Types](#list-of-component-types). The YAML configuration may contain multiple keys, each corresponding to a different component type. For example:
 
@@ -143,7 +144,7 @@ from ragbits.core.vector_stores import VectorStore
 vector_store = VectorStore.preferred_subclass()
 ```
 
-Note that `VectorStore` itself is an abstract class, so the instance created by `preferred_subclass()` will be an instance of one of the concrete subclasses of `VectorStore` that you have set as the preferred in the project configuration.
+Note that [`VectorStore`][ragbits.core.vector_stores.base.VectorStore] itself is an abstract class, so the instance created by `preferred_subclass()` will be an instance of one of the concrete subclasses of [`VectorStore`][ragbits.core.vector_stores.base.VectorStore] that you have set as the preferred in the project configuration.
 
 <a name="llm-usage"></a>
 !!! note "LLM Specific Usage"

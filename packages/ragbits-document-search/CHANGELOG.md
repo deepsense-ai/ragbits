@@ -3,6 +3,8 @@
 ## Unreleased
 - Compability with the new Vector Store interface from ragbits-core (#288)
 
+- Fix docstring formatting to resolve Griffe warnings
+
 ## 0.9.0 (2025-02-25)
 
 ### Changed
