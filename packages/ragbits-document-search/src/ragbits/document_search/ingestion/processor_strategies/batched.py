@@ -1,67 +1,77 @@
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Iterable
+from itertools import islice
 
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-from .base import ProcessingExecutionStrategy
+from .base import ProcessingExecutionResult, ProcessingExecutionStrategy
 
 
 class BatchedAsyncProcessing(ProcessingExecutionStrategy):
     """
-    A processing execution strategy that processes documents asynchronously in batches.
+    Processing execution strategy that processes documents in batches.
     """
 
-    def __init__(self, batch_size: int = 10):
+    def __init__(self, batch_size: int = 10, num_retries: int = 3) -> None:
         """
         Initialize the BatchedAsyncProcessing instance.
 
         Args:
             batch_size: The size of the batch to process documents in.
+            num_retries: The number of retries per document processing task error.
         """
+        super().__init__(num_retries=num_retries)
         self.batch_size = batch_size
 
-    async def _process_with_semaphore(
+    async def process(
         self,
-        semaphore: asyncio.Semaphore,
-        document: DocumentMeta | Document | Source,
+        documents: Iterable[DocumentMeta | Document | Source],
+        embedder: Embedder,
+        vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
-        async with semaphore:
-            return await self.process_document(document, processor_router, processor_overwrite)
-
-    async def process_documents(
-        self,
-        documents: Sequence[DocumentMeta | Document | Source],
-        processor_router: DocumentProcessorRouter,
-        processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
+    ) -> ProcessingExecutionResult:
         """
-        Process documents using the given processor and return the resulting elements.
+        Process documents for indexing sequentially in batches.
 
         Args:
             documents: The documents to process.
+            embedder: The embedder to produce chunk embeddings.
+            vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            A list of elements.
-
-        Returns:
-            A list of elements.
+            The processing excution result.
         """
-        semaphore = asyncio.Semaphore(self.batch_size)
+        results = ProcessingExecutionResult()
+        iterator = iter(documents)
 
-        responses = await asyncio.gather(
-            *[
-                self._process_with_semaphore(semaphore, document, processor_router, processor_overwrite)
-                for document in documents
-            ]
-        )
+        while batch := list(islice(iterator, self.batch_size)):
+            responses = await asyncio.gather(
+                *[
+                    self._parse_document(
+                        document=document,
+                        processor_router=processor_router,
+                        processor_overwrite=processor_overwrite,
+                    )
+                    for document in batch
+                ]
+            )
+            elements = [element for response in responses for element in response]
+            await self._remove_entries_with_same_sources(
+                elements=elements,
+                vector_store=vector_store,
+            )
+            await self._insert_elements(
+                elements=elements,
+                embedder=embedder,
+                vector_store=vector_store,
+            )
 
-        # Return a flattened list of elements
-        return [element for response in responses for element in response]
+        return results
