@@ -43,7 +43,6 @@ nav:
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
           - api_reference/core/vector-stores.md
-          - api_reference/core/metadata-stores.md
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md

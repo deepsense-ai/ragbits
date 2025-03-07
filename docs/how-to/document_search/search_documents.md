@@ -27,9 +27,8 @@ async def main() -> None:
     ]
 
     embedder = LiteLLMEmbedder()
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 
@@ -79,7 +78,6 @@ from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
     document_processor_router=DocumentProcessorRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
 )
@@ -107,7 +105,6 @@ The response will be a sequence of elements that are the most similar to provide
 There is an additional functionality of [`DocumentSearch`][ragbits.document_search.DocumentSearch] class that allows to provide a config with complete setup.
 ```python
 config = {
-    "embedder": {...},
     "vector_store": {...},
     "reranker": {...},
     "providers": {...},
