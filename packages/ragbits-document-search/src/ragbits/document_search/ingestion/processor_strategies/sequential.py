@@ -1,40 +1,60 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-from .base import ProcessingExecutionStrategy
+from .base import ProcessingExecutionResult, ProcessingExecutionStrategy
 
 
 class SequentialProcessing(ProcessingExecutionStrategy):
     """
-    A processing execution strategy that processes documents in sequence, one at a time.
+    Processing execution strategy that processes documents in sequence, one at a time.
     """
 
-    async def process_documents(
+    async def process(
         self,
-        documents: Sequence[DocumentMeta | Document | Source],
+        documents: Iterable[DocumentMeta | Document | Source],
+        embedder: Embedder,
+        vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
+    ) -> ProcessingExecutionResult:
         """
-        Process documents using the given processor and return the resulting elements.
+        Process documents for indexing sequentially one by one.
 
         Args:
             documents: The documents to process.
+            embedder: The embedder to produce chunk embeddings.
+            vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            A list of elements.
-
-        Returns:
-            A list of elements.
+            The processing excution result.
         """
-        elements = []
+        results = ProcessingExecutionResult()
         for document in documents:
-            elements.extend(await self.process_document(document, processor_router, processor_overwrite))
-        return elements
+            try:
+                elements = await self._parse_document(
+                    document=document,
+                    processor_router=processor_router,
+                    processor_overwrite=processor_overwrite,
+                )
+                await self._remove_entries_with_same_sources(
+                    elements=elements,
+                    vector_store=vector_store,
+                )
+                await self._insert_elements(
+                    elements=elements,
+                    embedder=embedder,
+                    vector_store=vector_store,
+                )
+            except Exception:
+                results.failed.append(document)
+            else:
+                results.successful.append(document)
+        return results

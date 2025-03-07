@@ -1,77 +1,75 @@
-import asyncio
-from collections.abc import Sequence
+from collections.abc import Iterable
 
-try:
-    import ray
-
-    HAS_RAY = True
-except ImportError:
-    HAS_RAY = False
-
+# try:
+#     import ray
+#     HAS_RAY = True
+# except ImportError:
+#     HAS_RAY = False
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.base import ProcessingExecutionStrategy
+from ragbits.document_search.ingestion.processor_strategies.base import (
+    ProcessingExecutionResult,
+    ProcessingExecutionStrategy,
+)
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
 class DistributedProcessing(ProcessingExecutionStrategy):
     """
-    A processing execution strategy that processes documents on a cluster, using Ray.
+    Processing execution strategy that processes documents on a cluster, using Ray.
     """
 
-    def __init__(self, batch_size: int = 10):
+    def __init__(self, batch_size: int = 10, num_retries: int = 3) -> None:
         """
         Initialize the DistributedProcessing instance.
 
         Args:
             batch_size: The size of the batch to process documents in.
-            It defaults to 10, but should be increased if the document processing is trivial (< 1s per batch).
-
-        Raises:
-            ModuleNotFoundError: If Ray is not installed.
+            num_retries: The number of retries per document processing task error.
         """
-        if not HAS_RAY:
-            raise ModuleNotFoundError(
-                "You need to install the 'distributed' extra requirements to use Ray distributed computing"
-            )
-
+        super().__init__(num_retries=num_retries)
         self.batch_size = batch_size
 
-    async def process_documents(
+    async def process(  # noqa: PLR6301
         self,
-        documents: Sequence[DocumentMeta | Document | Source],
+        documents: Iterable[DocumentMeta | Document | Source],
+        embedder: Embedder,
+        vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
-        """Process multiple documents in parallel using Ray distributed computing framework.
-
-        This method processes a sequence of documents in parallel using Ray distributed computing capabilities.
-        Each document is processed remotely as a separate Ray task.
+    ) -> ProcessingExecutionResult:
+        """
+        Process documents for indexing in parallel in batches.
 
         Args:
             documents: The documents to process.
+            embedder: The embedder to produce chunk embeddings.
+            vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            A list of elements.
+            The processing excution result.
         """
+        # @ray.remote
+        # def process_documents_remotely(documents: Iterable[DocumentMeta | Document | Source]) -> list[Element]:
+        #     async def process_batch() -> list[list[Element]]:
+        #         tasks = [
+        #             self._parse_document(document, processor_router, processor_overwrite) for document in documents
+        #         ]
+        #         return await asyncio.gather(*tasks)
 
-        @ray.remote
-        def process_document_remotely(documents: Sequence[DocumentMeta | Document | Source]) -> list[Element]:
-            async def process_batch() -> list[list[Element]]:
-                tasks = [
-                    self.process_document(document, processor_router, processor_overwrite) for document in documents
-                ]
-                return await asyncio.gather(*tasks)
+        #     results = asyncio.run(process_batch())
+        #     return sum(results, [])
 
-            results = asyncio.run(process_batch())
-            return sum(results, [])
+        # tasks = []
+        # iterator = iter(documents)
 
-        tasks = []
-        for i in range(0, len(documents), self.batch_size):
-            tasks.append(process_document_remotely.remote(documents[i : i + self.batch_size]))
+        # while batch := list(islice(iterator, self.batch_size)):
+        #     tasks.append(process_documents_remotely.remote(batch))
 
-        return sum(await asyncio.gather(*tasks), [])
+        # elements = sum(await asyncio.gather(*tasks), [])
+        return ProcessingExecutionResult()
