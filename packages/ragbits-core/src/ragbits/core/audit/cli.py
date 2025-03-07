@@ -31,9 +31,8 @@ class PrintColor(str, Enum):
     ERROR_COLOR = "bold red"
     TEXT_COLOR = "grey50"
     KEY_COLOR = "plum4"
-    SYSTEM_PROMPT_COLOR = "blue3"
-    USER_PROMPT_COLOR = "dark_blue"
-    RESPONSE_PROMPT_COLOR = "dark_green"
+    PROMPT_COLOR = "dark_blue"
+    RESPONSE_COLOR = "dark_green"
 
 
 class CLISpan:
@@ -93,12 +92,19 @@ class CLISpan:
             return string
         return ".".join(parts[: index + 1])
 
-    def render_prompt(self, prompt_attributes: list[str]) -> Panel:
+    def render_special_attribute(
+        self, special_attributes: list[str], special_color: str, keyword: str, special_keywords: list[str]
+    ) -> Panel:
         """
-        Renders the attributes related to prompt so they will be displayed in one frame in console.
+        Renders the special attributes containing keyword so they will be displayed in one frame in console.
+        If special keywords list is defined, the background color is set only for attributes with name
+        finishing with special keywords.
 
         Args:
-            prompt_attributes: The attributes with 'prompt' in the name.
+            special_attributes: The attributes with keyword in the name.
+            special_color: The color to print attributes for.
+            keyword: The keyword which attributes contain.
+            special_keywords: The list of keywords attribute is finished with - for special printing
 
         Returns:
             The rendered panel.
@@ -106,19 +112,15 @@ class CLISpan:
         key_color = PrintColor.KEY_COLOR.value
         text_color = PrintColor.TEXT_COLOR.value
         rendered_prompt_attributes: list[Panel | Text] = []
-        outer_panel_title = self._extract_panel_title(prompt_attributes[0], self.prompt_keyword)
-        for attr_key in prompt_attributes:
+        outer_panel_title = self._extract_panel_title(special_attributes[0], keyword)
+        for attr_key in special_attributes:
             attr_value = self.attributes[attr_key]
             color = None
-            if isinstance(attr_value, str):
-                if AttributeFormatter.is_special_key(
-                    curr_key=attr_key, key_list=AttributeFormatter.system_prompt_keywords
-                ):
-                    color = PrintColor.SYSTEM_PROMPT_COLOR.value
-                elif AttributeFormatter.is_special_key(
-                    curr_key=attr_key, key_list=AttributeFormatter.user_prompt_keywords
-                ):
-                    color = PrintColor.USER_PROMPT_COLOR.value
+            if isinstance(attr_value, str) and (
+                AttributeFormatter.is_special_key(curr_key=attr_key, key_list=special_keywords) or not special_keywords
+            ):
+                color = special_color
+
             if color:
                 syntax = Syntax(attr_value, lexer="markdown", theme="monokai", word_wrap=True, background_color=color)
                 panel = Panel(
@@ -135,40 +137,6 @@ class CLISpan:
         outer_panel = Panel(inner_group, title=f"[{key_color}]{outer_panel_title}[/{key_color}]", title_align="left")
         return outer_panel
 
-    def render_response(self, response_attributes: list[str]) -> Panel:
-        """
-        Renders the attributes related to response so they will be displayed in one frame in console.
-
-        Args:
-            response_attributes: The attributes with 'prompt' in the name.
-
-        Returns:
-            The rendered panel.
-        """
-        key_color = PrintColor.KEY_COLOR.value
-        text_color = PrintColor.TEXT_COLOR.value
-        rendered_response_attributes: list[Panel | Text] = []
-        outer_panel_title = self._extract_panel_title(response_attributes[0], self.response_keyword)
-        for attr_key in response_attributes:
-            attr_value = self.attributes[attr_key]
-            if isinstance(attr_value, str):
-                color = PrintColor.RESPONSE_PROMPT_COLOR.value
-                syntax = Syntax(attr_value, lexer="markdown", theme="monokai", word_wrap=True, background_color=color)
-                panel = Panel(
-                    syntax, title=f"[{key_color}]{attr_key}[/{key_color}]", title_align="left", border_style=color
-                )
-                rendered_response_attributes.append(panel)
-            else:
-                rendered_response_attributes.append(
-                    Text.from_markup(
-                        f"[{key_color}]{attr_key}:[/{key_color}] [{text_color}]{str(attr_value)}[/{text_color}]"
-                    )
-                )
-
-        inner_group = Group(*rendered_response_attributes)
-        outer_panel = Panel(inner_group, title=f"[{key_color}]{outer_panel_title}[/{key_color}]", title_align="left")
-        return outer_panel
-
     def render_attributes(self) -> list[Text | Panel]:
         """
         Renders attributes - uses markdown for prompts.
@@ -180,17 +148,28 @@ class CLISpan:
         key_color = PrintColor.KEY_COLOR.value
         text_color = PrintColor.TEXT_COLOR.value
         attrs: list[Text | Panel] = []
+
+        # render prompts
         prompt_attr = [k for k in self.attributes if self.prompt_keyword in k.split(".")]
         if len(prompt_attr) > 0:
-            new_attr = self.render_prompt(prompt_attr)
+            new_attr = self.render_special_attribute(
+                prompt_attr, PrintColor.PROMPT_COLOR.value, self.prompt_keyword, AttributeFormatter.prompt_keywords
+            )
             attrs.append(new_attr)
+
+        # render model response
         response_attr = [k for k in self.attributes if self.response_keyword in k.split(".")]
         if len(response_attr) > 0:
-            new_attr = self.render_response(response_attr)
+            new_attr = self.render_special_attribute(
+                response_attr, PrintColor.RESPONSE_COLOR.value, self.response_keyword, []
+            )
             attrs.append(new_attr)
+
+        # render others attributes
         for k, v in self.attributes.items():
             if self.prompt_keyword not in k.split(".") and self.response_keyword not in k.split("."):
                 attrs.append(Text.from_markup(f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"))
+
         return attrs
 
     def end(self) -> None:

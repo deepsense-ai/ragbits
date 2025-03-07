@@ -98,8 +98,14 @@ class AttributeFormatter:
     opt_list_length = 2
     max_recurrence_depth = 4
 
-    user_prompt_keywords = ["system_prompt", "rendered_system_prompt"]
-    system_prompt_keywords = ["user_prompt", "rendered_user_prompt"]
+    prompt_keywords = [
+        "system_prompt",
+        "rendered_system_prompt",
+        "user_prompt",
+        "rendered_user_prompt",
+        "prompt",
+        "chat",
+    ]
     response_keywords = ["response"]
 
     def __init__(self, data: dict[str, Any], prefix: str | None = None) -> None:
@@ -143,9 +149,7 @@ class AttributeFormatter:
             curr_key: The prefix of the current item in flattened dictionary.
             recurrence: The level of recursion.
         """
-        # if self.is_special_key(curr_key, self.excluded):
-        #     return
-        special_keywords = self.user_prompt_keywords + self.system_prompt_keywords + self.response_keywords
+        special_keywords = self.prompt_keywords + self.response_keywords
         recurrence += 1
 
         if recurrence > self.max_recurrence_depth:
