@@ -13,7 +13,7 @@ pip install ragbits
 This command will install all the popular Ragbits packages.
 
 ## Defining a Static Prompt
-The most standard way to define a prompt in Ragbits is to create a class that inherits from the `Prompt` class and configure it by setting values for appropriate properties. Here is an example of a simple prompt that asks the model to write a song about Ragbits:
+The most standard way to define a prompt in Ragbits is to create a class that inherits from the [`Prompt`](../api_reference/core/prompt.md) class and configure it by setting values for appropriate properties. Here is an example of a simple prompt that asks the model to write a song about Ragbits:
 
 ```python
 from ragbits.core.prompt import Prompt
@@ -24,12 +24,12 @@ class SongPrompt(Prompt):
     """
 ```
 
-In this case, all you had to do was set the `user_prompt` property to the desired prompt. That's it! This prompt can now be used anytime you want to pass a prompt to Ragbits.
+In this case, all you had to do was set the [`user_prompt`][ragbits.core.prompt.Prompt.user_prompt] property to the desired prompt. That's it! This prompt can now be used anytime you want to pass a prompt to Ragbits.
 
 Next, we'll learn how to make this prompt more dynamic (e.g., by adding placeholders for user inputs). But first, let's see how to use this prompt with a Large Language Model.
 
 ## Testing the Prompt from the CLI
-Even at this stage, you can test the prompt using the built-in `ragbits` CLI tool. To do this, you need to run the following command in your terminal:
+Even at this stage, you can test the prompt using the built-in [`ragbits` CLI tool](../cli/main.md). To do this, you need to run the following command in your terminal:
 
 ```bash
 ragbits prompts exec path.within.your.project:SongPrompt
@@ -60,7 +60,7 @@ response = await llm.generate(prompt)
 print(f"Generated song: {response}")
 ```
 
-In this code snippet, we first created an instance of the `LiteLLM` class and configured it to use OpenAI's `gpt-4` model. We then generated a response by passing the prompt to the model. As a result, the model will generate a song about Ragbits based on the provided prompt.
+In this code snippet, we first created an instance of the [`LiteLLM`][ragbits.core.llms.litellm.LiteLLM] class and configured it to use OpenAI's `gpt-4` model. We then generated a response by passing the prompt to the model. As a result, the model will generate a song about Ragbits based on the provided prompt.
 
 ## Making the Prompt Dynamic
 You can make the prompt dynamic by declaring a Pydantic model that serves as the prompt's input schema (i.e., declares the shape of the data that you will be able to use in the prompt). Here's an example:
@@ -116,7 +116,9 @@ Remember to change `song_prompt` to the name of the module where the prompt is d
 ## Conclusion
 You now know how to define a prompt in Ragbits and how to use it with Large Language Models. You've also learned to make the prompt dynamic by using Pydantic models and the Jinja2 templating language. To learn more about defining prompts, such as configuring the desired output format, refer to the how-to article [How to define and use Prompts in Ragbits](../how-to/core/use_prompting.md).
 
-<!-- TODO: Add a link to the how-to articles on using images in prompts and on defining custom prompt sources -->
+For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../how-to/core/use_images_in_prompts.md).
+
+<!-- TODO: Add a link to the how-to article on defining custom prompt sources -->
 
 ## Next Step
 In the next Quickstart guide, you will learn how to use Ragbits's Document Search capabilities to retrieve relevant documents for your prompts: [Quickstart 2: Adding RAG Capabilities](quickstart2_rag.md).
