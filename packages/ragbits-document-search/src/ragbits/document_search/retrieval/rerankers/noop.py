@@ -31,4 +31,6 @@ class NoopReranker(Reranker[RerankerOptions]):
         Returns:
             The reranked elements.
         """
-        return list(chain.from_iterable(elements))
+        element_list = [*{element.id: element for element in chain.from_iterable(elements)}.values()]
+
+        return element_list
