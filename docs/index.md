@@ -6,13 +6,15 @@ hide:
 # Ragbits docs
 
 <style>
-.md-content .md-typeset h1 { display: none; }
+.md-content .md-typeset #ragbits-docs { display: none; }
+
+#main-header {
+    font-size: 3em;
+    margin-bottom: 0;
+}
 </style>
 
-<div align="center" markdown="span">
-  <!-- TODO: Shouldn't custom assets live in this repo too? -->
-  <img alt="ragbits logo" src="./assets/ragbits.png" width="50%">
-</div>
+<h1 align="center" id="main-header">🐰 ragbits</h1>
 
 <p align="center">
   <em size="">Building blocks for rapid development of GenAI applications.</em>
@@ -35,12 +37,27 @@ hide:
 </div>
 ---
 
-**Ragbits** is a Python package that offers essential "bits" for building powerful Retrieval-Augmented Generation (RAG)
-applications.
+## Features
 
-**Ragbits** prioritizes an exceptional developer experience by providing a simple and intuitive API.
-It also includes a comprehensive set of tools for seamlessly building, testing, and deploying your RAG applications
-efficiently.
+
+### 🔨 Build Reliable & Scalable GenAI Apps
+- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/core/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/core/use_llms/#using-local-llms).
+- **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/how-to/core/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
+- **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
+- **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
+- **Modular installation** – Install only what you need, reducing dependencies and improving performance.
+
+### 📚 Fast & Flexible RAG Processing
+- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [unstructured](https://unstructured.io/) or create a custom provider.
+- **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
+- **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
+- **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
+
+### 🚀 Deploy & Monitor with Confidence
+- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#cli-trace-handler).
+- **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) before deployment.
+- **Auto-optimization** – Continuously evaluate and refine model performance.
+- **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
 
 ## Installation
 

@@ -6,7 +6,7 @@ This guide will walk you through defining and using prompts in Ragbits, includin
 
 ### Static Prompt Without an Input Model
 
-To define a static prompt without an input model, you can create a subclass of the `Prompt` class and provide the `user_prompt` attribute.
+To define a static prompt without an input model, you can create a subclass of the [`Prompt`][ragbits.core.prompt.Prompt] class and provide the [`user_prompt`][ragbits.core.prompt.Prompt.user_prompt] attribute.
 
 ```python
 from ragbits.core.prompt import Prompt
@@ -37,7 +37,7 @@ asyncio.run(main())
 ```
 
 ### Extending the Prompt with an Input Model
-To extend the prompt with an input model, define a Pydantic model for the input data and pass it as a generic type to the `Prompt` class. The output type defaults to string.
+To extend the prompt with an input model, define a Pydantic model for the input data and pass it as a generic type to the [`Prompt`][ragbits.core.prompt.Prompt] class. The output type defaults to string.
 
 Let's use a RAG example as a case study:
 
@@ -96,7 +96,7 @@ After succesful execution console should something like:
 ```text
 The last two World Cup winners as of November 2017 are Germany (2014) and Spain (2010).
 ```
-### How to configure `Prompt`'s output data type
+### How to configure [`Prompt`][ragbits.core.prompt.Prompt]'s output data type
 #### Defining output as a Pydantic Model
 You can define the output of a prompt as a Pydantic model by specifying the output type as a generic parameter. However, note that not all llm models support output schema definition. To use this feature effectively, you must set the `use_structured_output=True` flag when initializing the LLM. If this flag is not used, you will need to ensure that the JSON schema of your data model is incorporated into the prompt.
 
@@ -212,7 +212,7 @@ asyncio.run(main())
 
 
 
-### How to create a custom output parser for a `Prompt`
+### How to create a custom output parser for a [`Prompt`][ragbits.core.prompt.Prompt]
 The limitiations described above can be handled by creating a custom parser. The example below will show you how:
 
 ```python

@@ -11,3 +11,5 @@
 ::: ragbits.core.vector_stores.chroma.ChromaVectorStore
 
 ::: ragbits.core.vector_stores.qdrant.QdrantVectorStore
+
+::: ragbits.core.vector_stores.pgvector.PgVectorStore

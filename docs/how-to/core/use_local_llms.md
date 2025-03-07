@@ -2,7 +2,7 @@
 This guide explains how to set up and use local LLMs in Ragbits. It covers installation, model initialization, and configuration options.
 
 ## Setting up and using a local models
-To use a local LLMs, you need to install the 'local' extra requirements:
+To use local LLMs, you need to install the 'local' extra requirements:
 
 ```bash
 pip install ragbits[local]
