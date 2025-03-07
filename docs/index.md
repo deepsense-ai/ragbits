@@ -49,12 +49,12 @@ hide:
 
 ### 📚 Fast & Flexible RAG Processing
 - **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [unstructured](https://unstructured.io/) or create a custom provider.
-- **Handle complex data** – Extract tables, images, and structured content with built-in VLM support.
+- **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
 - **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
 ### 🚀 Deploy & Monitor with Confidence
-- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
+- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#cli-trace-handler).
 - **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
 - **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
