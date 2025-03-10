@@ -31,7 +31,6 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
     async def process(
         self,
         documents: Iterable[DocumentMeta | Document | Source],
-        embedder: Embedder,
         vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
@@ -41,7 +40,6 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
 
         Args:
             documents: The documents to process.
-            embedder: The embedder to produce chunk embeddings.
             vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
@@ -70,7 +68,6 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
             )
             await self._insert_elements(
                 elements=elements,
-                embedder=embedder,
                 vector_store=vector_store,
             )
 

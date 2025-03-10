@@ -15,12 +15,14 @@ For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdran
 
 ```python
 from ragbits.core.vector_stores import QdrantVectorStore
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from qdrant_client import AsyncQdrantClient
 
 def get_qdrant_vector_store():
     return QdrantVectorStore(
         client=AsyncQdrantClient(location=":memory:"),
         index_name="my_index",
+        embedder=LiteLLMEmbedder(),
     )
 ```
 
@@ -28,15 +30,15 @@ Then, you set the full Python path to this function in the `[tool.ragbits.core.c
 
 ```toml
 [tool.ragbits.core.component_preference_factories]
-vector_store = "my_project.get_qdrant_vector_store"
+vector_store = "my_project:get_qdrant_vector_store"
 ```
 
 The key `vector_store` is the name of the component type for which you are setting the preferred configuration. To see all possible component types, refer to the [List of Component Types](#list-of-component-types) section below. The `[tool.ragbits.core.component_preference_factories]` may contain multiple keys, each corresponding to a different component type. For example:
 
 ```toml
 [tool.ragbits.core.component_preference_factories]
-vector_store = "my_project.get_qdrant_vector_store"
-embedder = "my_project.get_litellm_embedder"
+vector_store = "my_project:get_qdrant_vector_store"
+embedder = "my_project:get_litellm_embedder"
 ```
 
 <a name="llm-configuration"></a>
@@ -45,9 +47,9 @@ embedder = "my_project.get_litellm_embedder"
 
     ```toml
     [tool.ragbits.core.llm_preference_factories]
-    text = "my_project.get_text_llm"
-    vision = "my_project.get_vision_llm"
-    structured_output = "my_project.get_structured_output_llm"
+    text = "my_project:get_text_llm"
+    vision = "my_project:get_vision_llm"
+    structured_output = "my_project:get_structured_output_llm"
     ```
 
     The keys in the `[tool.ragbits.core.llm_preference_factories]` section are the names of the LLM types for which you are setting the preferred configuration. The possible LLM types are `text`, `vision`, and `structured_output`. The values are the full Python paths to the factory functions that create instances of the LLMs.
@@ -64,6 +66,8 @@ vector_store:
     client:
       location: ":memory:"
     index_name: my_index
+    embedder:
+      type: LiteLLMEmbedder
 ```
 
 Then, you set the path to this file as `component_preference_config_path` in the `[tool.ragbits.core]` section of your project's `pyproject.toml` file:
@@ -73,7 +77,10 @@ Then, you set the path to this file as `component_preference_config_path` in the
 component_preference_config_path = "preferred_instances.yaml"
 ```
 
+Each key in the YAML configuration file corresponds to a different [component type](#list-of-component-types). The value of each key is a dictionary with up to two keys: `type` and `config`. The `type` key is the name of the preferred component implementation, and the optional `config` key is the configuration to be used with the component. The configuration is specific to each component type and implementation and corresponds to the arguments of the component's constructor.
+
 When using subclasses built into Ragbits, you can use either the name of the class alone (like the [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] in the example above) or the full Python path to the class (like `ragbits.core.vector_stores.QdrantVectorStore`). For other classes (like your own custom implementations of Ragbits components), you must use the full Python path.
+
 
 In the example, the `vector_store` key is the name of the component type for which you are setting the preferred component. To see all possible component types, refer to the [List of Component Types](#list-of-component-types). The YAML configuration may contain multiple keys, each corresponding to a different component type. For example:
 
@@ -84,11 +91,11 @@ vector_store:
     client:
       location: ":memory:"
     index_name: my_index
+    embedder:
+      type: LiteLLMEmbedder
 
-embedder:
-  type: LiteLLMEmbedder
-  config:
-    model: text-embedding-3-small
+rephraser:
+  type: NoopQueryRephraser
 ```
 
 <a name="ds-configuration"></a>
@@ -101,19 +108,25 @@ embedder:
     document_search:
       type: DocumentSearch
       config:
-        embedder:
-          type: NoopEmbedder
+        rephraser:
+          type: NoopQueryRephraser
         vector_store:
           type: InMemoryVectorStore
+          config:
+            embedder:
+              type: NoopEmbedder
     ```
 
     This is an example of a YAML configuration file that sets the preferred configuration for `DocumentSearch` implicitly:
 
     ```yaml
-    embedder:
-      type: NoopEmbedder
+    rephraser:
+      type: NoopQueryRephraser
     vector_store:
       type: InMemoryVectorStore
+      config:
+        embedder:
+          type: NoopEmbedder
     ```
 
     In both cases, `DocumentSearch` will use `NoopEmbedder` as the preferred embedder and `InMemoryVectorStore` as the preferred vector store.
@@ -150,7 +163,6 @@ This is the list of component types for which you can set a preferred configurat
 |----------------------|---------------------------|---------------------------------------------------|----------------------------------------------|
 | `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.Embedder]    |                                              |
 | `llm`                | `ragbits-core`            | [`LLM`][ragbits.core.llms.LLM]                    | Specifics: [Configuration](#llm-configuration), [Usage](#llm-usage)|
-| `metadata_store`     | `ragbits-core`            | [`MetadataStore`][ragbits.core.metadata_stores.base.MetadataStore]|                                          |
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |
 | `history_compressor` | `ragbits-conversations`   | [`ConversationHistoryCompressor`][ragbits.conversations.history.compressors.base.ConversationHistoryCompressor]|          |
 | `document_search`    | `ragbits-document-search` | [`DocumentSearch`][ragbits.document_search.DocumentSearch]| Specifics: [Configuration](#ds-configuration)|

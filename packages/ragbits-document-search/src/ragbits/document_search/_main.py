@@ -8,7 +8,6 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
-from ragbits.core.embeddings import Embedder
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
@@ -45,7 +44,6 @@ class DocumentSearchConfig(BaseModel):
     Schema for for the dict taken by DocumentSearch.from_config method.
     """
 
-    embedder: ObjectContructionConfig
     vector_store: ObjectContructionConfig
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
@@ -70,7 +68,6 @@ class DocumentSearch(WithConstructionConfig):
     default_module: ClassVar = document_search
     configuration_key: ClassVar = "document_search"
 
-    embedder: Embedder
     vector_store: VectorStore
     query_rephraser: QueryRephraser
     reranker: Reranker
@@ -79,14 +76,12 @@ class DocumentSearch(WithConstructionConfig):
 
     def __init__(
         self,
-        embedder: Embedder,
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
         processing_strategy: ProcessingExecutionStrategy | None = None,
     ) -> None:
-        self.embedder = embedder
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
@@ -110,7 +105,6 @@ class DocumentSearch(WithConstructionConfig):
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        embedder: Embedder = Embedder.subclass_from_config(model.embedder)
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
@@ -119,7 +113,7 @@ class DocumentSearch(WithConstructionConfig):
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
 
     @classmethod
     def preferred_subclass(
@@ -182,12 +176,11 @@ class DocumentSearch(WithConstructionConfig):
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
-            search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(
-                vector=search_vector[0],
+            results = await self.vector_store.retrieve(
+                text=rephrased_query,
                 options=VectorStoreOptions(**config.vector_store_kwargs),
             )
-            elements.append([Element.from_vector_db_entry(entry) for entry in entries])
+            elements.append([Element.from_vector_db_entry(result.entry) for result in results])
 
         return await self.reranker.rerank(
             elements=elements,
@@ -220,7 +213,6 @@ class DocumentSearch(WithConstructionConfig):
         sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
         return await self.processing_strategy.process(
             documents=sources,
-            embedder=self.embedder,
             vector_store=self.vector_store,
             processor_router=self.document_processor_router,
             processor_overwrite=document_processor,

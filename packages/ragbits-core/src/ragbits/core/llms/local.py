@@ -15,7 +15,6 @@ except ImportError:
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
-from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
@@ -41,6 +40,8 @@ class LocalLLMOptions(Options):
 class LocalLLM(LLM[LocalLLMOptions]):
     """
     Class for interaction with any LLM available in HuggingFace.
+
+    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation
     """
 
     options_cls = LocalLLMOptions
@@ -88,7 +89,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
     async def _call(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -97,7 +98,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Makes a call to the local LLM with the provided prompt and options.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
@@ -105,9 +106,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Response string from LLM.
         """
-        input_ids = self.tokenizer.apply_chat_template(
-            conversation, add_generation_prompt=True, return_tensors="pt"
-        ).to(self.model.device)
+        input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
+            self.model.device
+        )
 
         outputs = self.model.generate(
             input_ids,
@@ -120,7 +121,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
     async def _call_streaming(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -129,7 +130,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Makes a call to the local LLM with the provided prompt and options in streaming manner.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
@@ -137,9 +138,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Async generator of tokens
         """
-        input_ids = self.tokenizer.apply_chat_template(
-            conversation, add_generation_prompt=True, return_tensors="pt"
-        ).to(self.model.device)
+        input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
+            self.model.device
+        )
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
         generation_kwargs = dict(streamer=streamer, **options.dict())
         generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)

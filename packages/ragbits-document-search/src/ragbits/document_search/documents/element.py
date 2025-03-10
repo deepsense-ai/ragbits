@@ -5,7 +5,7 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, computed_field
 
-from ragbits.core.embeddings import EmbeddingType
+from ragbits.core.utils.pydantic import SerializableBytes
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -80,6 +80,16 @@ class Element(BaseModel, ABC):
             The text representation.
         """
 
+    @property
+    def image_representation(self) -> bytes | None:
+        """
+        Get the image representation of the element.
+
+        Returns:
+            The image representation.
+        """
+        return None
+
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
         element_type_default = cls.model_fields["element_type"].default
@@ -104,25 +114,23 @@ class Element(BaseModel, ABC):
             del db_entry.metadata["embedding_type"]
         return element_cls(**db_entry.metadata)
 
-    def to_vector_db_entry(self, vector: list[float], embedding_type: EmbeddingType) -> VectorStoreEntry:
+    def to_vector_db_entry(self) -> VectorStoreEntry:
         """
         Create a vector database entry from the element.
 
-        Args:
-            vector: The vector.
-            embedding_type: EmbeddingTypes
         Returns:
             The vector database entry
         """
         id_components = [
             self.id,
-            str(embedding_type),
         ]
-        vector_store_entry_id = str(uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components)))
+        vector_store_entry_id = uuid.uuid5(uuid.NAMESPACE_OID, ";".join(id_components))
         metadata = self.model_dump(exclude={"id", "key"})
-        metadata["embedding_type"] = str(embedding_type)
         metadata["document_meta"]["source"]["id"] = self.document_meta.source.id
-        return VectorStoreEntry(id=vector_store_entry_id, key=str(self.key), vector=vector, metadata=metadata)
+
+        return VectorStoreEntry(
+            id=vector_store_entry_id, text=self.key, image_bytes=self.image_representation, metadata=metadata
+        )
 
 
 class TextElement(Element):
@@ -153,7 +161,7 @@ class ImageElement(Element):
     element_type: str = "image"
     description: str
     ocr_extracted_text: str
-    image_bytes: bytes
+    image_bytes: SerializableBytes
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -172,6 +180,16 @@ class ImageElement(Element):
         if self.ocr_extracted_text:
             repr += f"Extracted text: {self.ocr_extracted_text}"
         return repr
+
+    @property
+    def image_representation(self) -> bytes:
+        """
+        Get the image representation of the element.
+
+        Returns:
+            The image representation.
+        """
+        return self.image_bytes
 
     def get_id_components(self) -> dict[str, str]:
         """
