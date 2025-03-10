@@ -35,7 +35,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
 
-    Currently doesn't support image embeddings when storing and retrieving entries.
+    Currently, doesn't support image embeddings when storing and retrieving entries.
     This will be added in the future.
     """
 

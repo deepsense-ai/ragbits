@@ -79,7 +79,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 
-    async def _preffered_embeddings(self, embeddings: dict[UUID, dict[str, list[float]]]) -> dict[UUID, list[float]]:
+    async def _preferred_embeddings(self, embeddings: dict[UUID, dict[str, list[float]]]) -> dict[UUID, list[float]]:
         """
         Returns the preferred embedding type (text or image) for each entry. If the preferred type is not available,
         the other type is returned.
@@ -117,7 +117,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         embeddings: list[Sequence[float]] = []
 
         raw_embeddings = await self._create_embeddings(entries)
-        ids_to_embeddings = await self._preffered_embeddings(raw_embeddings)
+        ids_to_embeddings = await self._preferred_embeddings(raw_embeddings)
         for entry in entries:
             if entry.id not in ids_to_embeddings:
                 continue
