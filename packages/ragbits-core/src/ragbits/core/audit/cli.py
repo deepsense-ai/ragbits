@@ -116,6 +116,7 @@ class CLISpan:
         for attr_key in special_attributes:
             attr_value = self.attributes[attr_key]
             color = None
+            # special attributes related to prompts and response should be in a color frame
             if isinstance(attr_value, str) and (
                 AttributeFormatter.is_special_key(curr_key=attr_key, key_list=special_keywords) or not special_keywords
             ):
@@ -152,22 +153,30 @@ class CLISpan:
         # render prompts
         prompt_attr = [k for k in self.attributes if self.prompt_keyword in k.split(".")]
         if len(prompt_attr) > 0:
-            new_attr = self.render_special_attribute(
+            rendered_prompts = self.render_special_attribute(
                 prompt_attr, PrintColor.PROMPT_COLOR.value, self.prompt_keyword, AttributeFormatter.prompt_keywords
             )
-            attrs.append(new_attr)
 
         # render model response
         response_attr = [k for k in self.attributes if self.response_keyword in k.split(".")]
         if len(response_attr) > 0:
-            new_attr = self.render_special_attribute(
+            rendered_response = self.render_special_attribute(
                 response_attr, PrintColor.RESPONSE_COLOR.value, self.response_keyword, []
             )
-            attrs.append(new_attr)
 
-        # render others attributes
+        rendered_prompts_done = False
+        rendered_response_done = False
         for k, v in self.attributes.items():
-            if self.prompt_keyword not in k.split(".") and self.response_keyword not in k.split("."):
+            # add all the attributes related to the prompt
+            if k in prompt_attr and not rendered_prompts_done:
+                attrs.append(rendered_prompts)
+                rendered_prompts_done = True
+            # add all the attributes related to the response
+            elif k in response_attr and not rendered_response_done:
+                attrs.append(rendered_response)
+                rendered_response_done = True
+            # add other attributes
+            elif self.prompt_keyword not in k.split(".") and self.response_keyword not in k.split("."):
                 attrs.append(Text.from_markup(f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"))
 
         return attrs

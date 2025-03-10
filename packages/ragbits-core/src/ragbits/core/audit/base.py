@@ -5,6 +5,8 @@ from contextvars import ContextVar
 from types import SimpleNamespace
 from typing import Any, Generic, TypeVar
 
+from ragbits.core.prompt.base import BasePrompt
+
 SpanT = TypeVar("SpanT")
 
 
@@ -105,6 +107,7 @@ class AttributeFormatter:
         "rendered_user_prompt",
         "prompt",
         "chat",
+        "BasePrompt",
     ]
     response_keywords = ["response"]
 
@@ -126,10 +129,12 @@ class AttributeFormatter:
         self, attr_dict: dict[str, Any] | None = None, curr_key: str | None = None, recurrence: int = 0
     ) -> None:
         """
-        Format attributes for CLI
+            Format attributes for CLI
+
         Args:
         attr_dict: The data to format.
         curr_key: The prefix to use for the keys.
+        recurrence: The depth of recurrence in object rendering.
         """
         if not curr_key and self.prefix:
             curr_key = self.prefix
@@ -139,6 +144,25 @@ class AttributeFormatter:
         for key, value in attr_dict.items():
             prefix = f"{curr_key}.{key}" if curr_key else key
             self.process_item(value, prefix, recurrence)
+
+    def process_prompt(self, curr_key: str | None, attr_dict: list[dict[str, Any]]) -> None:
+        """
+        Process an item which is a prompt in a chat format to obtain user and system prompt for better rendering.
+
+        Args:
+            curr_key: The prefix to use for the keys.
+            attr_dict: The data to process.
+        """
+        for idx, element in enumerate(attr_dict):
+            if "role" in element and "content" in element:
+                sub_key = f"{curr_key}.[{idx}].{element['role']}_prompt"
+                self.flattened[sub_key] = element["content"]
+            else:
+                sub_key = f"{curr_key}.[{idx}]"
+            for k, v in element.items():
+                if k not in ["role", "content"]:
+                    subb_key = f"{sub_key}.{k}"
+                    self.flattened[subb_key] = v
 
     def process_item(self, item: object, curr_key: str, recurrence: int) -> None:
         """
@@ -158,6 +182,7 @@ class AttributeFormatter:
 
         if isinstance(item, int | float | bool):
             self.flattened[curr_key] = item
+        # shorten too long string if not prompt
         elif isinstance(item, str):
             self.flattened[curr_key] = (
                 self.shorten_string(item) if not self.is_special_key(curr_key, special_keywords) else item
@@ -174,6 +199,7 @@ class AttributeFormatter:
                 self.process_attributes(item, curr_key)
             else:
                 self.flattened[curr_key] = repr(item)
+        # replace byte object with its size
         elif isinstance(item, bytes | bytearray):
             self.flattened[curr_key] = f"Byte object of size {self.human_readable_size(len(item))}"
         else:
@@ -192,14 +218,20 @@ class AttributeFormatter:
         if recurrence > self.max_recurrence_depth:
             self.flattened[curr_key] = repr(obj)
             return
-        curr_key = curr_key + "." + str(type(obj).__name__)
+        # add keyword to base prompt for proper rendering
+        if "prompt" in curr_key.split(".") and isinstance(obj, BasePrompt):
+            curr_key = curr_key + "." + str(type(obj).__name__) + ".BasePrompt"
+        else:
+            curr_key = curr_key + "." + str(type(obj).__name__)
 
         if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
             self.flattened[curr_key] = repr(obj)
             return
         for k, v in obj.__dict__.items():
+            # ignore private attributes
             if k.startswith("__"):
                 pass
+            # not iterate through protected attributes
             elif k.startswith("_"):
                 self.flattened[curr_key] = repr(v)
             else:
@@ -218,8 +250,12 @@ class AttributeFormatter:
         if isinstance(lst, set):
             lst = list(lst)
         list_length = len(lst)
+
         if all(isinstance(item, str | float | int | bool) for item in lst):
             self.flattened[curr_key] = self.shorten_list(lst)
+        # process prompt in chat format
+        elif "prompt" in curr_key.split(".") and self.is_in_chat_format(lst):
+            self.process_prompt(curr_key, lst)  # type: ignore
         elif list_length < self.max_list_length and len(repr(lst)) < self.max_string_length:
             self.flattened[curr_key] = repr(lst)
         else:
@@ -232,7 +268,7 @@ class AttributeFormatter:
             for idx, item in enumerate(lst):
                 position_key = f"{curr_key}[{idx}]"
                 self.process_item(item, position_key, recurrence)
-
+            # do not process too long lists.
             if is_too_long:
                 position_key = f"{curr_key}[{self.opt_list_length}:{list_length - 1}]"
                 self.flattened[position_key] = f"...{list_length - self.opt_list_length - 1} more elements..."
@@ -284,6 +320,27 @@ class AttributeFormatter:
             bool: True if the key is excluded.
         """
         return any(keyword == curr_key.split(".")[-1] for keyword in key_list)
+
+    @staticmethod
+    def is_in_chat_format(obj: list | tuple) -> bool:
+        """
+        Check is the object in Chat Format, i.e. list[dict[str, any]].
+
+        Args:
+            obj: The object to check.
+        """
+        if not isinstance(obj, list | tuple):
+            return False
+        if not obj:
+            return False
+        for element in obj:
+            if not isinstance(element, dict):
+                return False
+            for key in element:
+                if not isinstance(key, str):
+                    return False
+
+        return True
 
     @staticmethod
     def human_readable_size(size_in_bytes: float) -> str:
