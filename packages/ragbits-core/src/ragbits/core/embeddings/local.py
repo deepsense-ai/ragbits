@@ -24,6 +24,8 @@ class LocalEmbedderOptions(Options):
 class LocalEmbedder(Embedder[LocalEmbedderOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
+
+    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation
     """
 
     options_cls = LocalEmbedderOptions
