@@ -74,7 +74,7 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
                 theme="pirates",
                 image_url="https://upload.wikimedia.org/wikipedia/commons/5/55/Acd_a_frame.jpg",
             ),
-            ImagePromptOutput(description="Arrr, that would be a dog!."),
+            ImagePromptOutput(description="Arrr, that would be a dog!"),
         ),
         (
             ImagePromptInput(
