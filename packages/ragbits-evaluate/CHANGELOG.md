@@ -5,8 +5,6 @@
 
 - chore: fix typo in README.
 
- - added traceable
-
 ## 0.9.0 (2025-02-25)
 
 ### Changed
