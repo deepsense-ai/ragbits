@@ -143,6 +143,6 @@ def test_output_schema():
     assert prompt.output_schema() is None
 
 
-def test_list_images():
+def test_has_images():
     prompt = SimplePrompt("Hello")
-    assert prompt.list_images() == []
+    assert len(prompt.list_images()) == 0
