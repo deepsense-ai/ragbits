@@ -32,18 +32,6 @@ config = {
         "pipeline": {
             "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
             "config": {
-                "embedder": {
-                    "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
-                    "config": {
-                        "model": "text-embedding-3-small",
-                        "default_options": {
-                            "dimensions": {
-                                "optimize": True,
-                                "range": [32, 512],
-                            },
-                        },
-                    },
-                },
                 "vector_store": {
                     "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
                     "config": {
@@ -51,6 +39,18 @@ config = {
                             "type": "EphemeralClient",
                         },
                         "index_name": "baseline",
+                        "embedder": {
+                            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                            "config": {
+                                "model": "text-embedding-3-small",
+                                "default_options": {
+                                    "dimensions": {
+                                        "optimize": True,
+                                        "range": [32, 512],
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
                 "providers": {

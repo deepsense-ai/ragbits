@@ -100,9 +100,9 @@ class RAGSystemWithUI:
         vector_store = ChromaVectorStore(
             client=PersistentClient(database_path),
             index_name=index_name,
+            embedder=embedder,
         )
         self.document_search = DocumentSearch(
-            embedder=embedder,
             vector_store=vector_store,
         )
 

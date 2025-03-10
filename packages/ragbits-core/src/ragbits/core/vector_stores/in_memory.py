@@ -1,14 +1,20 @@
 from itertools import islice
+from uuid import UUID
 
 import numpy as np
 
 from ragbits.core.audit import traceable
-from ragbits.core.metadata_stores.base import MetadataStore
-from ragbits.core.utils.config_handling import ObjectContructionConfig
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.vector_stores.base import (
+    VectorStoreEntry,
+    VectorStoreNeedingEmbedder,
+    VectorStoreOptions,
+    VectorStoreResult,
+    WhereQuery,
+)
 
 
-class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
@@ -17,43 +23,28 @@ class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
 
     def __init__(
         self,
+        embedder: Embedder,
         default_options: VectorStoreOptions | None = None,
-        metadata_store: MetadataStore | None = None,
+        embedding_name_text: str = "text",
+        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new InMemoryVectorStore instance.
 
         Args:
             default_options: The default options for querying the vector store.
-            metadata_store: The metadata store to use.
+            embedder: The embedder to use for converting entries to vectors.
+            embedding_name_text: The name under which the text embedding is stored in the resulting object.
+            embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
-        super().__init__(default_options=default_options, metadata_store=metadata_store)
-        self._storage: dict[str, VectorStoreEntry] = {}
-
-    @classmethod
-    def from_config(cls, config: dict) -> "InMemoryVectorStore":
-        """
-        Creates and returns an instance of the InMemoryVectorStore class from the given configuration.
-
-        Args:
-            config: A dictionary containing the configuration for initializing the InMemoryVectorStore instance.
-
-        Returns:
-            An initialized instance of the InMemoryVectorStore class.
-
-        Raises:
-            ValidationError: The metadata_store configuration doesn't follow the expected format.
-            InvalidConfigError: The metadata_store class can't be found or is not the correct type.
-        """
-        store = (
-            MetadataStore.subclass_from_config(ObjectContructionConfig.model_validate(config["metadata_store"]))
-            if "metadata_store" in config
-            else None
+        super().__init__(
+            default_options=default_options,
+            embedder=embedder,
+            embedding_name_text=embedding_name_text,
+            embedding_name_image=embedding_name_image,
         )
-        return cls(
-            default_options=VectorStoreOptions(**config.get("default_options", {})),
-            metadata_store=store,
-        )
+        self._entries: dict[UUID, VectorStoreEntry] = {}
+        self._embeddings: dict[UUID, dict[str, list[float]]] = {}
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -64,36 +55,57 @@ class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
             entries: The entries to store.
         """
         for entry in entries:
-            self._storage[entry.id] = entry
+            self._entries[entry.id] = entry
+        embeddings = await self._create_embeddings(entries)
+        self._embeddings.update(embeddings)
 
     @traceable
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(
+        self,
+        text: str | None = None,
+        image: bytes | None = None,
+        options: VectorStoreOptions | None = None,
+    ) -> list[VectorStoreResult]:
         """
-        Retrieve entries from the vector store.
+        Retrieve entries from the vector store most similar to the provided entry.
+        Requires either text or image to be provided.
+
+        Compare stored entries looking both at their text and image embeddings
+        (if both are avialiable chooses the one with the smallest distance).
 
         Args:
-            vector: The vector to search for.
+            text: The text to query the vector store with.
+            image: The image to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
             The entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        entries = sorted(
-            (
-                (entry, float(np.linalg.norm(np.array(entry.vector) - np.array(vector))))
-                for entry in self._storage.values()
-            ),
-            key=lambda x: x[1],
-        )
-        return [
-            entry
-            for entry, distance in entries[: merged_options.k]
-            if merged_options.max_distance is None or distance <= merged_options.max_distance
-        ]
+
+        if image and text:
+            raise ValueError("Either text or image should be provided, not both.")
+
+        if text:
+            vector = await self._embedder.embed_text([text])
+        elif image:
+            vector = await self._embedder.embed_image([image])
+        else:
+            raise ValueError("Either text or image should be provided.")
+
+        results: list[VectorStoreResult] = []
+
+        for entry_id, vectors in self._embeddings.items():
+            distances = [float(np.linalg.norm(np.array(v) - np.array(vector))) for v in vectors.values()]
+            result = VectorStoreResult(entry=self._entries[entry_id], vectors=vectors, score=min(distances))
+            if merged_options.max_distance is None or result.score <= merged_options.max_distance:
+                results.append(result)
+
+        results = sorted(results, key=lambda r: r.score)
+        return results[: merged_options.k]
 
     @traceable
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
@@ -101,7 +113,8 @@ class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
             ids: The list of entries' IDs to remove.
         """
         for id in ids:
-            del self._storage[id]
+            del self._entries[id]
+            del self._embeddings[id]
 
     @traceable
     async def list(
@@ -119,7 +132,7 @@ class InMemoryVectorStore(VectorStore[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        entries = iter(self._storage.values())
+        entries = iter(self._entries.values())
 
         if where:
             entries = (

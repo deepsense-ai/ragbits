@@ -19,7 +19,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run python examples/document-search/multimodal.py
+    uv run python examples/document-search/multimodal_basic.py
     ```
 """
 
@@ -33,7 +33,6 @@ To run the script, execute the following command:
 import asyncio
 from pathlib import Path
 
-from ragbits.core import audit
 from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
@@ -41,8 +40,6 @@ from ragbits.document_search.documents.document import DocumentMeta, DocumentTyp
 from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.dummy import DummyImageProvider
-
-audit.set_trace_handlers("cli")
 
 IMAGES_PATH = Path(__file__).parent / "images"
 
@@ -68,7 +65,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = VertexAIMultimodelEmbedder()
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     router = DocumentProcessorRouter.from_config(
         {
             # For this example, we want to skip OCR and make sure
@@ -78,20 +75,20 @@ async def main() -> None:
     )
 
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
         document_processor_router=router,
     )
 
     await document_search.ingest(documents)
 
-    all_embeddings = await vector_store.list()
-    for embedding in all_embeddings:
-        print(f"Embedding: {embedding.metadata['document_meta']}")
+    all_entries = await vector_store.list()
+    for entry in all_entries:
+        print(f"ID: {entry.id}")
+        print(f"Document: {entry.metadata['document_meta']}")
         print()
 
     results = await document_search.search("Fluffy teady bear")
-    print("Results for 'Fluffy teady bear toy':")
+    print("Results for 'Fluffy teady bear':")
     for result in results:
         document = await result.document_meta.fetch()
         print(f"Type: {result.element_type}, Location: {document.local_path}, Text: {result.text_representation}")

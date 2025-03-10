@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Compability with the new Vector Store interface from ragbits-core (#288)
 
 - Add support for images in few shot prompts (#155)
 - Fix docstring formatting to resolve Griffe warnings
