@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -21,6 +21,7 @@ from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,
     SequentialProcessing,
 )
+from ragbits.document_search.ingestion.processor_strategies.base import ProcessingExecutionResult
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
@@ -190,10 +191,11 @@ class DocumentSearch(WithConstructionConfig):
     @traceable
     async def ingest(
         self,
-        documents: str | Sequence[DocumentMeta | Document | Source],
+        documents: str | Iterable[DocumentMeta | Document | Source],
         document_processor: BaseProvider | None = None,
-    ) -> None:
-        """Ingest documents into the search index.
+    ) -> ProcessingExecutionResult:
+        """
+        Ingest documents into the search index.
 
         Args:
             documents: Either:
@@ -204,40 +206,14 @@ class DocumentSearch(WithConstructionConfig):
                     - "huggingface://dataset/split/row"
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
+
+        Returns:
+            The processing excution result.
         """
-        if isinstance(documents, str):
-            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
-        else:
-            sources = documents
-        elements = await self.processing_strategy.process_documents(
-            sources, self.document_processor_router, document_processor
+        sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
+        return await self.processing_strategy.process(
+            documents=sources,
+            vector_store=self.vector_store,
+            processor_router=self.document_processor_router,
+            processor_overwrite=document_processor,
         )
-        await self._remove_entries_with_same_sources(elements)
-        await self.insert_elements(elements)
-
-    async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
-        """
-        Remove entries from the vector store whose source id is present in the elements' metadata.
-
-        Args:
-            elements: List of elements whose source ids will be checked and removed from the vector store if present.
-        """
-        unique_source_ids = {element.document_meta.source.id for element in elements}
-
-        ids_to_delete = []
-        # TODO: Pass 'where' argument to the list method to filter results and optimize search
-        for entry in await self.vector_store.list():
-            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
-                ids_to_delete.append(entry.id)
-
-        if ids_to_delete:
-            await self.vector_store.remove(ids_to_delete)
-
-    async def insert_elements(self, elements: list[Element]) -> None:
-        """
-        Insert Elements into the vector store.
-
-        Args:
-            elements: The list of Elements to insert.
-        """
-        await self.vector_store.store([element.to_vector_db_entry() for element in elements])
