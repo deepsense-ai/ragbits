@@ -106,9 +106,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Response string from LLM.
         """
-        conversation = prompt.chat
         input_ids = self.tokenizer.apply_chat_template(
-            conversation, add_generation_prompt=True, return_tensors="pt"
+            prompt.chat, add_generation_prompt=True, return_tensors="pt"
         ).to(self.model.device)
 
         outputs = self.model.generate(
@@ -139,9 +138,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Async generator of tokens
         """
-        conversation = prompt.chat
         input_ids = self.tokenizer.apply_chat_template(
-            conversation, add_generation_prompt=True, return_tensors="pt"
+            prompt.chat, add_generation_prompt=True, return_tensors="pt"
         ).to(self.model.device)
         streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
         generation_kwargs = dict(streamer=streamer, **options.dict())
