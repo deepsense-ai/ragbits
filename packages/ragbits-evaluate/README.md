@@ -1,6 +1,6 @@
 # Ragbits Evaluate
 
-Ragbits Evaluate is a package that contains tools for evaluating the prformance of AI pipelines defined with Ragbits components. It also helps with automatically finding the best hyperparameter configurations for them.
+Ragbits Evaluate is a package that contains tools for evaluating the performance of AI pipelines defined with Ragbits components. It also helps with automatically finding the best hyperparameter configurations for them.
 
 ## Installation
 
@@ -11,7 +11,7 @@ pip install ragbits-evaluate
 ```
 
 <!--
-TODO: Add a minimalistick example inspired by the Quickstart chapter on Ragbits Evaluate once it is ready.
+TODO: Add a minimalistic example inspired by the Quickstart chapter on Ragbits Evaluate once it is ready.
 -->
 
 ## Documentation

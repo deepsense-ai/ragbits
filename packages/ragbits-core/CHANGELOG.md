@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add support for images in few shot prompts (#155)
+- Add instruction on how to use local servers for LLMs (#395).
 
 ## 0.9.0 (2025-02-25)
 

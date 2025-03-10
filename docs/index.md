@@ -39,27 +39,25 @@ hide:
 
 ## Features
 
-### 🔨 Build future-proof, consistent GenAI applications
 
-- 🔮 **Hot-swappable LLMs**: Future-proof your applications by easily swapping out the underlying LLMs. Ragbits supports [over 100+ LLMs through LiteLLM](https://ragbits.deepsense.ai/how-to/core/use_llms/) or allows you to run [local models](https://ragbits.deepsense.ai/how-to/core/use_llms/#using-local-llms).
-- 🎯 **Type-safe LLM calls**: Ensure your LLM calls remain type-safe and consistent, no matter the model. [Leverage Python generics for guaranteed correctness](https://ragbits.deepsense.ai/how-to/core/use_prompting/#how-to-configure-prompts-output-data-type).
-- 💾 **Bring your favorite VectorStore**: Ragbits supports various vector stores out-of-the-box, including [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), and more. Easily switch between VectorStores to match your requirements.
-- 🛠 **Powerful CLI**: Effortlessly execute commands, browse vector stores, run queries against RAG pipelines, and [test prompts directly](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli) from your terminal.
-- 🤏 **Install only what you need**: Ragbits is designed to be modular, allowing you to install only the components you actually require. Say goodbye to unnecessary, bulky dependencies that degrade application performance.
+### 🔨 Build Reliable & Scalable GenAI Apps
+- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/core/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/core/use_llms/#using-local-llms).
+- **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/how-to/core/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
+- **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
+- **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
+- **Modular installation** – Install only what you need, reducing dependencies and improving performance.
 
-### 📚 RAGs in hours - not days
+### 📚 Fast & Flexible RAG Processing
+- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [unstructured](https://unstructured.io/) or create a custom provider.
+- **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
+- **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
+- **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
-- 📃 **Ingest 20+ document formats**: PDF, HTML, spreadsheets, presentations, and many other formats are supported natively. Process data using [unstructured](https://unstructured.io) or create a custom provider.
-- 🖼 **Understands complex data**: Built-in support for tables, images, and more. Agentic document processing using VLM.
-- 🔌 **Easily connect data sources**: Quickly integrate your data sources using built-in connectors with native support for S3, GCS, Azure, and more. If your particular source isn't included, simply implement a straightforward interface.
-- 🚄 **Rapid ingestion of massive payloads**: Leverage Ray-based parallel ingestion to [process massive datasets fast](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
-
-### 🚀 Deploy with ease and confidence
-
-- 👀 **Built-in observability**: Monitor your applications effortlessly with integrated observability tools. Ragbits incorporates integrations [with OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler), complemented by [beautiful CLI outputs](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler).
-- ✅ **Integrated testing & evaluation**: Built-in [integration with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) to facilitate comprehensive prompt testing and evaluation.
-- ♻️ **Evaluation and auto-optimization**: Automatically evaluate and optimize components of your application, ensuring continuous improvement in performance.
-- ✨ **Intuitive testing UI**: Visualize, test, and optimize your entire application through an intuitive, user-friendly interface (coming soon).
+### 🚀 Deploy & Monitor with Confidence
+- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/core/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/core/use_tracing/#cli-trace-handler).
+- **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/core/promptfoo/) before deployment.
+- **Auto-optimization** – Continuously evaluate and refine model performance.
+- **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
 
 ## Installation
 

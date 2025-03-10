@@ -27,7 +27,8 @@ class DistributedProcessing(ProcessingExecutionStrategy):
 
         Args:
             batch_size: The size of the batch to process documents in.
-            It defaults to 10, but should be increased if the document processing is trivial (< 1s per batch).
+                It defaults to 10, but should be increased if the document processing
+                is trivial (< 1s per batch).
 
         Raises:
             ModuleNotFoundError: If Ray is not installed.

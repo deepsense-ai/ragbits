@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add support for images in few shot prompts (#155)
+- Fix docstring formatting to resolve Griffe warnings
 
 ## 0.9.0 (2025-02-25)
 
