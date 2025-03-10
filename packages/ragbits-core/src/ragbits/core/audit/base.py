@@ -145,7 +145,7 @@ class AttributeFormatter:
             prefix = f"{curr_key}.{key}" if curr_key else key
             self.process_item(value, prefix, recurrence)
 
-    def process_prompt(self, curr_key: str | None, attr_dict: list[dict[str, Any]]) -> None:
+    def process_prompt_chat(self, curr_key: str | None, attr_dict: list[dict[str, Any]]) -> None:
         """
         Process an item which is a prompt in a chat format to obtain user and system prompt for better rendering.
 
@@ -233,7 +233,8 @@ class AttributeFormatter:
                 pass
             # not iterate through protected attributes
             elif k.startswith("_"):
-                self.flattened[curr_key] = repr(v)
+                sub_key = curr_key + "." + k
+                self.flattened[sub_key] = repr(v)
             else:
                 sub_key = curr_key + "." + k
                 self.process_item(v, sub_key, recurrence)
@@ -255,7 +256,7 @@ class AttributeFormatter:
             self.flattened[curr_key] = self.shorten_list(lst)
         # process prompt in chat format
         elif "prompt" in curr_key.split(".") and self.is_in_chat_format(lst):
-            self.process_prompt(curr_key, lst)  # type: ignore
+            self.process_prompt_chat(curr_key, lst)  # type: ignore
         elif list_length < self.max_list_length and len(repr(lst)) < self.max_string_length:
             self.flattened[curr_key] = repr(lst)
         else:

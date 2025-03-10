@@ -139,7 +139,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             Only used if the client has been initialized with `use_structured_output=True`.
 
         Returns:
-            Response string from LLM.
+           dict with response string from LLM with other response parameters.
 
         Raises:
             LLMConnectionError: If there is a connection error with the LLM API.
@@ -148,33 +148,27 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
-        with trace(
-            messages=conversation,
-            model=self.model_name,
-            base_url=self.base_url,
-            api_version=self.api_version,
-            response_format=repr(response_format),
-            options=repr(options.dict()),
-        ) as outputs:
-            response = await self._get_litellm_response(
-                conversation=conversation,
-                options=options,
-                response_format=response_format,
-            )
-            if not response.choices:  # type: ignore
-                raise LLMEmptyResponseError()
+        response = await self._get_litellm_response(
+            conversation=conversation,
+            options=options,
+            response_format=response_format,
+        )
+        if not response.choices:  # type: ignore
+            raise LLMEmptyResponseError()
 
-            outputs.response = response.choices[0].message.content  # type: ignore
+        result = {}
 
-            if response.usage:  # type: ignore
-                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
-                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
-                outputs.total_tokens = response.usage.total_tokens  # type: ignore
+        result["response"] = response.choices[0].message.content  # type: ignore
 
-            if options.logprobs:
-                outputs.logprobs = response.choices[0].logprobs["content"]  # type: ignore
+        if response.usage:  # type: ignore
+            result["completion_tokens"] = response.usage.completion_tokens  # type: ignore
+            result["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
+            result["total_tokens"] = response.usage.total_tokens  # type: ignore
 
-        return vars(outputs)  # type: ignore
+        if options.logprobs:
+            result["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
+
+        return result  # type: ignore
 
     async def _call_streaming(
         self,
