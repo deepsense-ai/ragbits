@@ -180,12 +180,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
-        conversation = prompt.chat
-
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         with trace(
-            messages=conversation,
+            messages=prompt.chat,
             model=self.model_name,
             base_url=self.base_url,
             api_version=self.api_version,
@@ -193,7 +191,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options=options.dict(),
         ) as outputs:
             response = await self._get_litellm_response(
-                conversation=conversation,
+                conversation=prompt.chat,
                 options=options,
                 response_format=response_format,
                 stream=True,
