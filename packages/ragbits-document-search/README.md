@@ -23,9 +23,8 @@ async def main() -> None:
     embedder = LiteLLMEmbedder(
         model="text-embedding-3-small",
     )
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 

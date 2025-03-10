@@ -1,5 +1,4 @@
 defaults:
-  - embedder@config.embedder: litellm
   - vector_store@config.vector_store: chroma
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop

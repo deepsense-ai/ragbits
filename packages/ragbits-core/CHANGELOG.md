@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
 - Add instruction on how to use local servers for LLMs (#395).
 
 ## 0.9.0 (2025-02-25)

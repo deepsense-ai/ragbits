@@ -41,7 +41,7 @@ Where `path.within.your.project` is the path to the Python module where the prom
 ragbits prompts exec song_prompt:SongPrompt
 ```
 
-This command will send the prompt to [the project's preffered LLM implementation](../how-to/core/component_preferrences.md) and display the generated response in the terminal.
+This command will send the prompt to [the project's preferred LLM implementation](../how-to/core/component_preferrences.md) and display the generated response in the terminal.
 
 !!! note
     If there is no preferred LLM configured for your project, Ragbits will use OpenAI's gpt-3.5-turbo. Ensure that the `OPENAI_API_KEY` environment variable is set and contains your OpenAI API key.
