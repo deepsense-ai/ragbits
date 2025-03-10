@@ -1,15 +1,13 @@
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import ClassVar
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.embeddings.base import Embedder, EmbeddingType
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import processor_strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter

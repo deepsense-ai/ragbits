@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 
-from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
