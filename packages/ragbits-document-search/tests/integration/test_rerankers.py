@@ -1,5 +1,6 @@
 import pytest
 
+from ragbits.core import audit
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
@@ -43,6 +44,7 @@ async def test_litellm_cohere_reranker_rerank() -> None:
 
 
 async def test_answerdotai_reranker_rerank() -> None:
+    audit.set_trace_handlers("cli")
     options = RerankerOptions(top_n=2)
     reranker = AnswerAIReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",

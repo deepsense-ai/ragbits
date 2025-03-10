@@ -8,7 +8,6 @@ from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
 from ragbits.conversations.history.stores.base import HistoryStore
-from ragbits.core.audit import traceable
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.utils.config_handling import ObjectContructionConfig
@@ -106,7 +105,6 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         async with self.sqlalchemy_engine.begin() as conn:
             await conn.run_sync(_Base.metadata.create_all)
 
-    @traceable
     async def create_conversation(self, messages: ChatFormat) -> str:
         """
         Creates a new conversation in the database with an auto-generated ID.
@@ -140,7 +138,6 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
                 await session.commit()
             return conversation_id
 
-    @traceable
     async def fetch_conversation(self, conversation_id: str) -> ChatFormat:
         """
         Fetches a conversation by its ID.
@@ -158,7 +155,6 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
             rows = result.scalars().all()
             return [{"role": row.role, "content": row.content} for row in rows] if rows else []
 
-    @traceable
     async def update_conversation(self, conversation_id: str, new_messages: ChatFormat) -> str:
         """
         Updates a conversation with new messages.

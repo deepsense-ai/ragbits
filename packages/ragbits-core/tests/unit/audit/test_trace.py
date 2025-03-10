@@ -194,11 +194,11 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             },
             "test",
             {
-                "test.objects[0].a": 1,
-                "test.objects[1].datetime": "datetime.datetime(2023, 1, 1, 0, 0)",
-                "test.objects[2].PosixPath": "PosixPath('/path/to/file')",
-                "test.objects[3]": "['short', 'list']",
-                "test.objects[4]": "LongString" + "A" * (AttributeFormatter.max_string_length - 10) + "...",
+                "test.objects.[0].a": 1,
+                "test.objects.[1].datetime": "datetime.datetime(2023, 1, 1, 0, 0)",
+                "test.objects.[2].PosixPath": "PosixPath('/path/to/file')",
+                "test.objects.[3]": "['short', 'list']",
+                "test.objects.[4]": "LongString" + "A" * (AttributeFormatter.max_string_length - 10) + "...",
             },
         ),
         # Mixed nested structure
@@ -214,9 +214,9 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             {
                 "vector": [0.01, 0.02, 0.03, 0.04] * 1534,
                 "vcs": VectorStoreEntry(
-                    id="uniq",
-                    key="21",
-                    vector=[0.01, 0.02, 0.03, 0.04] * 1534,
+                    id="9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+                    text="Some text",
+                    image_bytes=None,
                     metadata={
                         "for_shortening": "A" * AttributeFormatter.max_string_length
                         + "B" * AttributeFormatter.max_string_length
@@ -229,9 +229,9 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             "test",
             {
                 "test.vector": "[0.01, '...', 0.04](total 6136 elements)",
-                "test.vcs.VectorStoreEntry.id": "uniq",
-                "test.vcs.VectorStoreEntry.key": "21",
-                "test.vcs.VectorStoreEntry.vector": "[0.01, '...', 0.04](total 6136 elements)",
+                "test.vcs.VectorStoreEntry.id.UUID": "UUID('9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8')",
+                "test.vcs.VectorStoreEntry.text": "Some text",
+                "test.vcs.VectorStoreEntry.image_bytes": "None",
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
                 "test.not_for_shortening.response": "A" * AttributeFormatter.max_string_length
                 + "B" * AttributeFormatter.max_string_length,

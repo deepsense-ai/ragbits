@@ -3,7 +3,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace, traceable
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
@@ -75,19 +75,18 @@ class GCSSource(Source):
         bucket_local_dir = local_dir / self.bucket
         bucket_local_dir.mkdir(parents=True, exist_ok=True)
         path = bucket_local_dir / self.object_name
-
-        if not path.is_file():
-            storage = await self._get_storage()
-            async with storage as client:
-                content = await client.download(self.bucket, self.object_name)
-                Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
-                with open(path, mode="wb+") as file_object:
-                    file_object.write(content)
-
+        with trace(bucket=self.bucket, object=self.object_name) as outputs:
+            if not path.is_file():
+                storage = await self._get_storage()
+                async with storage as client:
+                    content = await client.download(self.bucket, self.object_name)
+                    Path(bucket_local_dir / self.object_name).parent.mkdir(parents=True, exist_ok=True)
+                    with open(path, mode="wb+") as file_object:
+                        file_object.write(content)
+            outputs.path = path
         return path
 
     @classmethod
-    @traceable
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
         """List all sources in the given GCS bucket, matching the prefix.
@@ -102,10 +101,14 @@ class GCSSource(Source):
         Raises:
             ImportError: If the required 'gcloud-aio-storage' package is not installed
         """
-        async with await cls._get_storage() as storage:
-            result = await storage.list_objects(bucket, params={"prefix": prefix})
-            items = result.get("items", [])
-            return [cls(bucket=bucket, object_name=item["name"]) for item in items if not item["name"].endswith("/")]
+        with trace() as outputs:
+            async with await cls._get_storage() as storage:
+                result = await storage.list_objects(bucket, params={"prefix": prefix})
+                items = result.get("items", [])
+                outputs.results = [
+                    cls(bucket=bucket, object_name=item["name"]) for item in items if not item["name"].endswith("/")
+                ]
+                return outputs.results
 
     @classmethod
     @traceable

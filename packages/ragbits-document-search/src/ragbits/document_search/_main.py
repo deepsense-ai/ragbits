@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from ragbits import document_search
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace, traceable
 from ragbits.core.config import CoreConfig
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
@@ -159,7 +159,6 @@ class DocumentSearch(WithConstructionConfig):
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
-    @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
@@ -173,21 +172,23 @@ class DocumentSearch(WithConstructionConfig):
         """
         config = config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
-        elements = []
-        for rephrased_query in queries:
-            results = await self.vector_store.retrieve(
-                text=rephrased_query,
-                options=VectorStoreOptions(**config.vector_store_kwargs),
+        with trace(queries=queries, config=config, vectore_store=self.vector_store, reranker=self.reranker) as outputs:
+            elements = []
+
+            for rephrased_query in queries:
+                results = await self.vector_store.retrieve(
+                    text=rephrased_query,
+                    options=VectorStoreOptions(**config.vector_store_kwargs),
+                )
+                elements.append([Element.from_vector_db_entry(result.entry) for result in results])
+
+            outputs.search_results = await self.reranker.rerank(
+                elements=elements,
+                query=query,
+                options=RerankerOptions(**config.reranker_kwargs),
             )
-            elements.append([Element.from_vector_db_entry(result.entry) for result in results])
+            return outputs.search_results
 
-        return await self.reranker.rerank(
-            elements=elements,
-            query=query,
-            options=RerankerOptions(**config.reranker_kwargs),
-        )
-
-    @traceable
     async def ingest(
         self,
         documents: str | Sequence[DocumentMeta | Document | Source],
@@ -205,15 +206,21 @@ class DocumentSearch(WithConstructionConfig):
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
         """
-        if isinstance(documents, str):
-            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
-        else:
-            sources = documents
-        elements = await self.processing_strategy.process_documents(
-            sources, self.document_processor_router, document_processor
-        )
-        await self._remove_entries_with_same_sources(elements)
-        await self.insert_elements(elements)
+        with trace(
+            documents=documents,
+            document_processor=document_processor,
+            document_processor_router=self.document_processor_router,
+            processing_strategy=self.processing_strategy,
+        ):
+            if isinstance(documents, str):
+                sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
+            else:
+                sources = documents
+            elements = await self.processing_strategy.process_documents(
+                sources, self.document_processor_router, document_processor
+            )
+            await self._remove_entries_with_same_sources(elements)
+            await self.insert_elements(elements)
 
     async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
         """

@@ -3,7 +3,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ragbits.core.audit import traceable
 from ragbits.core.prompt.prompt import Prompt
 from ragbits.core.utils.config_handling import import_by_path
 
@@ -68,7 +67,6 @@ class MultiQueryRephraserPrompt(Prompt[MultiQueryRephraserInput, list]):
     response_parser = _list_parser
 
 
-@traceable
 def get_rephraser_prompt(prompt: str) -> type[Prompt[Any, Any]]:
     """
     Initializes and returns a QueryRephraser object based on the provided configuration.
