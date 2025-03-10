@@ -24,6 +24,8 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
 
+    options_cls = VectorStoreOptions
+
     def __init__(
         self,
         client: ClientAPI,
