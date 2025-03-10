@@ -13,7 +13,6 @@ import jinja2
 from pydantic import BaseModel
 from rich.console import Console
 
-from ragbits.core.audit import traceable
 from ragbits.core.config import core_config
 from ragbits.core.llms import LLM
 from ragbits.core.llms.base import LLMType
@@ -39,7 +38,6 @@ class PromptState:
     llm: LLM | None = None
 
 
-@traceable
 def render_prompt(index: int, system_prompt: str, user_prompt: str, state: PromptState, *args: Any) -> PromptState:  # noqa: ANN401
     """
     Renders a prompt based on the provided key, system prompt, user prompt, and input variables.
@@ -71,7 +69,6 @@ def render_prompt(index: int, system_prompt: str, user_prompt: str, state: Promp
     return state
 
 
-@traceable
 def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
     """
     Returns a list of prompt choices based on the discovered prompts.
@@ -88,7 +85,6 @@ def list_prompt_choices(state: PromptState) -> list[tuple[str, int]]:
     return [(prompt.__name__, idx) for idx, prompt in enumerate(state.prompts)]
 
 
-@traceable
 def send_prompt_to_llm(state: PromptState) -> str:
     """
     Sends the current prompt to the LLM and returns the response.
@@ -118,7 +114,6 @@ def send_prompt_to_llm(state: PromptState) -> str:
     return response
 
 
-@traceable
 def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
     """
     Retrieves the field names and default values from the input type of a prompt.
@@ -140,7 +135,6 @@ def get_input_type_fields(obj: BaseModel | None) -> list[dict]:
     ]
 
 
-@traceable
 def lab_app(  # pylint: disable=missing-param-doc
     file_pattern: str = core_config.prompt_path_pattern,
     llm_factory: str | None = core_config.llm_preference_factories[LLMType.TEXT],

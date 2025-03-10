@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, get_origin
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.config import core_config
 from ragbits.core.prompt import Prompt
 
@@ -37,7 +37,6 @@ class PromptDiscovery:
         # in order to avoid generic type aliases (which `isclass` sees as classes, but `issubclass` don't).
         return inspect.isclass(obj) and not get_origin(obj) and issubclass(obj, Prompt) and obj != Prompt
 
-    @traceable
     def discover(self) -> set[type[Prompt]]:
         """
         Discovers Prompt objects within the specified file paths.
@@ -45,29 +44,31 @@ class PromptDiscovery:
         Returns:
             set[Prompt]: The discovered Prompt objects.
         """
-        result_set: set[type[Prompt]] = set()
+        with trace(file_patern=self.file_pattern, path=self.root_path) as outputs:
+            result_set: set[type[Prompt]] = set()
+            for file_path in self.root_path.glob(self.file_pattern):
+                # remove file extenson and remove directory separators with dots
+                module_name = str(file_path).rsplit(".", 1)[0].replace(os.sep, ".")
 
-        for file_path in self.root_path.glob(self.file_pattern):
-            # remove file extenson and remove directory separators with dots
-            module_name = str(file_path).rsplit(".", 1)[0].replace(os.sep, ".")
+                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                if spec is None:
+                    print(f"Skipping {file_path}, not a Python module")
+                    continue
 
-            spec = importlib.util.spec_from_file_location(module_name, file_path)
-            if spec is None:
-                print(f"Skipping {file_path}, not a Python module")
-                continue
+                module = importlib.util.module_from_spec(spec)
 
-            module = importlib.util.module_from_spec(spec)
+                assert spec.loader is not None  # noqa: S101
 
-            assert spec.loader is not None  # noqa: S101
+                try:
+                    spec.loader.exec_module(module)
+                except Exception as e:  # pylint: disable=broad-except
+                    print(f"Skipping {file_path}, loading failed: {e}")
+                    continue
 
-            try:
-                spec.loader.exec_module(module)
-            except Exception as e:  # pylint: disable=broad-except
-                print(f"Skipping {file_path}, loading failed: {e}")
-                continue
+                for _, obj in inspect.getmembers(module):
+                    if self.is_prompt_subclass(obj):
+                        result_set.add(obj)
 
-            for _, obj in inspect.getmembers(module):
-                if self.is_prompt_subclass(obj):
-                    result_set.add(obj)
+                outputs.result_set = result_set
 
         return result_set

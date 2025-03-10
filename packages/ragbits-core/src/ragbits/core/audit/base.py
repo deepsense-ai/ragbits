@@ -219,10 +219,11 @@ class AttributeFormatter:
             self.flattened[curr_key] = repr(obj)
             return
         # add keyword to base prompt for proper rendering
+        sub_key = self.get_class_name(obj)
         if "prompt" in curr_key.split(".") and isinstance(obj, BasePrompt):
-            curr_key = curr_key + "." + str(type(obj).__name__) + ".BasePrompt"
+            curr_key = curr_key + "." + sub_key + ".BasePrompt"
         else:
-            curr_key = curr_key + "." + str(type(obj).__name__)
+            curr_key = curr_key + "." + sub_key
 
         if not hasattr(obj, "__dict__") or obj.__dict__ == {}:
             self.flattened[curr_key] = repr(obj)
@@ -357,6 +358,22 @@ class AttributeFormatter:
             unit_index += 1
 
         return f"{size_in_bytes:.2f} {units[unit_index]}"
+
+    @staticmethod
+    def get_class_name(obj: Any) -> str:
+        """
+        Gets a class name from an object.
+
+        Args:
+            obj: The object to get the class name from.
+
+        Returns:
+            str: The class name.
+        """
+        if hasattr(obj, "__name__"):
+            return obj.__name__
+        else:
+            return type(obj).__name__
 
 
 def format_attributes(data: dict, prefix: str | None = None) -> dict:
