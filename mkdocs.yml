@@ -43,7 +43,6 @@ nav:
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
           - api_reference/core/vector-stores.md
-          - api_reference/core/metadata-stores.md
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
@@ -56,6 +55,8 @@ nav:
       - Conversations:
           - api_reference/conversations/compressors/base.md
           - api_reference/conversations/compressors/llm.md
+      - Guardrails:
+          - api_reference/guardrails/index.md
 hooks:
   - mkdocs_hooks.py
 theme:

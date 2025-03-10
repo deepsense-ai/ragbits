@@ -4,7 +4,7 @@ In this chapter, we will explore how to use Ragbit's Document Search capabilitie
 
 To work with document content, we first need to "ingest" them (i.e., process, embed, and store them in a vector database). Afterwards, we can search for relevant documents based on the user's input and use the retrieved information to enhance the LLM's response.
 
-We will continue with the example of generating custom songs. In the previous chapters, you learned how to define a prompt and interact with it using the `ragbits` CLI. We will now upgrade the prompt with a document search capability to provide the LLM with additional context when generating a song on the given subject (in this case: inspirations from children's stories).
+We will continue with the example of generating custom songs. In the previous chapters, you learned how to define a prompt and interact with it using the [`ragbits` CLI](../cli/main.md). We will now upgrade the prompt with a document search capability to provide the LLM with additional context when generating a song on the given subject (in this case: inspirations from children's stories).
 
 ## Getting the Documents
 
@@ -18,7 +18,7 @@ The short stories are in Markdown format. Ragbits supports [various document for
 
 ## Defining the Document Search Object
 
-The `DocumentSearch` class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the `LiteLLMEmbedder` embedder and the `InMemoryVectorStore` vector store:
+The [`DocumentSearch`][ragbits.document_search.DocumentSearch] class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the [`LiteLLMEmbedder`][ragbits.core.embeddings.litellm.LiteLLMEmbedder] embedder and the [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] vector store:
 
 ```python
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
@@ -28,15 +28,14 @@ from ragbits.document_search import DocumentSearch
 embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
-vector_store = InMemoryVectorStore()
+vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
 )
 ```
 
 !!! note
-    `InMemoryVectorStore` is a simple in-memory vector store suitable for demonstration purposes. In real-world scenarios, you would typically use one of the persistent vector stores like [`ChromaVectorStore`][ragbits.core.vector_stores.chroma.ChromaVectorStore] or [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore].
+    [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] is a simple in-memory vector store suitable for demonstration purposes. In real-world scenarios, you would typically use one of the persistent vector stores like [`ChromaVectorStore`][ragbits.core.vector_stores.chroma.ChromaVectorStore] or [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore].
 
 ## Defining the Source of the Documents
 
@@ -55,7 +54,7 @@ Because the documents are stored locally, we are using `LocalFileSource` here. R
 
 ## Ingesting the Documents
 
-Having established the documents and the `DocumentSearch` object, we can now ingest the documents:
+Having established the documents and the [`DocumentSearch`][ragbits.document_search.DocumentSearch] object, we can now ingest the documents:
 
 ```python
 import asyncio

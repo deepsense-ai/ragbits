@@ -4207,6 +4207,9 @@ local = [
 otel = [
     { name = "opentelemetry-api" },
 ]
+pgvector = [
+    { name = "asyncpg" },
+]
 promptfoo = [
     { name = "pyyaml" },
 ]
@@ -4225,6 +4228,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0" },
     { name = "chromadb", marker = "extra == 'chroma'", specifier = "~=0.4.24" },
     { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2" },
     { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0" },
@@ -4404,10 +4408,9 @@ name = "ragbits-workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "asyncpg" },
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
-    { name = "ragbits-core", extra = ["chroma", "fastembed", "lab", "local", "otel", "qdrant"] },
+    { name = "ragbits-core", extra = ["chroma", "fastembed", "lab", "local", "otel", "pgvector", "qdrant"] },
     { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface", "s3"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
@@ -4436,10 +4439,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
-    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },

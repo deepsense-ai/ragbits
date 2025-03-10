@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+- Compability with the new Vector Store interface from ragbits-core (#288)
+
+- Fix docstring formatting to resolve Griffe warnings
 
  - added traceable
 

@@ -1,6 +1,6 @@
 # How to Ingest Documents in a distributed fashion
 
-Ragbits Document Search can ingest documents in a distributed fashion if it's installed with `distributed` extra. This can be set up by specifying the `DistributedProcessing` execution strategy when creating the `DocumentSearch` instance.
+Ragbits Document Search can ingest documents in a distributed fashion if it's installed with `distributed` extra. This can be set up by specifying the [`DistributedProcessing`][ragbits.document_search.ingestion.processor_strategies.DistributedProcessing] execution strategy when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
 
 ```python
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
@@ -18,12 +18,11 @@ embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 
-vector_store = InMemoryVectorStore()
+vector_store = InMemoryVectorStore(embedder=embedder)
 
 processing_strategy = DistributedProcessing()
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
     processing_strategy=processing_strategy
 )

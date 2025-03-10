@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+- Compability with the new Vector Store interface from ragbits-core (#288)
+
+- chore: fix typo in README.
 
  - added traceable
 
