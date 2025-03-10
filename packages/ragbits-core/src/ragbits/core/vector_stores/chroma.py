@@ -19,21 +19,10 @@ from ragbits.core.vector_stores.base import (
 )
 
 
-class ChromaVectorStoreOptions(VectorStoreOptions):
-    """
-    An object representing the options for the Chroma vector store.
-    """
-
-    # Whether to choose images over text when both are available
-    prefer_image: bool = False
-
-
-class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
+class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
-
-    options_cls = ChromaVectorStoreOptions
 
     def __init__(
         self,
@@ -41,7 +30,8 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         index_name: str,
         embedder: Embedder,
         distance_method: Literal["l2", "ip", "cosine"] = "cosine",
-        default_options: ChromaVectorStoreOptions | None = None,
+        default_options: VectorStoreOptions | None = None,
+        prefer_image_embedding: bool = False,
         embedding_name_text: str = "text",
         embedding_name_image: str = "image",
     ) -> None:
@@ -54,6 +44,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
             embedder: The embedder to use for converting entries to vectors.
             distance_method: The distance method to use.
             default_options: The default options for querying the vector store.
+            prefer_image_embedding: Whether to prefer image embeddings over text embeddings when both are available.
             embedding_name_text: The name under which the text embedding is stored in the resulting object.
             embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
@@ -70,6 +61,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
             name=self._index_name,
             metadata={"hnsw:space": self._distance_method},
         )
+        self._prefer_image_embedding = prefer_image_embedding
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -93,10 +85,10 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[ChromaVectorStoreOptions]):
         the other type is returned.
         """
         default_embedding_key = (
-            self._embedding_name_text if not self.default_options.prefer_image else self._embedding_name_image
+            self._embedding_name_text if not self._prefer_image_embedding else self._embedding_name_image
         )
         fallback_embedding_key = (
-            self._embedding_name_image if not self.default_options.prefer_image else self._embedding_name_text
+            self._embedding_name_image if not self._prefer_image_embedding else self._embedding_name_text
         )
         return {
             key: (entry.get(default_embedding_key) or entry[fallback_embedding_key])
