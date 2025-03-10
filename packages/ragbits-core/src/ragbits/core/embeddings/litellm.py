@@ -45,7 +45,7 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
-            default_options: Defualt options to pass to the LiteLLM API.
+            default_options: Default options to pass to the LiteLLM API.
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\

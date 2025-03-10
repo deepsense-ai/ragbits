@@ -30,15 +30,15 @@ Then, you set the full Python path to this function in the `[tool.ragbits.core.c
 
 ```toml
 [tool.ragbits.core.component_preference_factories]
-vector_store = "my_project.get_qdrant_vector_store"
+vector_store = "my_project:get_qdrant_vector_store"
 ```
 
 The key `vector_store` is the name of the component type for which you are setting the preferred configuration. To see all possible component types, refer to the [List of Component Types](#list-of-component-types) section below. The `[tool.ragbits.core.component_preference_factories]` may contain multiple keys, each corresponding to a different component type. For example:
 
 ```toml
 [tool.ragbits.core.component_preference_factories]
-vector_store = "my_project.get_qdrant_vector_store"
-embedder = "my_project.get_litellm_embedder"
+vector_store = "my_project:get_qdrant_vector_store"
+embedder = "my_project:get_litellm_embedder"
 ```
 
 <a name="llm-configuration"></a>
@@ -47,9 +47,9 @@ embedder = "my_project.get_litellm_embedder"
 
     ```toml
     [tool.ragbits.core.llm_preference_factories]
-    text = "my_project.get_text_llm"
-    vision = "my_project.get_vision_llm"
-    structured_output = "my_project.get_structured_output_llm"
+    text = "my_project:get_text_llm"
+    vision = "my_project:get_vision_llm"
+    structured_output = "my_project:get_structured_output_llm"
     ```
 
     The keys in the `[tool.ragbits.core.llm_preference_factories]` section are the names of the LLM types for which you are setting the preferred configuration. The possible LLM types are `text`, `vision`, and `structured_output`. The values are the full Python paths to the factory functions that create instances of the LLMs.

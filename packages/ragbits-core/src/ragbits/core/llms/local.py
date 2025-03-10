@@ -41,6 +41,8 @@ class LocalLLMOptions(Options):
 class LocalLLM(LLM[LocalLLMOptions]):
     """
     Class for interaction with any LLM available in HuggingFace.
+
+    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation
     """
 
     options_cls = LocalLLMOptions
