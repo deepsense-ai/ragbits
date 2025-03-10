@@ -360,7 +360,7 @@ class AttributeFormatter:
         return f"{size_in_bytes:.2f} {units[unit_index]}"
 
     @staticmethod
-    def get_class_name(obj: Any) -> str:
+    def get_class_name(obj: object) -> str:
         """
         Gets a class name from an object.
 
