@@ -267,7 +267,7 @@ class AttributeFormatter:
                 lst = lst[: self.opt_list_length]
 
             for idx, item in enumerate(lst):
-                position_key = f"{curr_key}[{idx}]"
+                position_key = f"{curr_key}.[{idx}]"
                 self.process_item(item, position_key, recurrence)
             # do not process too long lists.
             if is_too_long:

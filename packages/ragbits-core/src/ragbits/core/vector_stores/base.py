@@ -10,7 +10,6 @@ from typing_extensions import Self
 
 from ragbits.core import vector_stores
 from ragbits.core.embeddings.base import Embedder
-from ragbits.core.audit.base import AttributeFormatter
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
@@ -51,15 +50,6 @@ class VectorStoreResult(BaseModel):
     entry: VectorStoreEntry
     vectors: dict[str, list[float]]  # Maps embedding type to vector
     score: float
-
-    def __repr__(self) -> str:
-        if len(self.vector) > AttributeFormatter.max_list_length:
-            shorten_vector = AttributeFormatter.shorten_list(self.vector)
-        else:
-            shorten_vector = str(self.vector)
-        return (
-            f"{self.__class__.__name__}(id={self.id} key={self.key} vector={shorten_vector} metadata={self.metadata})"
-        )
 
 
 class VectorStoreOptions(Options):
@@ -196,8 +186,7 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         image_only_ids = set(image_entries.keys()) - set(text_entries.keys())
         if image_only_ids and not self._embedder.image_support():
             warnings.warn(
-                "Can't embed the following image-only entries "
-                f"as the embedder doesn't support images: {image_only_ids}"
+                f"Can't embed the following image-only entries as the embedder doesn't support images: {image_only_ids}"
             )
 
         return dict(embeddings)

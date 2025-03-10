@@ -1,6 +1,6 @@
 from fastembed import SparseTextEmbedding, TextEmbedding
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder, EmbedderOptionsT, SparseEmbedder
 from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.options import Options
@@ -29,7 +29,6 @@ class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
         self.model_name = model_name
         self._model = TextEmbedding(model_name)
 
-    @traceable
     async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[list[float]]:
         """
         Embeds a list of strings into a list of embeddings.
@@ -42,8 +41,12 @@ class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
             List of embeddings for the given strings.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-
-        return [[float(x) for x in result] for result in self._model.embed(data, **merged_options.dict())]
+        with trace(
+            data=data, model_name=self.model_name, model=repr(self._model), options=merged_options.dict()
+        ) as outputs:
+            embeddings = [[float(x) for x in result] for result in self._model.embed(data, **merged_options.dict())]
+            outputs.embeddings = embeddings
+        return embeddings
 
 
 class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
@@ -60,7 +63,6 @@ class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
         self.model_name = model_name
         self._model = SparseTextEmbedding(model_name)
 
-    @traceable
     async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[SparseVector]:
         """
         Embeds a list of strings into a list of sparse embeddings.
@@ -73,8 +75,11 @@ class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
             List of embeddings for the given strings.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-
-        return [
-            SparseVector(values=[float(x) for x in result.values], indices=[int(x) for x in result.indices])
-            for result in self._model.embed(data, **merged_options.dict())
-        ]
+        with trace(
+            data=data, model_name=self.model_name, model=repr(self._model), options=merged_options.dict()
+        ) as outputs:
+            outputs.embeddings = [
+                SparseVector(values=[float(x) for x in result.values], indices=[int(x) for x in result.indices])
+                for result in self._model.embed(data, **merged_options.dict())
+            ]
+        return outputs.embeddings
