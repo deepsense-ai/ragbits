@@ -4,8 +4,11 @@
 #     "ragbits-core",
 # ]
 # ///
+import asyncio
+
 from pydantic import BaseModel
 
+from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 
 
@@ -42,7 +45,10 @@ class LoremPrompt(Prompt[LoremPromptInput, LoremPromptOutput]):
     """
 
 
-if __name__ == "__main__":
+async def main() -> None:
+    """
+    Example of using the LiteLLM client with a Prompt class. Requires the OPENAI_API_KEY environment variable to be set.
+    """
     lorem_prompt = LoremPrompt(LoremPromptInput(theme="animals"))
     lorem_prompt.add_few_shot("theme: business", "Lorem Ipsum biznessum dolor copy machinum yearly reportum")
     print("CHAT:")
@@ -50,3 +56,10 @@ if __name__ == "__main__":
     print()
     print("OUTPUT MODEL:")
     print(lorem_prompt.output_schema())
+    llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+    response = await llm.generate(lorem_prompt)
+    print(f"The LLM generated response: {response.text}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
