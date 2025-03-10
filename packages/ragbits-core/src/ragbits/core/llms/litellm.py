@@ -119,9 +119,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMNotSupportingImagesError: If the model does not support images.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError(
-                f"There are images in the prompt, but given LLM ({self.model_name}) " f"doesn't support them."
-            )
+            raise LLMNotSupportingImagesError()
+
         conversation = prompt.chat
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
@@ -180,9 +179,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMNotSupportingImagesError: If the model does not support images.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError(
-                f"There are images in the prompt, but given LLM ({self.model_name}) " f"doesn't support them."
-            )
+            raise LLMNotSupportingImagesError()
+
         conversation = prompt.chat
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
