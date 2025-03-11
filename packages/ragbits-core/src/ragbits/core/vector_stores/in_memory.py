@@ -7,14 +7,14 @@ from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
 
-class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """

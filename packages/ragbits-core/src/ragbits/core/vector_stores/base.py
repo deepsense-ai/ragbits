@@ -129,7 +129,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
 
-class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
+class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
     """
     Base class for vector stores that takes an embedder as an argument.
     """
@@ -155,6 +155,7 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         self._embedder = embedder
         self._embedding_name_text = embedding_name_text
         self._embedding_name_image = embedding_name_image
+        self._embedding_types = [self._embedding_name_text, self._embedding_name_image]
 
     async def _create_embeddings(
         self, entries: list[VectorStoreEntry] | list[VectorStoreEntry]

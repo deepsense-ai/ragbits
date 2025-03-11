@@ -11,10 +11,10 @@ from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
@@ -31,7 +31,7 @@ DISTANCE_OPS = {
 
 
 # TODO: Add support for image embeddings
-class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
 
