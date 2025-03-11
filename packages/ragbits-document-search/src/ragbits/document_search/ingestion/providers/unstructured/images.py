@@ -12,23 +12,10 @@ from ragbits.document_search.documents.document import DocumentMeta, DocumentTyp
 from ragbits.document_search.documents.element import Element, IntermediateImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.providers.unstructured.utils import (
-    # ImageDescriber,
     crop_and_convert_to_bytes,
     extract_image_coordinates,
     to_text_element,
 )
-
-DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
-
-
-class _ImagePrompt(Prompt):
-    user_prompt: str = DEFAULT_IMAGE_QUESTION_PROMPT
-    image_input_fields: list[str] = ["images"]
-
-
-class _ImagePromptInput(BaseModel):
-    images: list[bytes]
-
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
     """
@@ -90,11 +77,6 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         )
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-        # prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
-        # if self.image_describer is None:
-        #     llm_to_use = self._llm if self._llm is not None else get_preferred_llm(LLMType.VISION)
-        #     self.image_describer = ImageDescriber(llm_to_use)
-        # image_description = await self.image_describer.get_image_description(prompt=prompt)
         return IntermediateImageElement(
             ocr_extracted_text=element.text,
             image_bytes=img_bytes,

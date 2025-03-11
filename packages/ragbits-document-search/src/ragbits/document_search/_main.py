@@ -89,7 +89,7 @@ class DocumentSearch(WithConstructionConfig):
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
         self.processing_strategy = processing_strategy or SequentialProcessing()
-        self.intermediate_image_provider = intermediate_image_provider or ImageProvider.from_config()
+        self.intermediate_image_provider = intermediate_image_provider
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -115,8 +115,9 @@ class DocumentSearch(WithConstructionConfig):
 
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
+        intermediate_image_provider = ImageProvider.from_config(model.intermediate_image_provider)
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy, intermediate_image_provider)
 
     @classmethod
     def preferred_subclass(

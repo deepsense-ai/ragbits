@@ -7,6 +7,7 @@ from ragbits.core.prompt import Prompt
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.element import ImageElement, IntermediateImageElement
 from ragbits.document_search.ingestion import intermediate_providers
+from ragbits.core.utils.config_handling import ObjectContructionConfig
 
 DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
 
@@ -70,3 +71,10 @@ class ImageProvider(WithConstructionConfig):
         )
 
         return image_element
+    
+    @classmethod
+    def from_config(cls, config: dict) -> "ImageProvider":
+        """
+        """
+        llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
+        return cls(llm=llm)
