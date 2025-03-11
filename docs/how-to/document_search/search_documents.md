@@ -6,15 +6,17 @@
 3. Do the search
 
 This guide will walk you through all those steps and explain the details. Let's start with a minimalistic example to get the main idea:
+
 ```python
 import asyncio
 from pathlib import Path
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.sources import GCSSource
+
 
 async def main() -> None:
     # Load documents (there are multiple possible sources)
@@ -24,10 +26,9 @@ async def main() -> None:
         DocumentMeta.from_source(GCSSource(bucket="<your_bucket>", object_name="<your_object_name>"))
     ]
 
-    embedder = LiteLLMEmbeddings()
-    vector_store = InMemoryVectorStore()
+    embedder = LiteLLMEmbedder()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     document_search = DocumentSearch(
-        embedder=embedder,
         vector_store=vector_store,
     )
 
@@ -44,13 +45,15 @@ if __name__ == "__main__":
 ```
 
 ## Documents loading
-Before doing any search we need to have some documents that will build our knowledge base. Ragbits offers a handy class `Document` that stores all the information needed for document loading.
-Objects of this class are usually instantiated using `DocumentMeta` helper class that supports loading files from your local storage, GCS or HuggingFace.
-You can easily add support for your custom sources by extending the `Source` class and implementing the abstract methods:
+Before doing any search we need to have some documents that will build our knowledge base. Ragbits offers a handy class [`Document`][ragbits.document_search.documents.document.Document] that stores all the information needed for document loading.
+Objects of this class are usually instantiated using [`DocumentMeta`][ragbits.document_search.documents.document.DocumentMeta] helper class that supports loading files from your local storage, GCS or HuggingFace.
+You can easily add support for your custom sources by extending the [`Source`][ragbits.document_search.documents.sources.Source] class and implementing the abstract methods:
+
 ```python
 from pathlib import Path
 
 from ragbits.document_search.documents.sources import Source
+
 
 class CustomSource(Source):
     @property
@@ -62,11 +65,10 @@ class CustomSource(Source):
 ```
 
 ## Processing, embedding and storing
-Having the documents loaded we can proceed with the pipeline. The next step covers the processing, embedding and storing. Embeddings and Vector Stores have their own sections in the documentation,
-here we will focus on the processing.
+Having the documents loaded we can proceed with the pipeline. The next step covers the processing, embedding and storing. Embedders and Vector Stores have their own sections in the documentation, here we will focus on the processing.
 
 Before a document can be ingested into the system it needs to be processed into a collection of elements that the system supports. Right now there are two supported elements:
-`TextElement` and `ImageElement`. You can introduce your own elements by simply extending the `Element` class.
+`TextElement` and `ImageElement`. You can introduce your own elements by simply extending the [`Element`][ragbits.document_search.documents.element.Element] class.
 
 Depending on a type of the document there are different `providers` that work under the hood to return a list of supported elements. Ragbits rely mainly on [Unstructured](https://unstructured.io/)
 library that supports parsing and chunking of most common document types (i.e. pdf, md, doc, jpg). You can specify a mapping of file type to provider when creating document search instance:
@@ -76,13 +78,12 @@ from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
     document_processor_router=DocumentProcessorRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
 )
 ```
 
-If you want to implement a new provider you should extend the `BaseProvider` class:
+If you want to implement a new provider you should extend the [`BaseProvider`][ragbits.document_search.ingestion.providers.base.BaseProvider] class:
 ```python
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
@@ -97,14 +98,13 @@ class CustomProvider(BaseProvider):
 ```
 
 ## Search
-After storing indexed documents in the system we can move to the search part. It is very simple and straightforward, you simply need to call `search()` function.
+After storing indexed documents in the system we can move to the search part. It is very simple and straightforward, you simply need to call [`search()`][ragbits.document_search.DocumentSearch.search] function.
 The response will be a sequence of elements that are the most similar to provided query.
 
 ## Advanced configuration
-There is an additional functionality of `DocumentSearch` class that allows to provide a config with complete setup.
+There is an additional functionality of [`DocumentSearch`][ragbits.document_search.DocumentSearch] class that allows to provide a config with complete setup.
 ```python
 config = {
-    "embedder": {...},
     "vector_store": {...},
     "reranker": {...},
     "providers": {...},

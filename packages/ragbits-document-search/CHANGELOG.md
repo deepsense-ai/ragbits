@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Compability with the new Vector Store interface from ragbits-core (#288)
+- Fix docstring formatting to resolve Griffe warnings
+
+## 0.9.0 (2025-02-25)
+
+### Changed
+
+- ragbits-core updated to version v0.9.0
+- Add MultiQueryRetrieval (#311).
+- Add AWS S3 source integration (#339).
+- Add Azure BlobStorage source integration (#340).
+
 ## 0.8.0 (2025-01-29)
 
 ### Added

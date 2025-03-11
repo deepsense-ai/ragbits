@@ -17,10 +17,7 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import (
-    GCSSource,
-    LocalFileSource,
-)
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.batched import (
     BatchedAsyncProcessing,
@@ -29,8 +26,12 @@ from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
-    "embedder": {"type": "NoopEmbeddings"},
-    "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
+    "vector_store": {
+        "type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore",
+        "config": {
+            "embedder": {"type": "NoopEmbedder"},
+        },
+    },
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
     "processing_strategy": {"type": "SequentialProcessing"},
@@ -72,7 +73,7 @@ async def test_document_search_ingest_from_source():
     router = DocumentProcessorRouter.from_config(providers)
 
     document_search = DocumentSearch(
-        embedder=embeddings_mock, vector_store=InMemoryVectorStore(), document_processor_router=router
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock), document_processor_router=router
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
@@ -105,7 +106,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
 
     await document_search.ingest([document], document_processor=DummyProvider())
 
@@ -121,7 +122,7 @@ async def test_document_search_insert_elements():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
 
     await document_search.insert_elements(
         [
@@ -141,7 +142,7 @@ async def test_document_search_insert_elements():
 
 
 async def test_document_search_with_no_results():
-    document_search = DocumentSearch(embedder=AsyncMock(), vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=AsyncMock()))
 
     results = await document_search.search("Peppa's sister")
 
@@ -152,7 +153,7 @@ async def test_document_search_with_search_config():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
 
     await document_search.ingest(
         [DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")],
@@ -202,10 +203,9 @@ async def test_document_search_with_batched():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
 
     processing_strategy = BatchedAsyncProcessing(batch_size=5)
-    vectore_store = InMemoryVectorStore()
+    vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     document_search = DocumentSearch(
-        embedder=embeddings_mock,
         vector_store=vectore_store,
         processing_strategy=processing_strategy,
     )
@@ -474,7 +474,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     providers: Mapping[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
 
     # Mock vector store to track operations
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     # Create a temporary directory for storing test files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -490,11 +490,12 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.document_search.documents.sources.load_dataset", return_value=dataset),
-            mock.patch("ragbits.document_search.documents.sources.get_local_storage_dir", return_value=storage_dir),
+            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
+            mock.patch(
+                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
+            ),
         ):
             document_search = DocumentSearch(
-                embedder=embeddings_mock,
                 vector_store=vector_store,
                 document_processor_router=DocumentProcessorRouter.from_config(providers),
             )

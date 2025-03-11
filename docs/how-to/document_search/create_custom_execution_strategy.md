@@ -14,8 +14,13 @@ While implementing the `process_documents` method, you can use the built-in `pro
 
 ```python
 import asyncio
+from collections.abc import Sequence
 
+from ragbits.document_search.documents.document import Document, DocumentMeta, Source
+from ragbits.document_search.documents.element import Element
+from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import ProcessingExecutionStrategy
+from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 class DelayedExecutionStrategy(ProcessingExecutionStrategy):
     async def process_documents(
@@ -66,7 +71,7 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
 To use your custom execution strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance:
 
 ```python
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -77,14 +82,13 @@ documents = [
     DocumentMeta.create_text_document_from_literal("Example document 2"),
 ]
 
-embedder = LiteLLMEmbeddings(
+embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
-vector_store = InMemoryVectorStore()
+vector_store = InMemoryVectorStore(embedder=embedder)
 processing_strategy = DelayedExecutionStrategy()
 
 document_search = DocumentSearch(
-    embedder=embedder,
     vector_store=vector_store,
     processing_strategy=processing_strategy
 )

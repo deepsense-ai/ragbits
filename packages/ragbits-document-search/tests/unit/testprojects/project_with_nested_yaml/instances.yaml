@@ -1,17 +1,27 @@
-embedder:
-  type: NoopEmbeddings
+reranker:
+  type: NoopReranker
+  config:
+    default_options:
+      top_n: 23
 vector_store:
   type: InMemoryVectorStore
   config:
+    embedder:
+      type: NoopEmbedder
     default_options:
       k: 147
 document_search:
   type: DocumentSearch
   config:
-    embedder:
-      type: NoopEmbeddings
+    reranker:
+      type: NoopReranker
+      config:
+        default_options:
+          top_n: 17
     vector_store:
       type: InMemoryVectorStore
       config:
+        embedder:
+          type: NoopEmbedder
         default_options:
           k: 12

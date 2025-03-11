@@ -1,13 +1,18 @@
+import warnings
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import ClassVar, TypeVar
+from uuid import UUID
 
+import pydantic
 from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
-from ragbits.core.metadata_stores.base import MetadataStore
+from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
+from ragbits.core.utils.pydantic import SerializableBytes
 
 WhereQuery = dict[str, str | int | float | bool]
 
@@ -15,12 +20,36 @@ WhereQuery = dict[str, str | int | float | bool]
 class VectorStoreEntry(BaseModel):
     """
     An object representing a vector database entry.
+    Contains text and/or image for embedding + metadata.
     """
 
-    id: str
-    key: str
-    vector: list[float]
-    metadata: dict
+    id: UUID
+    text: str | None = None
+    image_bytes: SerializableBytes | None = None
+    metadata: dict = {}
+
+    @pydantic.model_validator(mode="after")
+    def text_or_image_required(self) -> Self:
+        """
+        Validates that either text or image_bytes are provided.
+
+        Raises:
+            ValueError: If neither text nor image_bytes are provided.
+        """
+        if not self.text and not self.image_bytes:
+            raise ValueError("Either text or image_bytes must be provided.")
+        return self
+
+
+class VectorStoreResult(BaseModel):
+    """
+    An object representing a query result from a vector store.
+    Contains the entry, its vectors, and the similarity score.
+    """
+
+    entry: VectorStoreEntry
+    vectors: dict[str, list[float]]  # Maps embedding type to vector
+    score: float
 
 
 class VectorStoreOptions(Options):
@@ -44,48 +73,6 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
     default_module: ClassVar = vector_stores
     configuration_key: ClassVar = "vector_store"
 
-    def __init__(
-        self,
-        default_options: VectorStoreOptionsT | None = None,
-        metadata_store: MetadataStore | None = None,
-    ) -> None:
-        """
-        Constructs a new VectorStore instance.
-
-        Args:
-            default_options: The default options for querying the vector store.
-            metadata_store: The metadata store to use.
-        """
-        super().__init__(default_options=default_options)
-        self._metadata_store = metadata_store
-
-    @classmethod
-    def from_config(cls, config: dict) -> Self:
-        """
-        Initializes the class with the provided configuration.
-
-        Args:
-            config: A dictionary containing configuration details for the class.
-
-        Returns:
-            An instance of the class initialized with the provided configuration.
-
-        Raises:
-            ValidationError: The metadata_store configuration doesn't follow the expected format.
-            InvalidConfigError: The metadata_store class can't be found or is not the correct type.
-        """
-        default_options = config.pop("default_options", None)
-        options = cls.options_cls(**default_options) if default_options else None
-
-        store_config = config.pop("metadata_store", None)
-        store = (
-            MetadataStore.subclass_from_config(ObjectContructionConfig.model_validate(store_config))
-            if store_config
-            else None
-        )
-
-        return cls(**config, default_options=options, metadata_store=store)
-
     @abstractmethod
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -96,12 +83,19 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    async def retrieve(self, vector: list[float], options: VectorStoreOptionsT | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(
+        self,
+        text: str | None = None,
+        image: bytes | None = None,
+        options: VectorStoreOptionsT | None = None,
+    ) -> list[VectorStoreResult]:
         """
-        Retrieve entries from the vector store.
+        Retrieve entries from the vector store most similar to the provided entry.
+        Requires either text or image to be provided.
 
         Args:
-            vector: The vector to search for.
+            text: The text to query the vector store with.
+            image: The image to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
@@ -109,7 +103,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
     @abstractmethod
-    async def remove(self, ids: list[str]) -> None:
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
@@ -133,3 +127,86 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         Returns:
             The entries.
         """
+
+
+class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
+    """
+    Base class for vector stores that takes an embedder as an argument.
+    """
+
+    def __init__(
+        self,
+        embedder: Embedder,
+        default_options: VectorStoreOptionsT | None = None,
+        embedding_name_text: str = "text",
+        embedding_name_image: str = "image",
+    ) -> None:
+        """
+        Constructs a new VectorStore instance.
+
+        Args:
+            embedder: The embedder to use for converting entries to vectors.
+            default_options: The default options for querying the vector store.
+            embedder: The embedder to use for converting entries to vectors.
+            embedding_name_text: The name of the embedding for text.
+            embedding_name_image: The name of the embedding for images.
+        """
+        super().__init__(default_options=default_options)
+        self._embedder = embedder
+        self._embedding_name_text = embedding_name_text
+        self._embedding_name_image = embedding_name_image
+
+    async def _create_embeddings(
+        self, entries: list[VectorStoreEntry] | list[VectorStoreEntry]
+    ) -> dict[UUID, dict[str, list[float]]]:
+        """
+        Create embeddings for the given entry.
+
+        Args:
+            entries: The entries to create embeddings for.
+
+        Returns:
+            The embeddings mapped by entry ID. The format for each entry is the same
+                as the one in VectorStoreResult.vectors.
+        """
+        text_entries = {e.id: e.text for e in entries if e.text}
+        image_entries = {e.id: e.image_bytes for e in entries if e.image_bytes}
+
+        embeddings: defaultdict[UUID, dict[str, list[float]]] = defaultdict(dict)
+        if text_entries:
+            embedded = await self._embedder.embed_text(list(text_entries.values()))
+            for i, id in enumerate(text_entries.keys()):
+                embeddings[id][self._embedding_name_text] = embedded[i]
+
+        if image_entries and self._embedder.image_support():
+            embedded = await self._embedder.embed_image(list(image_entries.values()))
+            for i, id in enumerate(image_entries.keys()):
+                embeddings[id][self._embedding_name_image] = embedded[i]
+
+        image_only_ids = set(image_entries.keys()) - set(text_entries.keys())
+        if image_only_ids and not self._embedder.image_support():
+            warnings.warn(
+                "Can't embed the following image-only entries "
+                f"as the embedder doesn't support images: {image_only_ids}"
+            )
+
+        return dict(embeddings)
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        default_options = config.pop("default_options", None)
+        options = cls.options_cls(**default_options) if default_options else None
+
+        embedder_config = config.pop("embedder")
+        embedder: Embedder = Embedder.subclass_from_config(ObjectContructionConfig.model_validate(embedder_config))
+
+        return cls(**config, default_options=options, embedder=embedder)

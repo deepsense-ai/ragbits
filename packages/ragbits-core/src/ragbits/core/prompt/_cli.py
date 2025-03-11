@@ -36,13 +36,13 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
 @prompts_app.command()
 def lab(
     file_pattern: str = core_config.prompt_path_pattern,
-    llm_factory: str = core_config.default_llm_factories[LLMType.TEXT],
+    llm_factory: str = core_config.llm_preference_factories[LLMType.TEXT],
 ) -> None:
     """
     Launches the interactive application for listing, rendering, and testing prompts
     defined within the current project.
 
-    For more information, see the [Prompts Lab documentation](../how-to/prompts_lab.md).
+    For more information, see the [Prompts Lab documentation](../how-to/core/prompts_lab.md).
     """
     from ragbits.core.prompt.lab.app import lab_app
 
@@ -58,7 +58,7 @@ def generate_promptfoo_configs(
     """
     Generates the configuration files for the PromptFoo prompts.
 
-    For more information, see the [Promptfoo integration documentation](../how-to/integrations/promptfoo.md).
+    For more information, see the [Promptfoo integration documentation](../how-to/core/promptfoo.md).
     """
     from ragbits.core.prompt.promptfoo import generate_configs
 
@@ -79,7 +79,7 @@ def render(prompt_path: str, payload: str | None = None) -> None:
 def execute(
     prompt_path: str,
     payload: str | None = None,
-    llm_factory: str = core_config.default_llm_factories[LLMType.TEXT],
+    llm_factory: str = core_config.llm_preference_factories[LLMType.TEXT],
 ) -> None:
     """
     Executes a prompt using the specified prompt class and LLM factory.

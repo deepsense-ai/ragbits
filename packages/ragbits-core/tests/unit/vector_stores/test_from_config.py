@@ -3,7 +3,6 @@ from chromadb import ClientAPI
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 
-from ragbits.core.metadata_stores.in_memory import InMemoryMetadataStore
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
@@ -16,12 +15,12 @@ def test_subclass_from_config():
         {
             "type": "ragbits.core.vector_stores:InMemoryVectorStore",
             "config": {
-                "metadata_store": {
-                    "type": "ragbits.core.metadata_stores:InMemoryMetadataStore",
-                },
                 "default_options": {
                     "k": 10,
                     "max_distance": 0.22,
+                },
+                "embedder": {
+                    "type": "ragbits.core.embeddings.noop:NoopEmbedder",
                 },
             },
         }
@@ -31,11 +30,17 @@ def test_subclass_from_config():
     assert isinstance(store.default_options, VectorStoreOptions)
     assert store.default_options.k == 10
     assert store.default_options.max_distance == 0.22
-    assert isinstance(store._metadata_store, InMemoryMetadataStore)
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "InMemoryVectorStore"})
+    config = ObjectContructionConfig.model_validate(
+        {
+            "type": "InMemoryVectorStore",
+            "config": {
+                "embedder": {"type": "NoopEmbedder"},
+            },
+        }
+    )
     store = VectorStore.subclass_from_config(config)  # type: ignore
     assert isinstance(store, InMemoryVectorStore)
 
@@ -51,6 +56,7 @@ def test_subclass_from_config_chroma_client():
                     "k": 10,
                     "max_distance": 0.22,
                 },
+                "embedder": {"type": "NoopEmbedder"},
             },
         }
     )
@@ -79,6 +85,7 @@ def test_subclass_from_config_qdrant_client():
                     "k": 10,
                     "max_distance": 0.22,
                 },
+                "embedder": {"type": "NoopEmbedder"},
             },
         }
     )

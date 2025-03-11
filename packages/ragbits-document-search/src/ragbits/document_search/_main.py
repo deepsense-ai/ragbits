@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, ClassVar
@@ -9,15 +8,14 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
-from ragbits.core.embeddings import Embeddings, EmbeddingType
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import NoDefaultConfigError, ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, ImageElement
-from ragbits.document_search.documents.source_resolver import SourceResolver
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,
@@ -45,7 +43,6 @@ class DocumentSearchConfig(BaseModel):
     Schema for for the dict taken by DocumentSearch.from_config method.
     """
 
-    embedder: ObjectContructionConfig
     vector_store: ObjectContructionConfig
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
@@ -70,7 +67,6 @@ class DocumentSearch(WithConstructionConfig):
     default_module: ClassVar = document_search
     configuration_key: ClassVar = "document_search"
 
-    embedder: Embeddings
     vector_store: VectorStore
     query_rephraser: QueryRephraser
     reranker: Reranker
@@ -79,14 +75,12 @@ class DocumentSearch(WithConstructionConfig):
 
     def __init__(
         self,
-        embedder: Embeddings,
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
         processing_strategy: ProcessingExecutionStrategy | None = None,
     ) -> None:
-        self.embedder = embedder
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
@@ -110,7 +104,6 @@ class DocumentSearch(WithConstructionConfig):
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        embedder: Embeddings = Embeddings.subclass_from_config(model.embedder)
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
@@ -119,52 +112,52 @@ class DocumentSearch(WithConstructionConfig):
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(embedder, vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
 
     @classmethod
-    def subclass_from_defaults(
-        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    def preferred_subclass(
+        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
     ) -> Self:
         """
-        Tries to create an instance by looking at default configuration file, and default factory function.
-        Takes optional overrides for both, which takes a higher precedence.
+        Tries to create an instance by looking at project's component prefferences, either from YAML
+        or from the factory. Takes optional overrides for both, which takes a higher precedence.
 
         Args:
-            defaults: The CoreConfig instance containing default factory and configuration details.
+            config: The CoreConfig instance containing preferred factory and configuration details.
             factory_path_override: A string representing the path to the factory function
                 in the format of "module.submodule:factory_name".
             yaml_path_override: A string representing the path to the YAML file containing
                 the Ragstack instance configuration. Looks for the configuration under the key "document_search",
-                and if not found, instantiates the class with the default configuration for each component.
+                and if not found, instantiates the class with the preferred configuration for each component.
 
         Raises:
             InvalidConfigError: If the default factory or configuration can't be found.
         """
         if yaml_path_override:
-            config = get_config_from_yaml(yaml_path_override)
+            preferrences = get_config_from_yaml(yaml_path_override)
 
             # Look for explicit document search configuration
-            if type_config := config.get(cls.configuration_key):
+            if type_config := preferrences.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
 
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(config)
+            # Instantate the class with the preferred configuration for each component
+            return cls.from_config(preferrences)
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
 
-        if default_factory := defaults.default_factories.get(cls.configuration_key):
-            return cls.subclass_from_factory(default_factory)
+        if preferred_factory := config.component_preference_factories.get(cls.configuration_key):
+            return cls.subclass_from_factory(preferred_factory)
 
-        if defaults.default_instaces_config_path is not None:
+        if config.component_preference_config_path is not None:
             # Look for explicit document search configuration
-            if default_config := defaults.default_instances_config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
+            if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
 
-            # Instantate the class with the default configuration for each component
-            return cls.from_config(defaults.default_instances_config)
+            # Instantate the class with the prefereed configuration for each component
+            return cls.from_config(config.preferred_instances_config)
 
-        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
     @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
@@ -182,12 +175,11 @@ class DocumentSearch(WithConstructionConfig):
         queries = await self.query_rephraser.rephrase(query)
         elements = []
         for rephrased_query in queries:
-            search_vector = await self.embedder.embed_text([rephrased_query])
-            entries = await self.vector_store.retrieve(
-                vector=search_vector[0],
+            results = await self.vector_store.retrieve(
+                text=rephrased_query,
                 options=VectorStoreOptions(**config.vector_store_kwargs),
             )
-            elements.extend([Element.from_vector_db_entry(entry) for entry in entries])
+            elements.append([Element.from_vector_db_entry(result.entry) for result in results])
 
         return await self.reranker.rerank(
             elements=elements,
@@ -248,31 +240,4 @@ class DocumentSearch(WithConstructionConfig):
         Args:
             elements: The list of Elements to insert.
         """
-        elements_with_text = [element for element in elements if element.key]
-        images_with_text = [element for element in elements_with_text if isinstance(element, ImageElement)]
-        vectors = await self.embedder.embed_text([element.key for element in elements_with_text])  # type: ignore
-
-        image_elements = [element for element in elements if isinstance(element, ImageElement)]
-
-        entries = [
-            element.to_vector_db_entry(vector, EmbeddingType.TEXT)
-            for element, vector in zip(elements_with_text, vectors, strict=False)
-        ]
-        not_embedded_image_elements = [
-            image_element for image_element in image_elements if image_element not in images_with_text
-        ]
-
-        if image_elements and self.embedder.image_support():
-            image_vectors = await self.embedder.embed_image([element.image_bytes for element in image_elements])
-            entries.extend(
-                [
-                    element.to_vector_db_entry(vector, EmbeddingType.IMAGE)
-                    for element, vector in zip(image_elements, image_vectors, strict=False)
-                ]
-            )
-            not_embedded_image_elements = []
-
-        for image_element in not_embedded_image_elements:
-            warnings.warn(f"Image: {image_element.id} could not be embedded")
-
-        await self.vector_store.store(entries)
+        await self.vector_store.store([element.to_vector_db_entry() for element in elements])

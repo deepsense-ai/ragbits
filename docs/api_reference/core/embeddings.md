@@ -1,7 +1,7 @@
-# Embeddings
+# Embedders
 
-::: ragbits.core.embeddings.Embeddings
+::: ragbits.core.embeddings.Embedder
 
-::: ragbits.core.embeddings.local.LocalEmbeddings
+::: ragbits.core.embeddings.local.LocalEmbedder
 
-::: ragbits.core.embeddings.litellm.LiteLLMEmbeddings
+::: ragbits.core.embeddings.litellm.LiteLLMEmbedder

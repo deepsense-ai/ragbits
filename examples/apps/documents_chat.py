@@ -13,7 +13,7 @@ import gradio as gr
 from chromadb import PersistentClient
 from pydantic import BaseModel
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbeddings
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
@@ -96,13 +96,13 @@ class RAGSystemWithUI:
         self._llm = LiteLLM(model_name, use_structured_output=True)
 
     def _prepare_document_search(self, database_path: str, index_name: str) -> None:
-        embedder = LiteLLMEmbeddings()
+        embedder = LiteLLMEmbedder()
         vector_store = ChromaVectorStore(
             client=PersistentClient(database_path),
             index_name=index_name,
+            embedder=embedder,
         )
         self.document_search = DocumentSearch(
-            embedder=embedder,
             vector_store=vector_store,
         )
 

@@ -1,7 +1,7 @@
 import litellm
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embeddings
+from ragbits.core.embeddings import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
     EmbeddingEmptyResponseError,
@@ -12,7 +12,7 @@ from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LiteLLMEmbeddingsOptions(Options):
+class LiteLLMEmbedderOptions(Options):
     """
     Dataclass that represents available call options for the LiteLLMEmbeddingClient client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding#optional-litellm-fields).
@@ -24,17 +24,17 @@ class LiteLLMEmbeddingsOptions(Options):
     encoding_format: str | None | NotGiven = NOT_GIVEN
 
 
-class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
+class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """
 
-    options_cls = LiteLLMEmbeddingsOptions
+    options_cls = LiteLLMEmbedderOptions
 
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        default_options: LiteLLMEmbeddingsOptions | None = None,
+        default_options: LiteLLMEmbedderOptions | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
         api_version: str | None = None,
@@ -45,7 +45,7 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
-            default_options: Defualt options to pass to the LiteLLM API.
+            default_options: Default options to pass to the LiteLLM API.
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
@@ -58,7 +58,7 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         self.api_key = api_key
         self.api_version = api_version
 
-    async def embed_text(self, data: list[str], options: LiteLLMEmbeddingsOptions | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 

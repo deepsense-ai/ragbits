@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add support for images in few shot prompts (#155)
+- BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
+- Add instruction on how to use local servers for LLMs (#395).
+
+## 0.9.0 (2025-02-25)
+
+- Add support to fastembed dense & sparse embeddings.
+- Rename "default configuration" to "preferred configuration" (#361).
+- Allow to pass str or dict to LLM.generate() (#286)
+- Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
+- Rename all embedders to have `Embedder` in their name (instead of `Embeddings`).
+
 ## 0.8.0 (2025-01-29)
 
 ### Added
@@ -89,7 +101,7 @@
 ### Added
 
 - Initial release of the package.
-- Introduce core components: Prompts, LLMs, Embeddings and VectorStores.
+- Introduce core components: Prompts, LLMs, Embedder and VectorStores.
 - `Prompt` class integration with promptfoo.
 - LiteLLM integration.
 - ChromaDB integration.

@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Configurable DocumentSearch
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbeddings` class to embed the documents and the query, the `ChromaVectorStore` class to store
+We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `ChromaVectorStore` class to store
 the embeddings, and the `LiteLLMReranker` class to rerank the search results. We will also use the `LLMQueryRephraser`
 class to rephrase the query.
 
@@ -60,9 +60,6 @@ documents = [
 ]
 
 config = {
-    "embedder": {
-        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
-    },
     "vector_store": {
         "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
         "config": {
@@ -78,8 +75,8 @@ config = {
                 "k": 3,
                 "max_distance": 1.2,
             },
-            "metadata_store": {
-                "type": "InMemoryMetadataStore",
+            "embedder": {
+                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
             },
         },
     },
@@ -103,7 +100,9 @@ config = {
                     "model_name": "gpt-4-turbo",
                 },
             },
-            "prompt": "QueryRephraserPrompt",
+            "prompt": {
+                "type": "QueryRephraserPrompt",
+            },
         },
     },
 }

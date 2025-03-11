@@ -5,10 +5,9 @@ description = "Ragbits development workspace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "asyncpg>=0.30.0",
     "ragbits-cli",
-    "ragbits-core[chroma,lab,local,otel,qdrant]",
-    "ragbits-document-search[gcs,huggingface,distributed]",
+    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector]",
+    "ragbits-document-search[gcs,huggingface,distributed,azure,s3]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
@@ -16,6 +15,7 @@ dependencies = [
 
 [tool.uv]
 dev-dependencies = [
+    "aiosqlite>=0.21.0",
     "pre-commit~=3.8.0",
     "pytest~=8.3.3",
     "pytest-cov~=5.0.0",

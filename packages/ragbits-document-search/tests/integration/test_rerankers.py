@@ -23,15 +23,17 @@ async def test_litellm_cohere_reranker_rerank() -> None:
         default_options=options,
     )
     elements = [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        [
+            TextElement(
+                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+        ]
     ]
     query = "Test query"
 
@@ -48,15 +50,17 @@ async def test_answerdotai_reranker_rerank() -> None:
         model_type="cross-encoder",
     )
     elements = [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        [
+            TextElement(
+                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+        ]
     ]
     query = "Test query"
 

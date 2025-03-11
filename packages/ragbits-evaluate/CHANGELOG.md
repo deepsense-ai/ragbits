@@ -1,6 +1,17 @@
 # CHANGELOG
 
 ## Unreleased
+- Compability with the new Vector Store interface from ragbits-core (#288)
+
+- chore: fix typo in README.
+
+## 0.9.0 (2025-02-25)
+
+### Changed
+
+- ragbits-core updated to version v0.9.0
+- Add cli for document search evaluation added (#356)
+- Add local data loader (#334).
 
 ## 0.8.0 (2025-01-29)
 

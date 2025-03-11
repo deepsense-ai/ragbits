@@ -1,6 +1,6 @@
 [project]
 name = "ragbits"
-version = "0.8.0"
+version = "0.9.0"
 description = "Building blocks for rapid development of GenAI applications"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["ragbits-document-search==0.8.0", "ragbits-cli==0.8.0", "ragbits-evaluate==0.8.0", "ragbits-guardrails==0.8.0", "ragbits-conversations==0.8.0", "ragbits-core==0.8.0"]
+dependencies = ["ragbits-document-search==0.9.0", "ragbits-cli==0.9.0", "ragbits-evaluate==0.9.0", "ragbits-guardrails==0.9.0", "ragbits-conversations==0.9.0", "ragbits-core==0.9.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -46,8 +46,16 @@ chroma = [
 huggingface = [
     "datasets~=3.0.1",
 ]
+s3 = [
+    "boto3~=1.35.42",
+]
 gcs = [
     "gcloud-aio-storage~=9.3.0"
+]
+azure=[
+    "azure-storage-blob~=12.24.1",
+    "azure-identity~=1.19.0",
+    "azure-core~=1.32.0"
 ]
 lab = [
     "gradio~=4.44.0",
@@ -74,6 +82,9 @@ relari = [
 ]
 distributed = [
     "ray>=2.39.0",
+]
+fastembed = [
+    "fastembed>=0.4.2"
 ]
 
 [build-system]

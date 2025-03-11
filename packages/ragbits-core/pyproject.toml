@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.8.0"
+version = "0.9.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -54,6 +54,9 @@ local = [
     "transformers~=4.44.2",
     "numpy~=1.26.0"
 ]
+fastembed = [
+    "fastembed>=0.4.2"
+]
 lab = [
     "gradio~=4.44.0",
 ]
@@ -65,6 +68,9 @@ otel = [
 ]
 qdrant = [
     "qdrant-client~=1.12.1",
+]
+pgvector = [
+    "asyncpg>=0.30.0",
 ]
 
 [tool.uv]

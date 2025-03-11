@@ -5,16 +5,21 @@ repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
 copyright: Copyright &copy; 2024 deepsense.ai
 nav:
-  - rabgbits: index.md
+  - ragbits: index.md
   - Quick Start:
       - quickstart/quickstart1_prompts.md
       - quickstart/quickstart2_rag.md
   - How-to Guides:
-      - how-to/use_prompting.md
-      - how-to/prompts_lab.md
-      - how-to/use_guardrails.md
-      - how-to/integrations/promptfoo.md
-      - how-to/use_pgVector_store.md
+      - Core:
+        - how-to/core/use_prompting.md
+        - how-to/core/use_images_in_prompts.md
+        - how-to/core/component_preferrences.md
+        - how-to/core/prompts_lab.md
+        - how-to/core/promptfoo.md
+        - how-to/core/use_tracing.md
+        - how-to/core/use_llms.md
+        - how-to/core/use_local_llms.md
+        - how-to/core/use_pgVector_store.md
       - Document Search:
           - how-to/document_search/async_processing.md
           - how-to/document_search/create_custom_execution_strategy.md
@@ -22,6 +27,7 @@ nav:
           - how-to/document_search/use_rephraser.md
           - how-to/document_search/use_reranker.md
           - how-to/document_search/distributed_ingestion.md
+      - Guardrails: how-to/guardrails/use_guardrails.md
       - Evaluate:
           - how-to/evaluate/optimize.md
           - how-to/evaluate/generate_dataset.md
@@ -44,9 +50,14 @@ nav:
           - Ingestion:
             - api_reference/document_search/processing.md
             - api_reference/document_search/execution_strategies.md
+          - Retrieval:
+            - api_reference/document_search/retrieval/rephrasers.md
+            - api_reference/document_search/retrieval/rerankers.md
       - Conversations:
           - api_reference/conversations/compressors/base.md
           - api_reference/conversations/compressors/llm.md
+      - Guardrails:
+          - api_reference/guardrails/index.md
 hooks:
   - mkdocs_hooks.py
 theme:
