@@ -1,3 +1,5 @@
+import base64
+import imghdr
 import textwrap
 from abc import ABCMeta
 from collections.abc import Callable
@@ -8,7 +10,8 @@ from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
-from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
+from .exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.parsers import (DEFAULT_PARSERS, build_pydantic_parser)
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
@@ -77,7 +80,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None) -> list[bytes | str]:
+    def _get_images_from_input_data(cls, input_data: InputT | None | str) -> list[bytes | str]:
         images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
@@ -137,7 +140,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instace_few_shots: list[FewShotExample[InputT, OutputT]] = []
+        self._instance_few_shots: list[FewShotExample[InputT, OutputT]] = []
         super().__init__()
 
     @property
@@ -148,6 +151,12 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
+        user_content = (
+            [{"type": "text", "text": self.rendered_user_prompt}]
+            + [self._create_message_with_image(image) for image in self.images]
+            if self.images
+            else self.rendered_user_prompt
+        )
         chat = [
             *(
                 [{"role": "system", "content": self.rendered_system_prompt}]
@@ -155,7 +164,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": self.rendered_user_prompt},
+            {"role": "user", "content": user_content},
         ]
         return chat
 
@@ -172,7 +181,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
         """
-        self._instace_few_shots.append((user_message, assistant_message))
+        self._instance_few_shots.append((user_message, assistant_message))
         return self
 
     def list_few_shots(self) -> ChatFormat:
@@ -183,9 +192,17 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
         result: ChatFormat = []
-        for user_message, assistant_message in self.few_shots + self._instace_few_shots:
+        user_content: str | list[dict[str, Any]]
+        for user_message, assistant_message in self.few_shots + self._instance_few_shots:
             if not isinstance(user_message, str):
-                user_content = self._render_template(self.user_prompt_template, user_message)
+                rendered_text_message = self._render_template(self.user_prompt_template, user_message)
+                images_in_input_data = self._get_images_from_input_data(user_message)
+                if images_in_input_data:
+                    user_content = [{"type": "text", "text": rendered_text_message}] + [
+                        self._create_message_with_image(image) for image in images_in_input_data
+                    ]
+                else:
+                    user_content = rendered_text_message
             else:
                 user_content = user_message
 
@@ -198,13 +215,35 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def list_images(self) -> list[bytes | str]:
+    def list_images(self) -> list[str]:
         """
-        Returns the schema of the list of images compatible with LLM APIs
+        Returns the images in form of URLs or base64 encoded strings.
+
         Returns:
-            list of dictionaries
+            list of images
         """
-        return self.images
+        return [
+            content["image_url"]["url"]
+            for message in self.chat
+            for content in message["content"]
+            if isinstance(message["content"], list) and content["type"] == "image_url"
+        ]
+
+    @staticmethod
+    def _create_message_with_image(image: str | bytes) -> dict:
+        if isinstance(image, bytes):
+            image_type = imghdr.what(None, image)
+            if not image_type:
+                raise PromptWithImagesOfInvalidFormat()
+            image_url = f"data:image/{image_type};base64,{base64.b64encode(image).decode('utf-8')}"
+        else:
+            image_url = image
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": image_url,
+            },
+        }
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """

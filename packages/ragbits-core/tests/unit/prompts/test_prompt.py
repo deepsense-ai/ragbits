@@ -4,6 +4,7 @@ import pydantic
 import pytest
 
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
 
 
 class _PromptInput(pydantic.BaseModel):
@@ -136,7 +137,22 @@ def test_image_prompt(field_value: bytes | str, image_present: bool):
         image_input_fields = ["image"]
 
     prompt = ImagePrompt(_ImagePromptInput(image=field_value))
-    assert (len(prompt.list_images()) > 0) == image_present
+    assert len(prompt.list_images()) == (1 if image_present else 0)
+
+
+def test_image_prompt_format():
+    """Tests the prompt format using an image"""
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
+    chat = prompt.chat
+    assert len(chat) == 1
+    assert chat[0]["role"] == "user"
+    assert chat[0]["content"][0]["text"] == "What is on this image?"
+    assert chat[0]["content"][1]["type"] == "image_url"
 
 
 @pytest.mark.parametrize(
@@ -157,6 +173,31 @@ def test_images_prompt(field_value: list[bytes | str], expected_number: int):
 
     prompt = ImagesPrompt(_ImagesPromptInput(images=field_value))
     assert len(prompt.list_images()) == expected_number
+
+
+def test_image_wrong_format():
+    """Tests the prompt creation using an invalid image"""
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
+    with pytest.raises(PromptWithImagesOfInvalidFormat):
+        prompt.chat  # noqa: B018
+
+
+def test_image_encoding():
+    """Tests whether the image has a proper encoding"""
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
+    images_list = prompt.list_images()
+    assert len(images_list) == 1
+    assert images_list[0][11:14] == "png"
 
 
 def test_prompt_with_no_input_type():

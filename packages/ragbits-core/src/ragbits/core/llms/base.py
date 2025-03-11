@@ -1,5 +1,4 @@
 import enum
-import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import ClassVar, Generic, TypeVar, cast, overload
@@ -104,7 +103,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt = SimplePrompt(prompt)
 
         return await self._call(
-            conversation=self._format_chat_for_llm(prompt),
+            prompt=prompt,
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -257,7 +256,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt = SimplePrompt(prompt)
 
         response = await self._call_streaming(
-            conversation=self._format_chat_for_llm(prompt),
+            prompt=prompt,
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -265,15 +264,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         async for text_piece in response:
             yield text_piece
 
-    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
-        if prompt.list_images():
-            wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
-        return prompt.chat
-
     @abstractmethod
     async def _call(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -282,7 +276,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Calls LLM inference API.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
@@ -294,7 +288,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @abstractmethod
     async def _call_streaming(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -303,7 +297,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Calls LLM inference API with output streaming.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
