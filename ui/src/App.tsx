@@ -12,6 +12,7 @@ export default function Component() {
     [],
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -20,13 +21,23 @@ export default function Component() {
       ...state,
       {
         name: "You",
-        message:
-          "Tell me statistics about capital of poland, like geographicaly, demographicaly etc. as much as you can",
+        message,
         isRTL: true,
       },
-    ]);
+    ]);   
 
-    const eventSource = new EventSource("http://localhost:8000/api/chat/1234");
+    const res = await fetch("http://localhost:8000/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        message,
+      }),
+    });
+
+    const data = await res.json();
+
+    const eventSource = new EventSource(
+      `http://localhost:8000/api/chat/${data.id}`,
+    );
 
     eventSource.onmessage = (event) => {
       const { data } = event;
@@ -81,6 +92,8 @@ export default function Component() {
             <PromptInputWithEnclosedActions
               isLoading={isLoading}
               submit={handleSubmit}
+              message={message}
+              setMessage={setMessage}
             />
           </div>
         </div>

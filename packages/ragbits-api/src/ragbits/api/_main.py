@@ -2,13 +2,16 @@ import asyncio
 import importlib
 from pathlib import Path
 import random
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import uvicorn
 
+# In-memory store for chat messages for developing purposes
+chats = {}
+counter = 1
 
 async def word_streamer(text: str):
     words = text.split()
@@ -57,15 +60,30 @@ class RagbitsAPI:
             return open(str(index_file)).read()
 
         @self.app.get("/api/chat/{id}", response_class=StreamingResponse)
-        async def chat() -> StreamingResponse:
-            response = await self.chat_module(question="Tell me statistics about capital of poland, like geographicaly, demographicaly etc. as much as you can")
+        async def chat(id: int) -> StreamingResponse:
+            question = chats.get(id)
+            if not question:
+                raise HTTPException(status_code=404, detail="Chat not found")
+
+            response = await self.chat_module(question=question)
             return StreamingResponse(word_streamer(response), media_type="text/event-stream")
         
-        # TODO: read data send by frontend
         @self.app.post("/api/chat", response_class=JSONResponse)
-        async def chat() -> JSONResponse:
-            id = str(random.randint(1000, 9999))
-            return JSONResponse(content={id: id})
+        async def chat(request: Request) -> JSONResponse:
+            global counter
+            
+            data = await request.json()
+            message = data.get("message")
+
+            if not message:
+                raise HTTPException(status_code=400, detail="Message is required")
+
+            print(counter)
+            chat_id = counter
+            chats[chat_id] = message
+            counter += 1
+            
+            return JSONResponse(content={"id": chat_id})
         
     
     def initialize_chat_module(self, chat_path: str):
