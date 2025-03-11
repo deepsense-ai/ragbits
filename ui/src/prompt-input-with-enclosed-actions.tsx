@@ -13,11 +13,13 @@ import PromptInput from "./prompt-input";
 interface ControlInputProps {
   isLoading: boolean;
   submit: () => Promise<() => void>;
+  message: string;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface PromptInputProps extends ControlInputProps {
-  prompt: string;
-  setPrompt: React.Dispatch<React.SetStateAction<string>>;
+  message: string;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface PromptInputAssetsProps {
@@ -66,8 +68,8 @@ const PromptInputAssets = ({
 };
 
 export function PromptInputFullLineComponent({
-  prompt,
-  setPrompt,
+  message,
+  setMessage,
   submit,
   isLoading,
 }: PromptInputProps) {
@@ -80,9 +82,9 @@ export function PromptInputFullLineComponent({
     if (!prompt && !isLoading) return;
 
     submit();
-    setPrompt("");
+    setMessage("");
     inputRef?.current?.focus();
-  }, [prompt, setPrompt, isLoading, submit]);
+  }, [message, setMessage, isLoading, submit]);
 
   const onSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -182,11 +184,11 @@ export function PromptInputFullLineComponent({
         name="content"
         radius="lg"
         spellCheck={"false"}
-        value={prompt}
+        value={message}
         variant="flat"
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
-        onValueChange={setPrompt}
+        onValueChange={setMessage}
       />
       <div className="flex w-full flex-row items-center justify-between px-3 pb-3">
         <Tooltip showArrow content="Attach Files">
@@ -239,13 +241,13 @@ export function PromptInputFullLineComponent({
 export default function PromptInputFullLine({
   isLoading,
   submit,
+  message,
+  setMessage,
 }: ControlInputProps) {
-  const [prompt, setPrompt] = React.useState<string>("");
-
   return (
     <PromptInputFullLineComponent
-      prompt={prompt}
-      setPrompt={setPrompt}
+      message={message}
+      setMessage={setMessage}
       isLoading={isLoading}
       submit={submit}
     />

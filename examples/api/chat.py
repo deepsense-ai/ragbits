@@ -35,7 +35,7 @@ class ChatPrompt(Prompt[ChatInput, ChatOutput]):
     """
 
     system_prompt = """
-    You are a wise person that answers questions. The answer should be serious and true
+    You are a wise person that answers questions. The answer should be serious and based on true statistics/knowledge.
     """
 
     user_prompt = """
