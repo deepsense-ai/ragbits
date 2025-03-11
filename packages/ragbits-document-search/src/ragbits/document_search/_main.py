@@ -13,10 +13,11 @@ from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectCon
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, IntermediateImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.intermediate_providers.images import ImageProvider
 from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,
     SequentialProcessing,
@@ -72,6 +73,7 @@ class DocumentSearch(WithConstructionConfig):
     reranker: Reranker
     document_processor_router: DocumentProcessorRouter
     processing_strategy: ProcessingExecutionStrategy
+    intermediate_image_provider: ImageProvider
 
     def __init__(
         self,
@@ -80,12 +82,14 @@ class DocumentSearch(WithConstructionConfig):
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
         processing_strategy: ProcessingExecutionStrategy | None = None,
+        intermediate_image_provider: ImageProvider | None = None,  # Fixed argument
     ) -> None:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
         self.processing_strategy = processing_strategy or SequentialProcessing()
+        self.intermediate_image_provider = intermediate_image_provider or ImageProvider.from_config()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -212,6 +216,17 @@ class DocumentSearch(WithConstructionConfig):
         elements = await self.processing_strategy.process_documents(
             sources, self.document_processor_router, document_processor
         )
+        intermediate_image_elements = [element for element in elements if isinstance(element, IntermediateImageElement)]
+        image_elements = []
+
+        for element in intermediate_image_elements:
+            image_element = await self.intermediate_image_provider.process(element)
+            image_elements.append(image_element)
+
+        elements = [
+            element for element in elements if not isinstance(element, IntermediateImageElement)
+        ] + image_elements
+
         await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
 

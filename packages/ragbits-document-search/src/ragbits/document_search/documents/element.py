@@ -19,6 +19,26 @@ class ElementLocation(BaseModel):
     coordinates: dict | None = None
 
 
+class IntermediateElement(BaseModel):
+    """
+    Represents an intermediate element extracted from a document before final processing.
+    """
+
+    element_type: str
+    document_meta: DocumentMeta
+    location: ElementLocation | None = None
+
+
+class IntermediateImageElement(IntermediateElement):
+    """
+    Represents an intermediate image element extracted from a document before final processing.
+    """
+
+    element_type: str = "image"
+    image_bytes: bytes
+    ocr_extracted_text: str
+
+
 class Element(BaseModel, ABC):
     """
     An object representing an element in a document.
