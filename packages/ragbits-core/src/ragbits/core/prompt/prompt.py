@@ -10,8 +10,9 @@ from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
+
 from .exceptions import PromptWithImagesOfInvalidFormat
-from ragbits.core.prompt.parsers import (DEFAULT_PARSERS, build_pydantic_parser)
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
