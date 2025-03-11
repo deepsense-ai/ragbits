@@ -10,10 +10,10 @@ from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.documents.element import Element, IntermediateImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.providers.unstructured.utils import (
-    ImageDescriber,
+    # ImageDescriber,
     crop_and_convert_to_bytes,
     extract_image_coordinates,
     to_text_element,
@@ -64,7 +64,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self.image_describer: ImageDescriber | None = None
+        # self.image_describer: ImageDescriber | None = None
         self._llm = llm
 
     async def _chunk_and_convert(
@@ -83,7 +83,7 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
 
     async def _to_image_element(
         self, element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
-    ) -> ImageElement:
+    ) -> IntermediateImageElement:
         top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
         image = self._load_document_as_image(document_path)
         top_x, top_y, bottom_x, bottom_y = self._convert_coordinates(
@@ -91,13 +91,12 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         )
 
         img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-        prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
-        if self.image_describer is None:
-            llm_to_use = self._llm if self._llm is not None else get_preferred_llm(LLMType.VISION)
-            self.image_describer = ImageDescriber(llm_to_use)
-        image_description = await self.image_describer.get_image_description(prompt=prompt)
-        return ImageElement(
-            description=image_description,
+        # prompt = _ImagePrompt(_ImagePromptInput(images=[img_bytes]))
+        # if self.image_describer is None:
+        #     llm_to_use = self._llm if self._llm is not None else get_preferred_llm(LLMType.VISION)
+        #     self.image_describer = ImageDescriber(llm_to_use)
+        # image_description = await self.image_describer.get_image_description(prompt=prompt)
+        return IntermediateImageElement(
             ocr_extracted_text=element.text,
             image_bytes=img_bytes,
             document_meta=document_meta,
