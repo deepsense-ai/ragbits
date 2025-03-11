@@ -52,8 +52,8 @@ gcs = [
 huggingface = [
     "datasets~=3.0.1",
 ]
-distributed = [
-    "ray>=2.39.0",
+ray = [
+    "ray[data]~=2.43.0",
 ]
 s3 = [
     "boto3~=1.35.42",

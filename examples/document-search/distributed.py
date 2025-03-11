@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: Distributed Ingest
+Ragbits Document Search Example: Qdrant Distributed Ingest
 
 This example is based on the "Basic" example, but it demonstrates how to ingest documents in a distributed manner.
 The distributed ingestion is provided by "DistributedProcessing" which uses Ray to parallelize the ingestion process.
@@ -19,6 +19,21 @@ To run the script, execute the following command:
     ```bash
     uv run examples/document-search/distributed.py
     ```
+
+The script ingests data to the Qdrant instance running on `http://localhost:6333`. The recommended way
+to run it is using the official Docker image:
+
+    1. Run Qdrant Docker container:
+
+        ```bash
+        docker run -p 6333:6333 qdrant/qdrant
+        ```
+
+    2. Open Qdrant dashboard in your browser:
+
+        ```
+        http://localhost:6333/dashboard
+        ```
 """
 
 # /// script
@@ -31,9 +46,11 @@ To run the script, execute the following command:
 
 import asyncio
 
+from qdrant_client import AsyncQdrantClient
+
 from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.processor_strategies import DistributedProcessing
@@ -71,7 +88,14 @@ async def main() -> None:
     embedder = LiteLLMEmbedder(
         model="text-embedding-3-small",
     )
-    vector_store = InMemoryVectorStore(embedder=embedder)
+    vector_store = QdrantVectorStore(
+        client=AsyncQdrantClient(
+            host="localhost",
+            port=6333,
+        ),
+        index_name="jokes",
+        embedder=embedder,
+    )
     processing_strategy = DistributedProcessing()
     document_search = DocumentSearch(
         vector_store=vector_store,

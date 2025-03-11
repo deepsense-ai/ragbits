@@ -14,13 +14,38 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
+class ProcessingExecutionTaskResult(BaseModel):
+    """
+    Represents the successful result of the documents processing execution.
+    """
+
+    class Config:  # noqa: D106
+        arbitrary_types_allowed = True
+
+    document_uri: str
+    response: list[Element] | BaseException
+
+
+class ProcessingExecutionSummaryResult(BaseModel):
+    """
+    Represents the successful result of the documents processing execution.
+    """
+
+    class Config:  # noqa: D106
+        arbitrary_types_allowed = True
+
+    document_uri: str
+    num_elements: int = 0
+    error: BaseException | None = None
+
+
 class ProcessingExecutionResult(BaseModel):
     """
     Represents the result of the documents processing execution.
     """
 
-    successful: list = Field(default_factory=list)
-    failed: list = Field(default_factory=list)
+    successful: list[ProcessingExecutionSummaryResult] = Field(default_factory=list)
+    failed: list[ProcessingExecutionSummaryResult] = Field(default_factory=list)
 
 
 class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
@@ -89,7 +114,7 @@ class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
         return await processor.process(document_meta)
 
     @staticmethod
-    async def _remove_entries_with_same_sources(elements: list[Element], vector_store: VectorStore) -> None:
+    async def _remove_elements(elements: list[Element], vector_store: VectorStore) -> None:
         """
         Remove entries from the vector store whose source id is present in the elements metadata.
 

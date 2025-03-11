@@ -1,10 +1,7 @@
+import asyncio
 from collections.abc import Iterable
 
-# try:
-#     import ray
-#     HAS_RAY = True
-# except ImportError:
-#     HAS_RAY = False
+from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
@@ -12,6 +9,8 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.processor_strategies.base import (
     ProcessingExecutionResult,
     ProcessingExecutionStrategy,
+    ProcessingExecutionSummaryResult,
+    ProcessingExecutionTaskResult,
 )
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
@@ -21,17 +20,31 @@ class DistributedProcessing(ProcessingExecutionStrategy):
     Processing execution strategy that processes documents on a cluster, using Ray.
     """
 
-    def __init__(self, batch_size: int = 10, num_retries: int = 3) -> None:
+    def __init__(
+        self,
+        cpu_batch_size: int = 1,
+        cpu_memory: float | None = None,
+        io_batch_size: int = 10,
+        io_memory: float | None = None,
+        num_retries: int = 3,
+    ) -> None:
         """
         Initialize the DistributedProcessing instance.
 
         Args:
-            batch_size: The size of the batch to process documents in.
-            num_retries: The number of retries per document processing task error.
+            cpu_batch_size: The batch size for CPU bound tasks (e.g. parsing).
+            cpu_memory: The heap memory in bytes to reserve for each parallel CPU bound tasks (e.g. parsing).
+            io_batch_size: The batch size for IO bound tasks (e.g. indexing).
+            io_memory: The heap memory in bytes to reserve for each parallel IO bound tasks (e.g. indexing).
+            num_retries: The number of retries for task error.
         """
         super().__init__(num_retries=num_retries)
-        self.batch_size = batch_size
+        self.cpu_batch_size = cpu_batch_size
+        self.cpu_memory = cpu_memory
+        self.io_batch_size = io_batch_size
+        self.io_memory = io_memory
 
+    @requires_dependencies(["ray.data"], "distributed")
     async def process(  # noqa: PLR6301
         self,
         documents: Iterable[DocumentMeta | Document | Source],
@@ -51,22 +64,137 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         Returns:
             The processing excution result.
         """
-        # @ray.remote
-        # def process_documents_remotely(documents: Iterable[DocumentMeta | Document | Source]) -> list[Element]:
-        #     async def process_batch() -> list[list[Element]]:
-        #         tasks = [
-        #             self._parse_document(document, processor_router, processor_overwrite) for document in documents
-        #         ]
-        #         return await asyncio.gather(*tasks)
+        import ray
 
-        #     results = asyncio.run(process_batch())
-        #     return sum(results, [])
+        def _parse(batch: dict[str, list[DocumentMeta | Document | Source]]) -> dict:
+            async def _main() -> dict:
+                document_uris = [
+                    document.metadata.id if isinstance(document, Document) else document.id
+                    for document in batch["item"]
+                ]
+                responses = await asyncio.gather(
+                    *[
+                        self._parse_document(
+                            document=document,
+                            processor_router=processor_router,
+                            processor_overwrite=processor_overwrite,
+                        )
+                        for document in batch["item"]
+                    ],
+                    return_exceptions=True,
+                )
+                return {
+                    "results": [
+                        ProcessingExecutionTaskResult(
+                            document_uri=uri,
+                            response=response,
+                        )
+                        for uri, response in zip(document_uris, responses, strict=False)
+                    ]
+                }
 
-        # tasks = []
-        # iterator = iter(documents)
+            return asyncio.run(_main())
 
-        # while batch := list(islice(iterator, self.batch_size)):
-        #     tasks.append(process_documents_remotely.remote(batch))
+        def _remove(batch: dict) -> dict:
+            async def _main() -> dict:
+                elements = [
+                    element
+                    for result in batch["results"]
+                    if not isinstance(result.response, BaseException)
+                    for element in result.response
+                ]
+                try:
+                    await self._remove_elements(
+                        elements=elements,
+                        vector_store=vector_store,
+                    )
+                except Exception as exc:
+                    batch["results"] = [
+                        ProcessingExecutionTaskResult(
+                            document_uri=result.document_uri,
+                            response=exc,
+                        )
+                        if not isinstance(result.response, BaseException)
+                        else result
+                        for result in batch["results"]
+                    ]
+                return batch
 
-        # elements = sum(await asyncio.gather(*tasks), [])
-        return ProcessingExecutionResult()
+            return asyncio.run(_main())
+
+        def _insert(batch: dict) -> dict:
+            async def _main() -> dict:
+                elements = [
+                    element
+                    for result in batch["results"]
+                    if not isinstance(result.response, BaseException)
+                    for element in result.response
+                ]
+                try:
+                    await self._insert_elements(
+                        elements=elements,
+                        vector_store=vector_store,
+                    )
+                except Exception as exc:
+                    batch["results"] = [
+                        ProcessingExecutionTaskResult(
+                            document_uri=result.document_uri,
+                            response=exc,
+                        )
+                        if not isinstance(result.response, BaseException)
+                        else result
+                        for result in batch["results"]
+                    ]
+                return batch
+
+            return asyncio.run(_main())
+
+        def _summarize(batch: dict) -> dict:
+            return {
+                "results": [
+                    ProcessingExecutionSummaryResult(
+                        document_uri=result.document_uri,
+                        error=result.response,
+                    )
+                    if isinstance(result.response, BaseException)
+                    else ProcessingExecutionSummaryResult(
+                        document_uri=result.document_uri,
+                        num_elements=len(result.response),
+                    )
+                    for result in batch["results"]
+                ]
+            }
+
+        dataset = (
+            ray.data.from_items(list(documents))
+            .map_batches(
+                fn=_parse,
+                batch_size=self.cpu_batch_size,
+                num_cpus=1,
+                memory=self.cpu_memory,
+                zero_copy_batch=True,
+            )
+            .map_batches(
+                fn=_remove,
+                batch_size=self.io_batch_size,
+                num_cpus=0,
+                memory=self.io_memory,
+            )
+            .map_batches(
+                fn=_insert,
+                batch_size=self.io_batch_size,
+                num_cpus=0,
+                memory=self.io_memory,
+            )
+            .map_batches(
+                fn=_summarize,
+                batch_size=self.io_batch_size,
+                num_cpus=0,
+                memory=self.io_memory,
+                zero_copy_batch=True,
+            )
+        )
+        return ProcessingExecutionResult(
+            successful=[data["results"] for data in dataset.filter(lambda data: not data["results"].error).take_all()],
+            failed=[data["results"] for data in dataset.filter(lambda data: data["results"].error).take_all()],
+        )

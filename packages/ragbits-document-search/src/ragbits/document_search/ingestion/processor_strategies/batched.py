@@ -8,7 +8,7 @@ from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-from .base import ProcessingExecutionResult, ProcessingExecutionStrategy
+from .base import ProcessingExecutionResult, ProcessingExecutionStrategy, ProcessingExecutionSummaryResult
 
 
 class BatchedAsyncProcessing(ProcessingExecutionStrategy):
@@ -50,6 +50,9 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
         iterator = iter(documents)
 
         while batch := list(islice(iterator, self.batch_size)):
+            document_uris = [
+                document.metadata.id if isinstance(document, Document) else document.id for document in batch
+            ]
             responses = await asyncio.gather(
                 *[
                     self._parse_document(
@@ -58,16 +61,47 @@ class BatchedAsyncProcessing(ProcessingExecutionStrategy):
                         processor_overwrite=processor_overwrite,
                     )
                     for document in batch
-                ]
+                ],
+                return_exceptions=True,
             )
-            elements = [element for response in responses for element in response]
-            await self._remove_entries_with_same_sources(
-                elements=elements,
-                vector_store=vector_store,
+            results.failed.extend(
+                ProcessingExecutionSummaryResult(
+                    document_uri=uri,
+                    error=response,
+                )
+                for uri, response in zip(document_uris, responses, strict=False)
+                if isinstance(response, BaseException)
             )
-            await self._insert_elements(
-                elements=elements,
-                vector_store=vector_store,
-            )
+            elements = [
+                element for response in responses if not isinstance(response, BaseException) for element in response
+            ]
+
+            try:
+                await self._remove_elements(
+                    elements=elements,
+                    vector_store=vector_store,
+                )
+                await self._insert_elements(
+                    elements=elements,
+                    vector_store=vector_store,
+                )
+            except Exception as exc:
+                results.failed.extend(
+                    ProcessingExecutionSummaryResult(
+                        document_uri=uri,
+                        error=exc,
+                    )
+                    for uri, response in zip(document_uris, responses, strict=False)
+                    if not isinstance(response, BaseException)
+                )
+            else:
+                results.successful.extend(
+                    ProcessingExecutionSummaryResult(
+                        document_uri=uri,
+                        num_elements=len(response),
+                    )
+                    for uri, response in zip(document_uris, responses, strict=False)
+                    if not isinstance(response, BaseException)
+                )
 
         return results
