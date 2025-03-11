@@ -265,7 +265,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         # Cast `where` to chromadb's Where type
         where_chroma: chromadb.Where | None = dict(where) if where else None
         with trace(
-            where=where_chroma, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
+            where=where, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
         ) as outputs:
             results = self._collection.get(
                 where=where_chroma,
