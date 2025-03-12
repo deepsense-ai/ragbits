@@ -248,8 +248,6 @@ class DocumentSearch(WithConstructionConfig):
                     f"No handler found for {element_type.__name__}. Keeping unprocessed elements.", RuntimeWarning
                 )
 
-        print(elements)
-
         await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)
 
