@@ -19,11 +19,11 @@ from ragbits.document_search.documents.document import (
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.batched import (
-    BatchedAsyncProcessing,
-)
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.strategies.batched import (
+    BatchedIngestStrategy,
+)
 
 CONFIG = {
     "vector_store": {
@@ -34,7 +34,7 @@ CONFIG = {
     },
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
-    "processing_strategy": {"type": "SequentialProcessing"},
+    "processing_strategy": {"type": "SequentialIngestStrategy"},
 }
 
 
@@ -202,7 +202,7 @@ async def test_document_search_with_batched():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
 
-    processing_strategy = BatchedAsyncProcessing(batch_size=5)
+    processing_strategy = BatchedIngestStrategy(batch_size=5)
     vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     document_search = DocumentSearch(

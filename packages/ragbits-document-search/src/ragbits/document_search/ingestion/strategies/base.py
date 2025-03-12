@@ -9,7 +9,7 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion import processor_strategies
+from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
@@ -48,17 +48,16 @@ class ProcessingExecutionResult(BaseModel):
     failed: list[ProcessingExecutionSummaryResult] = Field(default_factory=list)
 
 
-class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
+class IngestStrategy(WithConstructionConfig, ABC):
     """
-    Base class for processing execution strategies that define how documents are processed to become indexed.
-    The processing execution strategy is responsible for orchiesting the tasks required to index the document.
+    Base class for ingest strategies, responsible for orchiesting the tasks required to index the document.
     """
 
-    default_module: ClassVar = processor_strategies
+    default_module: ClassVar = strategies
 
     def __init__(self, num_retries: int = 3) -> None:
         """
-        Initialize the ProcessingExecutionStrategy instance.
+        Initialize the IngestStrategy instance.
 
         Args:
             num_retries: The number of retries per document processing task error.

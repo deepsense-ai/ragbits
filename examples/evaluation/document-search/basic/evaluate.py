@@ -51,7 +51,7 @@ config = {
                 },
             },
             "processing_strategy": {
-                "type": "ragbits.document_search.ingestion.processor_strategies.batched:BatchedAsyncProcessing",
+                "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,
                 },

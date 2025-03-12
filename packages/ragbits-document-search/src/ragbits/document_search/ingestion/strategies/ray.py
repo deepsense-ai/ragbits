@@ -6,18 +6,18 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.base import (
+from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.strategies.base import (
+    IngestStrategy,
     ProcessingExecutionResult,
-    ProcessingExecutionStrategy,
     ProcessingExecutionSummaryResult,
     ProcessingExecutionTaskResult,
 )
-from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
-class DistributedProcessing(ProcessingExecutionStrategy):
+class RayDistributedIngestStrategy(IngestStrategy):
     """
-    Processing execution strategy that processes documents on a cluster, using Ray.
+    Ingest strategy that processes documents on a cluster, using Ray.
     """
 
     def __init__(
@@ -29,7 +29,7 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         num_retries: int = 3,
     ) -> None:
         """
-        Initialize the DistributedProcessing instance.
+        Initialize the RayDistributedIngestStrategy instance.
 
         Args:
             cpu_batch_size: The batch size for CPU bound tasks (e.g. parsing).

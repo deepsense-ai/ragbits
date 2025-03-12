@@ -46,9 +46,9 @@ nav:
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
-          - Ingestion:
+          - Ingest:
             - api_reference/document_search/processing.md
-            - api_reference/document_search/execution_strategies.md
+            - api_reference/document_search/ingest/strategies.md
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md
             - api_reference/document_search/retrieval/rerankers.md

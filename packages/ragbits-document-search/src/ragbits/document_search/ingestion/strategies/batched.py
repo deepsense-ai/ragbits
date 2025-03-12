@@ -8,17 +8,17 @@ from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-from .base import ProcessingExecutionResult, ProcessingExecutionStrategy, ProcessingExecutionSummaryResult
+from .base import IngestStrategy, ProcessingExecutionResult, ProcessingExecutionSummaryResult
 
 
-class BatchedAsyncProcessing(ProcessingExecutionStrategy):
+class BatchedIngestStrategy(IngestStrategy):
     """
-    Processing execution strategy that processes documents in batches.
+    Ingest strategy that processes documents in batches.
     """
 
     def __init__(self, batch_size: int = 10, num_retries: int = 3) -> None:
         """
-        Initialize the BatchedAsyncProcessing instance.
+        Initialize the BatchedIngestStrategy instance.
 
         Args:
             batch_size: The size of the batch to process documents in.

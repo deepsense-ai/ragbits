@@ -4,17 +4,17 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.base import (
+from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.strategies.base import (
+    IngestStrategy,
     ProcessingExecutionResult,
-    ProcessingExecutionStrategy,
     ProcessingExecutionSummaryResult,
 )
-from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
-class SequentialProcessing(ProcessingExecutionStrategy):
+class SequentialIngestStrategy(IngestStrategy):
     """
-    Processing execution strategy that processes documents in sequence, one at a time.
+    Ingest strategy that processes documents in sequence, one at a time.
     """
 
     async def process(
