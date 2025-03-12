@@ -1,6 +1,8 @@
+import asyncio
+import random
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
-from typing import ClassVar
+from collections.abc import Awaitable, Callable, Iterable
+from typing import ClassVar, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -12,6 +14,9 @@ from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+
+_CallP = ParamSpec("_CallP")
+_CallReturnT = TypeVar("_CallReturnT")
 
 
 class IngestTaskResult(BaseModel):
@@ -55,14 +60,18 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
     default_module: ClassVar = strategies
 
-    def __init__(self, num_retries: int = 3) -> None:
+    def __init__(self, num_retries: int = 3, backoff_multiplier: int = 1, backoff_max: int = 60) -> None:
         """
         Initialize the IngestStrategy instance.
 
         Args:
             num_retries: The number of retries per document ingest task error.
+            backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
+            backoff_max: The maximum allowed delay (in seconds) between retries.
         """
         self.num_retries = num_retries
+        self.backoff_multiplier = backoff_multiplier
+        self.backoff_max = backoff_max
 
     @abstractmethod
     async def __call__(
@@ -85,6 +94,44 @@ class IngestStrategy(WithConstructionConfig, ABC):
             The ingest execution result.
         """
 
+    async def _call_with_error_handling(
+        self,
+        executable: Callable[_CallP, Awaitable[_CallReturnT]],
+        return_exception: bool = False,
+        *executable_args: _CallP.args,
+        **executable_kwargs: _CallP.kwargs,
+    ) -> _CallReturnT | BaseException:  # type: ignore
+        """
+        Call executable with standarized error handling.
+        If an error occurs, the executable is retried `num_retries` times using randomized exponential backoff.
+
+        Args:
+            executable: The callable function to execute.
+            return_exception: If True, return the exception instead of raising it after all retries.
+            executable_args: Positional arguments to pass to the executable.
+            executable_kwargs: Keyword arguments to pass to the executable.
+
+        Returns:
+            The result of the executable if successful.
+            If all retries fail and `return_exception` is True, returns the last encountered exception.
+            Otherwise, raises the exception after all retries are exhausted.
+        """
+        for i in range(max(0, self.num_retries) + 1):
+            try:
+                return await executable(*executable_args, **executable_kwargs)
+            except Exception as exc:
+                if i == self.num_retries:
+                    if return_exception:
+                        return exc
+                    else:
+                        raise exc
+
+                delay = min(2**i * self.backoff_multiplier, self.backoff_max)
+                delay = random.uniform(0, delay) if delay < self.backoff_max else random.uniform(0, self.backoff_max)  # noqa S311
+                await asyncio.sleep(delay)
+
+        raise RuntimeError("Unreachable code reached")  # mypy quirk
+
     @staticmethod
     async def _parse_document(
         document: DocumentMeta | Document | Source,
@@ -100,7 +147,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            A list of elements.
+            The list of elements.
         """
         document_meta = (
             await DocumentMeta.from_source(document)

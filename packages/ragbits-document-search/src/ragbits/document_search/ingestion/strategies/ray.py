@@ -27,6 +27,8 @@ class RayDistributedIngestStrategy(IngestStrategy):
         io_batch_size: int = 10,
         io_memory: float | None = None,
         num_retries: int = 3,
+        backoff_multiplier: int = 1,
+        backoff_max: int = 60,
     ) -> None:
         """
         Initialize the RayDistributedIngestStrategy instance.
@@ -37,8 +39,10 @@ class RayDistributedIngestStrategy(IngestStrategy):
             io_batch_size: The batch size for IO bound tasks (e.g. indexing).
             io_memory: The heap memory in bytes to reserve for each parallel IO bound tasks (e.g. indexing).
             num_retries: The number of retries per document ingest task error.
+            backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
+            backoff_max: The maximum allowed delay (in seconds) between retries.
         """
-        super().__init__(num_retries=num_retries)
+        super().__init__(num_retries=num_retries, backoff_multiplier=backoff_multiplier, backoff_max=backoff_max)
         self.cpu_batch_size = cpu_batch_size
         self.cpu_memory = cpu_memory
         self.io_batch_size = io_batch_size
@@ -74,7 +78,8 @@ class RayDistributedIngestStrategy(IngestStrategy):
                 ]
                 responses = await asyncio.gather(
                     *[
-                        self._parse_document(
+                        self._call_with_error_handling(
+                            self._parse_document,
                             document=document,
                             processor_router=processor_router,
                             processor_overwrite=processor_overwrite,

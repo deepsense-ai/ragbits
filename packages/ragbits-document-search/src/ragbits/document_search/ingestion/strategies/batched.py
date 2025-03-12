@@ -15,15 +15,23 @@ class BatchedIngestStrategy(IngestStrategy):
     Ingest strategy that processes documents in batches.
     """
 
-    def __init__(self, batch_size: int = 10, num_retries: int = 3) -> None:
+    def __init__(
+        self,
+        batch_size: int = 10,
+        num_retries: int = 3,
+        backoff_multiplier: int = 1,
+        backoff_max: int = 60,
+    ) -> None:
         """
         Initialize the BatchedIngestStrategy instance.
 
         Args:
             batch_size: The size of the batch to ingest documents in.
             num_retries: The number of retries per document ingest task error.
+            backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
+            backoff_max: The maximum allowed delay (in seconds) between retries.
         """
-        super().__init__(num_retries=num_retries)
+        super().__init__(num_retries=num_retries, backoff_multiplier=backoff_multiplier, backoff_max=backoff_max)
         self.batch_size = batch_size
 
     async def __call__(
@@ -54,7 +62,8 @@ class BatchedIngestStrategy(IngestStrategy):
             ]
             responses = await asyncio.gather(
                 *[
-                    self._parse_document(
+                    self._call_with_error_handling(
+                        self._parse_document,
                         document=document,
                         processor_router=processor_router,
                         processor_overwrite=processor_overwrite,
