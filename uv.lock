@@ -4417,7 +4417,7 @@ dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "fastembed", "lab", "local", "otel", "pgvector", "qdrant"] },
-    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface", "s3"] },
+    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "http", "huggingface", "s3"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4448,7 +4448,7 @@ requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3", "http"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
