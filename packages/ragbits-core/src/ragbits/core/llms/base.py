@@ -162,13 +162,14 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             raw_response = await self.generate_raw(prompt, options=options)
-
             if isinstance(prompt, BasePromptWithParser):
-                outputs.response = prompt.parse_response(raw_response["response"])
+                response = prompt.parse_response(raw_response["response"])
             else:
-                outputs.response = cast(OutputT, raw_response["response"])
+                response = cast(OutputT, raw_response["response"])
+            raw_response["response"] = response
+            outputs.response = raw_response
 
-        return outputs.response
+        return response
 
     @overload
     async def generate_with_metadata(
