@@ -19,11 +19,11 @@ from ragbits.document_search.documents.document import (
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.batched import (
-    BatchedAsyncProcessing,
-)
 from ragbits.document_search.ingestion.providers import BaseProvider
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.strategies.batched import (
+    BatchedIngestStrategy,
+)
 
 CONFIG = {
     "vector_store": {
@@ -34,7 +34,7 @@ CONFIG = {
     },
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
-    "processing_strategy": {"type": "SequentialProcessing"},
+    "ingest_strategy": {"type": "SequentialIngestStrategy"},
 }
 
 
@@ -118,29 +118,6 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     assert first_result.content == "Name of Peppa's brother is George"
 
 
-async def test_document_search_insert_elements():
-    embeddings_mock = AsyncMock()
-    embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
-
-    await document_search.insert_elements(
-        [
-            TextElement(
-                content="Name of Peppa's brother is George",
-                document_meta=DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
-            )
-        ]
-    )
-
-    results = await document_search.search("Peppa's brother")
-
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
-
-
 async def test_document_search_with_no_results():
     document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=AsyncMock()))
 
@@ -202,12 +179,12 @@ async def test_document_search_with_batched():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
 
-    processing_strategy = BatchedAsyncProcessing(batch_size=5)
+    ingest_strategy = BatchedIngestStrategy(batch_size=5)
     vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     document_search = DocumentSearch(
         vector_store=vectore_store,
-        processing_strategy=processing_strategy,
+        ingest_strategy=ingest_strategy,
     )
 
     await document_search.ingest(documents)

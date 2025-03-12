@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -17,11 +17,12 @@ from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies import (
-    ProcessingExecutionStrategy,
-    SequentialProcessing,
-)
 from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.strategies import (
+    IngestStrategy,
+    SequentialIngestStrategy,
+)
+from ragbits.document_search.ingestion.strategies.base import IngestExecutionResult
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -46,7 +47,7 @@ class DocumentSearchConfig(BaseModel):
     vector_store: ObjectContructionConfig
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
-    processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialProcessing")
+    ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
     providers: dict[str, ObjectContructionConfig] = {}
 
 
@@ -71,7 +72,7 @@ class DocumentSearch(WithConstructionConfig):
     query_rephraser: QueryRephraser
     reranker: Reranker
     document_processor_router: DocumentProcessorRouter
-    processing_strategy: ProcessingExecutionStrategy
+    ingest_strategy: IngestStrategy
 
     def __init__(
         self,
@@ -79,13 +80,13 @@ class DocumentSearch(WithConstructionConfig):
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
-        processing_strategy: ProcessingExecutionStrategy | None = None,
+        ingest_strategy: IngestStrategy | None = None,
     ) -> None:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
-        self.processing_strategy = processing_strategy or SequentialProcessing()
+        self.ingest_strategy = ingest_strategy or SequentialIngestStrategy()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -107,12 +108,12 @@ class DocumentSearch(WithConstructionConfig):
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
-        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(model.processing_strategy)
+        ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
 
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, ingest_strategy)
 
     @classmethod
     def preferred_subclass(
@@ -190,10 +191,11 @@ class DocumentSearch(WithConstructionConfig):
     @traceable
     async def ingest(
         self,
-        documents: str | Sequence[DocumentMeta | Document | Source],
+        documents: str | Iterable[DocumentMeta | Document | Source],
         document_processor: BaseProvider | None = None,
-    ) -> None:
-        """Ingest documents into the search index.
+    ) -> IngestExecutionResult:
+        """
+        Ingest documents into the search index.
 
         Args:
             documents: Either:
@@ -204,40 +206,14 @@ class DocumentSearch(WithConstructionConfig):
                     - "huggingface://dataset/split/row"
             document_processor: The document processor to use. If not provided, the document processor will be
                 determined based on the document metadata.
+
+        Returns:
+            The ingest execution result.
         """
-        if isinstance(documents, str):
-            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
-        else:
-            sources = documents
-        elements = await self.processing_strategy.process_documents(
-            sources, self.document_processor_router, document_processor
+        sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
+        return await self.ingest_strategy(
+            documents=sources,
+            vector_store=self.vector_store,
+            processor_router=self.document_processor_router,
+            processor_overwrite=document_processor,
         )
-        await self._remove_entries_with_same_sources(elements)
-        await self.insert_elements(elements)
-
-    async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
-        """
-        Remove entries from the vector store whose source id is present in the elements' metadata.
-
-        Args:
-            elements: List of elements whose source ids will be checked and removed from the vector store if present.
-        """
-        unique_source_ids = {element.document_meta.source.id for element in elements}
-
-        ids_to_delete = []
-        # TODO: Pass 'where' argument to the list method to filter results and optimize search
-        for entry in await self.vector_store.list():
-            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
-                ids_to_delete.append(entry.id)
-
-        if ids_to_delete:
-            await self.vector_store.remove(ids_to_delete)
-
-    async def insert_elements(self, elements: list[Element]) -> None:
-        """
-        Insert Elements into the vector store.
-
-        Args:
-            elements: The list of Elements to insert.
-        """
-        await self.vector_store.store([element.to_vector_db_entry() for element in elements])

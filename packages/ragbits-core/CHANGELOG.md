@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Qdrant vector store can now be serialized during Ray processing (#394)
 - Add support for images in few shot prompts (#155)
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
 - Add instruction on how to use local servers for LLMs (#395).

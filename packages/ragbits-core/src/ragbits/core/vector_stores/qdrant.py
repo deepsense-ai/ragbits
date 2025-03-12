@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Coroutine, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Iterable, Mapping
 from typing import Any, cast
 from uuid import UUID
 
@@ -61,6 +61,46 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
+
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        """
+        Enables the QdrantVectorStore to be pickled and unpickled.
+
+        Returns:
+            The tuple of function and its arguments that allows reconstruction of the QdrantVectorStore.
+        """
+
+        def _reconstruct(
+            client_params: dict,
+            index_name: str,
+            embedder: Embedder,
+            distance_method: Distance,
+            default_options: VectorStoreOptions,
+            embedding_name_text: str,
+            embedding_name_image: str,
+        ) -> QdrantVectorStore:
+            return QdrantVectorStore(
+                client=AsyncQdrantClient(**client_params),
+                index_name=index_name,
+                embedder=embedder,
+                distance_method=distance_method,
+                default_options=default_options,
+                embedding_name_text=embedding_name_text,
+                embedding_name_image=embedding_name_image,
+            )
+
+        return (
+            _reconstruct,
+            (
+                self._client._init_options,
+                self._index_name,
+                self._embedder,
+                self._distance_method,
+                self.default_options,
+                self._embedding_name_text,
+                self._embedding_name_image,
+            ),
+        )
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

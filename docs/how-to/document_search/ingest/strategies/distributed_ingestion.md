@@ -1,13 +1,13 @@
 # How to Ingest Documents in a distributed fashion
 
-Ragbits Document Search can ingest documents in a distributed fashion if it's installed with `distributed` extra. This can be set up by specifying the [`DistributedProcessing`][ragbits.document_search.ingestion.processor_strategies.DistributedProcessing] execution strategy when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
+Ragbits Document Search can ingest documents in a distributed fashion if it's installed with `distributed` extra. This can be set up by specifying the [`RayDistributedIngestStrategy`][ragbits.document_search.ingestion.strategies.RayDistributedIngestStrategy] execution strategy when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
 
 ```python
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.ingestion.processor_strategies.distributed import DistributedProcessing
+from ragbits.document_search.ingestion.strategies.ray import RayDistributedIngestStrategy
 
 documents = [
     DocumentMeta.create_text_document_from_literal("Example document 1"),
@@ -20,11 +20,11 @@ embedder = LiteLLMEmbedder(
 
 vector_store = InMemoryVectorStore(embedder=embedder)
 
-processing_strategy = DistributedProcessing()
+ingest_strategy = RayDistributedIngestStrategy()
 
 document_search = DocumentSearch(
     vector_store=vector_store,
-    processing_strategy=processing_strategy
+    ingest_strategy=ingest_strategy
 )
 ```
 
@@ -49,7 +49,7 @@ job_id = client.submit_job(
         "working_dir": "./",
         "pip": [
             "ragbits-core",
-            "ragbits-document-search[distributed]"
+            "ragbits-document-search[ray]"
         ]
     },
 )
@@ -61,7 +61,7 @@ Ray Jobs is also available as CLI commands. You can submit a job using the follo
 ```bash
 ray job submit \
     --address http://<cluster_address>:8265 \
-    --runtime-env '{"pip": ["ragbits-core", "ragbits-document-search[distributed]"]}'\
+    --runtime-env '{"pip": ["ragbits-core", "ragbits-document-search[ray]"]}'\
     --working-dir . \
     -- python script.py
 ```
