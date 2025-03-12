@@ -14,6 +14,7 @@ from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreOptionsT,
@@ -37,8 +38,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         embedder: Embedder,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new QdrantVectorStore instance.
@@ -49,14 +48,10 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder: The embedder to use for converting entries to vectors.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
-            embedding_name_text: The name under which the text embedding is stored in the resulting object.
-            embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
-            embedding_name_text=embedding_name_text,
-            embedding_name_image=embedding_name_image,
         )
         self._client = client
         self._index_name = index_name
@@ -91,8 +86,9 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 return len(vector)
         raise ValueError("No vectors found in the input")
 
-    def _internal_id(self, entry_id: UUID, embedding_type: str) -> UUID:
-        return UUID(int=entry_id.int + self._embedding_types.index(embedding_type))
+    @staticmethod
+    def _internal_id(entry_id: UUID, embedding_type: EmbeddingType) -> UUID:
+        return UUID(int=entry_id.int + list(EmbeddingType).index(embedding_type))
 
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -121,10 +117,10 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             models.PointStruct(
                 id=str(self._internal_id(entry.id, embedding_type)),
                 vector=embeddings[entry.id][embedding_type],
-                payload={**entry.model_dump(exclude_none=True), "__embeddings": embeddings[entry.id]},
+                payload=entry.model_dump(exclude_none=True),
             )
             for entry in entries
-            for embedding_type in self._embedding_types
+            for embedding_type in EmbeddingType
             if entry.id in embeddings and embedding_type in embeddings[entry.id]
         )
 
@@ -183,7 +179,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 VectorStoreResult(
                     entry=entry,
                     score=point.score,
-                    vectors=(point.payload or {}).get("__embeddings", {}),
+                    vector=cast(list[float], point.vector),
                 )
             )
 
@@ -208,9 +204,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 collection_name=self._index_name,
                 points_selector=models.PointIdsList(
                     points=[
-                        str(self._internal_id(id, embedding_type))
-                        for id in ids
-                        for embedding_type in self._embedding_types
+                        str(self._internal_id(id, embedding_type)) for id in ids for embedding_type in EmbeddingType
                     ],
                 ),
             )

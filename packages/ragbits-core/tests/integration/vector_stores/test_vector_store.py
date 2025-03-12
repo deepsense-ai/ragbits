@@ -31,15 +31,15 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
 @pytest.fixture(
     name="vector_store",
     params=[
-        InMemoryVectorStore(
+        lambda: InMemoryVectorStore(
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
         ),
-        ChromaVectorStore(
+        lambda: ChromaVectorStore(
             client=EphemeralClient(),
             index_name="test_index_name",
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
         ),
-        QdrantVectorStore(
+        lambda: QdrantVectorStore(
             client=AsyncQdrantClient(":memory:"),
             index_name="test_index_name",
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
@@ -48,7 +48,7 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
     ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore"],
 )
 def vector_store_fixture(request: pytest.FixtureRequest) -> VectorStore:
-    return request.param
+    return request.param()
 
 
 @pytest.fixture(name="vector_store_entries")
@@ -120,8 +120,6 @@ async def test_vector_store_retrieve(
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
         assert result.score != 0
-        assert expected.text is None or "text" in result.vectors
-        assert expected.image_bytes is None or "image" in result.vectors
 
         # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
         assert result.entry.text == expected.text or (expected.text is None and result.entry.text == "")

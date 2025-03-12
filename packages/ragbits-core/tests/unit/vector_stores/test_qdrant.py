@@ -73,7 +73,6 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
                 "document_type": "test_type",
             },
         },
-        "__embeddings": {"text": [0.1, 0.2, 0.3]},
     }
     assert call_points[1].id == "827cad0b-058f-4b85-b8ed-ac741948d502"
     assert call_points[1].vector == [0.1, 0.2, 0.3]
@@ -89,7 +88,6 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
             },
         },
         "image_bytes": _pydantic_bytes_to_hex(b"image"),
-        "__embeddings": {"image": [0.7, 0.8, 0.9], "text": [0.1, 0.2, 0.3]},
     }
     assert call_points[2].id == "827cad0b-058f-4b85-b8ed-ac741948d503"
     assert call_points[2].vector == [0.7, 0.8, 0.9]
@@ -105,7 +103,6 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
             },
         },
         "image_bytes": _pydantic_bytes_to_hex(b"image"),
-        "__embeddings": {"image": [0.7, 0.8, 0.9], "text": [0.1, 0.2, 0.3]},
     }
 
 
@@ -128,7 +125,6 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                             "document_type": "txt",
                         },
                     },
-                    "__embeddings": {"text": [0.12, 0.25, 0.29]},
                 },
             ),
             models.ScoredPoint(
@@ -148,7 +144,6 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                             "document_type": "txt",
                         },
                     },
-                    "__embeddings": {"text": [0.13, 0.26, 0.30], "image": [0.7, 0.8, 0.9]},
                 },
             ),
             models.ScoredPoint(
@@ -168,18 +163,17 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                             "document_type": "txt",
                         },
                     },
-                    "__embeddings": {"text": [0.13, 0.26, 0.30], "image": [0.7, 0.8, 0.9]},
                 },
             ),
         ]
     )
 
     results = [
-        {"content": "test content 1", "title": "test title 1", "vectors": {"text": [0.12, 0.25, 0.29]}, "score": 0.9},
+        {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29], "score": 0.9},
         {
             "content": "test content 2",
             "title": "test title 2",
-            "vectors": {"text": [0.13, 0.26, 0.30], "image": [0.7, 0.8, 0.9]},
+            "vector": [0.7, 0.8, 0.9],
             "score": 0.7,
         },
     ]
@@ -190,7 +184,7 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
-        assert query_result.vectors == result["vectors"]
+        assert query_result.vector == result["vector"]
         assert query_result.score == result["score"]
 
 
@@ -227,7 +221,6 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                             "source": {"path": "/test/path-1"},
                             "document_type": "txt",
                         },
-                        "__embeddings": {"text": [0.12, 0.25, 0.29]},
                     },
                 },
             ),
@@ -248,7 +241,6 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                             "document_type": "txt",
                         },
                     },
-                    "__embeddings": {"text": [0.13, 0.26, 0.30], "image": [0.7, 0.8, 0.9]},
                 },
             ),
             models.ScoredPoint(
@@ -268,7 +260,6 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                             "document_type": "txt",
                         },
                     },
-                    "__embeddings": {"text": [0.13, 0.26, 0.30], "image": [0.7, 0.8, 0.9]},
                 },
             ),
         ]

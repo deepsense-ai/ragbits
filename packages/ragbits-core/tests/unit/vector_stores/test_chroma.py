@@ -49,12 +49,6 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
                 "__id": "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-                "__embeddings.text[0]": 0.1,
-                "__embeddings.text[1]": 0.2,
-                "__embeddings.text[2]": 0.3,
-                "__embeddings.image[0]": 0.7,
-                "__embeddings.image[1]": 0.8,
-                "__embeddings.image[2]": 0.9,
                 "__image": _pydantic_bytes_to_hex(b"test image"),
             }
         ]
@@ -69,16 +63,16 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
         (
             None,
             [
-                {"content": "test content 1", "title": "test title 1", "vectors": {"text": [0.12, 0.25, 0.29]}},
+                {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]},
                 {
                     "content": "test content 2",
                     "title": "test title 2",
-                    "vectors": {"text": [0.13, 0.26, 0.30], "image": [0.99, 0.8, 0.85]},
+                    "vector": [0.13, 0.26, 0.30],
                     "image": b"test image",
                 },
             ],
         ),
-        (0.1, [{"content": "test content 1", "title": "test title 1", "vectors": {"text": [0.12, 0.25, 0.29]}}]),
+        (0.1, [{"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]}]),
         (0.09, []),
     ],
 )
@@ -95,9 +89,6 @@ async def test_retrieve(
                     "document_meta.source.path": "/test/path-1",
                     "document_meta.document_type": "txt",
                     "__id": ids[0],
-                    "__embeddings.text[0]": 0.12,
-                    "__embeddings.text[1]": 0.25,
-                    "__embeddings.text[2]": 0.29,
                 },
                 {
                     "content": "test content 2",
@@ -105,12 +96,6 @@ async def test_retrieve(
                     "document_meta.source.path": "/test/path-2",
                     "document_meta.document_type": "txt",
                     "__id": ids[1],
-                    "__embeddings.text[0]": 0.13,
-                    "__embeddings.text[1]": 0.26,
-                    "__embeddings.text[2]": 0.30,
-                    "__embeddings.image[0]": 0.99,
-                    "__embeddings.image[1]": 0.8,
-                    "__embeddings.image[2]": 0.85,
                     "__image": _pydantic_bytes_to_hex(b"test image"),
                 },
                 {
@@ -119,12 +104,6 @@ async def test_retrieve(
                     "document_meta.source.path": "/test/path-2",
                     "document_meta.document_type": "txt",
                     "__id": ids[1],
-                    "__embeddings.text[0]": 0.13,
-                    "__embeddings.text[1]": 0.26,
-                    "__embeddings.text[2]": 0.30,
-                    "__embeddings.image[0]": 0.99,
-                    "__embeddings.image[1]": 0.8,
-                    "__embeddings.image[2]": 0.85,
                     "__image": _pydantic_bytes_to_hex(b"test image"),
                 },
             ]
@@ -141,8 +120,7 @@ async def test_retrieve(
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
-        assert query_result.vectors["text"] == result["vectors"]["text"]
-        assert query_result.vectors.get("image") == result["vectors"].get("image")
+        assert query_result.vector == result["vector"]
         assert query_result.score in [0.1, 0.2]
 
         assert query_result.entry.id == uuid.uuid5(uuid.NAMESPACE_OID, f"test id {results.index(result) + 1}")
@@ -170,9 +148,6 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
                 "__id": "d8184a66-94c2-4bd1-8aeb-7f8a6d4917f0",
-                "__embeddings.text[0]": 0.12,
-                "__embeddings.text[1]": 0.25,
-                "__embeddings.text[2]": 0.29,
             },
             {
                 "content": "test content 2",
@@ -180,12 +155,6 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
                 "__id": "ee64bd1c-1096-4cca-98fe-78406f8c3ce5",
-                "__embeddings.text[0]": 0.13,
-                "__embeddings.text[1]": 0.26,
-                "__embeddings.text[2]": 0.30,
-                "__embeddings.image[0]": 0.99,
-                "__embeddings.image[1]": 0.8,
-                "__embeddings.image[2]": 0.85,
                 "__image": _pydantic_bytes_to_hex(b"test image"),
             },
             {
@@ -194,12 +163,6 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
                 "__id": "ee64bd1c-1096-4cca-98fe-78406f8c3ce5",
-                "__embeddings.text[0]": 0.13,
-                "__embeddings.text[1]": 0.26,
-                "__embeddings.text[2]": 0.30,
-                "__embeddings.image[0]": 0.99,
-                "__embeddings.image[1]": 0.8,
-                "__embeddings.image[2]": 0.85,
                 "__image": _pydantic_bytes_to_hex(b"test image"),
             },
         ],

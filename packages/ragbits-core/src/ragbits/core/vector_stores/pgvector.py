@@ -10,6 +10,7 @@ from pydantic.json import pydantic_encoder
 from ragbits.core.audit import traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreOptionsT,
@@ -50,8 +51,6 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         distance_method: str = "cosine",
         hnsw_params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new PgVectorStore instance.
@@ -64,15 +63,11 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             distance_method: The distance method to use.
             hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
-            embedding_name_text: The name of the embedding for text.
-            embedding_name_image: The name of the embedding for images.
         """
         (
             super().__init__(
                 default_options=default_options,
                 embedder=embedder,
-                embedding_name_text=embedding_name_text,
-                embedding_name_image=embedding_name_image,
             ),
         )
 
@@ -225,7 +220,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         try:
             async with self._client.acquire() as conn:
                 for entry in entries:
-                    if entry.id not in embeddings or self._embedding_name_text not in embeddings[entry.id]:
+                    if entry.id not in embeddings or EmbeddingType.TEXT not in embeddings[entry.id]:
                         warnings.warn(f"Skipping entry {entry.id} as it has no text embeddings.")
                         continue
 
@@ -233,7 +228,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                         insert_query,
                         str(entry.id),
                         entry.text,
-                        str(embeddings[entry.id][self._embedding_name_text]),
+                        str(embeddings[entry.id][EmbeddingType.TEXT]),
                         json.dumps(entry.metadata, default=pydantic_encoder),
                     )
         except asyncpg.exceptions.UndefinedTableError:
@@ -340,9 +335,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                         text=record["key"],
                         metadata=json.loads(record["metadata"]),
                     ),
-                    vectors={
-                        self._embedding_name_text: json.loads(record["vector"]),
-                    },
+                    vector=json.loads(record["vector"]),
                     score=record["distance"],
                 )
                 for record in results
