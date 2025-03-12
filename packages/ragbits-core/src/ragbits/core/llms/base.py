@@ -164,13 +164,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             raw_response = await self.generate_raw(prompt, options=options)
 
             if isinstance(prompt, BasePromptWithParser):
-                response = prompt.parse_response(raw_response["response"])
+                outputs.response = prompt.parse_response(raw_response["response"])
             else:
-                response = cast(OutputT, raw_response["response"])
-            raw_response["response"] = response
-            outputs.response = raw_response
+                outputs.response = cast(OutputT, raw_response["response"])
 
-        return response
+        return outputs.response
 
     @overload
     async def generate_with_metadata(
@@ -227,12 +225,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             content = response.pop("response")
             if isinstance(prompt, BasePromptWithParser):
                 content = prompt.parse_response(content)
-            response_with_metadata = LLMResponseWithMetadata[type(content)](  # type: ignore
+            outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
                 metadata=response,
             )
-            outputs.response = response_with_metadata
-        return response_with_metadata
+        return outputs.response
 
     async def generate_streaming(
         self,
