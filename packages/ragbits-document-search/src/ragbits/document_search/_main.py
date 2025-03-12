@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, ClassVar
@@ -8,16 +9,19 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit import traceable
 from ragbits.core.config import CoreConfig
+from ragbits.core.llms.base import LLMType
+from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, IntermediateImageElement
+from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_providers.images import ImageProvider
+from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler
 from ragbits.document_search.ingestion.processor_strategies import (
     ProcessingExecutionStrategy,
     SequentialProcessing,
@@ -49,6 +53,7 @@ class DocumentSearchConfig(BaseModel):
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
     processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialProcessing")
     providers: dict[str, ObjectContructionConfig] = {}
+    intermediate_element_handlers: dict[str, ObjectContructionConfig] = {}
 
 
 class DocumentSearch(WithConstructionConfig):
@@ -73,7 +78,7 @@ class DocumentSearch(WithConstructionConfig):
     reranker: Reranker
     document_processor_router: DocumentProcessorRouter
     processing_strategy: ProcessingExecutionStrategy
-    intermediate_image_provider: ImageProvider
+    intermediate_element_handlers: dict[type[IntermediateElement], BaseIntermediateHandler]
 
     def __init__(
         self,
@@ -82,14 +87,16 @@ class DocumentSearch(WithConstructionConfig):
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
         processing_strategy: ProcessingExecutionStrategy | None = None,
-        intermediate_image_provider: ImageProvider | None = None,  # Fixed argument
+        intermediate_element_handlers: dict[type[IntermediateElement], BaseIntermediateHandler] | None = None,
     ) -> None:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
         self.processing_strategy = processing_strategy or SequentialProcessing()
-        self.intermediate_image_provider = intermediate_image_provider
+        self.intermediate_element_handlers = intermediate_element_handlers or {
+            IntermediateImageElement: ImageIntermediateHandler(llm=get_preferred_llm(llm_type=LLMType.VISION))
+        }
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -115,9 +122,14 @@ class DocumentSearch(WithConstructionConfig):
 
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
-        intermediate_image_provider = ImageProvider.from_config(model.intermediate_image_provider)
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy, intermediate_image_provider)
+        return cls(
+            vector_store,
+            query_rephraser,
+            reranker,
+            document_processor_router,
+            processing_strategy,
+        )
 
     @classmethod
     def preferred_subclass(
@@ -214,19 +226,29 @@ class DocumentSearch(WithConstructionConfig):
             sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
         else:
             sources = documents
-        elements = await self.processing_strategy.process_documents(
+        raw_elements = await self.processing_strategy.process_documents(
             sources, self.document_processor_router, document_processor
         )
-        intermediate_image_elements = [element for element in elements if isinstance(element, IntermediateImageElement)]
-        image_elements = []
 
-        for element in intermediate_image_elements:
-            image_element = await self.intermediate_image_provider.process(element)
-            image_elements.append(image_element)
+        intermediate_elements: dict[type, list[IntermediateElement]] = {}
+        for element in raw_elements:
+            if isinstance(element, IntermediateElement):
+                intermediate_elements.setdefault(type(element), []).append(element)
 
-        elements = [
-            element for element in elements if not isinstance(element, IntermediateImageElement)
-        ] + image_elements
+        elements = [element for element in raw_elements if not isinstance(element, IntermediateElement)]
+
+        for element_type, element_list in intermediate_elements.items():
+            handler = self.intermediate_element_handlers.get(element_type)
+            if handler:
+                for element in element_list:
+                    processed_element = await handler.process(element)
+                    elements.append(processed_element)
+            else:
+                warnings.warn(
+                    f"No handler found for {element_type.__name__}. Keeping unprocessed elements.", RuntimeWarning
+                )
+
+        print(elements)
 
         await self._remove_entries_with_same_sources(elements)
         await self.insert_elements(elements)

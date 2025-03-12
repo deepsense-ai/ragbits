@@ -1,21 +1,21 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 from PIL import Image
-from pydantic import BaseModel
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
 from ragbits.core.llms.base import LLM
-from ragbits.core.prompt import Prompt
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element, IntermediateImageElement
+from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.providers.unstructured.utils import (
     crop_and_convert_to_bytes,
     extract_image_coordinates,
     to_text_element,
 )
+
 
 class UnstructuredImageProvider(UnstructuredDefaultProvider):
     """
@@ -50,17 +50,18 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        # self.image_describer: ImageDescriber | None = None
         self._llm = llm
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
-    ) -> list[Element]:
+    ) -> Sequence[Element | IntermediateElement]:
         image_elements = [e for e in elements if e.category == ElementType.IMAGE]
         other_elements = [e for e in elements if e.category != ElementType.IMAGE]
         chunked_other_elements = chunk_elements(other_elements, **self.chunking_kwargs)
 
-        text_elements: list[Element] = [to_text_element(element, document_meta) for element in chunked_other_elements]
+        text_elements: list[Element | IntermediateImageElement] = [
+            to_text_element(element, document_meta) for element in chunked_other_elements
+        ]
         if self.ignore_images:
             return text_elements
         return text_elements + [

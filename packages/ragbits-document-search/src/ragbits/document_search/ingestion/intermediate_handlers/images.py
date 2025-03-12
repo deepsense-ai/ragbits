@@ -1,13 +1,17 @@
-from typing import Any, ClassVar
+from typing import Any
 
 from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import WithConstructionConfig
-from ragbits.document_search.documents.element import ImageElement, IntermediateImageElement
-from ragbits.document_search.ingestion import intermediate_providers
 from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.document_search.documents.element import (
+    Element,
+    ImageElement,
+    IntermediateElement,
+    IntermediateImageElement,
+)
+from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 
 DEFAULT_IMAGE_QUESTION_PROMPT = "Describe the content of the image."
 
@@ -29,13 +33,10 @@ class _ImagePrompt(Prompt[_ImagePromptInput]):
     image_input_fields: list[str] = ["image"]
 
 
-class ImageProvider(WithConstructionConfig):
+class ImageIntermediateHandler(BaseIntermediateHandler):
     """
     Provides image processing capabilities using an LLM.
     """
-
-    default_module: ClassVar = intermediate_providers
-    configuration_key: ClassVar = "intermediate_provider"
 
     def __init__(self, llm: LLM, prompt: type[Prompt[_ImagePromptInput, Any]] | None = None):
         """
@@ -49,32 +50,43 @@ class ImageProvider(WithConstructionConfig):
         self._llm = llm
         self._prompt = prompt or _ImagePrompt
 
-    async def process(self, intermediate_image_element: IntermediateImageElement) -> ImageElement:
+    async def process(self, intermediate_element: IntermediateElement) -> Element:
         """
         Processes an intermediate image element and generates a corresponding ImageElement.
 
         Args:
-            intermediate_image_element: The intermediate image element to process.
+            intermediate_element: The intermediate image element to process.
 
         Returns:
             The processed image element with a generated description.
+
+        Raises:
+            TypeError: If the provided element is not an IntermediateImageElement.
         """
-        input_data = self._prompt.input_type(image=intermediate_image_element.image_bytes)  # type: ignore
+        if not isinstance(intermediate_element, IntermediateImageElement):
+            raise TypeError(f"Expected IntermediateImageElement, got {type(intermediate_element).__name__}")
+
+        input_data = self._prompt.input_type(image=intermediate_element.image_bytes)  # type: ignore
         prompt = self._prompt(input_data)
         response = await self._llm.generate(prompt)
 
-        image_element = ImageElement(
-            document_meta=intermediate_image_element.document_meta,
+        return ImageElement(
+            document_meta=intermediate_element.document_meta,
             description=response,
-            ocr_extracted_text=intermediate_image_element.ocr_extracted_text,
-            image_bytes=intermediate_image_element.image_bytes,
+            ocr_extracted_text=intermediate_element.ocr_extracted_text,
+            image_bytes=intermediate_element.image_bytes,
         )
 
-        return image_element
-    
     @classmethod
-    def from_config(cls, config: dict) -> "ImageProvider":
+    def from_config(cls, config: dict) -> "ImageIntermediateHandler":
         """
+        Create an `ImageIntermediateHandler` instance from a configuration dictionary.
+
+        Args:
+            config: A dictionary containing the configuration settings.
+
+        Returns:
+            An initialized instance of `ImageIntermediateHandler`.
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
         return cls(llm=llm)

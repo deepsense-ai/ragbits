@@ -19,7 +19,7 @@ class ElementLocation(BaseModel):
     coordinates: dict | None = None
 
 
-class IntermediateElement(BaseModel):
+class IntermediateElement(BaseModel, ABC):
     """
     Represents an intermediate element extracted from a document before final processing.
     """

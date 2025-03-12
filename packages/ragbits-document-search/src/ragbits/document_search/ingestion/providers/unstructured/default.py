@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from io import BytesIO
 from pathlib import Path
 
@@ -104,7 +105,7 @@ class UnstructuredDefaultProvider(BaseProvider):
         return self._client
 
     @traceable
-    async def process(self, document_meta: DocumentMeta) -> list[Element | IntermediateElement]:
+    async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
         """
         Process the document using the Unstructured API.
 
@@ -150,6 +151,6 @@ class UnstructuredDefaultProvider(BaseProvider):
         elements: list[UnstructuredElement],
         document_meta: DocumentMeta,
         document_path: Path,
-    ) -> list[Element]:
+    ) -> Sequence[Element | IntermediateElement]:
         chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
         return [to_text_element(element, document_meta) for element in chunked_elements]
