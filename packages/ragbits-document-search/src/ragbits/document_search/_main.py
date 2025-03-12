@@ -208,7 +208,7 @@ class DocumentSearch(WithConstructionConfig):
                 determined based on the document metadata.
 
         Returns:
-            The processing excution result.
+            The ingest execution result.
         """
         sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
         return await self.ingest_strategy(

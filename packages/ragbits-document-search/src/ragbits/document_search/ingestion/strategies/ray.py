@@ -44,7 +44,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
         self.io_batch_size = io_batch_size
         self.io_memory = io_memory
 
-    @requires_dependencies(["ray.data"], "distributed")
+    @requires_dependencies(["ray.data"], "ray")
     async def __call__(
         self,
         documents: Iterable[DocumentMeta | Document | Source],

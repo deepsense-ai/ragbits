@@ -16,7 +16,7 @@ from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 class IngestTaskResult(BaseModel):
     """
-    Represents the successful result of the documents ingest execution.
+    Represents the result of the document ingest tast.
     """
 
     class Config:  # noqa: D106
@@ -28,7 +28,7 @@ class IngestTaskResult(BaseModel):
 
 class IngestSummaryResult(BaseModel):
     """
-    Represents the successful result of the documents ingest execution.
+    Represents the result of the document ingest execution.
     """
 
     class Config:  # noqa: D106
@@ -122,13 +122,12 @@ class IngestStrategy(WithConstructionConfig, ABC):
             vector_store: The vector store to store document chunks.
         """
         unique_source_ids = {element.document_meta.source.id for element in elements}
-
-        ids_to_delete = []
         # TODO: Pass 'where' argument to the list method to filter results and optimize search
-        for entry in await vector_store.list():
-            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
-                ids_to_delete.append(entry.id)
-
+        ids_to_delete = [
+            entry.id
+            for entry in await vector_store.list()
+            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids
+        ]
         if ids_to_delete:
             await vector_store.remove(ids_to_delete)
 

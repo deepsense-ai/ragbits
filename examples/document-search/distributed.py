@@ -1,7 +1,7 @@
 """
 Ragbits Document Search Example: Qdrant Distributed Ingest
 
-This example is based on the "Basic" example, but it demonstrates how to ingest documents in a distributed manner.
+This example is based on the "Qdrant" example, but it demonstrates how to ingest documents in a distributed manner.
 The distributed ingest is provided by "RayDistributedIngestStrategy" which uses Ray to parallelize the ingest process.
 
 The script performs the following steps:
@@ -40,7 +40,7 @@ to run it is using the official Docker image:
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search[distributed]",
+#     "ragbits-document-search[ray]",
 #     "ragbits-core",
 # ]
 # ///
