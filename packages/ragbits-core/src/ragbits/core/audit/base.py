@@ -69,7 +69,7 @@ class TraceHandler(Generic[SpanT], ABC):
         Yields:
             The output data.
         """
-        self._spans.set(self._spans.get()[:])
+        self._spans.set(self._spans.get([])[:])
         current_span = self._spans.get()[-1] if self._spans.get() else None
 
         span = self.start(
