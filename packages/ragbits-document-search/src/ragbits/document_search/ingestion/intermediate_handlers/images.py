@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.document_search.documents.element import (
     Element,
     ImageElement,
@@ -15,7 +15,7 @@ from ragbits.document_search.documents.element import (
 from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 
 
-class _ImagePromptInput(BaseModel):
+class ImagePromptInput(BaseModel):
     """
     Represents the input for an image processing prompt.
     """
@@ -23,7 +23,7 @@ class _ImagePromptInput(BaseModel):
     image: bytes
 
 
-class _ImagePrompt(Prompt[_ImagePromptInput]):
+class _ImagePrompt(Prompt[ImagePromptInput]):
     """
     Defines a prompt for processing image elements using an LLM.
     """
@@ -37,7 +37,7 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
     Provides image processing capabilities using an LLM.
     """
 
-    def __init__(self, llm: LLM, prompt: type[Prompt[_ImagePromptInput, Any]] | None = None):
+    def __init__(self, llm: LLM, prompt: type[Prompt[ImagePromptInput, Any]] | None = None):
         """
         Initializes the ImageProvider.
 
@@ -95,4 +95,7 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
             An initialized instance of `ImageIntermediateHandler`.
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
-        return cls(llm=llm)
+        prompt_cls = None
+        if "prompt" in config:
+            prompt_cls = import_by_path(config["prompt"])
+        return cls(llm=llm, prompt=prompt_cls)
