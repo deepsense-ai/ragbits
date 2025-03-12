@@ -1,5 +1,7 @@
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
@@ -20,21 +22,39 @@ def documents_fixture() -> list[DocumentMeta]:
 
 
 async def test_sequential_strategy(documents: list[DocumentMeta]):
+    embedder = NoopEmbedder()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = SequentialIngestStrategy()
-    elements = await strategy.process_documents(documents, router)
-    assert len(elements) == 5
+    results = await strategy(
+        documents=documents,
+        vector_store=vector_store,
+        processor_router=router,
+    )
+    assert len(results.successful) == 5
 
 
 async def test_batched_strategy(documents: list[DocumentMeta]):
+    embedder = NoopEmbedder()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = BatchedIngestStrategy(batch_size=2)
-    elements = await strategy.process_documents(documents, router)
-    assert len(elements) == 5
+    results = await strategy(
+        documents=documents,
+        vector_store=vector_store,
+        processor_router=router,
+    )
+    assert len(results.successful) == 5
 
 
 async def test_distributed_strategy(documents: list[DocumentMeta]):
+    embedder = NoopEmbedder()
+    vector_store = InMemoryVectorStore(embedder=embedder)
     router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = RayDistributedIngestStrategy()
-    elements = await strategy.process_documents(documents, router)
-    assert len(elements) == 5
+    results = await strategy(
+        documents=documents,
+        vector_store=vector_store,
+        processor_router=router,
+    )
+    assert len(results.successful) == 5
