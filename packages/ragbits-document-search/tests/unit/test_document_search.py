@@ -34,7 +34,7 @@ CONFIG = {
     },
     "reranker": {"type": "NoopReranker"},
     "providers": {"txt": {"type": "DummyProvider"}},
-    "processing_strategy": {"type": "SequentialIngestStrategy"},
+    "ingest_strategy": {"type": "SequentialIngestStrategy"},
 }
 
 
@@ -202,12 +202,12 @@ async def test_document_search_with_batched():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
 
-    processing_strategy = BatchedIngestStrategy(batch_size=5)
+    ingest_strategy = BatchedIngestStrategy(batch_size=5)
     vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     document_search = DocumentSearch(
         vector_store=vectore_store,
-        processing_strategy=processing_strategy,
+        ingest_strategy=ingest_strategy,
     )
 
     await document_search.ingest(documents)

@@ -50,7 +50,7 @@ config = {
                     "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
                 },
             },
-            "processing_strategy": {
+            "ingest_strategy": {
                 "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,

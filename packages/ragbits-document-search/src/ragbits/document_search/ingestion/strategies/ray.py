@@ -8,10 +8,10 @@ from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.strategies.base import (
+    IngestExecutionResult,
     IngestStrategy,
-    ProcessingExecutionResult,
-    ProcessingExecutionSummaryResult,
-    ProcessingExecutionTaskResult,
+    IngestSummaryResult,
+    IngestTaskResult,
 )
 
 
@@ -36,7 +36,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
             cpu_memory: The heap memory in bytes to reserve for each parallel CPU bound tasks (e.g. parsing).
             io_batch_size: The batch size for IO bound tasks (e.g. indexing).
             io_memory: The heap memory in bytes to reserve for each parallel IO bound tasks (e.g. indexing).
-            num_retries: The number of retries for task error.
+            num_retries: The number of retries per document ingest task error.
         """
         super().__init__(num_retries=num_retries)
         self.cpu_batch_size = cpu_batch_size
@@ -45,24 +45,24 @@ class RayDistributedIngestStrategy(IngestStrategy):
         self.io_memory = io_memory
 
     @requires_dependencies(["ray.data"], "distributed")
-    async def process(  # noqa: PLR6301
+    async def __call__(
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> ProcessingExecutionResult:
+    ) -> IngestExecutionResult:
         """
-        Process documents for indexing in parallel in batches.
+        Ingest documents in parallel in batches.
 
         Args:
-            documents: The documents to process.
+            documents: The documents to ingest.
             vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            The processing excution result.
+            The ingest execution result.
         """
         import ray
 
@@ -85,7 +85,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
                 )
                 return {
                     "results": [
-                        ProcessingExecutionTaskResult(
+                        IngestTaskResult(
                             document_uri=uri,
                             response=response,
                         )
@@ -110,7 +110,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
                     )
                 except Exception as exc:
                     batch["results"] = [
-                        ProcessingExecutionTaskResult(
+                        IngestTaskResult(
                             document_uri=result.document_uri,
                             response=exc,
                         )
@@ -137,7 +137,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
                     )
                 except Exception as exc:
                     batch["results"] = [
-                        ProcessingExecutionTaskResult(
+                        IngestTaskResult(
                             document_uri=result.document_uri,
                             response=exc,
                         )
@@ -152,12 +152,12 @@ class RayDistributedIngestStrategy(IngestStrategy):
         def _summarize(batch: dict) -> dict:
             return {
                 "results": [
-                    ProcessingExecutionSummaryResult(
+                    IngestSummaryResult(
                         document_uri=result.document_uri,
                         error=result.response,
                     )
                     if isinstance(result.response, BaseException)
-                    else ProcessingExecutionSummaryResult(
+                    else IngestSummaryResult(
                         document_uri=result.document_uri,
                         num_elements=len(result.response),
                     )
@@ -194,7 +194,7 @@ class RayDistributedIngestStrategy(IngestStrategy):
                 zero_copy_batch=True,
             )
         )
-        return ProcessingExecutionResult(
+        return IngestExecutionResult(
             successful=[data["results"] for data in dataset.filter(lambda data: not data["results"].error).take_all()],
             failed=[data["results"] for data in dataset.filter(lambda data: data["results"].error).take_all()],
         )

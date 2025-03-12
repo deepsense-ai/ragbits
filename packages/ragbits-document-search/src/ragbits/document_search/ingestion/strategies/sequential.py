@@ -6,9 +6,9 @@ from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.strategies.base import (
+    IngestExecutionResult,
     IngestStrategy,
-    ProcessingExecutionResult,
-    ProcessingExecutionSummaryResult,
+    IngestSummaryResult,
 )
 
 
@@ -17,26 +17,26 @@ class SequentialIngestStrategy(IngestStrategy):
     Ingest strategy that processes documents in sequence, one at a time.
     """
 
-    async def process(
+    async def __call__(
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> ProcessingExecutionResult:
+    ) -> IngestExecutionResult:
         """
-        Process documents for indexing sequentially one by one.
+        Ingest documents sequentially one by one.
 
         Args:
-            documents: The documents to process.
+            documents: The documents to ingest.
             vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            The processing excution result.
+            The ingest execution result.
         """
-        results = ProcessingExecutionResult()
+        results = IngestExecutionResult()
 
         for document in documents:
             document_uri = document.metadata.id if isinstance(document, Document) else document.id
@@ -56,14 +56,14 @@ class SequentialIngestStrategy(IngestStrategy):
                 )
             except Exception as exc:
                 results.failed.append(
-                    ProcessingExecutionSummaryResult(
+                    IngestSummaryResult(
                         document_uri=document_uri,
                         error=exc,
                     )
                 )
             else:
                 results.successful.append(
-                    ProcessingExecutionSummaryResult(
+                    IngestSummaryResult(
                         document_uri=document_uri,
                         num_elements=len(elements),
                     )

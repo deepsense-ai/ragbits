@@ -14,9 +14,9 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
-class ProcessingExecutionTaskResult(BaseModel):
+class IngestTaskResult(BaseModel):
     """
-    Represents the successful result of the documents processing execution.
+    Represents the successful result of the documents ingest execution.
     """
 
     class Config:  # noqa: D106
@@ -26,9 +26,9 @@ class ProcessingExecutionTaskResult(BaseModel):
     response: list[Element] | BaseException
 
 
-class ProcessingExecutionSummaryResult(BaseModel):
+class IngestSummaryResult(BaseModel):
     """
-    Represents the successful result of the documents processing execution.
+    Represents the successful result of the documents ingest execution.
     """
 
     class Config:  # noqa: D106
@@ -39,13 +39,13 @@ class ProcessingExecutionSummaryResult(BaseModel):
     error: BaseException | None = None
 
 
-class ProcessingExecutionResult(BaseModel):
+class IngestExecutionResult(BaseModel):
     """
-    Represents the result of the documents processing execution.
+    Represents the result of the documents ingest execution.
     """
 
-    successful: list[ProcessingExecutionSummaryResult] = Field(default_factory=list)
-    failed: list[ProcessingExecutionSummaryResult] = Field(default_factory=list)
+    successful: list[IngestSummaryResult] = Field(default_factory=list)
+    failed: list[IngestSummaryResult] = Field(default_factory=list)
 
 
 class IngestStrategy(WithConstructionConfig, ABC):
@@ -60,29 +60,29 @@ class IngestStrategy(WithConstructionConfig, ABC):
         Initialize the IngestStrategy instance.
 
         Args:
-            num_retries: The number of retries per document processing task error.
+            num_retries: The number of retries per document ingest task error.
         """
         self.num_retries = num_retries
 
     @abstractmethod
-    async def process(
+    async def __call__(
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> ProcessingExecutionResult:
+    ) -> IngestExecutionResult:
         """
-        Process documents for indexing.
+        Ingest documents.
 
         Args:
-            documents: The documents to process.
+            documents: The documents to ingest.
             vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            The processing excution result.
+            The ingest execution result.
         """
 
     @staticmethod

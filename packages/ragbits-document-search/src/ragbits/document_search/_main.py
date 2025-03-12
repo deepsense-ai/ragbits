@@ -22,7 +22,7 @@ from ragbits.document_search.ingestion.strategies import (
     IngestStrategy,
     SequentialIngestStrategy,
 )
-from ragbits.document_search.ingestion.strategies.base import ProcessingExecutionResult
+from ragbits.document_search.ingestion.strategies.base import IngestExecutionResult
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -47,7 +47,7 @@ class DocumentSearchConfig(BaseModel):
     vector_store: ObjectContructionConfig
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
-    processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
+    ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
     providers: dict[str, ObjectContructionConfig] = {}
 
 
@@ -72,7 +72,7 @@ class DocumentSearch(WithConstructionConfig):
     query_rephraser: QueryRephraser
     reranker: Reranker
     document_processor_router: DocumentProcessorRouter
-    processing_strategy: IngestStrategy
+    ingest_strategy: IngestStrategy
 
     def __init__(
         self,
@@ -80,13 +80,13 @@ class DocumentSearch(WithConstructionConfig):
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         document_processor_router: DocumentProcessorRouter | None = None,
-        processing_strategy: IngestStrategy | None = None,
+        ingest_strategy: IngestStrategy | None = None,
     ) -> None:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
-        self.processing_strategy = processing_strategy or SequentialIngestStrategy()
+        self.ingest_strategy = ingest_strategy or SequentialIngestStrategy()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -108,12 +108,12 @@ class DocumentSearch(WithConstructionConfig):
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
-        processing_strategy = IngestStrategy.subclass_from_config(model.processing_strategy)
+        ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
 
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, ingest_strategy)
 
     @classmethod
     def preferred_subclass(
@@ -193,7 +193,7 @@ class DocumentSearch(WithConstructionConfig):
         self,
         documents: str | Iterable[DocumentMeta | Document | Source],
         document_processor: BaseProvider | None = None,
-    ) -> ProcessingExecutionResult:
+    ) -> IngestExecutionResult:
         """
         Ingest documents into the search index.
 
@@ -211,7 +211,7 @@ class DocumentSearch(WithConstructionConfig):
             The processing excution result.
         """
         sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
-        return await self.processing_strategy.process(
+        return await self.ingest_strategy(
             documents=sources,
             vector_store=self.vector_store,
             processor_router=self.document_processor_router,

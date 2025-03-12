@@ -7,8 +7,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.providers.base import BaseProvider
-
-from .base import IngestStrategy, ProcessingExecutionResult, ProcessingExecutionSummaryResult
+from ragbits.document_search.ingestion.strategies.base import IngestExecutionResult, IngestStrategy, IngestSummaryResult
 
 
 class BatchedIngestStrategy(IngestStrategy):
@@ -21,32 +20,32 @@ class BatchedIngestStrategy(IngestStrategy):
         Initialize the BatchedIngestStrategy instance.
 
         Args:
-            batch_size: The size of the batch to process documents in.
-            num_retries: The number of retries per document processing task error.
+            batch_size: The size of the batch to ingest documents in.
+            num_retries: The number of retries per document ingest task error.
         """
         super().__init__(num_retries=num_retries)
         self.batch_size = batch_size
 
-    async def process(
+    async def __call__(
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> ProcessingExecutionResult:
+    ) -> IngestExecutionResult:
         """
-        Process documents for indexing sequentially in batches.
+        Ingest documents sequentially in batches.
 
         Args:
-            documents: The documents to process.
+            documents: The documents to ingest.
             vector_store: The vector store to store document chunks.
             processor_router: The document processor router to use.
             processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
 
         Returns:
-            The processing excution result.
+            The ingest execution result.
         """
-        results = ProcessingExecutionResult()
+        results = IngestExecutionResult()
         iterator = iter(documents)
 
         while batch := list(islice(iterator, self.batch_size)):
@@ -65,7 +64,7 @@ class BatchedIngestStrategy(IngestStrategy):
                 return_exceptions=True,
             )
             results.failed.extend(
-                ProcessingExecutionSummaryResult(
+                IngestSummaryResult(
                     document_uri=uri,
                     error=response,
                 )
@@ -87,7 +86,7 @@ class BatchedIngestStrategy(IngestStrategy):
                 )
             except Exception as exc:
                 results.failed.extend(
-                    ProcessingExecutionSummaryResult(
+                    IngestSummaryResult(
                         document_uri=uri,
                         error=exc,
                     )
@@ -96,7 +95,7 @@ class BatchedIngestStrategy(IngestStrategy):
                 )
             else:
                 results.successful.extend(
-                    ProcessingExecutionSummaryResult(
+                    IngestSummaryResult(
                         document_uri=uri,
                         num_elements=len(response),
                     )

@@ -56,16 +56,16 @@ embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 vector_store = InMemoryVectorStore(embedder=embedder)
-processing_strategy = BatchedIngestStrategy()
+ingest_strategy = BatchedIngestStrategy()
 
 document_search = DocumentSearch(
     vector_store=vector_store,
-    processing_strategy=processing_strategy
+    ingest_strategy=ingest_strategy
 )
 ```
 
 Also, you can adjust the batch size for the [`BatchedIngestStrategy`][ragbits.document_search.ingestion.strategies.BatchedIngestStrategy] strategy. The batch size controls how many documents are processed at once. By default, the batch size is 10, but you can modify it by passing the `batch_size` parameter to the [`BatchedIngestStrategy`][ragbits.document_search.ingestion.strategies.BatchedIngestStrategy] constructor:
 
 ```python
-processing_strategy = BatchedIngestStrategy(batch_size=64)
+ingest_strategy = BatchedIngestStrategy(batch_size=64)
 ```

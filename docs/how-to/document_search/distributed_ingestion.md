@@ -20,11 +20,11 @@ embedder = LiteLLMEmbedder(
 
 vector_store = InMemoryVectorStore(embedder=embedder)
 
-processing_strategy = RayDistributedIngestStrategy()
+ingest_strategy = RayDistributedIngestStrategy()
 
 document_search = DocumentSearch(
     vector_store=vector_store,
-    processing_strategy=processing_strategy
+    ingest_strategy=ingest_strategy
 )
 ```
 

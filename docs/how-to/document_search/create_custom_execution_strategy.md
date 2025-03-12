@@ -86,10 +86,10 @@ embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 vector_store = InMemoryVectorStore(embedder=embedder)
-processing_strategy = DelayedExecutionStrategy()
+ingest_strategy = DelayedExecutionStrategy()
 
 document_search = DocumentSearch(
     vector_store=vector_store,
-    processing_strategy=processing_strategy
+    ingest_strategy=ingest_strategy
 )
 ```
