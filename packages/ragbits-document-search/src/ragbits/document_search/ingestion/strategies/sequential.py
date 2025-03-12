@@ -41,17 +41,20 @@ class SequentialIngestStrategy(IngestStrategy):
         for document in documents:
             document_uri = document.metadata.id if isinstance(document, Document) else document.id
             try:
-                elements = await self._parse_document(
+                elements = await self._call_with_error_handling(
+                    self._parse_document,
                     document=document,
                     processor_router=processor_router,
                     processor_overwrite=processor_overwrite,
                 )
-                await self._remove_elements(
-                    elements=elements,
+                await self._call_with_error_handling(
+                    self._remove_elements,
+                    elements=elements,  # type: ignore
                     vector_store=vector_store,
                 )
-                await self._insert_elements(
-                    elements=elements,
+                await self._call_with_error_handling(
+                    self._insert_elements,
+                    elements=elements,  # type: ignore
                     vector_store=vector_store,
                 )
             except Exception as exc:
@@ -65,7 +68,7 @@ class SequentialIngestStrategy(IngestStrategy):
                 results.successful.append(
                     IngestSummaryResult(
                         document_uri=document_uri,
-                        num_elements=len(elements),
+                        num_elements=len(elements),  # type: ignore
                     )
                 )
 

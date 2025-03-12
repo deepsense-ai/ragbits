@@ -100,7 +100,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
         return_exception: bool = False,
         *executable_args: _CallP.args,
         **executable_kwargs: _CallP.kwargs,
-    ) -> _CallReturnT | BaseException:  # type: ignore
+    ) -> _CallReturnT | BaseException:
         """
         Call executable with standarized error handling.
         If an error occurs, the executable is retried `num_retries` times using randomized exponential backoff.

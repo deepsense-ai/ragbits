@@ -108,12 +108,13 @@ class RayDistributedIngestStrategy(IngestStrategy):
                     if not isinstance(result.response, BaseException)
                     for element in result.response
                 ]
-                try:
-                    await self._remove_elements(
-                        elements=elements,
-                        vector_store=vector_store,
-                    )
-                except Exception as exc:
+                exc = await self._call_with_error_handling(
+                    self._remove_elements,
+                    elements=elements,
+                    vector_store=vector_store,
+                    return_exception=True,
+                )
+                if exc:
                     batch["results"] = [
                         IngestTaskResult(
                             document_uri=result.document_uri,
@@ -135,12 +136,13 @@ class RayDistributedIngestStrategy(IngestStrategy):
                     if not isinstance(result.response, BaseException)
                     for element in result.response
                 ]
-                try:
-                    await self._insert_elements(
-                        elements=elements,
-                        vector_store=vector_store,
-                    )
-                except Exception as exc:
+                exc = await self._call_with_error_handling(
+                    self._insert_elements,
+                    elements=elements,
+                    vector_store=vector_store,
+                    return_exception=True,
+                )
+                if exc:
                     batch["results"] = [
                         IngestTaskResult(
                             document_uri=result.document_uri,

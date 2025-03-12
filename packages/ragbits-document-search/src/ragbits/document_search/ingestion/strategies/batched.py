@@ -85,11 +85,13 @@ class BatchedIngestStrategy(IngestStrategy):
             ]
 
             try:
-                await self._remove_elements(
+                await self._call_with_error_handling(
+                    self._remove_elements,
                     elements=elements,
                     vector_store=vector_store,
                 )
-                await self._insert_elements(
+                await self._call_with_error_handling(
+                    self._insert_elements,
                     elements=elements,
                     vector_store=vector_store,
                 )
