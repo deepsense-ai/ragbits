@@ -4279,6 +4279,7 @@ gcs = [
     { name = "gcloud-aio-storage" },
 ]
 http = [
+    { name = "aiohttp" },
     { name = "validators" },
 ]
 huggingface = [
@@ -4300,6 +4301,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", marker = "extra == 'http'", specifier = ">=3.10.8" },
     { name = "azure-core", marker = "extra == 'azure'", specifier = "~=1.32.0" },
     { name = "azure-identity", marker = "extra == 'azure'", specifier = "~=1.19.0" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = "~=12.24.1" },

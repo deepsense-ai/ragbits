@@ -59,6 +59,7 @@ s3 = [
     "boto3~=1.35.42",
 ]
 http = [
+    "aiohttp>=3.10.8",
     "validators>=0.34.0",
 ]
 

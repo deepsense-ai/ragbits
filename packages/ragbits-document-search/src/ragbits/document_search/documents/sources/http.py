@@ -28,7 +28,7 @@ class HttpSource(Source):
         """
         return self.url
 
-    @requires_dependencies(["requests"])
+    @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
         """
         Download a file available in the given url.
