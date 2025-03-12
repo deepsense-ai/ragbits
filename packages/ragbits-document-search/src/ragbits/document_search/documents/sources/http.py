@@ -11,6 +11,8 @@ from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
+HTTP_STATUS_OK = 200
+
 
 class HttpSource(Source):
     """
@@ -46,14 +48,13 @@ class HttpSource(Source):
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / normalized_url_path
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.url) as response:
-                if response.status == 200:
-                    with open(path, 'wb') as f:
-                        async for chunk in response.content.iter_chunked(1024):
-                            f.write(chunk)
-                else:
-                    raise ValueError(f"Failed to download {self.url}. Response code: {response.status}")
+        async with aiohttp.ClientSession() as session, session.get(self.url) as response:
+            if response.status == HTTP_STATUS_OK:
+                with open(path, "wb") as f:
+                    async for chunk in response.content.iter_chunked(1024):
+                        f.write(chunk)
+            else:
+                raise ValueError(f"Failed to download {self.url}. Response code: {response.status}")
 
         return path
 
