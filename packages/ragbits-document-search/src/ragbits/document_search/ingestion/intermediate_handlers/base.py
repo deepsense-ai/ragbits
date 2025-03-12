@@ -12,13 +12,13 @@ class BaseIntermediateHandler(ABC):
     """
 
     @abstractmethod
-    async def process(self, intermediate_element: IntermediateElement) -> Element:
+    async def process(self, intermediate_elements: list[IntermediateElement]) -> list[Element]:
         """
         Process an `IntermediateElement` and return a corresponding `Element`.
 
         Args:
-            intermediate_element: The intermediate element to be processed.
+            intermediate_elements: The intermediate elements to be processed.
 
         Returns:
-            The processed `Element` corresponding to the given `IntermediateElement`.
+            The list of processed elements.
         """

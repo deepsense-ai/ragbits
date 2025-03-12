@@ -240,9 +240,8 @@ class DocumentSearch(WithConstructionConfig):
         for element_type, element_list in intermediate_elements.items():
             handler = self.intermediate_element_handlers.get(element_type)
             if handler:
-                for element in element_list:
-                    processed_element = await handler.process(element)
-                    elements.append(processed_element)
+                processed_elements = await handler.process(element_list)
+                elements.extend(processed_elements)
             else:
                 warnings.warn(
                     f"No handler found for {element_type.__name__}. Keeping unprocessed elements.", RuntimeWarning
