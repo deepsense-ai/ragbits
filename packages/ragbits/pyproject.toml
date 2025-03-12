@@ -86,10 +86,6 @@ distributed = [
 fastembed = [
     "fastembed>=0.4.2"
 ]
-http = [
-    "aiohttp>=3.11.13",
-    "validators>=0.34.0",
-]
 
 [build-system]
 requires = ["hatchling", "hatch-fancy-pypi-readme"]
