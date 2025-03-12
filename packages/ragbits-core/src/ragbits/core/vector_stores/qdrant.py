@@ -63,6 +63,13 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self._distance_method = distance_method
 
     def __reduce__(self) -> tuple[Callable, tuple]:
+        """
+        Enables the QdrantVectorStore to be pickled and unpickled.
+
+        Returns:
+            The tuple of function and its arguments that allows reconstruction of the QdrantVectorStore.
+        """
+
         def _reconstruct(
             client_params: dict,
             index_name: str,

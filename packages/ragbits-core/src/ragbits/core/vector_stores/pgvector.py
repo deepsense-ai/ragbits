@@ -98,6 +98,13 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self._distance_method = distance_method
         self._hnsw_params = hnsw_params
 
+    def __reduce__(self) -> tuple:
+        """
+        Enables the PgVectorStore to be pickled and unpickled.
+        """
+        # TODO: To be implemented. Required for Ray processing.
+        raise NotImplementedError
+
     def _create_retrieve_query(
         self, vector: list[float], query_options: VectorStoreOptions | None = None
     ) -> tuple[str, list[Any]]:
