@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
@@ -9,15 +11,21 @@ from ragbits.document_search.ingestion.intermediate_handlers.images import Image
 @pytest.fixture
 def llm() -> LiteLLM:
     options = LiteLLMOptions(mock_response="response")
-    llm = LiteLLM(api_key="key", default_options=options)
+    llm = LiteLLM(model_name="gpt-4o", api_key="key", default_options=options)
     return llm
 
 
 @pytest.fixture
-def intermediate_image_element() -> IntermediateImageElement:
+def image_bytes() -> bytes:
+    with open(Path(__file__).parent.parent / "test.png", "rb") as f:
+        return f.read()
+
+
+@pytest.fixture
+def intermediate_image_element(image_bytes: bytes) -> IntermediateImageElement:
     return IntermediateImageElement(
         document_meta=DocumentMeta.create_text_document_from_literal(""),
-        image_bytes=b"image_bytes",
+        image_bytes=image_bytes,
         ocr_extracted_text="ocr text",
     )
 
@@ -29,7 +37,7 @@ async def test_process(llm: LiteLLM, intermediate_image_element: IntermediateIma
 
     assert len(results) == 1
     assert isinstance(results[0], ImageElement)
-    assert results[0].description == "reponse."
+    assert results[0].description == "response"
     assert results[0].image_bytes == intermediate_image_element.image_bytes
     assert results[0].ocr_extracted_text == intermediate_image_element.ocr_extracted_text
 
