@@ -4,9 +4,8 @@
 To run a local instance of pgVector, use Docker to pull and start the database container.
 
 1. **Pull the pgVector Docker image**
-```bash
-sudo docker pull pgvector/pgvector:pg17
- ```
+`bash sudo docker pull pgvector/pgvector:pg17`
+
 
 2. **Run the PostgreSQL container with pgVector**
 
@@ -19,9 +18,13 @@ sudo docker pull pgvector/pgvector:pg17
             -d pgvector/pgvector:0.8.0-pg17
 ```
     * `--name` the docker container a name assign to postgres.
+
     * `-p` 5432:5432 maps the default PostgreSQL port to the local machine.
+
     * `-e` POSTGRES_USER=ragbits_user sets the user name of the database
+
     * `-e` POSTGRES_PASSWORD=ragbits_password example sets the database password.
+
     * `-d` runs the container in detached mode.
 
 The local instance of pgVector is accessible using the following connection string:
@@ -110,77 +113,22 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### PgVectorStore Parameters
+### PgVectorStore distance
 
-The PgVectorStore class is initialized with the following parameters:
-
-* embedder: Embedder - An instance of Embedder class responsible for converting entries to vectors.
-* client: asyncpg.Pool – An instance of asyncpg.Pool used for database connections.
-* table_name: str – The name of the table where vectors are stored.
-* vector_size: int – The dimensionality of the vectors. This must match the stored embeddings.
-* distance_method: str (default: `"cosine"") – The similarity metric used for vector comparisons.
+One of the PgVectorStore parameters is distance_method - the similarity metric used for vector comparisons.
 Supported values include:
-    - "cosine" (<=>) – Cosine distance
-    - "l2" (<->) – Euclidean (L2) distance
-    - "l1" (<+>) – Manhattan (L1) distance
-    - "ip" (<#>) – Inner product
-    - "bit_hamming" (<~>) – Hamming distance
-    - "bit_jaccard" (<%>) – Jaccard distance
-    - "sparsevec_l2" (<->) – Sparse vector L2 distance
-    - "halfvec_l2" (<->) – Half precision vector L2 distance
-* hnsw_params: dict | None (default: {"m": 4, "ef_construction": 10}) – HNSW indexing parameters.
-If not specified, the default values are used.
-* default_options: VectorStoreOptions | None (default: VectorStoreOptions(k=5, max_distance=None)) –
-Default search options, including:
-    - k: int = 5 – Number of nearest neighbors to retrieve.
-    - max_distance: float | None = None – Maximum distance threshold for retrieval.
-* embedding_name_text - the name of embeddings for text
-* embedding_name_image - the name of embeddings for images
 
-**Note**: Currently, pgVector vector store doesn't support images.
+ * "cosine" (<=>) – Cosine distance
+ * "l2" (<->) – Euclidean (L2) distance
+ *   - "l1" (<+>) – Manhattan (L1) distance
+ *  - "ip" (<#>) – Inner product
+ *   - "bit_hamming" (<~>) – Hamming distance
+ *   - "bit_jaccard" (<%>) – Jaccard distance
+ *   - "sparsevec_l2" (<->) – Sparse vector L2 distance
+ *   - "halfvec_l2" (<->) – Half precision vector L2 distance
 
-### VectorStoreEntry
+The default value for distance method is cosine similarity.
 
-Entries stored in the database are represented by the VectorStoreEntry class, which consists of:
 
-* id: UUID – A unique identifier for the entry.
-* text: str – A text data
-* image_bytes: SerializableBytes - An image data.
-* metadata: dict – Additional metadata associated with the entry.
 
-### pgVectorStore methods
-The PgVectorStore class provides the following methods for managing and querying vector data:
 
-#### store
-store(entries: list[VectorStoreEntry]) -> None
-
-Stores a list of VectorStoreEntry objects in the database.
-Each entry consists of an ID, key, vector, and optional metadata.
-#### remove
-remove(ids: list[str]) -> None
-
-Removes entries from the database based on a list of entry IDs.
-#### list
-list(where: dict, limit: int | None = None, offset: int | None = None) -> list[VectorStoreEntry]
-
-Retrieves a list of entries that match the specified metadata filter.
-
-* where: dict – A dictionary specifying metadata conditions for filtering entries.
-* limit: int | None – The maximum number of entries to return (default is unlimited).
-* offset: int | None – The number of entries to skip before returning results (default is 0).
-
-#### retrieve
-retrieve(vector: list[float], options: VectorStoreOptions) -> list[VectorStoreResult]
-
-Finds entries similar to the provided query vector based on the configured distance metric.
-
-* vector: list[float] – The query vector.
-* options: VectorStoreOptions – Query options, including:
-     - k – Number of nearest neighbors to return.
-     - max_distance – Maximum allowable distance for retrieval.
-   The retrieve method searches for the closest entries using the specified distance metric defined in the table
-   and applies the max_distance constraint from VectorStoreOptions.
-  * Returns the list of VectorStoreResult, an object consists of:
-     - entry: VectorStoreEntry - An entry in database.
-     - vectors: dict[str, list[float]]  - the vector for given embedding type.
-     - score: float - similarity score between given query vector and query result vector.
