@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from typing import ClassVar
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.ingestion import providers
 
 
@@ -28,7 +29,7 @@ class BaseProvider(WithConstructionConfig, ABC):
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
 
     @abstractmethod
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
         """
         Process the document.
 
