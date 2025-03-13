@@ -33,7 +33,7 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
         for document in documents:
             await asyncio.sleep(1)
             element = await self.process_document(document, processor_router, processor_overwrite)
-            elements.append(element)
+            elements.extend(element)
         return elements
 ```
 
@@ -42,8 +42,13 @@ Alternatively, instead of using the `process_document` method, you can process d
 
 ```python
 import asyncio
+from collections.abc import Sequence
 
+from ragbits.document_search.documents.document import Document, DocumentMeta, Source
+from ragbits.document_search.documents.element import Element
+from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies import ProcessingExecutionStrategy
+from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 class DelayedExecutionStrategy(ProcessingExecutionStrategy):
     async def process_documents(
@@ -58,12 +63,12 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
             document_meta = await self.to_document_meta(document)
 
             # Get the processor for the document
-            processor = processor_overwrite or processor_router.get_processor(document)
+            processor = processor_overwrite or processor_router.get_provider(document)
 
             await asyncio.sleep(1)
 
             element = await processor.process(document_meta)
-            elements.append(element)
+            elements.extend(element)
         return elements
 ```
 

@@ -14,7 +14,7 @@ To set the preferred component using a factory function, you need to create a fu
 For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a factory function like this:
 
 ```python
-from ragbits.core.vector_stores import QdrantVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from qdrant_client import AsyncQdrantClient
 
