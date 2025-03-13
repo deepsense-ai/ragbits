@@ -4259,6 +4259,7 @@ name = "ragbits-document-search"
 version = "0.9.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "pdf2image" },
     { name = "ragbits-core" },
     { name = "rerankers" },
@@ -4277,10 +4278,6 @@ distributed = [
 ]
 gcs = [
     { name = "gcloud-aio-storage" },
-]
-http = [
-    { name = "aiohttp" },
-    { name = "validators" },
 ]
 huggingface = [
     { name = "datasets" },
@@ -4301,7 +4298,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", marker = "extra == 'http'", specifier = ">=3.10.8" },
+    { name = "aiohttp", specifier = ">=3.10.8" },
     { name = "azure-core", marker = "extra == 'azure'", specifier = "~=1.32.0" },
     { name = "azure-identity", marker = "extra == 'azure'", specifier = "~=1.19.0" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = "~=12.24.1" },
@@ -4314,7 +4311,6 @@ requires-dist = [
     { name = "rerankers", specifier = ">=0.6.1" },
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
-    { name = "validators", marker = "extra == 'http'", specifier = ">=0.34.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -4417,7 +4413,7 @@ dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
     { name = "ragbits-core", extra = ["chroma", "fastembed", "lab", "local", "otel", "pgvector", "qdrant"] },
-    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "http", "huggingface", "s3"] },
+    { name = "ragbits-document-search", extra = ["azure", "distributed", "gcs", "huggingface", "s3"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4448,7 +4444,7 @@ requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
     { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3", "http"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["gcs", "huggingface", "distributed", "azure", "s3"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
@@ -5691,15 +5687,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/f8/5ceea6876154d926604f10c1dd896adf9bce6d55a55911364337b8a5ed8d/uvloop-0.20.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:649c33034979273fa71aa25d0fe120ad1777c551d8c4cd2c0c9851d88fcb13ab", size = 4173357 },
     { url = "https://files.pythonhosted.org/packages/18/b2/117ab6bfb18274753fbc319607bf06e216bd7eea8be81d5bac22c912d6a7/uvloop-0.20.0-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:3a609780e942d43a275a617c0839d85f95c334bad29c4c0918252085113285b5", size = 4029868 },
     { url = "https://files.pythonhosted.org/packages/6f/52/deb4be09060637ef4752adaa0b75bf770c20c823e8108705792f99cd4a6f/uvloop-0.20.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:aea15c78e0d9ad6555ed201344ae36db5c63d428818b4b2a42842b3870127c00", size = 4115980 },
-]
-
-[[package]]
-name = "validators"
-version = "0.34.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/64/07/91582d69320f6f6daaf2d8072608a4ad8884683d4840e7e4f3a9dbdcc639/validators-0.34.0.tar.gz", hash = "sha256:647fe407b45af9a74d245b943b18e6a816acf4926974278f6dd617778e1e781f", size = 70955 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6e/78/36828a4d857b25896f9774c875714ba4e9b3bc8a92d2debe3f4df3a83d4f/validators-0.34.0-py3-none-any.whl", hash = "sha256:c804b476e3e6d3786fa07a30073a4ef694e617805eb1946ceee3fe5a9b8b1321", size = 43536 },
 ]
 
 [[package]]

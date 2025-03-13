@@ -32,7 +32,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-dependencies = ["unstructured>=0.16.9", "unstructured-client>=0.26.0", "pdf2image>=1.17.0", "rerankers>=0.6.1", "ragbits-core==0.9.0"]
+dependencies = [
+    "unstructured>=0.16.9",
+    "unstructured-client>=0.26.0",
+    "pdf2image>=1.17.0",
+    "rerankers>=0.6.1",
+    "ragbits-core==0.9.0",
+    "aiohttp>=3.10.8",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -57,10 +64,6 @@ distributed = [
 ]
 s3 = [
     "boto3~=1.35.42",
-]
-http = [
-    "aiohttp>=3.10.8",
-    "validators>=0.34.0",
 ]
 
 [tool.uv]

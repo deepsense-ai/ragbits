@@ -1,5 +1,6 @@
 from sympy.testing import pytest
 
+from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources.http import HttpSource
 
 
@@ -24,12 +25,15 @@ async def test_from_uri_one_file():
         assert result[0] == HttpSource(url=uri)
 
 
-async def test_from_uri_invalid_url_raises_exception():
+async def test_invalid_url_raises_exception():
     wrong_uris = [
         "some string",
         "https://www.url with spaces.com/path/to/file",
         "www.without-protocol.com/path/to/file",
+        "http://www.domain-only.com",
+        "http://www.domain-only-with-slash.com/",
     ]
+
     for uri in wrong_uris:
-        with pytest.raises(ValueError):
-            await HttpSource.from_uri(uri)
+        with pytest.raises(SourceNotFoundError):
+            await HttpSource(url=uri).fetch()

@@ -1,17 +1,17 @@
+import re
 from collections.abc import Sequence
 from contextlib import suppress
 from pathlib import Path
+from typing import ClassVar
 from urllib.parse import urlparse
 
 with suppress(ImportError):
     import aiohttp
-    import validators
 
 from ragbits.core.utils.decorators import requires_dependencies
+from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import get_local_storage_dir
-
-HTTP_STATUS_OK = 200
 
 
 class HttpSource(Source):
@@ -20,6 +20,7 @@ class HttpSource(Source):
     """
 
     url: str
+    protocol: ClassVar[str] = "web"
 
     @property
     def id(self) -> str:
@@ -37,46 +38,58 @@ class HttpSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
-            ValueError: If the download fails.
+            SourceNotFoundError: If the URL is invalid.
         """
-        parsed_url = urlparse(self.url)
-        domain_name = parsed_url.netloc
-        normalized_url_path = parsed_url.path.replace("/", "_")
+        try:
+            parsed_url = urlparse(self.url)
+            url_path, file_name = parsed_url.path.rsplit("/", 1)
+            normalized_url_path = re.sub(r"\W", "_", url_path) + file_name
+            domain_name = parsed_url.netloc
+        except ValueError as e:
+            raise SourceNotFoundError(self.id) from e
 
         local_dir = get_local_storage_dir()
         container_local_dir = local_dir / domain_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / normalized_url_path
 
-        async with aiohttp.ClientSession() as session, session.get(self.url) as response:
-            if response.status == HTTP_STATUS_OK:
-                with open(path, "wb") as f:
-                    async for chunk in response.content.iter_chunked(1024):
-                        f.write(chunk)
-            else:
-                raise ValueError(f"Failed to download {self.url}. Response code: {response.status}")
+        try:
+            async with aiohttp.ClientSession() as session, session.get(self.url) as response:
+                if response.ok:
+                    with open(path, "wb") as f:
+                        async for chunk in response.content.iter_chunked(1024):
+                            f.write(chunk)
+                else:
+                    raise SourceNotFoundError(self.id)
+        except (aiohttp.ClientError, IsADirectoryError) as e:
+            raise SourceNotFoundError(self.id) from e
 
         return path
 
     @classmethod
-    @requires_dependencies(["validators"])
+    async def list_sources(cls, url: str) -> Sequence["HttpSource"]:
+        """
+        List the file under the given URL.
+
+        Arguments:
+            url: The URL to the file.
+
+        Returns:
+            Sequence: The Sequence with HTTP source.
+        """
+        return [cls(url=url)]
+
+    @classmethod
     async def from_uri(cls, url: str) -> Sequence["HttpSource"]:
         """
         Create HttpSource instances from a URI path.
         The supported url format is:
-        <protocol>://<domain>/<path>
+        <protocol>://<domain>/<path>/<filename>.<file_extension>
 
         Args:
             url: The URI path.
 
         Returns:
             A sequence containing a HttpSource instance.
-
-        Raises:
-            ValueError: If the url has invalid format
-
         """
-        if not validators.url(url):
-            raise ValueError(f"Invalid URL: {url}")
-
         return [cls(url=url)]
