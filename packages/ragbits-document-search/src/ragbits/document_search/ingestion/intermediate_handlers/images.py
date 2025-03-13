@@ -3,7 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMType
+from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.prompt import Prompt
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.document_search.documents.element import (
@@ -46,7 +47,7 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
             prompt: The prompt class to use.
                 Defaults to `_ImagePrompt` if not provided.
         """
-        self._llm = llm
+        self._llm = llm or get_preferred_llm(llm_type=LLMType.VISION)
         self._prompt = prompt or _ImagePrompt
 
     async def process(self, intermediate_elements: list[IntermediateElement]) -> list[Element]:

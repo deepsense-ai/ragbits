@@ -12,13 +12,20 @@ from ragbits.core.config import CoreConfig
 from ragbits.core.llms.base import LLMType
 from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import (
+    NoPreferredConfigError,
+    ObjectContructionConfig,
+    WithConstructionConfig,
+    import_by_path,
+)
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.document_search.documents import element
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
+from ragbits.document_search.ingestion import intermediate_handlers
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler
@@ -123,13 +130,14 @@ class DocumentSearch(WithConstructionConfig):
         providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
         document_processor_router = DocumentProcessorRouter.from_config(providers_config)
 
-        return cls(
-            vector_store,
-            query_rephraser,
-            reranker,
-            document_processor_router,
-            processing_strategy,
-        )
+        handlers = {
+            import_by_path(element_type, element): import_by_path(
+                handler_config["type"], intermediate_handlers
+            ).from_config(handler_config["config"])
+            for element_type, handler_config in config.get("intermediate_handlers", {}).items()
+        }
+
+        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy, handlers)
 
     @classmethod
     def preferred_subclass(
@@ -231,11 +239,11 @@ class DocumentSearch(WithConstructionConfig):
         )
 
         intermediate_elements: dict[type, list[IntermediateElement]] = {}
-        for element in raw_elements:
-            if isinstance(element, IntermediateElement):
-                intermediate_elements.setdefault(type(element), []).append(element)
+        for raw_element in raw_elements:
+            if isinstance(raw_element, IntermediateElement):
+                intermediate_elements.setdefault(type(raw_element), []).append(raw_element)
 
-        elements = [element for element in raw_elements if not isinstance(element, IntermediateElement)]
+        elements = [raw_element for raw_element in raw_elements if not isinstance(raw_element, IntermediateElement)]
 
         for element_type, element_list in intermediate_elements.items():
             handler = self.intermediate_element_handlers.get(element_type)
