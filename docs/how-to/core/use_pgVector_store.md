@@ -5,50 +5,75 @@ To run a local instance of pgVector, use Docker to pull and start the database c
 
 1. **Pull the pgVector Docker image**
 ```bash
-sudo docker pull pgvector/pgvector:pg16
+sudo docker pull pgvector/pgvector:pg17
  ```
 
 2. **Run the PostgreSQL container with pgVector**
+
 ```bash
-sudo docker run --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d pgvector/pgvector:pg16
+    docker run --name postgres_container \
+            -p 5432:5432 \
+            -e POSTGRES_USER=ragbits_user \
+            -e POSTGRES_PASSWORD=ragbits_password \
+            -e POSTGRES_DB = ragbits_db \
+            -d pgvector/pgvector:0.8.0-pg17
 ```
-    * `--name` postgres assigns the container a name (postgres).
+    * `--name` the docker container a name assign to postgres.
     * `-p` 5432:5432 maps the default PostgreSQL port to the local machine.
-    * `-e` POSTGRES_PASSWORD=mysecretpassword sets the database password.
+    * `-e` POSTGRES_USER=ragbits_user sets the user name of the database
+    * `-e` POSTGRES_PASSWORD=ragbits_password example sets the database password.
     * `-d` runs the container in detached mode.
 
 The local instance of pgVector is accessible using the following connection string:
-```DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"```
+```DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"```
 
 The database connection string (DB) may vary depending on the deployment setup.
 If the database is hosted remotely, in the cloud, or configured differently,
 update the connection string accordingly to match the appropriate host, port, credentials, and database name.
 
 ## How to connect to pgVector database with Ragbits
-To connect to PostgreSQL, establish a connection pool using asyncpg.
-The connection string can be provided directly or specified using individual parameters.
+To connect to PostgreSQL, establish a connection pool using asyncpg library.
+
+The connection string can be provided directly:
+```python
+import asyncpg
+DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
+async def main() -> None:
+    pool = await asyncpg.create_pool(dsn=DB)
+```
+Or specified using individual parameters:
+```python
+import asyncpg
+async def main() -> None:
+    pool = await asyncpg.create_pool(
+        user="ragbits_user",
+        password="ragbits_password",
+        database="ragbits_db",
+        host="localhost",
+    )
+```
+To ensure proper resource management, you can use asyncpg.create_pool as a context manager:
+```python
+import asyncpg
+DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
+async with asyncpg.create_pool(dsn=DB) as pool:
+
+```
+
+The connection pool created with asyncpg.create_pool will be used to initialize an instance of PgVectorStore.
+
 
 ```python
 import asyncpg
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 async def main() -> None:
-    pool = await asyncpg.create_pool(DB)
-    vector_store = PgVectorStore(client=pool, table_name="test_table", vector_size=1536)
+  DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
+  async with asyncpg.create_pool(dsn=DB) as pool:
+    embedder = LiteLLMEmbedder(model="text-embedding-3-small")
+    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table", vector_size=1536)
 ```
-Alternatively, the connection pool can be created explicitly:
-```python
-import asyncpg
-from ragbits.core.vector_stores.pgvector import PgVectorStore
-async def main() -> None:
-    pool = await asyncpg.create_pool(
-        user="postgres",
-        password="mysecretpassword",
-        database="postgres",
-        host="localhost",
-    )
-    vector_store = PgVectorStore(client=pool, table_name="test_table", vector_size=1536)
-```
+
 **Note**: Ensure that the vector size is correctly configured when initializing PgVectorStore,
 as it must match the expected dimensions of the stored embeddings.
 
@@ -59,12 +84,12 @@ import asyncpg
 import asyncio
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-
-DB = "postgresql://postgres:mysecretpassword@localhost:5432/postgres"
-
+from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 async def main() -> None:
-    pool = await asyncpg.create_pool(DB)
-    vector_store = PgVectorStore(client=pool, table_name="test_tableZXXX", vector_size=3)
+  DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
+  async with asyncpg.create_pool(dsn=DB) as pool:
+    embedder = LiteLLMEmbedder(model="text-embedding-3-small")
+    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table", vector_size=3)
     data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=[0.1, 0.2, 0.3],
             metadata={"key1": "value1", "content": "test 1"}),
             VectorStoreEntry(id="test_id_2", key="test_key_2", vector=[0.4, 0.5, 0.6],
@@ -84,9 +109,12 @@ async def main() -> None:
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
 ### PgVectorStore Parameters
+
 The PgVectorStore class is initialized with the following parameters:
 
+* embedder: Embedder - An instance of Embedder class responsible for converting entries to vectors.
 * client: asyncpg.Pool – An instance of asyncpg.Pool used for database connections.
 * table_name: str – The name of the table where vectors are stored.
 * vector_size: int – The dimensionality of the vectors. This must match the stored embeddings.
@@ -106,14 +134,18 @@ If not specified, the default values are used.
 Default search options, including:
     - k: int = 5 – Number of nearest neighbors to retrieve.
     - max_distance: float | None = None – Maximum distance threshold for retrieval.
-* metadata_store: MetadataStore | None – An optional metadata store for additional data management.
+* embedding_name_text - the name of embeddings for text
+* embedding_name_image - the name of embeddings for images
 
-### VectoreStoreEntry
+**Note**: Currently, pgVector vector store doesn't support images.
+
+### VectorStoreEntry
+
 Entries stored in the database are represented by the VectorStoreEntry class, which consists of:
 
-* id: str – A unique identifier for the entry.
-* key: str – A key associated with the vector.
-* vector: list[float] – The vector representation of the entry.
+* id: UUID – A unique identifier for the entry.
+* text: str – A text data
+* image_bytes: SerializableBytes - An image data.
 * metadata: dict – Additional metadata associated with the entry.
 
 ### pgVectorStore methods
@@ -121,10 +153,12 @@ The PgVectorStore class provides the following methods for managing and querying
 
 #### store
 store(entries: list[VectorStoreEntry]) -> None
+
 Stores a list of VectorStoreEntry objects in the database.
 Each entry consists of an ID, key, vector, and optional metadata.
 #### remove
 remove(ids: list[str]) -> None
+
 Removes entries from the database based on a list of entry IDs.
 #### list
 list(where: dict, limit: int | None = None, offset: int | None = None) -> list[VectorStoreEntry]
@@ -136,7 +170,7 @@ Retrieves a list of entries that match the specified metadata filter.
 * offset: int | None – The number of entries to skip before returning results (default is 0).
 
 #### retrieve
-retrieve(vector: list[float], options: VectorStoreOptions) -> list[VectorStoreEntry]
+retrieve(vector: list[float], options: VectorStoreOptions) -> list[VectorStoreResult]
 
 Finds entries similar to the provided query vector based on the configured distance metric.
 
@@ -146,3 +180,7 @@ Finds entries similar to the provided query vector based on the configured dista
      - max_distance – Maximum allowable distance for retrieval.
    The retrieve method searches for the closest entries using the specified distance metric defined in the table
    and applies the max_distance constraint from VectorStoreOptions.
+  * Returns the list of VectorStoreResult, an object consists of:
+     - entry: VectorStoreEntry - An entry in database.
+     - vectors: dict[str, list[float]]  - the vector for given embedding type.
+     - score: float - similarity score between given query vector and query result vector.
