@@ -1,0 +1,49 @@
+import pytest
+
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.documents.element import ImageElement, IntermediateImageElement
+from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler, _ImagePrompt
+
+
+@pytest.fixture
+def llm() -> LiteLLM:
+    options = LiteLLMOptions(mock_response="response")
+    llm = LiteLLM(api_key="key", default_options=options)
+    return llm
+
+
+@pytest.fixture
+def intermediate_image_element() -> IntermediateImageElement:
+    return IntermediateImageElement(
+        document_meta=DocumentMeta.create_text_document_from_literal(""),
+        image_bytes=b"image_bytes",
+        ocr_extracted_text="ocr text",
+    )
+
+
+@pytest.mark.asyncio
+async def test_process(llm: LiteLLM, intermediate_image_element: IntermediateImageElement):
+    handler = ImageIntermediateHandler(llm=llm)
+    results = await handler.process([intermediate_image_element])
+
+    assert len(results) == 1
+    assert isinstance(results[0], ImageElement)
+    assert results[0].description == "reponse."
+    assert results[0].image_bytes == intermediate_image_element.image_bytes
+    assert results[0].ocr_extracted_text == intermediate_image_element.ocr_extracted_text
+
+
+def test_from_config(llm: LiteLLM):
+    config = {
+        "llm": {
+            "type": "LiteLLM",
+            "prompt": "ragbits.document_search.ingestion.intermediate_handlers.images:_ImagePrompt",
+        }
+    }
+
+    handler = ImageIntermediateHandler.from_config(config)
+
+    assert isinstance(handler, ImageIntermediateHandler)
+    assert handler._llm == llm
+    assert handler._prompt == _ImagePrompt
