@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from enum import Enum
 from typing import ClassVar, TypeVar
 from uuid import UUID
 
@@ -44,11 +45,11 @@ class VectorStoreEntry(BaseModel):
 class VectorStoreResult(BaseModel):
     """
     An object representing a query result from a vector store.
-    Contains the entry, its vectors, and the similarity score.
+    Contains the entry, its vector, and the similarity score.
     """
 
     entry: VectorStoreEntry
-    vectors: dict[str, list[float]]  # Maps embedding type to vector
+    vector: list[float]
     score: float
 
 
@@ -129,7 +130,16 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
         """
 
 
-class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
+class EmbeddingType(Enum):
+    """
+    Types of embbedings supported by the vector store.
+    """
+
+    TEXT = "text"
+    IMAGE = "image"
+
+
+class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
     """
     Base class for vector stores that takes an embedder as an argument.
     """
@@ -138,8 +148,6 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         self,
         embedder: Embedder,
         default_options: VectorStoreOptionsT | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new VectorStore instance.
@@ -148,17 +156,13 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
             embedder: The embedder to use for converting entries to vectors.
             default_options: The default options for querying the vector store.
             embedder: The embedder to use for converting entries to vectors.
-            embedding_name_text: The name of the embedding for text.
-            embedding_name_image: The name of the embedding for images.
         """
         super().__init__(default_options=default_options)
         self._embedder = embedder
-        self._embedding_name_text = embedding_name_text
-        self._embedding_name_image = embedding_name_image
 
     async def _create_embeddings(
         self, entries: list[VectorStoreEntry] | list[VectorStoreEntry]
-    ) -> dict[UUID, dict[str, list[float]]]:
+    ) -> dict[UUID, dict[EmbeddingType, list[float]]]:
         """
         Create embeddings for the given entry.
 
@@ -172,16 +176,16 @@ class VectorStoreNeedingEmbedder(VectorStore[VectorStoreOptionsT]):
         text_entries = {e.id: e.text for e in entries if e.text}
         image_entries = {e.id: e.image_bytes for e in entries if e.image_bytes}
 
-        embeddings: defaultdict[UUID, dict[str, list[float]]] = defaultdict(dict)
+        embeddings: defaultdict[UUID, dict[EmbeddingType, list[float]]] = defaultdict(dict)
         if text_entries:
             embedded = await self._embedder.embed_text(list(text_entries.values()))
             for i, id in enumerate(text_entries.keys()):
-                embeddings[id][self._embedding_name_text] = embedded[i]
+                embeddings[id][EmbeddingType.TEXT] = embedded[i]
 
         if image_entries and self._embedder.image_support():
             embedded = await self._embedder.embed_image(list(image_entries.values()))
             for i, id in enumerate(image_entries.keys()):
-                embeddings[id][self._embedding_name_image] = embedded[i]
+                embeddings[id][EmbeddingType.IMAGE] = embedded[i]
 
         image_only_ids = set(image_entries.keys()) - set(text_entries.keys())
         if image_only_ids and not self._embedder.image_support():

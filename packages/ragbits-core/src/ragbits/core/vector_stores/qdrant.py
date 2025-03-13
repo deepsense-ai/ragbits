@@ -1,6 +1,6 @@
-import asyncio
-from collections.abc import Coroutine, Iterable, Mapping
-from typing import Any, cast
+import contextlib
+from collections.abc import Iterable, Mapping
+from typing import cast
 from uuid import UUID
 
 import httpx
@@ -14,16 +14,17 @@ from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
 
-class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
@@ -37,8 +38,6 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         embedder: Embedder,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new QdrantVectorStore instance.
@@ -49,14 +48,10 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             embedder: The embedder to use for converting entries to vectors.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
-            embedding_name_text: The name under which the text embedding is stored in the resulting object.
-            embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
-            embedding_name_text=embedding_name_text,
-            embedding_name_image=embedding_name_image,
         )
         self._client = client
         self._index_name = index_name
@@ -91,6 +86,10 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                 return len(vector)
         raise ValueError("No vectors found in the input")
 
+    @staticmethod
+    def _internal_id(entry_id: UUID, embedding_type: EmbeddingType) -> UUID:
+        return UUID(int=entry_id.int + list(EmbeddingType).index(embedding_type))
+
     @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -111,20 +110,18 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             vector_size = self._detect_vector_size(embeddings.values())
             await self._client.create_collection(
                 collection_name=self._index_name,
-                vectors_config={
-                    name: VectorParams(size=vector_size, distance=self._distance_method)
-                    for name in [self._embedding_name_text, self._embedding_name_image]
-                },
+                vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
             )
 
         points = (
             models.PointStruct(
-                id=str(entry.id),
-                vector=embeddings[entry.id],
+                id=str(self._internal_id(entry.id, embedding_type)),
+                vector=embeddings[entry.id][embedding_type],
                 payload=entry.model_dump(exclude_none=True),
             )
             for entry in entries
-            if entry.id in embeddings
+            for embedding_type in EmbeddingType
+            if entry.id in embeddings and embedding_type in embeddings[entry.id]
         )
 
         self._client.upload_points(
@@ -151,50 +148,43 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         merged_options = (self.default_options | options) if options else self.default_options
         score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
 
-        vector_coroutines: list[Coroutine[Any, Any, list[list[float]]]] = []
-        if text:
-            vector_coroutines.append(self._embedder.embed_text([text]))
-        if image:
-            vector_coroutines.append(self._embedder.embed_image([image]))
+        if image and text:
+            raise ValueError("Either text or image should be provided, not both.")
 
-        if not vector_coroutines:
+        if text:
+            vector = await self._embedder.embed_text([text])
+        elif image:
+            vector = await self._embedder.embed_image([image])
+        else:
             raise ValueError("Either text or image should be provided.")
 
-        query_vectors = await asyncio.gather(*vector_coroutines)
-
-        # TODO: Come up with a better way to query both image and text vectors
-        # FusionQuery boosts entries that appear in both lists, i.e. those
-        # that contain both text and image, which is probably not what we want.
         query_results = await self._client.query_points(
-            prefetch=[
-                models.Prefetch(
-                    query=vector[0],
-                    using=name,
-                )
-                for vector in query_vectors
-                for name in [self._embedding_name_text, self._embedding_name_image]
-            ],
             collection_name=self._index_name,
-            query=models.FusionQuery(fusion=models.Fusion.DBSF),
-            limit=merged_options.k,
+            query=vector[0],
+            limit=merged_options.k * 2,  # *2 to account for possible duplicates
             score_threshold=score_threshold,
             with_payload=True,
             with_vectors=True,
         )
 
         results: list[VectorStoreResult] = []
-
+        seen_ids = set()
         for point in query_results.points:
-            if not isinstance(point.vector, dict):
-                raise ValueError(f"For payload {point.payload}, vector is not a dict: {point.vector}")
-            vector: dict = point.vector
+            entry = VectorStoreEntry.model_validate(point.payload)
+            if entry.id in seen_ids:
+                continue
+            seen_ids.add(entry.id)
+
             results.append(
                 VectorStoreResult(
-                    entry=VectorStoreEntry.model_validate(point.payload),
+                    entry=entry,
                     score=point.score,
-                    vectors=vector,
+                    vector=cast(list[float], point.vector),
                 )
             )
+
+            if len(results) >= merged_options.k:
+                break
 
         return results
 
@@ -209,12 +199,15 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Raises:
             ValueError: If collection named `self._index_name` is not present in the vector store.
         """
-        await self._client.delete(
-            collection_name=self._index_name,
-            points_selector=models.PointIdsList(
-                points=[str(id) for id in ids],
-            ),
-        )
+        with contextlib.suppress(KeyError):  # it's ok if a point already doesn't exist
+            await self._client.delete(
+                collection_name=self._index_name,
+                points_selector=models.PointIdsList(
+                    points=[
+                        str(self._internal_id(id, embedding_type)) for id in ids for embedding_type in EmbeddingType
+                    ],
+                ),
+            )
 
     @staticmethod
     def _create_qdrant_filter(where: WhereQuery) -> Filter:
@@ -274,4 +267,8 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             with_payload=True,
             with_vectors=True,
         )
-        return [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+
+        vs_results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+        deduplicated_results = list({r.id: r for r in vs_results}.values())
+
+        return deduplicated_results

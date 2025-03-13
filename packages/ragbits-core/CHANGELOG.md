@@ -4,6 +4,7 @@
 
 - Add support for images in few shot prompts (#155)
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
+- Better handling of cases when text and image embeddings are mixed in VectorStore
 - Add instruction on how to use local servers for LLMs (#395).
 - Introduce intermediate image elements (#139)
 
