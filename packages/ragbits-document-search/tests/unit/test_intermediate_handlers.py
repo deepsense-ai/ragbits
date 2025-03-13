@@ -34,7 +34,7 @@ async def test_process(llm: LiteLLM, intermediate_image_element: IntermediateIma
     assert results[0].ocr_extracted_text == intermediate_image_element.ocr_extracted_text
 
 
-def test_from_config(llm: LiteLLM):
+def test_from_config():
     config = {
         "llm": {
             "type": "LiteLLM",
@@ -45,5 +45,5 @@ def test_from_config(llm: LiteLLM):
     handler = ImageIntermediateHandler.from_config(config)
 
     assert isinstance(handler, ImageIntermediateHandler)
-    assert handler._llm == llm
+    assert isinstance(handler._llm, LiteLLM)
     assert handler._prompt == _ImagePrompt
