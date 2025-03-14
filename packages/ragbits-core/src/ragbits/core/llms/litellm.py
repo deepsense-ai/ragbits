@@ -123,33 +123,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
-        with trace(
-            messages=prompt.chat,
-            model=self.model_name,
-            base_url=self.base_url,
-            api_version=self.api_version,
+        response = await self._get_litellm_response(
+            conversation=prompt.chat,
+            options=options,
             response_format=response_format,
-            options=options.dict(),
-        ) as outputs:
-            response = await self._get_litellm_response(
-                conversation=prompt.chat,
-                options=options,
-                response_format=response_format,
-            )
-            if not response.choices:  # type: ignore
-                raise LLMEmptyResponseError()
+        )
+        if not response.choices:  # type: ignore
+            raise LLMEmptyResponseError()
+        results = {}
+        results["response"] = response.choices[0].message.content  # type: ignore
 
-            outputs.response = response.choices[0].message.content  # type: ignore
+        if response.usage:  # type: ignore
+            results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
+            results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
+            results["total_tokens"] = response.usage.total_tokens  # type: ignore
 
-            if response.usage:  # type: ignore
-                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
-                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
-                outputs.total_tokens = response.usage.total_tokens  # type: ignore
+        if options.logprobs:
+            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
-            if options.logprobs:
-                outputs.logprobs = response.choices[0].logprobs["content"]  # type: ignore
-
-        return vars(outputs)  # type: ignore
+        return results  # type: ignore
 
     async def _call_streaming(
         self,

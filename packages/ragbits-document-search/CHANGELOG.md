@@ -6,6 +6,8 @@
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
 
+ - added traceable
+
 ## 0.9.0 (2025-02-25)
 
 ### Changed

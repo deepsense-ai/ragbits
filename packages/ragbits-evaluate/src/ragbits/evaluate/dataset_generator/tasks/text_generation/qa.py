@@ -2,8 +2,8 @@ from typing import Any
 
 from distilabel.llms.base import LLM
 
-from ...utils import get_closest_substring, get_passages_list
-from .base import BaseDistilabelTask
+from ragbits.evaluate.dataset_generator.tasks.text_generation.base import BaseDistilabelTask
+from ragbits.evaluate.dataset_generator.utils import get_closest_substring, get_passages_list
 
 
 class QueryGenTask(BaseDistilabelTask):

@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
+from ragbits.core.audit import trace, traceable
+
 with suppress(ImportError):
     import boto3
     from botocore.client import BaseClient
@@ -78,19 +80,19 @@ class S3Source(Source):
         container_local_dir.mkdir(parents=True, exist_ok=True)
         normalized_key = self.key.replace("/", "_")
         path = container_local_dir / normalized_key
-
-        try:
-            self._s3_client.download_file(self.bucket_name, self.key, path)
-        except ClientError as e:
-            if e.response["Error"]["Code"] == "404":
-                raise FileNotFoundError(f"The object does not exist: {self.key}") from e
-            elif e.response["Error"]["Code"] == "403":
-                raise PermissionError(f"Access denied. No permission to download: {self.key}") from e
-            else:
-                raise RuntimeError(f"S3 Client Error: {e}") from e
-        except (NoCredentialsError, PartialCredentialsError) as e:
-            raise ValueError("AWS credentials are missing or invalid.") from e
-
+        with trace(bucket=self.bucket_name, key=self.key) as outputs:
+            try:
+                self._s3_client.download_file(self.bucket_name, self.key, path)
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "404":
+                    raise FileNotFoundError(f"The object does not exist: {self.key}") from e
+                elif e.response["Error"]["Code"] == "403":
+                    raise PermissionError(f"Access denied. No permission to download: {self.key}") from e
+                else:
+                    raise RuntimeError(f"S3 Client Error: {e}") from e
+            except (NoCredentialsError, PartialCredentialsError) as e:
+                raise ValueError("AWS credentials are missing or invalid.") from e
+            outputs.path = path
         return path
 
     @classmethod
@@ -114,21 +116,23 @@ class S3Source(Source):
         cls._set_client(bucket_name)
         if cls._s3_client is None:
             raise RuntimeError("S3 client is not initialized.")
-
-        try:
-            aws_sources_list = []
-            paginator = cls._s3_client.get_paginator("list_objects_v2")
-            for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
-                for obj in page.get("Contents", []):
-                    key = obj["Key"]
-                    aws_sources_list.append(cls(bucket_name=bucket_name, key=key))
-            return aws_sources_list
-        except (NoCredentialsError, PartialCredentialsError) as e:
-            raise ValueError("AWS credentials are missing or incomplete. Please configure them.") from e
-        except ClientError as e:
-            raise RuntimeError(f"Failed to list files in bucket {bucket_name}: {e}") from e
+        with trace(bucket=cls.bucket_name, key=cls.key) as outputs:
+            try:
+                aws_sources_list = []
+                paginator = cls._s3_client.get_paginator("list_objects_v2")
+                for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
+                    for obj in page.get("Contents", []):
+                        key = obj["Key"]
+                        aws_sources_list.append(cls(bucket_name=bucket_name, key=key))
+                outputs.sources = aws_sources_list
+                return aws_sources_list
+            except (NoCredentialsError, PartialCredentialsError) as e:
+                raise ValueError("AWS credentials are missing or incomplete. Please configure them.") from e
+            except ClientError as e:
+                raise RuntimeError(f"Failed to list files in bucket {bucket_name}: {e}") from e
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["S3Source"]:
         """
         Create S3Source instances from a URI path.
