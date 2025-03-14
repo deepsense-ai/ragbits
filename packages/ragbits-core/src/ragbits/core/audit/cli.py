@@ -123,7 +123,7 @@ class CLISpan:
                 color = special_color
 
             if color:
-                syntax = Syntax(attr_value, lexer="markdown", theme="monokai", word_wrap=True, background_color=color)
+                syntax = Syntax(attr_value, lexer="markdown", theme="monokai", word_wrap=True)
                 panel = Panel(
                     syntax, title=f"[{key_color}]{attr_key}[/{key_color}]", title_align="left", border_style=color
                 )
