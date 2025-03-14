@@ -32,7 +32,7 @@ class PrintColor(str, Enum):
     TEXT_COLOR = "grey50"
     KEY_COLOR = "plum4"
     PROMPT_COLOR = "dark_blue"
-    RESPONSE_COLOR = "dark_green"
+    RESPONSE_COLOR = "bold green"
 
 
 class CLISpan:
