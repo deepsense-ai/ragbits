@@ -74,8 +74,9 @@ async def main() -> None:
     vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table", vector_size=1536)
 ```
 
-**Note**: Ensure that the vector size is correctly configured when initializing PgVectorStore,
-as it must match the expected dimensions of the stored embeddings.
+!!! note
+    Ensure that the vector size is correctly configured when initializing PgVectorStore,
+    as it must match the expected dimensions of the stored embeddings.
 
 ## pgVectorStore in Ragbits
 Example:
