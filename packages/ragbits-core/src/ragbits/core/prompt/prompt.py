@@ -9,9 +9,9 @@ from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
-from .base import BasePromptWithParser, ChatFormat, OutputT
-from .exceptions import PromptWithImagesOfInvalidFormat
-from .parsers import DEFAULT_PARSERS, build_pydantic_parser
+from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]

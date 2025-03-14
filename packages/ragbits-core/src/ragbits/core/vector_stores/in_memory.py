@@ -3,7 +3,7 @@ from uuid import UUID
 
 import numpy as np
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
@@ -46,7 +46,6 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self._entries: dict[UUID, VectorStoreEntry] = {}
         self._embeddings: dict[UUID, dict[str, list[float]]] = {}
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Store entries in the vector store.
@@ -54,12 +53,21 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Args:
             entries: The entries to store.
         """
-        for entry in entries:
-            self._entries[entry.id] = entry
-        embeddings = await self._create_embeddings(entries)
-        self._embeddings.update(embeddings)
+        with trace(
+            entries=entries,
+            embedder=repr(self._embedder),
+            embedding_name_text=self._embedding_name_text,
+            embedding_name_image=self._embedding_name_image,
+            mbedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ) as outputs:
+            for entry in entries:
+                self._entries[entry.id] = entry
+            embeddings = await self._create_embeddings(entries)
+            self._embeddings.update(embeddings)
+            outputs.embeddings = self._embeddings
+            outputs.entries = self._entries
 
-    @traceable
     async def retrieve(
         self,
         text: str | None = None,
@@ -71,7 +79,7 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Requires either text or image to be provided.
 
         Compare stored entries looking both at their text and image embeddings
-        (if both are avialiable chooses the one with the smallest distance).
+        (if both are available chooses the one with the smallest distance).
 
         Args:
             text: The text to query the vector store with.
@@ -82,27 +90,28 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             The entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        with trace(text=text, image=image, options=merged_options.dict(), embedder=repr(self._embedder)) as outputs:
+            if image and text:
+                raise ValueError("Either text or image should be provided, not both.")
 
-        if image and text:
-            raise ValueError("Either text or image should be provided, not both.")
+            if text:
+                vector = await self._embedder.embed_text([text])
+            elif image:
+                vector = await self._embedder.embed_image([image])
+            else:
+                raise ValueError("Either text or image should be provided.")
 
-        if text:
-            vector = await self._embedder.embed_text([text])
-        elif image:
-            vector = await self._embedder.embed_image([image])
-        else:
-            raise ValueError("Either text or image should be provided.")
+            results: list[VectorStoreResult] = []
 
-        results: list[VectorStoreResult] = []
+            for entry_id, vectors in self._embeddings.items():
+                distances = [float(np.linalg.norm(np.array(v) - np.array(vector))) for v in vectors.values()]
+                result = VectorStoreResult(entry=self._entries[entry_id], vectors=vectors, score=min(distances))
+                if merged_options.max_distance is None or result.score <= merged_options.max_distance:
+                    results.append(result)
 
-        for entry_id, vectors in self._embeddings.items():
-            distances = [float(np.linalg.norm(np.array(v) - np.array(vector))) for v in vectors.values()]
-            result = VectorStoreResult(entry=self._entries[entry_id], vectors=vectors, score=min(distances))
-            if merged_options.max_distance is None or result.score <= merged_options.max_distance:
-                results.append(result)
-
-        results = sorted(results, key=lambda r: r.score)
-        return results[: merged_options.k]
+            results = sorted(results, key=lambda r: r.score)
+            outputs.results = results[: merged_options.k]
+            return outputs.results
 
     @traceable
     async def remove(self, ids: list[UUID]) -> None:

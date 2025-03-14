@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import ClassVar
 
+from ragbits.core.audit import traceable
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources import Source
 
@@ -24,6 +25,7 @@ class LocalFileSource(Source):
         """
         return f"local_file:{self.path.absolute()}"
 
+    @traceable
     async def fetch(self) -> Path:
         """
         Fetch the source.
@@ -39,6 +41,7 @@ class LocalFileSource(Source):
         return self.path
 
     @classmethod
+    @traceable
     def list_sources(cls, path: Path, file_pattern: str = "*") -> list["LocalFileSource"]:
         """
         List all sources in the given directory, matching the file pattern.
@@ -53,6 +56,7 @@ class LocalFileSource(Source):
         return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
         """Create LocalFileSource instances from a URI path.
 

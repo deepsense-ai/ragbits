@@ -6,7 +6,7 @@ import chromadb
 from chromadb.api import ClientAPI
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
@@ -98,7 +98,6 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             if entry.get(default_embedding_key) or entry.get(fallback_embedding_key)
         }
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the ChromaDB collection.
@@ -110,42 +109,51 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Args:
             entries: The entries to store.
         """
-        if not entries:
-            return
+        with trace(
+            entries=entries,
+            index_name=self._index_name,
+            collection=self._collection,
+            distance_method=self._distance_method,
+            prefer_image=self._prefer_image_embedding,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ):
+            if not entries:
+                return
 
-        ids = []
-        documents = []
-        metadatas: list[Mapping] = []
-        embeddings: list[Sequence[float]] = []
+            ids = []
+            documents = []
+            metadatas: list[Mapping] = []
+            embeddings: list[Sequence[float]] = []
 
-        raw_embeddings = await self._create_embeddings(entries)
-        ids_to_embeddings = await self._preferred_embeddings(raw_embeddings)
-        for entry in entries:
-            if entry.id not in ids_to_embeddings:
-                continue
-            embeddings.append(ids_to_embeddings[entry.id])
-            ids.append(str(entry.id))
-            documents.append(entry.text or "")
-            metadatas.append(
-                self._flatten_metadata(
-                    {
-                        **entry.metadata,
-                        **{
-                            "__embeddings": raw_embeddings[entry.id],
-                            "__image": entry.image_bytes.hex() if entry.image_bytes else None,
-                        },
-                    }
+            raw_embeddings = await self._create_embeddings(entries)
+            ids_to_embeddings = await self._preferred_embeddings(raw_embeddings)
+            for entry in entries:
+                if entry.id not in ids_to_embeddings:
+                    continue
+                embeddings.append(ids_to_embeddings[entry.id])
+                ids.append(str(entry.id))
+                documents.append(entry.text or "")
+                metadatas.append(
+                    self._flatten_metadata(
+                        {
+                            **entry.metadata,
+                            **{
+                                "__embeddings": raw_embeddings[entry.id],
+                                "__image": entry.image_bytes.hex() if entry.image_bytes else None,
+                            },
+                        }
+                    )
                 )
+
+            self._collection.add(
+                ids=ids,
+                embeddings=embeddings,
+                metadatas=metadatas,
+                documents=documents,
             )
 
-        self._collection.add(
-            ids=ids,
-            embeddings=embeddings,
-            metadatas=metadatas,
-            documents=documents,
-        )
-
-    @traceable
     async def retrieve(
         self,
         text: str | None = None,
@@ -167,53 +175,65 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             MetadataNotFoundError: If the metadata is not found.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        with trace(
+            text=text,
+            image=image,
+            options=merged_options.dict(),
+            index_name=self._index_name,
+            collection=self._collection,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ) as outputs:
+            if image and text:
+                raise ValueError("Either text or image should be provided, not both.")
 
-        if image and text:
-            raise ValueError("Either text or image should be provided, not both.")
+            if text:
+                vector = await self._embedder.embed_text([text])
+            elif image:
+                vector = await self._embedder.embed_image([image])
+            else:
+                raise ValueError("Either text or image should be provided.")
 
-        if text:
-            vector = await self._embedder.embed_text([text])
-        elif image:
-            vector = await self._embedder.embed_image([image])
-        else:
-            raise ValueError("Either text or image should be provided.")
-
-        results = self._collection.query(
-            query_embeddings=cast(list[Sequence[float]], vector),
-            n_results=merged_options.k,
-            include=["metadatas", "embeddings", "distances", "documents"],
-        )
-
-        ids = [id for batch in results.get("ids", []) for id in batch]
-        distances = [distance for batch in results.get("distances") or [] for distance in batch]
-        documents = [document for batch in results.get("documents") or [] for document in batch]
-
-        metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
-
-        # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
-        unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
-
-        embeddings: list[dict] = [cast(dict, metadata.pop("__embeddings", {})) for metadata in unflattened_metadatas]
-        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
-
-        return [
-            VectorStoreResult(
-                score=distance,
-                vectors=vectors,
-                entry=VectorStoreEntry(
-                    id=id,
-                    text=document,
-                    image_bytes=image,
-                    metadata=metadata,
-                ),
+            results = self._collection.query(
+                query_embeddings=cast(list[Sequence[float]], vector),
+                n_results=merged_options.k,
+                include=["metadatas", "embeddings", "distances", "documents"],
             )
-            for id, metadata, distance, document, image, vectors in zip(
-                ids, unflattened_metadatas, distances, documents, images, embeddings, strict=True
-            )
-            if merged_options.max_distance is None or distance <= merged_options.max_distance
-        ]
 
-    @traceable
+            ids = [id for batch in results.get("ids", []) for id in batch]
+            distances = [distance for batch in results.get("distances") or [] for distance in batch]
+            documents = [document for batch in results.get("documents") or [] for document in batch]
+
+            metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
+
+            # Remove the `# type: ignore` when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+
+            embeddings: list[dict] = [
+                cast(dict, metadata.pop("__embeddings", {})) for metadata in unflattened_metadatas
+            ]
+            images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+
+            outputs.retrieved_entries = [
+                VectorStoreResult(
+                    score=distance,
+                    vectors=vectors,
+                    entry=VectorStoreEntry(
+                        id=id,
+                        text=document,
+                        image_bytes=image,
+                        metadata=metadata,
+                    ),
+                )
+                for id, metadata, distance, document, image, vectors in zip(
+                    ids, unflattened_metadatas, distances, documents, images, embeddings, strict=True
+                )
+                if merged_options.max_distance is None or distance <= merged_options.max_distance
+            ]
+            return outputs.retrieved_entries
+
     async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
@@ -221,9 +241,9 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Args:
             ids: The list of entries' IDs to remove.
         """
-        self._collection.delete(ids=[str(id) for id in ids])
+        with trace(ids=ids, collection=self._collection, index_name=self._index_name):
+            self._collection.delete(ids=[str(id) for id in ids])
 
-    @traceable
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:
@@ -244,36 +264,39 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         """
         # Cast `where` to chromadb's Where type
         where_chroma: chromadb.Where | None = dict(where) if where else None
-
-        results = self._collection.get(
-            where=where_chroma,
-            limit=limit,
-            offset=offset,
-            include=["metadatas", "documents"],
-        )
-
-        ids = results.get("ids") or []
-        documents = results.get("documents") or []
-        metadatas: Sequence = results.get("metadatas") or []
-
-        # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
-        unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
-
-        images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
-
-        # remove embeddings from metadata
-        for metadata in unflattened_metadatas:
-            metadata.pop("__embeddings", None)
-
-        return [
-            VectorStoreEntry(
-                id=UUID(id),
-                text=document,
-                metadata=metadata,
-                image_bytes=image,
+        with trace(
+            where=where, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
+        ) as outputs:
+            results = self._collection.get(
+                where=where_chroma,
+                limit=limit,
+                offset=offset,
+                include=["metadatas", "documents"],
             )
-            for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
-        ]
+
+            ids = results.get("ids") or []
+            documents = results.get("documents") or []
+            metadatas: Sequence = results.get("metadatas") or []
+
+            # Remove the `# type: ignore` when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+
+            images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+
+            # remove embeddings from metadata
+            for metadata in unflattened_metadatas:
+                metadata.pop("__embeddings", None)
+
+            outputs.listed_entries = [
+                VectorStoreEntry(
+                    id=UUID(id),
+                    text=document,
+                    metadata=metadata,
+                    image_bytes=image,
+                )
+                for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
+            ]
+            return outputs.listed_entries
 
     @staticmethod
     def _flatten_metadata(metadata: dict) -> dict:

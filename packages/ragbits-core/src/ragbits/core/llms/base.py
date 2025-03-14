@@ -6,6 +6,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
+from ragbits.core.audit import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -159,10 +160,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        raw_response = await self.generate_raw(prompt, options=options)
-        if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(raw_response["response"])
-        return cast(OutputT, raw_response["response"])
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            raw_response = await self.generate_raw(prompt, options=options)
+            if isinstance(prompt, BasePromptWithParser):
+                response = prompt.parse_response(raw_response["response"])
+            else:
+                response = cast(OutputT, raw_response["response"])
+            raw_response["response"] = response
+            outputs.response = raw_response
+
+        return response
 
     @overload
     async def generate_with_metadata(
@@ -214,11 +221,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Text response from LLM with metadata.
         """
-        response = await self.generate_raw(prompt, options=options)
-        content = response.pop("response")
-        if isinstance(prompt, BasePromptWithParser):
-            content = prompt.parse_response(content)
-        return LLMResponseWithMetadata[type(content)](content=content, metadata=response)  # type: ignore
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            response = await self.generate_raw(prompt, options=options)
+            content = response.pop("response")
+            if isinstance(prompt, BasePromptWithParser):
+                content = prompt.parse_response(content)
+            outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
+                content=content,
+                metadata=response,
+            )
+        return outputs.response
 
     async def generate_streaming(
         self,

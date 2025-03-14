@@ -1,4 +1,4 @@
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options, OptionsT
 
@@ -37,7 +37,6 @@ class NoopEmbedder(Embedder[Options]):
         self.return_cycle = 0
         self.image_return_cycle = 0
 
-    @traceable
     async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:  # noqa: PLR6301
         """
         Embeds a list of strings into a list of vectors.
@@ -49,16 +48,22 @@ class NoopEmbedder(Embedder[Options]):
         Returns:
             A list of embedding vectors, one for each input text.
         """
-        # Get the right values for the current cycle
-        values = self.return_values[self.return_cycle]
+        with trace(
+            data=data,
+            options=self.default_options.dict(),
+            return_values=self.return_values,
+            return_cycle=self.return_cycle,
+        ) as outputs:
+            # Get the right values for the current cycle
+            values = self.return_values[self.return_cycle]
 
-        # Expand the values to at least match the number of inputs
-        values = values * (len(data) // len(values) + 1)
+            # Expand the values to at least match the number of inputs
+            values = values * (len(data) // len(values) + 1)
 
-        # Update the cycle counter
-        self.return_cycle = (self.return_cycle + 1) % len(self.return_values)
-
-        return values[: len(data)]
+            # Update the cycle counter
+            self.return_cycle = (self.return_cycle + 1) % len(self.return_values)
+            outputs.embeddings = values[: len(data)]
+        return outputs.embeddings
 
     def image_support(self) -> bool:
         """
@@ -69,7 +74,6 @@ class NoopEmbedder(Embedder[Options]):
         """
         return self.image_return_values is not None
 
-    @traceable
     async def embed_image(self, images: list[bytes], options: Options | None = None) -> list[list[float]]:
         """
         Embeds a list of images into a list of vectors.
@@ -83,7 +87,14 @@ class NoopEmbedder(Embedder[Options]):
         """
         if self.image_return_values is None:
             raise NotImplementedError("Image embeddings are not supported by this model.")
-        values = self.image_return_values[self.image_return_cycle]
-        values = values * (len(images) // len(values) + 1)
-        self.image_return_cycle = (self.image_return_cycle + 1) % len(self.image_return_values)
-        return values[: len(images)]
+        with trace(
+            images=self.image_return_values,
+            options=self.default_options.dict(),
+            image_return_values=self.image_return_values,
+            image_return_cycle=self.image_return_cycle,
+        ) as outputs:
+            values = self.image_return_values[self.image_return_cycle]
+            values = values * (len(images) // len(values) + 1)
+            self.image_return_cycle = (self.image_return_cycle + 1) % len(self.image_return_values)
+            outputs.embeddings = values[: len(images)]
+        return outputs.embeddings
