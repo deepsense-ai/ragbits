@@ -1,9 +1,11 @@
+from collections.abc import Sequence
+
 from ragbits.document_search.documents.document import (
     DocumentMeta,
     DocumentType,
     TextDocument,
 )
-from ragbits.document_search.documents.element import Element, ImageElement, TextElement
+from ragbits.document_search.documents.element import Element, ImageElement, IntermediateElement, TextElement
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
 
@@ -15,7 +17,7 @@ class DummyProvider(BaseProvider):
 
     SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT, DocumentType.MD}
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def process(self, document_meta: DocumentMeta) -> list[Element | IntermediateElement]:
         """
         Process the text document.
 
@@ -41,7 +43,7 @@ class DummyImageProvider(BaseProvider):
 
     SUPPORTED_DOCUMENT_TYPES = {DocumentType.JPG, DocumentType.PNG}
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
         """
         Process the image document.
 

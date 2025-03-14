@@ -5,7 +5,8 @@
 - Add support for images in few shot prompts (#155)
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
 - Add instruction on how to use local servers for LLMs (#395).
- - corrected typo (#307)
+- Introduce intermediate image elements (#139)
+
 ## 0.9.0 (2025-02-25)
 
 - Add support to fastembed dense & sparse embeddings.
