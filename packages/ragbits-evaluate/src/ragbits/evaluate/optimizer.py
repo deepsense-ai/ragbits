@@ -9,8 +9,10 @@ from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.dataloaders.base import DataLoader
+from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.base import EvaluationConfig, EvaluationPipeline
+from ragbits.evaluate.evaluator import EvaluatorConfig
+from ragbits.evaluate.pipelines.base import EvaluationPipeline
 from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 
@@ -19,7 +21,7 @@ class OptimizerConfig(BaseModel):
     Schema for the dict taken by `Optimizer.run_from_config` method.
     """
 
-    experiment: EvaluationConfig
+    experiment: EvaluatorConfig
     optimizer: dict | None = None
     neptune_callback: bool = False
 
@@ -57,7 +59,7 @@ class Optimizer(WithConstructionConfig):
             List of tested configs with associated scores and metrics.
         """
         optimizer_config = OptimizerConfig.model_validate(config)
-        evaluator_config = EvaluationConfig.model_validate(optimizer_config.experiment)
+        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.experiment)
 
         dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.dataloader)
         metrics: MetricSet = MetricSet.from_config(evaluator_config.metrics)
@@ -73,6 +75,7 @@ class Optimizer(WithConstructionConfig):
             metrics=metrics,
             dataloader=dataloader,
             callbacks=callbacks,
+            schema_config=evaluator_config.schema_config,
         )
 
     def optimize(
@@ -82,6 +85,7 @@ class Optimizer(WithConstructionConfig):
         dataloader: DataLoader,
         metrics: MetricSet,
         callbacks: list[Callable] | None = None,
+        schema_config: dict | None = None,
     ) -> list[tuple[dict, float, dict[str, float]]]:
         """
         Runs the optimization process for given parameters.
@@ -104,6 +108,7 @@ class Optimizer(WithConstructionConfig):
                 pipeline_config=pipeline_config,
                 dataloader=dataloader,
                 metrics=metrics,
+                schema_config=schema_config,
             )
 
         study = optuna.create_study(direction=self.direction)
@@ -131,6 +136,7 @@ class Optimizer(WithConstructionConfig):
         pipeline_config: dict,
         dataloader: DataLoader,
         metrics: MetricSet,
+        schema_config: dict | None = None,
     ) -> float:
         """
         Runs a single experiment.
@@ -140,6 +146,7 @@ class Optimizer(WithConstructionConfig):
         score = 1e16 if self.direction == "maximize" else -1e16
         metrics_values = None
         config_for_trial = None
+        evaluator: Evaluator = Evaluator(schema_config=schema_config, pipeline_type=pipeline_class.configuration_key)
 
         for attempt in range(1, self.max_retries_for_trial + 1):
             try:
@@ -148,7 +155,8 @@ class Optimizer(WithConstructionConfig):
                 pipeline = pipeline_class.from_config(config_for_trial)
 
                 results = event_loop.run_until_complete(
-                    pipeline.run_evaluation(
+                    evaluator.compute(
+                        pipeline=pipeline,
                         dataloader=dataloader,
                         metrics=metrics,
                     )

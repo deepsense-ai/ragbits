@@ -9,13 +9,17 @@ from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import Metric, MetricSet
 from ragbits.evaluate.optimizer import Optimizer
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+from ragbits.evaluate.pipelines.base import EvaluationDatapointSchema, EvaluationPipeline
 
 
 @dataclass
 class MockEvaluationResult(EvaluationResult):
     input_data: int
     is_correct: bool
+
+
+class MockEvaluationDatapointSchema(EvaluationDatapointSchema):
+    input_col: str = "input"
 
 
 class MockEvaluationTargetConfig(BaseModel):
@@ -28,12 +32,12 @@ class MockEvaluationTarget(WithConstructionConfig):
         self.threshold = threshold
 
 
-class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget]):
-    CONCURRENCY = 2
+class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationDatapointSchema]):
+    configuration_key = "test"
 
-    async def __call__(self, data: dict) -> MockEvaluationResult:
+    async def __call__(self, data: dict, schema: MockEvaluationDatapointSchema) -> MockEvaluationResult:
         return MockEvaluationResult(
-            input_data=data["input"], is_correct=data["input"] >= self.evaluation_target.threshold
+            input_data=data[schema.input_col], is_correct=data[schema.input_col] >= self.evaluation_target.threshold
         )
 
     @classmethod
@@ -80,6 +84,7 @@ def experiment_config(eval_pipeline_config: dict) -> dict:
             "pipeline": {"type": f"{__name__}:MockEvaluationPipeline", "config": eval_pipeline_config},
             "dataloader": {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 30}},
             "metrics": {"test": {"type": f"{__name__}:MockMetric", "config": {}}},
+            "schema_config": {"type": f"{__name__}:MockEvaluationDatapointSchema", "config": {"input_col": "input"}},
         },
     }
     return config
