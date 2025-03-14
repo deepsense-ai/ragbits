@@ -6,7 +6,7 @@ from ragbits.document_search.documents.sources.http import HttpSource
 
 def test_id():
     source = HttpSource(url="http://example.com/file.pdf")
-    expected_id = "web:http://example.com/file.pdf"
+    expected_id = "https:http://example.com/file.pdf"
     assert source.id == expected_id
 
 

@@ -20,14 +20,14 @@ class HttpSource(Source):
     """
 
     url: str
-    protocol: ClassVar[str] = "web"
+    protocol: ClassVar[str] = "https"
 
     @property
     def id(self) -> str:
         """
         Get the source ID, which is the full url to the file.
         """
-        return f"web:{self.url}"
+        return f"https:{self.url}"
 
     @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
