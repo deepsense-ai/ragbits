@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
 ### PgVectorStore distance
 
-One of the PgVectorStore parameters is distance_method - the similarity metric used for vector comparisons.
+One of the `PgVectorStore` parameters is `distance_method` - the similarity metric used for vector comparisons.
 Supported values include:
 
  * "cosine" (<=>) – Cosine distance
