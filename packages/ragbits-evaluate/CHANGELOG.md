@@ -5,6 +5,9 @@
 - chore: fix typo in README.
 - fix typos in doc strings
 
+- move Evaluator class logic to base EvaluationPipeline
+- add testing for ragbits.evaluate module
+
 ## 0.9.0 (2025-02-25)
 
 ### Changed
