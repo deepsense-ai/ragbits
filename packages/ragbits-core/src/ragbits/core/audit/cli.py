@@ -31,7 +31,7 @@ class PrintColor(str, Enum):
     ERROR_COLOR = "bold red"
     TEXT_COLOR = "grey50"
     KEY_COLOR = "plum4"
-    PROMPT_COLOR = "dark_blue"
+    PROMPT_COLOR = "bold blue"
     RESPONSE_COLOR = "bold green"
 
 
