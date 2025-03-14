@@ -117,12 +117,12 @@ Supported values include:
 
  * "cosine" (<=>) – Cosine distance
  * "l2" (<->) – Euclidean (L2) distance
- *   - "l1" (<+>) – Manhattan (L1) distance
- *  - "ip" (<#>) – Inner product
- *   - "bit_hamming" (<~>) – Hamming distance
- *   - "bit_jaccard" (<%>) – Jaccard distance
- *   - "sparsevec_l2" (<->) – Sparse vector L2 distance
- *   - "halfvec_l2" (<->) – Half precision vector L2 distance
+ * "l1" (<+>) – Manhattan (L1) distance
+ * "ip" (<#>) – Inner product
+ * "bit_hamming" (<~>) – Hamming distance
+ * "bit_jaccard" (<%>) – Jaccard distance
+ * "sparsevec_l2" (<->) – Sparse vector L2 distance
+ * "halfvec_l2" (<->) – Half precision vector L2 distance
 
 The default value for distance method is cosine similarity.
 
