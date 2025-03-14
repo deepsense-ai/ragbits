@@ -17,15 +17,12 @@ To run a local instance of pgVector, use Docker to pull and start the database c
             -e POSTGRES_DB = ragbits_db \
             -d pgvector/pgvector:0.8.0-pg17
 ```
-    * `--name` the docker container a name assign to postgres.
 
-    * `-p` 5432:5432 maps the default PostgreSQL port to the local machine.
-
-    * `-e` POSTGRES_USER=ragbits_user sets the user name of the database
-
-    * `-e` POSTGRES_PASSWORD=ragbits_password example sets the database password.
-
-    * `-d` runs the container in detached mode.
+* `--name` the docker container a name assign to postgres.
+* `-p 5432:5432` maps the default PostgreSQL port to the local machine.
+* `-e POSTGRES_USER=ragbits_user` sets the user name of the database
+* `-e POSTGRES_PASSWORD=ragbits_password` example sets the database password.
+* `-d` runs the container in detached mode.
 
 The local instance of pgVector is accessible using the following connection string:
 ```DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"```
