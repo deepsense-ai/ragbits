@@ -72,6 +72,9 @@ qdrant = [
 pgvector = [
     "asyncpg>=0.30.0",
 ]
+fastembed-gpu = [
+    "fastembed-gpu>=0.4.2",
+]
 
 [tool.uv]
 dev-dependencies = [
