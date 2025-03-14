@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import processor_strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
@@ -45,7 +45,7 @@ class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
         document: DocumentMeta | Document | Source,
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
+    ) -> Sequence[Element | IntermediateElement]:
         """
         Process a single document and return the elements.
 
@@ -67,7 +67,7 @@ class ProcessingExecutionStrategy(WithConstructionConfig, ABC):
         documents: Sequence[DocumentMeta | Document | Source],
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
+    ) -> Sequence[Element | IntermediateElement]:
         """
         Process documents using the given processor and return the resulting elements.
 
