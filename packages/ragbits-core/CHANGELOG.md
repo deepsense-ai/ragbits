@@ -7,7 +7,7 @@
 - Add instruction on how to use local servers for LLMs (#395).
 - Introduce intermediate image elements (#139)
 - Correct typos in doc strings
-- 
+-
 ## 0.9.0 (2025-02-25)
 
 - Add support to fastembed dense & sparse embeddings.

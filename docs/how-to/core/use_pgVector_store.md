@@ -126,7 +126,7 @@ Supported values include:
  * "halfvec_l2" (<->) – Half precision vector L2 distance
 
 The default value for distance method is cosine similarity.
-See [PgVectorStore API](../../api_reference/core/vector-stores.md/#ragbits.core.vector_stores.pgvector.PgVectorStore) 
+See [PgVectorStore API](../../api_reference/core/vector-stores.md/#ragbits.core.vector_stores.pgvector.PgVectorStore)
 for more information about PgVectorStore parameters and methods.
 
 
