@@ -4,8 +4,11 @@ import SidebarContainer from "./sidebar-with-chat-history";
 import MessagingChatMessage from "./messaging-chat-message";
 
 import PromptInputWithEnclosedActions from "./prompt-input-with-enclosed-actions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MessagingChatMessageProps } from "./data";
+import PluginWrapper from "./utils/plugins/PluginWrapper";
+import { ExamplePlugin, ExamplePluginName } from "./plugins/ExamplePlugin";
+import { pluginManager } from "./utils/plugins/PluginManager";
 
 export default function Component() {
   const [messages, setMessages] = useState<Array<MessagingChatMessageProps>>(
@@ -13,6 +16,17 @@ export default function Component() {
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+
+  useEffect(() => {
+    // Delay loading of plugin to demonstrate lazy loading
+    const timeout = setTimeout(() => {
+      pluginManager.activate(ExamplePluginName);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -24,7 +38,7 @@ export default function Component() {
         message,
         isRTL: true,
       },
-    ]);   
+    ]);
 
     const res = await fetch("http://localhost:8000/api/chat", {
       method: "POST",
@@ -98,6 +112,7 @@ export default function Component() {
           </div>
         </div>
       </SidebarContainer>
+      <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" />
     </div>
   );
 }
