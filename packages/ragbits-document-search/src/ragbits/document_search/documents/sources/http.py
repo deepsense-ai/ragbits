@@ -27,7 +27,7 @@ class HttpSource(Source):
         """
         Get the source ID, which is the full url to the file.
         """
-        return self.url
+        return f"web:{self.url}"
 
     @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
@@ -40,13 +40,10 @@ class HttpSource(Source):
         Raises:
             SourceNotFoundError: If the URL is invalid.
         """
-        try:
-            parsed_url = urlparse(self.url)
-            url_path, file_name = parsed_url.path.rsplit("/", 1)
-            normalized_url_path = re.sub(r"\W", "_", url_path) + file_name
-            domain_name = parsed_url.netloc
-        except ValueError as e:
-            raise SourceNotFoundError(self.id) from e
+        parsed_url = urlparse(self.url)
+        url_path, file_name = ("/" + parsed_url.netloc + parsed_url.path).rsplit("/", 1)
+        normalized_url_path = re.sub(r"\W", "_", url_path) + file_name
+        domain_name = parsed_url.netloc
 
         local_dir = get_local_storage_dir()
         container_local_dir = local_dir / domain_name
