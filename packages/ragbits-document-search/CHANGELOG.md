@@ -7,6 +7,8 @@
 - Introduce intermediate image elements (#139)
 - Add HTTP source type, which downloads a file from the provided URL (#397)
 
+ - added traceable
+
 ## 0.9.0 (2025-02-25)
 
 ### Changed

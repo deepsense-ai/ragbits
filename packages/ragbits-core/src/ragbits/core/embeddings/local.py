@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 
+from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder
 from ragbits.core.options import Options
 
@@ -69,23 +70,31 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
             List of embeddings for the given strings.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        with trace(
+            data=data,
+            model_name=self.model_name,
+            model=repr(self.model),
+            tokenizer=repr(self.tokenizer),
+            device=self.device,
+            options=merged_options.dict(),
+        ) as outputs:
+            embeddings = []
+            for batch in self._batch(data, merged_options.batch_size):
+                batch_dict = self.tokenizer(
+                    batch,
+                    max_length=self.tokenizer.model_max_length,
+                    padding=True,
+                    truncation=True,
+                    return_tensors="pt",
+                ).to(self.device)
+                with torch.no_grad():
+                    model_outputs = self.model(**batch_dict)
+                    batch_embeddings = self._average_pool(model_outputs.last_hidden_state, batch_dict["attention_mask"])
+                    batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
+                embeddings.extend(batch_embeddings.to("cpu").tolist())
 
-        embeddings = []
-        for batch in self._batch(data, merged_options.batch_size):
-            batch_dict = self.tokenizer(
-                batch,
-                max_length=self.tokenizer.model_max_length,
-                padding=True,
-                truncation=True,
-                return_tensors="pt",
-            ).to(self.device)
-            with torch.no_grad():
-                outputs = self.model(**batch_dict)
-                batch_embeddings = self._average_pool(outputs.last_hidden_state, batch_dict["attention_mask"])
-                batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
-            embeddings.extend(batch_embeddings.to("cpu").tolist())
-
-        torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
+            outputs.embeddings = embeddings
         return embeddings
 
     @staticmethod
