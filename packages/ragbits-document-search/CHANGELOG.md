@@ -5,6 +5,7 @@
 - Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
+- Add HTTP source type, which downloads a file from the provided URL (#397)
 
  - added traceable
 
