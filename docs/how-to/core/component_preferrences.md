@@ -14,7 +14,7 @@ To set the preferred component using a factory function, you need to create a fu
 For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdrant.QdrantVectorStore] (with an in-memory `AsyncQdrantClient`) as the preferred vector store implementation, you can create a factory function like this:
 
 ```python
-from ragbits.core.vector_stores import QdrantVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from qdrant_client import AsyncQdrantClient
 
@@ -140,8 +140,9 @@ For example, the code below will create an instance of the default vector store 
 
 ```python
 from ragbits.core.vector_stores import VectorStore
+from ragbits.core.config import core_config
 
-vector_store = VectorStore.preferred_subclass()
+vector_store = VectorStore.preferred_subclass(core_config)
 ```
 
 Note that [`VectorStore`][ragbits.core.vector_stores.base.VectorStore] itself is an abstract class, so the instance created by `preferred_subclass()` will be an instance of one of the concrete subclasses of [`VectorStore`][ragbits.core.vector_stores.base.VectorStore] that you have set as the preferred in the project configuration.

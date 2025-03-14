@@ -135,7 +135,7 @@ class WithConstructionConfig(abc.ABC):
         cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
     ) -> Self:
         """
-        Tries to create an instance by looking at project's component prefferences, either from YAML
+        Tries to create an instance by looking at project's component preferences, either from YAML
         or from the factory. Takes optional overrides for both, which takes a higher precedence.
 
         Args:
@@ -149,8 +149,8 @@ class WithConstructionConfig(abc.ABC):
             InvalidConfigError: If the default factory or configuration can't be found.
         """
         if yaml_path_override:
-            preferrences = get_config_from_yaml(yaml_path_override)
-            if type_config := preferrences.get(cls.configuration_key):
+            preferences = get_config_from_yaml(yaml_path_override)
+            if type_config := preferences.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
 
         if factory_path_override:
