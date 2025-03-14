@@ -9,7 +9,7 @@ except ImportError:
     HAS_RAY = False
 
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.processor_strategies.base import ProcessingExecutionStrategy
@@ -45,7 +45,7 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         documents: Sequence[DocumentMeta | Document | Source],
         processor_router: DocumentProcessorRouter,
         processor_overwrite: BaseProvider | None = None,
-    ) -> list[Element]:
+    ) -> Sequence[Element | IntermediateElement]:
         """Process multiple documents in parallel using Ray distributed computing framework.
 
         This method processes a sequence of documents in parallel using Ray distributed computing capabilities.
@@ -61,18 +61,20 @@ class DistributedProcessing(ProcessingExecutionStrategy):
         """
 
         @ray.remote
-        def process_document_remotely(documents: Sequence[DocumentMeta | Document | Source]) -> list[Element]:
-            async def process_batch() -> list[list[Element]]:
+        def process_document_remotely(
+            documents: Sequence[DocumentMeta | Document | Source],
+        ) -> Sequence[Element | IntermediateElement]:
+            async def process_batch() -> list[Sequence[Element | IntermediateElement]]:
                 tasks = [
                     self.process_document(document, processor_router, processor_overwrite) for document in documents
                 ]
                 return await asyncio.gather(*tasks)
 
             results = asyncio.run(process_batch())
-            return sum(results, [])
+            return sum(results, [])  # type: ignore
 
         tasks = []
         for i in range(0, len(documents), self.batch_size):
             tasks.append(process_document_remotely.remote(documents[i : i + self.batch_size]))
 
-        return sum(await asyncio.gather(*tasks), [])
+        return sum(await asyncio.gather(*tasks), [])  # type: ignore
