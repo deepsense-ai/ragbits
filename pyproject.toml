@@ -191,3 +191,6 @@ known-third-party = [
     "requests", "scipy", "setuptools", "shapely", "skimage", "sklearn", "streamlit",
     "torch", "torchvision", "tqdm", "typer"
 ]
+
+
+

@@ -5,6 +5,7 @@ from ragbits.document_search.documents.sources.hf import HuggingFaceSource
 from ragbits.document_search.documents.sources.http import HttpSource
 from ragbits.document_search.documents.sources.local import LocalFileSource
 from ragbits.document_search.documents.sources.s3 import S3Source
+from ragbits.core.config import import_modules_from_config
 
 __all__ = [
     "AzureBlobStorageSource",
@@ -15,3 +16,5 @@ __all__ = [
     "S3Source",
     "Source",
 ]
+
+import_modules_from_config("sources")
