@@ -6,7 +6,7 @@ from typing_extensions import Self
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.sources import HuggingFaceSource
 from ragbits.evaluate import EvaluationResult
-from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationDatapointSchema
+from ragbits.evaluate.pipelines.base import EvaluationDatapointSchema, EvaluationPipeline
 
 
 class DocumentSearchDatapointSchema(EvaluationDatapointSchema):
@@ -29,6 +29,8 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
     """
     Document search evaluation pipeline.
     """
+
+    configuration_key = "document_search_evaluation"
 
     def __init__(self, evaluation_target: DocumentSearch, source: dict | None = None) -> None:
         """

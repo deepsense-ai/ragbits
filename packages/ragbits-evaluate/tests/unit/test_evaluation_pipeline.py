@@ -7,8 +7,9 @@ from datasets import Dataset
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
+from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics.base import Metric, MetricSet
-from ragbits.evaluate.pipelines.base import EvaluationPipeline
+from ragbits.evaluate.pipelines.base import EvaluationDatapointSchema, EvaluationPipeline
 
 
 @dataclass
@@ -24,12 +25,18 @@ class MockEvaluationTarget(WithConstructionConfig):
         self.model_name = model_name
 
 
-class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget]):
-    async def __call__(self, data: dict) -> MockEvaluationResult:
+class MockEvaluationSchema(EvaluationDatapointSchema):
+    input_col: str
+
+
+class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationSchema]):
+    configuration_key = "test"
+
+    async def __call__(self, data: dict, schema: MockEvaluationSchema) -> MockEvaluationResult:
         return MockEvaluationResult(
-            input_data=data["input"],
-            processed_output=f"{self.evaluation_target.model_name}_{data['input']}",
-            is_correct=data["input"] % 2 == 0,
+            input_data=data[schema.input_col],
+            processed_output=f"{self.evaluation_target.model_name}_{data[schema.input_col]}",
+            is_correct=data[schema.input_col] % 2 == 0,
         )
 
     @classmethod
@@ -74,14 +81,20 @@ def experiment_config() -> dict:
     return config
 
 
-@pytest.mark.asyncio
-async def test_run_evaluation() -> None:
-    target = MockEvaluationTarget(model_name="test_model")
-    pipeline = MockEvaluationPipeline(target)
-    loader = MockDataLoader()
-    metrics = MetricSet(*[MockMetric()])
+@pytest.fixture
+def datapoint_schema_config() -> dict:
+    return {"type": f"{__name__}:MockEvaluationSchema", "config": {"input_col": "input"}}
 
-    results = await pipeline.run_evaluation(loader, metrics)
+
+@pytest.mark.asyncio
+async def test_run_evaluation(datapoint_schema_config: dict) -> None:
+    target: MockEvaluationTarget = MockEvaluationTarget(model_name="test_model")
+    pipeline: MockEvaluationPipeline = MockEvaluationPipeline(target)
+    loader: MockDataLoader = MockDataLoader()
+    metrics: MetricSet = MetricSet(*[MockMetric()])
+    evaluator: Evaluator = Evaluator(schema_config=datapoint_schema_config)
+
+    results = await evaluator.compute(pipeline, loader, metrics)
 
     assert len(results["results"]) == 4
     assert 0 <= results["metrics"]["accuracy"] <= 1
@@ -89,10 +102,13 @@ async def test_run_evaluation() -> None:
 
 
 @pytest.mark.asyncio
-async def test_result_structure() -> None:
+async def test_result_structure(datapoint_schema_config) -> None:
     target = MockEvaluationTarget()
     pipeline = MockEvaluationPipeline(target)
-    result = await pipeline({"input": 2})
+    schema = EvaluationDatapointSchema.subclass_from_config(
+        ObjectContructionConfig.model_validate(datapoint_schema_config)
+    )
+    result = await pipeline({"input": 2}, schema=schema)  # type: ignore[arg-type]
 
     assert isinstance(result, MockEvaluationResult)
     assert result.is_correct is True
@@ -101,6 +117,6 @@ async def test_result_structure() -> None:
 
 @pytest.mark.asyncio
 async def test_run_from_config(experiment_config: dict) -> None:
-    results = await MockEvaluationPipeline.run_from_config(experiment_config)
+    results = await Evaluator.run_from_config(experiment_config)
     assert len(results["results"]) == 3
     assert all("config_model_" in r["processed_output"] for r in results["results"])
