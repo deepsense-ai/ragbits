@@ -141,6 +141,9 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
         self._instance_few_shots: list[FewShotExample[InputT, OutputT]] = []
+
+        # Additional conversation history that can be added dynamically using methods
+        self._conversation_history: list[dict[str, Any]] = []
         super().__init__()
 
     @property
@@ -165,6 +168,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ),
             *self.list_few_shots(),
             {"role": "user", "content": user_content},
+            *self._conversation_history,
         ]
         return chat
 
@@ -214,6 +218,57 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "user", "content": user_content})
             result.append({"role": "assistant", "content": assistant_content})
         return result
+
+    def add_user_message(self, message: str | dict[str, Any] | InputT) -> "Prompt[InputT, OutputT]":
+        """
+        Add a user message to the conversation history.
+
+        Args:
+            message (str | dict[str, Any] | InputT): The user message content. Can be:
+                - A string: Used directly as content
+                - A dictionary: With format {"type": "text", "text": "message"} or image content
+                - An InputT model: Will be rendered using the user prompt template
+
+        Returns:
+            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+        """
+        content: str | list[dict[str, Any]] | dict[str, Any] | InputT
+
+        if isinstance(message, BaseModel):
+            # Type checking to ensure we're passing InputT to the methods
+            input_model: InputT = cast(InputT, message)
+
+            # Render the message using the template if it's an input model
+            rendered_text = self._render_template(self.user_prompt_template, input_model)
+            images_in_input = self._get_images_from_input_data(input_model)
+
+            if images_in_input:
+                content = [{"type": "text", "text": rendered_text}] + [
+                    self._create_message_with_image(image) for image in images_in_input
+                ]
+            else:
+                content = rendered_text
+        else:
+            # Use the message directly if it's a string or dict
+            content = message
+
+        self._conversation_history.append({"role": "user", "content": content})
+        return self
+
+    def add_assistant_message(self, message: str | OutputT) -> "Prompt[InputT, OutputT]":
+        """
+        Add an assistant message to the conversation history.
+
+        Args:
+            message (str): The assistant message content.
+
+        Returns:
+            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+        """
+        if isinstance(message, BaseModel):
+            message = message.model_dump_json()
+        self._conversation_history.append({"role": "assistant", "content": message})
+        return self
 
     def list_images(self) -> list[str]:
         """
