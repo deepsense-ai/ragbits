@@ -1,6 +1,6 @@
 import os
 import tempfile
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 from unittest import mock
@@ -57,39 +57,32 @@ async def test_document_search_from_config(document: DocumentMeta, expected: str
     document_search = DocumentSearch.from_config(CONFIG)
 
     await document_search.ingest([document])
+
     results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == expected
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == expected
 
 
 async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    providers: Mapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {DocumentType.TXT: DummyProvider()}
-    router = DocumentProcessorRouter.from_config(providers)
-
     document_search = DocumentSearch(
-        vector_store=InMemoryVectorStore(embedder=embeddings_mock), document_processor_router=router
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        parser_router=DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()}),
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
         f.write(b"Name of Peppa's brother is George")
         f.seek(0)
-
         source = LocalFileSource(path=Path(f.name))
-
         await document_search.ingest([source])
 
-        results = await document_search.search("Peppa's brother")
+    results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == "Name of Peppa's brother is George"
 
 
 @pytest.mark.parametrize(
@@ -107,11 +100,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        document_processor_router=DocumentProcessorRouter(
-            {
-                DocumentType.TXT: DummyProvider(),
-            }
-        ),
+        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
     )
     await document_search.ingest([document])
 
@@ -134,11 +123,7 @@ async def test_document_search_with_search_config():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        document_processor_router=DocumentProcessorRouter(
-            {
-                DocumentType.TXT: DummyProvider(),
-            }
-        ),
+        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
@@ -476,12 +461,13 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
         ):
             document_search = DocumentSearch(
                 vector_store=vector_store,
-                document_processor_router=DocumentProcessorRouter.from_config(providers),
+                parser_router=DocumentProcessorRouter.from_config(providers),
             )
 
             await document_search.ingest("huggingface://dataset_name/train/0")
 
             results = await document_search.search("HuggingFace test content")
+
             assert len(results) == 1
             assert isinstance(results[0], TextElement)
             assert results[0].content == "HuggingFace test content"

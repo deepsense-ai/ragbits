@@ -84,7 +84,7 @@ class DocumentSearch(WithConstructionConfig):
     reranker: Reranker
 
     ingest_strategy: IngestStrategy
-    document_processor_router: DocumentProcessorRouter
+    parser_router: DocumentProcessorRouter
     enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler]
 
     def __init__(
@@ -92,7 +92,7 @@ class DocumentSearch(WithConstructionConfig):
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
-        document_processor_router: DocumentProcessorRouter | None = None,
+        parser_router: DocumentProcessorRouter | None = None,
         ingest_strategy: IngestStrategy | None = None,
         enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler] | None = None,
     ) -> None:
@@ -100,7 +100,7 @@ class DocumentSearch(WithConstructionConfig):
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.ingest_strategy = ingest_strategy or SequentialIngestStrategy()
-        self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
+        self.parser_router = parser_router or DocumentProcessorRouter.from_config()
         self.enricher_router = enricher_router or {
             IntermediateImageElement: ImageIntermediateHandler(llm=get_preferred_llm(llm_type=LLMType.VISION)),
         }
@@ -127,16 +127,23 @@ class DocumentSearch(WithConstructionConfig):
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
 
         ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
-        document_processor_router = DocumentProcessorRouter.from_config(providers_config)
-        handlers = {
+        parser_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
+        parser_router = DocumentProcessorRouter.from_config(parser_config)
+        enricher_router = {
             import_by_path(element_type, element): (
                 import_by_path(handler_config["type"], intermediate_handlers).from_config(handler_config["config"])
             )
             for element_type, handler_config in config.get("intermediate_handlers", {}).items()
         }
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, ingest_strategy, handlers)
+        return cls(
+            vector_store=vector_store,
+            query_rephraser=query_rephraser,
+            reranker=reranker,
+            ingest_strategy=ingest_strategy,
+            parser_router=parser_router,
+            enricher_router=enricher_router,
+        )
 
     @classmethod
     def preferred_subclass(
@@ -229,10 +236,10 @@ class DocumentSearch(WithConstructionConfig):
         Returns:
             The ingest execution result.
         """
-        sources = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
+        resolved_documents = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
         return await self.ingest_strategy(
-            documents=sources,
+            documents=resolved_documents,
             vector_store=self.vector_store,
-            parser_router=self.document_processor_router,
+            parser_router=self.parser_router,
             enricher_router=self.enricher_router,
         )
