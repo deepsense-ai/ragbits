@@ -3,6 +3,7 @@ import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from types import ModuleType
 from typing import ClassVar, ParamSpec, TypeVar
 
 from pydantic import BaseModel, Field
@@ -47,7 +48,8 @@ class IngestStrategy(WithConstructionConfig, ABC):
     Base class for ingest strategies, responsible for orchiesting the tasks required to index the document.
     """
 
-    default_module: ClassVar = strategies
+    default_module: ClassVar[ModuleType | None] = strategies
+    configuration_key: ClassVar[str] = "ingest_strategy"
 
     def __init__(self, num_retries: int = 3, backoff_multiplier: int = 1, backoff_max: int = 60) -> None:
         """
