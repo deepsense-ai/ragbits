@@ -24,37 +24,46 @@ def documents_fixture() -> list[DocumentMeta]:
 async def test_sequential_strategy(documents: list[DocumentMeta]):
     embedder = NoopEmbedder()
     vector_store = InMemoryVectorStore(embedder=embedder)
-    router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
+    parser_router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = SequentialIngestStrategy()
+
     results = await strategy(
         documents=documents,
         vector_store=vector_store,
-        processor_router=router,
+        parser_router=parser_router,
+        enricher_router={},
     )
+
     assert len(results.successful) == 5
 
 
 async def test_batched_strategy(documents: list[DocumentMeta]):
     embedder = NoopEmbedder()
     vector_store = InMemoryVectorStore(embedder=embedder)
-    router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
+    parser_router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = BatchedIngestStrategy(batch_size=2)
+
     results = await strategy(
         documents=documents,
         vector_store=vector_store,
-        processor_router=router,
+        parser_router=parser_router,
+        enricher_router={},
     )
+
     assert len(results.successful) == 5
 
 
 async def test_distributed_strategy(documents: list[DocumentMeta]):
     embedder = NoopEmbedder()
     vector_store = InMemoryVectorStore(embedder=embedder)
-    router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
+    parser_router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
     strategy = RayDistributedIngestStrategy()
+
     results = await strategy(
         documents=documents,
         vector_store=vector_store,
-        processor_router=router,
+        parser_router=parser_router,
+        enricher_router={},
     )
+
     assert len(results.successful) == 5

@@ -105,17 +105,20 @@ async def test_document_search_ingest_from_source():
 async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
-
-    await document_search.ingest([document], document_processor=DummyProvider())
+    document_search = DocumentSearch(
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        document_processor_router=DocumentProcessorRouter(
+            {
+                DocumentType.TXT: DummyProvider(),
+            }
+        ),
+    )
+    await document_search.ingest([document])
 
     results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_with_no_results():
@@ -129,13 +132,15 @@ async def test_document_search_with_no_results():
 async def test_document_search_with_search_config():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=embeddings_mock))
-
-    await document_search.ingest(
-        [DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")],
-        document_processor=DummyProvider(),
+    document_search = DocumentSearch(
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        document_processor_router=DocumentProcessorRouter(
+            {
+                DocumentType.TXT: DummyProvider(),
+            }
+        ),
     )
+    await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
     results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
 
@@ -148,10 +153,7 @@ async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent / "example_files"
 
-    await document_search.ingest(
-        LocalFileSource.list_sources(examples_files, file_pattern="*.md"),
-        document_processor=DummyProvider(),
-    )
+    await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 

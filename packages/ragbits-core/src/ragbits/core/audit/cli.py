@@ -93,7 +93,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
 
     def __init__(self) -> None:
         super().__init__()
-        self.live = Live(auto_refresh=False)
+        self.live = Live(auto_refresh=False, vertical_overflow="visible")
 
     def start(self, name: str, inputs: dict, current_span: CLISpan | None = None) -> CLISpan:
         """
@@ -114,7 +114,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             parent=current_span,
         )
         if current_span is None:
-            self.live = Live(auto_refresh=False)
+            self.live = Live(auto_refresh=False, vertical_overflow="visible")
             self.live.start()
             self.tree = span.tree
 

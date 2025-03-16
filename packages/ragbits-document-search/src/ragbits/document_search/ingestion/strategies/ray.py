@@ -4,18 +4,18 @@ from collections.abc import Iterable
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
+from ragbits.document_search.documents.element import IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.strategies.base import (
+    IngestDocumentResult,
     IngestExecutionResult,
-    IngestStrategy,
-    IngestSummaryResult,
-    IngestTaskResult,
 )
+from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy, IngestTaskResult
 
 
-class RayDistributedIngestStrategy(IngestStrategy):
+class RayDistributedIngestStrategy(BatchedIngestStrategy):
     """
     Ingest strategy that processes documents on a cluster, using Ray.
     """
@@ -53,8 +53,8 @@ class RayDistributedIngestStrategy(IngestStrategy):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        processor_router: DocumentProcessorRouter,
-        processor_overwrite: BaseProvider | None = None,
+        parser_router: DocumentProcessorRouter,
+        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
     ) -> IngestExecutionResult:
         """
         Ingest documents in parallel in batches.
@@ -62,146 +62,67 @@ class RayDistributedIngestStrategy(IngestStrategy):
         Args:
             documents: The documents to ingest.
             vector_store: The vector store to store document chunks.
-            processor_router: The document processor router to use.
-            processor_overwrite: Forces the use of a specific processor, instead of the one provided by the router.
+            parser_router: The document parser router to use.
+            enricher_router: The intermediate element enricher router to use.
 
         Returns:
             The ingest execution result.
         """
         import ray
 
-        def _parse(batch: dict[str, list[DocumentMeta | Document | Source]]) -> dict:
-            async def _main() -> dict:
-                document_uris = [
-                    document.metadata.id if isinstance(document, Document) else document.id
-                    for document in batch["item"]
-                ]
-                responses = await asyncio.gather(
-                    *[
-                        self._call_with_error_handling(
-                            self._parse_document,
-                            document=document,
-                            processor_router=processor_router,
-                            processor_overwrite=processor_overwrite,
-                        )
-                        for document in batch["item"]
-                    ],
-                    return_exceptions=True,
-                )
-                return {
-                    "results": [
-                        IngestTaskResult(
-                            document_uri=uri,
-                            response=response,
-                        )
-                        for uri, response in zip(document_uris, responses, strict=False)
-                    ]
-                }
-
-            return asyncio.run(_main())
-
-        def _remove(batch: dict) -> dict:
-            async def _main() -> dict:
-                elements = [
-                    element
-                    for result in batch["results"]
-                    if not isinstance(result.response, BaseException)
-                    for element in result.response
-                ]
-                exc = await self._call_with_error_handling(
-                    self._remove_elements,
-                    elements=elements,
-                    vector_store=vector_store,
-                    return_exception=True,
-                )
-                if exc:
-                    batch["results"] = [
-                        IngestTaskResult(
-                            document_uri=result.document_uri,
-                            response=exc,
-                        )
-                        if not isinstance(result.response, BaseException)
-                        else result
-                        for result in batch["results"]
-                    ]
-                return batch
-
-            return asyncio.run(_main())
-
-        def _insert(batch: dict) -> dict:
-            async def _main() -> dict:
-                elements = [
-                    element
-                    for result in batch["results"]
-                    if not isinstance(result.response, BaseException)
-                    for element in result.response
-                ]
-                exc = await self._call_with_error_handling(
-                    self._insert_elements,
-                    elements=elements,
-                    vector_store=vector_store,
-                    return_exception=True,
-                )
-                if exc:
-                    batch["results"] = [
-                        IngestTaskResult(
-                            document_uri=result.document_uri,
-                            response=exc,
-                        )
-                        if not isinstance(result.response, BaseException)
-                        else result
-                        for result in batch["results"]
-                    ]
-                return batch
-
-            return asyncio.run(_main())
-
-        def _summarize(batch: dict) -> dict:
-            return {
-                "results": [
-                    IngestSummaryResult(
-                        document_uri=result.document_uri,
-                        error=result.response,
-                    )
-                    if isinstance(result.response, BaseException)
-                    else IngestSummaryResult(
-                        document_uri=result.document_uri,
-                        num_elements=len(result.response),
-                    )
-                    for result in batch["results"]
-                ]
-            }
-
-        dataset = (
-            ray.data.from_items(list(documents))
-            .map_batches(
-                fn=_parse,
-                batch_size=self.cpu_batch_size,
-                num_cpus=1,
-                memory=self.cpu_memory,
-                zero_copy_batch=True,
-            )
-            .map_batches(
-                fn=_remove,
-                batch_size=self.io_batch_size,
-                num_cpus=0,
-                memory=self.io_memory,
-            )
-            .map_batches(
-                fn=_insert,
-                batch_size=self.io_batch_size,
-                num_cpus=0,
-                memory=self.io_memory,
-            )
-            .map_batches(
-                fn=_summarize,
-                batch_size=self.io_batch_size,
-                num_cpus=0,
-                memory=self.io_memory,
-                zero_copy_batch=True,
-            )
+        # Parse documents
+        parse_results = ray.data.from_items(list(documents)).map_batches(
+            fn=lambda batch: {"results": asyncio.run(self._parse_batch(batch["item"], parser_router))},
+            batch_size=self.cpu_batch_size,
+            num_cpus=1,
+            memory=self.cpu_memory,
+            zero_copy_batch=True,
         )
+
+        # Split documents into successful and failed
+        successfully_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestTaskResult))
+        failed_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestDocumentResult))
+
+        # Further split valid documents into intermediate and ready
+        intermediate_parsed = successfully_parsed.filter(
+            lambda data: any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+        )
+        ready_parsed = successfully_parsed.filter(
+            lambda data: not any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+        )
+
+        # Enrich intermediate documents
+        enrich_results = intermediate_parsed.map_batches(
+            fn=lambda batch: {"results": asyncio.run(self._enrich_batch(batch["results"], enricher_router))},
+            batch_size=self.io_batch_size,
+            num_cpus=0,
+            memory=self.io_memory,
+        )
+
+        # Split enriched documents into successful and failed
+        successfully_enriched = enrich_results.filter(lambda data: isinstance(data["results"], IngestTaskResult))
+        failed_enriched = enrich_results.filter(lambda data: isinstance(data["results"], IngestDocumentResult))
+
+        # Combine ready documents with successfully enriched documents for indexing
+        to_index = ready_parsed.union(successfully_enriched)
+
+        # Index the combined documents
+        index_results = to_index.map_batches(
+            fn=lambda batch: {"results": asyncio.run(self._index_batch(batch["results"], vector_store))},
+            batch_size=self.io_batch_size,
+            num_cpus=0,
+            memory=self.io_memory,
+        )
+
+        # Split indexed documents into successful and failed
+        successfully_indexed = index_results.filter(lambda data: not data["results"].error)
+        failed_indexed = index_results.filter(lambda data: data["results"].error)
+
+        # Combine all failed documents
+        all_failed = failed_parsed.union(failed_enriched, failed_indexed)
+
+        # Return the final result
         return IngestExecutionResult(
-            successful=[data["results"] for data in dataset.filter(lambda data: not data["results"].error).take_all()],
-            failed=[data["results"] for data in dataset.filter(lambda data: data["results"].error).take_all()],
+            successful=[data["results"] for data in successfully_indexed.take_all()],
+            failed=[data["results"] for data in all_failed.take_all()],
         )

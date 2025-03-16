@@ -5,6 +5,7 @@
 - BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
 - Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
+- Introduce intermediate image elements (#139)
 
 ## 0.9.0 (2025-02-25)
 
