@@ -49,14 +49,11 @@ import asyncio
 
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
-
-audit.set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
@@ -97,7 +94,10 @@ async def main() -> None:
         index_name="jokes",
         embedder=embedder,
     )
-    ingest_strategy = RayDistributedIngestStrategy()
+    ingest_strategy = RayDistributedIngestStrategy(
+        cpu_batch_size=1,
+        io_batch_size=4,
+    )
     document_search = DocumentSearch(
         vector_store=vector_store,
         ingest_strategy=ingest_strategy,

@@ -84,7 +84,7 @@ embedder = LiteLLMEmbedder()
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(
     vector_store=vector_store,
-    document_processor_router=DocumentProcessorRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
+    parser_router=DocumentProcessorRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
 )
 ```
 
