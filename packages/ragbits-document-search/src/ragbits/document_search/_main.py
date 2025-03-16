@@ -1,5 +1,6 @@
 from collections.abc import Iterable, Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
@@ -75,9 +76,8 @@ class DocumentSearch(WithConstructionConfig):
         3. Uses Reranker to rerank the chunks.
     """
 
-    # WithConstructionConfig configuration
-    default_module: ClassVar = document_search
-    configuration_key: ClassVar = "document_search"
+    default_module: ClassVar[ModuleType | None] = document_search
+    configuration_key: ClassVar[str] = "document_search"
 
     vector_store: VectorStore
     query_rephraser: QueryRephraser
@@ -147,7 +147,10 @@ class DocumentSearch(WithConstructionConfig):
 
     @classmethod
     def preferred_subclass(
-        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+        cls,
+        config: CoreConfig,
+        factory_path_override: str | None = None,
+        yaml_path_override: Path | None = None,
     ) -> Self:
         """
         Tries to create an instance by looking at project's component prefferences, either from YAML
