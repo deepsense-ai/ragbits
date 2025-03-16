@@ -90,7 +90,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
         **executable_kwargs: _CallP.kwargs,
     ) -> _CallReturnT:
         """
-        Call executable with standarized error handling.
+        Call executable with a standarized error handling.
         If an error occurs, the executable is retried `num_retries` times using randomized exponential backoff.
 
         Args:
