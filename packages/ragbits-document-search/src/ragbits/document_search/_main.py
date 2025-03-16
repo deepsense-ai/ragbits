@@ -92,8 +92,8 @@ class DocumentSearch(WithConstructionConfig):
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
-        parser_router: DocumentProcessorRouter | None = None,
         ingest_strategy: IngestStrategy | None = None,
+        parser_router: DocumentProcessorRouter | None = None,
         enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler] | None = None,
     ) -> None:
         self.vector_store = vector_store
