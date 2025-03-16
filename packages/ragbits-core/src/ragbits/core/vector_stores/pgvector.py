@@ -7,7 +7,7 @@ from uuid import UUID
 import asyncpg
 from pydantic.json import pydantic_encoder
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
@@ -173,45 +173,50 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         """
         Create a pgVector table with an HNSW index for given similarity.
         """
-        check_table_existence = """
-                SELECT EXISTS (
-                SELECT FROM information_schema.tables
-                WHERE table_name = $1
-            ); """
-        distance = DISTANCE_OPS[self._distance_method][0]
-        create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
-        # _table_name and has been validated in the class constructor, and it is a valid table name.
-        # _vector_size has been validated in the class constructor, and it is a valid vector size.
+        with trace(
+            table_name=self._table_name,
+            distance_method=self._distance_method,
+            vector_size=self._vector_size,
+            hnsw_index_parameters=self._hnsw_params,
+        ):
+            check_table_existence = """
+                    SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = $1
+                ); """
+            distance = DISTANCE_OPS[self._distance_method][0]
+            create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
+            # _table_name and has been validated in the class constructor, and it is a valid table name.
+            # _vector_size has been validated in the class constructor, and it is a valid vector size.
 
-        create_table_query = f"""
-        CREATE TABLE {self._table_name}
-        (id UUID, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
-        """
-        # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
-        create_index_query = f"""
-                CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
-                USING hnsw (vector {distance})
-                WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
-                """
+            create_table_query = f"""
+            CREATE TABLE {self._table_name}
+            (id UUID, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
+            """
+            # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
+            create_index_query = f"""
+                    CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
+                    USING hnsw (vector {distance})
+                    WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
+                    """
 
-        async with self._client.acquire() as conn:
-            await conn.execute(create_vector_extension)
-            exists = await conn.fetchval(check_table_existence, self._table_name)
+            async with self._client.acquire() as conn:
+                await conn.execute(create_vector_extension)
+                exists = await conn.fetchval(check_table_existence, self._table_name)
 
-            if not exists:
-                try:
-                    async with conn.transaction():
-                        await conn.execute(create_table_query)
-                        await conn.execute(create_index_query)
+                if not exists:
+                    try:
+                        async with conn.transaction():
+                            await conn.execute(create_table_query)
+                            await conn.execute(create_index_query)
 
-                    print("Table and index created!")
-                except Exception as e:
-                    print(f"Failed to create table and index: {e}")
-                    raise
-            else:
-                print("Table already exists!")
+                        print("Table and index created!")
+                    except Exception as e:
+                        print(f"Failed to create table and index: {e}")
+                        raise
+                else:
+                    print("Table already exists!")
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores entries in the pgVector collection.
@@ -226,35 +231,41 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         INSERT INTO {self._table_name} (id, key, vector, metadata)
         VALUES ($1, $2, $3, $4)
         """  # noqa S608
+        with trace(
+            table_name=self._table_name,
+            entries=entries,
+            vector_size=self._vector_size,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ):
+            embeddings = await self._create_embeddings(entries)
 
-        embeddings = await self._create_embeddings(entries)
-
-        try:
-            async with self._client.acquire() as conn:
-                for entry in entries:
-                    if entry.id not in embeddings or self._embedding_name_text not in embeddings[entry.id]:
-                        warnings.warn(f"Skipping entry {entry.id} as it has no text embeddings.")
-                        continue
-
-                    await conn.execute(
-                        insert_query,
-                        str(entry.id),
-                        entry.text,
-                        str(embeddings[entry.id][self._embedding_name_text]),
-                        json.dumps(entry.metadata, default=pydantic_encoder),
-                    )
-        except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self._table_name} does not exist. Creating the table.")
             try:
-                await self.create_table()
-            except Exception as e:
-                print(f"Failed to handle missing table: {e}")
-                return
+                async with self._client.acquire() as conn:
+                    for entry in entries:
+                        if entry.id not in embeddings or self._embedding_name_text not in embeddings[entry.id]:
+                            warnings.warn(f"Skipping entry {entry.id} as it has no text embeddings.")
+                            continue
 
-            print("Table created successfully. Inserting entries...")
-            await self.store(entries)
+                        await conn.execute(
+                            insert_query,
+                            str(entry.id),
+                            entry.text,
+                            str(embeddings[entry.id][self._embedding_name_text]),
+                            json.dumps(entry.metadata, default=pydantic_encoder),
+                        )
+            except asyncpg.exceptions.UndefinedTableError:
+                print(f"Table {self._table_name} does not exist. Creating the table.")
+                try:
+                    await self.create_table()
+                except Exception as e:
+                    print(f"Failed to handle missing table: {e}")
+                    return
 
-    @traceable
+                print("Table created successfully. Inserting entries...")
+                await self.store(entries)
+
     async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
@@ -270,15 +281,14 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         DELETE FROM {self._table_name}
         WHERE id = ANY($1)
         """  # noqa S608
+        with trace(table_name=self._table_name, ids=ids):
+            try:
+                async with self._client.acquire() as conn:
+                    await conn.execute(remove_query, ids)
+            except asyncpg.exceptions.UndefinedTableError:
+                print(f"Table {self._table_name} does not exist.")
+                return
 
-        try:
-            async with self._client.acquire() as conn:
-                await conn.execute(remove_query, ids)
-        except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self._table_name} does not exist.")
-            return
-
-    @traceable
     async def _fetch_records(self, query: str, values: list[Any]) -> list[VectorStoreEntry]:
         """
         Fetch records from the pgVector collection.
@@ -307,7 +317,6 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             print(f"Table {self._table_name} does not exist.")
             return []
 
-    @traceable
     async def retrieve(
         self,
         text: str | None = None,
@@ -330,36 +339,47 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         if image is not None:
             warnings.warn("Image retrieval is not supported yet. Ignoring the image.")
-
-        vector = (await self._embedder.embed_text([text]))[0]
-
         query_options = (self.default_options | options) if options else self.default_options
-        retrieve_query, values = self._create_retrieve_query(vector, query_options)
+        with trace(
+            text=text,
+            image=image,
+            table_name=self._table_name,
+            query_options=query_options,
+            vector_size=self._vector_size,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ) as outputs:
+            vector = (await self._embedder.embed_text([text]))[0]
 
-        try:
-            async with self._client.acquire() as conn:
-                results = await conn.fetch(retrieve_query, *values)
+            retrieve_query, values = self._create_retrieve_query(vector, query_options)
 
-            return [
-                VectorStoreResult(
-                    entry=VectorStoreEntry(
-                        id=record["id"],
-                        text=record["key"],
-                        metadata=json.loads(record["metadata"]),
-                    ),
-                    vectors={
-                        self._embedding_name_text: json.loads(record["vector"]),
-                    },
-                    score=record["distance"],
-                )
-                for record in results
-            ]
+            try:
+                async with self._client.acquire() as conn:
+                    results = await conn.fetch(retrieve_query, *values)
 
-        except asyncpg.exceptions.UndefinedTableError:
-            print(f"Table {self._table_name} does not exist.")
-            return []
+                retrieved_entries = [
+                    VectorStoreResult(
+                        entry=VectorStoreEntry(
+                            id=record["id"],
+                            text=record["key"],
+                            metadata=json.loads(record["metadata"]),
+                        ),
+                        vectors={
+                            self._embedding_name_text: json.loads(record["vector"]),
+                        },
+                        score=record["distance"],
+                    )
+                    for record in results
+                ]
 
-    @traceable
+            except asyncpg.exceptions.UndefinedTableError:
+                print(f"Table {self._table_name} does not exist.")
+                retrieved_entries = []
+            outputs.retrieved_entries = retrieved_entries
+            return retrieved_entries
+
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
     ) -> list[VectorStoreEntry]:
@@ -375,5 +395,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        list_query, values = self._create_list_query(where, limit, offset)
-        return await self._fetch_records(list_query, values)
+        with trace(table=self._table_name, query=where, limit=limit, offset=offset) as outputs:
+            list_query, values = self._create_list_query(where, limit, offset)
+            outputs.listed_entries = await self._fetch_records(list_query, values)
+            return outputs.listed_entries

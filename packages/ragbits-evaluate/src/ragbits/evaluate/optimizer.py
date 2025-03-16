@@ -17,7 +17,7 @@ from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 class OptimizerConfig(BaseModel):
     """
-    Schema for for the dict taken by `Optimizer.run_from_config` method.
+    Schema for the dict taken by `Optimizer.run_from_config` method.
     """
 
     experiment: EvaluatorConfig

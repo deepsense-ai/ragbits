@@ -1,12 +1,14 @@
 import asyncio
 from collections.abc import Callable
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 from ragbits.core.audit import _get_function_inputs, set_trace_handlers, trace, traceable
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import AttributeFormatter, TraceHandler
+from ragbits.core.vector_stores import VectorStoreEntry
 
 
 class MockTraceHandler(TraceHandler):
@@ -166,33 +168,79 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
     [
         # Empty dict
         ({}, None, {}),
-        ({}, "test", {}),
+        ({}, "prefix", {}),
         # Simple types
         (
             {"str": "value", "int": 42, "float": 3.14, "bool": True},
             None,
             {"str": "value", "int": 42, "float": 3.14, "bool": True},
         ),
-        # With prefix
+        # # With prefix
         ({"str": "value", "int": 42}, "prefix", {"prefix.str": "value", "prefix.int": 42}),
-        # Nested dict
+        # # Nested dict
         ({"nested": {"key1": "value1", "key2": 42}}, None, {"nested.key1": "value1", "nested.key2": 42}),
         # Lists and tuples
         ({"list": [1, 2, 3], "tuple": ("a", "b", "c")}, None, {"list": "[1, 2, 3]", "tuple": "['a', 'b', 'c']"}),
         # Complex objects in lists
         (
-            {"objects": [{"a": 1}, datetime(2023, 1, 1)]},
-            None,
-            {"objects": "[\"{'a': 1}\", 'datetime.datetime(2023, 1, 1, 0, 0)']"},
+            {
+                "objects": [
+                    {"a": 1},
+                    datetime(2023, 1, 1),
+                    Path("/path/to/file"),
+                    ["short", "list"],
+                    "LongString" + "A" * (AttributeFormatter.max_string_length + 50),
+                ]
+            },
+            "test",
+            {
+                "test.objects.[0].a": 1,
+                "test.objects.[1].datetime": "datetime.datetime(2023, 1, 1, 0, 0)",
+                "test.objects.[2].PosixPath": "PosixPath('/path/to/file')",
+                "test.objects.[3]": "['short', 'list']",
+                "test.objects.[4]": "LongString" + "A" * (AttributeFormatter.max_string_length - 10) + "...",
+            },
         ),
         # Mixed nested structure
         (
             {"level1": {"level2": {"string": "value", "list": [1, {"x": "y"}]}}},
             "test",
-            {"test.level1.level2.string": "value", "test.level1.level2.list": "[1, \"{'x': 'y'}\"]"},
+            {"test.level1.level2.string": "value", "test.level1.level2.list": "[1, {'x': 'y'}]"},
+        ),
+        # Empty dict and list
+        ({"a": [], "b": {}, "c": ""}, "empty", {"empty.a": "[]", "empty.b": "{}", "empty.c": ""}),
+        # Long list and long string
+        (
+            {
+                "vector": [0.01, 0.02, 0.03, 0.04] * 1534,
+                "vcs": VectorStoreEntry(
+                    id="9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+                    text="Some text",
+                    image_bytes=None,
+                    metadata={
+                        "for_shortening": "A" * AttributeFormatter.max_string_length
+                        + "B" * AttributeFormatter.max_string_length
+                    },
+                ),
+                "not_for_shortening": {
+                    "response": "A" * AttributeFormatter.max_string_length + "B" * AttributeFormatter.max_string_length
+                },
+            },
+            "test",
+            {
+                "test.vector": "[0.01, '...', 0.04](total 6136 elements)",
+                "test.vcs.VectorStoreEntry.id.UUID": "UUID('9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8')",
+                "test.vcs.VectorStoreEntry.text": "Some text",
+                "test.vcs.VectorStoreEntry.image_bytes": "None",
+                "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
+                "test.not_for_shortening.response": "A" * AttributeFormatter.max_string_length
+                + "B" * AttributeFormatter.max_string_length,
+            },
         ),
     ],
 )
 def test_format_attributes(input_data: dict, prefix: str, expected: dict) -> None:
-    result = format_attributes(input_data, prefix)
+    formatter = AttributeFormatter(input_data, prefix)
+    formatter.process_attributes()
+    result = formatter.flattened
     assert result == expected

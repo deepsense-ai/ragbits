@@ -19,6 +19,7 @@ nav:
         - how-to/core/use_tracing.md
         - how-to/core/use_llms.md
         - how-to/core/use_local_llms.md
+        - how-to/core/use_pgVector_store.md
       - Document Search:
         - Ingest:
           - Using Strategies:

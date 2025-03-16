@@ -9,7 +9,7 @@ from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
@@ -131,7 +131,6 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                 return len(vector)
         raise ValueError("No vectors found in the input")
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
@@ -142,38 +141,45 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Raises:
             QdrantException: If upload to collection fails.
         """
-        if not entries:
-            return
+        with trace(
+            entries=entries,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ):
+            if not entries:
+                return
 
-        embeddings: dict = await self._create_embeddings(entries)
+            embeddings: dict = await self._create_embeddings(entries)
 
-        if not await self._client.collection_exists(self._index_name):
-            vector_size = self._detect_vector_size(embeddings.values())
-            await self._client.create_collection(
+            if not await self._client.collection_exists(self._index_name):
+                vector_size = self._detect_vector_size(embeddings.values())
+                await self._client.create_collection(
+                    collection_name=self._index_name,
+                    vectors_config={
+                        name: VectorParams(size=vector_size, distance=self._distance_method)
+                        for name in [self._embedding_name_text, self._embedding_name_image]
+                    },
+                )
+
+            points = (
+                models.PointStruct(
+                    id=str(entry.id),
+                    vector=embeddings[entry.id],
+                    payload=entry.model_dump(exclude_none=True),
+                )
+                for entry in entries
+                if entry.id in embeddings
+            )
+
+            self._client.upload_points(
                 collection_name=self._index_name,
-                vectors_config={
-                    name: VectorParams(size=vector_size, distance=self._distance_method)
-                    for name in [self._embedding_name_text, self._embedding_name_image]
-                },
+                points=points,
+                wait=True,
             )
 
-        points = (
-            models.PointStruct(
-                id=str(entry.id),
-                vector=embeddings[entry.id],
-                payload=entry.model_dump(exclude_none=True),
-            )
-            for entry in entries
-            if entry.id in embeddings
-        )
-
-        self._client.upload_points(
-            collection_name=self._index_name,
-            points=points,
-            wait=True,
-        )
-
-    @traceable
     async def retrieve(
         self, text: str | None = None, image: bytes | None = None, options: VectorStoreOptionsT | None = None
     ) -> list[VectorStoreResult]:
@@ -190,55 +196,63 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         """
         merged_options = (self.default_options | options) if options else self.default_options
         score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
+        with trace(
+            text=text,
+            image=image,
+            options=merged_options,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedder_for_text=self._embedding_name_text,
+            embedder_for_image=self._embedding_name_image,
+        ) as outputs:
+            vector_coroutines: list[Coroutine[Any, Any, list[list[float]]]] = []
+            if text:
+                vector_coroutines.append(self._embedder.embed_text([text]))
+            if image:
+                vector_coroutines.append(self._embedder.embed_image([image]))
 
-        vector_coroutines: list[Coroutine[Any, Any, list[list[float]]]] = []
-        if text:
-            vector_coroutines.append(self._embedder.embed_text([text]))
-        if image:
-            vector_coroutines.append(self._embedder.embed_image([image]))
+            if not vector_coroutines:
+                raise ValueError("Either text or image should be provided.")
 
-        if not vector_coroutines:
-            raise ValueError("Either text or image should be provided.")
+            query_vectors = await asyncio.gather(*vector_coroutines)
 
-        query_vectors = await asyncio.gather(*vector_coroutines)
-
-        # TODO: Come up with a better way to query both image and text vectors
-        # FusionQuery boosts entries that appear in both lists, i.e. those
-        # that contain both text and image, which is probably not what we want.
-        query_results = await self._client.query_points(
-            prefetch=[
-                models.Prefetch(
-                    query=vector[0],
-                    using=name,
-                )
-                for vector in query_vectors
-                for name in [self._embedding_name_text, self._embedding_name_image]
-            ],
-            collection_name=self._index_name,
-            query=models.FusionQuery(fusion=models.Fusion.DBSF),
-            limit=merged_options.k,
-            score_threshold=score_threshold,
-            with_payload=True,
-            with_vectors=True,
-        )
-
-        results: list[VectorStoreResult] = []
-
-        for point in query_results.points:
-            if not isinstance(point.vector, dict):
-                raise ValueError(f"For payload {point.payload}, vector is not a dict: {point.vector}")
-            vector: dict = point.vector
-            results.append(
-                VectorStoreResult(
-                    entry=VectorStoreEntry.model_validate(point.payload),
-                    score=point.score,
-                    vectors=vector,
-                )
+            # TODO: Come up with a better way to query both image and text vectors
+            # FusionQuery boosts entries that appear in both lists, i.e. those
+            # that contain both text and image, which is probably not what we want.
+            query_results = await self._client.query_points(
+                prefetch=[
+                    models.Prefetch(
+                        query=vector[0],
+                        using=name,
+                    )
+                    for vector in query_vectors
+                    for name in [self._embedding_name_text, self._embedding_name_image]
+                ],
+                collection_name=self._index_name,
+                query=models.FusionQuery(fusion=models.Fusion.DBSF),
+                limit=merged_options.k,
+                score_threshold=score_threshold,
+                with_payload=True,
+                with_vectors=True,
             )
 
-        return results
+            results: list[VectorStoreResult] = []
 
-    @traceable
+            for point in query_results.points:
+                if not isinstance(point.vector, dict):
+                    raise ValueError(f"For payload {point.payload}, vector is not a dict: {point.vector}")
+                vector: dict = point.vector
+                results.append(
+                    VectorStoreResult(
+                        entry=VectorStoreEntry.model_validate(point.payload),
+                        score=point.score,
+                        vectors=vector,
+                    )
+                )
+            outputs.retrieved_entries = results
+            return results
+
     async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
@@ -249,12 +263,13 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Raises:
             ValueError: If collection named `self._index_name` is not present in the vector store.
         """
-        await self._client.delete(
-            collection_name=self._index_name,
-            points_selector=models.PointIdsList(
-                points=[str(id) for id in ids],
-            ),
-        )
+        with trace(ids=ids, index_name=self._index_name):
+            await self._client.delete(
+                collection_name=self._index_name,
+                points_selector=models.PointIdsList(
+                    points=[str(id) for id in ids],
+                ),
+            )
 
     @staticmethod
     def _create_qdrant_filter(where: WhereQuery) -> Filter:
@@ -298,20 +313,22 @@ class QdrantVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        collection_exists = await self._client.collection_exists(collection_name=self._index_name)
-        if not collection_exists:
-            return []
+        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+            collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+            if not collection_exists:
+                return []
 
-        limit = limit or (await self._client.count(collection_name=self._index_name)).count
+            limit = limit or (await self._client.count(collection_name=self._index_name)).count
 
-        qdrant_filter = self._create_qdrant_filter(where) if where else None
+            qdrant_filter = self._create_qdrant_filter(where) if where else None
 
-        results = await self._client.query_points(
-            collection_name=self._index_name,
-            query_filter=qdrant_filter,
-            limit=limit,
-            offset=offset,
-            with_payload=True,
-            with_vectors=True,
-        )
-        return [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+            results = await self._client.query_points(
+                collection_name=self._index_name,
+                query_filter=qdrant_filter,
+                limit=limit,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            outputs.listed_entries = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+            return outputs.listed_entries

@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
+from ragbits.core.audit import trace, traceable
+
 with suppress(ImportError):
     from azure.core.exceptions import ResourceNotFoundError
     from azure.identity import DefaultAzureCredential
@@ -92,23 +94,25 @@ class AzureBlobStorageSource(Source):
         container_local_dir = get_local_storage_dir() / self.account_name / self.container_name
         container_local_dir.mkdir(parents=True, exist_ok=True)
         path = container_local_dir / self.blob_name
-        try:
-            blob_service = await self._get_blob_service(account_name=self.account_name)
-            blob_client = blob_service.get_blob_client(container=self.container_name, blob=self.blob_name)
-            Path(path).parent.mkdir(parents=True, exist_ok=True)
-            stream = blob_client.download_blob()
-            content = stream.readall()
-            with open(path, "wb") as file:
-                file.write(content)
+        with trace(account_name=self.account_name, container=self.container_name, blob=self.blob_name) as outputs:
+            try:
+                blob_service = await self._get_blob_service(account_name=self.account_name)
+                blob_client = blob_service.get_blob_client(container=self.container_name, blob=self.blob_name)
+                Path(path).parent.mkdir(parents=True, exist_ok=True)
+                stream = blob_client.download_blob()
+                content = stream.readall()
+                with open(path, "wb") as file:
+                    file.write(content)
 
-        except ResourceNotFoundError as e:
-            raise SourceNotFoundError(f"Blob {self.blob_name} not found in container {self.container_name}") from e
-        except Exception as e:
-            raise SourceConnectionError() from e
-
+            except ResourceNotFoundError as e:
+                raise SourceNotFoundError(f"Blob {self.blob_name} not found in container {self.container_name}") from e
+            except Exception as e:
+                raise SourceConnectionError() from e
+            outputs.path = path
         return path
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["AzureBlobStorageSource"]:
         """
         Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorageSource.
@@ -174,13 +178,15 @@ class AzureBlobStorageSource(Source):
             ImportError: If the required 'azure-storage-blob' package is not installed
             SourceConnectionError: If there's an error connecting to Azure
         """
-        blob_service = await cls._get_blob_service(account_name=account_name)
-        try:
-            container_client = blob_service.get_container_client(container)
-            blobs = container_client.list_blobs(name_starts_with=blob_name)
-            return [
-                AzureBlobStorageSource(container_name=container, blob_name=blob.name, account_name=account_name)
-                for blob in blobs
-            ]
-        except Exception as e:
-            raise SourceConnectionError() from e
+        with trace(account_name=account_name, container=container, blob_name=blob_name) as outputs:
+            blob_service = await cls._get_blob_service(account_name=account_name)
+            try:
+                container_client = blob_service.get_container_client(container)
+                blobs = container_client.list_blobs(name_starts_with=blob_name)
+                outputs.results = [
+                    AzureBlobStorageSource(container_name=container, blob_name=blob.name, account_name=account_name)
+                    for blob in blobs
+                ]
+                return outputs.results
+            except Exception as e:
+                raise SourceConnectionError() from e

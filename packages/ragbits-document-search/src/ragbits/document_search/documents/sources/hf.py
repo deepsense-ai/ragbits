@@ -4,6 +4,7 @@ from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
+from ragbits.core.audit import trace, traceable
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.document_search.documents.sources import Source
@@ -34,6 +35,7 @@ class HuggingFaceSource(Source):
         """
         return f"huggingface:{self.path}/{self.split}/{self.row}"
 
+    @traceable
     @requires_dependencies(["datasets"], "huggingface")
     async def fetch(self) -> Path:
         """
@@ -47,30 +49,32 @@ class HuggingFaceSource(Source):
             SourceConnectionError: If the source connection fails.
             SourceNotFoundError: If the source document is not found.
         """
-        try:
-            dataset = load_dataset(self.path, split=self.split, streaming=True)  # type: ignore
-        except ConnectionError as exc:
-            raise SourceConnectionError() from exc
-        except DatasetNotFoundError as exc:  # type: ignore
-            raise SourceNotFoundError(source_id=self.id) from exc
+        with trace(path=self.path, split=self.split, row=self.row) as outputs:
+            try:
+                dataset = load_dataset(self.path, split=self.split, streaming=True)  # type: ignore
+            except ConnectionError as exc:
+                raise SourceConnectionError() from exc
+            except DatasetNotFoundError as exc:  # type: ignore
+                raise SourceNotFoundError(source_id=self.id) from exc
 
-        try:
-            data = next(iter(dataset.skip(self.row).take(1)))  # type: ignore
-        except StopIteration as exc:
-            raise SourceNotFoundError(source_id=self.id) from exc
+            try:
+                data = next(iter(dataset.skip(self.row).take(1)))  # type: ignore
+            except StopIteration as exc:
+                raise SourceNotFoundError(source_id=self.id) from exc
 
-        storage_dir = get_local_storage_dir()
-        source_dir = storage_dir / Path(data["source"]).parent
-        source_dir.mkdir(parents=True, exist_ok=True)
-        path = storage_dir / data["source"]
+            storage_dir = get_local_storage_dir()
+            source_dir = storage_dir / Path(data["source"]).parent
+            source_dir.mkdir(parents=True, exist_ok=True)
+            path = storage_dir / data["source"]
 
-        if not path.is_file():
-            with open(path, mode="w", encoding="utf-8") as file:
-                file.write(data["content"])
-
-        return path
+            if not path.is_file():
+                with open(path, mode="w", encoding="utf-8") as file:
+                    file.write(data["content"])
+            outputs.path = path
+            return path
 
     @classmethod
+    @traceable
     async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
         """Create HuggingFaceSource instances from a URI path.
 
@@ -98,6 +102,7 @@ class HuggingFaceSource(Source):
             raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err
 
     @classmethod
+    @traceable
     async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
         """
         List all sources in the given Hugging Face repository.

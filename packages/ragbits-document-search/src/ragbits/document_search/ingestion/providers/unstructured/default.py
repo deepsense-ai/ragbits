@@ -8,7 +8,7 @@ from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.ingestion.providers.base import BaseProvider
@@ -104,7 +104,6 @@ class UnstructuredDefaultProvider(BaseProvider):
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
-    @traceable
     async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
         """
         Process the document using the Unstructured API.
@@ -119,31 +118,39 @@ class UnstructuredDefaultProvider(BaseProvider):
             DocumentTypeNotSupportedError: If the document type is not supported.
 
         """
-        self.validate_document_type(document_meta.document_type)
-        document = await document_meta.fetch()
+        with trace(
+            partition_arg=self.partition_kwargs,
+            chunking_arg=self.chunking_kwargs,
+            api_server=self.api_server,
+            api_key=self.api_key,
+            ignore_images=self.ignore_images,
+        ) as outputs:
+            self.validate_document_type(document_meta.document_type)
+            document = await document_meta.fetch()
 
-        if self.use_api:
-            res = await self.client.general.partition_async(
-                request={
-                    "partition_parameters": {
-                        "files": {
-                            "content": document.local_path.read_bytes(),
-                            "file_name": document.local_path.name,
-                        },
-                        "coordinates": True,
-                        **self.partition_kwargs,
+            if self.use_api:
+                res = await self.client.general.partition_async(
+                    request={
+                        "partition_parameters": {
+                            "files": {
+                                "content": document.local_path.read_bytes(),
+                                "file_name": document.local_path.name,
+                            },
+                            "coordinates": True,
+                            **self.partition_kwargs,
+                        }
                     }
-                }
-            )
-            elements = elements_from_dicts(res.elements)  # type: ignore
-        else:
-            elements = partition(
-                file=BytesIO(document.local_path.read_bytes()),
-                metadata_filename=document.local_path.name,
-                **self.partition_kwargs,
-            )
+                )
+                elements = elements_from_dicts(res.elements)  # type: ignore
+            else:
+                elements = partition(
+                    file=BytesIO(document.local_path.read_bytes()),
+                    metadata_filename=document.local_path.name,
+                    **self.partition_kwargs,
+                )
 
-        return await self._chunk_and_convert(elements, document_meta, document.local_path)
+            outputs.results = await self._chunk_and_convert(elements, document_meta, document.local_path)
+            return outputs.results
 
     async def _chunk_and_convert(
         # pylint: disable=unused-argument
