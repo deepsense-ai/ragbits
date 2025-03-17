@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Better handling of cases when text and image embeddings are mixed in VectorStore
 
 ## 0.10.0 (2025-03-17)
 

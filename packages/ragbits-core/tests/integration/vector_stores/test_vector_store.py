@@ -6,7 +6,7 @@ from chromadb import EphemeralClient
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.noop import NoopEmbedder
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
@@ -16,14 +16,13 @@ from ragbits.document_search.documents.sources import LocalFileSource
 
 text_embbedings = [
     [[0.1, 0.2, 0.3], [0.9, 0.9, 0.9]],  # for storage
-    [[0.1, 0.1, 0.3]],  # for retrieval
+    [[0.12, 0.23, 0.29]],  # for retrieval
 ]
 
 image_embbedings = [
-    [[-100.0, -100.0, -100.0], [0.1, 0.1, 0.1]],  # for storage
-    [[0.99, 0.99, 0.99]],  # for retrieval
+    [[0.7, 0.8, 0.9], [1.0, 0.81, 0.84]],  # for storage
+    [[0.99, 0.8, 0.85]],  # for retrieval
 ]
-
 
 IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
 
@@ -32,15 +31,15 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
 @pytest.fixture(
     name="vector_store",
     params=[
-        InMemoryVectorStore(
+        lambda: InMemoryVectorStore(
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
         ),
-        ChromaVectorStore(
+        lambda: ChromaVectorStore(
             client=EphemeralClient(),
             index_name="test_index_name",
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
         ),
-        QdrantVectorStore(
+        lambda: QdrantVectorStore(
             client=AsyncQdrantClient(":memory:"),
             index_name="test_index_name",
             embedder=NoopEmbedder(return_values=text_embbedings, image_return_values=image_embbedings),
@@ -49,7 +48,7 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
     ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore"],
 )
 def vector_store_fixture(request: pytest.FixtureRequest) -> VectorStore:
-    return request.param
+    return request.param()
 
 
 @pytest.fixture(name="vector_store_entries")
@@ -101,11 +100,11 @@ async def test_vector_store_remove(
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
-    await vector_store.remove([vector_store_entries[0].id])
+    await vector_store.remove([vector_store_entries[2].id])
 
     result_entries = await vector_store.list()
     assert len(result_entries) == 2
-    assert vector_store_entries[0].id not in {entry.id for entry in result_entries}
+    assert vector_store_entries[2].id not in {entry.id for entry in result_entries}
 
 
 async def test_vector_store_retrieve(
@@ -121,13 +120,35 @@ async def test_vector_store_retrieve(
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
         assert result.score != 0
-        assert expected.text is None or "text" in result.vectors
-        assert expected.image_bytes is None or "image" in result.vectors
 
         # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
         assert result.entry.text == expected.text or (expected.text is None and result.entry.text == "")
         assert result.entry.metadata == expected.metadata
         assert result.entry.image_bytes == expected.image_bytes
+
+
+async def test_vector_store_retrieve_by_text(
+    vector_store: VectorStore,
+    vector_store_entries: list[VectorStoreEntry],
+) -> None:
+    await vector_store.store(vector_store_entries)
+    results = await vector_store.retrieve(text="foo", options=VectorStoreOptions(k=2))
+
+    assert len(results) == 2
+    assert results[0].entry.id == vector_store_entries[0].id
+    assert results[1].entry.id == vector_store_entries[1].id
+
+
+async def test_vector_store_retrieve_by_image(
+    vector_store: VectorStore,
+    vector_store_entries: list[VectorStoreEntry],
+) -> None:
+    await vector_store.store(vector_store_entries)
+    results = await vector_store.retrieve(image=vector_store_entries[1].image_bytes, options=VectorStoreOptions(k=2))
+
+    assert len(results) == 2
+    assert results[0].entry.id == vector_store_entries[2].id
+    assert results[1].entry.id == vector_store_entries[1].id
 
 
 async def test_handling_document_ingestion_with_different_content_and_verifying_replacement(

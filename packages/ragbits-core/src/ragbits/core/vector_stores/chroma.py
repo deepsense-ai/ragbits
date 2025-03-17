@@ -1,9 +1,11 @@
-from collections.abc import Mapping, Sequence
-from typing import Literal, cast
+import asyncio
+from collections.abc import Coroutine, Mapping, Sequence
+from typing import Literal
 from uuid import UUID
 
 import chromadb
 from chromadb.api import ClientAPI
+from pyparsing import Any
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
@@ -11,15 +13,16 @@ from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
 
-class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
@@ -33,9 +36,6 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         embedder: Embedder,
         distance_method: Literal["l2", "ip", "cosine"] = "cosine",
         default_options: VectorStoreOptions | None = None,
-        prefer_image_embedding: bool = False,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new ChromaVectorStore instance.
@@ -46,15 +46,10 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             embedder: The embedder to use for converting entries to vectors.
             distance_method: The distance method to use.
             default_options: The default options for querying the vector store.
-            prefer_image_embedding: Whether to prefer image embeddings over text embeddings when both are available.
-            embedding_name_text: The name under which the text embedding is stored in the resulting object.
-            embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
-            embedding_name_text=embedding_name_text,
-            embedding_name_image=embedding_name_image,
         )
         self._client = client
         self._index_name = index_name
@@ -63,7 +58,6 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             name=self._index_name,
             metadata={"hnsw:space": self._distance_method},
         )
-        self._prefer_image_embedding = prefer_image_embedding
 
     def __reduce__(self) -> tuple:
         """
@@ -88,22 +82,9 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 
-    async def _preferred_embeddings(self, embeddings: dict[UUID, dict[str, list[float]]]) -> dict[UUID, list[float]]:
-        """
-        Returns the preferred embedding type (text or image) for each entry. If the preferred type is not available,
-        the other type is returned.
-        """
-        default_embedding_key = (
-            self._embedding_name_text if not self._prefer_image_embedding else self._embedding_name_image
-        )
-        fallback_embedding_key = (
-            self._embedding_name_image if not self._prefer_image_embedding else self._embedding_name_text
-        )
-        return {
-            key: (entry.get(default_embedding_key) or entry[fallback_embedding_key])
-            for key, entry in embeddings.items()
-            if entry.get(default_embedding_key) or entry.get(fallback_embedding_key)
-        }
+    @staticmethod
+    def _internal_id(entry_id: UUID, embedding_type: EmbeddingType) -> str:
+        return f"{entry_id}-{embedding_type.value}"
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -121,10 +102,7 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             index_name=self._index_name,
             collection=self._collection,
             distance_method=self._distance_method,
-            prefer_image=self._prefer_image_embedding,
             embedder=repr(self._embedder),
-            embedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
         ):
             if not entries:
                 return
@@ -135,24 +113,25 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             embeddings: list[Sequence[float]] = []
 
             raw_embeddings = await self._create_embeddings(entries)
-            ids_to_embeddings = await self._preferred_embeddings(raw_embeddings)
             for entry in entries:
-                if entry.id not in ids_to_embeddings:
-                    continue
-                embeddings.append(ids_to_embeddings[entry.id])
-                ids.append(str(entry.id))
-                documents.append(entry.text or "")
-                metadatas.append(
-                    self._flatten_metadata(
-                        {
-                            **entry.metadata,
-                            **{
-                                "__embeddings": raw_embeddings[entry.id],
-                                "__image": entry.image_bytes.hex() if entry.image_bytes else None,
-                            },
-                        }
+                for embedding_type in EmbeddingType:
+                    if not raw_embeddings[entry.id].get(embedding_type):
+                        continue
+
+                    embeddings.append(raw_embeddings[entry.id][embedding_type])
+                    ids.append(self._internal_id(entry.id, embedding_type))
+                    documents.append(entry.text or "")
+                    metadatas.append(
+                        self._flatten_metadata(
+                            {
+                                **entry.metadata,
+                                **{
+                                    "__id": str(entry.id),
+                                    "__image": entry.image_bytes.hex() if entry.image_bytes else None,
+                                },
+                            }
+                        )
                     )
-                )
 
             self._collection.add(
                 ids=ids,
@@ -190,43 +169,41 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             collection=self._collection,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
-            embedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
         ) as outputs:
-            if image and text:
-                raise ValueError("Either text or image should be provided, not both.")
-
+            vector_coroutines: list[Coroutine[Any, Any, list[list[float]]]] = []
             if text:
-                vector = await self._embedder.embed_text([text])
-            elif image:
-                vector = await self._embedder.embed_image([image])
-            else:
+                vector_coroutines.append(self._embedder.embed_text([text]))
+            if image:
+                vector_coroutines.append(self._embedder.embed_image([image]))
+
+            if not vector_coroutines:
                 raise ValueError("Either text or image should be provided.")
 
+            query_vectors: list[Sequence[float]] = [vectors[0] for vectors in await asyncio.gather(*vector_coroutines)]
+
             results = self._collection.query(
-                query_embeddings=cast(list[Sequence[float]], vector),
-                n_results=merged_options.k,
+                query_embeddings=query_vectors,
+                n_results=merged_options.k * 2,  # double the number of results to account for duplicates
                 include=["metadatas", "embeddings", "distances", "documents"],
             )
 
-            ids = [id for batch in results.get("ids", []) for id in batch]
+            internal_ids = [id for batch in results.get("ids", []) for id in batch]
             distances = [distance for batch in results.get("distances") or [] for distance in batch]
             documents = [document for batch in results.get("documents") or [] for document in batch]
+            embeddings = [embedding for batch in results.get("embeddings") or [] for embedding in batch]
 
             metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
 
-            # Remove the `# type: ignore` when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
+            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
             unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
 
-            embeddings: list[dict] = [
-                cast(dict, metadata.pop("__embeddings", {})) for metadata in unflattened_metadatas
-            ]
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+            ids = [UUID(metadata.pop("__id", internal_ids[i])) for i, metadata in enumerate(unflattened_metadatas)]
 
-            outputs.retrieved_entries = [
+            vs_results = [
                 VectorStoreResult(
                     score=distance,
-                    vectors=vectors,
+                    vector=vector,
                     entry=VectorStoreEntry(
                         id=id,
                         text=document,
@@ -234,12 +211,23 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                         metadata=metadata,
                     ),
                 )
-                for id, metadata, distance, document, image, vectors in zip(
+                for id, metadata, distance, document, image, vector in zip(
                     ids, unflattened_metadatas, distances, documents, images, embeddings, strict=True
                 )
                 if merged_options.max_distance is None or distance <= merged_options.max_distance
             ]
-            return outputs.retrieved_entries
+
+            outputs.results = []
+            seen_ids = set()
+            for result in vs_results:
+                if result.entry.id not in seen_ids:
+                    seen_ids.add(result.entry.id)
+                    outputs.results.append(result)
+
+                if len(outputs.results) >= merged_options.k:
+                    break
+
+            return outputs.results
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -249,7 +237,9 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             ids: The list of entries' IDs to remove.
         """
         with trace(ids=ids, collection=self._collection, index_name=self._index_name):
-            self._collection.delete(ids=[str(id) for id in ids])
+            self._collection.delete(
+                ids=[self._internal_id(id, embedding_type) for id in ids for embedding_type in EmbeddingType]
+            )
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
@@ -269,11 +259,12 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        # Cast `where` to chromadb's Where type
-        where_chroma: chromadb.Where | None = dict(where) if where else None
         with trace(
             where=where, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
         ) as outputs:
+            # Cast `where` to chromadb's Where type
+            where_chroma: chromadb.Where | None = dict(where) if where else None
+
             results = self._collection.get(
                 where=where_chroma,
                 limit=limit,
@@ -281,29 +272,29 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
                 include=["metadatas", "documents"],
             )
 
-            ids = results.get("ids") or []
+            internal_ids = results.get("ids") or []
             documents = results.get("documents") or []
             metadatas: Sequence = results.get("metadatas") or []
 
-            # Remove the `# type: ignore` when https://github.com/deepsense-ai/ragbits/pull/379/files is resolved
+            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
             unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
 
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+            ids = [UUID(metadata.pop("__id", internal_ids[i])) for i, metadata in enumerate(unflattened_metadatas)]
 
-            # remove embeddings from metadata
-            for metadata in unflattened_metadatas:
-                metadata.pop("__embeddings", None)
-
-            outputs.listed_entries = [
+            vs_results = [
                 VectorStoreEntry(
-                    id=UUID(id),
+                    id=id,
                     text=document,
                     metadata=metadata,
                     image_bytes=image,
                 )
                 for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
             ]
-            return outputs.listed_entries
+
+            outputs.results = list({r.id: r for r in vs_results}.values())
+
+            return outputs.results
 
     @staticmethod
     def _flatten_metadata(metadata: dict) -> dict:

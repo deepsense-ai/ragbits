@@ -6,15 +6,16 @@ import numpy as np
 from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
 
-class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
@@ -25,8 +26,6 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self,
         embedder: Embedder,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new InMemoryVectorStore instance.
@@ -34,17 +33,13 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Args:
             default_options: The default options for querying the vector store.
             embedder: The embedder to use for converting entries to vectors.
-            embedding_name_text: The name under which the text embedding is stored in the resulting object.
-            embedding_name_image: The name under which the image embedding is stored in the resulting object.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
-            embedding_name_text=embedding_name_text,
-            embedding_name_image=embedding_name_image,
         )
         self._entries: dict[UUID, VectorStoreEntry] = {}
-        self._embeddings: dict[UUID, dict[str, list[float]]] = {}
+        self._embeddings: dict[UUID, dict[EmbeddingType, list[float]]] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -56,10 +51,6 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         with trace(
             entries=entries,
             embedder=repr(self._embedder),
-            embedding_name_text=self._embedding_name_text,
-            embedding_name_image=self._embedding_name_image,
-            mbedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
         ) as outputs:
             for entry in entries:
                 self._entries[entry.id] = entry
@@ -104,13 +95,16 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             results: list[VectorStoreResult] = []
 
             for entry_id, vectors in self._embeddings.items():
-                distances = [float(np.linalg.norm(np.array(v) - np.array(vector))) for v in vectors.values()]
-                result = VectorStoreResult(entry=self._entries[entry_id], vectors=vectors, score=min(distances))
+                distances = [
+                    (float(np.linalg.norm(np.array(v) - np.array(vector))), embedding_type)
+                    for embedding_type, v in vectors.items()
+                ]
+                min_distance, min_type = min(distances, key=lambda x: x[0])
+                result = VectorStoreResult(entry=self._entries[entry_id], vector=vectors[min_type], score=min_distance)
                 if merged_options.max_distance is None or result.score <= merged_options.max_distance:
                     results.append(result)
 
-            results = sorted(results, key=lambda r: r.score)
-            outputs.results = results[: merged_options.k]
+            outputs.results = sorted(results, key=lambda r: r.score)[: merged_options.k]
             return outputs.results
 
     @traceable
