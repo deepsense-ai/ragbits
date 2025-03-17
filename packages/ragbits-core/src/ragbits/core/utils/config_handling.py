@@ -6,7 +6,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing_extensions import Self
 
 from ragbits.core.options import OptionsT
@@ -31,7 +31,7 @@ class NoPreferredConfigError(InvalidConfigError):
 def import_by_path(path: str, default_module: ModuleType | None = None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns an object based on the string in the format of "module.submodule:object_name".
-    If the first part is ommited, the default module is used.
+    If the first part is omitted, the default module is used.
 
     Args:
         path: A string representing the path to the object. This can either be a
@@ -85,6 +85,9 @@ class WithConstructionConfig(abc.ABC):
 
     # The key under configuration for this class (and its subclasses) can be found.
     configuration_key: ClassVar[str]
+
+    # The type of pydantic model
+    model_type: type[BaseModel] | None
 
     @classmethod
     def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
@@ -175,7 +178,16 @@ class WithConstructionConfig(abc.ABC):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        return cls(**config)
+        if cls.model_type:
+            try:
+                validated_config = cls.model_type.model_validate(config)
+                return cls(**validated_config.model_dump())
+
+            except ValidationError as e:
+                raise ValueError(f"Invalid config: {e}") from e
+
+        else:
+            return cls(**config)
 
 
 class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
