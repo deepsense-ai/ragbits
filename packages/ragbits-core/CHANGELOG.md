@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.0 (2025-03-17)
+
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
 - Qdrant vector store can now be serialized during Ray processing (#394)
 - Improve cli trace handler

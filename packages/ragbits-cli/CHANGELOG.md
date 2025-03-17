@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.0 (2025-03-17)
+
+### Changed
+
+- ragbits-core updated to version v0.10.0
+
 - ragbits-conversations added traceable
 - ragbits-core added traceable
 - ragbits-document-search added traceable
