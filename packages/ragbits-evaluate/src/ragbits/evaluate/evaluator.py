@@ -28,7 +28,7 @@ class EvaluatorConfig(BaseModel):
     dataloader: ObjectContructionConfig
     pipeline: ObjectContructionConfig
     metrics: dict[str, ObjectContructionConfig]
-    schema_config: dict[str, str] | None = None
+    schema_config: dict | None = None
 
 
 class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithConstructionConfig):

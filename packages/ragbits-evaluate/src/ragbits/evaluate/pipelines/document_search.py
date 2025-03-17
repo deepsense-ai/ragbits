@@ -10,6 +10,7 @@ from ragbits.evaluate.pipelines.base import EvaluationDatapointSchema, Evaluatio
 
 
 class DocumentSearchDatapointSchema(EvaluationDatapointSchema):
+    """A column description for document search"""
     question_col: str
     reference_passage_col: str
 
@@ -81,6 +82,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
 
         Args:
             data: The evaluation data.
+            schema: column names specification
 
         Returns:
             The evaluation result.

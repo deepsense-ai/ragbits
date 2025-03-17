@@ -61,7 +61,7 @@ class MockMetric(Metric):
 
 
 @pytest.fixture
-def experiment_config() -> dict:
+def experiment_config(datapoint_schema_config: dict) -> dict:
     config = {
         "dataloader": ObjectContructionConfig.model_validate(
             {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 3}}
@@ -77,6 +77,7 @@ def experiment_config() -> dict:
         "metrics": {
             "main_metric": ObjectContructionConfig.model_validate({"type": f"{__name__}:MockMetric", "config": {}})
         },
+        "schema_config": datapoint_schema_config,
     }
     return config
 
@@ -102,7 +103,7 @@ async def test_run_evaluation(datapoint_schema_config: dict) -> None:
 
 
 @pytest.mark.asyncio
-async def test_result_structure(datapoint_schema_config) -> None:
+async def test_result_structure(datapoint_schema_config: dict) -> None:
     target = MockEvaluationTarget()
     pipeline = MockEvaluationPipeline(target)
     schema = EvaluationDatapointSchema.subclass_from_config(

@@ -73,6 +73,11 @@ def eval_pipeline_config() -> dict:
 
 
 @pytest.fixture
+def test_schema_config() -> dict:
+    return {"type": f"{__name__}:MockEvaluationDatapointSchema", "config": {"input_col": "input"}}
+
+
+@pytest.fixture
 def experiment_config(eval_pipeline_config: dict) -> dict:
     config = {
         "optimizer": {
@@ -91,13 +96,14 @@ def experiment_config(eval_pipeline_config: dict) -> dict:
 
 
 @pytest.mark.parametrize(("direction"), ["maximize", "minimize"])
-def test_optimization(direction: str, eval_pipeline_config: dict) -> None:
+def test_optimization(direction: str, eval_pipeline_config: dict, test_schema_config: dict) -> None:
     optimizer = Optimizer(direction=direction, n_trials=2)
     ordered_results = optimizer.optimize(
         pipeline_class=MockEvaluationPipeline,
         pipeline_config=eval_pipeline_config,
         dataloader=MockDataLoader(dataset_size=30),
         metrics=MetricSet(*[MockMetric()]),
+        schema_config=test_schema_config,
     )
     assert MockEvaluationTargetConfig.model_validate(ordered_results[0][0]["evaluation_target"])
     assert MockEvaluationTargetConfig.model_validate(ordered_results[1][0]["evaluation_target"])

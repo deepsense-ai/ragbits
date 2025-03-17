@@ -13,6 +13,14 @@ class EvaluationDatapointSchema(WithConstructionConfig, BaseModel, ABC):
 
     @classmethod
     def get_default_for_pipeline(cls, config: EvaluateConfig, pipeline_type: str) -> "EvaluationDatapointSchema":
+        """
+        A method extracting default schema for a pipeline
+        Args:
+            config: EvaluateConfig - configuration of ragbits evaluate
+            pipeline_type: str - type of a pipeline
+        Returns:
+            EvaluationDatapointSchema
+        """
         datapoint_schemas = config.default_input_schemas_for_pipelines
         schema_config = datapoint_schemas.get(pipeline_type)
         if schema_config is None:

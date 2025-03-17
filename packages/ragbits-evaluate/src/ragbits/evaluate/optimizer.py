@@ -9,9 +9,8 @@ from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig, import_by_path
 from ragbits.evaluate.dataloaders.base import DataLoader
-from ragbits.evaluate.evaluator import Evaluator
+from ragbits.evaluate.evaluator import Evaluator, EvaluatorConfig
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.evaluator import EvaluatorConfig
 from ragbits.evaluate.pipelines.base import EvaluationPipeline
 from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
@@ -96,6 +95,7 @@ class Optimizer(WithConstructionConfig):
             dataloader: Data loader.
             metrics: Metrics to be optimized.
             callbacks: Experiment callbacks.
+            schema_config: dictionary with schema configuration
 
         Returns:
             List of tested configs with associated scores and metrics.
