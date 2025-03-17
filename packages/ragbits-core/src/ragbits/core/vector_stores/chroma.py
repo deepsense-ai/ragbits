@@ -65,6 +65,13 @@ class ChromaVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         )
         self._prefer_image_embedding = prefer_image_embedding
 
+    def __reduce__(self) -> tuple:
+        """
+        Enables the ChromaVectorStore to be pickled and unpickled.
+        """
+        # TODO: To be implemented. Required for Ray processing.
+        raise NotImplementedError
+
     @classmethod
     def from_config(cls, config: dict) -> Self:
         """

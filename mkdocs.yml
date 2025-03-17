@@ -21,12 +21,14 @@ nav:
         - how-to/core/use_local_llms.md
         - how-to/core/use_pgVector_store.md
       - Document Search:
-          - how-to/document_search/async_processing.md
-          - how-to/document_search/create_custom_execution_strategy.md
-          - how-to/document_search/search_documents.md
-          - how-to/document_search/use_rephraser.md
-          - how-to/document_search/use_reranker.md
-          - how-to/document_search/distributed_ingestion.md
+        - Ingest:
+          - Using Strategies:
+            - how-to/document_search/ingest/strategies/async_processing.md
+            - how-to/document_search/ingest/strategies/distributed_ingestion.md
+            - how-to/document_search/ingest/strategies/create_custom_execution_strategy.md
+        - how-to/document_search/search_documents.md
+        - how-to/document_search/use_rephraser.md
+        - how-to/document_search/use_reranker.md
       - Guardrails: how-to/guardrails/use_guardrails.md
       - Evaluate:
           - how-to/evaluate/optimize.md
@@ -47,9 +49,9 @@ nav:
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
-          - Ingestion:
+          - Ingest:
             - api_reference/document_search/processing.md
-            - api_reference/document_search/execution_strategies.md
+            - api_reference/document_search/ingest/strategies.md
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md
             - api_reference/document_search/retrieval/rerankers.md

@@ -8,7 +8,8 @@ In Ragbits, document processing during ingestion is controlled by a component kn
 Ragbits provides several built-in execution strategies that can be easily interchanged. You can also create your own custom execution strategy to fulfill your specific needs. This guide will show you how to develop a custom execution strategy using a somewhat impractical example of a strategy that processes documents one by one, but with a delay between each document.
 
 ## Implementing a Custom Execution Strategy
-To create a custom execution strategy, you need to create a new class that inherits from [`ProcessingExecutionStrategy`][ragbits.document_search.ingestion.processor_strategies.ProcessingExecutionStrategy] and implement the abstract method `execute`. This method should take a list of documents and process them asynchronously. It should also implement the abstract method `process_documents`.
+
+To create a custom execution strategy, you need to create a new class that inherits from [`IngestStrategy`][ragbits.document_search.ingestion.strategies.IngestStrategy] and implement the abstract method `execute`. This method should take a list of documents and process them asynchronously. It should also implement the abstract method `process_documents`.
 
 While implementing the `process_documents` method, you can use the built-in `process_document` method, which has the same signature and performs the actual processing of a single document.
 
@@ -19,10 +20,10 @@ from collections.abc import Sequence
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies import ProcessingExecutionStrategy
+from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-class DelayedExecutionStrategy(ProcessingExecutionStrategy):
+class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
@@ -38,6 +39,7 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
 ```
 
 ## Implementing an Advanced Custom Execution Strategy
+
 Alternatively, instead of using the `process_document` method, you can process documents directly using the `processor_router` and `processor_overwrite` parameters. This gives you more control over the processing of documents.
 
 ```python
@@ -47,10 +49,10 @@ from collections.abc import Sequence
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies import ProcessingExecutionStrategy
+from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 
-class DelayedExecutionStrategy(ProcessingExecutionStrategy):
+class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
@@ -73,6 +75,7 @@ class DelayedExecutionStrategy(ProcessingExecutionStrategy):
 ```
 
 ## Using the Custom Execution Strategy
+
 To use your custom execution strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance:
 
 ```python
@@ -91,10 +94,10 @@ embedder = LiteLLMEmbedder(
     model="text-embedding-3-small",
 )
 vector_store = InMemoryVectorStore(embedder=embedder)
-processing_strategy = DelayedExecutionStrategy()
+ingest_strategy = DelayedExecutionStrategy()
 
 document_search = DocumentSearch(
     vector_store=vector_store,
-    processing_strategy=processing_strategy
+    ingest_strategy=ingest_strategy
 )
 ```
