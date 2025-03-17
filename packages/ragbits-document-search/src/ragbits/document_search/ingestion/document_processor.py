@@ -4,10 +4,10 @@ from typing import cast
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.providers.base import BaseProvider
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
-from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
-from ragbits.document_search.ingestion.providers.unstructured.pdf import UnstructuredPdfProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
+from ragbits.document_search.ingestion.parsers.unstructured.pdf import UnstructuredPdfProvider
 
 # TODO consider defining with some defined schema
 ProvidersConfig = Mapping[DocumentType, Callable[[], BaseProvider] | BaseProvider]

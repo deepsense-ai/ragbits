@@ -4,7 +4,7 @@ from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 from ragbits.document_search.ingestion.strategies.base import IngestStrategy
 from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
 from ragbits.document_search.ingestion.strategies.ray import RayDistributedIngestStrategy

@@ -6,7 +6,7 @@ from unstructured.documents.coordinates import CoordinateSystem, Orientation
 from unstructured.documents.elements import Element as UnstructuredElement
 
 from ragbits.document_search.documents.document import DocumentType
-from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
+from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
 
 
 class UnstructuredPdfProvider(UnstructuredImageProvider):

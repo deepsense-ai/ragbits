@@ -167,6 +167,6 @@ This is the list of component types for which you can set a preferred configurat
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |
 | `history_compressor` | `ragbits-conversations`   | [`ConversationHistoryCompressor`][ragbits.conversations.history.compressors.base.ConversationHistoryCompressor]|          |
 | `document_search`    | `ragbits-document-search` | [`DocumentSearch`][ragbits.document_search.DocumentSearch]| Specifics: [Configuration](#ds-configuration)|
-| `provider`           | `ragbits-document-search` | [`BaseProvider`][ragbits.document_search.ingestion.providers.base.BaseProvider]|                                              |
+| `provider`           | `ragbits-document-search` | [`BaseProvider`][ragbits.document_search.ingestion.parsers.base.BaseProvider]|                                              |
 | `rephraser`          | `ragbits-document-search` | [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.QueryRephraser]|                                          |
 | `reranker`           | `ragbits-document-search` | [`Reranker`][ragbits.document_search.retrieval.rerankers.base.Reranker]|                                               |

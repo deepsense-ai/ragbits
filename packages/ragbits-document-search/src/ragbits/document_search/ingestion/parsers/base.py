@@ -5,7 +5,7 @@ from typing import ClassVar
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, IntermediateElement
-from ragbits.document_search.ingestion import providers
+from ragbits.document_search.ingestion import parsers
 
 
 class DocumentTypeNotSupportedError(Exception):
@@ -23,7 +23,7 @@ class BaseProvider(WithConstructionConfig, ABC):
     A base class for the document processing providers.
     """
 
-    default_module: ClassVar = providers
+    default_module: ClassVar = parsers
     configuration_key: ClassVar = "provider"
 
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]

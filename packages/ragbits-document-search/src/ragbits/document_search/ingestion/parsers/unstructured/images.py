@@ -9,8 +9,8 @@ from unstructured.documents.elements import ElementType
 from ragbits.core.llms.base import LLM
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
-from ragbits.document_search.ingestion.providers.unstructured.utils import (
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.utils import (
     crop_and_convert_to_bytes,
     extract_image_coordinates,
     to_text_element,

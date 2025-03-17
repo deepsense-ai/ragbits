@@ -6,7 +6,7 @@ from ragbits.document_search.documents.document import (
     TextDocument,
 )
 from ragbits.document_search.documents.element import Element, ImageElement, IntermediateElement, TextElement
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
 
 class DummyProvider(BaseProvider):

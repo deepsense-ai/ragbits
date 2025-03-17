@@ -21,7 +21,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta, S
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
 class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(
@@ -50,7 +50,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta, S
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
 class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(

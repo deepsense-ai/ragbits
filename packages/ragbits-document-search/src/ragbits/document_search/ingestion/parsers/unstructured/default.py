@@ -11,8 +11,8 @@ from unstructured_client import UnstructuredClient
 from ragbits.core.audit import trace
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, IntermediateElement
-from ragbits.document_search.ingestion.providers.base import BaseProvider
-from ragbits.document_search.ingestion.providers.unstructured.utils import check_required_argument, to_text_element
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.unstructured.utils import check_required_argument, to_text_element
 
 DEFAULT_PARTITION_KWARGS: dict = {
     "strategy": "hi_res",

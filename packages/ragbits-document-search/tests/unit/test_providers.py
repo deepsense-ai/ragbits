@@ -5,11 +5,11 @@ import pytest
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.providers.base import BaseProvider, DocumentTypeNotSupportedError
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
-from ragbits.document_search.ingestion.providers.unstructured.images import UnstructuredImageProvider
-from ragbits.document_search.ingestion.providers.unstructured.pdf import UnstructuredPdfProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider, DocumentTypeNotSupportedError
+from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
+from ragbits.document_search.ingestion.parsers.unstructured.pdf import UnstructuredPdfProvider
 
 
 @pytest.mark.parametrize("document_type", UnstructuredDefaultProvider.SUPPORTED_DOCUMENT_TYPES)
@@ -56,7 +56,7 @@ async def test_unstructured_provider_raises_value_error_when_server_url_not_set(
 
 def test_subclass_from_config():
     config = ObjectContructionConfig.model_validate(
-        {"type": "ragbits.document_search.ingestion.providers:DummyProvider"}
+        {"type": "ragbits.document_search.ingestion.parsers:DummyProvider"}
     )
     embedding = BaseProvider.subclass_from_config(config)
     assert isinstance(embedding, DummyProvider)

@@ -2,7 +2,7 @@ import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 
 
 async def test_document_processor_router():

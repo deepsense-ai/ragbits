@@ -47,7 +47,7 @@ config = {
             },
             "providers": {
                 "txt": {
-                    "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
+                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider",
                 },
             },
             "ingest_strategy": {

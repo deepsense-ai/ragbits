@@ -19,8 +19,8 @@ from ragbits.document_search.documents.document import (
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers import BaseProvider
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers import BaseProvider
+from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 from ragbits.document_search.ingestion.strategies.batched import (
     BatchedIngestStrategy,
 )

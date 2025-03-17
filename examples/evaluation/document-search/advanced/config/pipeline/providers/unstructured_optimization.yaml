@@ -1,5 +1,5 @@
 txt:
-  type: ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider
+  type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider
   config:
     use_api: false
     partition_kwargs:
@@ -16,7 +16,7 @@ txt:
       overlap_all: 0
 
 md:
-  type: ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider
+  type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider
   config:
     use_api: false
     partition_kwargs:

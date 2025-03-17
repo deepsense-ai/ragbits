@@ -4,7 +4,7 @@ import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter, ProvidersConfig
-from ragbits.document_search.ingestion.providers.unstructured.default import (
+from ragbits.document_search.ingestion.parsers.unstructured.default import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_SERVER_URL_ENV,

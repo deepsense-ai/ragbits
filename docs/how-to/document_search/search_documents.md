@@ -78,7 +78,7 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
 from ragbits.document_search.documents.document import DocumentType
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
 
 embedder = LiteLLMEmbedder()
 vector_store = InMemoryVectorStore(embedder=embedder)
@@ -88,11 +88,11 @@ document_search = DocumentSearch(
 )
 ```
 
-If you want to implement a new provider you should extend the [`BaseProvider`][ragbits.document_search.ingestion.providers.base.BaseProvider] class:
+If you want to implement a new provider you should extend the [`BaseProvider`][ragbits.document_search.ingestion.parsers.base.BaseProvider] class:
 ```python
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
 
 class CustomProvider(BaseProvider):
