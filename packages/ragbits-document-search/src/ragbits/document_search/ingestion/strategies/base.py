@@ -3,10 +3,9 @@ import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterable, Sequence
+from dataclasses import dataclass, field
 from types import ModuleType
 from typing import ClassVar, ParamSpec, TypeVar
-
-from pydantic import BaseModel, Field
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore
@@ -21,26 +20,25 @@ _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
 
 
-class IngestDocumentResult(BaseModel):
+@dataclass
+class IngestDocumentResult:
     """
     Represents the result of the document ingest execution.
     """
-
-    class Config:  # noqa: D106
-        arbitrary_types_allowed = True
 
     document_uri: str
     num_elements: int = 0
     error: BaseException | None = None
 
 
-class IngestExecutionResult(BaseModel):
+@dataclass
+class IngestExecutionResult:
     """
     Represents the result of the documents ingest execution.
     """
 
-    successful: list[IngestDocumentResult] = Field(default_factory=list)
-    failed: list[IngestDocumentResult] = Field(default_factory=list)
+    successful: list[IngestDocumentResult] = field(default_factory=list)
+    failed: list[IngestDocumentResult] = field(default_factory=list)
 
 
 class IngestStrategy(WithConstructionConfig, ABC):

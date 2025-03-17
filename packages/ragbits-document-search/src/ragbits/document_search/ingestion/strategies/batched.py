@@ -1,8 +1,7 @@
 import asyncio
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from itertools import islice
-
-from pydantic import BaseModel
 
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
@@ -17,13 +16,11 @@ from ragbits.document_search.ingestion.strategies.base import (
 )
 
 
-class IngestTaskResult(BaseModel):
+@dataclass
+class IngestTaskResult:
     """
     Represents the result of the document batch ingest tast.
     """
-
-    class Config:  # noqa: D106
-        arbitrary_types_allowed = True
 
     document_uri: str
     elements: Sequence[Element | IntermediateElement]
@@ -195,7 +192,7 @@ class BatchedIngestStrategy(IngestStrategy):
             if isinstance(response, BaseException)
             else IngestTaskResult(
                 document_uri=result.document_uri,
-                elements=[element for element in result.elements if isinstance(element, Element)] + response,  # type: ignore
+                elements=[element for element in result.elements if isinstance(element, Element)] + response,
             )
             for result, response in zip(batch, responses, strict=True)
         ]
