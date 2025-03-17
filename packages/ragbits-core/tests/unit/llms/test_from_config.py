@@ -1,10 +1,10 @@
 from ragbits.core.llms import LLM
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.llms.litellm:LiteLLM",
             "config": {
@@ -27,6 +27,6 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "LiteLLM"})
+    config = ObjectConstructionConfig.model_validate({"type": "LiteLLM"})
     llm: LLM = LLM.subclass_from_config(config)
     assert isinstance(llm, LiteLLM)

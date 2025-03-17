@@ -3,7 +3,7 @@ from typing import Any
 from ragbits.core.audit import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.prompts import (
     MultiQueryRephraserInput,
@@ -70,10 +70,10 @@ class MultiQueryRephraser(QueryRephraser):
            ValueError: If the prompt class is not a subclass of `Prompt`.
 
         """
-        llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
+        llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
         prompt_cls = None
         if "prompt" in config:
-            prompt_config = ObjectContructionConfig.model_validate(config["prompt"])
+            prompt_config = ObjectConstructionConfig.model_validate(config["prompt"])
             prompt_cls = get_rephraser_prompt(prompt_config.type)
         n = config.get("n", 5)
         return cls(llm=llm, n=n, prompt=prompt_cls)

@@ -10,7 +10,7 @@ from typing_extensions import Self
 from ragbits.conversations.history.stores.base import HistoryStore
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 class _Base(DeclarativeBase):
@@ -190,6 +190,6 @@ class SQLHistoryStore(HistoryStore[SQLHistoryStoreOptions]):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        engine_options = ObjectContructionConfig.model_validate(config["sqlalchemy_engine"])
+        engine_options = ObjectConstructionConfig.model_validate(config["sqlalchemy_engine"])
         config["sqlalchemy_engine"] = create_async_engine(engine_options.config["url"])
         return cls(**config)

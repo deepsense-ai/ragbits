@@ -2,7 +2,7 @@ import copy
 from collections.abc import Callable, Mapping, MutableMapping
 from typing import cast
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import BaseProvider
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -47,7 +47,7 @@ class DocumentProcessorRouter:
         self._providers = providers
 
     @staticmethod
-    def from_dict_to_providers_config(dict_config: dict[str, ObjectContructionConfig]) -> ProvidersConfig:
+    def from_dict_to_providers_config(dict_config: dict[str, ObjectConstructionConfig]) -> ProvidersConfig:
         """
         Creates ProvidersConfig from dictionary that maps document types to the provider configuration.
 

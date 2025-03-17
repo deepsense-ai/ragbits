@@ -63,7 +63,7 @@ def import_by_path(path: str, default_module: ModuleType | None = None) -> Any: 
         raise InvalidConfigError(f"{path} not found in module {default_module}") from err
 
 
-class ObjectContructionConfig(BaseModel):
+class ObjectConstructionConfig(BaseModel):
     """
     A model for object construction configuration.
     """
@@ -90,7 +90,7 @@ class WithConstructionConfig(abc.ABC):
     model_type: type[BaseModel] | None
 
     @classmethod
-    def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
+    def subclass_from_config(cls, config: ObjectConstructionConfig) -> Self:
         """
         Initializes the class with the provided configuration. May return a subclass of the class,
         if requested by the configuration.
@@ -154,7 +154,7 @@ class WithConstructionConfig(abc.ABC):
         if yaml_path_override:
             preferences = get_config_from_yaml(yaml_path_override)
             if type_config := preferences.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+                return cls.subclass_from_config(ObjectConstructionConfig.model_validate(type_config))
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
@@ -163,7 +163,7 @@ class WithConstructionConfig(abc.ABC):
             return cls.subclass_from_factory(preferred_factory)
 
         if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
-            return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
+            return cls.subclass_from_config(ObjectConstructionConfig.model_validate(preferred_config))
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 

@@ -10,7 +10,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
-from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
@@ -77,7 +77,7 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        client_options = ObjectContructionConfig.model_validate(config["client"])
+        client_options = ObjectConstructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, chromadb)
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
