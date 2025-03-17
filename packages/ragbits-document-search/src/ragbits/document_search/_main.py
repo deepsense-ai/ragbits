@@ -25,10 +25,10 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
-from ragbits.document_search.ingestion import intermediate_handlers
+from ragbits.document_search.ingestion import enrichers
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
-from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler
 from ragbits.document_search.ingestion.strategies import (
     IngestStrategy,
     SequentialIngestStrategy,
@@ -131,7 +131,7 @@ class DocumentSearch(WithConstructionConfig):
         parser_router = DocumentProcessorRouter.from_config(parser_config)
         enricher_router = {
             import_by_path(element_type, element): (
-                import_by_path(handler_config["type"], intermediate_handlers).from_config(handler_config["config"])
+                import_by_path(handler_config["type"], enrichers).from_config(handler_config["config"])
             )
             for element_type, handler_config in config.get("intermediate_handlers", {}).items()
         }

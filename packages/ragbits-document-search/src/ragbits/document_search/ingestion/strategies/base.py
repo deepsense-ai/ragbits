@@ -14,7 +14,7 @@ from ragbits.document_search.documents.element import Element, IntermediateEleme
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")

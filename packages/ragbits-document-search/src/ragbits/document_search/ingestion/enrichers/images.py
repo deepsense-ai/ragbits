@@ -13,7 +13,7 @@ from ragbits.document_search.documents.element import (
     IntermediateElement,
     IntermediateImageElement,
 )
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 
 
 class ImagePromptInput(BaseModel):

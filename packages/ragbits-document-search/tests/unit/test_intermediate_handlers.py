@@ -5,7 +5,7 @@ import pytest
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import ImageElement, IntermediateImageElement
-from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler, _ImagePrompt
+from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler, _ImagePrompt
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def test_from_config():
     config = {
         "llm": {
             "type": "LiteLLM",
-            "prompt": "ragbits.document_search.ingestion.intermediate_handlers.images:_ImagePrompt",
+            "prompt": "ragbits.document_search.ingestion.enrichers.images:_ImagePrompt",
         }
     }
 

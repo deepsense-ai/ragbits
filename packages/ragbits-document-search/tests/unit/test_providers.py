@@ -55,9 +55,7 @@ async def test_unstructured_provider_raises_value_error_when_server_url_not_set(
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
-        {"type": "ragbits.document_search.ingestion.parsers:DummyProvider"}
-    )
+    config = ObjectContructionConfig.model_validate({"type": "ragbits.document_search.ingestion.parsers:DummyProvider"})
     embedding = BaseProvider.subclass_from_config(config)
     assert isinstance(embedding, DummyProvider)
 
