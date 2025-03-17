@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.0 (2025-03-17)
+
+### Changed
+
+- ragbits-core updated to version v0.10.0
+
 - BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
 - Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
