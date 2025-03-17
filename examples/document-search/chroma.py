@@ -37,7 +37,8 @@ from chromadb import EphemeralClient
 
 from ragbits.core import audit
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
-from ragbits.core.vector_stores.chroma import ChromaVectorStore, VectorStoreOptions
+from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 

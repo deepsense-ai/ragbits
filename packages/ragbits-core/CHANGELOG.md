@@ -1,10 +1,19 @@
 # CHANGELOG
 
 ## Unreleased
+- Better handling of cases when text and image embeddings are mixed in VectorStore
+
+## 0.10.0 (2025-03-17)
 
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
-- Better handling of cases when text and image embeddings are mixed in VectorStore
+- Qdrant vector store can now be serialized during Ray processing (#394)
+- Improve cli trace handler
+- Add traceable to some method
+- Add support for images in few shot prompts (#155)
 - Add instruction on how to use local servers for LLMs (#395).
+- Introduce intermediate image elements (#139)
+- Correct typos in doc strings (#398)
+- Enable GPU support and (un)pickling for fastembed embedders (#409).
 
 ## 0.9.0 (2025-02-25)
 

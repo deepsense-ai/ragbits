@@ -1,44 +1,59 @@
 """
-Ragbits Document Search Example: Distributed Ingest
+Ragbits Document Search Example: Qdrant Distributed Ingest
 
-This example is based on the "Basic" example, but it demonstrates how to ingest documents in a distributed manner.
-The distributed ingestion is provided by "DistributedProcessing" which uses Ray to parallelize the ingestion process.
+This example is based on the "Qdrant" example, but it demonstrates how to ingest documents in a distributed manner.
+The distributed ingest is provided by "RayDistributedIngestStrategy" which uses Ray to parallelize the ingest process.
 
 The script performs the following steps:
 
     1. Create a list of documents.
     2. Initialize the `LiteLLMEmbedder` class with the OpenAI `text-embedding-3-small` embedding model.
-    3. Initialize the `InMemoryVectorStore` class.
-    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
-    5. Ingest the documents into the `DocumentSearch` instance in a distributed manner.
-    6. Search for documents using a query.
-    7. Print the search results.
+    3. Initialize the `QdrantVectorStore` class with a `AsyncQdrantClient` HTTP instance and an index name.
+    4. Initialize the `RayDistributedIngestStrategy` class with a standard params.
+    5. Initialize the `DocumentSearch` class with the embedder and the vector store.
+    6. Ingest the documents into the `DocumentSearch` instance using Ray distributed strategy.
+    7. Search for documents using a query.
+    8. Print the search results.
 
 To run the script, execute the following command:
 
     ```bash
     uv run examples/document-search/distributed.py
     ```
+
+The script ingests data to the Qdrant instance running on `http://localhost:6333`. The recommended way
+to run it is using the official Docker image:
+
+    1. Run Qdrant Docker container:
+
+        ```bash
+        docker run -p 6333:6333 qdrant/qdrant
+        ```
+
+    2. Open Qdrant dashboard in your browser:
+
+        ```
+        http://localhost:6333/dashboard
+        ```
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-document-search[distributed]",
+#     "ragbits-document-search[ray]",
 #     "ragbits-core",
 # ]
 # ///
 
 import asyncio
 
-from ragbits.core import audit
+from qdrant_client import AsyncQdrantClient
+
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.ingestion.processor_strategies import DistributedProcessing
-
-audit.set_trace_handlers("cli")
+from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
@@ -71,11 +86,21 @@ async def main() -> None:
     embedder = LiteLLMEmbedder(
         model="text-embedding-3-small",
     )
-    vector_store = InMemoryVectorStore(embedder=embedder)
-    processing_strategy = DistributedProcessing()
+    vector_store = QdrantVectorStore(
+        client=AsyncQdrantClient(
+            host="localhost",
+            port=6333,
+        ),
+        index_name="jokes",
+        embedder=embedder,
+    )
+    ingest_strategy = RayDistributedIngestStrategy(
+        cpu_batch_size=1,
+        io_batch_size=4,
+    )
     document_search = DocumentSearch(
         vector_store=vector_store,
-        processing_strategy=processing_strategy,
+        ingest_strategy=ingest_strategy,
     )
 
     await document_search.ingest(documents)

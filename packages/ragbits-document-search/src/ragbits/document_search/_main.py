@@ -1,27 +1,39 @@
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from ragbits import document_search
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace, traceable
 from ragbits.core.config import CoreConfig
+from ragbits.core.llms.base import LLMType
+from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import NoPreferredConfigError, ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import (
+    NoPreferredConfigError,
+    ObjectContructionConfig,
+    WithConstructionConfig,
+    import_by_path,
+)
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.document_search.documents import element
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element
+from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
+from ragbits.document_search.ingestion import intermediate_handlers
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies import (
-    ProcessingExecutionStrategy,
-    SequentialProcessing,
+from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.intermediate_handlers.images import ImageIntermediateHandler
+from ragbits.document_search.ingestion.strategies import (
+    IngestStrategy,
+    SequentialIngestStrategy,
 )
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.strategies.base import IngestExecutionResult
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -40,14 +52,15 @@ class SearchConfig(BaseModel):
 
 class DocumentSearchConfig(BaseModel):
     """
-    Schema for for the dict taken by DocumentSearch.from_config method.
+    Schema for the dict taken by DocumentSearch.from_config method.
     """
 
     vector_store: ObjectContructionConfig
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
-    processing_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialProcessing")
+    ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
     providers: dict[str, ObjectContructionConfig] = {}
+    intermediate_element_handlers: dict[str, ObjectContructionConfig] = {}
 
 
 class DocumentSearch(WithConstructionConfig):
@@ -63,29 +76,34 @@ class DocumentSearch(WithConstructionConfig):
         3. Uses Reranker to rerank the chunks.
     """
 
-    # WithConstructionConfig configuration
-    default_module: ClassVar = document_search
-    configuration_key: ClassVar = "document_search"
+    default_module: ClassVar[ModuleType | None] = document_search
+    configuration_key: ClassVar[str] = "document_search"
 
     vector_store: VectorStore
     query_rephraser: QueryRephraser
     reranker: Reranker
-    document_processor_router: DocumentProcessorRouter
-    processing_strategy: ProcessingExecutionStrategy
+
+    ingest_strategy: IngestStrategy
+    parser_router: DocumentProcessorRouter
+    enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler]
 
     def __init__(
         self,
         vector_store: VectorStore,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
-        document_processor_router: DocumentProcessorRouter | None = None,
-        processing_strategy: ProcessingExecutionStrategy | None = None,
+        ingest_strategy: IngestStrategy | None = None,
+        parser_router: DocumentProcessorRouter | None = None,
+        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler] | None = None,
     ) -> None:
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
-        self.document_processor_router = document_processor_router or DocumentProcessorRouter.from_config()
-        self.processing_strategy = processing_strategy or SequentialProcessing()
+        self.ingest_strategy = ingest_strategy or SequentialIngestStrategy()
+        self.parser_router = parser_router or DocumentProcessorRouter.from_config()
+        self.enricher_router = enricher_router or {
+            IntermediateImageElement: ImageIntermediateHandler(llm=get_preferred_llm(llm_type=LLMType.VISION)),
+        }
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -107,16 +125,32 @@ class DocumentSearch(WithConstructionConfig):
         query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
         reranker: Reranker = Reranker.subclass_from_config(model.reranker)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
-        processing_strategy = ProcessingExecutionStrategy.subclass_from_config(model.processing_strategy)
 
-        providers_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
-        document_processor_router = DocumentProcessorRouter.from_config(providers_config)
+        ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
+        parser_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
+        parser_router = DocumentProcessorRouter.from_config(parser_config)
+        enricher_router = {
+            import_by_path(element_type, element): (
+                import_by_path(handler_config["type"], intermediate_handlers).from_config(handler_config["config"])
+            )
+            for element_type, handler_config in config.get("intermediate_handlers", {}).items()
+        }
 
-        return cls(vector_store, query_rephraser, reranker, document_processor_router, processing_strategy)
+        return cls(
+            vector_store=vector_store,
+            query_rephraser=query_rephraser,
+            reranker=reranker,
+            ingest_strategy=ingest_strategy,
+            parser_router=parser_router,
+            enricher_router=enricher_router,
+        )
 
     @classmethod
     def preferred_subclass(
-        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+        cls,
+        config: CoreConfig,
+        factory_path_override: str | None = None,
+        yaml_path_override: Path | None = None,
     ) -> Self:
         """
         Tries to create an instance by looking at project's component prefferences, either from YAML
@@ -159,7 +193,6 @@ class DocumentSearch(WithConstructionConfig):
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
-    @traceable
     async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
@@ -173,71 +206,43 @@ class DocumentSearch(WithConstructionConfig):
         """
         config = config or SearchConfig()
         queries = await self.query_rephraser.rephrase(query)
-        elements = []
-        for rephrased_query in queries:
-            results = await self.vector_store.retrieve(
-                text=rephrased_query,
-                options=VectorStoreOptions(**config.vector_store_kwargs),
-            )
-            elements.append([Element.from_vector_db_entry(result.entry) for result in results])
+        with trace(queries=queries, config=config, vectore_store=self.vector_store, reranker=self.reranker) as outputs:
+            elements = []
 
-        return await self.reranker.rerank(
-            elements=elements,
-            query=query,
-            options=RerankerOptions(**config.reranker_kwargs),
-        )
+            for rephrased_query in queries:
+                results = await self.vector_store.retrieve(
+                    text=rephrased_query,
+                    options=VectorStoreOptions(**config.vector_store_kwargs),
+                )
+                elements.append([Element.from_vector_db_entry(result.entry) for result in results])
+
+            outputs.search_results = await self.reranker.rerank(
+                elements=elements,
+                query=query,
+                options=RerankerOptions(**config.reranker_kwargs),
+            )
+            return outputs.search_results
 
     @traceable
-    async def ingest(
-        self,
-        documents: str | Sequence[DocumentMeta | Document | Source],
-        document_processor: BaseProvider | None = None,
-    ) -> None:
-        """Ingest documents into the search index.
+    async def ingest(self, documents: str | Iterable[DocumentMeta | Document | Source]) -> IngestExecutionResult:
+        """
+        Ingest documents into the search index.
 
         Args:
             documents: Either:
-                - A sequence of `Document`, `DocumentMetadata`, or `Source` objects
+                - A iterable of `Document`, `DocumentMetadata`, or `Source` objects
                 - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example:
                     - "file:///path/to/files/*.txt"
                     - "gcs://bucket/folder/*"
                     - "huggingface://dataset/split/row"
-            document_processor: The document processor to use. If not provided, the document processor will be
-                determined based on the document metadata.
+
+        Returns:
+            The ingest execution result.
         """
-        if isinstance(documents, str):
-            sources: Sequence[DocumentMeta | Document | Source] = await SourceResolver.resolve(documents)
-        else:
-            sources = documents
-        elements = await self.processing_strategy.process_documents(
-            sources, self.document_processor_router, document_processor
+        resolved_documents = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
+        return await self.ingest_strategy(
+            documents=resolved_documents,
+            vector_store=self.vector_store,
+            parser_router=self.parser_router,
+            enricher_router=self.enricher_router,
         )
-        await self._remove_entries_with_same_sources(elements)
-        await self.insert_elements(elements)
-
-    async def _remove_entries_with_same_sources(self, elements: list[Element]) -> None:
-        """
-        Remove entries from the vector store whose source id is present in the elements' metadata.
-
-        Args:
-            elements: List of elements whose source ids will be checked and removed from the vector store if present.
-        """
-        unique_source_ids = {element.document_meta.source.id for element in elements}
-
-        ids_to_delete = []
-        # TODO: Pass 'where' argument to the list method to filter results and optimize search
-        for entry in await self.vector_store.list():
-            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids:
-                ids_to_delete.append(entry.id)
-
-        if ids_to_delete:
-            await self.vector_store.remove(ids_to_delete)
-
-    async def insert_elements(self, elements: list[Element]) -> None:
-        """
-        Insert Elements into the vector store.
-
-        Args:
-            elements: The list of Elements to insert.
-        """
-        await self.vector_store.store([element.to_vector_db_entry() for element in elements])

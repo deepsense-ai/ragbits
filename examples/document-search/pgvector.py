@@ -25,6 +25,7 @@ required setup, execute the following command:
     ```bash
     docker run --rm -e POSTGRES_USER=ragbits_example \
            -e POSTGRES_PASSWORD=ragbits_example \
+           -e POSTGRES_DB=ragbits_example \
            -p 5432:5432 \
            pgvector/pgvector:0.8.0-pg17
     ```

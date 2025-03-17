@@ -1,10 +1,14 @@
 import time
 from enum import Enum
 
+from rich.console import Group
 from rich.live import Live
+from rich.panel import Panel
+from rich.syntax import Syntax
+from rich.text import Text
 from rich.tree import Tree
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.base import AttributeFormatter, TraceHandler
 
 
 class SpanStatus(Enum):
@@ -27,12 +31,17 @@ class PrintColor(str, Enum):
     ERROR_COLOR = "bold red"
     TEXT_COLOR = "grey50"
     KEY_COLOR = "plum4"
+    PROMPT_COLOR = "bold blue"
+    RESPONSE_COLOR = "bold green"
 
 
 class CLISpan:
     """
     CLI Span represents a single operation within a trace.
     """
+
+    prompt_keyword = "prompt"
+    response_keyword = "response"
 
     def __init__(self, name: str, attributes: dict, parent: "CLISpan | None" = None) -> None:
         """
@@ -63,18 +72,114 @@ class CLISpan:
             SpanStatus.STARTED: PrintColor.RUNNING_COLOR,
             SpanStatus.COMPLETED: PrintColor.END_COLOR,
         }[self.status].value
-        text_color = PrintColor.TEXT_COLOR.value
-        key_color = PrintColor.KEY_COLOR.value
 
+        text_color = PrintColor.TEXT_COLOR.value
         name = f"[{color}]{self.name}[/{color}][{text_color}]{elapsed}[/{text_color}]"
 
-        # TODO: Remove truncating after implementing better CLI formatting.
-        attrs = [
-            f"[{key_color}]{k}:[/{key_color}] "
-            f"[{text_color}]{str(v)[:120] + ' (...)' if len(str(v)) > 120 else v}[/{text_color}]"  # noqa: PLR2004
-            for k, v in self.attributes.items()
-        ]
-        self.tree.label = f"{name}\n{chr(10).join(attrs)}" if attrs else name
+        attrs = self.render_attributes()
+
+        if len(attrs) > 0:
+            self.tree.label = Group(name, *attrs)
+        else:
+            self.tree.label = name
+
+    @staticmethod
+    def _extract_panel_title(string: str, keyword: str) -> str:
+        parts = string.strip().split(".")
+        try:
+            index = parts.index(keyword)
+        except ValueError:
+            return string
+        return ".".join(parts[: index + 1])
+
+    def render_special_attribute(
+        self, special_attributes: list[str], special_color: str, keyword: str, special_keywords: list[str]
+    ) -> Panel:
+        """
+        Renders the special attributes containing keyword so they will be displayed in one frame in console.
+        If special keywords list is defined, the background color is set only for attributes with name
+        finishing with special keywords.
+
+        Args:
+            special_attributes: The attributes with keyword in the name.
+            special_color: The color to print attributes for.
+            keyword: The keyword which attributes contain.
+            special_keywords: The list of keywords attribute is finished with - for special printing
+
+        Returns:
+            The rendered panel.
+        """
+        key_color = PrintColor.KEY_COLOR.value
+        text_color = PrintColor.TEXT_COLOR.value
+        rendered_prompt_attributes: list[Panel | Text] = []
+        outer_panel_title = self._extract_panel_title(special_attributes[0], keyword)
+        for attr_key in special_attributes:
+            attr_value = self.attributes[attr_key]
+            color = None
+            # special attributes related to prompts and response should be in a color frame
+            if isinstance(attr_value, str) and (
+                AttributeFormatter.is_special_key(curr_key=attr_key, key_list=special_keywords) or not special_keywords
+            ):
+                color = special_color
+
+            if color:
+                syntax = Syntax(attr_value, lexer="markdown", theme="monokai", word_wrap=True)
+                panel = Panel(
+                    syntax, title=f"[{key_color}]{attr_key}[/{key_color}]", title_align="left", border_style=color
+                )
+                rendered_prompt_attributes.append(panel)
+            else:
+                rendered_prompt_attributes.append(
+                    Text.from_markup(
+                        f"[{key_color}]{attr_key}:[/{key_color}] [{text_color}]{str(attr_value)}[/{text_color}]"
+                    )
+                )
+        inner_group = Group(*rendered_prompt_attributes)
+        outer_panel = Panel(inner_group, title=f"[{key_color}]{outer_panel_title}[/{key_color}]", title_align="left")
+        return outer_panel
+
+    def render_attributes(self) -> list[Text | Panel]:
+        """
+        Renders attributes - uses markdown for prompts.
+
+        Returns:
+            list: List of formated attribute names and values.
+
+        """
+        key_color = PrintColor.KEY_COLOR.value
+        text_color = PrintColor.TEXT_COLOR.value
+        attrs: list[Text | Panel] = []
+
+        # render prompts
+        prompt_attr = [k for k in self.attributes if self.prompt_keyword in k.split(".")]
+        if len(prompt_attr) > 0:
+            rendered_prompts = self.render_special_attribute(
+                prompt_attr, PrintColor.PROMPT_COLOR.value, self.prompt_keyword, AttributeFormatter.prompt_keywords
+            )
+
+        # render model response
+        response_attr = [k for k in self.attributes if self.response_keyword in k.split(".")]
+        if len(response_attr) > 0:
+            rendered_response = self.render_special_attribute(
+                response_attr, PrintColor.RESPONSE_COLOR.value, self.response_keyword, []
+            )
+
+        rendered_prompts_done = False
+        rendered_response_done = False
+        for k, v in self.attributes.items():
+            # add all the attributes related to the prompt
+            if k in prompt_attr and not rendered_prompts_done:
+                attrs.append(rendered_prompts)
+                rendered_prompts_done = True
+            # add all the attributes related to the response
+            elif k in response_attr and not rendered_response_done:
+                attrs.append(rendered_response)
+                rendered_response_done = True
+            # add other attributes
+            elif self.prompt_keyword not in k.split(".") and self.response_keyword not in k.split("."):
+                attrs.append(Text.from_markup(f"[{key_color}]{k}:[/{key_color}] [{text_color}]{str(v)}[/{text_color}]"))
+
+        return attrs
 
     def end(self) -> None:
         """
@@ -93,7 +198,7 @@ class CLITraceHandler(TraceHandler[CLISpan]):
 
     def __init__(self) -> None:
         super().__init__()
-        self.live = Live(auto_refresh=False)
+        self.live = Live(auto_refresh=False, vertical_overflow="visible")
 
     def start(self, name: str, inputs: dict, current_span: CLISpan | None = None) -> CLISpan:
         """
@@ -107,14 +212,17 @@ class CLITraceHandler(TraceHandler[CLISpan]):
         Returns:
             The updated current trace span.
         """
-        attributes = format_attributes(inputs, prefix="inputs")
+        formatter = AttributeFormatter(data=inputs, prefix="inputs")
+        formatter.process_attributes()
+        attributes = formatter.flattened
+
         span = CLISpan(
             name=name,
             attributes=attributes,
             parent=current_span,
         )
         if current_span is None:
-            self.live = Live(auto_refresh=False)
+            self.live = Live(auto_refresh=False, vertical_overflow="visible")
             self.live.start()
             self.tree = span.tree
 
@@ -131,7 +239,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             outputs: The output data.
             current_span: The current trace span.
         """
-        attributes = format_attributes(outputs, prefix="outputs")
+        formatter = AttributeFormatter(data=outputs, prefix="outputs")
+        formatter.process_attributes()
+        attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.COMPLETED
         current_span.end()
@@ -150,7 +260,9 @@ class CLITraceHandler(TraceHandler[CLISpan]):
             error: The error that occurred.
             current_span: The current trace span.
         """
-        attributes = format_attributes({"message": str(error), **vars(error)}, prefix="error")
+        formatter = AttributeFormatter({"message": str(error), **vars(error)}, prefix="error")
+        formatter.process_attributes()
+        attributes = formatter.flattened
         current_span.attributes.update(attributes)
         current_span.status = SpanStatus.ERROR
         current_span.end()

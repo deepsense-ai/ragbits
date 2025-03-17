@@ -1,5 +1,5 @@
 import contextlib
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import cast
 from uuid import UUID
 
@@ -9,7 +9,7 @@ from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
@@ -57,6 +57,42 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         self._index_name = index_name
         self._distance_method = distance_method
 
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        """
+        Enables the QdrantVectorStore to be pickled and unpickled.
+
+        Returns:
+            The tuple of function and its arguments that allows reconstruction of the QdrantVectorStore.
+        """
+
+        def _reconstruct(
+            client_params: dict,
+            index_name: str,
+            embedder: Embedder,
+            distance_method: Distance,
+            default_options: VectorStoreOptions,
+            embedding_name_text: str,
+            embedding_name_image: str,
+        ) -> QdrantVectorStore:
+            return QdrantVectorStore(
+                client=AsyncQdrantClient(**client_params),
+                index_name=index_name,
+                embedder=embedder,
+                distance_method=distance_method,
+                default_options=default_options,
+            )
+
+        return (
+            _reconstruct,
+            (
+                self._client._init_options,
+                self._index_name,
+                self._embedder,
+                self._distance_method,
+                self.default_options,
+            ),
+        )
+
     @classmethod
     def from_config(cls, config: dict) -> Self:
         """
@@ -90,7 +126,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     def _internal_id(entry_id: UUID, embedding_type: EmbeddingType) -> UUID:
         return UUID(int=entry_id.int + list(EmbeddingType).index(embedding_type))
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
@@ -101,36 +136,41 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Raises:
             QdrantException: If upload to collection fails.
         """
-        if not entries:
-            return
+        with trace(
+            entries=entries,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+        ):
+            if not entries:
+                return
 
-        embeddings: dict = await self._create_embeddings(entries)
+            embeddings: dict = await self._create_embeddings(entries)
 
-        if not await self._client.collection_exists(self._index_name):
-            vector_size = self._detect_vector_size(embeddings.values())
-            await self._client.create_collection(
+            if not await self._client.collection_exists(self._index_name):
+                vector_size = self._detect_vector_size(embeddings.values())
+                await self._client.create_collection(
+                    collection_name=self._index_name,
+                    vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
+                )
+
+            points = (
+                models.PointStruct(
+                    id=str(self._internal_id(entry.id, embedding_type)),
+                    vector=embeddings[entry.id][embedding_type],
+                    payload=entry.model_dump(exclude_none=True),
+                )
+                for entry in entries
+                for embedding_type in EmbeddingType
+                if entry.id in embeddings and embedding_type in embeddings[entry.id]
+            )
+
+            self._client.upload_points(
                 collection_name=self._index_name,
-                vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
+                points=points,
+                wait=True,
             )
 
-        points = (
-            models.PointStruct(
-                id=str(self._internal_id(entry.id, embedding_type)),
-                vector=embeddings[entry.id][embedding_type],
-                payload=entry.model_dump(exclude_none=True),
-            )
-            for entry in entries
-            for embedding_type in EmbeddingType
-            if entry.id in embeddings and embedding_type in embeddings[entry.id]
-        )
-
-        self._client.upload_points(
-            collection_name=self._index_name,
-            points=points,
-            wait=True,
-        )
-
-    @traceable
     async def retrieve(
         self, text: str | None = None, image: bytes | None = None, options: VectorStoreOptionsT | None = None
     ) -> list[VectorStoreResult]:
@@ -147,48 +187,54 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         """
         merged_options = (self.default_options | options) if options else self.default_options
         score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
+        with trace(
+            text=text,
+            image=image,
+            options=merged_options,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+        ) as outputs:
+            if image and text:
+                raise ValueError("Either text or image should be provided, not both.")
 
-        if image and text:
-            raise ValueError("Either text or image should be provided, not both.")
+            if text:
+                vector = await self._embedder.embed_text([text])
+            elif image:
+                vector = await self._embedder.embed_image([image])
+            else:
+                raise ValueError("Either text or image should be provided.")
 
-        if text:
-            vector = await self._embedder.embed_text([text])
-        elif image:
-            vector = await self._embedder.embed_image([image])
-        else:
-            raise ValueError("Either text or image should be provided.")
-
-        query_results = await self._client.query_points(
-            collection_name=self._index_name,
-            query=vector[0],
-            limit=merged_options.k * 2,  # *2 to account for possible duplicates
-            score_threshold=score_threshold,
-            with_payload=True,
-            with_vectors=True,
-        )
-
-        results: list[VectorStoreResult] = []
-        seen_ids = set()
-        for point in query_results.points:
-            entry = VectorStoreEntry.model_validate(point.payload)
-            if entry.id in seen_ids:
-                continue
-            seen_ids.add(entry.id)
-
-            results.append(
-                VectorStoreResult(
-                    entry=entry,
-                    score=point.score,
-                    vector=cast(list[float], point.vector),
-                )
+            query_results = await self._client.query_points(
+                collection_name=self._index_name,
+                query=vector[0],
+                limit=merged_options.k * 2,  # *2 to account for possible duplicates
+                score_threshold=score_threshold,
+                with_payload=True,
+                with_vectors=True,
             )
 
-            if len(results) >= merged_options.k:
-                break
+            outputs.results = []
+            seen_ids = set()
+            for point in query_results.points:
+                entry = VectorStoreEntry.model_validate(point.payload)
+                if entry.id in seen_ids:
+                    continue
+                seen_ids.add(entry.id)
 
-        return results
+                outputs.results.append(
+                    VectorStoreResult(
+                        entry=entry,
+                        score=point.score,
+                        vector=cast(list[float], point.vector),
+                    )
+                )
 
-    @traceable
+                if len(outputs.results) >= merged_options.k:
+                    break
+
+            return outputs.results
+
     async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
@@ -199,7 +245,10 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Raises:
             ValueError: If collection named `self._index_name` is not present in the vector store.
         """
-        with contextlib.suppress(KeyError):  # it's ok if a point already doesn't exist
+        with (
+            trace(ids=ids, index_name=self._index_name),
+            contextlib.suppress(KeyError),  # it's ok if a point already doesn't exist
+        ):
             await self._client.delete(
                 collection_name=self._index_name,
                 points_selector=models.PointIdsList(
@@ -229,7 +278,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             ]
         )
 
-    @traceable
     async def list(
         self,
         where: WhereQuery | None = None,
@@ -251,24 +299,25 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        collection_exists = await self._client.collection_exists(collection_name=self._index_name)
-        if not collection_exists:
-            return []
+        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+            collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+            if not collection_exists:
+                return []
 
-        limit = limit or (await self._client.count(collection_name=self._index_name)).count
+            limit = limit or (await self._client.count(collection_name=self._index_name)).count
 
-        qdrant_filter = self._create_qdrant_filter(where) if where else None
+            qdrant_filter = self._create_qdrant_filter(where) if where else None
 
-        results = await self._client.query_points(
-            collection_name=self._index_name,
-            query_filter=qdrant_filter,
-            limit=limit,
-            offset=offset,
-            with_payload=True,
-            with_vectors=True,
-        )
+            results = await self._client.query_points(
+                collection_name=self._index_name,
+                query_filter=qdrant_filter,
+                limit=limit,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
 
-        vs_results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
-        deduplicated_results = list({r.id: r for r in vs_results}.values())
+            vs_results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+            outputs.results = list({r.id: r for r in vs_results}.values())
 
-        return deduplicated_results
+            return outputs.results

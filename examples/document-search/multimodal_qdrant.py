@@ -46,18 +46,10 @@ from ragbits.document_search.ingestion.providers.dummy import DummyImageProvider
 
 IMAGES_PATH = Path(__file__).parent / "images"
 
-
-def jpg_example(file_name: str) -> DocumentMeta:
-    """
-    Create a document from a JPG file in the image's directory.
-    """
-    return DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / file_name))
-
-
 documents = [
-    jpg_example("bear.jpg"),
-    jpg_example("game.jpg"),
-    jpg_example("tree.jpg"),
+    DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "bear.jpg")),
+    DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "game.jpg")),
+    DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "tree.jpg")),
     DocumentMeta.create_text_document_from_literal("A beautiful teady bear."),
     DocumentMeta.create_text_document_from_literal("The constitution of the United States."),
 ]
@@ -73,17 +65,12 @@ async def main() -> None:
         index_name="multimodal",
         embedder=embedder,
     )
-    router = DocumentProcessorRouter.from_config(
-        {
-            # For this example, we want to skip OCR and make sure
-            # that we test direct image embeddings.
-            DocumentType.JPG: DummyImageProvider(),
-        }
-    )
+    # For this example, we want to skip OCR and make sure that we test direct image embeddings.
+    parser_router = DocumentProcessorRouter.from_config({DocumentType.JPG: DummyImageProvider()})
 
     document_search = DocumentSearch(
         vector_store=vector_store,
-        document_processor_router=router,
+        parser_router=parser_router,
     )
 
     await document_search.ingest(documents)

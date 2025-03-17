@@ -124,7 +124,7 @@ def common_args(
 @eval_app.command()
 def run_evaluation() -> None:
     """
-    Evaluate the set up pipeline.
+    Evaluate the set-up pipeline.
     """
 
     async def run() -> None:

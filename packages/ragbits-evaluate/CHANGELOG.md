@@ -1,9 +1,15 @@
 # CHANGELOG
 
 ## Unreleased
-- Compability with the new Vector Store interface from ragbits-core (#288)
 
+## 0.10.0 (2025-03-17)
+### Changed
+
+- ragbits-core updated to version v0.10.0
+
+- Compability with the new Vector Store interface from ragbits-core (#288)
 - chore: fix typo in README.
+- fix typos in doc strings
 
 ## 0.9.0 (2025-02-25)
 

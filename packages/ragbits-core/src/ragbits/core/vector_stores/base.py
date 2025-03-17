@@ -190,8 +190,7 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         image_only_ids = set(image_entries.keys()) - set(text_entries.keys())
         if image_only_ids and not self._embedder.image_support():
             warnings.warn(
-                "Can't embed the following image-only entries "
-                f"as the embedder doesn't support images: {image_only_ids}"
+                f"Can't embed the following image-only entries as the embedder doesn't support images: {image_only_ids}"
             )
 
         return dict(embeddings)

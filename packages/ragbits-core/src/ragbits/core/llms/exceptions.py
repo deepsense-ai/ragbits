@@ -43,3 +43,12 @@ class LLMEmptyResponseError(LLMError):
 
     def __init__(self, message: str = "Empty response returned by API.") -> None:
         super().__init__(message)
+
+
+class LLMNotSupportingImagesError(LLMError):
+    """
+    Raised when there are images in the prompt, but LLM doesn't support them.
+    """
+
+    def __init__(self, message: str = "There are images in the prompt, but given LLM doesn't support them.") -> None:
+        super().__init__(message)

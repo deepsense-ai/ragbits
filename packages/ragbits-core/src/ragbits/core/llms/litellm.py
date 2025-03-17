@@ -1,5 +1,3 @@
-import base64
-import warnings
 from collections.abc import AsyncGenerator
 
 import litellm
@@ -11,6 +9,7 @@ from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
+    LLMNotSupportingImagesError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -93,37 +92,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
 
-    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
-        images = prompt.list_images()
-        chat = prompt.chat
-        if images:
-            if not litellm.supports_vision(self.model_name):
-                warnings.warn(
-                    message=f"Model {self.model_name} does not support vision. Image input would be ignored",
-                    category=UserWarning,
-                )
-                return chat
-            user_message_content = [
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"
-                        if isinstance(im, bytes)
-                        else im,
-                    },
-                }
-                for im in images
-            ]
-            last_message = chat[-1]
-            if last_message["role"] == "user":
-                user_message_content = [{"type": "text", "text": last_message["content"]}] + user_message_content
-                chat = chat[:-1]
-            chat.append({"role": "user", "content": user_message_content})
-        return chat
-
     async def _call(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -132,7 +103,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
@@ -145,40 +116,36 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
+            LLMNotSupportingImagesError: If the model does not support images.
         """
+        if prompt.list_images() and not litellm.supports_vision(self.model_name):
+            raise LLMNotSupportingImagesError()
+
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
-        with trace(
-            messages=conversation,
-            model=self.model_name,
-            base_url=self.base_url,
-            api_version=self.api_version,
+        response = await self._get_litellm_response(
+            conversation=prompt.chat,
+            options=options,
             response_format=response_format,
-            options=options.dict(),
-        ) as outputs:
-            response = await self._get_litellm_response(
-                conversation=conversation,
-                options=options,
-                response_format=response_format,
-            )
-            if not response.choices:  # type: ignore
-                raise LLMEmptyResponseError()
+        )
+        if not response.choices:  # type: ignore
+            raise LLMEmptyResponseError()
+        results = {}
+        results["response"] = response.choices[0].message.content  # type: ignore
 
-            outputs.response = response.choices[0].message.content  # type: ignore
+        if response.usage:  # type: ignore
+            results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
+            results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
+            results["total_tokens"] = response.usage.total_tokens  # type: ignore
 
-            if response.usage:  # type: ignore
-                outputs.completion_tokens = response.usage.completion_tokens  # type: ignore
-                outputs.prompt_tokens = response.usage.prompt_tokens  # type: ignore
-                outputs.total_tokens = response.usage.total_tokens  # type: ignore
+        if options.logprobs:
+            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
-            if options.logprobs:
-                outputs.logprobs = response.choices[0].logprobs["content"]  # type: ignore
-
-        return vars(outputs)  # type: ignore
+        return results  # type: ignore
 
     async def _call_streaming(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -187,7 +154,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
@@ -200,11 +167,15 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
+            LLMNotSupportingImagesError: If the model does not support images.
         """
+        if prompt.list_images() and not litellm.supports_vision(self.model_name):
+            raise LLMNotSupportingImagesError()
+
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         with trace(
-            messages=conversation,
+            messages=prompt.chat,
             model=self.model_name,
             base_url=self.base_url,
             api_version=self.api_version,
@@ -212,7 +183,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options=options.dict(),
         ) as outputs:
             response = await self._get_litellm_response(
-                conversation=conversation,
+                conversation=prompt.chat,
                 options=options,
                 response_format=response_format,
                 stream=True,

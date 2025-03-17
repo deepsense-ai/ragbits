@@ -1,9 +1,20 @@
 # CHANGELOG
 
 ## Unreleased
-- Compability with the new Vector Store interface from ragbits-core (#288)
 
+## 0.10.0 (2025-03-17)
+
+### Changed
+
+- ragbits-core updated to version v0.10.0
+
+- BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
+- Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
+- Introduce intermediate image elements (#139)
+- Add HTTP source type, which downloads a file from the provided URL (#397)
+
+ - added traceable
 
 ## 0.9.0 (2025-02-25)
 

@@ -1,5 +1,4 @@
 import enum
-import warnings as wrngs
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import ClassVar, Generic, TypeVar, cast, overload
@@ -7,6 +6,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
+from ragbits.core.audit import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -103,7 +103,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt = SimplePrompt(prompt)
 
         return await self._call(
-            conversation=self._format_chat_for_llm(prompt),
+            prompt=prompt,
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -160,10 +160,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM.
         """
-        raw_response = await self.generate_raw(prompt, options=options)
-        if isinstance(prompt, BasePromptWithParser):
-            return prompt.parse_response(raw_response["response"])
-        return cast(OutputT, raw_response["response"])
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            raw_response = await self.generate_raw(prompt, options=options)
+            if isinstance(prompt, BasePromptWithParser):
+                response = prompt.parse_response(raw_response["response"])
+            else:
+                response = cast(OutputT, raw_response["response"])
+            raw_response["response"] = response
+            outputs.response = raw_response
+
+        return response
 
     @overload
     async def generate_with_metadata(
@@ -215,11 +221,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Text response from LLM with metadata.
         """
-        response = await self.generate_raw(prompt, options=options)
-        content = response.pop("response")
-        if isinstance(prompt, BasePromptWithParser):
-            content = prompt.parse_response(content)
-        return LLMResponseWithMetadata[type(content)](content=content, metadata=response)  # type: ignore
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            response = await self.generate_raw(prompt, options=options)
+            content = response.pop("response")
+            if isinstance(prompt, BasePromptWithParser):
+                content = prompt.parse_response(content)
+            outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
+                content=content,
+                metadata=response,
+            )
+        return outputs.response
 
     async def generate_streaming(
         self,
@@ -243,7 +254,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt = SimplePrompt(prompt)
 
         response = await self._call_streaming(
-            conversation=self._format_chat_for_llm(prompt),
+            prompt=prompt,
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
@@ -251,15 +262,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         async for text_piece in response:
             yield text_piece
 
-    def _format_chat_for_llm(self, prompt: BasePrompt) -> ChatFormat:
-        if prompt.list_images():
-            wrngs.warn(message=f"Image input not implemented for {self.__class__.__name__}")
-        return prompt.chat
-
     @abstractmethod
     async def _call(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -268,7 +274,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Calls LLM inference API.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
@@ -280,7 +286,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @abstractmethod
     async def _call_streaming(
         self,
-        conversation: ChatFormat,
+        prompt: BasePrompt,
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
@@ -289,7 +295,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Calls LLM inference API with output streaming.
 
         Args:
-            conversation: List of dicts with "role" and "content" keys, representing the chat history so far.
+            prompt: Formatted prompt template with conversation.
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
