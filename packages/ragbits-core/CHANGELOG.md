@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ## Unreleased
+- configure imported modules (#343)
+- improve cli trace handler
+- added traceable to some method
+- Add support for images in few shot prompts (#155)
 - Better handling of cases when text and image embeddings are mixed in VectorStore
 
 ## 0.10.0 (2025-03-17)

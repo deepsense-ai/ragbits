@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Configured source classes are auto-imported (#343)
 ## 0.10.0 (2025-03-17)
 
 ### Changed

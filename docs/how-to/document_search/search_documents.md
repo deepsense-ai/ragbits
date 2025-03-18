@@ -64,6 +64,16 @@ class CustomSource(Source):
         pass
 ```
 
+To register protocol for your custom source class please update `pyproject.toml` within your project root with the following lines:
+
+
+```toml
+[tool.ragbits.core]
+modules_to_import = {sources=["python.path.to.custom_source:CustomSource"]}
+```
+
+You can specify any number of custom source classes in that list - they would be imported and registered whenever you import `ragbits.document_search.documents.sources.base:SourceResolver`
+
 ## Processing, embedding and storing
 Having the documents loaded we can proceed with the pipeline. The next step covers the processing, embedding and storing. Embedders and Vector Stores have their own sections in the documentation, here we will focus on the processing.
 
