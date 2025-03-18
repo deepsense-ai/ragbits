@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- support configuring datapoint schema for evaluator
+- add testing for ragbits.evaluate module
+
 ## 0.10.0 (2025-03-17)
 ### Changed
 
@@ -11,8 +14,7 @@
 - chore: fix typo in README.
 - fix typos in doc strings
 
-- move Evaluator class logic to base EvaluationPipeline
-- add testing for ragbits.evaluate module
+
 
 ## 0.9.0 (2025-02-25)
 
