@@ -31,7 +31,7 @@ async def _add_example_documents(document_search: DocumentSearch) -> None:
 
 
 def create_document_search_instance_with_documents() -> DocumentSearch:
-    document_search = DocumentSearch(embedder=NoopEmbedder(), vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=NoopEmbedder()))
     asyncio.run(_add_example_documents(document_search))
     return document_search
 
