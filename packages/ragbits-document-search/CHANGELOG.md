@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- BREAKING CHANGE: Renamed HttpSource to WebSource (#420)
+- Better error distinction for WebSource (#421)
+
 ## 0.10.0 (2025-03-17)
 
 ### Changed
