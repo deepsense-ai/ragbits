@@ -38,7 +38,7 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
     Provides image processing capabilities using an LLM.
     """
 
-    def __init__(self, llm: LLM, prompt: type[Prompt[ImagePromptInput, Any]] | None = None):
+    def __init__(self, llm: LLM | None = None, prompt: type[Prompt[ImagePromptInput, Any]] | None = None) -> None:
         """
         Initializes the ImageProvider.
 

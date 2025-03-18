@@ -55,10 +55,10 @@ class DocumentParserRouter(WithConstructionConfig):
             parsers: The mapping of document types and their parsers. To override default Unstructured parsers.
 
         Example:
-                {
-                    DocumentType.PDF: CustomPDFParser(),
-                    DocumentType.TXT: CustomTextParser(),
-                }
+            {
+                DocumentType.PDF: CustomPDFParser(),
+                DocumentType.TXT: CustomTextParser(),
+            }
         """
         self._parsers = {**_DEFAULT_PARSERS, **parsers} if parsers else _DEFAULT_PARSERS
 

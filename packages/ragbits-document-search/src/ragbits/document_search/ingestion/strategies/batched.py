@@ -7,7 +7,7 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
@@ -55,7 +55,7 @@ class BatchedIngestStrategy(IngestStrategy):
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         parser_router: DocumentParserRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents sequentially in batches.
@@ -161,7 +161,7 @@ class BatchedIngestStrategy(IngestStrategy):
     async def _enrich_batch(
         self,
         batch: list[IngestTaskResult],
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        enricher_router: ElementEnricherRouter,
     ) -> list[IngestTaskResult | IngestDocumentResult]:
         """
         Enrich batch of documents.

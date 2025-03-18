@@ -13,7 +13,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
-from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 
 _CallP = ParamSpec("_CallP")
@@ -68,7 +68,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
         parser_router: DocumentParserRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents.
@@ -148,7 +148,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
     @staticmethod
     async def _enrich_elements(
         elements: Iterable[IntermediateElement],
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        enricher_router: ElementEnricherRouter,
     ) -> list[Element]:
         """
         Enrich intermediate elements.
@@ -159,8 +159,11 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
         Returns:
             The list of enriched elements.
+
+        Raises:
+            ValueError: If no enricher found for the element type.
         """
-        grouped_intermediate_elements: dict[type, list[IntermediateElement]] = defaultdict(list)
+        grouped_intermediate_elements: dict[type[IntermediateElement], list[IntermediateElement]] = defaultdict(list)
         for element in elements:
             if isinstance(element, IntermediateElement):
                 grouped_intermediate_elements[type(element)].append(element)

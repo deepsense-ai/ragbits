@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.element import Element, IntermediateElement
 
 
-class BaseIntermediateHandler(ABC):
+class BaseIntermediateHandler(WithConstructionConfig, ABC):
     """
     Base class for handling `IntermediateElement` processing.
 
