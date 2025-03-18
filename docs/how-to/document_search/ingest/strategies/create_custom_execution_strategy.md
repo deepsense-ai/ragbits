@@ -19,7 +19,7 @@ from collections.abc import Sequence
 
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
@@ -48,7 +48,7 @@ from collections.abc import Sequence
 
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.parsers.base import BaseProvider
 

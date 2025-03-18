@@ -26,7 +26,7 @@ from ragbits.document_search.documents.element import Element, IntermediateEleme
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion import enrichers
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler
 from ragbits.document_search.ingestion.strategies import (

@@ -41,7 +41,7 @@ from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.sources import LocalFileSource
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.parsers.dummy import DummyImageProvider
 
 IMAGES_PATH = Path(__file__).parent / "images"

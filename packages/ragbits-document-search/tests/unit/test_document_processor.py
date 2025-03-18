@@ -1,7 +1,7 @@
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 
 

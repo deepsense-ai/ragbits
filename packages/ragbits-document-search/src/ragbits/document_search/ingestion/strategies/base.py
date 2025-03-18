@@ -13,7 +13,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 
 _CallP = ParamSpec("_CallP")

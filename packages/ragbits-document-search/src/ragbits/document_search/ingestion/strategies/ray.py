@@ -6,7 +6,7 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import IntermediateElement
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
