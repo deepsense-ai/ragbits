@@ -15,7 +15,10 @@ from fastapi.staticfiles import StaticFiles
 class ChatStore:
     _instance = None
 
-    def __new__(cls):
+    chats: dict[int, str]
+    counter: int
+
+    def __new__(cls) -> "ChatStore":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.chats = {}
@@ -39,7 +42,7 @@ class RagbitsAPI:
     RagbitsAPI class for running API with Demo UI for testing purposes
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.app = FastAPI()
         self.chat_module = None
         self.dist_dir = Path(__file__).parent / "ui-build"
@@ -68,7 +71,7 @@ class RagbitsAPI:
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
             with open(str(index_file)) as file:
-                return file.read()
+                return HTMLResponse(content=file.read())
 
         @self.app.get("/api/chat/{id}", response_class=StreamingResponse)
         async def chat_init(id: int) -> StreamingResponse:
@@ -76,6 +79,9 @@ class RagbitsAPI:
             question = chats.get(id)
             if not question:
                 raise HTTPException(status_code=404, detail="Chat not found")
+
+            if not self.chat_module:
+                raise HTTPException(status_code=500, detail="Chat module is not initialized")
 
             response = await self.chat_module(question=question)
             return StreamingResponse(word_streamer(response), media_type="text/event-stream")
