@@ -15,7 +15,7 @@ async def test_parser_router():
     assert isinstance(parser, DummyProvider)
 
 
-async def test_parser_router_raises_when_no_provider_found():
+async def test_parser_router_raises_when_no_parser_found():
     parser_router = DocumentParserRouter()
     parser_router._parsers = {DocumentType.TXT: DummyProvider()}
 
@@ -26,4 +26,4 @@ async def test_parser_router_raises_when_no_provider_found():
     with pytest.raises(ValueError) as err:
         _ = parser_router.get(document_meta)
 
-    assert str(err.value) == f"No provider found for the document type {DocumentType.PDF}"
+    assert str(err.value) == f"No parser found for the document type {DocumentType.PDF}"
