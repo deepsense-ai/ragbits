@@ -39,7 +39,7 @@ class DocumentType(str, Enum):
     UNKNOWN = "unknown"
 
     @classmethod
-    def _missing_(cls, value: object) -> Any:
+    def _missing_(cls, value: object) -> Any:  # noqa: ANN401
         """
         Return WILDCARD if the value is not found in the enum.
         """

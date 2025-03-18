@@ -13,8 +13,8 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
@@ -131,6 +131,9 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
         Returns:
             The list of elements.
+
+        Raises:
+            ValueError: If no parser is found for the document type.
         """
         document_meta = (
             await DocumentMeta.from_source(document)
@@ -139,7 +142,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
             if isinstance(document, DocumentMeta)
             else document.metadata
         )
-        parser = parser_router.get_provider(document_meta)
+        parser = parser_router.get(document_meta)
         return await parser.process(document_meta)
 
     @staticmethod

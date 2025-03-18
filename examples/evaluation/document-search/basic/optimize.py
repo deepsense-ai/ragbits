@@ -53,7 +53,7 @@ config = {
                         },
                     },
                 },
-                "providers": {
+                "parsers": {
                     "txt": {
                         "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider",
                     },

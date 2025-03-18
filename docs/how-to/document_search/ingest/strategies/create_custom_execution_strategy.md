@@ -65,7 +65,7 @@ class DelayedExecutionStrategy(IngestStrategy):
             document_meta = await self.to_document_meta(document)
 
             # Get the processor for the document
-            processor = processor_overwrite or processor_router.get_provider(document)
+            processor = processor_overwrite or processor_router.get(document)
 
             await asyncio.sleep(1)
 

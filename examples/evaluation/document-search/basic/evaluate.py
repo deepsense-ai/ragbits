@@ -45,15 +45,15 @@ config = {
                     },
                 },
             },
-            "providers": {
-                "txt": {
-                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider",
-                },
-            },
             "ingest_strategy": {
                 "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,
+                },
+            },
+            "parsers": {
+                "txt": {
+                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDefaultProvider",
                 },
             },
             "source": {

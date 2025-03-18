@@ -26,9 +26,9 @@ from ragbits.document_search.documents.element import Element, IntermediateEleme
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion import enrichers
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies import (
     IngestStrategy,
     SequentialIngestStrategy,
@@ -59,7 +59,7 @@ class DocumentSearchConfig(BaseModel):
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
     ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
-    providers: dict[str, ObjectContructionConfig] = {}
+    parsers: dict[str, ObjectContructionConfig] = {}
     intermediate_element_handlers: dict[str, ObjectContructionConfig] = {}
 
 
@@ -100,7 +100,7 @@ class DocumentSearch(WithConstructionConfig):
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
         self.ingest_strategy = ingest_strategy or SequentialIngestStrategy()
-        self.parser_router = parser_router or DocumentParserRouter.from_config()
+        self.parser_router = parser_router or DocumentParserRouter()
         self.enricher_router = enricher_router or {
             IntermediateImageElement: ImageIntermediateHandler(llm=get_preferred_llm(llm_type=LLMType.VISION)),
         }
@@ -127,8 +127,7 @@ class DocumentSearch(WithConstructionConfig):
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
 
         ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
-        parser_config = DocumentParserRouter.from_dict_to_providers_config(model.providers)
-        parser_router = DocumentParserRouter.from_config(parser_config)
+        parser_router = DocumentParserRouter.from_config(model.parsers)
         enricher_router = {
             import_by_path(element_type, element): (
                 import_by_path(handler_config["type"], enrichers).from_config(handler_config["config"])

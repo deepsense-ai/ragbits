@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter, ProvidersConfig
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.parsers.unstructured.default import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
@@ -15,7 +15,7 @@ from ..helpers import env_vars_not_set
 
 
 @pytest.mark.parametrize(
-    "config",
+    "parsers",
     [
         {},
         pytest.param({DocumentType.TXT: UnstructuredDefaultProvider()}),
@@ -28,18 +28,13 @@ from ..helpers import env_vars_not_set
         ),
     ],
 )
-async def test_document_processor_processes_text_document_with_unstructured_provider(config: ProvidersConfig):
-    document_processor = DocumentParserRouter.from_config(config)
+async def test_parser_router_processes_text_document_with_unstructured_provider(parsers: dict):
+    parser_router = DocumentParserRouter(parsers)
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
 
-    elements = await document_processor.get_provider(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).process(document_meta)
 
-    expected_provider_type = (
-        UnstructuredDefaultProvider
-        if isinstance(config.get(DocumentType.TXT), UnstructuredDefaultProvider)
-        else type(UnstructuredDefaultProvider)
-    )
-    assert isinstance(document_processor._providers[DocumentType.TXT], expected_provider_type)
+    assert isinstance(parser_router._parsers[DocumentType.TXT], UnstructuredDefaultProvider)
     assert len(elements) == 1
     assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
 
@@ -48,11 +43,11 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
     env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
-async def test_document_processor_processes_md_document_with_unstructured_provider():
-    document_processor = DocumentParserRouter.from_config()
+async def test_parser_router_processes_md_document_with_unstructured_provider():
+    parser_router = DocumentParserRouter()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
 
-    elements = await document_processor.get_provider(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).process(document_meta)
 
     assert len(elements) == 1
     assert elements[0].content == "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."  # type: ignore
@@ -67,11 +62,11 @@ async def test_document_processor_processes_md_document_with_unstructured_provid
     reason="OpenAI API environment variables not set",
 )
 @pytest.mark.parametrize("file_name", ["transformers_paper_page.pdf", "transformers_paper_page.png"])
-async def test_document_processor_processes_image_document_with_unstructured_provider(file_name: str):
-    document_processor = DocumentParserRouter.from_config()
+async def test_parser_router_processes_image_document_with_unstructured_provider(file_name: str):
+    parser_router = DocumentParserRouter()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / file_name)
 
-    elements = await document_processor.get_provider(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).process(document_meta)
 
     assert len(elements) == 7
     assert elements[-1].description != ""  # type: ignore
