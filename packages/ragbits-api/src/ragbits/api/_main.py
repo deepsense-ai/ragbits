@@ -13,12 +13,13 @@ import uvicorn
 chats = {}
 counter = 1
 
+
 async def word_streamer(text: str):
     words = text.split()
     i = 0
     while i < len(words):
         batch_size = random.randint(10, 25)
-        chunk = words[i:i + batch_size]
+        chunk = words[i : i + batch_size]
         yield f"data: {' '.join(chunk)}\n\n"
         i += batch_size
         await asyncio.sleep(0.15)
@@ -28,13 +29,13 @@ class RagbitsAPI:
     """
     RagbitsAPI class for running API with Demo UI for testing purposes
     """
+
     def __init__(self):
         self.app = FastAPI()
         self.chat_module = None
         self.dist_dir = Path(__file__).parent / "ui-build"
         self.configure_app()
         self.setup_routes()
-
 
     def configure_app(self):
         """Configures middleware, CORS, and other settings."""
@@ -51,9 +52,9 @@ class RagbitsAPI:
         self.app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static")
         self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-
     def setup_routes(self):
         """Defines API routes."""
+
         @self.app.get("/", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
@@ -85,13 +86,11 @@ class RagbitsAPI:
 
             return JSONResponse(content={"id": chat_id})
 
-
     def initialize_chat_module(self, chat_path: str):
         module_stringified, object_stringified = chat_path.split(":")
         print(module_stringified, object_stringified)
         module = importlib.import_module(module_stringified)
         self.chat_module = getattr(module, object_stringified)
-
 
     def run(self, host="127.0.0.1", port=8000):
         """
@@ -99,6 +98,6 @@ class RagbitsAPI:
         """
 
         # if self.chat_module is None:
-            # raise Exception("Cannot start api service without chat module, please provide method for handling chat tasks through chat-path and chat-name arguments")
+        # raise Exception("Cannot start api service without chat module, please provide method for handling chat tasks through chat-path and chat-name arguments")
 
         uvicorn.run(self.app, host=host, port=port)

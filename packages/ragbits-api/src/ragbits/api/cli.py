@@ -25,7 +25,3 @@ def run(chat_path: str = typer.Option(..., "--chat-path", help="Path to a module
     api = RagbitsAPI()
     api.initialize_chat_module(chat_path=chat_path)
     api.run()
-
-
-
-
