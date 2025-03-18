@@ -5,7 +5,6 @@
 # ]
 # ///
 import asyncio
-import os
 
 from pydantic import BaseModel
 
