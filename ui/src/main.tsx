@@ -4,7 +4,7 @@ import { HeroUIProvider } from "@heroui/react";
 import App from "./App";
 import "./globals.css";
 import { ExamplePlugin } from "./plugins/ExamplePlugin";
-import { pluginManager } from "./utils/plugins/PluginManager";
+import { pluginManager } from "./core/utils/plugins/PluginManager";
 
 // Register plugins
 pluginManager.register(ExamplePlugin);

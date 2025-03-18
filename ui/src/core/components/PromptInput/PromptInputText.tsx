@@ -1,11 +1,11 @@
-import type {TextAreaProps} from "@heroui/react";
+import type { TextAreaProps } from "@heroui/react";
 
 import React from "react";
-import {Textarea} from "@heroui/react";
-import {cn} from "@heroui/react";
+import { Textarea } from "@heroui/react";
+import { cn } from "@heroui/react";
 
-const PromptInput = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
-  ({classNames = {}, ...props}, ref) => {
+const PromptInputText = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
+  ({ classNames = {}, ...props }, ref) => {
     return (
       <Textarea
         ref={ref}
@@ -26,6 +26,6 @@ const PromptInput = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
   },
 );
 
-export default PromptInput;
+export default PromptInputText;
 
-PromptInput.displayName = "PromptInput";
+PromptInputText.displayName = "PromptInputText";
