@@ -1,7 +1,7 @@
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel
 
@@ -11,7 +11,7 @@ from ragbits.document_search.documents.sources.base import SourceDiscriminator
 
 class DocumentType(str, Enum):
     """
-    Types of documents that can be stored.
+    Document types that can be parsed.
     """
 
     MD = "md"
@@ -31,11 +31,19 @@ class DocumentType(str, Enum):
     RST = "rst"
     RTF = "rtf"
     TSV = "tsv"
+    JSON = "json"
     XML = "xml"
     JPG = "jpg"
     PNG = "png"
 
     UNKNOWN = "unknown"
+
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        """
+        Return WILDCARD if the value is not found in the enum.
+        """
+        return cls.UNKNOWN
 
 
 class DocumentMeta(BaseModel):
