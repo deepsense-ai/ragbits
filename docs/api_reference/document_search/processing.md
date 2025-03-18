@@ -1,6 +1,6 @@
 # Document Processing
 
-::: ragbits.document_search.ingestion.parsers.router.DocumentProcessorRouter
+::: ragbits.document_search.ingestion.parsers.router.DocumentParserRouter
 
 ## Providers
 ::: ragbits.document_search.ingestion.parsers.base.BaseProvider

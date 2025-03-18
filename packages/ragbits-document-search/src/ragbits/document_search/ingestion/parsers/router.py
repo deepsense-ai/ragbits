@@ -37,9 +37,9 @@ DEFAULT_PROVIDERS_CONFIG: MutableMapping[DocumentType, Callable[[], BaseProvider
 }
 
 
-class DocumentProcessorRouter:
+class DocumentParserRouter:
     """
-    The DocumentProcessorRouter is responsible for routing the document to the correct provider based on the document
+    The DocumentParserRouter is responsible for routing the document to the correct provider based on the document
     metadata such as the document type.
     """
 
@@ -71,9 +71,9 @@ class DocumentProcessorRouter:
         return providers_config
 
     @classmethod
-    def from_config(cls, providers: ProvidersConfig | None = None) -> "DocumentProcessorRouter":
+    def from_config(cls, providers: ProvidersConfig | None = None) -> "DocumentParserRouter":
         """
-        Create a DocumentProcessorRouter from a configuration. If the configuration is not provided, the default
+        Create a DocumentParserRouter from a configuration. If the configuration is not provided, the default
         configuration will be used. If the configuration is provided, it will be merged with the default configuration,
         overriding the default values for the document types that are defined in the configuration.
         Example of the configuration:
@@ -87,7 +87,7 @@ class DocumentProcessorRouter:
                 provider class.
 
         Returns:
-            The DocumentProcessorRouter.
+            The DocumentParserRouter.
         """
         config: MutableMapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = copy.deepcopy(
             DEFAULT_PROVIDERS_CONFIG

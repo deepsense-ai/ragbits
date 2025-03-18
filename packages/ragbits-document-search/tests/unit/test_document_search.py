@@ -18,7 +18,7 @@ from ragbits.document_search.documents.document import (
 )
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.parsers import BaseProvider
 from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 from ragbits.document_search.ingestion.strategies.batched import (
@@ -70,7 +70,7 @@ async def test_document_search_ingest_from_source():
 
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter.from_config({DocumentType.TXT: DummyProvider()}),
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
@@ -100,7 +100,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: DummyProvider()}),
     )
     await document_search.ingest([document])
 
@@ -123,7 +123,7 @@ async def test_document_search_with_search_config():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: DummyProvider()}),
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
@@ -461,7 +461,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
         ):
             document_search = DocumentSearch(
                 vector_store=vector_store,
-                parser_router=DocumentProcessorRouter.from_config(providers),
+                parser_router=DocumentParserRouter.from_config(providers),
             )
 
             await document_search.ingest("huggingface://dataset_name/train/0")

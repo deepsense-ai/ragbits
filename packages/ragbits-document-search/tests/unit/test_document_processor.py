@@ -1,12 +1,12 @@
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 
 
 async def test_document_processor_router():
-    document_processor_router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()})
+    document_processor_router = DocumentParserRouter.from_config({DocumentType.TXT: DummyProvider()})
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")
 
@@ -16,7 +16,7 @@ async def test_document_processor_router():
 
 
 async def test_document_processor_router_raises_when_no_provider_found():
-    document_processor_router = DocumentProcessorRouter.from_config()
+    document_processor_router = DocumentParserRouter.from_config()
     document_processor_router._providers = {DocumentType.TXT: DummyProvider()}
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")

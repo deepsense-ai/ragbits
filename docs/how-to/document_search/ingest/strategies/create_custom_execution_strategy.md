@@ -19,7 +19,7 @@ from collections.abc import Sequence
 
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
@@ -27,7 +27,7 @@ class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
-        processor_router: DocumentProcessorRouter,
+        processor_router: DocumentParserRouter,
         processor_overwrite: BaseProvider | None = None,
     ) -> list[Element]:
         elements = []
@@ -48,7 +48,7 @@ from collections.abc import Sequence
 
 from ragbits.document_search.documents.document import Document, DocumentMeta, Source
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies import IngestStrategy
 from ragbits.document_search.ingestion.parsers.base import BaseProvider
 
@@ -56,7 +56,7 @@ class DelayedExecutionStrategy(IngestStrategy):
     async def process_documents(
         self,
         documents: Sequence[DocumentMeta | Document | Source],
-        processor_router: DocumentProcessorRouter,
+        processor_router: DocumentParserRouter,
         processor_overwrite: BaseProvider | None = None,
     ) -> list[Element]:
         elements = []

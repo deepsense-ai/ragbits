@@ -13,7 +13,7 @@ from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 
 _CallP = ParamSpec("_CallP")
@@ -67,7 +67,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
+        parser_router: DocumentParserRouter,
         enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
     ) -> IngestExecutionResult:
         """
@@ -120,7 +120,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
     @staticmethod
     async def _parse_document(
         document: DocumentMeta | Document | Source,
-        parser_router: DocumentProcessorRouter,
+        parser_router: DocumentParserRouter,
     ) -> Sequence[Element | IntermediateElement]:
         """
         Parse a single document and return the elements.

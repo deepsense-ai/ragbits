@@ -3,7 +3,7 @@
 In Ragbits, a component called "processing execution strategy" controls how document processing is executed during ingestion. There are multiple execution strategies available in Ragbits that can be easily interchanged. You can also [create new custom execution strategies](create_custom_execution_strategy.md) to meet your specific needs.
 
 !!! note
-    It's important to note that processing execution strategies are a separate concept from processors. While the former manage how the processing is executed, the latter deals with the actual processing of documents. Processors are managed by [DocumentProcessorRouter][ragbits.document_search.ingestion.parsers.router.DocumentProcessorRouter].
+    It's important to note that processing execution strategies are a separate concept from processors. While the former manage how the processing is executed, the latter deals with the actual processing of documents. Processors are managed by [DocumentParserRouter][ragbits.document_search.ingestion.parsers.router.DocumentParserRouter].
 
 ## The Synchronous Execution Strategy
 

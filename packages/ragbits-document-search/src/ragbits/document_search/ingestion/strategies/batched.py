@@ -7,7 +7,7 @@ from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element, IntermediateElement
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
@@ -54,7 +54,7 @@ class BatchedIngestStrategy(IngestStrategy):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
+        parser_router: DocumentParserRouter,
         enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
     ) -> IngestExecutionResult:
         """
@@ -121,7 +121,7 @@ class BatchedIngestStrategy(IngestStrategy):
     async def _parse_batch(
         self,
         batch: list[DocumentMeta | Document | Source],
-        parser_router: DocumentProcessorRouter,
+        parser_router: DocumentParserRouter,
     ) -> list[IngestTaskResult | IngestDocumentResult]:
         """
         Parse batch of documents.

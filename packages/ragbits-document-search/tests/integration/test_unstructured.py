@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.router import DocumentProcessorRouter, ProvidersConfig
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter, ProvidersConfig
 from ragbits.document_search.ingestion.parsers.unstructured.default import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
@@ -29,7 +29,7 @@ from ..helpers import env_vars_not_set
     ],
 )
 async def test_document_processor_processes_text_document_with_unstructured_provider(config: ProvidersConfig):
-    document_processor = DocumentProcessorRouter.from_config(config)
+    document_processor = DocumentParserRouter.from_config(config)
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
 
     elements = await document_processor.get_provider(document_meta).process(document_meta)
@@ -49,7 +49,7 @@ async def test_document_processor_processes_text_document_with_unstructured_prov
     reason="Unstructured API environment variables not set",
 )
 async def test_document_processor_processes_md_document_with_unstructured_provider():
-    document_processor = DocumentProcessorRouter.from_config()
+    document_processor = DocumentParserRouter.from_config()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
 
     elements = await document_processor.get_provider(document_meta).process(document_meta)
@@ -68,7 +68,7 @@ async def test_document_processor_processes_md_document_with_unstructured_provid
 )
 @pytest.mark.parametrize("file_name", ["transformers_paper_page.pdf", "transformers_paper_page.png"])
 async def test_document_processor_processes_image_document_with_unstructured_provider(file_name: str):
-    document_processor = DocumentProcessorRouter.from_config()
+    document_processor = DocumentParserRouter.from_config()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / file_name)
 
     elements = await document_processor.get_provider(document_meta).process(document_meta)
