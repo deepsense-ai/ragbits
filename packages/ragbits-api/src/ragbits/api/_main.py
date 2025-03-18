@@ -35,7 +35,7 @@ class RagbitsAPI:
         self.configure_app()
         self.setup_routes()
 
-        
+
     def configure_app(self):
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
@@ -50,11 +50,11 @@ class RagbitsAPI:
         static_dir = self.dist_dir / "static"
         self.app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static")
         self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-        
+
 
     def setup_routes(self):
         """Defines API routes."""
-        @self.app.get("/", response_class=HTMLResponse) 
+        @self.app.get("/", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
             return open(str(index_file)).read()
@@ -67,11 +67,11 @@ class RagbitsAPI:
 
             response = await self.chat_module(question=question)
             return StreamingResponse(word_streamer(response), media_type="text/event-stream")
-        
+
         @self.app.post("/api/chat", response_class=JSONResponse)
         async def chat(request: Request) -> JSONResponse:
             global counter
-            
+
             data = await request.json()
             message = data.get("message")
 
@@ -82,16 +82,16 @@ class RagbitsAPI:
             chat_id = counter
             chats[chat_id] = message
             counter += 1
-            
+
             return JSONResponse(content={"id": chat_id})
-        
-    
+
+
     def initialize_chat_module(self, chat_path: str):
         module_stringified, object_stringified = chat_path.split(":")
         print(module_stringified, object_stringified)
         module = importlib.import_module(module_stringified)
         self.chat_module = getattr(module, object_stringified)
-        
+
 
     def run(self, host="127.0.0.1", port=8000):
         """

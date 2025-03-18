@@ -7,7 +7,7 @@ repos:
           - id: check-case-conflict
           - id: check-merge-conflict
           - id: trailing-whitespace
-            exclude: .bumpversion.cfg|notebooks/.*\.py
+            exclude: .bumpversion.cfg|notebooks/.*\.py|ui-build/*
           - id: check-ast
           - id: check-added-large-files
           - id: check-toml
