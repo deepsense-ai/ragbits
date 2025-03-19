@@ -3,6 +3,8 @@
 ## Unreleased
 
 ## 0.10.1 (2025-03-19)
+
+- Fix Qdrant vector store serialization
 - Better handling of cases when text and image embeddings are mixed in VectorStore
 
 ## 0.10.0 (2025-03-17)
