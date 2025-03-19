@@ -9,14 +9,14 @@ with suppress(ImportError):
     import aiohttp
 
 from ragbits.core.utils.decorators import requires_dependencies
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.document_search.documents.exceptions import SourceNotFoundError, WebDownloadError
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
 
-class HttpSource(Source):
+class WebSource(Source):
     """
-    An object representing an HTTP dataset source.
+    An object representing a Web dataset source.
     """
 
     url: str
@@ -25,9 +25,9 @@ class HttpSource(Source):
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is the full url to the file.
+        Get the source ID, which is an unique identifier of the object.
         """
-        return f"https:{self.url}"
+        return f"web:{self.url}"
 
     @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
@@ -38,6 +38,7 @@ class HttpSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
+            WebDownloadError: If the download failed.
             SourceNotFoundError: If the URL is invalid.
         """
         parsed_url = urlparse(self.url)
@@ -57,14 +58,14 @@ class HttpSource(Source):
                         async for chunk in response.content.iter_chunked(1024):
                             f.write(chunk)
                 else:
-                    raise SourceNotFoundError(self.id)
+                    raise WebDownloadError(url=self.url, code=response.status)
         except (aiohttp.ClientError, IsADirectoryError) as e:
             raise SourceNotFoundError(self.id) from e
 
         return path
 
     @classmethod
-    async def list_sources(cls, url: str) -> Sequence["HttpSource"]:
+    async def list_sources(cls, url: str) -> Sequence["WebSource"]:
         """
         List the file under the given URL.
 
@@ -72,21 +73,21 @@ class HttpSource(Source):
             url: The URL to the file.
 
         Returns:
-            Sequence: The Sequence with HTTP source.
+            Sequence: The Sequence with Web source.
         """
         return [cls(url=url)]
 
     @classmethod
-    async def from_uri(cls, url: str) -> Sequence["HttpSource"]:
+    async def from_uri(cls, uri: str) -> Sequence["WebSource"]:
         """
-        Create HttpSource instances from a URI path.
-        The supported url format is:
+        Create WebSource instances from a URI path.
+        The supported uri format is:
         <protocol>://<domain>/<path>/<filename>.<file_extension>
 
         Args:
-            url: The URI path.
+            uri: The URI path. Needs to include the protocol.
 
         Returns:
-            A sequence containing a HttpSource instance.
+            A sequence containing a WebSource instance.
         """
-        return [cls(url=url)]
+        return [cls(url=uri)]

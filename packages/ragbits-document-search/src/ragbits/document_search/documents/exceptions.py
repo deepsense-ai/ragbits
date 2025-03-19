@@ -25,3 +25,12 @@ class SourceNotFoundError(SourceError):
     def __init__(self, source_id: str) -> None:
         super().__init__(f"Source with ID {source_id} not found.")
         self.source_id = source_id
+
+
+class WebDownloadError(SourceError):
+    """
+    Raised when an error occurs during the download of a file from an Web source.
+    """
+
+    def __init__(self, url: str, code: int):
+        super().__init__(f"Download of {url} failed with code {code}.")

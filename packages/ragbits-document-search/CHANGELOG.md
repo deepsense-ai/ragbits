@@ -4,6 +4,14 @@
 
 - BREAKING CHANGE: Providers and intermediate handlers refactored to parsers and enrichers (#419)
 
+## 0.10.1 (2025-03-19)
+
+### Changed
+
+- ragbits-core updated to version v0.10.1
+- BREAKING CHANGE: Renamed HttpSource to WebSource and changed property names (#420)
+- Better error distinction for WebSource (#421)
+
 ## 0.10.0 (2025-03-17)
 
 ### Changed
@@ -14,8 +22,7 @@
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
 - Add HTTP source type, which downloads a file from the provided URL (#397)
-
- - added traceable
+- added traceable
 
 ## 0.9.0 (2025-02-25)
 
