@@ -11,7 +11,7 @@ if [ -z "$CHANGED_FILES" ]; then
   exit 0
 fi
 
-CHANGED_PACKAGES=$(echo "$CHANGED_FILES" | grep -oE 'packages/[^/]+' | cut -d '/' -f2 | sort -u)
+CHANGED_PACKAGES=$(echo "$CHANGED_FILES" | grep -oE 'packages/[^/]+/src' | cut -d '/' -f2 | sort -u)
 
 if [ -z "$CHANGED_PACKAGES" ]; then
   echo "No package changes detected. Skipping changelog check."
