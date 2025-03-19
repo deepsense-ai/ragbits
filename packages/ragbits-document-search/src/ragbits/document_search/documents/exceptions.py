@@ -32,5 +32,5 @@ class WebDownloadError(SourceError):
     Raised when an error occurs during the download of a file from an Web source.
     """
 
-    def __init__(self, uri: str, code: int):
-        super().__init__(f"Download of {uri} failed with code {code}.")
+    def __init__(self, url: str, code: int):
+        super().__init__(f"Download of {url} failed with code {code}.")
