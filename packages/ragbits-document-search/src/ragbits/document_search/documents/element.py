@@ -30,7 +30,6 @@ class Element(BaseModel, ABC):
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         """
@@ -80,7 +79,6 @@ class Element(BaseModel, ABC):
             The text representation.
         """
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def image_representation(self) -> bytes | None:
         """
@@ -183,7 +181,6 @@ class ImageElement(Element):
             repr += f"Extracted text: {self.ocr_extracted_text}"
         return repr
 
-    @computed_field  # type: ignore[prop-decorator]
     @property
     def image_representation(self) -> bytes:
         """
