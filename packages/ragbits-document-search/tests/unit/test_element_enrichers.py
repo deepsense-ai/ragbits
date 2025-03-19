@@ -10,9 +10,8 @@ from ragbits.document_search.ingestion.enrichers.images import ImageElementEnric
 
 @pytest.fixture
 def llm() -> LiteLLM:
-    options = LiteLLMOptions(mock_response="response")
-    llm = LiteLLM(model_name="gpt-4o", api_key="key", default_options=options)
-    return llm
+    default_options = LiteLLMOptions(mock_response="response")
+    return LiteLLM(model_name="gpt-4o", default_options=default_options)
 
 
 @pytest.fixture
@@ -22,7 +21,7 @@ def image_bytes() -> bytes:
 
 
 @pytest.fixture
-def intermediate_image_element(image_bytes: bytes) -> ImageElement:
+def image_element(image_bytes: bytes) -> ImageElement:
     return ImageElement(
         document_meta=DocumentMeta.create_text_document_from_literal(""),
         image_bytes=image_bytes,
@@ -30,7 +29,6 @@ def intermediate_image_element(image_bytes: bytes) -> ImageElement:
     )
 
 
-@pytest.mark.asyncio
 async def test_process(llm: LiteLLM, image_element: ImageElement):
     enricher = ImageElementEnricher(llm=llm)
     results = await enricher.enrich([image_element])
