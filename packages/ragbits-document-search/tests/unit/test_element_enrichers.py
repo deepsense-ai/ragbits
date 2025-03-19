@@ -5,7 +5,7 @@ import pytest
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import ImageElement
-from ragbits.document_search.ingestion.enrichers.images import ImageElementEnricher, _ImagePrompt
+from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher, _ImagePrompt
 
 
 @pytest.fixture

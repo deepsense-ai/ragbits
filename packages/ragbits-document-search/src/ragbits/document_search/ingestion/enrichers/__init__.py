@@ -1,4 +1,4 @@
 from .base import ElementEnricher
-from .images import ImageElementEnricher
+from .image import ImageElementEnricher
 
 __all__ = ["ElementEnricher", "ImageElementEnricher"]

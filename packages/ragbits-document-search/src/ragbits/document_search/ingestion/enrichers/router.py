@@ -7,7 +7,7 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, WithCons
 from ragbits.document_search.documents import element
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
-from ragbits.document_search.ingestion.enrichers.images import ImageElementEnricher
+from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher
 
 _DEFAULT_ENRICHERS: dict[type[Element], ImageElementEnricher] = {
     ImageElement: ImageElementEnricher(),
