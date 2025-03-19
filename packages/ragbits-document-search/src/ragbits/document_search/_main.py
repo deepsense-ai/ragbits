@@ -168,14 +168,14 @@ class DocumentSearch(WithConstructionConfig):
             InvalidConfigError: If the default factory or configuration can't be found.
         """
         if yaml_path_override:
-            preferrences = get_config_from_yaml(yaml_path_override)
+            preferences = get_config_from_yaml(yaml_path_override)
 
             # Look for explicit document search configuration
-            if type_config := preferrences.get(cls.configuration_key):
+            if type_config := preferences.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
 
-            # Instantate the class with the preferred configuration for each component
-            return cls.from_config(preferrences)
+            # Instantiate the class with the preferred configuration for each component
+            return cls.from_config(preferences)
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
@@ -188,7 +188,7 @@ class DocumentSearch(WithConstructionConfig):
             if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
                 return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
 
-            # Instantate the class with the prefereed configuration for each component
+            # Instantiate the class with the preferred configuration for each component
             return cls.from_config(config.preferred_instances_config)
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")

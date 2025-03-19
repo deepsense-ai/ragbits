@@ -10,16 +10,19 @@ nav:
       - quickstart/quickstart1_prompts.md
       - quickstart/quickstart2_rag.md
   - How-to Guides:
-      - Core:
-        - how-to/core/use_prompting.md
-        - how-to/core/use_images_in_prompts.md
-        - how-to/core/component_preferrences.md
-        - how-to/core/prompts_lab.md
-        - how-to/core/promptfoo.md
-        - how-to/core/use_tracing.md
-        - how-to/core/use_llms.md
-        - how-to/core/use_local_llms.md
-        - how-to/core/use_pgVector_store.md
+      - Prompting:
+          - how-to/prompts/use_prompting.md
+          - how-to/prompts/use_images_in_prompts.md
+          - how-to/prompts/prompts_lab.md
+          - how-to/prompts/promptfoo.md
+      - LLMs:
+        - how-to/llms/use_llms.md
+        - how-to/llms/use_local_llms.md
+      - VectorStores:
+        - how-to/vector_stores/use_pgVector_store.md
+      - Project configuration:
+        - how-to/project/component_preferences.md
+        - how-to/project/use_tracing.md
       - Document Search:
         - Ingest:
           - Using Strategies:

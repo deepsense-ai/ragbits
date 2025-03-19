@@ -1,4 +1,4 @@
-# How to Set Preferred Components for Your Project
+# Set Preferred Components in Your Project
 
 ## Introduction
 When you use Ragbits in your project, you can set the preferred components for different component types (like embedders, vector stores, LLMs, etc.) in the project configuration. Typically, there are many different implementations for each type of component, and each implementation has its own configuration. Ragbits allows you to choose the implementation you prefer for each type of component and the configuration to be used along with it.
@@ -136,7 +136,7 @@ Preferred components are used automatically by the [Ragbits CLI](../../cli/main.
 
 You can also retrieve preferred components in your own code by instantiating the component using the `preferred_subclass()` factory method of [the base class of the given component type](#list-of-component-types). This method will automatically create an instance of the preferred implementation of the component with the configuration you have set.
 
-For example, the code below will create an instance of the default vector store implementation with the default configuration (as long as you have [set the default vector store in the project configuration](#how-to-set-preferred-components-for-your-project)):
+For example, the code below will create an instance of the default vector store implementation with the default configuration (as long as you have [set the default vector store in the project configuration](#set-preferred-components-in-your-project)):
 
 ```python
 from ragbits.core.vector_stores import VectorStore

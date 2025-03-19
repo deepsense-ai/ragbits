@@ -1,4 +1,4 @@
-# How to use LLMs with Ragbits
+# Interact with LLMs 
 
 This guide will walk you through configuring and using both local and remote LLMs in Ragbits. It covers initializing models, calling LLM classes using Prompts and raw string inputs, and handling different response formats.
 
@@ -55,7 +55,7 @@ Ragbits provides a flexible way to interact with LLMs by allowing you to use [`P
 
 ## Using prompts with LLMs
 
-Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../core/use_images_in_prompts.md).
+Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../prompts/use_images_in_prompts.md).
 
 ```python
 from ragbits.core.prompt import Prompt

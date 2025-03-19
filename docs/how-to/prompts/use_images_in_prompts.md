@@ -1,4 +1,4 @@
-# How to define and use image prompts in Ragbits
+# Use images in prompts
 
 This guide will walk you through defining and using prompts in Ragbits that accept images as input. It covers handling single and multiple image inputs, incorporating conditionals in prompt templates based on the presence of images, and using such prompts with an LLM.
 

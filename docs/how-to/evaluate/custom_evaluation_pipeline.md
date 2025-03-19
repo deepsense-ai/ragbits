@@ -1,4 +1,4 @@
-# How to create custom Evaluation Pipeline for Ragbits evaluation
+# Create custom Evaluation Pipeline
 
 Ragbits provides a ready-to-use evaluation pipeline for document search, implemented within the `ragbits.evaluate.document_search.DocumentSearchPipeline` module.
 

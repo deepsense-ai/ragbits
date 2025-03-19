@@ -1,4 +1,4 @@
-# How to create custom DataLoader for Ragbits evaluation
+# Create custom DataLoader
 
 Ragbits provides a base interface for data loading, `ragbits.evaluate.dataloaders.base.DataLoader`, designed specifically for evaluation purposes. A ready-to-use implementation, `ragbits.evaluate.dataloaders.hf.HFLoader`, is available for handling datasets in huggingface format.
 

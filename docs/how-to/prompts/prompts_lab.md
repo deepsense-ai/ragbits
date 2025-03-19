@@ -1,4 +1,4 @@
-# How to Manage Prompts using GUI with Prompts Lab
+# Manage Prompts using GUI
 
 Prompts Lab is a GUI tool that automatically detects prompts in your project and allows you to interact with them. You can use it to test your prompts with Large Language Models and see how the model responds to different prompts.
 
@@ -28,12 +28,12 @@ The tool will open in your default web browser. You will see a list of prompts d
 
 To work with a specific prompt, select it from the list. The "Inputs" pane allows you to enter the values for the placeholders in the prompt. For the `SongPrompt` prompt example, this would be the subject, age group, and genre of the song:
 
-![Prompts Lab](./prompts_lab_input.png){style="max-width: 300px; display: block; margin: 0 auto;"}
+![Prompts Lab](prompts_lab_input.png){style="max-width: 300px; display: block; margin: 0 auto;"}
 
 Then, click "Render prompt" to view the final prompt content, with all placeholders replaced with the values you provided. To check how the Large Language Model responds to the prompt, click "Send to LLM".
 
 !!! note
-    If there is no [preferred LLM configured for your project](../core/component_preferrences.md), Prompts Lab will use OpenAI's gpt-3.5-turbo. Ensure that the OPENAI_API_KEY environment variable is set and contains your OpenAI API key.
+    If there is no [preferred LLM configured for your project](../project/component_preferences.md), Prompts Lab will use OpenAI's gpt-3.5-turbo. Ensure that the OPENAI_API_KEY environment variable is set and contains your OpenAI API key.
 
     Alternatively, you can use your own custom LLM factory (a function that creates an instance of [ragbit's LLM class][ragbits.core.llms.LLM]) by specifying the path to the factory function using the `--llm-factory` option with the `ragbits prompts lab` command.
 

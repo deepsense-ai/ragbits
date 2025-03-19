@@ -1,4 +1,4 @@
-# How to integrate Promptfoo with Ragbits
+# Test prompts with promptfoo
 
 Ragbits' [`Prompt`][ragbits.core.prompt.Prompt] abstraction can be seamlessly integrated with the `promptfoo` tool. After installing `promptfoo` as
 specified in the [promptfoo documentation](https://www.promptfoo.dev/docs/installation/), you can generate promptfoo
