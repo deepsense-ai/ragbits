@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Plugin } from "../../utils/plugins/PluginManager";
+import { Plugin } from "../../core/utils/plugins/PluginManager";
 
 export const ExamplePluginName = "ExamplePlugin";
 
