@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-
+- correct the typo in the class name ObjectConstructionConfig
 ## 0.10.1 (2025-03-19)
 
 ### Changed
@@ -10,8 +10,7 @@
 
 - BREAKING CHANGE: Renamed HttpSource to WebSource and changed property names (#420)
 - Better error distinction for WebSource (#421)
-- correct the typo in the class name ObjectConstructionConfig
--
+
 ## 0.10.0 (2025-03-17)
 
 ### Changed
