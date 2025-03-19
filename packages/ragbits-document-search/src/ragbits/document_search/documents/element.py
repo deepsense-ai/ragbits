@@ -19,26 +19,6 @@ class ElementLocation(BaseModel):
     coordinates: dict | None = None
 
 
-class IntermediateElement(BaseModel, ABC):
-    """
-    Represents an intermediate element extracted from a document before final processing.
-    """
-
-    element_type: str
-    document_meta: DocumentMeta
-    location: ElementLocation | None = None
-
-
-class IntermediateImageElement(IntermediateElement):
-    """
-    Represents an intermediate image element extracted from a document before final processing.
-    """
-
-    element_type: str = "image"
-    image_bytes: bytes
-    ocr_extracted_text: str
-
-
 class Element(BaseModel, ABC):
     """
     An object representing an element in a document.
@@ -50,7 +30,7 @@ class Element(BaseModel, ABC):
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
-    # type: ignore[prop-decorator]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def id(self) -> str:
         """
@@ -100,6 +80,7 @@ class Element(BaseModel, ABC):
             The text representation.
         """
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def image_representation(self) -> bytes | None:
         """
@@ -179,9 +160,9 @@ class ImageElement(Element):
     """
 
     element_type: str = "image"
-    description: str
-    ocr_extracted_text: str
     image_bytes: SerializableBytes
+    description: str | None = None
+    ocr_extracted_text: str | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -194,6 +175,7 @@ class ImageElement(Element):
         """
         if not self.description and not self.ocr_extracted_text:
             return None
+
         repr = ""
         if self.description:
             repr += f"Description: {self.description}\n"
@@ -201,6 +183,7 @@ class ImageElement(Element):
             repr += f"Extracted text: {self.ocr_extracted_text}"
         return repr
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def image_representation(self) -> bytes:
         """

@@ -4,7 +4,7 @@ import pytest
 
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import ImageElement, IntermediateImageElement
+from ragbits.document_search.documents.element import ImageElement
 from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler, _ImagePrompt
 
 
@@ -22,8 +22,8 @@ def image_bytes() -> bytes:
 
 
 @pytest.fixture
-def intermediate_image_element(image_bytes: bytes) -> IntermediateImageElement:
-    return IntermediateImageElement(
+def intermediate_image_element(image_bytes: bytes) -> ImageElement:
+    return ImageElement(
         document_meta=DocumentMeta.create_text_document_from_literal(""),
         image_bytes=image_bytes,
         ocr_extracted_text="ocr text",
@@ -31,7 +31,7 @@ def intermediate_image_element(image_bytes: bytes) -> IntermediateImageElement:
 
 
 @pytest.mark.asyncio
-async def test_process(llm: LiteLLM, intermediate_image_element: IntermediateImageElement):
+async def test_process(llm: LiteLLM, intermediate_image_element: ImageElement):
     handler = ImageIntermediateHandler(llm=llm)
     results = await handler.process([intermediate_image_element])
 

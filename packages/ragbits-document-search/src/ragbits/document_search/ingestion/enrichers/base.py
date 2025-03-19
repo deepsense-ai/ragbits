@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
-from ragbits.document_search.documents.element import Element, IntermediateElement
+from ragbits.document_search.documents.element import Element
 
 
 class BaseIntermediateHandler(WithConstructionConfig, ABC):
@@ -13,13 +13,13 @@ class BaseIntermediateHandler(WithConstructionConfig, ABC):
     """
 
     @abstractmethod
-    async def process(self, intermediate_elements: list[IntermediateElement]) -> list[Element]:
+    async def process(self, elements: list[Element]) -> list[Element]:
         """
         Process an `IntermediateElement` and return a corresponding `Element`.
 
         Args:
-            intermediate_elements: The intermediate elements to be processed.
+            elements: The elements to be enriched.
 
         Returns:
-            The list of processed elements.
+            The list of enriched elements.
         """

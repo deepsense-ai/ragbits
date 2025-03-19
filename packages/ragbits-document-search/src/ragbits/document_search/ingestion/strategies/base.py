@@ -2,7 +2,7 @@ import asyncio
 import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from types import ModuleType
 from typing import ClassVar, ParamSpec, TypeVar
@@ -10,7 +10,7 @@ from typing import ClassVar, ParamSpec, TypeVar
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, IntermediateElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
@@ -121,7 +121,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
     async def _parse_document(
         document: DocumentMeta | Document | Source,
         parser_router: DocumentParserRouter,
-    ) -> Sequence[Element | IntermediateElement]:
+    ) -> list[Element]:
         """
         Parse a single document and return the elements.
 
@@ -147,15 +147,15 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
     @staticmethod
     async def _enrich_elements(
-        elements: Iterable[IntermediateElement],
+        elements: Iterable[Element],
         enricher_router: ElementEnricherRouter,
     ) -> list[Element]:
         """
-        Enrich intermediate elements.
+        Enrich elements for a single document.
 
         Args:
             elements: The document elements to enrich.
-            enricher_router: The intermediate element enricher router to use.
+            enricher_router: The element enricher router to use.
 
         Returns:
             The list of enriched elements.
@@ -163,15 +163,14 @@ class IngestStrategy(WithConstructionConfig, ABC):
         Raises:
             ValueError: If no enricher found for the element type.
         """
-        grouped_intermediate_elements: dict[type[IntermediateElement], list[IntermediateElement]] = defaultdict(list)
+        grouped_elements = defaultdict(list)
         for element in elements:
-            if isinstance(element, IntermediateElement):
-                grouped_intermediate_elements[type(element)].append(element)
+            grouped_elements[type(element)].append(element)
 
         grouped_enriched_elements = await asyncio.gather(
             *[
-                enricher.process(intermediate_elements)
-                for element_type, intermediate_elements in grouped_intermediate_elements.items()
+                enricher.process(elements)
+                for element_type, elements in grouped_elements.items()
                 if (enricher := enricher_router.get(element_type))
             ]
         )

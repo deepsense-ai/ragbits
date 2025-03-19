@@ -5,12 +5,12 @@ from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig, import_by_path
 from ragbits.document_search.documents import element
-from ragbits.document_search.documents.element import IntermediateElement, IntermediateImageElement
+from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler
 
-_DEFAULT_ENRICHERS: dict[type[IntermediateElement], ImageIntermediateHandler] = {
-    IntermediateImageElement: ImageIntermediateHandler(),
+_DEFAULT_ENRICHERS: dict[type[Element], ImageIntermediateHandler] = {
+    ImageElement: ImageIntermediateHandler(),
 }
 
 
@@ -21,11 +21,11 @@ class ElementEnricherRouter(WithConstructionConfig):
 
     configuration_key: ClassVar[str] = "enrichers"
 
-    _enrichers: Mapping[type[IntermediateElement], ImageIntermediateHandler]
+    _enrichers: Mapping[type[Element], ImageIntermediateHandler]
 
     def __init__(
         self,
-        enrichers: Mapping[type[IntermediateElement], ImageIntermediateHandler] | None = None,
+        enrichers: Mapping[type[Element], ImageIntermediateHandler] | None = None,
     ) -> None:
         """
         Initialize the ElementEnricherRouter instance.
@@ -35,11 +35,23 @@ class ElementEnricherRouter(WithConstructionConfig):
 
         Example:
             {
-                IntermediateImageElement: ImageIntermediateHandler(),
-                IntermediateTextElement: TextIntermediateHandler(),
+                ImageElement: ImageIntermediateHandler(),
+                CustomTextElement: TextIntermediateHandler(),
             }
         """
         self._enrichers = {**_DEFAULT_ENRICHERS, **enrichers} if enrichers else _DEFAULT_ENRICHERS
+
+    def __contains__(self, element_type: type[Element]) -> bool:
+        """
+        Check if there is an enricher defined of the given element type.
+
+        Args:
+            element_type: The element type.
+
+        Returns:
+            True if the enricher is defined for the element, otherwise False.
+        """
+        return element_type in self._enrichers
 
     @classmethod
     def from_config(cls, config: dict[str, ObjectContructionConfig]) -> Self:
@@ -61,7 +73,7 @@ class ElementEnricherRouter(WithConstructionConfig):
         }
         return cls(enrichers=enrichers)  # type: ignore
 
-    def get(self, element_type: type[IntermediateElement]) -> BaseIntermediateHandler:
+    def get(self, element_type: type[Element]) -> BaseIntermediateHandler:
         """
         Get the enricher for the element.
 

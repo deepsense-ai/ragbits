@@ -4,7 +4,6 @@ from collections.abc import Iterable
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import IntermediateElement
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
@@ -83,16 +82,16 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         successfully_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestTaskResult))
         failed_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestDocumentResult))
 
-        # Further split valid documents into intermediate and ready
-        intermediate_parsed = successfully_parsed.filter(
-            lambda data: any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+        # Further split valid documents into to enrich and ready
+        to_enrich = successfully_parsed.filter(
+            lambda data: any(type(element) in enricher_router for element in data["results"].elements)
         )
         ready_parsed = successfully_parsed.filter(
-            lambda data: not any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+            lambda data: not any(type(element) in enricher_router for element in data["results"].elements)
         )
 
-        # Enrich intermediate documents
-        enrich_results = intermediate_parsed.map_batches(
+        # Enrich documents
+        enrich_results = to_enrich.map_batches(
             fn=lambda batch: {"results": asyncio.run(self._enrich_batch(batch["results"], enricher_router))},
             batch_size=self.io_batch_size,
             num_cpus=0,

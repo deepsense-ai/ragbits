@@ -10,8 +10,6 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, import_b
 from ragbits.document_search.documents.element import (
     Element,
     ImageElement,
-    IntermediateElement,
-    IntermediateImageElement,
 )
 from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
 
@@ -50,38 +48,34 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
         self._llm = llm or get_preferred_llm(llm_type=LLMType.VISION)
         self._prompt = prompt or _ImagePrompt
 
-    async def process(self, intermediate_elements: list[IntermediateElement]) -> list[Element]:
+    async def process(self, elements: list[Element]) -> list[Element]:
         """
         Processes a list of intermediate image elements concurrently and generates corresponding ImageElements.
 
         Args:
-            intermediate_elements: List of intermediate image elements to process.
+            elements: The elements to be enriched.
 
         Returns:
-            List of processed image elements with generated descriptions.
+            The list of enriched elements.
         """
-        tasks = [
-            self._process_single(element)
-            for element in intermediate_elements
-            if isinstance(element, IntermediateImageElement)
-        ]
-        skipped_count = len(intermediate_elements) - len(tasks)
+        tasks = [self._process_single(element) for element in elements if isinstance(element, ImageElement)]
+        skipped_count = len(elements) - len(tasks)
 
         if skipped_count > 0:
             print(f"Warning: {skipped_count} elements were skipped due to incorrect type.")
 
         return await asyncio.gather(*tasks)
 
-    async def _process_single(self, intermediate_element: IntermediateImageElement) -> Element:
-        input_data = self._prompt.input_type(image=intermediate_element.image_bytes)  # type: ignore
+    async def _process_single(self, element: ImageElement) -> ImageElement:
+        input_data = self._prompt.input_type(image=element.image_bytes)  # type: ignore
         prompt = self._prompt(input_data)
         response = await self._llm.generate(prompt)
 
         return ImageElement(
-            document_meta=intermediate_element.document_meta,
+            document_meta=element.document_meta,
             description=response,
-            ocr_extracted_text=intermediate_element.ocr_extracted_text,
-            image_bytes=intermediate_element.image_bytes,
+            ocr_extracted_text=element.ocr_extracted_text,
+            image_bytes=element.image_bytes,
         )
 
     @classmethod

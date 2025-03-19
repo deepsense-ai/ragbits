@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from io import BytesIO
 from pathlib import Path
 
@@ -10,7 +9,7 @@ from unstructured_client import UnstructuredClient
 
 from ragbits.core.audit import trace
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element, IntermediateElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.parsers.base import BaseProvider
 from ragbits.document_search.ingestion.parsers.unstructured.utils import check_required_argument, to_text_element
 
@@ -104,7 +103,7 @@ class UnstructuredDefaultProvider(BaseProvider):
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
-    async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
+    async def process(self, document_meta: DocumentMeta) -> list[Element]:
         """
         Process the document using the Unstructured API.
 
@@ -158,6 +157,6 @@ class UnstructuredDefaultProvider(BaseProvider):
         elements: list[UnstructuredElement],
         document_meta: DocumentMeta,
         document_path: Path,
-    ) -> Sequence[Element | IntermediateElement]:
+    ) -> list[Element]:
         chunked_elements = chunk_elements(elements, **self.chunking_kwargs)
         return [to_text_element(element, document_meta) for element in chunked_elements]
