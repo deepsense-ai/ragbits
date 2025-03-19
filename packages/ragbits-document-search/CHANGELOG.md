@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.1 (2025-03-19)
+
+### Changed
+
+- ragbits-core updated to version v0.10.1
+
 - BREAKING CHANGE: Renamed HttpSource to WebSource and changed property names (#420)
 - Better error distinction for WebSource (#421)
 
