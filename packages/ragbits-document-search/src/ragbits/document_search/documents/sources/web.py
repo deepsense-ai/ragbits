@@ -19,7 +19,7 @@ class WebSource(Source):
     An object representing a Web dataset source.
     """
 
-    uri: str
+    url: str
     protocol: ClassVar[str] = "https"
 
     @property
@@ -27,24 +27,24 @@ class WebSource(Source):
         """
         Get the source ID, which is an unique identifier of the object.
         """
-        return f"web:{self.uri}"
+        return f"web:{self.url}"
 
     @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
         """
-        Download a file available in the given uri.
+        Download a file available in the given url.
 
         Returns:
             Path: The local path to the downloaded file.
 
         Raises:
             WebDownloadError: If the download failed.
-            SourceNotFoundError: If the URI is invalid.
+            SourceNotFoundError: If the URL is invalid.
         """
-        parsed_uri = urlparse(self.uri)
-        url_path, file_name = ("/" + parsed_uri.netloc + parsed_uri.path).rsplit("/", 1)
+        parsed_url = urlparse(self.url)
+        url_path, file_name = ("/" + parsed_url.netloc + parsed_url.path).rsplit("/", 1)
         normalized_url_path = re.sub(r"\W", "_", url_path) + file_name
-        domain_name = parsed_uri.netloc
+        domain_name = parsed_url.netloc
 
         local_dir = get_local_storage_dir()
         container_local_dir = local_dir / domain_name
@@ -52,30 +52,30 @@ class WebSource(Source):
         path = container_local_dir / normalized_url_path
 
         try:
-            async with aiohttp.ClientSession() as session, session.get(self.uri) as response:
+            async with aiohttp.ClientSession() as session, session.get(self.url) as response:
                 if response.ok:
                     with open(path, "wb") as f:
                         async for chunk in response.content.iter_chunked(1024):
                             f.write(chunk)
                 else:
-                    raise WebDownloadError(uri=self.uri, code=response.status)
+                    raise WebDownloadError(url=self.url, code=response.status)
         except (aiohttp.ClientError, IsADirectoryError) as e:
             raise SourceNotFoundError(self.id) from e
 
         return path
 
     @classmethod
-    async def list_sources(cls, uri: str) -> Sequence["WebSource"]:
+    async def list_sources(cls, url: str) -> Sequence["WebSource"]:
         """
-        List the file under the given URI.
+        List the file under the given URL.
 
         Arguments:
-            uri: The URI to the file.
+            url: The URL to the file.
 
         Returns:
             Sequence: The Sequence with Web source.
         """
-        return [cls(uri=uri)]
+        return [cls(url=url)]
 
     @classmethod
     async def from_uri(cls, uri: str) -> Sequence["WebSource"]:
@@ -85,9 +85,9 @@ class WebSource(Source):
         <protocol>://<domain>/<path>/<filename>.<file_extension>
 
         Args:
-            uri: The URI path.
+            uri: The URI path. Needs to include the protocol.
 
         Returns:
             A sequence containing a WebSource instance.
         """
-        return [cls(uri=uri)]
+        return [cls(url=uri)]
