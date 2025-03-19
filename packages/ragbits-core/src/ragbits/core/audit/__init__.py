@@ -6,7 +6,7 @@ from functools import wraps
 from types import SimpleNamespace
 from typing import Any, ParamSpec, TypeVar
 
-from ragbits.core.audit.base import TraceHandler
+from ragbits.core.audit.trace_handlers.base import TraceHandler
 
 __all__ = ["TraceHandler", "set_trace_handlers", "trace", "traceable"]
 
