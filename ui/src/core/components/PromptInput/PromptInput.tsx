@@ -3,76 +3,25 @@ import { Button } from "@heroui/button";
 import { Form } from "@heroui/form";
 import { cn } from "@heroui/theme";
 import { Tooltip } from "@heroui/tooltip";
-import { Image } from "@heroui/image";
 import React, { useCallback, useState } from "react";
-import { Badge } from "@heroui/react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
 
-import PromptInput from "./prompt-input";
+import PromptInputText from "./PromptInputText";
+import PromptInputAssets from "./PromptInputAssets";
 
-interface ControlInputProps {
+interface PromptInputProps {
   isLoading: boolean;
   submit: () => Promise<() => void>;
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
-interface PromptInputProps extends ControlInputProps {
-  message: string;
-  setMessage: React.Dispatch<React.SetStateAction<string>>;
-}
-
-interface PromptInputAssetsProps {
-  assets: string[];
-  onRemoveAsset: (index: number) => void;
-}
-
-const PromptInputAssets = ({
-  assets,
-  onRemoveAsset,
-}: PromptInputAssetsProps) => {
-  if (assets.length === 0) return null;
-
-  return (
-    <>
-      {assets.map((asset, index) => (
-        <Badge
-          key={index}
-          isOneChar
-          className="opacity-0 group-hover:opacity-100"
-          content={
-            <Button
-              isIconOnly
-              radius="full"
-              size="sm"
-              variant="light"
-              onPress={() => onRemoveAsset(index)}
-            >
-              <Icon
-                className="text-foreground"
-                icon="iconamoon:close-thin"
-                width={16}
-              />
-            </Button>
-          }
-        >
-          <Image
-            alt="uploaded image"
-            className="h-14 w-14 rounded-small border-small border-default-200/50 object-cover"
-            src={asset}
-          />
-        </Badge>
-      ))}
-    </>
-  );
-};
-
-export function PromptInputFullLineComponent({
+const PromptInput = ({
   message,
   setMessage,
   submit,
   isLoading,
-}: PromptInputProps) {
+}: PromptInputProps) => {
   const [assets, setAssets] = useState<string[]>([]);
 
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -84,7 +33,7 @@ export function PromptInputFullLineComponent({
     submit();
     setMessage("");
     inputRef?.current?.focus();
-  }, [message, setMessage, isLoading, submit]);
+  }, [setMessage, isLoading, submit]);
 
   const onSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
@@ -170,7 +119,7 @@ export function PromptInputFullLineComponent({
           }}
         />
       </div>
-      <PromptInput
+      <PromptInputText
         ref={inputRef}
         autoFocus
         classNames={{
@@ -236,20 +185,7 @@ export function PromptInputFullLineComponent({
       </div>
     </Form>
   );
-}
+};
 
-export default function PromptInputFullLine({
-  isLoading,
-  submit,
-  message,
-  setMessage,
-}: ControlInputProps) {
-  return (
-    <PromptInputFullLineComponent
-      message={message}
-      setMessage={setMessage}
-      isLoading={isLoading}
-      submit={submit}
-    />
-  );
-}
+export default PromptInput;
+PromptInput.displayName = "PromptInput";

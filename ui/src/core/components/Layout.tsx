@@ -2,23 +2,9 @@ import React from "react";
 import { Button, Spacer, useDisclosure, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import SidebarDrawer from "./sidebar-drawer";
+import SidebarDrawer from "./SidebarDrawer";
 
-/**
- * 💡 TIP: You can use the usePathname hook from Next.js App Router to get the current pathname
- * and use it as the active key for the Sidebar component.
- *
- * ```tsx
- * import {usePathname} from "next/navigation";
- *
- * const pathname = usePathname();
- * const currentPath = pathname.split("/")?.[1]
- *
- * <Sidebar defaultSelectedKey="home" selectedKeys={[currentPath]} />
- * ```
- */
-
-export default function Component({
+export default function Layout({
   children,
   header,
   title,
@@ -33,35 +19,6 @@ export default function Component({
 }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  const content = (
-    <div className="relative flex h-full w-72 flex-1 flex-col p-6">
-      <div className="flex items-center gap-2 px-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
-          🐰
-        </div>
-        <span className="text-base font-bold uppercase leading-6 text-foreground">
-          RAGBITS
-        </span>
-      </div>
-
-      <Spacer y={8} />
-
-      <Button
-        fullWidth
-        className="mb-6 mt-2 h-[44px] justify-start gap-3 bg-default-foreground px-3 py-[10px] text-default-50"
-        startContent={
-          <Icon
-            className="text-default-50"
-            icon="solar:chat-round-dots-linear"
-            width={24}
-          />
-        }
-      >
-        New Chat
-      </Button>
-    </div>
-  );
-
   return (
     <div className="flex h-full min-h-[48rem] w-full py-4">
       <SidebarDrawer
@@ -69,7 +26,32 @@ export default function Component({
         isOpen={isOpen}
         onOpenChange={onOpenChange}
       >
-        {content}
+        <div className="relative flex h-full w-72 flex-1 flex-col p-6">
+          <div className="flex items-center gap-2 px-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
+              🐰
+            </div>
+            <span className="text-base font-bold uppercase leading-6 text-foreground">
+              RAGBITS
+            </span>
+          </div>
+
+          <Spacer y={8} />
+
+          <Button
+            fullWidth
+            className="mb-6 mt-2 h-[44px] justify-start gap-3 bg-default-foreground px-3 py-[10px] text-default-50"
+            startContent={
+              <Icon
+                className="text-default-50"
+                icon="solar:chat-round-dots-linear"
+                width={24}
+              />
+            }
+          >
+            New Chat
+          </Button>
+        </div>
       </SidebarDrawer>
       <div className="flex w-full flex-col px-4 sm:max-w-[calc(100%_-_288px)]">
         <header
