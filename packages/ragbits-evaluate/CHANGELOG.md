@@ -1,13 +1,14 @@
 # CHANGELOG
 
 ## Unreleased
-
+- correct the typo in the class name ObjectConstructionConfig 
+- 
 ## 0.10.0 (2025-03-17)
 ### Changed
 
 - ragbits-core updated to version v0.10.0
 
-- Compability with the new Vector Store interface from ragbits-core (#288)
+- Compatibility with the new Vector Store interface from ragbits-core (#288)
 - chore: fix typo in README.
 - fix typos in doc strings
 
