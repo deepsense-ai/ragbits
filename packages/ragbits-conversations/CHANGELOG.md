@@ -3,6 +3,12 @@
 ## Unreleased
 - correct the typo in the class name ObjectConstructionConfig
 
+## 0.10.1 (2025-03-19)
+
+### Changed
+
+- ragbits-core updated to version v0.10.1
+
 ## 0.10.0 (2025-03-17)
 
 ### Changed
