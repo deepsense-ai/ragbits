@@ -1,7 +1,9 @@
+import time
 from collections.abc import AsyncGenerator
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
+from opentelemetry.metrics import Meter
 from pydantic import BaseModel
 
 from ragbits.core.audit import trace
@@ -55,6 +57,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_version: str | None = None,
         use_structured_output: bool = False,
         router: litellm.Router | None = None,
+        meter: Meter | None = None,
     ) -> None:
         """
         Constructs a new LiteLLM instance.
@@ -72,8 +75,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
             router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
+            meter: An optional OpenTelemetry Meter instance for logging metrics. Defaults to None.
         """
-        super().__init__(model_name, default_options)
+        super().__init__(model_name, default_options, meter)
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
@@ -123,15 +127,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
+        start_time = time.perf_counter()
         response = await self._get_litellm_response(
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
         )
+        prompt_throughput = time.perf_counter() - start_time
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
         results = {}
         results["response"] = response.choices[0].message.content  # type: ignore
+        
+        if self._metric_handler:
+            self._metric_handler.record("prompt_throughput", prompt_throughput)
+
+        if not response.choices:  # type: ignore
+            raise LLMEmptyResponseError()
+
+        outputs.response = response.choices[0].message.content  # type: ignore
 
         if response.usage:  # type: ignore
             results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
@@ -140,6 +154,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
+        
+        if self._metric_handler:
+            self._metric_handler.record("input_tokens", results.prompt_tokens)
+            token_throughput = results.total_tokens / prompt_throughput
+            self._metric_handler.record("token_throughput", token_throughput)
 
         return results  # type: ignore
 
