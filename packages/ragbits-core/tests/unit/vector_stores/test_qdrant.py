@@ -59,7 +59,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     call_points = list(call_kwargs["points"])
 
     assert call_kwargs["collection_name"] == "test_collection"
-    assert len(call_points) == 3
+    assert len(call_points) == 2
     assert call_points[0].id == "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"
     assert call_points[0].vector == [0.1, 0.2, 0.3]
     assert call_points[0].payload == {
@@ -77,21 +77,6 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     assert call_points[1].id == "827cad0b-058f-4b85-b8ed-ac741948d502"
     assert call_points[1].vector == [0.1, 0.2, 0.3]
     assert call_points[1].payload == {
-        "id": UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
-        "text": "some other key",
-        "metadata": {
-            "content": "test content",
-            "document_meta": {
-                "title": "test title",
-                "source": {"path": "/test/path"},
-                "document_type": "test_type",
-            },
-        },
-        "image_bytes": _pydantic_bytes_to_hex(b"image"),
-    }
-    assert call_points[2].id == "827cad0b-058f-4b85-b8ed-ac741948d503"
-    assert call_points[2].vector == [0.7, 0.8, 0.9]
-    assert call_points[2].payload == {
         "id": UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
         "text": "some other key",
         "metadata": {
@@ -146,25 +131,6 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                     },
                 },
             ),
-            models.ScoredPoint(
-                version=1,
-                id="827cad0b-058f-4b85-b8ed-ac741948d503",
-                vector={"text": [0.13, 0.26, 0.30]},
-                score=0.5,
-                payload={
-                    "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
-                    "text": "test_key 2",
-                    "image_bytes": _pydantic_bytes_to_hex(b"image"),
-                    "metadata": {
-                        "content": "test content 2",
-                        "document_meta": {
-                            "title": "test title 2",
-                            "source": {"path": "/test/path-2"},
-                            "document_type": "txt",
-                        },
-                    },
-                },
-            ),
         ]
     )
 
@@ -196,9 +162,7 @@ async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
     mock_qdrant_store._client.delete.assert_called_once()  # type: ignore
     mock_qdrant_store._client.delete.assert_called_with(  # type: ignore
         collection_name="test_collection",
-        points_selector=models.PointIdsList(
-            points=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8", "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a9"],  # text and image
-        ),
+        points_selector=models.PointIdsList(points=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]),
     )
 
 
@@ -229,25 +193,6 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 id="827cad0b-058f-4b85-b8ed-ac741948d502",
                 vector=[0.13, 0.26, 0.30],
                 score=0.7,
-                payload={
-                    "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
-                    "text": "test_key 2",
-                    "image_bytes": _pydantic_bytes_to_hex(b"image"),
-                    "metadata": {
-                        "content": "test content 2",
-                        "document_meta": {
-                            "title": "test title 2",
-                            "source": {"path": "/test/path-2"},
-                            "document_type": "txt",
-                        },
-                    },
-                },
-            ),
-            models.ScoredPoint(
-                version=1,
-                id="827cad0b-058f-4b85-b8ed-ac741948d503",
-                vector=[0.7, 0.8, 0.9],
-                score=0.5,
                 payload={
                     "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
                     "text": "test_key 2",

@@ -4,7 +4,7 @@ import pytest
 from pydantic import computed_field
 
 from ragbits.core.embeddings.noop import NoopEmbedder
-from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.base import EmbeddingType, VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
@@ -18,34 +18,69 @@ class AnimalElement(Element):
 
     element_type: str = "animal"
     name: str
-    species: str
+    species: str | None
     type: str
     age: int
+    photo: bytes | None = None
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def text_representation(self) -> str:
+    def text_representation(self) -> str | None:
         """
         Get the text representation of the element.
 
         Returns:
             The text representation.
         """
-        return self.name
+        return self.species
+
+    @property
+    def image_representation(self) -> bytes | None:
+        """
+        Get the image representation of the element.
+
+        Returns:
+            The image representation.
+        """
+        return self.photo
 
 
-@pytest.fixture(name="store")
-async def store_fixture() -> InMemoryVectorStore:
-    document_meta = DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path("test.txt")))
+async def text_store_fixture() -> InMemoryVectorStore:
+    def meta(name: str) -> DocumentMeta:
+        return DocumentMeta(document_type=DocumentType.TXT, source=LocalFileSource(path=Path(f"{name}.txt")))
+
     elements = [
-        (AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=document_meta), [0.5, 0.5]),
-        (AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=document_meta), [0.6, 0.6]),
-        (AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=document_meta), [0.7, 0.7]),
-        (AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=document_meta), [0.8, 0.8]),
-        (AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=document_meta), [0.9, 0.9]),
         (
-            AnimalElement(name="spotty", species="ladybug", type="insect", age=1, document_meta=document_meta),
+            AnimalElement(name="spikey", species="dog", type="mammal", age=5, document_meta=meta("spikey")),
+            [0.5, 0.5],
+        ),
+        (
+            AnimalElement(name="fluffy", species="cat", type="mammal", age=3, document_meta=meta("fluffy")),
+            [0.6, 0.6],
+        ),
+        (
+            AnimalElement(name="slimy", species="frog", type="amphibian", age=1, document_meta=meta("slimey")),
+            [0.7, 0.7],
+        ),
+        (
+            AnimalElement(name="scaly", species="snake", type="reptile", age=2, document_meta=meta("scaly")),
+            [0.8, 0.8],
+        ),
+        (
+            AnimalElement(name="hairy", species="spider", type="insect", age=6, document_meta=meta("hairy")),
+            [0.9, 0.9],
+        ),
+        (
+            AnimalElement(
+                name="spotty", species="ladybug", type="insect", age=1, photo=b"image", document_meta=meta("spotty")
+            ),
             [0.1, 0.1],
+        ),
+        (
+            AnimalElement(  # Image-only element, should be ignored by text-only store
+                name="photty", species=None, type="insect", age=6, document_meta=meta("photty.jpg"), photo=b"image"
+            ),
+            [0.2, 0.2],
         ),
     ]
 
@@ -57,6 +92,84 @@ async def store_fixture() -> InMemoryVectorStore:
     store = InMemoryVectorStore(embedder=NoopEmbedder(return_values=[embeddings, [search_vector]]))
     await store.store(entries)
     return store
+
+
+async def image_store_fixture() -> InMemoryVectorStore:
+    def meta(name: str) -> DocumentMeta:
+        return DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=Path(f"{name}.jpg")))
+
+    elements = [
+        (
+            AnimalElement(
+                name="spikey", species="dog", type="mammal", age=5, photo=b"image", document_meta=meta("spikey")
+            ),
+            [0.5, 0.5],
+        ),
+        (
+            AnimalElement(
+                name="fluffy", species="cat", type="mammal", age=3, photo=b"image", document_meta=meta("fluffy")
+            ),
+            [0.6, 0.6],
+        ),
+        (
+            AnimalElement(
+                name="slimy", species=None, type="amphibian", age=1, photo=b"image", document_meta=meta("slimey")
+            ),
+            [0.7, 0.7],
+        ),
+        (
+            AnimalElement(
+                name="scaly", species=None, type="reptile", age=2, photo=b"image", document_meta=meta("scaly")
+            ),
+            [0.8, 0.8],
+        ),
+        (
+            AnimalElement(
+                name="hairy", species="spider", type="insect", age=6, photo=b"image", document_meta=meta("hairy")
+            ),
+            [0.9, 0.9],
+        ),
+        (
+            AnimalElement(
+                name="spotty", species=None, type="insect", age=1, photo=b"image", document_meta=meta("spotty")
+            ),
+            [0.1, 0.1],
+        ),
+        (
+            AnimalElement(  # Text-only element, should be ignored by image-only store
+                name="texty",
+                species="spider",
+                type="insect",
+                age=6,
+                document_meta=meta("texty"),
+            ),
+            [0.2, 0.2],
+        ),
+    ]
+
+    entries = [element[0].to_vector_db_entry() for element in elements]
+
+    embeddings = [element[1] for element in elements]
+    search_vector = [0.4, 0.4]
+
+    store = InMemoryVectorStore(
+        embedder=NoopEmbedder(return_values=[[search_vector]], image_return_values=[embeddings]),
+        embedding_type=EmbeddingType.IMAGE,
+    )
+    await store.store(entries)
+    return store
+
+
+@pytest.fixture(
+    name="store",
+    params=[
+        text_store_fixture,
+        image_store_fixture,
+    ],
+    ids=["text store", "image store"],
+)
+async def vector_store_fixture(request: pytest.FixtureRequest) -> InMemoryVectorStore:
+    return await request.param()
 
 
 @pytest.mark.parametrize(

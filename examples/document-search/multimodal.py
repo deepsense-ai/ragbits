@@ -1,5 +1,5 @@
 """
-Ragbits Document Search Example: Multimodal Embedder
+Ragbits Document Search Example: Multimodal search
 
 This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
 
@@ -9,7 +9,7 @@ logged in to Google Cloud (using the `gcloud auth login` command) and that you h
 The script performs the following steps:
     1. Create a list of example documents.
     2. Initialize the `VertexAIMultimodelEmbedder` class (which uses the VertexAI multimodal embeddings).
-    3. Initialize the `InMemoryVectorStore` class, which stores the embeddings for the duration of the script.
+    3. Initialize `HybridSearchVectorStore` with two `InMemoryVectorStore` instances (one for text and one for images).
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
     6. List all embeddings in the vector store.
@@ -34,6 +34,8 @@ import asyncio
 from pathlib import Path
 
 from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.vector_stores.base import EmbeddingType
+from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
@@ -56,19 +58,26 @@ async def main() -> None:
     """
     Run the example.
     """
+    # Has to support both text and image embeddings
     embedder = VertexAIMultimodelEmbedder()
-    vector_store = InMemoryVectorStore(embedder=embedder)
+
+    # You can replace InMemoryVectorStore with other vector store implementations
+    vector_store_text = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.TEXT)
+    vector_store_image = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.IMAGE)
+
+    vector_store_hybrid = HybridSearchVectorStore(vector_store_text, vector_store_image)
+
     # For this example, we want to skip OCR and make sure that we test direct image embeddings.
     parser_router = DocumentProcessorRouter.from_config({DocumentType.JPG: DummyImageProvider()})
 
     document_search = DocumentSearch(
-        vector_store=vector_store,
+        vector_store=vector_store_hybrid,
         parser_router=parser_router,
     )
 
     await document_search.ingest(documents)
 
-    all_entries = await vector_store.list()
+    all_entries = await vector_store_hybrid.list()
     for entry in all_entries:
         print(f"ID: {entry.id}")
         print(f"Document: {entry.metadata['document_meta']}")
