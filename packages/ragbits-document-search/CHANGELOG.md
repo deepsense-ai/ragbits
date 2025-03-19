@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- correcting typo in class name ObjectConstructionConfig and other typo corrections
+- BREAKING CHANGE: Renamed HttpSource to WebSource (#420)
+- Better error distinction for WebSource (#421)
 
 ## 0.10.0 (2025-03-17)
 
@@ -15,7 +16,8 @@
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
 - Add HTTP source type, which downloads a file from the provided URL (#397)
-- added traceable
+
+ - added traceable
 
 ## 0.9.0 (2025-02-25)
 
