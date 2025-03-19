@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-- correct the typo in the class name ObjectConstructionConfig 
+- correct the typo in the class name ObjectConstructionConfig
 
 ## 0.10.0 (2025-03-17)
 ### Changed
