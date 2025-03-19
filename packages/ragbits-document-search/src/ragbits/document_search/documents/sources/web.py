@@ -65,17 +65,17 @@ class WebSource(Source):
         return path
 
     @classmethod
-    async def list_sources(cls, uri: str) -> Sequence["WebSource"]:
+    async def list_sources(cls, url: str) -> Sequence["WebSource"]:
         """
-        List the file under the given URI.
+        List the file under the given URL.
 
         Arguments:
-            uri: The URI to the file. Needs to include the protocol.
+            url: The URL to the file.
 
         Returns:
             Sequence: The Sequence with Web source.
         """
-        return [cls(url=uri)]
+        return [cls(url=url)]
 
     @classmethod
     async def from_uri(cls, uri: str) -> Sequence["WebSource"]:
