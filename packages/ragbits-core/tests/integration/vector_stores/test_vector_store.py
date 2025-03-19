@@ -124,8 +124,6 @@ async def test_vector_store_list(
 
     sorted_results = sorted(result_entries, key=lambda entry: entry.id)
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
-    print(f"sorted_results ids: {[entry.id for entry in sorted_results]}")
-    print(f"sorted_expected ids: {[entry.id for entry in sorted_expected]}")
 
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.id == expected.id
