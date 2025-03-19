@@ -5,7 +5,7 @@ from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
 from ragbits.document_search.ingestion.parsers.unstructured.pdf import UnstructuredPdfProvider
@@ -14,7 +14,7 @@ _default_parser = UnstructuredDefaultProvider()
 _default_img_parser = UnstructuredImageProvider()
 _default_pdf_parser = UnstructuredPdfProvider()
 
-_DEFAULT_PARSERS: dict[DocumentType, BaseProvider] = {
+_DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.TXT: _default_parser,
     DocumentType.MD: _default_parser,
     DocumentType.PDF: _default_pdf_parser,
@@ -45,9 +45,9 @@ class DocumentParserRouter(WithConstructionConfig):
 
     configuration_key: ClassVar[str] = "parsers"
 
-    _parsers: Mapping[DocumentType, BaseProvider]
+    _parsers: Mapping[DocumentType, DocumentParser]
 
-    def __init__(self, parsers: Mapping[DocumentType, BaseProvider] | None = None) -> None:
+    def __init__(self, parsers: Mapping[DocumentType, DocumentParser] | None = None) -> None:
         """
         Initialize the DocumentParserRouter instance.
 
@@ -77,12 +77,12 @@ class DocumentParserRouter(WithConstructionConfig):
             InvalidConfigError: If any of the provided parsers cannot be initialized.
         """
         parsers = {
-            DocumentType(document_type): BaseProvider.subclass_from_config(parser_config)
+            DocumentType(document_type): DocumentParser.subclass_from_config(parser_config)
             for document_type, parser_config in config.items()
         }
         return cls(parsers=parsers)
 
-    def get(self, document_meta: DocumentMeta) -> BaseProvider:
+    def get(self, document_meta: DocumentMeta) -> DocumentParser:
         """
         Get the parser for the document.
 
@@ -97,7 +97,7 @@ class DocumentParserRouter(WithConstructionConfig):
         """
         parser = self._parsers.get(document_meta.document_type)
 
-        if isinstance(parser, BaseProvider):
+        if isinstance(parser, DocumentParser):
             return parser
 
         raise ValueError(f"No parser found for the document type {document_meta.document_type}")

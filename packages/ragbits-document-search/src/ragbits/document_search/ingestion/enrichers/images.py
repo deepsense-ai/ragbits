@@ -11,7 +11,7 @@ from ragbits.document_search.documents.element import (
     Element,
     ImageElement,
 )
-from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
 
 
 class ImagePromptInput(BaseModel):
@@ -27,11 +27,11 @@ class _ImagePrompt(Prompt[ImagePromptInput]):
     Defines a prompt for processing image elements using an LLM.
     """
 
-    user_prompt: str = "Describe the content of the image."
-    image_input_fields: list[str] = ["image"]
+    user_prompt = "Describe the content of the image."
+    image_input_fields = ["image"]
 
 
-class ImageIntermediateHandler(BaseIntermediateHandler):
+class ImageElementEnricher(ElementEnricher):
     """
     Provides image processing capabilities using an LLM.
     """
@@ -48,9 +48,9 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
         self._llm = llm or get_preferred_llm(llm_type=LLMType.VISION)
         self._prompt = prompt or _ImagePrompt
 
-    async def process(self, elements: list[Element]) -> list[Element]:
+    async def enrich(self, elements: list[Element]) -> list[Element]:
         """
-        Processes a list of intermediate image elements concurrently and generates corresponding ImageElements.
+        Enrich image elements with additinal description of the image.
 
         Args:
             elements: The elements to be enriched.
@@ -79,18 +79,16 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
         )
 
     @classmethod
-    def from_config(cls, config: dict) -> "ImageIntermediateHandler":
+    def from_config(cls, config: dict) -> "ImageElementEnricher":
         """
-        Create an `ImageIntermediateHandler` instance from a configuration dictionary.
+        Create an `ImageElementEnricher` instance from a configuration dictionary.
 
         Args:
             config: A dictionary containing the configuration settings.
 
         Returns:
-            An initialized instance of `ImageIntermediateHandler`.
+            An initialized instance of `ImageElementEnricher`.
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
-        prompt_cls = None
-        if "prompt" in config:
-            prompt_cls = import_by_path(config["prompt"])
-        return cls(llm=llm, prompt=prompt_cls)
+        prompt = import_by_path(config["prompt"]) if "prompt" in config else None
+        return cls(llm=llm, prompt=prompt)

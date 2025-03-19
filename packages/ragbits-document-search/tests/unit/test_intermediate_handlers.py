@@ -5,7 +5,7 @@ import pytest
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import ImageElement
-from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler, _ImagePrompt
+from ragbits.document_search.ingestion.enrichers.images import ImageElementEnricher, _ImagePrompt
 
 
 @pytest.fixture
@@ -31,15 +31,15 @@ def intermediate_image_element(image_bytes: bytes) -> ImageElement:
 
 
 @pytest.mark.asyncio
-async def test_process(llm: LiteLLM, intermediate_image_element: ImageElement):
-    handler = ImageIntermediateHandler(llm=llm)
-    results = await handler.process([intermediate_image_element])
+async def test_process(llm: LiteLLM, image_element: ImageElement):
+    enricher = ImageElementEnricher(llm=llm)
+    results = await enricher.enrich([image_element])
 
     assert len(results) == 1
     assert isinstance(results[0], ImageElement)
     assert results[0].description == "response"
-    assert results[0].image_bytes == intermediate_image_element.image_bytes
-    assert results[0].ocr_extracted_text == intermediate_image_element.ocr_extracted_text
+    assert results[0].image_bytes == image_element.image_bytes
+    assert results[0].ocr_extracted_text == image_element.ocr_extracted_text
 
 
 def test_from_config():
@@ -50,8 +50,8 @@ def test_from_config():
         }
     }
 
-    handler = ImageIntermediateHandler.from_config(config)
+    enricher = ImageElementEnricher.from_config(config)
 
-    assert isinstance(handler, ImageIntermediateHandler)
-    assert isinstance(handler._llm, LiteLLM)
-    assert handler._prompt == _ImagePrompt
+    assert isinstance(enricher, ImageElementEnricher)
+    assert isinstance(enricher._llm, LiteLLM)
+    assert enricher._prompt == _ImagePrompt

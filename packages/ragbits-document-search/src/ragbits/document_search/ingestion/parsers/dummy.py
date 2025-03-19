@@ -4,10 +4,10 @@ from ragbits.document_search.documents.document import (
     TextDocument,
 )
 from ragbits.document_search.documents.element import Element, ImageElement, TextElement
-from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import DocumentParser
 
 
-class DummyProvider(BaseProvider):
+class DummyProvider(DocumentParser):
     """
     This is a mock provider that returns a TextElement with the content of the document.
     It should be used for testing purposes only.
@@ -15,7 +15,7 @@ class DummyProvider(BaseProvider):
 
     SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT, DocumentType.MD}
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
         Process the text document.
 
@@ -33,7 +33,7 @@ class DummyProvider(BaseProvider):
         return []
 
 
-class DummyImageProvider(BaseProvider):
+class DummyImageProvider(DocumentParser):
     """
     This is a simple provider that returns an ImageElement with the content of the image
     and empty text metadata.
@@ -41,7 +41,7 @@ class DummyImageProvider(BaseProvider):
 
     SUPPORTED_DOCUMENT_TYPES = {DocumentType.JPG, DocumentType.PNG}
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
         Process the image document.
 

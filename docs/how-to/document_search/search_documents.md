@@ -88,14 +88,14 @@ document_search = DocumentSearch(
 )
 ```
 
-If you want to implement a new provider you should extend the [`BaseProvider`][ragbits.document_search.ingestion.parsers.base.BaseProvider] class:
+If you want to implement a new provider you should extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class:
 ```python
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import DocumentParser
 
 
-class CustomProvider(BaseProvider):
+class CustomProvider(DocumentParser):
     SUPPORTED_DOCUMENT_TYPES = { DocumentType.TXT }  # provide supported document types
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:

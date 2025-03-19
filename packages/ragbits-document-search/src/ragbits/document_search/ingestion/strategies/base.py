@@ -143,7 +143,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
             else document.metadata
         )
         parser = parser_router.get(document_meta)
-        return await parser.process(document_meta)
+        return await parser.parse(document_meta)
 
     @staticmethod
     async def _enrich_elements(
@@ -169,7 +169,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
         grouped_enriched_elements = await asyncio.gather(
             *[
-                enricher.process(elements)
+                enricher.enrich(elements)
                 for element_type, elements in grouped_elements.items()
                 if (enricher := enricher_router.get(element_type))
             ]

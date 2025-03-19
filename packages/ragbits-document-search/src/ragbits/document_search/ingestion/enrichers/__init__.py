@@ -1,4 +1,4 @@
-from .base import BaseIntermediateHandler
-from .images import ImageIntermediateHandler
+from .base import ElementEnricher
+from .images import ImageElementEnricher
 
-__all__ = ["BaseIntermediateHandler", "ImageIntermediateHandler"]
+__all__ = ["ElementEnricher", "ImageElementEnricher"]

@@ -3,7 +3,7 @@
 ::: ragbits.document_search.ingestion.parsers.router.DocumentParserRouter
 
 ## Providers
-::: ragbits.document_search.ingestion.parsers.base.BaseProvider
+::: ragbits.document_search.ingestion.parsers.base.DocumentParser
     options:
       heading_level: 3
 

@@ -18,7 +18,7 @@ from ragbits.document_search.documents.document import (
 )
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
-from ragbits.document_search.ingestion.parsers import BaseProvider
+from ragbits.document_search.ingestion.parsers import DocumentParser
 from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.batched import (
@@ -435,7 +435,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
 
     # Create parsers dict with actual provider instance
-    parsers: Mapping[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
+    parsers: Mapping[DocumentType, DocumentParser] = {DocumentType.TXT: DummyProvider()}
 
     # Mock vector store to track operations
     vector_store = InMemoryVectorStore(embedder=embeddings_mock)

@@ -6,11 +6,11 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig, import_by_path
 from ragbits.document_search.documents import element
 from ragbits.document_search.documents.element import Element, ImageElement
-from ragbits.document_search.ingestion.enrichers.base import BaseIntermediateHandler
-from ragbits.document_search.ingestion.enrichers.images import ImageIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
+from ragbits.document_search.ingestion.enrichers.images import ImageElementEnricher
 
-_DEFAULT_ENRICHERS: dict[type[Element], ImageIntermediateHandler] = {
-    ImageElement: ImageIntermediateHandler(),
+_DEFAULT_ENRICHERS: dict[type[Element], ImageElementEnricher] = {
+    ImageElement: ImageElementEnricher(),
 }
 
 
@@ -21,11 +21,11 @@ class ElementEnricherRouter(WithConstructionConfig):
 
     configuration_key: ClassVar[str] = "enrichers"
 
-    _enrichers: Mapping[type[Element], ImageIntermediateHandler]
+    _enrichers: Mapping[type[Element], ImageElementEnricher]
 
     def __init__(
         self,
-        enrichers: Mapping[type[Element], ImageIntermediateHandler] | None = None,
+        enrichers: Mapping[type[Element], ImageElementEnricher] | None = None,
     ) -> None:
         """
         Initialize the ElementEnricherRouter instance.
@@ -35,7 +35,7 @@ class ElementEnricherRouter(WithConstructionConfig):
 
         Example:
             {
-                ImageElement: ImageIntermediateHandler(),
+                ImageElement: ImageElementEnricher(),
                 CustomTextElement: TextIntermediateHandler(),
             }
         """
@@ -68,12 +68,12 @@ class ElementEnricherRouter(WithConstructionConfig):
             InvalidConfigError: If any of the provided parsers cannot be initialized.
         """
         enrichers = {
-            import_by_path(element_type, element): BaseIntermediateHandler.subclass_from_config(enricher_config)
+            import_by_path(element_type, element): ElementEnricher.subclass_from_config(enricher_config)
             for element_type, enricher_config in config.items()
         }
         return cls(enrichers=enrichers)  # type: ignore
 
-    def get(self, element_type: type[Element]) -> BaseIntermediateHandler:
+    def get(self, element_type: type[Element]) -> ElementEnricher:
         """
         Get the enricher for the element.
 
@@ -88,7 +88,7 @@ class ElementEnricherRouter(WithConstructionConfig):
         """
         enricher = self._enrichers.get(element_type)
 
-        if isinstance(enricher, BaseIntermediateHandler):
+        if isinstance(enricher, ElementEnricher):
             return enricher
 
         raise ValueError(f"No enricher found for the element type {element_type}")

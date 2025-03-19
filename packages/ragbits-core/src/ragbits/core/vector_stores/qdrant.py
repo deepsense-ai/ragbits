@@ -71,8 +71,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder: Embedder,
             distance_method: Distance,
             default_options: VectorStoreOptions,
-            embedding_name_text: str,
-            embedding_name_image: str,
         ) -> QdrantVectorStore:
             return QdrantVectorStore(
                 client=AsyncQdrantClient(**client_params),

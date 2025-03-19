@@ -1,4 +1,4 @@
-from .base import BaseProvider
+from .base import DocumentParser
 from .dummy import DummyProvider
 
-__all__ = ["BaseProvider", "DummyProvider"]
+__all__ = ["DocumentParser", "DummyProvider"]

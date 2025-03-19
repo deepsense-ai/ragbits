@@ -17,23 +17,23 @@ class DocumentTypeNotSupportedError(Exception):
         super().__init__(message)
 
 
-class BaseProvider(WithConstructionConfig, ABC):
+class DocumentParser(WithConstructionConfig, ABC):
     """
-    A base class for the document processing providers.
+    Base class for document parsers, responsible for converting the document into a list of elements.
     """
 
     default_module: ClassVar = parsers
-    configuration_key: ClassVar = "provider"
+    configuration_key: ClassVar = "parser"
 
     SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
 
     @abstractmethod
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
-        Process the document.
+        Parse the document.
 
         Args:
-            document_meta: The document to process.
+            document_meta: The document to parse.
 
         Returns:
             The list of elements extracted from the document.

@@ -32,7 +32,7 @@ async def test_parser_router_processes_text_document_with_unstructured_provider(
     parser_router = DocumentParserRouter(parsers)
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
 
-    elements = await parser_router.get(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).parse(document_meta)
 
     assert isinstance(parser_router._parsers[DocumentType.TXT], UnstructuredDefaultProvider)
     assert len(elements) == 1
@@ -47,7 +47,7 @@ async def test_parser_router_processes_md_document_with_unstructured_provider():
     parser_router = DocumentParserRouter()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
 
-    elements = await parser_router.get(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).parse(document_meta)
 
     assert len(elements) == 1
     assert elements[0].content == "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."  # type: ignore
@@ -66,7 +66,7 @@ async def test_parser_router_processes_image_document_with_unstructured_provider
     parser_router = DocumentParserRouter()
     document_meta = DocumentMeta.from_local_path(Path(__file__).parent / file_name)
 
-    elements = await parser_router.get(document_meta).process(document_meta)
+    elements = await parser_router.get(document_meta).parse(document_meta)
 
     assert len(elements) == 7
     assert elements[-1].description != ""  # type: ignore
@@ -88,7 +88,7 @@ async def test_parser_router_processes_image_document_with_unstructured_provider
 async def test_unstructured_provider_document_with_default_partition_kwargs(use_api: bool):
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
     unstructured_provider = UnstructuredDefaultProvider(use_api=use_api)
-    elements = await unstructured_provider.process(document_meta)
+    elements = await unstructured_provider.parse(document_meta)
 
     assert unstructured_provider.partition_kwargs == DEFAULT_PARTITION_KWARGS
     assert len(elements) == 1
@@ -112,7 +112,7 @@ async def test_unstructured_provider_document_with_custom_partition_kwargs(use_a
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
     partition_kwargs = {"languages": ["pl"], "strategy": "fast"}
     unstructured_provider = UnstructuredDefaultProvider(use_api=use_api, partition_kwargs=partition_kwargs)
-    elements = await unstructured_provider.process(document_meta)
+    elements = await unstructured_provider.parse(document_meta)
 
     assert unstructured_provider.partition_kwargs == partition_kwargs
     assert len(elements) == 1

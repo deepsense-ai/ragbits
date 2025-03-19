@@ -10,7 +10,7 @@ from unstructured_client import UnstructuredClient
 from ragbits.core.audit import trace
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.parsers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.unstructured.utils import check_required_argument, to_text_element
 
 DEFAULT_PARTITION_KWARGS: dict = {
@@ -27,7 +27,7 @@ UNSTRUCTURED_API_KEY_ENV = "UNSTRUCTURED_API_KEY"
 UNSTRUCTURED_SERVER_URL_ENV = "UNSTRUCTURED_SERVER_URL"
 
 
-class UnstructuredDefaultProvider(BaseProvider):
+class UnstructuredDefaultProvider(DocumentParser):
     """
     A provider that uses the Unstructured API or local SDK to process the documents.
     """
@@ -103,7 +103,7 @@ class UnstructuredDefaultProvider(BaseProvider):
         self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
         return self._client
 
-    async def process(self, document_meta: DocumentMeta) -> list[Element]:
+    async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
         Process the document using the Unstructured API.
 

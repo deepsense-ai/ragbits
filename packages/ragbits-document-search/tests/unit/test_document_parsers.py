@@ -5,7 +5,7 @@ import pytest
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.base import BaseProvider, DocumentTypeNotSupportedError
+from ragbits.document_search.ingestion.parsers.base import DocumentParser, DocumentTypeNotSupportedError
 from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
 from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
 from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
@@ -37,7 +37,7 @@ def test_unsupported_provider_validates_supported_document_types_fails():
 @patch.dict(os.environ, {}, clear=True)
 async def test_unstructured_provider_raises_value_error_when_api_key_not_set():
     with pytest.raises(ValueError) as err:
-        await UnstructuredDefaultProvider(use_api=True).process(
+        await UnstructuredDefaultProvider(use_api=True).parse(
             DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
         )
 
@@ -47,7 +47,7 @@ async def test_unstructured_provider_raises_value_error_when_api_key_not_set():
 @patch.dict(os.environ, {}, clear=True)
 async def test_unstructured_provider_raises_value_error_when_server_url_not_set():
     with pytest.raises(ValueError) as err:
-        await UnstructuredDefaultProvider(api_key="api_key", use_api=True).process(
+        await UnstructuredDefaultProvider(api_key="api_key", use_api=True).parse(
             DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
         )
 
@@ -56,11 +56,11 @@ async def test_unstructured_provider_raises_value_error_when_server_url_not_set(
 
 def test_subclass_from_config():
     config = ObjectContructionConfig.model_validate({"type": "ragbits.document_search.ingestion.parsers:DummyProvider"})
-    embedding = BaseProvider.subclass_from_config(config)
-    assert isinstance(embedding, DummyProvider)
+    parser = DocumentParser.subclass_from_config(config)
+    assert isinstance(parser, DummyProvider)
 
 
 def test_subclass_from_config_default_path():
     config = ObjectContructionConfig.model_validate({"type": "DummyProvider"})
-    embedding = BaseProvider.subclass_from_config(config)
-    assert isinstance(embedding, DummyProvider)
+    parser = DocumentParser.subclass_from_config(config)
+    assert isinstance(parser, DummyProvider)
