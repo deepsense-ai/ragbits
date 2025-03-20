@@ -1,7 +1,7 @@
 import asyncio
 import threading
-from collections.abc import AsyncGenerator
 import time
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
