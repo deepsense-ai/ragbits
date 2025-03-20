@@ -128,6 +128,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             index_name=self._index_name,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ):
             if not entries:
                 return
@@ -176,6 +177,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             index_name=self._index_name,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
 

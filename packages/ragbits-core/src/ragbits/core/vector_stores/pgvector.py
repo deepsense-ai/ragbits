@@ -233,6 +233,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             entries=entries,
             vector_size=self._vector_size,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ):
             embeddings = await self._create_embeddings(entries)
 
@@ -334,6 +335,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             vector_size=self._vector_size,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ) as outputs:
             vector = (await self._embedder.embed_text([text]))[0]
 

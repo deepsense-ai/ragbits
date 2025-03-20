@@ -54,6 +54,7 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         with trace(
             entries=entries,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ) as outputs:
             embeddings = await self._create_embeddings(entries)
             self._embeddings.update(embeddings)
@@ -77,7 +78,12 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             The entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        with trace(text=text, options=merged_options.dict(), embedder=repr(self._embedder)) as outputs:
+        with trace(
+            text=text,
+            options=merged_options.dict(),
+            embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
+        ) as outputs:
             query_vector = await self._embedder.embed_text([text])
             results: list[VectorStoreResult] = []
 

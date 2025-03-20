@@ -100,6 +100,7 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             collection=self._collection,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ):
             if not entries:
                 return
@@ -161,6 +162,7 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             collection=self._collection,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
 
