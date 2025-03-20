@@ -1,7 +1,7 @@
 from opentelemetry import trace
 from opentelemetry.trace import Span, StatusCode, TracerProvider
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.trace_handlers.base import TraceHandler, format_attributes
 
 
 class OtelTraceHandler(TraceHandler[Span]):
