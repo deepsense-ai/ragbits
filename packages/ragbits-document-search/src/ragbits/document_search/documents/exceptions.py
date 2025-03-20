@@ -1,3 +1,7 @@
+import inspect
+from typing import Any, Self
+
+
 class SourceError(Exception):
     """
     Class for all exceptions raised by the document source.
@@ -6,6 +10,18 @@ class SourceError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
         self.message = message
+
+    def __reduce__(self) -> tuple[type[Self], tuple[Any, ...]]:
+        # This __reduce__ method is written in a way that it automatically handles any subclass of SourceError.
+        # It requires the subclass to have an initializer that store the arguments in the instance's state, under the same name.
+        init_params = inspect.signature(self.__class__.__init__).parameters
+
+        args = [
+            self.__getattribute__(param_name)
+            for param_name in list(init_params.keys())[1:]  # Skip 'self'
+        ]
+
+        return self.__class__, tuple(args)
 
 
 class SourceConnectionError(SourceError):
@@ -34,3 +50,5 @@ class WebDownloadError(SourceError):
 
     def __init__(self, url: str, code: int):
         super().__init__(f"Download of {url} failed with code {code}.")
+        self.url = url
+        self.code = code
