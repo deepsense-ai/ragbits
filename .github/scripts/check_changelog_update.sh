@@ -20,6 +20,16 @@ fi
 
 echo "Found changes in the following packages: $CHANGED_PACKAGES"
 
+# Look for "Changelog-ignore: <package-name>" in the commit message (possibly multiple entries in separate lines)
+IGNORED_PACKAGES=$(git log --pretty=format:%B origin/main..HEAD | grep -oP '^Changelog-ignore: \K[^ ]+' | sort -u)
+
+for IGNORED_PACKAGE in $IGNORED_PACKAGES; do
+  if echo "$CHANGED_PACKAGES" | grep -q "^$IGNORED_PACKAGE$"; then
+    echo "Ignoring changelog check for package: $IGNORED_PACKAGE"
+    CHANGED_PACKAGES=$(echo "$CHANGED_PACKAGES" | grep -v "^$IGNORED_PACKAGE$")
+  fi
+done
+
 for PACKAGE in $CHANGED_PACKAGES; do
   CHANGELOG="packages/$PACKAGE/CHANGELOG.md"
   echo "Checking changelog for package: $PACKAGE"
