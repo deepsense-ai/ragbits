@@ -15,7 +15,7 @@ class OtelMetricHandler:
         Initializes histograms for prompt latency, token throughput, and input tokens.
         """
         self.histograms = {
-            "prompt_latency": self._meter.create_histogram(
+            "prompt_throughput": self._meter.create_histogram(
                 name="prompt_throughput", description="Tracks the response time of LLM calls", unit="ms"
             ),
             "token_throughput": self._meter.create_histogram(
