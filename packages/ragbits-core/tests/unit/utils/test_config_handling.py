@@ -49,7 +49,7 @@ class ExampleModel:
 class ExampleClassWithModelType(WithConstructionConfig):
     default_module = sys.modules[__name__]
     configuration_key = "example"
-    model_type = ExampleBaseModel
+    config_model = ExampleBaseModel
 
     def __init__(self, foo: str, bar: int) -> None:
         self.foo = foo
@@ -57,7 +57,7 @@ class ExampleClassWithModelType(WithConstructionConfig):
 
 
 class ExampleConfigurableComponentClass(ConfigurableComponent):
-    model_type = ExampleBaseModel
+    config_model = ExampleBaseModel
     options_cls = Options
 
     def __init__(self, foo: str, bar: int, default_options: type[OptionsT]) -> None:
@@ -76,7 +76,7 @@ def test_default_from_config():
         instance = ExampleClassWithConfigMixin.from_config(config)
         assert instance.foo == "foo"
         assert instance.bar == 1
-        assert instance.model_type is None
+        assert instance.config_model is None
         mock_validate.assert_not_called()
 
 
@@ -115,7 +115,7 @@ def test_configurable_component_from_config_without_model_type():
         assert isinstance(instance, ExampleConfigurableComponentClass)
         assert instance.foo == "foo"
         assert instance.bar == 1
-        assert instance.model_type is None
+        assert instance.config_model is None
         mock_validate.assert_not_called()
 
 

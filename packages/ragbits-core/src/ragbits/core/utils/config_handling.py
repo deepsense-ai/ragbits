@@ -87,7 +87,7 @@ class WithConstructionConfig(abc.ABC):
     configuration_key: ClassVar[str]
 
     # The type of pydantic model
-    model_type: ClassVar[type[BaseModel] | None] = None
+    config_model: ClassVar[type[BaseModel] | None] = None
 
     @classmethod
     def subclass_from_config(cls, config: ObjectConstructionConfig) -> Self:
@@ -179,18 +179,18 @@ class WithConstructionConfig(abc.ABC):
             An instance of the class initialized with the provided configuration.
 
         Raises:
-            AttributeError: If model_type is not a subclass of BaseModel.
+            AttributeError: If config_model is not a subclass of BaseModel.
             InvalidConfigError: If the config is invalid with respect to given model type.
         """
-        if cls.model_type:
+        if cls.config_model:
             try:
-                validated_config = cls.model_type.model_validate(config)
-                return cls(**validated_config.model_dump())
+                validated_config = cls.config_model.model_validate(config)
+                return cls(**validated_config)
 
             except ValidationError as e:
                 raise InvalidConfigError(f"Invalid config: {e}") from e
             except AttributeError as e:
-                raise TypeError(f"Ensure that {cls.model_type} is a subclass of BaseModel: {e}") from e
+                raise TypeError(f"Ensure that {cls.config_model} is a subclass of BaseModel: {e}") from e
         else:
             return cls(**config)
 
@@ -223,19 +223,13 @@ class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
             An instance of the class initialized with the provided configuration.
 
         Raises:
-            AttributeError: If model_type is not a subclass of BaseModel.
+            AttributeError: If config_model is not a subclass of BaseModel.
             InvalidConfigError: If the config is invalid with respect to given model type.
         """
         default_options = config.pop("default_options", None)
         options = cls.options_cls(**default_options) if default_options else None
-        if cls.model_type:
-            try:
-                validated_config = cls.model_type.model_validate(config)
-                return cls(**validated_config.model_dump(), default_options=options)
+        validated_config = super().from_config(config)
 
-            except ValidationError as e:
-                raise InvalidConfigError(f"Invalid config: {e}") from e
-            except AttributeError as e:
-                raise TypeError(f"Ensure that {cls.model_type} is a subclass of BaseModel: {e}") from e
-        else:
-            return cls(**config, default_options=options)
+        # Inject `default_options` before returning
+        validated_config.default_options = options or validated_config.options_cls()
+        return validated_config
