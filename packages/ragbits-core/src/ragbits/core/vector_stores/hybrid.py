@@ -135,7 +135,7 @@ class HybridSearchVectorStore(VectorStore):
     ) -> list[VectorStoreEntry]:
         """
         List entries from the vector stores. The entries can be filtered, limited and offset.
-        Vector wstores are queried in the order they were provided in the constructor.
+        Vector stores are queried in the order they were provided in the constructor.
 
         Args:
             where: The filter dictionary - the keys are the field names and the values are the values to filter by.

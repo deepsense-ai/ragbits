@@ -127,7 +127,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
 
 class EmbeddingType(Enum):
     """
-    Types of embbedings supported by the vector store.
+    Types of embeddings supported by vector stores
     """
 
     TEXT = "text"

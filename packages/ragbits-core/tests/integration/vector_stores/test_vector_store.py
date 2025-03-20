@@ -27,7 +27,7 @@ text_embbedings = [
     [[0.12, 0.23, 0.29]],  # for retrieval
 ]
 
-image_embbedings = [
+image_embeddings = [
     [[0.7, 0.8, 0.9], [1.0, 0.81, 0.84]],
 ]
 
@@ -63,10 +63,10 @@ def vector_store_fixture(
     embedder = (
         NoopEmbedder(return_values=text_embbedings)
         if request.param == EmbeddingType.TEXT
-        else NoopEmbedder(return_values=text_embbedings[-1:], image_return_values=image_embbedings)
+        else NoopEmbedder(return_values=text_embbedings[-1:], image_return_values=image_embeddings)
     )
 
-    # Workarond for Chroma reusing resources between EphemeralClient() instances
+    # Workaround for Chroma reusing resources between EphemeralClient() instances
     partial_cls = cast(partial, vector_store_cls)
     if "index_name" in partial_cls.keywords:
         partial_cls.keywords["index_name"] = f"{partial_cls.keywords['index_name']}_{request.param.name.lower()}"
