@@ -73,6 +73,7 @@ async def test_hybrid_list_limit_offset(entries: list[VectorStoreEntry]):
     vs_hybrid_entries = await vs_hybrid.list(limit=3, offset=2)
     vs_hybrid_entries.sort(key=lambda entry: entry.id)
 
+    assert len(vs_hybrid_entries) == 3
     assert vs_hybrid_entries == entries[2:5]
 
 

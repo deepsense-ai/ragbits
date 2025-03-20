@@ -148,13 +148,10 @@ class HybridSearchVectorStore(VectorStore):
         """
         retrieved_results: dict[UUID, VectorStoreEntry] = {}
         for vector_store in self.vector_stores:
-            needed = None
-            if limit is not None:
-                needed = limit + offset - len(retrieved_results)
-                if needed <= 0:
-                    break
+            if limit is not None and (offset + limit - len(retrieved_results)) <= 0:
+                break
 
-            store_results = await vector_store.list(where, limit=limit)
+            store_results = await vector_store.list(where)
             retrieved_results.update({entry.id: entry for entry in store_results})
 
         results = list(retrieved_results.values())
