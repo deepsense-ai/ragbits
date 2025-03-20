@@ -11,7 +11,7 @@ if [ -z "$CHANGED_FILES" ]; then
   exit 0
 fi
 
-CHANGED_PACKAGES=$(echo "$CHANGED_FILES" | grep -oE 'packages/[^/]+' | cut -d '/' -f2 | sort -u)
+CHANGED_PACKAGES=$(echo "$CHANGED_FILES" | grep -oE 'packages/[^/]+/src' | cut -d '/' -f2 | sort -u)
 
 if [ -z "$CHANGED_PACKAGES" ]; then
   echo "No package changes detected. Skipping changelog check."
@@ -19,6 +19,16 @@ if [ -z "$CHANGED_PACKAGES" ]; then
 fi
 
 echo "Found changes in the following packages: $CHANGED_PACKAGES"
+
+# Look for "Changelog-ignore: <package-name>" in the commit message (possibly multiple entries in separate lines)
+IGNORED_PACKAGES=$(git log --pretty=format:%B origin/main..HEAD | grep -oP '^Changelog-ignore: \K[^ ]+' | sort -u)
+
+for IGNORED_PACKAGE in $IGNORED_PACKAGES; do
+  if echo "$CHANGED_PACKAGES" | grep -q "^$IGNORED_PACKAGE$"; then
+    echo "Ignoring changelog check for package: $IGNORED_PACKAGE"
+    CHANGED_PACKAGES=$(echo "$CHANGED_PACKAGES" | grep -v "^$IGNORED_PACKAGE$")
+  fi
+done
 
 for PACKAGE in $CHANGED_PACKAGES; do
   CHANGELOG="packages/$PACKAGE/CHANGELOG.md"
