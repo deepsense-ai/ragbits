@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import pydantic
@@ -77,7 +78,7 @@ def test_raises_when_system_variable_with_no_input():
             system_prompt = "Hello, {{ name }}"
 
 
-def test_raises_when_unknow_user_template_variable():
+def test_raises_when_unknown_user_template_variable():
     """Test that a ValueError is raised when an unknown template variable is provided."""
     with pytest.raises(ValueError):
 
@@ -87,7 +88,7 @@ def test_raises_when_unknow_user_template_variable():
             user_prompt = "Hello, {{ foo }}"
 
 
-def test_raises_when_unknow_system_template_variable():
+def test_raises_when_unknown_system_template_variable():
     """Test that a ValueError is raised when an unknown template variable is provided."""
     with pytest.raises(ValueError):
 
@@ -515,3 +516,26 @@ def test_two_instances_do_not_share_few_shots():
         {"role": "assistant", "content": "Why do I know all the words?"},
         {"role": "user", "content": "Theme for the song is rock."},
     ]
+
+
+def test_response_parser():
+    class TestPrompt(Prompt):
+        user_prompt = "Hello AI"
+
+    async def async_parser(response: str) -> str:
+        await asyncio.sleep(1)
+        return response.upper()
+
+    def sync_parser(response: str) -> str:
+        return response.lower()
+
+    test_prompt = TestPrompt()
+
+    resp = "Hello Human"
+    test_prompt.response_parser = async_parser
+    resp_async = test_prompt.parse_response(resp)
+    assert resp_async == "HELLO HUMAN"
+
+    test_prompt.response_parser = sync_parser
+    resp_sync = test_prompt.parse_response(resp)
+    assert resp_sync == "hello human"

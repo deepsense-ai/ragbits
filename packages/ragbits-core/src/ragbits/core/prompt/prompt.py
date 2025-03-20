@@ -1,8 +1,9 @@
+import asyncio
 import base64
 import imghdr
 import textwrap
 from abc import ABCMeta
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
@@ -15,6 +16,9 @@ from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
+
+SyncParser = Callable[[str], OutputT]
+AsyncParser = Callable[[str], Awaitable[OutputT]]
 
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
@@ -34,7 +38,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
-    response_parser: Callable[[str], OutputT]
+    response_parser: Callable[[str], OutputT | Awaitable[OutputT]]
 
     # Automatically set in __init_subclass__
     input_type: type[InputT] | None
@@ -98,7 +102,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return textwrap.dedent(message).strip()
 
     @classmethod
-    def _detect_response_parser(cls) -> Callable[[str], OutputT]:
+    def _detect_response_parser(cls) -> Callable[[str], OutputT | Awaitable[OutputT]]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
         if issubclass(cls.output_type, BaseModel):
@@ -265,7 +269,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         return issubclass(self.output_type, BaseModel)
 
-    def parse_response(self, response: str) -> OutputT:
+    async def parse_response(self, response: str) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 
@@ -278,7 +282,11 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Raises:
             ResponseParsingError: If the response cannot be parsed.
         """
-        return self.response_parser(response)
+        if asyncio.iscoroutinefunction(self.response_parser):
+            result = await self.response_parser(response)
+        else:
+            result = self.response_parser(response)
+        return result
 
     @classmethod
     def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:
