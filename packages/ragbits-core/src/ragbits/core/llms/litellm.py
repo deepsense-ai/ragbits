@@ -149,14 +149,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMEmptyResponseError()
         results = {}
         results["response"] = response.choices[0].message.content  # type: ignore
-        
+
         if self._metric_handler:
             self._metric_handler.record("prompt_throughput", prompt_throughput)
 
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
-
-        outputs.response = response.choices[0].message.content  # type: ignore
 
         if response.usage:  # type: ignore
             results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
@@ -165,7 +163,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
-        
+
         if self._metric_handler:
             self._metric_handler.record("input_tokens", results.prompt_tokens)
             token_throughput = results.total_tokens / prompt_throughput
