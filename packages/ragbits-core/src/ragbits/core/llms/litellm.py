@@ -202,6 +202,15 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
+        first_token_received = False
+        input_tokens = self.count_tokens(prompt)
+        output_tokens = 0
+
+        if self._metric_handler:
+            self._metric_handler.record("input_tokens", input_tokens)
+
+        start_time = time.perf_counter()
+
         with trace(
             messages=prompt.chat,
             model=self.model_name,
@@ -220,8 +229,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 raise LLMEmptyResponseError()
 
             async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
+                nonlocal first_token_received, start_time, output_tokens
                 async for item in response:
-                    yield item.choices[0].delta.content or ""
+                    content = item.choices[0].delta.content or ""
+                    if content:
+                        output_tokens += 1
+
+                        if not first_token_received:
+                            time_to_first_token = time.perf_counter() - start_time
+                            if self._metric_handler:
+                                self._metric_handler.record("time_to_first_token", time_to_first_token)
+                            first_token_received = True
+
+                    yield content
+
+                total_time = time.perf_counter() - start_time
+                if self._metric_handler:
+                    token_throughput = output_tokens / total_time
+                    self._metric_handler.record("prompt_throughput", total_time)
+                    self._metric_handler.record("token_throughput", token_throughput)
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 

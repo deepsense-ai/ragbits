@@ -24,6 +24,9 @@ class OtelMetricHandler:
             "input_tokens": self._meter.create_histogram(
                 name="input_tokens", description="Tracks the number of input tokens per request", unit="tokens"
             ),
+            "time_to_first_token": self._meter.create_histogram(
+                name="time_to_first_token", description="Tracks the time to first token in milliseconds", unit="ms"
+            ),
         }
 
     def record(self, metric_name: str, value: float) -> None:
