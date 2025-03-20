@@ -8,7 +8,7 @@ from ragbits.core.prompt.parsers import ResponseParsingError
 from .test_prompt import _PromptOutput
 
 
-def test_prompt_with_str_output():
+async def test_prompt_with_str_output():
     """Test a prompt with a string output."""
 
     class TestPrompt(Prompt[None, str]):  # pylint: disable=unused-variable
@@ -17,7 +17,7 @@ def test_prompt_with_str_output():
         user_prompt = "Hello"
 
     prompt = TestPrompt()
-    assert prompt.parse_response("Hi") == "Hi"
+    assert await prompt.parse_response("Hi") == "Hi"
 
 
 async def test_prompt_with_int_output():
@@ -29,7 +29,7 @@ async def test_prompt_with_int_output():
         user_prompt = "Hello"
 
     prompt = TestPrompt()
-    assert prompt.parse_response("1") == 1
+    assert await prompt.parse_response("1") == 1
 
     with pytest.raises(ResponseParsingError):
         await prompt.parse_response("a")
@@ -44,7 +44,7 @@ async def test_prompt_with_model_output():
         user_prompt = "Hello"
 
     prompt = TestPrompt()
-    assert prompt.parse_response('{"song_title": "Hello", "song_lyrics": "World"}') == _PromptOutput(
+    assert await prompt.parse_response('{"song_title": "Hello", "song_lyrics": "World"}') == _PromptOutput(
         song_title="Hello", song_lyrics="World"
     )
 
@@ -61,7 +61,7 @@ async def test_prompt_with_float_output():
         user_prompt = "Hello"
 
     prompt = TestPrompt()
-    assert prompt.parse_response("1.0") == 1.0
+    assert await prompt.parse_response("1.0") == 1.0
 
     with pytest.raises(ResponseParsingError):
         await prompt.parse_response("a")

@@ -518,7 +518,7 @@ def test_two_instances_do_not_share_few_shots():
     ]
 
 
-def test_response_parser():
+async def test_response_parser():
     class TestPrompt(Prompt):
         user_prompt = "Hello AI"
 
@@ -533,9 +533,9 @@ def test_response_parser():
 
     resp = "Hello Human"
     test_prompt.response_parser = async_parser
-    resp_async = test_prompt.parse_response(resp)
+    resp_async = await test_prompt.parse_response(resp)
     assert resp_async == "HELLO HUMAN"
 
     test_prompt.response_parser = sync_parser
-    resp_sync = test_prompt.parse_response(resp)
+    resp_sync = await test_prompt.parse_response(resp)
     assert resp_sync == "hello human"
