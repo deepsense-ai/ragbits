@@ -1,7 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
-- correct the typo in the class name ObjectConstructionConfig
+
+- Remove obsolete ImageDescriber and llm from UnstructuredImageProvider
+
 ## 0.10.1 (2025-03-19)
 
 ### Changed
