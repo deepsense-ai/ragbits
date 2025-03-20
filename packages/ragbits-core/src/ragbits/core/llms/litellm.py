@@ -164,9 +164,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
-        if self._metric_handler:
-            self._metric_handler.record("input_tokens", results.prompt_tokens)
-            token_throughput = results.total_tokens / prompt_throughput
+        if self._metric_handler and response.usage:  # type: ignore
+            self._metric_handler.record("input_tokens", response.usage.prompt_tokens) # type: ignore
+            token_throughput = response.usage.total_tokens / prompt_throughput # type: ignore
             self._metric_handler.record("token_throughput", token_throughput)
 
         return results  # type: ignore
