@@ -1,12 +1,9 @@
 import io
 import os
-import warnings as wrngs
 
 from PIL import Image
 from unstructured.documents.elements import Element as UnstructuredElement
 
-from ragbits.core.llms.base import LLM
-from ragbits.core.prompt.base import BasePrompt
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import ElementLocation, TextElement
 
@@ -99,25 +96,3 @@ def crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: floa
     buffered = io.BytesIO()
     image.save(buffered, format="JPEG")
     return buffered.getvalue()
-
-
-class ImageDescriber:
-    """
-    Describes images content using an LLM
-    """
-
-    def __init__(self, llm: LLM):
-        self.llm = llm
-
-    async def get_image_description(self, prompt: BasePrompt) -> str:
-        """
-        Provides summary of the image passed with prompt
-
-        Args:
-            prompt: BasePrompt an instance of a prompt
-        Returns:
-            summary of the image
-        """
-        if not prompt.list_images():
-            wrngs.warn(message="Image data not provided", category=UserWarning)
-        return await self.llm.generate(prompt=prompt)

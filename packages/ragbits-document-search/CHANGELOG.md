@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove obsolete ImageDescrber and llm from UnstructuredImageProvider
+
 ## 0.10.1 (2025-03-19)
 
 ### Changed
