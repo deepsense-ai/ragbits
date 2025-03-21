@@ -225,7 +225,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             response = await self.generate_raw(prompt, options=options)
             content = response.pop("response")
             if isinstance(prompt, BasePromptWithParser):
-                content = prompt.parse_response(content)
+                content = await prompt.parse_response(content)
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
                 metadata=response,
