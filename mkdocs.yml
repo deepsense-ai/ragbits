@@ -11,18 +11,18 @@ nav:
       - quickstart/quickstart2_rag.md
   - How-to Guides:
       - Prompting:
-          - how-to/prompts/use_prompting.md
-          - how-to/prompts/use_images_in_prompts.md
-          - how-to/prompts/prompts_lab.md
-          - how-to/prompts/promptfoo.md
+          - "Define and use prompts": how-to/prompts/use_prompting.md
+          - "Use images in prompts": how-to/prompts/use_images_in_prompts.md
+          - "Manage prompts using GUI": how-to/prompts/prompts_lab.md
+          - "Test prompts with promptfoo": how-to/prompts/promptfoo.md
       - LLMs:
-        - how-to/llms/use_llms.md
-        - how-to/llms/use_local_llms.md
+        - "Interact with LLMs": how-to/llms/use_llms.md
+        - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
       - VectorStores:
-        - how-to/vector_stores/use_pgVector_store.md
+        - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Project configuration:
-        - how-to/project/component_preferences.md
-        - how-to/project/use_tracing.md
+        - "Set preferred components in project": how-to/project/component_preferences.md
+        - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
         - Ingest:
           - Using Strategies:
@@ -32,15 +32,15 @@ nav:
         - how-to/document_search/search_documents.md
         - how-to/document_search/use_rephraser.md
         - how-to/document_search/use_reranker.md
-      - Guardrails: how-to/guardrails/use_guardrails.md
+      - Guardrails:
+        - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Evaluate:
-          - how-to/evaluate/optimize.md
-          - how-to/evaluate/generate_dataset.md
-          - how-to/evaluate/evaluate.md
-          - how-to/evaluate/custom_metric.md
-          - how-to/evaluate/custom_evaluation_pipeline.md
-          - how-to/evaluate/custom_metric.md
-          - how-to/evaluate/custom_dataloader.md
+          - "Evaluate pipelines": how-to/evaluate/evaluate.md
+          - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
+          - "Create custom evaluation metric": how-to/evaluate/custom_metric.md
+          - "Create custom data loader": how-to/evaluate/custom_dataloader.md
+          - "Generate new dataset with LLM": how-to/evaluate/generate_dataset.md
+          - "Auto-optimize hyperparameter tuning": how-to/evaluate/optimize.md
   - CLI:
       - cli/main.md
   - API Reference:

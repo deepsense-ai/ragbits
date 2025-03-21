@@ -1,4 +1,4 @@
-# Interact with LLMs 
+# How-To: Interact with LLMs using Ragbits
 
 This guide will walk you through configuring and using both local and remote LLMs in Ragbits. It covers initializing models, calling LLM classes using Prompts and raw string inputs, and handling different response formats.
 

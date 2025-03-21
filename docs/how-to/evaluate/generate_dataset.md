@@ -1,4 +1,4 @@
-# Generate new dataset with LLM
+# How-To: Generate new dataset with LLM using Ragbits
 
 Ragbits offers a convenient feature to generate artificial QA datasets for evaluating Retrieval-Augmented Generation (RAG) systems. You can choose between two different approaches:
 

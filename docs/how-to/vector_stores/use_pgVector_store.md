@@ -1,4 +1,4 @@
-# Use PostgreSQL as a vector store with pgVector
+# How-To: Use PostgreSQL as a vector store with pgVector in Ragbits
 
 ## How to set up pgVector database locally
 To run a local instance of pgVector, use Docker to pull and start the database container.

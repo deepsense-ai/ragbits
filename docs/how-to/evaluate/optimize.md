@@ -1,4 +1,4 @@
-# Use Auto-optimization for hyperparameter tuning
+# How-To: Auto-optimize for hyperparameter tuning in Ragbits
 
 Ragbits provides a feature that allows users to automatically configure hyperparameters for a pipeline. This functionality is agnostic to the type of optimized structure, with the only requirements being the following:
 

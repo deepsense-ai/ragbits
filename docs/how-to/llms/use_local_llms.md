@@ -1,4 +1,4 @@
-# Use local or self-hosted LLMs
+# How-To: Use local or self-hosted LLMs
 This guide explains how to set up and use local LLMs in Ragbits. It covers installation, model initialization, and configuration options.
 
 > ℹ️ **NOTE**

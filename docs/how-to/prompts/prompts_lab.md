@@ -1,4 +1,4 @@
-# Manage Prompts using GUI
+# How-To: Manage prompts using Ragbits GUI
 
 Prompts Lab is a GUI tool that automatically detects prompts in your project and allows you to interact with them. You can use it to test your prompts with Large Language Models and see how the model responds to different prompts.
 

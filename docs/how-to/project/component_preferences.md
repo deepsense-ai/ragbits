@@ -1,4 +1,4 @@
-# Set Preferred Components in Your Project
+# How-To: Set preferred components in Ragbits project
 
 ## Introduction
 When you use Ragbits in your project, you can set the preferred components for different component types (like embedders, vector stores, LLMs, etc.) in the project configuration. Typically, there are many different implementations for each type of component, and each implementation has its own configuration. Ragbits allows you to choose the implementation you prefer for each type of component and the configuration to be used along with it.
