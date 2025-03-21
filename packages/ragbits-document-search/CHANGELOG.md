@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.10.2 (2025-03-21)
+
+### Changed
+
+- ragbits-core updated to version v0.10.2
+
 - Remove obsolete ImageDescriber and llm from UnstructuredImageProvider (#430)
 - Make SourceError and its subclasses picklable (#435)
 - Allow for setting custom headers in WebSource (#437)
