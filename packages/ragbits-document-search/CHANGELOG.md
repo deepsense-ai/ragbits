@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Remove obsolete ImageDescriber and llm from UnstructuredImageProvider
+- Remove obsolete ImageDescriber and llm from UnstructuredImageProvider (#430)
+- Make SourceError and its subclasses picklable (#435)
 
 ## 0.10.1 (2025-03-19)
 
@@ -20,7 +21,7 @@
 - ragbits-core updated to version v0.10.0
 
 - BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
-- Compatibility with the new Vector Store interface from ragbits-core (#288)
+- Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
 - Add HTTP source type, which downloads a file from the provided URL (#397)
