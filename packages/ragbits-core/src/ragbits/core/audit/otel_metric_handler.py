@@ -29,12 +29,16 @@ class OtelMetricHandler:
             ),
         }
 
-    def record(self, metric_name: str, value: float) -> None:
+    def record(self, metric_name: str, value: float, attributes: dict | None = None) -> None:
         """
         Records the given amount for a specified metric.
 
         Args:
             metric_name: Name of the metric to record (e.g., "prompt_throughput").
             value: The value to record for the metric.
+            attributes: Optional dictionary of attributes providing additional context
+            for the metric. Keys are strings, and values can be
+            strings, booleans, integers, floats, or sequences of these types.
+
         """
-        self.histograms[metric_name].record(value)
+        self.histograms[metric_name].record(value, attributes=attributes)

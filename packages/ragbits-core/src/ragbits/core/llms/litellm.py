@@ -150,8 +150,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
         results = {}
         results["response"] = response.choices[0].message.content  # type: ignore
 
+        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+
         if self._metric_handler:
-            self._metric_handler.record("prompt_throughput", prompt_throughput)
+            self._metric_handler.record("prompt_throughput", prompt_throughput, attributes)
 
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
@@ -165,9 +167,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
         if self._metric_handler and response.usage:  # type: ignore
-            self._metric_handler.record("input_tokens", response.usage.prompt_tokens)  # type: ignore
+            self._metric_handler.record("input_tokens", response.usage.prompt_tokens, attributes)  # type: ignore
             token_throughput = response.usage.total_tokens / prompt_throughput  # type: ignore
-            self._metric_handler.record("token_throughput", token_throughput)
+            self._metric_handler.record("token_throughput", token_throughput, attributes)
 
         return results  # type: ignore
 
@@ -201,13 +203,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMNotSupportingImagesError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
+        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
 
         first_token_received = False
         input_tokens = self.count_tokens(prompt)
         output_tokens = 0
 
         if self._metric_handler:
-            self._metric_handler.record("input_tokens", input_tokens)
+            self._metric_handler.record("input_tokens", input_tokens, attributes)
 
         start_time = time.perf_counter()
 
@@ -238,7 +241,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                         if not first_token_received:
                             time_to_first_token = time.perf_counter() - start_time
                             if self._metric_handler:
-                                self._metric_handler.record("time_to_first_token", time_to_first_token)
+                                self._metric_handler.record("time_to_first_token", time_to_first_token, attributes)
                             first_token_received = True
 
                     yield content
@@ -246,8 +249,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 total_time = time.perf_counter() - start_time
                 if self._metric_handler:
                     token_throughput = output_tokens / total_time
-                    self._metric_handler.record("prompt_throughput", total_time)
-                    self._metric_handler.record("token_throughput", token_throughput)
+                    self._metric_handler.record("prompt_throughput", total_time, attributes)
+                    self._metric_handler.record("token_throughput", token_throughput, attributes)
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 

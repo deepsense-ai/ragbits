@@ -126,10 +126,11 @@ class LocalLLM(LLM[LocalLLMOptions]):
         prompt_throughput = time.perf_counter() - start_time
 
         if self._metric_handler:
-            self._metric_handler.record("prompt_throughput", prompt_throughput)
-            self._metric_handler.record("input_tokens", input_ids.shape[-1])
+            attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+            self._metric_handler.record("prompt_throughput", prompt_throughput, attributes)
+            self._metric_handler.record("input_tokens", input_ids.shape[-1], attributes)
             token_throughput = outputs.total_tokens / prompt_throughput
-            self._metric_handler.record("token_throughput", token_throughput)
+            self._metric_handler.record("token_throughput", token_throughput, attributes)
 
         return {"response": decoded_response}
 
@@ -159,8 +160,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
         )
         output_tokens = 0
 
+        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+
         if self._metric_handler:
-            self._metric_handler.record("input_tokens", input_tokens)
+            self._metric_handler.record("input_tokens", input_tokens, attributes)
 
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
@@ -181,7 +184,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
                     if not first_token_received:
                         time_to_first_token = time.perf_counter() - start_time
                         if self._metric_handler:
-                            self._metric_handler.record("time_to_first_token", time_to_first_token)
+                            self._metric_handler.record("time_to_first_token", time_to_first_token, attributes)
                         first_token_received = True
 
                 yield text_piece
@@ -191,7 +194,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             total_time = time.perf_counter() - start_time
             if self._metric_handler:
                 token_throughput = output_tokens / total_time
-                self._metric_handler.record("prompt_throughput", total_time)
-                self._metric_handler.record("token_throughput", token_throughput)
+                self._metric_handler.record("prompt_throughput", total_time, attributes)
+                self._metric_handler.record("token_throughput", token_throughput, attributes)
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)
