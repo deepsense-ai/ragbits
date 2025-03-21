@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Self
+from typing import Any
 
 
 class SourceError(Exception):
@@ -11,7 +11,7 @@ class SourceError(Exception):
         super().__init__(message)
         self.message = message
 
-    def __reduce__(self) -> tuple[type[Self], tuple[Any, ...]]:
+    def __reduce__(self) -> tuple[type["SourceError"], tuple[Any, ...]]:
         # This __reduce__ method is written in a way that it automatically handles any subclass of SourceError.
         # It requires the subclass to have an initializer that store the arguments in the instance's state, under the same name.
         init_params = inspect.signature(self.__class__.__init__).parameters
