@@ -136,7 +136,7 @@ Preferred components are used automatically by the [Ragbits CLI](../../cli/main.
 
 You can also retrieve preferred components in your own code by instantiating the component using the `preferred_subclass()` factory method of [the base class of the given component type](#list-of-component-types). This method will automatically create an instance of the preferred implementation of the component with the configuration you have set.
 
-For example, the code below will create an instance of the default vector store implementation with the default configuration (as long as you have [set the default vector store in the project configuration](#set-preferred-components-in-your-project)):
+For example, the code below will create an instance of the default vector store implementation with the default configuration (as long as you have set the default vector store in the project configuration):
 
 ```python
 from ragbits.core.vector_stores import VectorStore
