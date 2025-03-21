@@ -28,7 +28,7 @@ class CustomPrompt(BasePromptWithParser[CustomOutputType]):
         return [{"role": "user", "content": self._content}]
 
     @staticmethod
-    def parse_response(response: str) -> CustomOutputType:
+    async def parse_response(response: str) -> CustomOutputType:
         return CustomOutputType(message=response)
 
 
