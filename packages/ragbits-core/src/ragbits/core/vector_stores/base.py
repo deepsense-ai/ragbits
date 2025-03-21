@@ -12,7 +12,7 @@ from typing_extensions import Self
 from ragbits.core import vector_stores
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
-from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
+from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
 
 WhereQuery = dict[str, str | int | float | bool]
@@ -210,6 +210,6 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         options = cls.options_cls(**default_options) if default_options else None
 
         embedder_config = config.pop("embedder")
-        embedder: Embedder = Embedder.subclass_from_config(ObjectContructionConfig.model_validate(embedder_config))
+        embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
 
         return cls(**config, default_options=options, embedder=embedder)

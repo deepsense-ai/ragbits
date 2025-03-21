@@ -6,7 +6,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, ClassVar, Generic
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing_extensions import Self
 
 from ragbits.core.options import OptionsT
@@ -31,7 +31,7 @@ class NoPreferredConfigError(InvalidConfigError):
 def import_by_path(path: str, default_module: ModuleType | None = None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns an object based on the string in the format of "module.submodule:object_name".
-    If the first part is ommited, the default module is used.
+    If the first part is omitted, the default module is used.
 
     Args:
         path: A string representing the path to the object. This can either be a
@@ -63,7 +63,7 @@ def import_by_path(path: str, default_module: ModuleType | None = None) -> Any: 
         raise InvalidConfigError(f"{path} not found in module {default_module}") from err
 
 
-class ObjectContructionConfig(BaseModel):
+class ObjectConstructionConfig(BaseModel):
     """
     A model for object construction configuration.
     """
@@ -86,8 +86,11 @@ class WithConstructionConfig(abc.ABC):
     # The key under configuration for this class (and its subclasses) can be found.
     configuration_key: ClassVar[str]
 
+    # The type of pydantic model
+    config_model: ClassVar[type[BaseModel] | None] = None
+
     @classmethod
-    def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
+    def subclass_from_config(cls, config: ObjectConstructionConfig) -> Self:
         """
         Initializes the class with the provided configuration. May return a subclass of the class,
         if requested by the configuration.
@@ -151,7 +154,7 @@ class WithConstructionConfig(abc.ABC):
         if yaml_path_override:
             preferences = get_config_from_yaml(yaml_path_override)
             if type_config := preferences.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+                return cls.subclass_from_config(ObjectConstructionConfig.model_validate(type_config))
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
@@ -160,7 +163,7 @@ class WithConstructionConfig(abc.ABC):
             return cls.subclass_from_factory(preferred_factory)
 
         if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
-            return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
+            return cls.subclass_from_config(ObjectConstructionConfig.model_validate(preferred_config))
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
@@ -174,8 +177,21 @@ class WithConstructionConfig(abc.ABC):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            AttributeError: If config_model is not a subclass of BaseModel.
+            InvalidConfigError: If the config is invalid with respect to given model type.
         """
-        return cls(**config)
+        if cls.config_model:
+            try:
+                validated_config = cls.config_model.model_validate(config)
+                return cls(**validated_config.model_dump())
+            except ValidationError as e:
+                raise InvalidConfigError(f"Invalid config: {e}") from e
+            except AttributeError as e:
+                raise TypeError(f"Ensure that {cls.config_model} is a subclass of BaseModel: {e}") from e
+        else:
+            return cls(**config)
 
 
 class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
@@ -204,7 +220,21 @@ class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            AttributeError: If config_model is not a subclass of BaseModel.
+            InvalidConfigError: If the config is invalid with respect to given model type.
         """
         default_options = config.pop("default_options", None)
         options = cls.options_cls(**default_options) if default_options else None
-        return cls(**config, default_options=options)
+        if cls.config_model:
+            try:
+                validated_config = cls.config_model.model_validate(config)
+                return cls(**validated_config.model_dump(), default_options=options)
+
+            except ValidationError as e:
+                raise InvalidConfigError(f"Invalid config: {e}") from e
+            except AttributeError as e:
+                raise TypeError(f"Ensure that {cls.config_model} is a subclass of BaseModel: {e}") from e
+        else:
+            return cls(**config, default_options=options)

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.providers.base import BaseProvider, DocumentTypeNotSupportedError
 from ragbits.document_search.ingestion.providers.dummy import DummyProvider
@@ -55,7 +55,7 @@ async def test_unstructured_provider_raises_value_error_when_server_url_not_set(
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {"type": "ragbits.document_search.ingestion.providers:DummyProvider"}
     )
     embedding = BaseProvider.subclass_from_config(config)
@@ -63,6 +63,6 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "DummyProvider"})
+    config = ObjectConstructionConfig.model_validate({"type": "DummyProvider"})
     embedding = BaseProvider.subclass_from_config(config)
     assert isinstance(embedding, DummyProvider)

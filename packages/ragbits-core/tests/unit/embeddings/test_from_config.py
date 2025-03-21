@@ -2,11 +2,11 @@ from ragbits.core.embeddings import Embedder, NoopEmbedder
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
 from ragbits.core.types import NOT_GIVEN
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 def test_subclass_from_config_litellm():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
             "config": {
@@ -32,13 +32,13 @@ def test_subclass_from_config_litellm():
 
 
 def test_subclass_from_config_default_path_litellm():
-    config = ObjectContructionConfig.model_validate({"type": "NoopEmbedder"})
+    config = ObjectConstructionConfig.model_validate({"type": "NoopEmbedder"})
     embedder: Embedder = Embedder.subclass_from_config(config)
     assert isinstance(embedder, NoopEmbedder)
 
 
 def test_subclass_from_config_bag_of_tokens():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.embeddings.sparse:BagOfTokens",
             "config": {

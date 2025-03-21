@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.documents.element import (
     Element,
     ImageElement,
@@ -95,7 +95,7 @@ class ImageIntermediateHandler(BaseIntermediateHandler):
         Returns:
             An initialized instance of `ImageIntermediateHandler`.
         """
-        llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
+        llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
         prompt_cls = None
         if "prompt" in config:
             prompt_cls = import_by_path(config["prompt"])

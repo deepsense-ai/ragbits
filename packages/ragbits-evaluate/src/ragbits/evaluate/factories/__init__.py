@@ -3,14 +3,14 @@ import asyncio
 from datasets import load_dataset
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.evaluate.metrics import MetricSet
 
 DS_PRECISION_RECALL_F1 = {
-    "precision_recall_f1": ObjectContructionConfig.model_validate(
+    "precision_recall_f1": ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
             "config": {
