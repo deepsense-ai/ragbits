@@ -6,7 +6,7 @@ from functools import wraps
 from types import SimpleNamespace
 from typing import Any, ParamSpec, TypeVar
 
-from ragbits.core.audit.base import TraceHandler
+from ragbits.core.audit.trace_handlers.base import TraceHandler
 
 __all__ = ["TraceHandler", "set_trace_handlers", "trace", "traceable"]
 
@@ -39,12 +39,12 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
             _trace_handlers.append(handler)
         elif isinstance(handler, str):
             if handler == "otel":
-                from ragbits.core.audit.otel import OtelTraceHandler
+                from ragbits.core.audit.trace_handlers.otel import OtelTraceHandler
 
                 if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
                     _trace_handlers.append(OtelTraceHandler())
             elif handler == "cli":
-                from ragbits.core.audit.cli import CLITraceHandler
+                from ragbits.core.audit.trace_handlers.cli import CLITraceHandler
 
                 if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
                     _trace_handlers.append(CLITraceHandler())

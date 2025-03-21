@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry
+
 ## 0.10.1 (2025-03-19)
 - Better handling of cases when text and image embeddings are mixed in VectorStore
 

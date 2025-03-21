@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
@@ -12,6 +13,8 @@ try:
     HAS_LOCAL_LLM = True
 except ImportError:
     HAS_LOCAL_LLM = False
+
+from opentelemetry.metrics import Meter
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
@@ -52,6 +55,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         default_options: LocalLLMOptions | None = None,
         *,
         api_key: str | None = None,
+        meter: Meter | None = None,
     ) -> None:
         """
         Constructs a new local LLM instance.
@@ -60,6 +64,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             model_name: Name of the model to use. This should be a model from the CausalLM class.
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
+            meter: An optional OpenTelemetry Meter instance for logging metrics. Defaults to None.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -67,7 +72,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         if not HAS_LOCAL_LLM:
             raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
-        super().__init__(model_name, default_options)
+        super().__init__(model_name, default_options, meter)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name, device_map="auto", torch_dtype=torch.bfloat16, token=api_key
         )
@@ -106,6 +111,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Response string from LLM.
         """
+        start_time = time.perf_counter()
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
@@ -117,6 +123,15 @@ class LocalLLM(LLM[LocalLLMOptions]):
         )
         response = outputs[0][input_ids.shape[-1] :]
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
+        prompt_throughput = time.perf_counter() - start_time
+
+        if self._metric_handler:
+            attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+            self._metric_handler.record("prompt_throughput", prompt_throughput, attributes)
+            self._metric_handler.record("input_tokens", input_ids.shape[-1], attributes)
+            token_throughput = outputs.total_tokens / prompt_throughput
+            self._metric_handler.record("token_throughput", token_throughput, attributes)
+
         return {"response": decoded_response}
 
     async def _call_streaming(
@@ -138,6 +153,18 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Async generator of tokens
         """
+        start_time = time.perf_counter()
+        first_token_received = False
+        input_tokens = len(
+            self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt")[0]
+        )
+        output_tokens = 0
+
+        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+
+        if self._metric_handler:
+            self._metric_handler.record("input_tokens", input_tokens, attributes)
+
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
@@ -148,10 +175,26 @@ class LocalLLM(LLM[LocalLLMOptions]):
         async def streamer_to_async_generator(
             streamer: TextIteratorStreamer, generation_thread: threading.Thread
         ) -> AsyncGenerator[str, None]:
+            nonlocal first_token_received, start_time, output_tokens
             generation_thread.start()
             for text_piece in streamer:
+                if text_piece:
+                    output_tokens += 1
+
+                    if not first_token_received:
+                        time_to_first_token = time.perf_counter() - start_time
+                        if self._metric_handler:
+                            self._metric_handler.record("time_to_first_token", time_to_first_token, attributes)
+                        first_token_received = True
+
                 yield text_piece
                 await asyncio.sleep(0.0)
             generation_thread.join()
+
+            total_time = time.perf_counter() - start_time
+            if self._metric_handler:
+                token_throughput = output_tokens / total_time
+                self._metric_handler.record("prompt_throughput", total_time, attributes)
+                self._metric_handler.record("token_throughput", token_throughput, attributes)
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)
