@@ -6,7 +6,6 @@ from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
 
-from ragbits.core.llms.base import LLM
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, IntermediateElement, IntermediateImageElement
 from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
@@ -34,7 +33,6 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
         api_key: str | None = None,
         api_server: str | None = None,
         use_api: bool = False,
-        llm: LLM | None = None,
     ) -> None:
         """Initialize the UnstructuredPdfProvider.
 
@@ -47,10 +45,8 @@ class UnstructuredImageProvider(UnstructuredDefaultProvider):
             api_server: The API server URL to use for the Unstructured API. If not specified, the
                 UNSTRUCTURED_SERVER_URL environment variable will be used.
             use_api: Whether to use the Unstructured API. If False, the provider will only use the local processing.
-            llm: llm to use
         """
         super().__init__(partition_kwargs, chunking_kwargs, api_key, api_server, use_api)
-        self._llm = llm
 
     async def _chunk_and_convert(
         self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
