@@ -1,4 +1,6 @@
-from sympy.testing import pytest
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources.web import WebSource
@@ -37,3 +39,38 @@ async def test_invalid_url_raises_exception():
     for url in wrong_urls:
         with pytest.raises(SourceNotFoundError):
             await WebSource(url=url).fetch()
+
+
+@patch("ragbits.document_search.documents.sources.web.aiohttp.ClientSession")
+async def test_url_and_headers_are_passed_correctly(client_session_mock: MagicMock) -> None:
+    session_mock = MagicMock()
+    get_mock = MagicMock()
+    expected_url = "http://example.com"
+    expected_headers = {"header1": "value1"}
+
+    source = WebSource(url=expected_url, headers=expected_headers)
+    client_session_mock.return_value.__aenter__.return_value = session_mock
+    session_mock.get.return_value.__aenter__.return_value = get_mock
+    get_mock.content.iter_chunked.return_value.__aiter__.return_value = [b"test data"]
+
+    await source.fetch()
+
+    assert session_mock.get.call_args.args[0] == expected_url
+    assert session_mock.get.call_args.kwargs["headers"] == expected_headers
+
+
+@patch("ragbits.document_search.documents.sources.web.aiohttp.ClientSession")
+async def test_passed_headers_are_none_by_default(client_session_mock: MagicMock) -> None:
+    session_mock = MagicMock()
+    get_mock = MagicMock()
+    expected_url = "http://example.com"
+
+    source = WebSource(url=expected_url)
+    client_session_mock.return_value.__aenter__.return_value = session_mock
+    session_mock.get.return_value.__aenter__.return_value = get_mock
+    get_mock.content.iter_chunked.return_value.__aiter__.return_value = [b"test data"]
+
+    await source.fetch()
+
+    assert session_mock.get.call_args.args[0] == expected_url
+    assert session_mock.get.call_args.kwargs["headers"] is None

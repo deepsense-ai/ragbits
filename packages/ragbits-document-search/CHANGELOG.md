@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Remove obsolete ImageDescrber and llm from UnstructuredImageProvider
+- Remove obsolete ImageDescriber and llm from UnstructuredImageProvider (#430)
+- Make SourceError and its subclasses picklable (#435)
+- Allow for setting custom headers in WebSource (#437)
 
 ## 0.10.1 (2025-03-19)
 
