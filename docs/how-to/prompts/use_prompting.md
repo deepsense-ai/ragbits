@@ -1,4 +1,4 @@
-# How to define and use Prompts in Ragbits
+# How-To: Define and use prompts with Ragbits
 
 This guide will walk you through defining and using prompts in Ragbits, including configuring input and output data types, creating custom output parsers, and passing images to a prompt.
 

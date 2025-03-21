@@ -60,7 +60,7 @@ def get_instance_or_exit(
 - providing a path to a YAML configuration file with the [b]{yaml_path_argument_name}[/b] option
 - providing a Python path to a function that creates a vector store with the [b]{factory_path_argument_name}[/b] option
 - setting the preferred {type_name} configuration in your project's [b]pyproject.toml[/b] file
-  (see https://ragbits.deepsense.ai/how-to/core/component_preferrences/ for more information)""")
+  (see https://ragbits.deepsense.ai/how-to/project/component_preferences/ for more information)""")
         raise typer.Exit(1) from e
     except InvalidConfigError as e:
         Console(stderr=True).print(e)
