@@ -17,7 +17,7 @@
 ## Features
 
 ### 🔨 Build Reliable & Scalable GenAI Apps
-- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_llms/#using-local-llms).
+- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
 - **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
 - **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
 - **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
