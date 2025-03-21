@@ -4,11 +4,11 @@ import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.parsers.unstructured.default import (
+from ragbits.document_search.ingestion.parsers.unstructured import (
     DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_SERVER_URL_ENV,
-    UnstructuredDefaultProvider,
+    UnstructuredDocumentParser,
 )
 
 from ..helpers import env_vars_not_set
@@ -18,9 +18,9 @@ from ..helpers import env_vars_not_set
     "parsers",
     [
         {},
-        pytest.param({DocumentType.TXT: UnstructuredDefaultProvider()}),
+        pytest.param({DocumentType.TXT: UnstructuredDocumentParser()}),
         pytest.param(
-            {DocumentType.TXT: UnstructuredDefaultProvider(use_api=True)},
+            {DocumentType.TXT: UnstructuredDocumentParser(use_api=True)},
             marks=pytest.mark.skipif(
                 env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
                 reason="Unstructured API environment variables not set",
@@ -34,7 +34,7 @@ async def test_parser_router_processes_text_document_with_unstructured_provider(
 
     elements = await parser_router.get(document_meta).parse(document_meta)
 
-    assert isinstance(parser_router._parsers[DocumentType.TXT], UnstructuredDefaultProvider)
+    assert isinstance(parser_router._parsers[DocumentType.TXT], UnstructuredDocumentParser)
     assert len(elements) == 1
     assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
 
@@ -87,7 +87,7 @@ async def test_parser_router_processes_image_document_with_unstructured_provider
 )
 async def test_unstructured_provider_document_with_default_partition_kwargs(use_api: bool):
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
-    unstructured_provider = UnstructuredDefaultProvider(use_api=use_api)
+    unstructured_provider = UnstructuredDocumentParser(use_api=use_api)
     elements = await unstructured_provider.parse(document_meta)
 
     assert unstructured_provider.partition_kwargs == DEFAULT_PARTITION_KWARGS
@@ -111,7 +111,7 @@ async def test_unstructured_provider_document_with_default_partition_kwargs(use_
 async def test_unstructured_provider_document_with_custom_partition_kwargs(use_api: bool):
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
     partition_kwargs = {"languages": ["pl"], "strategy": "fast"}
-    unstructured_provider = UnstructuredDefaultProvider(use_api=use_api, partition_kwargs=partition_kwargs)
+    unstructured_provider = UnstructuredDocumentParser(use_api=use_api, partition_kwargs=partition_kwargs)
     elements = await unstructured_provider.parse(document_meta)
 
     assert unstructured_provider.partition_kwargs == partition_kwargs

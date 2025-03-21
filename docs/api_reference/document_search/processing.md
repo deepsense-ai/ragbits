@@ -11,7 +11,7 @@
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredDefaultProvider
+::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredDocumentParser
     options:
       heading_level: 3
 

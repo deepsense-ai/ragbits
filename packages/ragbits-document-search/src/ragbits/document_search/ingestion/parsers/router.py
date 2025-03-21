@@ -6,18 +6,14 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
-from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
-from ragbits.document_search.ingestion.parsers.unstructured.images import UnstructuredImageProvider
-from ragbits.document_search.ingestion.parsers.unstructured.pdf import UnstructuredPdfProvider
+from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredDocumentParser
 
-_default_parser = UnstructuredDefaultProvider()
-_default_img_parser = UnstructuredImageProvider()
-_default_pdf_parser = UnstructuredPdfProvider()
+_default_parser = UnstructuredDocumentParser()
 
 _DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.TXT: _default_parser,
     DocumentType.MD: _default_parser,
-    DocumentType.PDF: _default_pdf_parser,
+    DocumentType.PDF: _default_parser,
     DocumentType.DOCX: _default_parser,
     DocumentType.DOC: _default_parser,
     DocumentType.PPTX: _default_parser,
@@ -33,8 +29,8 @@ _DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.RTF: _default_parser,
     DocumentType.TSV: _default_parser,
     DocumentType.XML: _default_parser,
-    DocumentType.JPG: _default_img_parser,
-    DocumentType.PNG: _default_img_parser,
+    DocumentType.JPG: _default_parser,
+    DocumentType.PNG: _default_parser,
 }
 
 

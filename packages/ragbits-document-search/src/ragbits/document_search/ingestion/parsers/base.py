@@ -25,7 +25,7 @@ class DocumentParser(WithConstructionConfig, ABC):
     default_module: ClassVar = parsers
     configuration_key: ClassVar = "parser"
 
-    SUPPORTED_DOCUMENT_TYPES: set[DocumentType]
+    supported_document_types: set[DocumentType]
 
     @abstractmethod
     async def parse(self, document_meta: DocumentMeta) -> list[Element]:
@@ -49,5 +49,5 @@ class DocumentParser(WithConstructionConfig, ABC):
         Raises:
             DocumentTypeNotSupportedError: If the document type is not supported.
         """
-        if document_type not in self.SUPPORTED_DOCUMENT_TYPES:
+        if document_type not in self.supported_document_types:
             raise DocumentTypeNotSupportedError(provider_name=self.__class__.__name__, document_type=document_type)

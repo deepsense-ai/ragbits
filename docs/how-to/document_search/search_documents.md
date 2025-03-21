@@ -78,13 +78,13 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.documents.document import DocumentType
-from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDocumentParser
 
 embedder = LiteLLMEmbedder()
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(
     vector_store=vector_store,
-    parser_router=DocumentParserRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
+    parser_router=DocumentParserRouter({DocumentType.TXT: UnstructuredDocumentParser()})
 )
 ```
 

@@ -13,7 +13,7 @@ class DummyProvider(DocumentParser):
     It should be used for testing purposes only.
     """
 
-    SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT, DocumentType.MD}
+    supported_document_types = {DocumentType.TXT, DocumentType.MD}
 
     async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
@@ -39,7 +39,7 @@ class DummyImageProvider(DocumentParser):
     and empty text metadata.
     """
 
-    SUPPORTED_DOCUMENT_TYPES = {DocumentType.JPG, DocumentType.PNG}
+    supported_document_types = {DocumentType.JPG, DocumentType.PNG}
 
     async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
