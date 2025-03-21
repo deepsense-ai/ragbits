@@ -47,7 +47,7 @@ dependencies = [
 
 [project.optional-dependencies]
 chroma = [
-    "chromadb~=0.4.24",
+    "chromadb~=0.6.3",
 ]
 local = [
     "torch~=2.2.1",
