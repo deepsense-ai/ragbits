@@ -17,9 +17,6 @@ from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 InputT = TypeVar("InputT", bound=BaseModel | None)
 FewShotExample = tuple[str | InputT, str | OutputT]
 
-SyncParser = Callable[[str], OutputT]
-AsyncParser = Callable[[str], Awaitable[OutputT]]
-
 
 class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
     """
