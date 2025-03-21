@@ -17,7 +17,7 @@ def test_source_error_init():
 def test_source_error_pickle():
     original = SourceError("Test pickle message")
     pickled = pickle.dumps(original)
-    unpickled = pickle.loads(pickled) # noqa: S301
+    unpickled = pickle.loads(pickled)  # noqa: S301
 
     assert isinstance(unpickled, SourceError)
     assert unpickled.message == "Test pickle message"
@@ -33,7 +33,7 @@ def test_source_connection_error_init():
 def test_source_connection_error_pickle():
     original = SourceConnectionError()
     pickled = pickle.dumps(original)
-    unpickled = pickle.loads(pickled) # noqa: S301
+    unpickled = pickle.loads(pickled)  # noqa: S301
 
     assert isinstance(unpickled, SourceConnectionError)
     assert unpickled.message == "Connection error."
@@ -50,7 +50,7 @@ def test_source_not_found_error_init():
 def test_source_not_found_error_pickle():
     original = SourceNotFoundError("test-source-id")
     pickled = pickle.dumps(original)
-    unpickled = pickle.loads(pickled) # noqa: S301
+    unpickled = pickle.loads(pickled)  # noqa: S301
 
     assert isinstance(unpickled, SourceNotFoundError)
     assert unpickled.source_id == "test-source-id"
@@ -74,7 +74,7 @@ def test_web_download_error_pickle():
     code = 404
     original = WebDownloadError(url, code)
     pickled = pickle.dumps(original)
-    unpickled = pickle.loads(pickled) # noqa: S301
+    unpickled = pickle.loads(pickled)  # noqa: S301
 
     assert isinstance(unpickled, WebDownloadError)
     assert unpickled.url == url
