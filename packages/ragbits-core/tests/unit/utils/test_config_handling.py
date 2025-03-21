@@ -95,7 +95,7 @@ def test_default_from_config_with_incorrect_config():
 
 def test_default_from_config_with_not_base_model():
     config = {"foo": "foo", "bar": 1}
-    ExampleClassWithModelType.model_type = ExampleModel  # type: ignore
+    ExampleClassWithModelType.config_model = ExampleModel  # type: ignore
     with pytest.raises(TypeError):
         ExampleClassWithModelType.from_config(config)
 
@@ -109,7 +109,7 @@ def test_configurable_component_from_config_with_model_type_set():
 
 def test_configurable_component_from_config_without_model_type():
     config = {"foo": "foo", "bar": 1}
-    ExampleConfigurableComponentClass.model_type = None  # type: ignore
+    ExampleConfigurableComponentClass.config_model = None  # type: ignore
     with patch.object(ExampleBaseModel, "model_validate", wraps=ExampleBaseModel.model_validate) as mock_validate:
         instance = ExampleConfigurableComponentClass.from_config(config)
         assert isinstance(instance, ExampleConfigurableComponentClass)

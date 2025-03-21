@@ -185,8 +185,7 @@ class WithConstructionConfig(abc.ABC):
         if cls.config_model:
             try:
                 validated_config = cls.config_model.model_validate(config)
-                return cls(**validated_config)
-
+                return cls(**validated_config.model_dump())
             except ValidationError as e:
                 raise InvalidConfigError(f"Invalid config: {e}") from e
             except AttributeError as e:
@@ -228,8 +227,14 @@ class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
         """
         default_options = config.pop("default_options", None)
         options = cls.options_cls(**default_options) if default_options else None
-        validated_config = super().from_config(config)
+        if cls.config_model:
+            try:
+                validated_config = cls.config_model.model_validate(config)
+                return cls(**validated_config.model_dump(), default_options=options)
 
-        # Inject `default_options` before returning
-        validated_config.default_options = options or validated_config.options_cls()
-        return validated_config
+            except ValidationError as e:
+                raise InvalidConfigError(f"Invalid config: {e}") from e
+            except AttributeError as e:
+                raise TypeError(f"Ensure that {cls.config_model} is a subclass of BaseModel: {e}") from e
+        else:
+            return cls(**config, default_options=options)
