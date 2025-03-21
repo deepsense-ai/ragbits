@@ -5,7 +5,6 @@ import pytest
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.parsers.unstructured import (
-    DEFAULT_PARTITION_KWARGS,
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_SERVER_URL_ENV,
     UnstructuredDocumentParser,
@@ -57,10 +56,6 @@ async def test_parser_router_processes_md_document_with_unstructured_provider():
     env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
     reason="Unstructured API environment variables not set",
 )
-@pytest.mark.skipif(
-    env_vars_not_set(["OPENAI_API_KEY"]),
-    reason="OpenAI API environment variables not set",
-)
 @pytest.mark.parametrize("file_name", ["transformers_paper_page.pdf", "transformers_paper_page.png"])
 async def test_parser_router_processes_image_document_with_unstructured_provider(file_name: str):
     parser_router = DocumentParserRouter()
@@ -90,7 +85,6 @@ async def test_unstructured_provider_document_with_default_partition_kwargs(use_
     unstructured_provider = UnstructuredDocumentParser(use_api=use_api)
     elements = await unstructured_provider.parse(document_meta)
 
-    assert unstructured_provider.partition_kwargs == DEFAULT_PARTITION_KWARGS
     assert len(elements) == 1
     assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
 

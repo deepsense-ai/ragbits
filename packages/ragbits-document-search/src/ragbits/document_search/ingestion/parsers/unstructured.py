@@ -1,31 +1,21 @@
-import io
+import base64
 import os
 from io import BytesIO
-from pathlib import Path
 
-from pdf2image import convert_from_path
 from PIL import Image
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
-from unstructured.documents.elements import ElementType
+from unstructured.documents.elements import ElementType, Points
 from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
+from unstructured_client.models.operations import PartitionRequestTypedDict
+from unstructured_client.models.shared import FilesTypedDict, PartitionParametersTypedDict, Strategy
 
 from ragbits.core.audit import traceable
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element, ElementLocation, ImageElement, TextElement
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
-
-DEFAULT_PARTITION_KWARGS: dict = {
-    "strategy": "hi_res",
-    "languages": ["eng"],
-    "split_pdf_page": True,
-    "split_pdf_allow_failed": True,
-    "split_pdf_concurrency_level": 15,
-}
-
-DEFAULT_CHUNKING_KWARGS: dict = {}
 
 UNSTRUCTURED_API_KEY_ENV = "UNSTRUCTURED_API_KEY"
 UNSTRUCTURED_SERVER_URL_ENV = "UNSTRUCTURED_SERVER_URL"
@@ -69,7 +59,8 @@ class UnstructuredDocumentParser(DocumentParser):
         use_api: bool = False,
         ignore_images: bool = False,
     ) -> None:
-        """Initialize the UnstructuredDocumentParser.
+        """
+        Initialize the UnstructuredDocumentParser instance.
 
         Args:
             partition_kwargs: The additional arguments for the partitioning. Refer to the Unstructured API documentation
@@ -82,193 +73,185 @@ class UnstructuredDocumentParser(DocumentParser):
             use_api: whether to use Unstructured API, otherwise use local version of Unstructured library
             ignore_images: if True images will be skipped
         """
-        self.partition_kwargs = partition_kwargs or DEFAULT_PARTITION_KWARGS
-        self.chunking_kwargs = chunking_kwargs or DEFAULT_CHUNKING_KWARGS
-        self.api_key = api_key
-        self.api_server = api_server
+        self.partition_kwargs = partition_kwargs or {}
+        self.chunking_kwargs = chunking_kwargs or {}
+        self.api_key = api_key or os.getenv(UNSTRUCTURED_API_KEY_ENV)
+        self.api_server = api_server or os.getenv(UNSTRUCTURED_SERVER_URL_ENV)
         self.use_api = use_api
-        self._client: UnstructuredClient | None = None
         self.ignore_images = ignore_images
 
-    @property
-    def client(self) -> UnstructuredClient:
-        """
-        Get the UnstructuredClient instance. If the client is not initialized, it will be created.
-
-        Returns:
-            The UnstructuredClient instance.
-
-        Raises:
-            ValueError: If the UNSTRUCTURED_API_KEY_ENV environment variable is not set.
-            ValueError: If the UNSTRUCTURED_SERVER_URL_ENV environment variable is not set.
-        """
-        if self._client is not None:
-            return self._client
-        api_key = check_required_argument(arg_name="api_key", value=self.api_key, fallback_env=UNSTRUCTURED_API_KEY_ENV)
-        api_server = check_required_argument(
-            arg_name="api_server", value=self.api_server, fallback_env=UNSTRUCTURED_SERVER_URL_ENV
+        self._client = UnstructuredClient(
+            api_key_auth=self.api_key,
+            server_url=self.api_server,
         )
-        self._client = UnstructuredClient(api_key_auth=api_key, server_url=api_server)
-        return self._client
 
     @traceable
     async def parse(self, document_meta: DocumentMeta) -> list[Element]:
         """
-        Process the document using the Unstructured API.
+        Parse the document using the Unstructured API.
 
         Args:
-            document_meta: The document to process.
+            document_meta: The document to parse.
 
         Returns:
             The list of elements extracted from the document.
 
         Raises:
             DocumentTypeNotSupportedError: If the document type is not supported.
-
         """
         self.validate_document_type(document_meta.document_type)
         document = await document_meta.fetch()
 
+        elements = await self._partition(document)
+        return self._chunk(elements, document)
+
+    async def _partition(self, document: Document) -> list[UnstructuredElement]:
+        """
+        Partition the document.
+
+        Args:
+            document: The document to parse.
+
+        Returns:
+            The list of extracted elements.
+        """
         if self.use_api:
-            res = await self.client.general.partition_async(
-                request={
-                    "partition_parameters": {
-                        "files": {
-                            "content": document.local_path.read_bytes(),
-                            "file_name": document.local_path.name,
-                        },
-                        "coordinates": True,
-                        **self.partition_kwargs,
-                    }
-                }
+            request = PartitionRequestTypedDict(
+                partition_parameters=PartitionParametersTypedDict(
+                    files=FilesTypedDict(
+                        content=document.local_path.read_bytes(),
+                        file_name=document.local_path.name,
+                    ),
+                    coordinates=True,
+                    strategy=Strategy.HI_RES,
+                    languages=["eng"],
+                    extract_image_block_types=["Image", "Table"],
+                    split_pdf_allow_failed=True,
+                    split_pdf_concurrency_level=15,
+                    split_pdf_page=True,
+                    include_orig_elements=True,
+                ),
             )
-            elements = elements_from_dicts(res.elements)  # type: ignore
-        else:
-            elements = partition(
-                file=BytesIO(document.local_path.read_bytes()),
-                metadata_filename=document.local_path.name,
-                **self.partition_kwargs,
+            request["partition_parameters"].update(**self.partition_kwargs)  # type: ignore
+            response = await self._client.general.partition_async(request=request)
+            return elements_from_dicts(response.elements) if response.elements else []
+
+        return partition(
+            filename=str(document.local_path),
+            metadata_filename=document.local_path.name,
+            extract_image_block_types=["Image", "Table"],
+            extract_image_block_to_payload=True,
+            include_orig_elements=True,
+            **self.partition_kwargs,
+        )
+
+    def _chunk(self, elements: list[UnstructuredElement], document: Document) -> list[Element]:
+        """
+        Chunk the list of elements.
+
+        Args:
+            elements: The list of unstructured elements.
+            document: The document to parse.
+
+        Returns:
+            The list of chunked elements.
+        """
+        nonimage_elements = [element for element in elements if element.category != ElementType.IMAGE]
+
+        text_elements: list[Element] = [
+            TextElement(
+                document_meta=document.metadata,
+                location=self._extract_element_location(element),
+                content=element.text,
             )
-        return await self._chunk_and_convert(elements, document_meta, document.local_path)
-
-    async def _chunk_and_convert(
-        self, elements: list[UnstructuredElement], document_meta: DocumentMeta, document_path: Path
-    ) -> list[Element]:
-        image_elements = [e for e in elements if e.category == ElementType.IMAGE]
-        other_elements = [e for e in elements if e.category != ElementType.IMAGE]
-        chunked_other_elements = chunk_elements(other_elements, **self.chunking_kwargs)
-
-        text_elements: list[Element] = [to_text_element(element, document_meta) for element in chunked_other_elements]
-        if self.ignore_images:
-            return text_elements
-        return text_elements + [
-            await _to_image_element(element, document_meta, document_path) for element in image_elements
+            for element in chunk_elements(nonimage_elements, **self.chunking_kwargs)
         ]
 
+        if self.ignore_images:
+            return text_elements
 
-async def _to_image_element(
-    element: UnstructuredElement, document_meta: DocumentMeta, document_path: Path
-) -> ImageElement:
-    top_x, top_y, bottom_x, bottom_y = extract_image_coordinates(element)
+        return text_elements + [
+            ImageElement(
+                document_meta=document.metadata,
+                location=self._extract_element_location(element),
+                image_bytes=self._extract_image_bytes(element, document),
+                ocr_extracted_text=element.text,
+            )
+            for element in elements
+            if element.category == ElementType.IMAGE
+        ]
 
-    image = (
-        convert_from_path(document_path)[0]
-        if document_meta.document_type == DocumentType.PDF
-        else Image.open(document_path).convert("RGB")
-    )
-    img_bytes = crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
-    return ImageElement(
-        ocr_extracted_text=element.text,
-        image_bytes=img_bytes,
-        document_meta=document_meta,
-    )
+    @staticmethod
+    def _extract_element_location(element: UnstructuredElement) -> ElementLocation:
+        """
+        Convert unstructured element to element location.
 
+        Args:
+            element: The element from unstructured.
 
-def to_text_element(element: UnstructuredElement, document_meta: DocumentMeta) -> TextElement:
-    """
-    Converts unstructured element to ragbits text element
+        Returns:
+            The element location.
+        """
+        metadata = element.metadata.to_dict()
+        return ElementLocation(
+            page_number=metadata.get("page_number"),
+            coordinates=metadata.get("coordinates"),
+        )
 
-    Args:
-        element: element from unstructured
-        document_meta: metadata of the document
+    def _extract_image_bytes(self, element: UnstructuredElement, document: Document) -> bytes:
+        """
+        Extract image data using alternative methods when element.metadata.image_base64 is empty.
 
-    Returns:
-        text element
-    """
-    location = to_element_location(element)
-    return TextElement(
-        document_meta=document_meta,
-        content=element.text,
-        location=location,
-    )
+        This handles cases where the Unstructured doesn't properly extract image data,
+        requiring additional processing.
 
+        Args:
+            element: The Unstructured image element.
+            document: The Document to parse.
 
-def to_element_location(element: UnstructuredElement) -> ElementLocation:
-    """
-    Converts unstructured element to element location.
+        Return:
+            The raw image data.
+        """
+        if element.metadata.image_base64:
+            return base64.b64decode(element.metadata.image_base64)
 
-    Args:
-        element: element from unstructured
+        elif element.metadata.coordinates and element.metadata.coordinates.points:
+            image = Image.open(document.local_path).convert("RGB")
+            top_x, top_y, bottom_x, bottom_y = self._extract_image_coordinates(element.metadata.coordinates.points)
+            return self._crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
 
-    Returns:
-        element location
-    """
-    metadata = element.metadata.to_dict()
-    page_number = metadata.get("page_number")
-    coordinates = metadata.get("coordinates")
-    return ElementLocation(
-        page_number=page_number,
-        coordinates=coordinates,
-    )
+        return b""
 
+    @staticmethod
+    def _extract_image_coordinates(points: Points) -> tuple[float, float, float, float]:
+        """
+        Extract image coordinates from unstructured element points.
 
-def check_required_argument(value: str | None, arg_name: str, fallback_env: str) -> str:
-    """
-    Checks if given environment variable is set and returns it or raises an error
+        Args:
+            points: The Unstructured element points.
 
-    Args:
-        arg_name: name of the variable
-        value: optional default value
-        fallback_env: name of the environment variable to get
+        Returns:
+            x of top left corner, y of top left corner, x of bottom right corner, y of bottom right corner.
+        """
+        p1, p2, p3, p4 = points
+        return min(p1[0], p2[0]), min(p1[1], p4[1]), max(p3[0], p4[0]), max(p2[1], p3[1])
 
-    Raises:
-        ValueError: if environment variable is not set
+    @staticmethod
+    def _crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
+        """
+        Crop the image and converts to bytes.
 
-    Returns:
-        environment variable value
-    """
-    if value is not None:
-        return value
-    if (env_value := os.getenv(fallback_env)) is None:
-        raise ValueError(f"Either pass {arg_name} argument or set the {fallback_env} environment variable")
-    return env_value
+        Args:
+            image: The image to crop.
+            x0: x of top left corner.
+            y0: y of top left corner.
+            x1: x of bottom right corner.
+            y1: y of bottom right corner.
 
-
-def extract_image_coordinates(element: UnstructuredElement) -> tuple[float, float, float, float]:
-    """
-    Extracts image coordinates from unstructured element
-    Args:
-        element: element from unstructured
-    Returns:
-        x of top left corner, y of top left corner, x of bottom right corner, y of bottom right corner
-    """
-    p1, p2, p3, p4 = element.metadata.coordinates.points  # type: ignore
-    return min(p1[0], p2[0]), min(p1[1], p4[1]), max(p3[0], p4[0]), max(p2[1], p3[1])
-
-
-def crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
-    """
-    Crops the image and converts to bytes
-    Args:
-        image: PIL image
-        x0: x of top left corner
-        y0: y of top left corner
-        x1: x of bottom right corner
-        y1: y of bottom right corner
-    Returns:
-        bytes of the cropped image
-    """
-    image = image.crop((x0, y0, x1, y1))
-    buffered = io.BytesIO()
-    image.save(buffered, format="JPEG")
-    return buffered.getvalue()
+        Returns:
+            The bytes of the cropped image.
+        """
+        image = image.crop((x0, y0, x1, y1))
+        buffered = BytesIO()
+        image.save(buffered, format="JPEG")
+        return buffered.getvalue()
