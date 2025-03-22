@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
-from unstructured.documents.elements import ElementType, Points
+from unstructured.documents.elements import ElementType
 from unstructured.partition.auto import partition
 from unstructured.staging.base import elements_from_dicts
 from unstructured_client import UnstructuredClient
@@ -79,11 +79,7 @@ class UnstructuredDocumentParser(DocumentParser):
         self.api_server = api_server or os.getenv(UNSTRUCTURED_SERVER_URL_ENV)
         self.use_api = use_api
         self.ignore_images = ignore_images
-
-        self._client = UnstructuredClient(
-            api_key_auth=self.api_key,
-            server_url=self.api_server,
-        )
+        self._client = UnstructuredClient(api_key_auth=self.api_key, server_url=self.api_server)
 
     @traceable
     async def parse(self, document_meta: DocumentMeta) -> list[Element]:
@@ -174,7 +170,7 @@ class UnstructuredDocumentParser(DocumentParser):
             ImageElement(
                 document_meta=document.metadata,
                 location=self._extract_element_location(element),
-                image_bytes=self._extract_image_bytes(element, document),
+                image_bytes=self._extract_image_element_bytes(element, document),
                 ocr_extracted_text=element.text,
             )
             for element in elements
@@ -198,7 +194,8 @@ class UnstructuredDocumentParser(DocumentParser):
             coordinates=metadata.get("coordinates"),
         )
 
-    def _extract_image_bytes(self, element: UnstructuredElement, document: Document) -> bytes:
+    @staticmethod
+    def _extract_image_element_bytes(element: UnstructuredElement, document: Document) -> bytes:
         """
         Extract image data using alternative methods when element.metadata.image_base64 is empty.
 
@@ -215,43 +212,16 @@ class UnstructuredDocumentParser(DocumentParser):
         if element.metadata.image_base64:
             return base64.b64decode(element.metadata.image_base64)
 
-        elif element.metadata.coordinates and element.metadata.coordinates.points:
-            image = Image.open(document.local_path).convert("RGB")
-            top_x, top_y, bottom_x, bottom_y = self._extract_image_coordinates(element.metadata.coordinates.points)
-            return self._crop_and_convert_to_bytes(image, top_x, top_y, bottom_x, bottom_y)
+        if element.metadata.coordinates and element.metadata.coordinates.points:
+            buffered = BytesIO()
+            Image.open(document.local_path).convert("RGB").crop(
+                (
+                    min(element.metadata.coordinates.points[0][0], element.metadata.coordinates.points[1][0]),
+                    min(element.metadata.coordinates.points[0][1], element.metadata.coordinates.points[3][1]),
+                    max(element.metadata.coordinates.points[2][0], element.metadata.coordinates.points[3][0]),
+                    max(element.metadata.coordinates.points[1][1], element.metadata.coordinates.points[2][1]),
+                )
+            ).save(buffered, format="JPEG")
+            return buffered.getvalue()
 
         return b""
-
-    @staticmethod
-    def _extract_image_coordinates(points: Points) -> tuple[float, float, float, float]:
-        """
-        Extract image coordinates from unstructured element points.
-
-        Args:
-            points: The Unstructured element points.
-
-        Returns:
-            x of top left corner, y of top left corner, x of bottom right corner, y of bottom right corner.
-        """
-        p1, p2, p3, p4 = points
-        return min(p1[0], p2[0]), min(p1[1], p4[1]), max(p3[0], p4[0]), max(p2[1], p3[1])
-
-    @staticmethod
-    def _crop_and_convert_to_bytes(image: Image.Image, x0: float, y0: float, x1: float, y1: float) -> bytes:
-        """
-        Crop the image and converts to bytes.
-
-        Args:
-            image: The image to crop.
-            x0: x of top left corner.
-            y0: y of top left corner.
-            x1: x of bottom right corner.
-            y1: y of bottom right corner.
-
-        Returns:
-            The bytes of the cropped image.
-        """
-        image = image.crop((x0, y0, x1, y1))
-        buffered = BytesIO()
-        image.save(buffered, format="JPEG")
-        return buffered.getvalue()
