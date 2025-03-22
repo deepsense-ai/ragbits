@@ -133,7 +133,10 @@ class IngestStrategy(WithConstructionConfig, ABC):
             The list of elements.
 
         Raises:
-            ValueError: If no parser is found for the document type.
+            ParserError: If the parsing of the document failed.
+            ParserDocumentNotSupportedError: If the document type is not supported.
+            ParserNotFoundError: If no parser is found for the document type.
+            SourceError: If the download of the document failed.
         """
         document_meta = (
             await DocumentMeta.from_source(document)
@@ -143,7 +146,9 @@ class IngestStrategy(WithConstructionConfig, ABC):
             else document.metadata
         )
         parser = parser_router.get(document_meta)
-        return await parser.parse(document_meta)
+        parser.validate_document_type(document_meta.document_type)
+        document = await document_meta.fetch()
+        return await parser.parse(document)
 
     @staticmethod
     async def _enrich_elements(

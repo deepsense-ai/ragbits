@@ -1,23 +1,23 @@
 import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 
 
 async def test_parser_router():
-    parser_router = DocumentParserRouter({DocumentType.TXT: DummyProvider()})
+    parser_router = DocumentParserRouter({DocumentType.TXT: TextDocumentParser()})
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")
 
     parser = parser_router.get(document_meta)
 
-    assert isinstance(parser, DummyProvider)
+    assert isinstance(parser, TextDocumentParser)
 
 
 async def test_parser_router_raises_when_no_parser_found():
     parser_router = DocumentParserRouter()
-    parser_router._parsers = {DocumentType.TXT: DummyProvider()}
+    parser_router._parsers = {DocumentType.TXT: TextDocumentParser()}
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")
 

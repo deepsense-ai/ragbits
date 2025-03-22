@@ -32,12 +32,6 @@ class ElementEnricherRouter(WithConstructionConfig):
 
         Args:
             enrichers: The mapping of element types and their enrichers. To override default enrichers.
-
-        Example:
-            {
-                ImageElement: ImageElementEnricher(),
-                CustomTextElement: TextIntermediateHandler(),
-            }
         """
         self._enrichers = {**_DEFAULT_ENRICHERS, **enrichers} if enrichers else _DEFAULT_ENRICHERS
 

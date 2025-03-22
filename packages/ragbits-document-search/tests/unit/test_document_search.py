@@ -19,7 +19,7 @@ from ragbits.document_search.documents.document import (
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.parsers import DocumentParser
-from ragbits.document_search.ingestion.parsers.dummy import DummyProvider
+from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.batched import (
     BatchedIngestStrategy,
@@ -33,7 +33,7 @@ CONFIG = {
         },
     },
     "reranker": {"type": "NoopReranker"},
-    "parsers": {"txt": {"type": "DummyProvider"}},
+    "parsers": {"txt": {"type": "TextDocumentParser"}},
     "ingest_strategy": {"type": "SequentialIngestStrategy"},
 }
 
@@ -70,7 +70,7 @@ async def test_document_search_ingest_from_source():
 
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentParserRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
@@ -100,7 +100,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentParserRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
     await document_search.ingest([document])
 
@@ -123,7 +123,7 @@ async def test_document_search_with_search_config():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentParserRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
@@ -435,7 +435,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
 
     # Create parsers dict with actual provider instance
-    parsers: Mapping[DocumentType, DocumentParser] = {DocumentType.TXT: DummyProvider()}
+    parsers: Mapping[DocumentType, DocumentParser] = {DocumentType.TXT: TextDocumentParser()}
 
     # Mock vector store to track operations
     vector_store = InMemoryVectorStore(embedder=embeddings_mock)

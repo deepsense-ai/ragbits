@@ -6,6 +6,7 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
+from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
 from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredDocumentParser
 
 _default_parser = UnstructuredDocumentParser()
@@ -49,12 +50,6 @@ class DocumentParserRouter(WithConstructionConfig):
 
         Args:
             parsers: The mapping of document types and their parsers. To override default Unstructured parsers.
-
-        Example:
-            {
-                DocumentType.PDF: CustomPDFParser(),
-                DocumentType.TXT: CustomTextParser(),
-            }
         """
         self._parsers = {**_DEFAULT_PARSERS, **parsers} if parsers else _DEFAULT_PARSERS
 
@@ -89,11 +84,11 @@ class DocumentParserRouter(WithConstructionConfig):
             The parser for processing the document.
 
         Raises:
-            ValueError: If no parser is found for the document type.
+            ParserNotFoundError: If no parser is found for the document type.
         """
         parser = self._parsers.get(document_meta.document_type)
 
         if isinstance(parser, DocumentParser):
             return parser
 
-        raise ValueError(f"No parser found for the document type {document_meta.document_type}")
+        raise ParserNotFoundError(document_meta.document_type)

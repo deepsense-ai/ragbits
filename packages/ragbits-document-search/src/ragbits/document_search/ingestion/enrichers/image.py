@@ -74,8 +74,8 @@ class ImageElementEnricher(ElementEnricher):
         return ImageElement(
             document_meta=element.document_meta,
             description=response,
-            ocr_extracted_text=element.ocr_extracted_text,
             image_bytes=element.image_bytes,
+            ocr_extracted_text=element.ocr_extracted_text,
         )
 
     @classmethod

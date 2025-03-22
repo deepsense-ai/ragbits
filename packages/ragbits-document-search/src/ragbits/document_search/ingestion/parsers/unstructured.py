@@ -13,7 +13,7 @@ from unstructured_client.models.operations import PartitionRequestTypedDict
 from unstructured_client.models.shared import FilesTypedDict, PartitionParametersTypedDict, Strategy
 
 from ragbits.core.audit import traceable
-from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import Document, DocumentType
 from ragbits.document_search.documents.element import Element, ElementLocation, ImageElement, TextElement
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
 
@@ -82,22 +82,20 @@ class UnstructuredDocumentParser(DocumentParser):
         self._client = UnstructuredClient(api_key_auth=self.api_key, server_url=self.api_server)
 
     @traceable
-    async def parse(self, document_meta: DocumentMeta) -> list[Element]:
+    async def parse(self, document: Document) -> list[Element]:
         """
         Parse the document using the Unstructured API.
 
         Args:
-            document_meta: The document to parse.
+            document: The document to parse.
 
         Returns:
             The list of elements extracted from the document.
 
         Raises:
-            DocumentTypeNotSupportedError: If the document type is not supported.
+            ParserDocumentNotSupportedError: If the document type is not supported by the parser.
         """
-        self.validate_document_type(document_meta.document_type)
-        document = await document_meta.fetch()
-
+        self.validate_document_type(document.metadata.document_type)
         elements = await self._partition(document)
         return self._chunk(elements, document)
 

@@ -7,7 +7,7 @@
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.parsers.dummy.DummyProvider
+::: ragbits.document_search.ingestion.parsers.base.TextDocumentParser
     options:
       heading_level: 3
 

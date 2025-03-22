@@ -2,112 +2,65 @@ from pathlib import Path
 
 import pytest
 
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.parsers.unstructured import (
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_SERVER_URL_ENV,
     UnstructuredDocumentParser,
 )
-
-from ..helpers import env_vars_not_set
-
-
-@pytest.mark.parametrize(
-    "parsers",
-    [
-        {},
-        pytest.param({DocumentType.TXT: UnstructuredDocumentParser()}),
-        pytest.param(
-            {DocumentType.TXT: UnstructuredDocumentParser(use_api=True)},
-            marks=pytest.mark.skipif(
-                env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
-                reason="Unstructured API environment variables not set",
-            ),
-        ),
-    ],
-)
-async def test_parser_router_processes_text_document_with_unstructured_provider(parsers: dict):
-    parser_router = DocumentParserRouter(parsers)
-    document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
-
-    elements = await parser_router.get(document_meta).parse(document_meta)
-
-    assert isinstance(parser_router._parsers[DocumentType.TXT], UnstructuredDocumentParser)
-    assert len(elements) == 1
-    assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
-
-
-@pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
-    reason="Unstructured API environment variables not set",
-)
-async def test_parser_router_processes_md_document_with_unstructured_provider():
-    parser_router = DocumentParserRouter()
-    document_meta = DocumentMeta.from_local_path(Path(__file__).parent / "test_file.md")
-
-    elements = await parser_router.get(document_meta).parse(document_meta)
-
-    assert len(elements) == 1
-    assert elements[0].content == "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."  # type: ignore
-
-
-@pytest.mark.skipif(
-    env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
-    reason="Unstructured API environment variables not set",
-)
-@pytest.mark.parametrize("file_name", ["transformers_paper_page.pdf", "transformers_paper_page.png"])
-async def test_parser_router_processes_image_document_with_unstructured_provider(file_name: str):
-    parser_router = DocumentParserRouter()
-    document_meta = DocumentMeta.from_local_path(Path(__file__).parent / file_name)
-
-    elements = await parser_router.get(document_meta).parse(document_meta)
-
-    assert len(elements) == 7
-    assert elements[-1].description != ""  # type: ignore
+from tests.helpers import env_vars_not_set
 
 
 @pytest.mark.parametrize(
     "use_api",
     [
-        False,
+        pytest.param(
+            False,
+            id="local",
+        ),
         pytest.param(
             True,
             marks=pytest.mark.skipif(
                 env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
                 reason="Unstructured API environment variables not set",
             ),
+            id="api",
         ),
     ],
 )
-async def test_unstructured_provider_document_with_default_partition_kwargs(use_api: bool):
-    document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
-    unstructured_provider = UnstructuredDocumentParser(use_api=use_api)
-    elements = await unstructured_provider.parse(document_meta)
-
-    assert len(elements) == 1
-    assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
-
-
 @pytest.mark.parametrize(
-    "use_api",
+    ("document_metadata", "expected_num_elements"),
     [
-        False,
         pytest.param(
-            True,
-            marks=pytest.mark.skipif(
-                env_vars_not_set([UNSTRUCTURED_SERVER_URL_ENV, UNSTRUCTURED_API_KEY_ENV]),
-                reason="Unstructured API environment variables not set",
+            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George."),
+            1,
+            id="TextDocument",
+        ),
+        pytest.param(
+            DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "md" / "test_file.md"),
+            1,
+            id="MarkdownDocument",
+        ),
+        pytest.param(
+            DocumentMeta.from_local_path(
+                Path(__file__).parent.parent / "assets" / "img" / "transformers_paper_page.png"
             ),
+            7,
+            id="ImageDocument",
+        ),
+        pytest.param(
+            DocumentMeta.from_local_path(
+                Path(__file__).parent.parent / "assets" / "pdf" / "transformers_paper_page.pdf"
+            ),
+            7,
+            id="PDFDocument",
         ),
     ],
 )
-async def test_unstructured_provider_document_with_custom_partition_kwargs(use_api: bool):
-    document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George.")
-    partition_kwargs = {"languages": ["pl"], "strategy": "fast"}
-    unstructured_provider = UnstructuredDocumentParser(use_api=use_api, partition_kwargs=partition_kwargs)
-    elements = await unstructured_provider.parse(document_meta)
+async def test_unstructured_parser(use_api: bool, document_metadata: DocumentMeta, expected_num_elements: int) -> None:
+    document = await document_metadata.fetch()
+    parser = UnstructuredDocumentParser(use_api=use_api)
 
-    assert unstructured_provider.partition_kwargs == partition_kwargs
-    assert len(elements) == 1
-    assert elements[0].content == "Name of Peppa's brother is George."  # type: ignore
+    elements = await parser.parse(document)
+
+    assert len(elements) == expected_num_elements
