@@ -1,8 +1,10 @@
 import base64
+import inspect
 import os
 from io import BytesIO
 
 from PIL import Image
+from typing_extensions import Self
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
@@ -80,6 +82,18 @@ class UnstructuredDocumentParser(DocumentParser):
         self.use_api = use_api
         self.ignore_images = ignore_images
         self._client = UnstructuredClient(api_key_auth=self.api_key, server_url=self.api_server)
+
+    def __reduce__(self) -> tuple[type[Self], tuple]:
+        """
+        Enables the UnstructuredDocumentParser to be pickled and unpickled.
+
+        Returns:
+            The tuple of class and its arguments that allows object reconstruction.
+        """
+        return self.__class__, tuple(
+            self.__getattribute__(param_name)
+            for param_name in list(inspect.signature(self.__class__.__init__).parameters)[1:]
+        )
 
     @traceable
     async def parse(self, document: Document) -> list[Element]:

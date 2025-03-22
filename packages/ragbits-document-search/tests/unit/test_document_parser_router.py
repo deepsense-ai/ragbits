@@ -2,10 +2,11 @@ import pytest
 
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
+from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 
 
-async def test_parser_router():
+async def test_parser_router() -> None:
     parser_router = DocumentParserRouter({DocumentType.TXT: TextDocumentParser()})
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")
@@ -15,15 +16,14 @@ async def test_parser_router():
     assert isinstance(parser, TextDocumentParser)
 
 
-async def test_parser_router_raises_when_no_parser_found():
+async def test_parser_router_raises_when_no_parser_found() -> None:
     parser_router = DocumentParserRouter()
     parser_router._parsers = {DocumentType.TXT: TextDocumentParser()}
 
     document_meta = DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")
-
     document_meta.document_type = DocumentType.PDF
 
-    with pytest.raises(ValueError) as err:
-        _ = parser_router.get(document_meta)
+    with pytest.raises(ParserNotFoundError) as err:
+        parser_router.get(document_meta)
 
     assert str(err.value) == f"No parser found for the document type {DocumentType.PDF}"
