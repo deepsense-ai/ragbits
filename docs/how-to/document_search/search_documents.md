@@ -112,7 +112,7 @@ There is an additional functionality of [`DocumentSearch`][ragbits.document_sear
 config = {
     "vector_store": {...},
     "reranker": {...},
-    "providers": {...},
+    "parsers": {...},
     "rephraser": {...},
 }
 
