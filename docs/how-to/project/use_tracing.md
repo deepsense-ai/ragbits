@@ -1,4 +1,4 @@
-# How to use tracing in Ragbits
+# How-To: Setup tracing with Ragbits
 
 Each component of Ragbits includes built-in tracing, enabling users to collect detailed telemetry data
 without additional configuration. These traces provide visibility into execution flow, performance characteristics,

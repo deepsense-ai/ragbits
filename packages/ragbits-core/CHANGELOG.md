@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.2 (2025-03-21)
+
 ## 0.10.1 (2025-03-19)
 
 - Fix Qdrant vector store serialization

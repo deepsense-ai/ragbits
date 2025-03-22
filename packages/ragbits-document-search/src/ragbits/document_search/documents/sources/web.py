@@ -20,6 +20,7 @@ class WebSource(Source):
     """
 
     url: str
+    headers: dict[str, str] | None = None
     protocol: ClassVar[str] = "https"
 
     @property
@@ -52,7 +53,7 @@ class WebSource(Source):
         path = container_local_dir / normalized_url_path
 
         try:
-            async with aiohttp.ClientSession() as session, session.get(self.url) as response:
+            async with aiohttp.ClientSession() as session, session.get(self.url, headers=self.headers) as response:
                 if response.ok:
                     with open(path, "wb") as f:
                         async for chunk in response.content.iter_chunked(1024):

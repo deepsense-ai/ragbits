@@ -42,7 +42,7 @@ def lab(
     Launches the interactive application for listing, rendering, and testing prompts
     defined within the current project.
 
-    For more information, see the [Prompts Lab documentation](../how-to/core/prompts_lab.md).
+    For more information, see the [Prompts Lab documentation](../how-to/prompts/prompts_lab.md).
     """
     from ragbits.core.prompt.lab.app import lab_app
 
@@ -58,7 +58,7 @@ def generate_promptfoo_configs(
     """
     Generates the configuration files for the PromptFoo prompts.
 
-    For more information, see the [Promptfoo integration documentation](../how-to/core/promptfoo.md).
+    For more information, see the [Promptfoo integration documentation](../how-to/prompts/promptfoo.md).
     """
     from ragbits.core.prompt.promptfoo import generate_configs
 
