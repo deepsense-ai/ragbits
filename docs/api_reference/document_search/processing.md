@@ -1,24 +1,24 @@
 # Document Processing
 
-::: ragbits.document_search.ingestion.document_processor.DocumentProcessorRouter
+::: ragbits.document_search.ingestion.parsers.router.DocumentParserRouter
 
 ## Providers
-::: ragbits.document_search.ingestion.providers.base.BaseProvider
+::: ragbits.document_search.ingestion.parsers.base.DocumentParser
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.providers.dummy.DummyProvider
+::: ragbits.document_search.ingestion.parsers.base.TextDocumentParser
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.providers.unstructured.UnstructuredDefaultProvider
+::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredDocumentParser
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.providers.unstructured.UnstructuredImageProvider
+::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredImageProvider
     options:
       heading_level: 3
 
-::: ragbits.document_search.ingestion.providers.unstructured.UnstructuredPdfProvider
+::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredPdfProvider
     options:
       heading_level: 3

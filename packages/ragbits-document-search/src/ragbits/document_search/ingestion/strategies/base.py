@@ -2,7 +2,7 @@ import asyncio
 import random
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Awaitable, Callable, Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
 from types import ModuleType
 from typing import ClassVar, ParamSpec, TypeVar
@@ -10,11 +10,11 @@ from typing import ClassVar, ParamSpec, TypeVar
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, IntermediateElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
@@ -67,8 +67,8 @@ class IngestStrategy(WithConstructionConfig, ABC):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        parser_router: DocumentParserRouter,
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents.
@@ -120,8 +120,8 @@ class IngestStrategy(WithConstructionConfig, ABC):
     @staticmethod
     async def _parse_document(
         document: DocumentMeta | Document | Source,
-        parser_router: DocumentProcessorRouter,
-    ) -> Sequence[Element | IntermediateElement]:
+        parser_router: DocumentParserRouter,
+    ) -> list[Element]:
         """
         Parse a single document and return the elements.
 
@@ -131,6 +131,12 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
         Returns:
             The list of elements.
+
+        Raises:
+            ParserError: If the parsing of the document failed.
+            ParserDocumentNotSupportedError: If the document type is not supported.
+            ParserNotFoundError: If no parser is found for the document type.
+            SourceError: If the download of the document failed.
         """
         document_meta = (
             await DocumentMeta.from_source(document)
@@ -139,33 +145,37 @@ class IngestStrategy(WithConstructionConfig, ABC):
             if isinstance(document, DocumentMeta)
             else document.metadata
         )
-        parser = parser_router.get_provider(document_meta)
-        return await parser.process(document_meta)
+        parser = parser_router.get(document_meta)
+        parser.validate_document_type(document_meta.document_type)
+        document = await document_meta.fetch()
+        return await parser.parse(document)
 
     @staticmethod
     async def _enrich_elements(
-        elements: Iterable[IntermediateElement],
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        elements: Iterable[Element],
+        enricher_router: ElementEnricherRouter,
     ) -> list[Element]:
         """
-        Enrich intermediate elements.
+        Enrich elements for a single document.
 
         Args:
             elements: The document elements to enrich.
-            enricher_router: The intermediate element enricher router to use.
+            enricher_router: The element enricher router to use.
 
         Returns:
             The list of enriched elements.
+
+        Raises:
+            ValueError: If no enricher found for the element type.
         """
-        grouped_intermediate_elements: dict[type, list[IntermediateElement]] = defaultdict(list)
+        grouped_elements = defaultdict(list)
         for element in elements:
-            if isinstance(element, IntermediateElement):
-                grouped_intermediate_elements[type(element)].append(element)
+            grouped_elements[type(element)].append(element)
 
         grouped_enriched_elements = await asyncio.gather(
             *[
-                enricher.process(intermediate_elements)
-                for element_type, intermediate_elements in grouped_intermediate_elements.items()
+                enricher.enrich(elements)
+                for element_type, elements in grouped_elements.items()
                 if (enricher := enricher_router.get(element_type))
             ]
         )

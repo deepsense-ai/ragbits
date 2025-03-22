@@ -2,7 +2,7 @@ defaults:
   - vector_store@config.vector_store: chroma_optimization
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop
-  - providers@config.providers: unstructured_optimization
+  - parsers@config.parsers: unstructured_optimization
   - source@config.source: hf
   - _self_
 
