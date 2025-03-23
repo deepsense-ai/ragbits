@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from types import ModuleType
+from typing import ClassVar, Generic, TypeVar
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.element import Element
+from ragbits.document_search.ingestion import enrichers
 from ragbits.document_search.ingestion.enrichers.exceptions import EnricherElementNotSupportedError
 
 ElementT = TypeVar("ElementT", bound=Element)
@@ -12,6 +14,9 @@ class ElementEnricher(Generic[ElementT], WithConstructionConfig, ABC):
     """
     Base class for element enrichers, responsible for providing additional information about elements.
     """
+
+    default_module: ClassVar[ModuleType | None] = enrichers
+    configuration_key: ClassVar[str] = "enricher"
 
     @abstractmethod
     async def enrich(self, elements: list[ElementT]) -> list[ElementT]:

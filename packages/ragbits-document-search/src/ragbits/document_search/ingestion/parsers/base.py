@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from types import ModuleType
 from typing import ClassVar
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
@@ -13,8 +14,8 @@ class DocumentParser(WithConstructionConfig, ABC):
     Base class for document parsers, responsible for converting the document into a list of elements.
     """
 
-    default_module: ClassVar = parsers
-    configuration_key: ClassVar = "parser"
+    default_module: ClassVar[ModuleType | None] = parsers
+    configuration_key: ClassVar[str] = "parser"
 
     supported_document_types: set[DocumentType] = set()
 

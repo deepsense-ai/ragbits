@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from ragbits.core.embeddings.noop import NoopEmbedder
@@ -25,18 +27,14 @@ def ingest_strategy_fixture(request: pytest.FixtureRequest) -> IngestStrategy:
     return request.param
 
 
-@pytest.fixture(name="documents")
-def documents_fixture() -> list[DocumentMeta]:
-    return [
+async def test_ingest_strategy_call(ingest_strategy: IngestStrategy) -> None:
+    documents = [
         DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
         DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
         DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
         DocumentMeta.create_text_document_from_literal("Name of Peppa's grandfather is Grandpa Pig"),
         DocumentMeta.create_text_document_from_literal("Name of Peppa's grandmother is Granny Pig"),
     ]
-
-
-async def test_ingest_strategy_call(ingest_strategy: IngestStrategy, documents: list[DocumentMeta]) -> None:
     vector_store = InMemoryVectorStore(embedder=NoopEmbedder())
     parser_router = DocumentParserRouter({DocumentType.TXT: TextDocumentParser()})
     enricher_router = ElementEnricherRouter()
@@ -48,5 +46,29 @@ async def test_ingest_strategy_call(ingest_strategy: IngestStrategy, documents: 
         enricher_router=enricher_router,
     )
 
-    assert len(results.successful) == len(documents)
+    assert len(results.successful) == 5
     assert len(results.failed) == 0
+
+
+async def test_ingest_strategy_call_fail(ingest_strategy: IngestStrategy) -> None:
+    documents = [
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
+        DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
+        DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "img" / "transformers_paper_page.png"),
+        DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "pdf" / "transformers_paper_page.pdf"),
+    ]
+    vector_store = InMemoryVectorStore(embedder=NoopEmbedder())
+    parser_router = DocumentParserRouter()
+    parser_router._parsers = {DocumentType.TXT: TextDocumentParser()}
+    enricher_router = ElementEnricherRouter()
+
+    results = await ingest_strategy(
+        documents=documents,
+        vector_store=vector_store,
+        parser_router=parser_router,
+        enricher_router=enricher_router,
+    )
+
+    assert len(results.successful) == 3
+    assert len(results.failed) == 2
