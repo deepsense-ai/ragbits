@@ -85,6 +85,6 @@ async def test_parser_call_fail(parser_type: type[DocumentParser]) -> None:
     with pytest.raises(ParserDocumentNotSupportedError) as exc:
         await parser.parse(document)
 
-    assert exc.value.message == f"Document type {DocumentType.PDF} is not supported by the {parser_type.__name__}"
+    assert exc.value.message == f"Document type {DocumentType.PDF.value} is not supported by the {parser_type.__name__}"
     assert exc.value.document_type == DocumentType.PDF
     assert exc.value.parser_name == parser_type.__name__
