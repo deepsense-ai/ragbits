@@ -4,7 +4,7 @@ from typing import ClassVar
 from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
 from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredDocumentParser
@@ -73,12 +73,12 @@ class DocumentParserRouter(WithConstructionConfig):
         }
         return cls(parsers=parsers)
 
-    def get(self, document_meta: DocumentMeta) -> DocumentParser:
+    def get(self, document_type: DocumentType) -> DocumentParser:
         """
         Get the parser for the document.
 
         Args:
-            document_meta: The document metadata.
+            document_type: The document type.
 
         Returns:
             The parser for processing the document.
@@ -86,9 +86,9 @@ class DocumentParserRouter(WithConstructionConfig):
         Raises:
             ParserNotFoundError: If no parser is found for the document type.
         """
-        parser = self._parsers.get(document_meta.document_type)
+        parser = self._parsers.get(document_type)
 
         if isinstance(parser, DocumentParser):
             return parser
 
-        raise ParserNotFoundError(document_meta.document_type)
+        raise ParserNotFoundError(document_type)

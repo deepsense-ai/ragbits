@@ -146,7 +146,7 @@ class IngestStrategy(WithConstructionConfig, ABC):
             else document.metadata
         )
 
-        parser = parser_router.get(document_meta)
+        parser = parser_router.get(document_meta.document_type)
         parser.validate_document_type(document_meta.document_type)
         document = await document_meta.fetch()
 
