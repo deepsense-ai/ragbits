@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry
+
 ## 0.10.2 (2025-03-21)
 
 ## 0.10.1 (2025-03-19)
