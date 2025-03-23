@@ -16,6 +16,7 @@ from tests.helpers import env_vars_not_set
     [
         pytest.param(
             False,
+            marks=pytest.mark.skipif(True, reason="No dependencies installed"),
             id="local",
         ),
         pytest.param(

@@ -16,7 +16,7 @@ class DocumentParser(WithConstructionConfig, ABC):
     default_module: ClassVar = parsers
     configuration_key: ClassVar = "parser"
 
-    supported_document_types: set[DocumentType]
+    supported_document_types: set[DocumentType] = set()
 
     @abstractmethod
     async def parse(self, document: Document) -> list[Element]:

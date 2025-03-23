@@ -70,10 +70,9 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
         responses: list[ImageDescriberOutput] = []
         for element in elements:
             self.validate_element_type(type(element))
-            if isinstance(element, ImageElement):
-                input_data = self._prompt.input_type(image=element.image_bytes)  # type: ignore
-                prompt = self._prompt(input_data)
-                responses.append(await self._llm.generate(prompt))
+            input_data = self._prompt.input_type(image=element.image_bytes)  # type: ignore
+            prompt = self._prompt(input_data)
+            responses.append(await self._llm.generate(prompt))
 
         return [
             ImageElement(
@@ -95,6 +94,10 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
 
         Returns:
             The initialized instance of `ImageElementEnricher`.
+
+        Raises:
+            ValidationError: If the configuration doesn't follow the expected format.
+            InvalidConfigError: If llm or prompt can't be found or are not the correct type.
         """
         llm: LLM = LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"]))
         prompt = import_by_path(config["prompt"]) if "prompt" in config else None
