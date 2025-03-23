@@ -23,6 +23,7 @@ nav:
       - Project configuration:
         - "Set preferred components in project": how-to/project/component_preferences.md
         - "Setup tracing": how-to/project/use_tracing.md
+        - "Setup metrics": how-to/project/use_metrics.md
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md
         - "Search documents": how-to/document_search/search-documents.md
