@@ -4,7 +4,7 @@ This guide will walk you through setting up metric tracking with Ragbits using t
 
 ## Set up the OpenTelemetry backend
 
-To track metrics, you need a backend to receive, store, and visualize the data. We recommend using the [`grafana/otel-lgtm`](https://hub.docker.com/r/grafana/otel-lgtm) Docker image, which provides a complete OpenTelemetry stack in a single container, eliminating the need to configure and manage multiple services separately. This includes **OpenTelemetry collector**, **Prometheus** and **Grafana**. For more details on how to get started and leverage this tool, check out [the official Grafana blog post](https://grafana.com/blog/2024/03/13/an-opentelemetry-backend-in-a-docker-image-introducing-grafana/otel-lgtm/). 
+To track metrics, you need a backend to receive, store, and visualize the data. We recommend using the [`grafana/otel-lgtm`](https://hub.docker.com/r/grafana/otel-lgtm) Docker image, which provides a complete OpenTelemetry stack in a single container, eliminating the need to configure and manage multiple services separately. This includes **OpenTelemetry collector**, **Prometheus** and **Grafana**. For more details on how to get started and leverage this tool, check out [the official Grafana blog post](https://grafana.com/blog/2024/03/13/an-opentelemetry-backend-in-a-docker-image-introducing-grafana/otel-lgtm/).
 
 Run the following command to start the backend:
 
@@ -50,7 +50,7 @@ Once the OpenTelemetry backend and Ragbits are configured, you can start trackin
 
 ## Metrics Tracked by Ragbits
 
-Ragbits automatically tracks the following metrics during LLM interactions: the time taken to process a prompt and receive a response (`prompt_throughput`), the number of input tokens sent to the LLM (`input_tokens`), the number of tokens processed per second (`token_throughput`) and the time taken (in seconds) to receive the first token in a streaming response (`time_to_first_token`). 
+Ragbits automatically tracks the following metrics during LLM interactions: the time taken to process a prompt and receive a response (`prompt_throughput`), the number of input tokens sent to the LLM (`input_tokens`), the number of tokens processed per second (`token_throughput`) and the time taken (in seconds) to receive the first token in a streaming response (`time_to_first_token`).
 
 Each metric is tagged with the following **labels** (attributes) for better filtering and analysis: the class name of the prompt being processed (`promp`) and the name of the LLM being used (`model`).
 
