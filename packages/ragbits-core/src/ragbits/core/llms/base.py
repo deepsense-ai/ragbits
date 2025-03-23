@@ -3,12 +3,10 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
-from opentelemetry.metrics import Meter
 from pydantic import BaseModel
 
 from ragbits.core import llms
 from ragbits.core.audit import trace
-from ragbits.core.audit.otel_metric_handler import OtelMetricHandler
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -50,25 +48,19 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     default_module: ClassVar = llms
     configuration_key: ClassVar = "llm"
 
-    def __init__(
-        self, model_name: str, default_options: LLMClientOptionsT | None = None, meter: Meter | None = None
-    ) -> None:
+    def __init__(self, model_name: str, default_options: LLMClientOptionsT | None = None) -> None:
         """
         Constructs a new LLM instance.
 
         Args:
             model_name: Name of the model to be used.
             default_options: Default options to be used.
-            meter: An optional OpenTelemetry Meter instance for logging metrics. Defaults to None.
 
         Raises:
             TypeError: If the subclass is missing the 'options_cls' attribute.
         """
         super().__init__(default_options=default_options)
         self.model_name = model_name
-        self._metric_handler = OtelMetricHandler(meter) if meter else None
-        if self._metric_handler:
-            self._metric_handler.setup_histograms()
 
     def __init_subclass__(cls) -> None:
         if not hasattr(cls, "options_cls"):
