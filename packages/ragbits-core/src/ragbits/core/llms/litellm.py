@@ -3,10 +3,9 @@ from collections.abc import AsyncGenerator
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
-from opentelemetry.metrics import Meter
 from pydantic import BaseModel
 
-from ragbits.core.audit import trace
+from ragbits.core.audit import record_metric, trace
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -57,7 +56,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_version: str | None = None,
         use_structured_output: bool = False,
         router: litellm.Router | None = None,
-        meter: Meter | None = None,
     ) -> None:
         """
         Constructs a new LiteLLM instance.
@@ -75,9 +73,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
             router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
-            meter: An optional OpenTelemetry Meter instance for logging metrics. Defaults to None.
         """
-        super().__init__(model_name, default_options, meter)
+        super().__init__(model_name, default_options)
         self.base_url = base_url
         self.api_key = api_key
         self.api_version = api_version
@@ -141,8 +138,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
 
-        if self._metric_handler:
-            self._metric_handler.record("prompt_throughput", prompt_throughput, attributes)
+        record_metric("prompt_throughput", prompt_throughput, attributes)
 
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
@@ -155,10 +151,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
-        if self._metric_handler and response.usage:  # type: ignore
-            self._metric_handler.record("input_tokens", response.usage.prompt_tokens, attributes)  # type: ignore
+        if response.usage:  # type: ignore
+            record_metric("input_tokens", response.usage.prompt_tokens, attributes)  # type: ignore
             token_throughput = response.usage.total_tokens / prompt_throughput  # type: ignore
-            self._metric_handler.record("token_throughput", token_throughput, attributes)
+            record_metric("token_throughput", token_throughput, attributes)
 
         return results  # type: ignore
 
@@ -198,8 +194,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         input_tokens = self.count_tokens(prompt)
         output_tokens = 0
 
-        if self._metric_handler:
-            self._metric_handler.record("input_tokens", input_tokens, attributes)
+        record_metric("input_tokens", input_tokens, attributes)
 
         start_time = time.perf_counter()
 
@@ -229,17 +224,15 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
                         if not first_token_received:
                             time_to_first_token = time.perf_counter() - start_time
-                            if self._metric_handler:
-                                self._metric_handler.record("time_to_first_token", time_to_first_token, attributes)
+                            record_metric("time_to_first_token", time_to_first_token, attributes)
                             first_token_received = True
 
                     yield content
 
                 total_time = time.perf_counter() - start_time
-                if self._metric_handler:
-                    token_throughput = output_tokens / total_time
-                    self._metric_handler.record("prompt_throughput", total_time, attributes)
-                    self._metric_handler.record("token_throughput", token_throughput, attributes)
+                token_throughput = output_tokens / total_time
+                record_metric("prompt_throughput", total_time, attributes)
+                record_metric("token_throughput", token_throughput, attributes)
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 

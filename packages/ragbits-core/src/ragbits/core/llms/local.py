@@ -14,8 +14,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from opentelemetry.metrics import Meter
-
+from ragbits.core.audit import record_metric
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt
@@ -55,7 +54,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         default_options: LocalLLMOptions | None = None,
         *,
         api_key: str | None = None,
-        meter: Meter | None = None,
     ) -> None:
         """
         Constructs a new local LLM instance.
@@ -64,7 +62,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
             model_name: Name of the model to use. This should be a model from the CausalLM class.
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
-            meter: An optional OpenTelemetry Meter instance for logging metrics. Defaults to None.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -72,7 +69,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         if not HAS_LOCAL_LLM:
             raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
 
-        super().__init__(model_name, default_options, meter)
+        super().__init__(model_name, default_options)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name, device_map="auto", torch_dtype=torch.bfloat16, token=api_key
         )
@@ -125,12 +122,11 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         prompt_throughput = time.perf_counter() - start_time
 
-        if self._metric_handler:
-            attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
-            self._metric_handler.record("prompt_throughput", prompt_throughput, attributes)
-            self._metric_handler.record("input_tokens", input_ids.shape[-1], attributes)
-            token_throughput = outputs.total_tokens / prompt_throughput
-            self._metric_handler.record("token_throughput", token_throughput, attributes)
+        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
+        record_metric("prompt_throughput", prompt_throughput, attributes)
+        record_metric("input_tokens", input_ids.shape[-1], attributes)
+        token_throughput = outputs.total_tokens / prompt_throughput
+        record_metric("token_throughput", token_throughput, attributes)
 
         return {"response": decoded_response}
 
@@ -162,8 +158,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
         attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
 
-        if self._metric_handler:
-            self._metric_handler.record("input_tokens", input_tokens, attributes)
+        record_metric("input_tokens", input_tokens, attributes)
 
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
@@ -183,8 +178,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
                     if not first_token_received:
                         time_to_first_token = time.perf_counter() - start_time
-                        if self._metric_handler:
-                            self._metric_handler.record("time_to_first_token", time_to_first_token, attributes)
+                        record_metric("time_to_first_token", time_to_first_token, attributes)
                         first_token_received = True
 
                 yield text_piece
@@ -192,9 +186,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
             generation_thread.join()
 
             total_time = time.perf_counter() - start_time
-            if self._metric_handler:
-                token_throughput = output_tokens / total_time
-                self._metric_handler.record("prompt_throughput", total_time, attributes)
-                self._metric_handler.record("token_throughput", token_throughput, attributes)
+            token_throughput = output_tokens / total_time
+            record_metric("prompt_throughput", total_time, attributes)
+            record_metric("token_throughput", token_throughput, attributes)
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)

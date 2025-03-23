@@ -6,16 +6,54 @@ from functools import wraps
 from types import SimpleNamespace
 from typing import Any, ParamSpec, TypeVar
 
+from opentelemetry.metrics import Meter
+
+from ragbits.core.audit.otel_metric_handler import OtelMetricHandler
 from ragbits.core.audit.trace_handlers.base import TraceHandler
 
-__all__ = ["TraceHandler", "set_trace_handlers", "trace", "traceable"]
+__all__ = [
+    "OtelMetricHandler",
+    "TraceHandler",
+    "record_metric",
+    "set_metric_handler",
+    "set_trace_handlers",
+    "trace",
+    "traceable",
+]
 
 _trace_handlers: list[TraceHandler] = []
+_metric_handler: OtelMetricHandler | None = None
+
 
 Handler = str | TraceHandler
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def set_metric_handler(meter: Meter) -> None:
+    """
+    Sets up the global metric handler.
+
+    Args:
+        meter: OpenTelemetry Meter instance to be used for metrics.
+    """
+    global _metric_handler  # noqa: PLW0603
+    _metric_handler = OtelMetricHandler(meter)
+    _metric_handler.setup_histograms()
+
+
+def record_metric(metric_name: str, value: float, attributes: dict | None = None) -> None:
+    """
+    Records a metric using the global metric handler.
+
+    Args:
+        metric_name: The name of the metric.
+        value: The value to record.
+        attributes: Optional attributes providing context for the metric.
+    """
+    if _metric_handler:
+        _metric_handler.record(metric_name, value, attributes)
 
 
 def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
