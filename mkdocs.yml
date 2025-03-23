@@ -53,7 +53,8 @@ nav:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
           - Ingest:
-            - api_reference/document_search/processing.md
+            - api_reference/document_search/ingest/parsers.md
+            - api_reference/document_search/ingest/enrichers.md
             - api_reference/document_search/ingest/strategies.md
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md

@@ -11,7 +11,7 @@ from ragbits.document_search.ingestion.enrichers.image import ImageDescriberProm
 
 @pytest.fixture
 def llm() -> LiteLLM:
-    default_options = LiteLLMOptions(mock_response="{\"description\": \"response\"}")
+    default_options = LiteLLMOptions(mock_response='{"description": "response"}')
     return LiteLLM(model_name="gpt-4o", default_options=default_options)
 
 
