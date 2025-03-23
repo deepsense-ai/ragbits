@@ -7,9 +7,10 @@ from ragbits.core.utils.config_handling import ObjectContructionConfig, WithCons
 from ragbits.document_search.documents import element
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
+from ragbits.document_search.ingestion.enrichers.exceptions import EnricherNotFoundError
 from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher
 
-_DEFAULT_ENRICHERS: dict[type[Element], ImageElementEnricher] = {
+_DEFAULT_ENRICHERS: dict[type[Element], ElementEnricher] = {
     ImageElement: ImageElementEnricher(),
 }
 
@@ -21,11 +22,11 @@ class ElementEnricherRouter(WithConstructionConfig):
 
     configuration_key: ClassVar[str] = "enrichers"
 
-    _enrichers: Mapping[type[Element], ImageElementEnricher]
+    _enrichers: Mapping[type[Element], ElementEnricher]
 
     def __init__(
         self,
-        enrichers: Mapping[type[Element], ImageElementEnricher] | None = None,
+        enrichers: Mapping[type[Element], ElementEnricher] | None = None,
     ) -> None:
         """
         Initialize the ElementEnricherRouter instance.
@@ -61,11 +62,11 @@ class ElementEnricherRouter(WithConstructionConfig):
         Raises:
             InvalidConfigError: If any of the provided parsers cannot be initialized.
         """
-        enrichers = {
+        enrichers: dict[type[Element], ElementEnricher] = {
             import_by_path(element_type, element): ElementEnricher.subclass_from_config(enricher_config)
             for element_type, enricher_config in config.items()
         }
-        return cls(enrichers=enrichers)  # type: ignore
+        return cls(enrichers=enrichers)
 
     def get(self, element_type: type[Element]) -> ElementEnricher:
         """
@@ -78,11 +79,11 @@ class ElementEnricherRouter(WithConstructionConfig):
             The enricher for processing the element.
 
         Raises:
-            ValueError: If no enricher is found for the element type.
+            EnricherNotFoundError: If no enricher is found for the element type.
         """
         enricher = self._enrichers.get(element_type)
 
         if isinstance(enricher, ElementEnricher):
             return enricher
 
-        raise ValueError(f"No enricher found for the element type {element_type}")
+        raise EnricherNotFoundError(element_type)

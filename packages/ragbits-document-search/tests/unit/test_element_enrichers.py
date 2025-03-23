@@ -4,13 +4,14 @@ import pytest
 
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import ImageElement
-from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher, _ImagePrompt
+from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.ingestion.enrichers.exceptions import EnricherElementNotSupportedError
+from ragbits.document_search.ingestion.enrichers.image import ImageDescriberPrompt, ImageElementEnricher
 
 
 @pytest.fixture
 def llm() -> LiteLLM:
-    default_options = LiteLLMOptions(mock_response="response")
+    default_options = LiteLLMOptions(mock_response="{\"description\": \"response\"}")
     return LiteLLM(model_name="gpt-4o", default_options=default_options)
 
 
@@ -29,6 +30,18 @@ def image_element(image_bytes: bytes) -> ImageElement:
     )
 
 
+def test_enricher_validates_supported_element_types_passes() -> None:
+    ImageElementEnricher.validate_element_type(ImageElement)
+
+
+def test_enricher_validates_supported_document_types_fails() -> None:
+    class CustomElement(Element):
+        pass
+
+    with pytest.raises(EnricherElementNotSupportedError):
+        ImageElementEnricher.validate_element_type(CustomElement)  # type: ignore
+
+
 async def test_process(llm: LiteLLM, image_element: ImageElement):
     enricher = ImageElementEnricher(llm=llm)
     results = await enricher.enrich([image_element])
@@ -44,7 +57,7 @@ def test_from_config():
     config = {
         "llm": {
             "type": "LiteLLM",
-            "prompt": "ragbits.document_search.ingestion.enrichers.images:_ImagePrompt",
+            "prompt": "ragbits.document_search.ingestion.enrichers.image:ImageDescriberPrompt",
         }
     }
 
@@ -52,4 +65,4 @@ def test_from_config():
 
     assert isinstance(enricher, ImageElementEnricher)
     assert isinstance(enricher._llm, LiteLLM)
-    assert enricher._prompt == _ImagePrompt
+    assert enricher._prompt == ImageDescriberPrompt

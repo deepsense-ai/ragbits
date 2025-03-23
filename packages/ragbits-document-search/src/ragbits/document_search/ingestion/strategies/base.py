@@ -145,9 +145,11 @@ class IngestStrategy(WithConstructionConfig, ABC):
             if isinstance(document, DocumentMeta)
             else document.metadata
         )
+
         parser = parser_router.get(document_meta)
         parser.validate_document_type(document_meta.document_type)
         document = await document_meta.fetch()
+
         return await parser.parse(document)
 
     @staticmethod
@@ -166,18 +168,20 @@ class IngestStrategy(WithConstructionConfig, ABC):
             The list of enriched elements.
 
         Raises:
-            ValueError: If no enricher found for the element type.
+            EnricherError: If the enrichment of the elements failed.
+            EnricherElementNotSupportedError: If the element type is not supported.
+            EnricherNotFoundError: If no enricher is found for the element type.
         """
         grouped_elements = defaultdict(list)
         for element in elements:
             grouped_elements[type(element)].append(element)
 
+        for element_type in grouped_elements:
+            enricher = enricher_router.get(element_type)
+            enricher.validate_element_type(element_type)
+
         grouped_enriched_elements = await asyncio.gather(
-            *[
-                enricher.enrich(elements)
-                for element_type, elements in grouped_elements.items()
-                if (enricher := enricher_router.get(element_type))
-            ]
+            *[enricher_router.get(element_type).enrich(elements) for element_type, elements in grouped_elements.items()]
         )
         return [element for enriched_elements in grouped_enriched_elements for element in enriched_elements]
 

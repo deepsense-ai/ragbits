@@ -33,7 +33,8 @@ class DocumentParser(WithConstructionConfig, ABC):
             ParserError: If the parsing of the document failed.
         """
 
-    def validate_document_type(self, document_type: DocumentType) -> None:
+    @classmethod
+    def validate_document_type(cls, document_type: DocumentType) -> None:
         """
         Check if the parser supports the document type.
 
@@ -43,8 +44,8 @@ class DocumentParser(WithConstructionConfig, ABC):
         Raises:
             ParserDocumentNotSupportedError: If the document type is not supported.
         """
-        if document_type not in self.supported_document_types:
-            raise ParserDocumentNotSupportedError(parser_name=self.__class__.__name__, document_type=document_type)
+        if document_type not in cls.supported_document_types:
+            raise ParserDocumentNotSupportedError(parser_name=cls.__name__, document_type=document_type)
 
 
 class TextDocumentParser(DocumentParser):

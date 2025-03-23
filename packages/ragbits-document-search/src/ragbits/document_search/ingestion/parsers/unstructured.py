@@ -25,7 +25,7 @@ UNSTRUCTURED_SERVER_URL_ENV = "UNSTRUCTURED_SERVER_URL"
 
 class UnstructuredDocumentParser(DocumentParser):
     """
-    A provider that uses the Unstructured API or local SDK to process the documents.
+    Parser that uses the Unstructured API or local SDK to process the documents.
     """
 
     supported_document_types = {
