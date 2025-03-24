@@ -142,6 +142,7 @@ async def test_from_uri_with_ssh_branch():
     assert sources[0].file_path == "README.md"
 
 
+@pytest.mark.skip(reason="SSH is not supported in the CI environment")
 async def test_git_source_fetch_with_ssh():
     """Test fetching a specific file using SSH repository URL."""
     source = GitSource(repo_url=TEST_REPO_SSH_URL, file_path="README.md")
