@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 
 import pydantic
@@ -523,7 +522,6 @@ async def test_response_parser():
         user_prompt = "Hello AI"
 
     async def async_parser(response: str) -> str:
-        await asyncio.sleep(1)
         return response.upper()
 
     def sync_parser(response: str) -> str:
