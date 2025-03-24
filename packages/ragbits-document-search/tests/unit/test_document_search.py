@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -163,11 +164,8 @@ async def test_document_search_with_batched():
         DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Alexander Pig"),
     ]
 
-    embeddings_mock = AsyncMock()
-    embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
-
     ingest_strategy = BatchedIngestStrategy(batch_size=5)
-    vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
+    vectore_store = InMemoryVectorStore(embedder=NoopEmbedder())
 
     document_search = DocumentSearch(
         vector_store=vectore_store,

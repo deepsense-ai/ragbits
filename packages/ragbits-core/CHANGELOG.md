@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Fix Qdrant vector store serialization
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
+- Fix Qdrant vector store serialization (#419)
 
 ## 0.10.2 (2025-03-21)
 
