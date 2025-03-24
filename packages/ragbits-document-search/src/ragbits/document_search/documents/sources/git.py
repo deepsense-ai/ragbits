@@ -110,7 +110,7 @@ class GitSource(Source):
                 repo = git.Repo(str(repo_dir))
                 origin = repo.remotes.origin
                 # Use shallow fetch when pulling
-                origin.fetch(depth=1, single_branch=bool(branch))
+                origin.fetch(depth=1)  # Removed single_branch option as it's not supported
                 # Reset to the latest commit
                 repo.git.reset("--hard", "origin/" + (branch or repo.active_branch.name))
         except git.GitCommandError as e:
@@ -178,6 +178,8 @@ class GitSource(Source):
         Supported URI formats:
         - git://https://github.com/username/repo.git:path/to/file.txt
         - git://https://github.com/username/repo.git:branch:path/to/file.txt
+        - git@github.com:username/repo.git:path/to/file.txt
+        - git@github.com:username/repo.git:branch:path/to/file.txt
 
         Args:
             uri: The URI path in the format described above.
@@ -195,9 +197,17 @@ class GitSource(Source):
             # Repo URL and file path
             return [cls(repo_url=parts[0], file_path=parts[1])]
         elif len(parts) >= _MIN_PARTS_WITH_PROTOCOL:
-            # This could either be a git://https://github.com format or just a URL with multiple colons
-            # Try to reconstruct a valid repo URL
-            if parts[0] in ["http", "https"]:
+            # Handle SSH format (git@github.com:username/repo.git)
+            if parts[0].startswith("git@"):
+                repo_url = f"{parts[0]}:{parts[1]}"  # Reconstruct full SSH URL
+                if len(parts) == _MIN_PARTS_WITH_PROTOCOL:
+                    # Just file path, no branch
+                    return [cls(repo_url=repo_url, file_path=parts[2])]
+                else:
+                    # Branch and file path
+                    return [cls(repo_url=repo_url, branch=parts[2], file_path=parts[3])]
+            # Handle HTTPS format
+            elif parts[0] in ["http", "https"]:
                 # This is likely an https:// URL format
                 repo_url = f"{parts[0]}:{parts[1]}"
                 # The rest of the parts could be the branch and file path

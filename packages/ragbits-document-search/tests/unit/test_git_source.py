@@ -58,6 +58,27 @@ async def test_from_uri():
     assert result[0].branch == "main"
     assert result[0].file_path == "docs/api/index.md"
 
+    # Test with SSH format and file path
+    result = await GitSource.from_uri("git@github.com:user/repo.git:README.md")
+    assert len(result) == 1
+    assert result[0].repo_url == "git@github.com:user/repo.git"
+    assert result[0].file_path == "README.md"
+    assert result[0].branch is None
+
+    # Test with SSH format, branch, and file path
+    result = await GitSource.from_uri("git@github.com:user/repo.git:main:README.md")
+    assert len(result) == 1
+    assert result[0].repo_url == "git@github.com:user/repo.git"
+    assert result[0].branch == "main"
+    assert result[0].file_path == "README.md"
+
+    # Test with SSH format and deep file path
+    result = await GitSource.from_uri("git@github.com:user/repo.git:main:docs/api/index.md")
+    assert len(result) == 1
+    assert result[0].repo_url == "git@github.com:user/repo.git"
+    assert result[0].branch == "main"
+    assert result[0].file_path == "docs/api/index.md"
+
 
 @patch("ragbits.document_search.documents.sources.git.git")
 async def test_fetch_new_repository(git_mock: MagicMock):
@@ -94,7 +115,10 @@ async def test_fetch_existing_repository(git_mock: MagicMock):
     # Setup mocks
     repo_mock = MagicMock()
     origin_mock = MagicMock()
+    active_branch_mock = MagicMock()
+    active_branch_mock.name = "main"
     repo_mock.remotes.origin = origin_mock
+    repo_mock.active_branch = active_branch_mock
     git_mock.Repo.return_value = repo_mock
     git_mock.GitCommandError = Exception
 
@@ -111,8 +135,10 @@ async def test_fetch_existing_repository(git_mock: MagicMock):
 
     # Verify Repo was initialized with the correct path
     git_mock.Repo.assert_called_once()
-    # Verify pull was called
-    origin_mock.pull.assert_called_once()
+    # Verify fetch was called with depth=1
+    origin_mock.fetch.assert_called_once_with(depth=1)
+    # Verify reset was called
+    repo_mock.git.reset.assert_called_once_with("--hard", "origin/main")
 
     # Verify result is a Path
     assert isinstance(result, Path)

@@ -11,6 +11,7 @@ os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 # A public repository that's unlikely to disappear and has a stable structure
 TEST_REPO_URL = "https://github.com/psf/requests.git"
+TEST_REPO_SSH_URL = "git@github.com:psf/requests.git"
 
 
 async def test_git_source_fetch_file():
@@ -117,3 +118,39 @@ async def test_list_sources_py_files():
     # setup.py should be one of the files
     setup_py_sources = [s for s in result if s.file_path == "setup.py"]
     assert len(setup_py_sources) == 1
+
+
+async def test_from_uri_with_ssh():
+    """Test GitSource.from_uri with SSH repository URL."""
+    uri = f"{TEST_REPO_SSH_URL}:README.md"
+    sources = await GitSource.from_uri(uri)
+
+    assert len(sources) == 1
+    assert sources[0].repo_url == TEST_REPO_SSH_URL
+    assert sources[0].file_path == "README.md"
+    assert sources[0].branch is None
+
+
+async def test_from_uri_with_ssh_branch():
+    """Test GitSource.from_uri with SSH repository URL and branch."""
+    uri = f"{TEST_REPO_SSH_URL}:main:README.md"
+    sources = await GitSource.from_uri(uri)
+
+    assert len(sources) == 1
+    assert sources[0].repo_url == TEST_REPO_SSH_URL
+    assert sources[0].branch == "main"
+    assert sources[0].file_path == "README.md"
+
+
+async def test_git_source_fetch_with_ssh():
+    """Test fetching a specific file using SSH repository URL."""
+    source = GitSource(repo_url=TEST_REPO_SSH_URL, file_path="README.md")
+    path = await source.fetch()
+
+    # Check that the path exists and is a file
+    assert path.is_file()
+    assert path.name == "README.md"
+
+    # Check that the content is reasonable
+    content = path.read_text()
+    assert "Requests" in content  # The README should contain the name of the project
