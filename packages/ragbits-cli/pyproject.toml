@@ -44,7 +44,7 @@ ragbits = "ragbits.cli:main"
 rbts = "ragbits.cli:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "setuptools==77.0.3"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
