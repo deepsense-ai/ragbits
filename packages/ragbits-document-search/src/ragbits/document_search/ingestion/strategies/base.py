@@ -1,5 +1,6 @@
 import asyncio
 import random
+import traceback
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Awaitable, Callable, Iterable, Sequence
@@ -19,6 +20,28 @@ from ragbits.document_search.ingestion.intermediate_handlers.base import BaseInt
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
 
+@dataclass
+class IngestError:
+    """
+    Represents an error that occurred during the document ingest execution
+    """
+    type: type[Exception]
+    message: str
+    stacktrace: str
+
+    @staticmethod
+    def from_exception(exc: Exception) -> "IngestError":
+        """
+        Create an IngestError from an exception.
+
+        Args:
+            exc: The exception to create the IngestError from.
+
+        Returns:
+            The IngestError instance.
+        """
+        stacktrace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+        return IngestError(type=type(exc), message=str(exc), stacktrace=stacktrace)
 
 @dataclass
 class IngestDocumentResult:
@@ -28,7 +51,7 @@ class IngestDocumentResult:
 
     document_uri: str
     num_elements: int = 0
-    error: BaseException | None = None
+    error: IngestError | None = None
 
 
 @dataclass

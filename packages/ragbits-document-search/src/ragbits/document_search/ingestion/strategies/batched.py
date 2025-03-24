@@ -11,6 +11,7 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
+    IngestError,
     IngestExecutionResult,
     IngestStrategy,
 )
@@ -19,7 +20,7 @@ from ragbits.document_search.ingestion.strategies.base import (
 @dataclass
 class IngestTaskResult:
     """
-    Represents the result of the document batch ingest tast.
+    Represents the result of the document batch ingest task.
     """
 
     document_uri: str
@@ -145,12 +146,13 @@ class BatchedIngestStrategy(IngestStrategy):
             ],
             return_exceptions=True,
         )
+
         return [
             IngestDocumentResult(
                 document_uri=uri,
-                error=response,
+                error=IngestError.from_exception(response),
             )
-            if isinstance(response, BaseException)
+            if isinstance(response, Exception)
             else IngestTaskResult(
                 document_uri=uri,
                 elements=response,
@@ -187,9 +189,9 @@ class BatchedIngestStrategy(IngestStrategy):
         return [
             IngestDocumentResult(
                 document_uri=result.document_uri,
-                error=response,
+                error=IngestError.from_exception(response),
             )
-            if isinstance(response, BaseException)
+            if isinstance(response, Exception)
             else IngestTaskResult(
                 document_uri=result.document_uri,
                 elements=[element for element in result.elements if isinstance(element, Element)] + response,
@@ -230,7 +232,7 @@ class BatchedIngestStrategy(IngestStrategy):
             return [
                 IngestDocumentResult(
                     document_uri=result.document_uri,
-                    error=exc,
+                    error=IngestError.from_exception(exc),
                 )
                 for result in batch
             ]
