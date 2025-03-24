@@ -68,6 +68,7 @@ dev-dependencies = [
     "pip-licenses>=4.0.0,<5.0.0",
     "ragbits[local]"
 ]
+build-constraint-dependencies = ["setuptools<78"]
 
 [tool.uv.sources]
 ragbits-core = { workspace = true }

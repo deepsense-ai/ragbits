@@ -33,6 +33,9 @@ classifiers = [
 ]
 dependencies = ["typer>=0.12.5", "ragbits-core==0.10.2"]
 
+[uv.tool]
+build-constraint-dependencies = ["setuptools<78"]
+
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
 "Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"

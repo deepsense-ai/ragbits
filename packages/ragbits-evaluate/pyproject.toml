@@ -53,6 +53,7 @@ dev-dependencies = [
     "pytest-asyncio~=0.24.0",
     "pip-licenses>=4.0.0,<5.0.0"
 ]
+build-constraint-dependencies = ["setuptools<78"]
 
 [build-system]
 requires = ["hatchling"]
