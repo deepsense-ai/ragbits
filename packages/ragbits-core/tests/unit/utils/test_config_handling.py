@@ -46,7 +46,7 @@ class ExampleModel:
     bar: int
 
 
-class ExampleClassWithModelType(WithConstructionConfig):
+class ExampleClassWithConfigModel(WithConstructionConfig):
     default_module = sys.modules[__name__]
     configuration_key = "example"
     config_model = ExampleBaseModel
@@ -64,6 +64,7 @@ class ExampleConfigurableComponentClass(ConfigurableComponent):
         super().__init__(default_options=default_options)
         self.foo = foo
         self.bar = bar
+        self.default_options = default_options
 
 
 def example_factory() -> ExampleClassWithConfigMixin:
@@ -80,35 +81,40 @@ def test_default_from_config():
         mock_validate.assert_not_called()
 
 
-def test_default_from_config_when_model_type_set():
+def test_default_from_config_when_config_model():
     config = {"foo": "foo", "bar": 1}
     with patch.object(ExampleBaseModel, "model_validate", wraps=ExampleBaseModel.model_validate) as mock_validate:
-        ExampleClassWithModelType.from_config(config)
+        ExampleClassWithConfigModel.from_config(config)
         mock_validate.assert_called_once_with(config)
 
 
 def test_default_from_config_with_incorrect_config():
     config = {"foo": "foo"}
     with pytest.raises(InvalidConfigError):
-        ExampleClassWithModelType.from_config(config)
+        ExampleClassWithConfigModel.from_config(config)
 
 
 def test_default_from_config_with_not_base_model():
     config = {"foo": "foo", "bar": 1}
-    ExampleClassWithModelType.config_model = ExampleModel  # type: ignore
+    ExampleClassWithConfigModel.config_model = ExampleModel  # type: ignore
     with pytest.raises(TypeError):
-        ExampleClassWithModelType.from_config(config)
+        ExampleClassWithConfigModel.from_config(config)
 
 
-def test_configurable_component_from_config_with_model_type_set():
-    config = {"foo": "foo", "bar": 1}
+def test_configurable_component_from_config_when_config_model():
+    config = {"foo": "foo", "bar": 1, "default_options": {"k": 10, "max_distance": 0.22}}
     with patch.object(ExampleBaseModel, "model_validate", wraps=ExampleBaseModel.model_validate) as mock_validate:
-        ExampleConfigurableComponentClass.from_config(config)
+        instance = ExampleConfigurableComponentClass.from_config(config)
+        assert instance.foo == "foo"  # type: ignore
+        assert instance.bar == 1  # type: ignore
+        assert instance.default_options.k == 10
+        assert instance.default_options.max_distance == 0.22
+        assert instance.config_model == ExampleBaseModel
         mock_validate.assert_called_once_with(config)
 
 
 def test_configurable_component_from_config_without_model_type():
-    config = {"foo": "foo", "bar": 1}
+    config = {"foo": "foo", "bar": 1, "default_options": {"k": 10, "max_distance": 0.22}}
     ExampleConfigurableComponentClass.config_model = None  # type: ignore
     with patch.object(ExampleBaseModel, "model_validate", wraps=ExampleBaseModel.model_validate) as mock_validate:
         instance = ExampleConfigurableComponentClass.from_config(config)
