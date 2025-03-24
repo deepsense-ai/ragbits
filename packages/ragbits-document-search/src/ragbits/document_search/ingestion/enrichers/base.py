@@ -13,6 +13,9 @@ ElementT = TypeVar("ElementT", bound=Element)
 class ElementEnricher(Generic[ElementT], WithConstructionConfig, ABC):
     """
     Base class for element enrichers, responsible for providing additional information about elements.
+
+    Enrichers operate on raw elements and are used to fill in missing fields that could not be filled in during parsing.
+    They usually deal with summarizing text or describing images.
     """
 
     default_module: ClassVar[ModuleType | None] = enrichers
@@ -36,7 +39,7 @@ class ElementEnricher(Generic[ElementT], WithConstructionConfig, ABC):
     @classmethod
     def validate_element_type(cls, element_type: type[Element]) -> None:
         """
-        Check if the enricher supports the enricher type.
+        Check if the enricher supports the element type.
 
         Args:
             element_type: The element type to validate against the enricher.

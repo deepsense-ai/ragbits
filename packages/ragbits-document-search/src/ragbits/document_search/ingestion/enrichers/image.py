@@ -55,7 +55,7 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
 
     async def enrich(self, elements: list[ImageElement]) -> list[ImageElement]:
         """
-        Enrich image elements with additinal description of the image.
+        Enrich image elements with additional description of the image.
 
         Args:
             elements: The elements to be enriched.
@@ -70,8 +70,7 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
         responses: list[ImageDescriberOutput] = []
         for element in elements:
             self.validate_element_type(type(element))
-            input_data = self._prompt.input_type(image=element.image_bytes)  # type: ignore
-            prompt = self._prompt(input_data)
+            prompt = self._prompt(ImageDescriberInput(image=element.image_bytes))
             responses.append(await self._llm.generate(prompt))
 
         return [
