@@ -1,0 +1,202 @@
+import re
+from collections.abc import Sequence
+from contextlib import suppress
+from pathlib import Path
+from typing import ClassVar
+
+with suppress(ImportError):
+    import git
+
+from ragbits.core.audit import traceable
+from ragbits.core.utils.decorators import requires_dependencies
+from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.documents.sources.base import get_local_storage_dir
+
+# Constants for URI parts
+_REPO_AND_FILE_PARTS = 2
+_MIN_PARTS_WITH_PROTOCOL = 3
+
+
+class GitSource(Source):
+    """
+    An object representing a file in a Git repository.
+    """
+
+    repo_url: str
+    file_path: str
+    branch: str | None = None
+    protocol: ClassVar[str] = "git"
+
+    @property
+    def id(self) -> str:
+        """
+        Get the source ID, which is a unique identifier of the object.
+
+        Returns:
+            The source ID.
+        """
+        repo_name = self.repo_url.rstrip("/").split("/")[-1]
+        if repo_name.endswith(".git"):
+            repo_name = repo_name[:-4]
+
+        branch_part = f":{self.branch}" if self.branch else ""
+
+        return f"git:{repo_name}{branch_part}:{self.file_path}"
+
+    @requires_dependencies(["git"])
+    @traceable
+    async def fetch(self) -> Path:
+        """
+        Clone the Git repository and return the path to the specific file.
+
+        Returns:
+            The local path to the specific file in the cloned repository.
+
+        Raises:
+            SourceNotFoundError: If the repository cannot be cloned or the file doesn't exist.
+        """
+        local_dir = get_local_storage_dir()
+
+        # Create a sanitized directory name based on the repo URL
+        sanitized_repo = re.sub(r"[^\w.-]", "_", self.repo_url)
+        repo_dir_name = sanitized_repo.split("/")[-1]
+        if repo_dir_name.endswith(".git"):
+            repo_dir_name = repo_dir_name[:-4]
+
+        # Include branch name in the directory path if specified
+        if self.branch:
+            repo_dir_name += f"_{self.branch}"
+
+        repo_dir = local_dir / "git" / repo_dir_name
+
+        # Create parent directories
+        repo_dir.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Clone the repository if it doesn't exist
+            if not repo_dir.exists():
+                if self.branch:
+                    git.Repo.clone_from(self.repo_url, str(repo_dir), branch=self.branch)
+                else:
+                    git.Repo.clone_from(self.repo_url, str(repo_dir))
+            else:
+                # If repository exists, pull the latest changes
+                repo = git.Repo(str(repo_dir))
+                origin = repo.remotes.origin
+                origin.pull()
+
+            # Check if the file exists in the repository
+            file_path = repo_dir / self.file_path
+            if not file_path.exists() or not file_path.is_file():
+                raise SourceNotFoundError(f"File {self.file_path} not found in repository")
+
+            return file_path
+
+        except git.GitCommandError as e:
+            raise SourceNotFoundError(f"Failed to clone repository: {e}") from e
+
+    @classmethod
+    @traceable
+    async def list_sources(
+        cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None
+    ) -> list["GitSource"]:
+        """
+        List all files in the repository matching the pattern.
+
+        Args:
+            repo_url: URL of the git repository.
+            file_pattern: The glob pattern to match files.
+            branch: Optional branch name.
+
+        Returns:
+            List of GitSource objects, one for each file matching the pattern.
+        """
+        local_dir = get_local_storage_dir()
+
+        # Create a sanitized directory name based on the repo URL
+        sanitized_repo = re.sub(r"[^\w.-]", "_", repo_url)
+        repo_dir_name = sanitized_repo.split("/")[-1]
+        if repo_dir_name.endswith(".git"):
+            repo_dir_name = repo_dir_name[:-4]
+
+        # Include branch name in the directory path if specified
+        if branch:
+            repo_dir_name += f"_{branch}"
+
+        repo_dir = local_dir / "git" / repo_dir_name
+
+        # Create parent directories
+        repo_dir.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            # Clone the repository if it doesn't exist
+            if not repo_dir.exists():
+                if branch:
+                    git.Repo.clone_from(repo_url, str(repo_dir), branch=branch)
+                else:
+                    git.Repo.clone_from(repo_url, str(repo_dir))
+            else:
+                # If repository exists, pull the latest changes
+                repo = git.Repo(str(repo_dir))
+                origin = repo.remotes.origin
+                origin.pull()
+
+            # Find all files matching the pattern
+            matched_files = repo_dir.glob(file_pattern)
+            file_sources = []
+
+            for file_path in matched_files:
+                if file_path.is_file():
+                    # Convert to relative path within the repository
+                    relative_path = file_path.relative_to(repo_dir)
+                    file_sources.append(cls(repo_url=repo_url, file_path=str(relative_path), branch=branch))
+
+            return file_sources
+
+        except git.GitCommandError as e:
+            raise SourceNotFoundError(f"Failed to clone repository: {e}") from e
+
+    @classmethod
+    @traceable
+    async def from_uri(cls, uri: str) -> Sequence["GitSource"]:
+        """
+        Create GitSource instances from a URI path.
+
+        Supported URI formats:
+        - git://https://github.com/username/repo.git:path/to/file.txt
+        - git://https://github.com/username/repo.git:branch:path/to/file.txt
+
+        Args:
+            uri: The URI path in the format described above.
+
+        Returns:
+            A sequence containing a GitSource instance.
+        """
+        # Check if URI starts with git:// protocol
+        if uri.startswith("git://"):
+            uri = uri[6:]  # Remove the git:// prefix
+
+        parts = uri.split(":")
+
+        if len(parts) == _REPO_AND_FILE_PARTS:
+            # Repo URL and file path
+            return [cls(repo_url=parts[0], file_path=parts[1])]
+        elif len(parts) >= _MIN_PARTS_WITH_PROTOCOL:
+            # This could either be a git://https://github.com format or just a URL with multiple colons
+            # Try to reconstruct a valid repo URL
+            if parts[0] in ["http", "https"]:
+                # This is likely an https:// URL format
+                repo_url = f"{parts[0]}:{parts[1]}"
+                # The rest of the parts could be the branch and file path
+                if len(parts) == _MIN_PARTS_WITH_PROTOCOL:
+                    # Just file path, no branch
+                    return [cls(repo_url=repo_url, file_path=parts[2])]
+                else:
+                    # Branch and file path
+                    return [cls(repo_url=repo_url, branch=parts[2], file_path=parts[3])]
+            else:
+                # Repo URL, branch, and file path in standard format
+                return [cls(repo_url=parts[0], branch=parts[1], file_path=parts[2])]
+        else:
+            return []
