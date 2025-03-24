@@ -44,73 +44,17 @@ class GitSource(Source):
 
         return f"git:{repo_name}{branch_part}:{self.file_path}"
 
-    @requires_dependencies(["git"])
-    @traceable
-    async def fetch(self) -> Path:
-        """
-        Clone the Git repository and return the path to the specific file.
-
-        Returns:
-            The local path to the specific file in the cloned repository.
-
-        Raises:
-            SourceNotFoundError: If the repository cannot be cloned or the file doesn't exist.
-        """
-        local_dir = get_local_storage_dir()
-
-        # Create a sanitized directory name based on the repo URL
-        sanitized_repo = re.sub(r"[^\w.-]", "_", self.repo_url)
-        repo_dir_name = sanitized_repo.split("/")[-1]
-        if repo_dir_name.endswith(".git"):
-            repo_dir_name = repo_dir_name[:-4]
-
-        # Include branch name in the directory path if specified
-        if self.branch:
-            repo_dir_name += f"_{self.branch}"
-
-        repo_dir = local_dir / "git" / repo_dir_name
-
-        # Create parent directories
-        repo_dir.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            # Clone the repository if it doesn't exist
-            if not repo_dir.exists():
-                if self.branch:
-                    git.Repo.clone_from(self.repo_url, str(repo_dir), branch=self.branch)
-                else:
-                    git.Repo.clone_from(self.repo_url, str(repo_dir))
-            else:
-                # If repository exists, pull the latest changes
-                repo = git.Repo(str(repo_dir))
-                origin = repo.remotes.origin
-                origin.pull()
-
-            # Check if the file exists in the repository
-            file_path = repo_dir / self.file_path
-            if not file_path.exists() or not file_path.is_file():
-                raise SourceNotFoundError(f"File {self.file_path} not found in repository")
-
-            return file_path
-
-        except git.GitCommandError as e:
-            raise SourceNotFoundError(f"Failed to clone repository: {e}") from e
-
     @classmethod
-    @traceable
-    async def list_sources(
-        cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None
-    ) -> list["GitSource"]:
+    def _get_repo_dir(cls, repo_url: str, branch: str | None = None) -> Path:
         """
-        List all files in the repository matching the pattern.
+        Get the local directory for a Git repository.
 
         Args:
             repo_url: URL of the git repository.
-            file_pattern: The glob pattern to match files.
             branch: Optional branch name.
 
         Returns:
-            List of GitSource objects, one for each file matching the pattern.
+            Path to the local repository directory.
         """
         local_dir = get_local_storage_dir()
 
@@ -129,6 +73,21 @@ class GitSource(Source):
         # Create parent directories
         repo_dir.parent.mkdir(parents=True, exist_ok=True)
 
+        return repo_dir
+
+    @classmethod
+    def _ensure_repo(cls, repo_url: str, repo_dir: Path, branch: str | None = None) -> None:
+        """
+        Ensure the repository is cloned and up to date.
+
+        Args:
+            repo_url: URL of the git repository.
+            repo_dir: Path to the local repository directory.
+            branch: Optional branch name.
+
+        Raises:
+            SourceNotFoundError: If repository operations fail.
+        """
         try:
             # Clone the repository if it doesn't exist
             if not repo_dir.exists():
@@ -141,21 +100,61 @@ class GitSource(Source):
                 repo = git.Repo(str(repo_dir))
                 origin = repo.remotes.origin
                 origin.pull()
-
-            # Find all files matching the pattern
-            matched_files = repo_dir.glob(file_pattern)
-            file_sources = []
-
-            for file_path in matched_files:
-                if file_path.is_file():
-                    # Convert to relative path within the repository
-                    relative_path = file_path.relative_to(repo_dir)
-                    file_sources.append(cls(repo_url=repo_url, file_path=str(relative_path), branch=branch))
-
-            return file_sources
-
         except git.GitCommandError as e:
             raise SourceNotFoundError(f"Failed to clone repository: {e}") from e
+
+    @requires_dependencies(["git"])
+    @traceable
+    async def fetch(self) -> Path:
+        """
+        Clone the Git repository and return the path to the specific file.
+
+        Returns:
+            The local path to the specific file in the cloned repository.
+
+        Raises:
+            SourceNotFoundError: If the repository cannot be cloned or the file doesn't exist.
+        """
+        repo_dir = self._get_repo_dir(self.repo_url, self.branch)
+        self._ensure_repo(self.repo_url, repo_dir, self.branch)
+
+        # Check if the file exists in the repository
+        file_path = repo_dir / self.file_path
+        if not file_path.exists() or not file_path.is_file():
+            raise SourceNotFoundError(f"File {self.file_path} not found in repository")
+
+        return file_path
+
+    @classmethod
+    @traceable
+    async def list_sources(
+        cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None
+    ) -> list["GitSource"]:
+        """
+        List all files in the repository matching the pattern.
+
+        Args:
+            repo_url: URL of the git repository.
+            file_pattern: The glob pattern to match files.
+            branch: Optional branch name.
+
+        Returns:
+            List of GitSource objects, one for each file matching the pattern.
+        """
+        repo_dir = cls._get_repo_dir(repo_url, branch)
+        cls._ensure_repo(repo_url, repo_dir, branch)
+
+        # Find all files matching the pattern
+        matched_files = repo_dir.glob(file_pattern)
+        file_sources = []
+
+        for file_path in matched_files:
+            if file_path.is_file():
+                # Convert to relative path within the repository
+                relative_path = file_path.relative_to(repo_dir)
+                file_sources.append(cls(repo_url=repo_url, file_path=str(relative_path), branch=branch))
+
+        return file_sources
 
     @classmethod
     @traceable
