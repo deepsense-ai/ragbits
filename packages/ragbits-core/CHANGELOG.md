@@ -3,6 +3,8 @@
 ## Unreleased
 - Adding optional model_type in WithConstructionConfig and the validation of the model in from_config method (#237)
 
+## 0.10.2 (2025-03-21)
+
 ## 0.10.1 (2025-03-19)
 - Better handling of cases when text and image embeddings are mixed in VectorStore
 

@@ -41,7 +41,7 @@ Where `path.within.your.project` is the path to the Python module where the prom
 ragbits prompts exec song_prompt:SongPrompt
 ```
 
-This command will send the prompt to [the project's preferred LLM implementation](../how-to/core/component_preferrences.md) and display the generated response in the terminal.
+This command will send the prompt to [the project's preferred LLM implementation](../how-to/project/component_preferences.md) and display the generated response in the terminal.
 
 !!! note
     If there is no preferred LLM configured for your project, Ragbits will use OpenAI's gpt-3.5-turbo. Ensure that the `OPENAI_API_KEY` environment variable is set and contains your OpenAI API key.
@@ -111,12 +111,12 @@ ragbits prompts exec song_prompt:SongPrompt --payload '{"subject": "unicorns", "
 Remember to change `song_prompt` to the name of the module where the prompt is defined and adjust the values of the placeholders to your liking.
 
 !!! tip
-    Ragbits also comes with a built-in GUI tool called Prompts Lab that allows you to manage and interact with prompts in a more user-friendly way. To learn more about using Prompts Lab, see the how-to article [How to Manage Prompts using GUI with Prompts Lab](../how-to/core/prompts_lab.md).
+    Ragbits also comes with a built-in GUI tool called Prompts Lab that allows you to manage and interact with prompts in a more user-friendly way. To learn more about using Prompts Lab, see the how-to article [How to Manage Prompts using GUI with Prompts Lab](../how-to/prompts/prompts_lab.md).
 
 ## Conclusion
-You now know how to define a prompt in Ragbits and how to use it with Large Language Models. You've also learned to make the prompt dynamic by using Pydantic models and the Jinja2 templating language. To learn more about defining prompts, such as configuring the desired output format, refer to the how-to article [How to define and use Prompts in Ragbits](../how-to/core/use_prompting.md).
+You now know how to define a prompt in Ragbits and how to use it with Large Language Models. You've also learned to make the prompt dynamic by using Pydantic models and the Jinja2 templating language. To learn more about defining prompts, such as configuring the desired output format, refer to the how-to article [How to define and use Prompts in Ragbits](../how-to/prompts/use_prompting.md).
 
-For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../how-to/core/use_images_in_prompts.md).
+For more advanced use cases, such as using images in prompts, check out the guide: [How to define and use image prompts in Ragbits](../how-to/prompts/use_images_in_prompts.md).
 
 <!-- TODO: Add a link to the how-to article on defining custom prompt sources -->
 
