@@ -70,10 +70,10 @@ class MultiQueryRephraser(QueryRephraser):
            ValueError: If the prompt class is not a subclass of `Prompt`.
 
         """
-        llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
-        prompt_cls = None
+        config["llm"] = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
+        config["prompt"] = None
         if "prompt" in config:
             prompt_config = ObjectConstructionConfig.model_validate(config["prompt"])
-            prompt_cls = get_rephraser_prompt(prompt_config.type)
-        n = config.get("n", 5)
-        return cls(llm=llm, n=n, prompt=prompt_cls)
+            config["prompt"] = get_rephraser_prompt(prompt_config.type)
+        config["n"] = config.get("n", 5)
+        return super().from_config(config)

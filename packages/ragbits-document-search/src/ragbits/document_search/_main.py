@@ -122,28 +122,21 @@ class DocumentSearch(WithConstructionConfig):
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
-        reranker: Reranker = Reranker.subclass_from_config(model.reranker)
-        vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
+        config["query_rephraser"] = QueryRephraser.subclass_from_config(model.rephraser)
+        config["reranker"] = Reranker.subclass_from_config(model.reranker)
+        config["vector_store"] = VectorStore.subclass_from_config(model.vector_store)
 
-        ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
+        config["ingest_strategy"] = IngestStrategy.subclass_from_config(model.ingest_strategy)
         parser_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
-        parser_router = DocumentProcessorRouter.from_config(parser_config)
-        enricher_router = {
+        config["parser_router"] = DocumentProcessorRouter.from_config(parser_config)
+        config["enricher_router"] = {
             import_by_path(element_type, element): (
                 import_by_path(handler_config["type"], intermediate_handlers).from_config(handler_config["config"])
             )
             for element_type, handler_config in config.get("intermediate_handlers", {}).items()
         }
 
-        return cls(
-            vector_store=vector_store,
-            query_rephraser=query_rephraser,
-            reranker=reranker,
-            ingest_strategy=ingest_strategy,
-            parser_router=parser_router,
-            enricher_router=enricher_router,
-        )
+        return super().from_config(config)
 
     @classmethod
     def preferred_subclass(

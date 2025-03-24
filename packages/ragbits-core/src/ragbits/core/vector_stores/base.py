@@ -132,7 +132,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
 
 class EmbeddingType(Enum):
     """
-    Types of embbedings supported by the vector store.
+    Types of embeddings supported by the vector store.
     """
 
     TEXT = "text"
@@ -206,10 +206,7 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        default_options = config.pop("default_options", None)
-        options = cls.options_cls(**default_options) if default_options else None
-
         embedder_config = config.pop("embedder")
         embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
-
-        return cls(**config, default_options=options, embedder=embedder)
+        config["embedder"] = embedder
+        return super().from_config(config) # type: ignore

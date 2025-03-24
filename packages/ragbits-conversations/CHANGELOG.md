@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-
+- change from_config methods so they refer to WithConstructionObject/ConfigurableComponent method
 ## 0.10.2 (2025-03-21)
 
 ### Changed

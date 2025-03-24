@@ -43,8 +43,9 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
             importlib.import_module("continuous_eval.metrics.retrieval.matching_strategy"),
             config["matching_strategy"]["type"],
         )
-        matching_strategy = matching_strategy_cls(**config["matching_strategy"]["config"])
-        return cls(matching_strategy=matching_strategy, weight=config.get("weight", 1.0))
+        config["matching_strategy"] = matching_strategy_cls(**config["matching_strategy"]["config"])
+        config["weight"] = config.get("weight", 1.0)
+        return super().from_config(config)
 
     def compute(self, results: list[DocumentSearchResult]) -> dict:
         """
