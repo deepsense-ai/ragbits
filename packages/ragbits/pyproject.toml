@@ -97,7 +97,7 @@ ray = [
 ]
 
 [build-system]
-requires = ["hatchling", "hatch-fancy-pypi-readme", "setuptools==77.0.3"]
+requires = ["hatchling", "hatch-fancy-pypi-readme"]
 build-backend = "hatchling.build"
 
 [tool.hatch.metadata]
