@@ -209,4 +209,4 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         embedder_config = config.pop("embedder")
         embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
         config["embedder"] = embedder
-        return super().from_config(config)  # type: ignore
+        return super().from_config(config)
