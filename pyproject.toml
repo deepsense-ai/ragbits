@@ -33,9 +33,7 @@ dev-dependencies = [
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
 ]
-constraint-dependencies = [
-    "setuptools==77.0.3",
-]
+build-constraint-dependencies = ["setuptools<78"]
 
 [tool.uv.sources]
 ragbits-cli = { workspace = true }

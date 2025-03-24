@@ -23,7 +23,6 @@ members = [
     "ragbits-guardrails",
     "ragbits-workspace",
 ]
-constraints = [{ name = "setuptools", specifier = "==77.0.3" }]
 
 [[package]]
 name = "aiofiles"
