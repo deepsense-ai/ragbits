@@ -35,6 +35,7 @@ jobs:
 
       - name: Run pre-commit checks
         run: |
+          uv run pip install setuptools==77.0.3
           uv run pre-commit run --all-files --show-diff-on-failure --color always
 
       - name: Run ruff formatter
