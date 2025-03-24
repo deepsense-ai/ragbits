@@ -23,6 +23,7 @@ members = [
     "ragbits-guardrails",
     "ragbits-workspace",
 ]
+constraints = [{ name = "setuptools", specifier = "==77.0.3" }]
 
 [[package]]
 name = "aiofiles"
@@ -4543,7 +4544,6 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
-    { name = "setuptools" },
     { name = "types-pyyaml" },
 ]
 
@@ -4575,7 +4575,6 @@ dev = [
     { name = "pytest", specifier = "~=8.3.3" },
     { name = "pytest-asyncio", specifier = "~=0.24.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "setuptools", specifier = "==77.0.3" },
     { name = "types-pyyaml", specifier = ">=6.0.2" },
 ]
 
