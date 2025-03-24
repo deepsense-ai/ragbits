@@ -66,7 +66,7 @@ class ElementEnricherRouter(WithConstructionConfig):
             import_by_path(element_type, element): ElementEnricher.subclass_from_config(enricher_config)
             for element_type, enricher_config in config.items()
         }
-        return cls(enrichers=enrichers)
+        return super().from_config({"enrichers": enrichers})
 
     def get(self, element_type: type[Element]) -> ElementEnricher:
         """

@@ -71,7 +71,7 @@ class DocumentParserRouter(WithConstructionConfig):
             DocumentType(document_type): DocumentParser.subclass_from_config(parser_config)
             for document_type, parser_config in config.items()
         }
-        return cls(parsers=parsers)
+        return super().from_config({"parsers": parsers})
 
     def get(self, document_type: DocumentType) -> DocumentParser:
         """

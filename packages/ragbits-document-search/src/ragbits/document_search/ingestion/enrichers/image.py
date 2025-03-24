@@ -98,8 +98,8 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
             ValidationError: If the configuration doesn't follow the expected format.
             InvalidConfigError: If llm or prompt can't be found or are not the correct type.
         """
-        llm: LLM | None = (
+        config["llm"] = (
             LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"])) if "llm" in config else None
         )
-        prompt = import_by_path(config["prompt"]) if "prompt" in config else None
-        return cls(llm=llm, prompt=prompt)
+        config["prompt"] = import_by_path(config["prompt"]) if "prompt" in config else None
+        return super().from_config(config)
