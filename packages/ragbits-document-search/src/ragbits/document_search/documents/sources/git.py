@@ -92,14 +92,27 @@ class GitSource(Source):
             # Clone the repository if it doesn't exist
             if not repo_dir.exists():
                 if branch:
-                    git.Repo.clone_from(repo_url, str(repo_dir), branch=branch)
+                    git.Repo.clone_from(
+                        repo_url,
+                        str(repo_dir),
+                        branch=branch,
+                        depth=1,  # Use shallow clone
+                        single_branch=True,  # Only fetch the specified branch
+                    )
                 else:
-                    git.Repo.clone_from(repo_url, str(repo_dir))
+                    git.Repo.clone_from(
+                        repo_url,
+                        str(repo_dir),
+                        depth=1,  # Use shallow clone
+                    )
             else:
                 # If repository exists, pull the latest changes
                 repo = git.Repo(str(repo_dir))
                 origin = repo.remotes.origin
-                origin.pull()
+                # Use shallow fetch when pulling
+                origin.fetch(depth=1, single_branch=bool(branch))
+                # Reset to the latest commit
+                repo.git.reset("--hard", "origin/" + (branch or repo.active_branch.name))
         except git.GitCommandError as e:
             raise SourceNotFoundError(f"Failed to clone repository: {e}") from e
 
