@@ -41,7 +41,7 @@ dependencies = ["ragbits-core==0.10.2"]
 
 [project.optional-dependencies]
 openai = [
-    "openai~=1.57.3",
+    "openai>=1.57.3,<2.0.0",
 ]
 
 [tool.uv]

@@ -47,21 +47,21 @@ dependencies = [
 
 [project.optional-dependencies]
 azure=[
-    "azure-storage-blob~=12.24.1",
-    "azure-identity~=1.19.0",
-    "azure-core~=1.32.0"
+    "azure-storage-blob>=12.24.1,<13.0.0",
+    "azure-identity>=1.19.0,<2.0.0",
+    "azure-core>=1.32.0,<2.0.0"
 ]
 gcs = [
-    "gcloud-aio-storage~=9.3.0"
+    "gcloud-aio-storage>=9.3.0,<10.0.0"
 ]
 huggingface = [
-    "datasets~=3.0.1",
+    "datasets>=3.0.1,<4.0.0",
 ]
 ray = [
-    "ray[data]~=2.43.0",
+    "ray[data]>=2.43.0,<3.0.0",
 ]
 s3 = [
-    "boto3~=1.35.42",
+    "boto3>=1.35.42,<2.0.0",
 ]
 
 [tool.uv]

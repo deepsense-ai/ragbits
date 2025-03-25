@@ -4234,7 +4234,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ragbits-core", editable = "packages/ragbits-core" },
-    { name = "typer", specifier = ">=0.12.5" },
+    { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
 
 [[package]]
@@ -4322,22 +4322,22 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0" },
-    { name = "chromadb", marker = "extra == 'chroma'", specifier = "~=0.6.3" },
-    { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2" },
-    { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2" },
-    { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0" },
-    { name = "jinja2", specifier = ">=3.1.4" },
-    { name = "litellm", specifier = "~=1.55.0" },
-    { name = "numpy", marker = "extra == 'local'", specifier = "~=1.26.0" },
-    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = "~=1.27.0" },
-    { name = "pydantic", specifier = ">=2.9.1" },
-    { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = "~=6.0.2" },
-    { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = "~=1.12.1" },
-    { name = "tomli", specifier = "~=2.0.2" },
-    { name = "torch", marker = "extra == 'local'", specifier = "~=2.2.1" },
-    { name = "transformers", marker = "extra == 'local'", specifier = "~=4.44.2" },
-    { name = "typer", specifier = "~=0.12.5" },
+    { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0,<1.0.0" },
+    { name = "chromadb", marker = "extra == 'chroma'", specifier = ">=0.6.3,<1.0.0" },
+    { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0,<5.0.0" },
+    { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
+    { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
+    { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.27.0,<2.0.0" },
+    { name = "pydantic", specifier = ">=2.9.1,<3.0.0" },
+    { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
+    { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
+    { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
+    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
+    { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
+    { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
 provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu"]
 
@@ -4394,14 +4394,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.10.8" },
-    { name = "azure-core", marker = "extra == 'azure'", specifier = "~=1.32.0" },
-    { name = "azure-identity", marker = "extra == 'azure'", specifier = "~=1.19.0" },
-    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = "~=12.24.1" },
-    { name = "boto3", marker = "extra == 's3'", specifier = "~=1.35.42" },
-    { name = "datasets", marker = "extra == 'huggingface'", specifier = "~=3.0.1" },
-    { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = "~=9.3.0" },
+    { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0,<2.0.0" },
+    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0,<2.0.0" },
+    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
+    { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42,<2.0.0" },
+    { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
-    { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = "~=2.43.0" },
+    { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1" },
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
@@ -4446,7 +4446,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "continuous-eval", marker = "extra == 'relari'", specifier = "~=0.3.12" },
+    { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
     { name = "distilabel", specifier = "==1.4.1" },
     { name = "hydra-core", specifier = "~=1.3.2" },
     { name = "neptune", extras = ["optuna"], specifier = "~=1.12.0" },
@@ -4488,7 +4488,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openai", marker = "extra == 'openai'", specifier = "~=1.57.3" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.3,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]
