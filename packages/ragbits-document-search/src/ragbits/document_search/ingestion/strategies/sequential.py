@@ -8,6 +8,7 @@ from ragbits.document_search.ingestion.document_processor import DocumentProcess
 from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
+    IngestError,
     IngestExecutionResult,
     IngestStrategy,
 )
@@ -70,7 +71,7 @@ class SequentialIngestStrategy(IngestStrategy):
                 results.failed.append(
                     IngestDocumentResult(
                         document_uri=document_uri,
-                        error=exc,
+                        error=IngestError.from_exception(exc),
                     )
                 )
             else:
