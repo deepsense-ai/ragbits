@@ -2,6 +2,11 @@
 
 ## Unreleased
 - change from_config methods so they refer to WithConstructionObject/ConfigurableComponent method
+
+### Changed
+
+- Add support for Git source to fetch files from Git repositories
+
 ## 0.10.2 (2025-03-21)
 
 ### Changed
