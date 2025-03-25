@@ -1,8 +1,10 @@
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import litellm
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
+from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.llms.base import LLM
@@ -239,3 +241,19 @@ class LiteLLM(LLM[LiteLLMOptions]):
             elif json_mode:
                 response_format = {"type": "json_object"}
         return response_format
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:
+        """
+        Creates and returns a LiteLLM instance.
+
+        Args:
+            config: A configuration object containing the configuration for initializing the LiteLLM instance.
+
+        Returns:
+            LiteLLM: An initialized LiteLLM instance.
+        """
+        router = litellm.router.Router(model_list=config["router"])
+
+        config["router"] = router
+        return super().from_config(config)
