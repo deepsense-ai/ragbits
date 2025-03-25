@@ -2,8 +2,11 @@
 
 ## Unreleased
 
+## 0.12.0 (2025-03-25)
+
 ### Changed
 
+- ragbits-core updated to version v0.12.0
 - BREAKING CHANGE: Providers and intermediate handlers refactored to parsers and enrichers (#419)
 
 ## 0.11.0 (2025-03-25)
