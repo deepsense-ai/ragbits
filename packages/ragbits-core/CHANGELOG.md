@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
-- Adding optional model_type in WithConstructionConfig and the validation of the model in from_config method (#237)
+- Add optional model_type in WithConstructionConfig and the validation of the model in from_config method (#237)
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
 
