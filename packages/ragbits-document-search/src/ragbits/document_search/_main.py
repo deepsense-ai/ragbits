@@ -121,13 +121,13 @@ class DocumentSearch(WithConstructionConfig):
             InvalidConfigError: If one of the specified classes can't be found or is not the correct type.
         """
         model = DocumentSearchConfig.model_validate(config)
-
+        DocumentSearch.config_model = DocumentSearchConfig
         config["query_rephraser"] = QueryRephraser.subclass_from_config(model.rephraser)
         config["reranker"] = Reranker.subclass_from_config(model.reranker)
         config["vector_store"] = VectorStore.subclass_from_config(model.vector_store)
-
         config["ingest_strategy"] = IngestStrategy.subclass_from_config(model.ingest_strategy)
         parser_config = DocumentProcessorRouter.from_dict_to_providers_config(model.providers)
+        config.pop("providers")
         config["parser_router"] = DocumentProcessorRouter.from_config(parser_config)
         config["enricher_router"] = {
             import_by_path(element_type, element): (
@@ -135,7 +135,6 @@ class DocumentSearch(WithConstructionConfig):
             )
             for element_type, handler_config in config.get("intermediate_handlers", {}).items()
         }
-
         return super().from_config(config)
 
     @classmethod
