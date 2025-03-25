@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Introduce picklable ingest error wrapper (#448)
+- Add support for Git source to fetch files from Git repositories (#439)
 
 ## 0.10.2 (2025-03-21)
 
