@@ -19,7 +19,7 @@ jobs:
         uses: astral-sh/setup-uv@v2
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
-  
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
