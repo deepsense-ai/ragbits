@@ -7,6 +7,7 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
+from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import IngestStrategy
 from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
@@ -72,3 +73,15 @@ async def test_ingest_strategy_call_fail(ingest_strategy: IngestStrategy) -> Non
 
     assert len(results.successful) == 3
     assert len(results.failed) == 2
+
+    for result in results.successful:
+        assert result.num_elements == 1
+        assert result.error is None
+
+    for result in results.failed:
+        assert result.num_elements == 0
+        assert result.error is not None
+        assert result.error.type == ParserNotFoundError
+        assert result.error.stacktrace.startswith("Traceback")
+        assert "No parser found for the document type" in result.error.stacktrace
+        assert "No parser found for the document type" in result.error.message

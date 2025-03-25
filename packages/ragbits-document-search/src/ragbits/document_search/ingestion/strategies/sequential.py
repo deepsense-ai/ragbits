@@ -7,6 +7,7 @@ from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRo
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
+    IngestError,
     IngestExecutionResult,
     IngestStrategy,
 )
@@ -69,7 +70,7 @@ class SequentialIngestStrategy(IngestStrategy):
                 results.failed.append(
                     IngestDocumentResult(
                         document_uri=document_uri,
-                        error=exc,
+                        error=IngestError.from_exception(exc),
                     )
                 )
             else:
