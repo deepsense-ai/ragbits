@@ -147,18 +147,28 @@ class BatchedIngestStrategy(IngestStrategy):
             return_exceptions=True,
         )
 
-        return [
-            IngestDocumentResult(
-                document_uri=uri,
-                error=IngestError.from_exception(response),
-            )
-            if isinstance(response, Exception)
-            else IngestTaskResult(
-                document_uri=uri,
-                elements=response,
-            )
-            for uri, response in zip(uris, responses, strict=True)
-        ]
+        results: list[IngestTaskResult | IngestDocumentResult] = []
+        for uri, response in zip(uris, responses, strict=True):
+            if isinstance(response, BaseException):
+                if isinstance(response, Exception):
+                    results.append(
+                        IngestDocumentResult(
+                            document_uri=uri,
+                            error=IngestError.from_exception(response),
+                        )
+                    )
+                # Handle only standard exceptions, not BaseExceptions like SystemExit, KeyboardInterrupt, etc.
+                else:
+                    raise response
+            else:
+                results.append(
+                    IngestTaskResult(
+                        document_uri=uri,
+                        elements=response,
+                    )
+                )
+
+        return results
 
     async def _enrich_batch(
         self,
@@ -186,18 +196,29 @@ class BatchedIngestStrategy(IngestStrategy):
             ],
             return_exceptions=True,
         )
-        return [
-            IngestDocumentResult(
-                document_uri=result.document_uri,
-                error=IngestError.from_exception(response),
-            )
-            if isinstance(response, Exception)
-            else IngestTaskResult(
-                document_uri=result.document_uri,
-                elements=[element for element in result.elements if isinstance(element, Element)] + response,
-            )
-            for result, response in zip(batch, responses, strict=True)
-        ]
+
+        results: list[IngestTaskResult | IngestDocumentResult] = []
+        for result, response in zip(batch, responses, strict=True):
+            if isinstance(response, BaseException):
+                if isinstance(response, Exception):
+                    results.append(
+                        IngestDocumentResult(
+                            document_uri=result.document_uri,
+                            error=IngestError.from_exception(response),
+                        )
+                    )
+                # Handle only standard exceptions, not BaseExceptions like SystemExit, KeyboardInterrupt, etc.
+                else:
+                    raise response
+            else:
+                results.append(
+                    IngestTaskResult(
+                        document_uri=result.document_uri,
+                        elements=[element for element in result.elements if isinstance(element, Element)] + response,
+                    )
+                )
+
+        return results
 
     async def _index_batch(
         self,
