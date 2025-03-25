@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from typing_extensions import Self
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig, import_by_path
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig, import_by_path
 from ragbits.document_search.documents import element
 from ragbits.document_search.documents.element import Element, ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
@@ -49,7 +49,7 @@ class ElementEnricherRouter(WithConstructionConfig):
         return element_type in self._enrichers
 
     @classmethod
-    def from_config(cls, config: dict[str, ObjectContructionConfig]) -> Self:
+    def from_config(cls, config: dict[str, ObjectConstructionConfig]) -> Self:
         """
         Initialize the class with the provided configuration.
 
