@@ -2,9 +2,14 @@
 
 ## Unreleased
 
+## 0.11.0 (2025-03-25)
+
 ### Changed
 
-- Add support for Git source to fetch files from Git repositories
+- ragbits-core updated to version v0.11.0
+
+- Introduce picklable ingest error wrapper (#448)
+- Add support for Git source to fetch files from Git repositories (#439)
 
 ## 0.10.2 (2025-03-21)
 
