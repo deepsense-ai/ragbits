@@ -4336,7 +4336,7 @@ dev = [
 requires-dist = [
     { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0,<1.0.0" },
     { name = "chromadb", marker = "extra == 'chroma'", specifier = ">=0.6.3,<1.0.0" },
-    { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2" },
+    { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
     { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0,<5.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
