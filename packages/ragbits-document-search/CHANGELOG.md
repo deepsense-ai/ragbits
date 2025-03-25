@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Add support for Git source to fetch files from Git repositories
+
 ## 0.10.2 (2025-03-21)
 
 ### Changed
