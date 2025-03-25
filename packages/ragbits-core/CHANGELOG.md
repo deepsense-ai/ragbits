@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
 
