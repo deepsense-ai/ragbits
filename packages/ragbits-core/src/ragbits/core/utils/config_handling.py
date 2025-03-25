@@ -211,7 +211,7 @@ class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
         self.default_options: OptionsT = default_options or self.options_cls()
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:
+    def from_config(cls, config: dict[str, Any]) -> Self:
         """
         Initializes the class with the provided configuration.
 
