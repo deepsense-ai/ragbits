@@ -253,7 +253,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Returns:
             LiteLLM: An initialized LiteLLM instance.
         """
-        router = litellm.router.Router(model_list=config["router"])
-
-        config["router"] = router
+        if "router" in config:
+            router = litellm.router.Router(model_list=config["router"])
+            config["router"] = router
         return super().from_config(config)
