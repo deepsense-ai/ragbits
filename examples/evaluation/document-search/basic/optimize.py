@@ -53,9 +53,9 @@ config = {
                         },
                     },
                 },
-                "providers": {
+                "parser_router": {
                     "txt": {
-                        "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
+                        "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                     },
                 },
                 "source": {

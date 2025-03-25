@@ -3,12 +3,16 @@
 ## Unreleased
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
 
+- Fix Qdrant vector store serialization (#419)
+
 ## 0.11.0 (2025-03-25)
+
 - Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
 
 ## 0.10.1 (2025-03-19)
+
 - Better handling of cases when text and image embeddings are mixed in VectorStore
 
 ## 0.10.0 (2025-03-17)
