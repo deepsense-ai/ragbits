@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
 
 - Fix Qdrant vector store serialization (#419)
 
