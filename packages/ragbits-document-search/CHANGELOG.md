@@ -5,6 +5,12 @@
 ### Changed
 
 - BREAKING CHANGE: Providers and intermediate handlers refactored to parsers and enrichers (#419)
+
+## 0.11.0 (2025-03-25)
+
+### Changed
+
+- ragbits-core updated to version v0.11.0
 - Introduce picklable ingest error wrapper (#448)
 - Add support for Git source to fetch files from Git repositories (#439)
 
