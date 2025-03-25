@@ -76,26 +76,26 @@ library that supports parsing and chunking of most common document types (i.e. p
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.documents.document import DocumentType
-from ragbits.document_search.ingestion.providers.unstructured.default import UnstructuredDefaultProvider
+from ragbits.document_search.ingestion.parsers.unstructured.default import UnstructuredDocumentParser
 
 embedder = LiteLLMEmbedder()
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(
     vector_store=vector_store,
-    parser_router=DocumentProcessorRouter({DocumentType.TXT: UnstructuredDefaultProvider()})
+    parser_router=DocumentParserRouter({DocumentType.TXT: UnstructuredDocumentParser()})
 )
 ```
 
-If you want to implement a new provider you should extend the [`BaseProvider`][ragbits.document_search.ingestion.providers.base.BaseProvider] class:
+If you want to implement a new provider you should extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class:
 ```python
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.providers.base import BaseProvider
+from ragbits.document_search.ingestion.parsers.base import DocumentParser
 
 
-class CustomProvider(BaseProvider):
+class CustomProvider(DocumentParser):
     SUPPORTED_DOCUMENT_TYPES = { DocumentType.TXT }  # provide supported document types
 
     async def process(self, document_meta: DocumentMeta) -> list[Element]:
@@ -112,7 +112,7 @@ There is an additional functionality of [`DocumentSearch`][ragbits.document_sear
 config = {
     "vector_store": {...},
     "reranker": {...},
-    "providers": {...},
+    "parser_router": {...},
     "rephraser": {...},
 }
 

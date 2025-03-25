@@ -2,10 +2,9 @@ from collections.abc import Iterable
 
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import IntermediateElement
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
     IngestError,
@@ -23,8 +22,8 @@ class SequentialIngestStrategy(IngestStrategy):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        parser_router: DocumentParserRouter,
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents sequentially one by one.
@@ -50,11 +49,11 @@ class SequentialIngestStrategy(IngestStrategy):
                 )
                 enriched_elements = await self._call_with_error_handling(
                     self._enrich_elements,
-                    elements=[element for element in parsed_elements if isinstance(element, IntermediateElement)],
+                    elements=[element for element in parsed_elements if type(element) in enricher_router],
                     enricher_router=enricher_router,
                 )
                 elements = [
-                    element for element in parsed_elements if not isinstance(element, IntermediateElement)
+                    element for element in parsed_elements if type(element) not in enricher_router
                 ] + enriched_elements
 
                 await self._call_with_error_handling(

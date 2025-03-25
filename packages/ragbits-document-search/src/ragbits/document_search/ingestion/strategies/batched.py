@@ -1,14 +1,14 @@
 import asyncio
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import islice
 
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import Element, IntermediateElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
     IngestError,
@@ -24,7 +24,7 @@ class IngestTaskResult:
     """
 
     document_uri: str
-    elements: Sequence[Element | IntermediateElement]
+    elements: list[Element]
 
 
 class BatchedIngestStrategy(IngestStrategy):
@@ -55,8 +55,8 @@ class BatchedIngestStrategy(IngestStrategy):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        parser_router: DocumentParserRouter,
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents sequentially in batches.
@@ -81,20 +81,20 @@ class BatchedIngestStrategy(IngestStrategy):
             successfully_parsed = [result for result in parse_results if isinstance(result, IngestTaskResult)]
             failed_parsed = [result for result in parse_results if isinstance(result, IngestDocumentResult)]
 
-            # Further split successful documents into intermediate and ready
-            intermediate_parsed = [
+            # Further split successful documents into to enrich and ready
+            to_enrich = [
                 result
                 for result in successfully_parsed
-                if any(isinstance(element, IntermediateElement) for element in result.elements)
+                if any(type(element) in enricher_router for element in result.elements)
             ]
             ready_parsed = [
                 result
                 for result in successfully_parsed
-                if not any(isinstance(element, IntermediateElement) for element in result.elements)
+                if not any(type(element) in enricher_router for element in result.elements)
             ]
 
-            # Enrich intermediate documents
-            enrich_results = await self._enrich_batch(intermediate_parsed, enricher_router)
+            # Enrich documents
+            enrich_results = await self._enrich_batch(to_enrich, enricher_router)
 
             # Split enriched documents into successful and failed
             successfully_enriched = [result for result in enrich_results if isinstance(result, IngestTaskResult)]
@@ -122,7 +122,7 @@ class BatchedIngestStrategy(IngestStrategy):
     async def _parse_batch(
         self,
         batch: list[DocumentMeta | Document | Source],
-        parser_router: DocumentProcessorRouter,
+        parser_router: DocumentParserRouter,
     ) -> list[IngestTaskResult | IngestDocumentResult]:
         """
         Parse batch of documents.
@@ -173,7 +173,7 @@ class BatchedIngestStrategy(IngestStrategy):
     async def _enrich_batch(
         self,
         batch: list[IngestTaskResult],
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        enricher_router: ElementEnricherRouter,
     ) -> list[IngestTaskResult | IngestDocumentResult]:
         """
         Enrich batch of documents.
@@ -189,7 +189,7 @@ class BatchedIngestStrategy(IngestStrategy):
             *[
                 self._call_with_error_handling(
                     self._enrich_elements,
-                    elements=[element for element in result.elements if isinstance(element, IntermediateElement)],
+                    elements=[element for element in result.elements if type(element) in enricher_router],
                     enricher_router=enricher_router,
                 )
                 for result in batch
@@ -214,7 +214,8 @@ class BatchedIngestStrategy(IngestStrategy):
                 results.append(
                     IngestTaskResult(
                         document_uri=result.document_uri,
-                        elements=[element for element in result.elements if isinstance(element, Element)] + response,
+                        elements=[element for element in result.elements if type(element) not in enricher_router]
+                        + response,
                     )
                 )
 
@@ -235,9 +236,7 @@ class BatchedIngestStrategy(IngestStrategy):
         Returns:
             The task results.
         """
-        elements = [
-            element for result in batch for element in result.elements if not isinstance(element, IntermediateElement)
-        ]
+        elements = [element for result in batch for element in result.elements]
         try:
             await self._call_with_error_handling(
                 self._remove_elements,
