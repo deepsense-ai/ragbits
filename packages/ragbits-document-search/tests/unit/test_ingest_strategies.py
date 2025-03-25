@@ -4,7 +4,7 @@ from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
+from ragbits.document_search.ingestion.providers.dummy import DummyFailureProvider, DummyProvider
 from ragbits.document_search.ingestion.strategies.base import IngestStrategy
 from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
 from ragbits.document_search.ingestion.strategies.ray import RayDistributedIngestStrategy
@@ -48,3 +48,27 @@ async def test_ingest_strategy_call(ingest_strategy: IngestStrategy, documents: 
 
     assert len(results.successful) == len(documents)
     assert len(results.failed) == 0
+
+
+async def test_ingest_errors_are_returned(ingest_strategy: IngestStrategy, documents: list[DocumentMeta]) -> None:
+    vector_store = InMemoryVectorStore(embedder=NoopEmbedder())
+    parser_router = DocumentProcessorRouter.from_config({DocumentType.TXT: DummyFailureProvider()})
+
+    results = await ingest_strategy(
+        documents=documents,
+        vector_store=vector_store,
+        parser_router=parser_router,
+        enricher_router={},
+    )
+
+    assert len(results.successful) == 0
+    assert len(results.failed) == len(documents)
+
+    expected_error_message = "This is a dummy exception"
+    expected_error_type = RuntimeError
+    for result in results.failed:
+        assert result.error is not None
+        assert result.error.type == expected_error_type
+        assert result.error.message == expected_error_message
+        assert result.error.stacktrace.startswith("Traceback")
+        assert expected_error_message in result.error.stacktrace

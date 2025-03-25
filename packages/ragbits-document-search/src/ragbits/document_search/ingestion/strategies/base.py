@@ -20,11 +20,13 @@ from ragbits.document_search.ingestion.intermediate_handlers.base import BaseInt
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
 
+
 @dataclass
 class IngestError:
     """
     Represents an error that occurred during the document ingest execution
     """
+
     type: type[Exception]
     message: str
     stacktrace: str
@@ -42,6 +44,7 @@ class IngestError:
         """
         stacktrace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
         return IngestError(type=type(exc), message=str(exc), stacktrace=stacktrace)
+
 
 @dataclass
 class IngestDocumentResult:

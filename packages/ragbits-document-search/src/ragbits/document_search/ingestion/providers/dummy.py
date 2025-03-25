@@ -67,3 +67,25 @@ class DummyImageProvider(BaseProvider):
                 document_meta=document_meta,
             )
         ]
+
+
+class DummyFailureProvider(BaseProvider):
+    """
+    This is a simple provider that always raises an exception.
+    """
+
+    SUPPORTED_DOCUMENT_TYPES = {DocumentType.TXT, DocumentType.MD, DocumentType.JPG, DocumentType.PNG}
+
+    async def process(self, document_meta: DocumentMeta) -> Sequence[Element | IntermediateElement]:
+        """
+        Process the text document.
+
+        Args:
+            document_meta: The document to process.
+
+        Returns:
+            List with a single TextElement containing the content of the document.
+        """
+        self.validate_document_type(document_meta.document_type)
+
+        raise RuntimeError("This is a dummy exception")
