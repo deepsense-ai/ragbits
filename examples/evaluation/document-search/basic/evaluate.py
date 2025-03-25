@@ -51,7 +51,7 @@ config = {
                     "batch_size": 10,
                 },
             },
-            "parsers": {
+            "parser_router": {
                 "txt": {
                     "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                 },

@@ -53,7 +53,7 @@ config = {
                         },
                     },
                 },
-                "parsers": {
+                "parser_router": {
                     "txt": {
                         "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                     },

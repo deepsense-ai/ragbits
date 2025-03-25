@@ -40,7 +40,7 @@ class DocumentParserRouter(WithConstructionConfig):
     The class responsible for routing the document to the correct parser based on the document type.
     """
 
-    configuration_key: ClassVar[str] = "parsers"
+    configuration_key: ClassVar[str] = "parser_router"
 
     _parsers: Mapping[DocumentType, DocumentParser]
 

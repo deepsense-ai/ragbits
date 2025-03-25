@@ -5,7 +5,7 @@ task:
 
 pipeline:
   config:
-    parsers:
+    parser_router:
       txt:
         config:
           chunking_kwargs:

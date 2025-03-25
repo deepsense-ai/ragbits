@@ -53,8 +53,8 @@ class DocumentSearchConfig(BaseModel):
     rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
     reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
     ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
-    parsers: dict[str, ObjectContructionConfig] = {}
-    enrichers: dict[str, ObjectContructionConfig] = {}
+    parser_router: dict[str, ObjectContructionConfig] = {}
+    enricher_router: dict[str, ObjectContructionConfig] = {}
 
 
 class DocumentSearch(WithConstructionConfig):
@@ -119,8 +119,8 @@ class DocumentSearch(WithConstructionConfig):
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
 
         ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
-        parser_router = DocumentParserRouter.from_config(model.parsers)
-        enricher_router = ElementEnricherRouter.from_config(model.enrichers)
+        parser_router = DocumentParserRouter.from_config(model.parser_router)
+        enricher_router = ElementEnricherRouter.from_config(model.enricher_router)
 
         return cls(
             vector_store=vector_store,

@@ -20,7 +20,7 @@ class ElementEnricherRouter(WithConstructionConfig):
     The class responsible for routing the element to the correct enricher based on the element type.
     """
 
-    configuration_key: ClassVar[str] = "enrichers"
+    configuration_key: ClassVar[str] = "enricher_router"
 
     _enrichers: Mapping[type[Element], ElementEnricher]
 

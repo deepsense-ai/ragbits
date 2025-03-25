@@ -1,5 +1,3 @@
-
-
 from ragbits.document_search.documents.document import DocumentType
 
 
