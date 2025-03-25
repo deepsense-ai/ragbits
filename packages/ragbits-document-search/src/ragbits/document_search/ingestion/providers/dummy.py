@@ -83,8 +83,8 @@ class DummyFailureProvider(BaseProvider):
         Args:
             document_meta: The document to process.
 
-        Returns:
-            List with a single TextElement containing the content of the document.
+        Raises:
+            RuntimeError: This is a dummy exception.
         """
         self.validate_document_type(document_meta.document_type)
 

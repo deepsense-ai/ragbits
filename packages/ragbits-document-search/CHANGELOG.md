@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Introduce picklable ingest error wrapper (#448)
+
 ## 0.10.2 (2025-03-21)
 
 ### Changed
