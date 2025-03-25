@@ -1,6 +1,4 @@
-import inspect
 
-from typing_extensions import Self
 
 from ragbits.document_search.documents.element import Element
 
@@ -13,12 +11,6 @@ class EnricherError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
         self.message = message
-
-    def __reduce__(self) -> tuple[type[Self], tuple]:
-        return self.__class__, tuple(
-            self.__getattribute__(param_name)
-            for param_name in list(inspect.signature(self.__class__.__init__).parameters)[1:]
-        )
 
 
 class EnricherNotFoundError(EnricherError):
