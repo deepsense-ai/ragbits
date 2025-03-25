@@ -31,8 +31,8 @@ class IngestError:
     message: str
     stacktrace: str
 
-    @staticmethod
-    def from_exception(exc: Exception) -> "IngestError":
+    @classmethod
+    def from_exception(cls, exc: Exception) -> "IngestError":
         """
         Create an IngestError from an exception.
 
@@ -43,7 +43,7 @@ class IngestError:
             The IngestError instance.
         """
         stacktrace = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-        return IngestError(type=type(exc), message=str(exc), stacktrace=stacktrace)
+        return cls(type=type(exc), message=str(exc), stacktrace=stacktrace)
 
 
 @dataclass
