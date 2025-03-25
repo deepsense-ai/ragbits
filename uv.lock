@@ -2626,6 +2626,26 @@ wheels = [
 ]
 
 [[package]]
+name = "moto"
+version = "4.2.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "boto3" },
+    { name = "botocore" },
+    { name = "cryptography" },
+    { name = "jinja2" },
+    { name = "python-dateutil" },
+    { name = "requests" },
+    { name = "responses" },
+    { name = "werkzeug" },
+    { name = "xmltodict" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f8/b2/06671ae921e7c7ebf18a20a6218fb55e83c3784b026eaf3d5670f9315924/moto-4.2.14.tar.gz", hash = "sha256:8f9263ca70b646f091edcc93e97cda864a542e6d16ed04066b1370ed217bd190", size = 4933741 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/0f/ef410e6660d381e04cb6f33065d03b3aefd3444d558fcdd41ef235a1802c/moto-4.2.14-py2.py3-none-any.whl", hash = "sha256:6d242dbbabe925bb385ddb6958449e5c827670b13b8e153ed63f91dbdb50372c", size = 3312702 },
+]
+
+[[package]]
 name = "mpmath"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4224,7 +4244,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-cli"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4239,7 +4259,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-conversations"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-conversations" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4268,7 +4288,7 @@ dev = [
 
 [[package]]
 name = "ragbits-core"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "jinja2" },
@@ -4352,7 +4372,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "aiohttp" },
@@ -4420,7 +4440,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "distilabel" },
@@ -4466,7 +4486,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "0.11.0"
+version = "0.12.0"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4527,6 +4547,7 @@ dev = [
     { name = "mkdocs-material-extensions" },
     { name = "mkdocstrings" },
     { name = "mkdocstrings-python" },
+    { name = "moto" },
     { name = "mypy" },
     { name = "pip-licenses" },
     { name = "pre-commit" },
@@ -4558,6 +4579,7 @@ dev = [
     { name = "mkdocs-material-extensions", specifier = ">=1.3.1" },
     { name = "mkdocstrings", specifier = ">=0.26.1" },
     { name = "mkdocstrings-python", specifier = ">=1.11.1" },
+    { name = "moto", specifier = "~=4.2.7" },
     { name = "mypy", specifier = ">=1.13.0" },
     { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
     { name = "pre-commit", specifier = "~=3.8.0" },
@@ -4816,6 +4838,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/26/17d3e803472963893f8ee77cb56e9a908e65bf5cafd56164ef400674a93e/rerankers-0.6.1.tar.gz", hash = "sha256:36569dbb4499eaf1ba52b3fb6bf0781f2259e28acc2b58d8a68986e0dd2a88e0", size = 40715 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/58/c8/5683740eafb3c429c8af63e6775bfdfe2b85d26c4f774923337325393a19/rerankers-0.6.1-py3-none-any.whl", hash = "sha256:d13ce36ef18d68b7ee06a5c6e74822b4e0be45660d0963c15a5f2be312030732", size = 41496 },
+]
+
+[[package]]
+name = "responses"
+version = "0.25.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "requests" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/81/7e/2345ac3299bd62bd7163216702bbc88976c099cfceba5b889f2a457727a1/responses-0.25.7.tar.gz", hash = "sha256:8ebae11405d7a5df79ab6fd54277f6f2bc29b2d002d0dd2d5c632594d1ddcedb", size = 79203 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e4/fc/1d20b64fa90e81e4fa0a34c9b0240a6cfb1326b7e06d18a5432a9917c316/responses-0.25.7-py3-none-any.whl", hash = "sha256:92ca17416c90fe6b35921f52179bff29332076bb32694c0df02dcac2c6bc043c", size = 34732 },
 ]
 
 [[package]]
@@ -5989,6 +6025,18 @@ wheels = [
 ]
 
 [[package]]
+name = "werkzeug"
+version = "3.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markupsafe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/69/83029f1f6300c5fb2471d621ab06f6ec6b3324685a2ce0f9777fd4a8b71e/werkzeug-3.1.3.tar.gz", hash = "sha256:60723ce945c19328679790e3282cc758aa4a6040e4bb330f53d30fa546d44746", size = 806925 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/52/24/ab44c871b0f07f491e5d2ad12c9bd7358e527510618cb1b803a88e986db1/werkzeug-3.1.3-py3-none-any.whl", hash = "sha256:54b78bf3716d19a65be4fceccc0d1d7b89e608834989dfae50ea87564639213e", size = 224498 },
+]
+
+[[package]]
 name = "win32-setctime"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -6034,6 +6082,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a2/5b/4660897233eb2c8c4de3dc7cefed114c61bacb3c28327e64150dc44ee2f6/wrapt-1.16.0-cp312-cp312-win32.whl", hash = "sha256:685f568fa5e627e93f3b52fda002c7ed2fa1800b50ce51f6ed1d572d8ab3e7fc", size = 35568 },
     { url = "https://files.pythonhosted.org/packages/5c/cc/8297f9658506b224aa4bd71906447dea6bb0ba629861a758c28f67428b91/wrapt-1.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:dcdba5c86e368442528f7060039eda390cc4091bfd1dca41e8046af7c910dda8", size = 37653 },
     { url = "https://files.pythonhosted.org/packages/ff/21/abdedb4cdf6ff41ebf01a74087740a709e2edb146490e4d9beea054b0b7a/wrapt-1.16.0-py3-none-any.whl", hash = "sha256:6906c4100a8fcbf2fa735f6059214bb13b97f75b1a61777fcf6432121ef12ef1", size = 23362 },
+]
+
+[[package]]
+name = "xmltodict"
+version = "0.14.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/05/51dcca9a9bf5e1bce52582683ce50980bcadbc4fa5143b9f2b19ab99958f/xmltodict-0.14.2.tar.gz", hash = "sha256:201e7c28bb210e374999d1dde6382923ab0ed1a8a5faeece48ab525b7810a553", size = 51942 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d6/45/fc303eb433e8a2a271739c98e953728422fa61a3c1f36077a49e395c972e/xmltodict-0.14.2-py2.py3-none-any.whl", hash = "sha256:20cc7d723ed729276e808f26fb6b3599f786cbc37e06c65e192ba77c40f20aac", size = 9981 },
 ]
 
 [[package]]
