@@ -1,19 +1,16 @@
 import { ScrollShadow } from "@heroui/react";
-
-import SidebarContainer from "./sidebar-with-chat-history";
-import MessagingChatMessage from "./messaging-chat-message";
-
-import PromptInputWithEnclosedActions from "./prompt-input-with-enclosed-actions";
+import Layout from "./core/components/Layout";
+import ChatMessage, { ChatMessageProps } from "./core/components/ChatMessage";
 import { useEffect, useState } from "react";
-import { MessagingChatMessageProps } from "./data";
-import PluginWrapper from "./utils/plugins/PluginWrapper";
+import PluginWrapper from "./core/utils/plugins/PluginWrapper";
 import { ExamplePlugin, ExamplePluginName } from "./plugins/ExamplePlugin";
-import { pluginManager } from "./utils/plugins/PluginManager";
+import { pluginManager } from "./core/utils/plugins/PluginManager";
+import PromptInput from "./core/components/PromptInput/PromptInput";
+import { createEventSource } from "./core/utils/eventSourceUtils";
+import axiosWrapper from "./core/utils/axiosWrapper";
 
 export default function Component() {
-  const [messages, setMessages] = useState<Array<MessagingChatMessageProps>>(
-    [],
-  );
+  const [messages, setMessages] = useState<Array<ChatMessageProps>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
 
@@ -40,60 +37,69 @@ export default function Component() {
       },
     ]);
 
-    const res = await fetch("http://localhost:8000/api/chat", {
+    const onError = () => {
+      setIsLoading(false);
+      // Add error message
+      setMessages((state) => [
+        ...state,
+        {
+          name: "Ragbits",
+          message: "An error occurred. Please try again.",
+        },
+      ]);
+    };
+
+    const [data, error] = await axiosWrapper<{ id: string }>({
+      url: "http://localhost:8000/api/chat",
       method: "POST",
-      body: JSON.stringify({
-        message,
-      }),
+      body: { message },
     });
 
-    const data = await res.json();
+    if (error) {
+      console.error("Failed to send message:", error);
+      onError();
+      return () => {
+        setIsLoading(false);
+      };
+    }
 
-    const eventSource = new EventSource(
+    const cleanUp = createEventSource<string>(
       `http://localhost:8000/api/chat/${data.id}`,
+      (data) => {
+        setMessages((state) => {
+          if (state[state.length - 1].name === "You") {
+            return [
+              ...state,
+              {
+                name: "Ragbits",
+                message: data,
+              },
+            ];
+          } else {
+            return state.map((item, index) =>
+              index === state.length - 1
+                ? { ...item, message: item.message + data }
+                : item,
+            );
+          }
+        });
+      },
+      onError,
     );
 
-    eventSource.onmessage = (event) => {
-      const { data } = event;
-
-      setMessages((state) => {
-        if (state[state.length - 1].name === "You") {
-          return [
-            ...state,
-            {
-              name: "Ragbits",
-              message: data,
-            },
-          ];
-        } else {
-          return state.map((item, index) =>
-            index === state.length - 1
-              ? { ...item, message: item.message + data }
-              : item,
-          );
-        }
-      });
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("EventSource failed:", error);
-      eventSource.close();
-      setIsLoading(false);
-    };
-
     return () => {
-      eventSource.close();
+      cleanUp();
       setIsLoading(false);
     };
   };
 
   return (
     <div className="h-full w-full max-w-full">
-      <SidebarContainer subTitle="by deepsense.ai" title="Ragbits Chat">
+      <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
         <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
           <ScrollShadow className="flex h-full flex-col gap-6">
             {messages.map((message, idx) => (
-              <MessagingChatMessage
+              <ChatMessage
                 key={idx}
                 classNames={{
                   base: "bg-default-50",
@@ -103,7 +109,7 @@ export default function Component() {
             ))}
           </ScrollShadow>
           <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
-            <PromptInputWithEnclosedActions
+            <PromptInput
               isLoading={isLoading}
               submit={handleSubmit}
               message={message}
@@ -111,8 +117,8 @@ export default function Component() {
             />
           </div>
         </div>
-      </SidebarContainer>
-      <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" />
+        <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" />
+      </Layout>
     </div>
   );
 }

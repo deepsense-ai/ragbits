@@ -1,9 +1,9 @@
-import type { MessagingChatMessageProps } from "./data";
+import { ChatMessageProps } from "./core/components/ChatMessage";
 
-const messagingChatAIConversations: MessagingChatMessageProps[] = [
+const exampleConversation: ChatMessageProps[] = [
   {
     message:
-      "I’m writing an out-of-office message and need your help. Here’s what I want to say: I’m out from 2024-5-24 to 2024-5-29, contact my colleague for questions, and I will check email when I’m back.",
+      "I'm writing an out-of-office message and need your help. Here's what I want to say: I'm out from 2024-5-24 to 2024-5-29, contact my colleague for questions, and I will check email when I'm back.",
     name: "You",
     isRTL: true,
   },
@@ -19,4 +19,4 @@ const messagingChatAIConversations: MessagingChatMessageProps[] = [
   },
 ];
 
-export default messagingChatAIConversations;
+export default exampleConversation;
