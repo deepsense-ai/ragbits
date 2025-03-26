@@ -2,8 +2,7 @@ import { ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage, { ChatMessageProps } from "./core/components/ChatMessage";
 import { useEffect, useState } from "react";
-import PluginWrapper from "./core/utils/plugins/PluginWrapper";
-import { ExamplePlugin, ExamplePluginName } from "./plugins/ExamplePlugin";
+import { ExamplePluginName } from "./plugins/ExamplePlugin";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
@@ -117,7 +116,6 @@ export default function Component() {
             />
           </div>
         </div>
-        {/* <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" /> */}
       </Layout>
     </div>
   );
