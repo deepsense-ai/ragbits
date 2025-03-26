@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
 from ragbits.core.prompt import Prompt
-from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.documents.element import ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
 
@@ -99,7 +99,9 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
             InvalidConfigError: If llm or prompt can't be found or are not the correct type.
         """
         config["llm"] = (
-            LLM.subclass_from_config(ObjectContructionConfig.model_validate(config["llm"])) if "llm" in config else None
+            LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
+            if "llm" in config
+            else None
         )
         config["prompt"] = import_by_path(config["prompt"]) if "prompt" in config else None
         return super().from_config(config)

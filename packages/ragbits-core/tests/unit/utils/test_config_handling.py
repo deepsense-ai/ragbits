@@ -5,7 +5,7 @@ import pytest
 
 from ragbits.core.config import CoreConfig, core_config
 from ragbits.core.utils._pyproject import get_config_instance
-from ragbits.core.utils.config_handling import InvalidConfigError, ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import InvalidConfigError, ObjectConstructionConfig, WithConstructionConfig
 
 projects_dir = Path(__file__).parent / "testprojects"
 
@@ -40,7 +40,7 @@ def test_default_from_config():
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ExampleSubclass",
             "config": {"foo": "foo", "bar": 1},
@@ -53,7 +53,7 @@ def test_subclass_from_config():
 
 
 def test_incorrect_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ExampleWithNoDefaultModule",  # Not a subclass of ExampleClassWithConfigMixin
             "config": {"foo": "foo", "bar": 1},
@@ -64,7 +64,7 @@ def test_incorrect_subclass_from_config():
 
 
 def test_no_default_module():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ExampleWithNoDefaultModule",
             "config": {"foo": "foo", "bar": 1},

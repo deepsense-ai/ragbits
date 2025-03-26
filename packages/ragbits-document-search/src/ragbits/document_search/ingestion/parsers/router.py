@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from typing_extensions import Self
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
@@ -54,7 +54,7 @@ class DocumentParserRouter(WithConstructionConfig):
         self._parsers = {**_DEFAULT_PARSERS, **parsers} if parsers else _DEFAULT_PARSERS
 
     @classmethod
-    def from_config(cls, config: dict[str, ObjectContructionConfig]) -> Self:
+    def from_config(cls, config: dict[str, ObjectConstructionConfig]) -> Self:
         """
         Initialize the class with the provided configuration.
 

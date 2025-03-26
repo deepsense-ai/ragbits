@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, ImageElement, TextElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
@@ -31,7 +31,7 @@ def test_enricher_validates_supported_document_types_fails() -> None:
     ],
 )
 def test_enricher_subclass_from_config(enricher_type: str, expected_enricher: type[ImageElementEnricher]) -> None:
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": enricher_type,
             "config": {
