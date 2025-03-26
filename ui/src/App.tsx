@@ -117,7 +117,7 @@ export default function Component() {
             />
           </div>
         </div>
-        <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" />
+        {/* <PluginWrapper plugin={ExamplePlugin} component="ExampleComponent" /> */}
       </Layout>
     </div>
   );
