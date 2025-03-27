@@ -3,7 +3,7 @@ site_description: Library for fast RAG application development
 site_url: https://ragbits.deepsense.ai
 repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
-copyright: Copyright &copy; 2024 deepsense.ai
+copyright: Copyright &copy; 2025 deepsense.ai
 nav:
   - ragbits: index.md
   - Quick Start:
