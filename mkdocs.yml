@@ -1,5 +1,5 @@
 site_name: ragbits docs
-site_description: Library for fast RAG application development
+site_description: Building blocks for rapid development of GenAI applications
 site_url: https://ragbits.deepsense.ai
 repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
@@ -18,20 +18,14 @@ nav:
       - LLMs:
         - "Interact with LLMs": how-to/llms/use_llms.md
         - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
-      - VectorStores:
+      - Vector Stores:
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Project configuration:
         - "Set preferred components in project": how-to/project/component_preferences.md
         - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
-        - Ingest:
-          - Using Strategies:
-            - how-to/document_search/ingest/strategies/async_processing.md
-            - how-to/document_search/ingest/strategies/distributed_ingestion.md
-            - how-to/document_search/ingest/strategies/create_custom_execution_strategy.md
-        - how-to/document_search/search_documents.md
-        - how-to/document_search/use_rephraser.md
-        - how-to/document_search/use_reranker.md
+        - "Ingest documents": how-to/document_search/ingest.md
+        - "Search documents": how-to/document_search/search.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Evaluate:
