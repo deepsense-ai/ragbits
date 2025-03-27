@@ -2,14 +2,14 @@
 
 The Ragbits document search pipeline consists of three sequential steps: query rephrasing, vector search, and reranking. Each step can be parameterized, enabling more sophisticated retrieval.
 
-## Rephrasing
+## Rephrase query
 
 ...
 
-## Vector Search
+## Search elements
 
 ...
 
-## Reranking
+## Rerank elements
 
 ...

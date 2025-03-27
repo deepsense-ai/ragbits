@@ -2,7 +2,7 @@
 
 The Ragbits document ingest pipeline consists of four main steps: loading, parsing, enrichment, and indexing. All of these steps can be orchestrated using different strategies, depending on the expected load.
 
-## Loading
+## Loading sources
 
 Before a document can be processed, it must be defined and downloaded. In Ragbits, there are a few ways to do this: you can provide a source URI, or a source instance.
 
@@ -65,7 +65,7 @@ class CustomSource(Source):
         return Path(f"/tmp/{self.source_url}")
 ```
 
-## Parsing
+## Parsing documents
 
 Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the  [`unstructured`](https://github.com/Unstructured-IO/unstructured) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOC, JPG). If you need to implement a custom parser, you must extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class.
 
@@ -115,7 +115,7 @@ parser_router = DocumentParserRouter({
 document_search = DocumentSearch(parser_router=parser_router, ...)
 ```
 
-## Enrichment
+## Enriching elements
 
 After parsing the document, the resulting elements can optionally be enriched. Element enrichers generate additional information about elements, such as text summaries or image descriptions. Most enrichers are lightweight wrappers around LLMs that process elements in a specific format. By default, Ragbit enriches image elements with descriptions using the preferred VLM. To define a new element enricher, extend the [`ElementEnricher`][ragbits.document_search.ingestion.enrichers.base.ElementEnricher] class.
 
@@ -150,7 +150,7 @@ class TextElementEnricher(ElementEnricher[TextElement]):
         ]
 ```
 
-To apply the new enriche, define a enricher router and assign it to the document search instance:
+To apply the new enriche, define a enricher router and assign it to the document search instance.
 
 ```python
 from ragbits.document_search import DocumentSearch
@@ -164,26 +164,161 @@ enricher_router = ElementEnricherRouter({
 document_search = DocumentSearch(enricher_router=enricher_router, ...)
 ```
 
-## Indexing
+## Indexing elements
 
 At the end of the ingestion process, elements are indexed into the vector database. First, the vector store is scanned to identify and remove any existing elements from sources that are about to be ingested. Then, the new elements are inserted, ensuring that only the latest versions of the sources remain. Indexing is performed in batches, allowing all elements from a batch of documents to be processed in a single request to the database, which improves efficiency and speeds up the process.
 
-## Strategies
+## Orchestrating ingest tasks
 
 Running an ingest pipeline can be time-consuming, depending on your expected load. Ragbits offers three built-in ingest strategies that you can use out of the box for your workload, or you can implement a custom strategy to suit your needs.
 
-### Sequential Ingest
+=== "Sequential"
 
-...
+    ```python
+    from ragbits.document_search import DocumentSearch
+    from ragbits.document_search.ingestion.strategies import SequentialIngestStrategy
 
-### Batched Ingest
+    ingest_strategy = SequentialIngestStrategy()
+    document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
 
-...
+    await document_search.ingest("s3://")
+    ```
 
-### Ray Distributed Ingest
+    The default ingest strategy in Ragbits is [`SequentialIngestStrategy`][ragbits.document_search.ingestion.strategies.SequentialIngestStrategy]. This strategy processes documents one by one, waiting for each document to be processed before moving on to the next. Although it's the simplest and most straightforward strategy, it may be slow when processing a large number of documents.
 
-...
+=== "Batched"
 
-### Custom Ingest
+    ```python
+    from ragbits.document_search import DocumentSearch
+    from ragbits.document_search.ingestion.strategies import BatchedIngestStrategy
 
-...
+    ingest_strategy = BatchedIngestStrategy(batch_size=10)
+    document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
+
+    await document_search.ingest("s3://")
+    ```
+
+    If you need to process documents simultaneously, you can use the [`BatchedIngestStrategy`][ragbits.document_search.ingestion.strategies.BatchedIngestStrategy] strategy. This strategy uses Python built-in `asyncio` to process documents concurrently, making it faster than the [`SequentialIngestStrategy`][ragbits.document_search.ingestion.strategies.SequentialIngestStrategy] strategy, especially with large document volumes.
+
+=== "Ray Distributed"
+
+    ```python
+    from ragbits.document_search import DocumentSearch
+    from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
+
+    ingest_strategy = RayDistributedIngestStrategy(cpu_batch_size=1, io_batch_size=5)
+    document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
+
+    await document_search.ingest("s3://")
+    ```
+
+    If you need even better performance, you can use the [`RayDistributedIngestStrategy`][ragbits.document_search.ingestion.strategies.RayDistributedIngestStrategy] strategy. By default, when run outside of a Ray cluster, the Ray Core library will parallelize the processing of documents on the local machine, using available CPU cores.
+
+    When run inside a Ray cluster, the Ray Core library will parallelize the processing of documents across the nodes in the cluster. There are several ways of sending documents to the Ray cluster for processing, but using Ray Jobs API is by far the most recommended one.
+
+    To use Ray Jobs API, you should prepare the processing script and the documents to be processed, and then submit the job to the Ray cluster.
+    Make sure to replace `<cluster_address>` with the address of your Ray cluster and adjust the `entrypoint` and `runtime_env` parameters to match your setup.
+
+    ```python
+    from ray.job_submission import JobSubmissionClient
+
+    client = JobSubmissionClient("http://<cluster_address>:8265")
+    client.submit_job(
+        entrypoint="python script.py",
+        runtime_env={
+            "working_dir": "./",
+            "pip": [
+                "ragbits-core",
+                "ragbits-document-search[ray]"
+            ]
+        },
+    )
+    ```
+
+    Ray Jobs is also available as CLI commands. You can submit a job using the following command:
+
+    ```bash
+    ray job submit \
+        --address http://<cluster_address>:8265 \
+        --runtime-env '{"pip": ["ragbits-core", "ragbits-document-search[ray]"]}' \
+        --working-dir . \
+        --python script.py
+    ```
+
+    There are also other ways to submit jobs to the Ray cluster. For more information, please refer to the [Ray documentation](https://docs.ray.io/en/latest/ray-overview/index.html).
+
+To define a new ingest strategy, extend the [`IngestStrategy`][ragbits.document_search.ingestion.strategies.IngestStrategy] class.
+
+```python
+from ragbits.core.vector_stores.base import VectorStore
+from ragbits.document_search.documents.document import Document, DocumentMeta
+from ragbits.document_search.documents.sources import Source
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+from ragbits.document_search.ingestion.strategies.base import (
+    IngestDocumentResult,
+    IngestError,
+    IngestExecutionResult,
+    IngestStrategy,
+)
+
+
+class DelayedIngestStrategy(IngestStrategy):
+    """
+    Ingest strategy that processes documents in sequence, one at a time with a small delay.
+    """
+
+    async def __call__(
+        self,
+        documents: Iterable[DocumentMeta | Document | Source],
+        vector_store: VectorStore,
+        parser_router: DocumentParserRouter,
+        enricher_router: ElementEnricherRouter,
+    ) -> IngestExecutionResult:
+        """
+        Ingest documents sequentially one by one with a small delay.
+
+        Args:
+            documents: The documents to ingest.
+            vector_store: The vector store to store document chunks.
+            parser_router: The document parser router to use.
+            enricher_router: The intermediate element enricher router to use.
+
+        Returns:
+            The ingest execution result.
+        """
+        results = IngestExecutionResult()
+
+        for document in documents:
+            try:
+                # Parse
+                parsed_elements = await self._call_with_error_handling(self._parse_document, ...)
+
+                # Enrich
+                enriched_elements = await self._call_with_error_handling(self._enrich_elements, ...)
+
+                # Index
+                await self._call_with_error_handling(self._remove_elements, ...)
+                await self._call_with_error_handling(self._insert_elements, ...)
+
+                # Artificial delay
+                await asyncio.sleep(1)
+
+            except Exception as exc:
+                results.failed.append(IngestDocumentResult(error=IngestError.from_exception(exc), ...))
+            else:
+                results.successful.append(IngestDocumentResult(...))
+
+        return results
+```
+
+To use your custom ingest strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
+
+```python
+from ragbits.document_search import DocumentSearch
+
+ingest_strategy = DelayedIngestStrategy()
+document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
+
+await document_search.ingest("s3://")
+```
