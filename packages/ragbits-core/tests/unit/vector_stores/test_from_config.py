@@ -3,7 +3,7 @@ from chromadb import ClientAPI
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -11,7 +11,7 @@ from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.vector_stores:InMemoryVectorStore",
             "config": {
@@ -33,7 +33,7 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "InMemoryVectorStore",
             "config": {
@@ -46,7 +46,7 @@ def test_subclass_from_config_default_path():
 
 
 def test_subclass_from_config_chroma_client():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
             "config": {
@@ -69,7 +69,7 @@ def test_subclass_from_config_chroma_client():
 
 
 def test_subclass_from_config_qdrant_client():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.core.vector_stores.qdrant:QdrantVectorStore",
             "config": {

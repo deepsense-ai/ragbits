@@ -1,6 +1,6 @@
 import pytest
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.element import ImageElement, TextElement
 from ragbits.document_search.ingestion.enrichers.exceptions import EnricherNotFoundError
 from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher
@@ -9,10 +9,10 @@ from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRo
 
 def test_enricher_router_from_config() -> None:
     config = {
-        "TextElement": ObjectContructionConfig.model_validate(
+        "TextElement": ObjectConstructionConfig.model_validate(
             {"type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"}
         ),
-        "ImageElement": ObjectContructionConfig.model_validate(
+        "ImageElement": ObjectConstructionConfig.model_validate(
             {"type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"}
         ),
     }

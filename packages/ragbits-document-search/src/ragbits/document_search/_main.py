@@ -12,7 +12,7 @@ from ragbits.core.config import CoreConfig
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import (
     NoPreferredConfigError,
-    ObjectContructionConfig,
+    ObjectConstructionConfig,
     WithConstructionConfig,
 )
 from ragbits.core.vector_stores import VectorStore
@@ -49,12 +49,12 @@ class DocumentSearchConfig(BaseModel):
     Schema for the dict taken by DocumentSearch.from_config method.
     """
 
-    vector_store: ObjectContructionConfig
-    rephraser: ObjectContructionConfig = ObjectContructionConfig(type="NoopQueryRephraser")
-    reranker: ObjectContructionConfig = ObjectContructionConfig(type="NoopReranker")
-    ingest_strategy: ObjectContructionConfig = ObjectContructionConfig(type="SequentialIngestStrategy")
-    parser_router: dict[str, ObjectContructionConfig] = {}
-    enricher_router: dict[str, ObjectContructionConfig] = {}
+    vector_store: ObjectConstructionConfig
+    rephraser: ObjectConstructionConfig = ObjectConstructionConfig(type="NoopQueryRephraser")
+    reranker: ObjectConstructionConfig = ObjectConstructionConfig(type="NoopReranker")
+    ingest_strategy: ObjectConstructionConfig = ObjectConstructionConfig(type="SequentialIngestStrategy")
+    parser_router: dict[str, ObjectConstructionConfig] = {}
+    enricher_router: dict[str, ObjectConstructionConfig] = {}
 
 
 class DocumentSearch(WithConstructionConfig):
@@ -158,7 +158,7 @@ class DocumentSearch(WithConstructionConfig):
 
             # Look for explicit document search configuration
             if type_config := preferences.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+                return cls.subclass_from_config(ObjectConstructionConfig.model_validate(type_config))
 
             # Instantiate the class with the preferred configuration for each component
             return cls.from_config(preferences)
@@ -172,7 +172,7 @@ class DocumentSearch(WithConstructionConfig):
         if config.component_preference_config_path is not None:
             # Look for explicit document search configuration
             if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(preferred_config))
+                return cls.subclass_from_config(ObjectConstructionConfig.model_validate(preferred_config))
 
             # Instantiate the class with the preferred configuration for each component
             return cls.from_config(config.preferred_instances_config)

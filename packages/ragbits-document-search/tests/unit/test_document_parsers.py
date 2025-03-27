@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import ImageElement, TextElement
 from ragbits.document_search.ingestion.parsers.base import DocumentParser, ImageDocumentParser, TextDocumentParser
@@ -34,7 +34,7 @@ def test_parser_validates_supported_document_types_fails() -> None:
     ],
 )
 def test_parser_subclass_from_config(parser_type: str, expected_parser: type[DocumentParser]) -> None:
-    config = ObjectContructionConfig.model_validate({"type": parser_type})
+    config = ObjectConstructionConfig.model_validate({"type": parser_type})
     parser = DocumentParser.subclass_from_config(config)
 
     assert isinstance(parser, expected_parser)

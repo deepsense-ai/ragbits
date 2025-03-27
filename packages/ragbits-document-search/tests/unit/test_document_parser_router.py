@@ -1,6 +1,6 @@
 import pytest
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import ImageDocumentParser, TextDocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
@@ -10,13 +10,13 @@ from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredD
 
 def test_parser_router_from_config() -> None:
     config = {
-        "txt": ObjectContructionConfig.model_validate(
+        "txt": ObjectConstructionConfig.model_validate(
             {"type": "ragbits.document_search.ingestion.parsers.base:TextDocumentParser"}
         ),
-        "png": ObjectContructionConfig.model_validate(
+        "png": ObjectConstructionConfig.model_validate(
             {"type": "ragbits.document_search.ingestion.parsers.base:ImageDocumentParser"}
         ),
-        "pdf": ObjectContructionConfig.model_validate(
+        "pdf": ObjectConstructionConfig.model_validate(
             {"type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser"}
         ),
     }

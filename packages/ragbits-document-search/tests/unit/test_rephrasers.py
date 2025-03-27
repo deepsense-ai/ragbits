@@ -1,5 +1,5 @@
 from ragbits.core.llms.litellm import LiteLLM
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser
 from ragbits.document_search.retrieval.rephrasers.multi import MultiQueryRephraser
@@ -8,7 +8,7 @@ from ragbits.document_search.retrieval.rephrasers.prompts import MultiQueryRephr
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {"type": "ragbits.document_search.retrieval.rephrasers:NoopQueryRephraser"}
     )
     rephraser = QueryRephraser.subclass_from_config(config)
@@ -16,13 +16,13 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "NoopQueryRephraser"})
+    config = ObjectConstructionConfig.model_validate({"type": "NoopQueryRephraser"})
     rephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, NoopQueryRephraser)
 
 
 def test_subclass_from_config_llm():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
             "config": {
@@ -40,7 +40,7 @@ def test_subclass_from_config_llm():
 
 
 def test_subclass_from_config_llm_prompt():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
             "config": {
@@ -59,7 +59,7 @@ def test_subclass_from_config_llm_prompt():
 
 
 def test_subclass_from_config_multi():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rephrasers.multi:MultiQueryRephraser",
             "config": {
@@ -77,7 +77,7 @@ def test_subclass_from_config_multi():
 
 
 def test_subclass_from_config_multiquery_llm_prompt():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rephrasers.multi:MultiQueryRephraser",
             "config": {
