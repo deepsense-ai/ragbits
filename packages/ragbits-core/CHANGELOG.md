@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- image embeddings with liteLLM for vertex_ai models
 
 ## 0.12.0 (2025-03-25)
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.

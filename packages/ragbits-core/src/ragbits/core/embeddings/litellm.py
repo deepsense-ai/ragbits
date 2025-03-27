@@ -1,4 +1,9 @@
+import asyncio
+import base64
+
 import litellm
+from litellm.main import VertexMultimodalEmbedding
+from litellm.types.llms.vertex_ai import Instance, InstanceImage
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder
@@ -110,3 +115,74 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
                 outputs.total_tokens = response.usage.total_tokens
 
         return outputs.embeddings
+
+    def image_support(self) -> bool:  # noqa: PLR6301
+        """
+        Check if the model supports image embeddings.
+
+        Returns:
+            True if the model supports image embeddings, False otherwise.
+        """
+        # If not in our dictionary, we'll try a more dynamic approach
+        model_name = self.model.replace("vertexai/", "").lower()
+
+        # Check against known supported models
+        supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
+
+        return model_name in supported_models
+
+    async def process_image(self, image_instance: Instance, options: Options) -> list[float]:
+        """
+        Embeds a single image from the given instance.
+
+        Args:
+            image_instance: Instance of the image to embed.
+            options: Additional options to pass to the Lite LLM API.
+
+        Returns:
+            list of floats representing the embedded image.
+        """
+        response = await litellm.aembedding(
+            model=self.model,
+            input=image_instance,
+            api_base=self.api_base,
+            api_key=self.api_key,
+            api_version=self.api_version,
+            **options.dict(),
+        )
+        return response.data[0].embedding
+
+    async def embed_image(self, images: list[bytes], options: Options | None = None) -> list[list[float]]:
+        """
+        Embeds a list of images into a list of vectors.
+
+        Args:
+            images: A list of input image bytes to embed.
+            options: Additional settings used by the Embedder model.
+
+        Returns:
+            A list of embedding vectors, one for each input image.
+        """
+        merged_options = (self.default_options | options) if options else self.default_options
+        with trace(
+            model=self.model,
+            api_base=self.api_base,
+            api_version=self.api_version,
+            options=merged_options.dict(),
+        ) as outputs:
+            base64_images = [base64.b64encode(img).decode("utf-8") for img in images]
+            instances = [Instance(image=InstanceImage(bytesBase64Encoded=base64_img)) for base64_img in base64_images]
+            try:
+                embeddings = await asyncio.gather(
+                    *[self.process_image(instance, merged_options) for instance in instances]
+                )
+
+            except litellm.openai.APIConnectionError as exc:
+                raise EmbeddingConnectionError() from exc
+            except litellm.openai.APIStatusError as exc:
+                raise EmbeddingStatusError(exc.message, exc.status_code) from exc
+            except litellm.openai.APIResponseValidationError as exc:
+                raise EmbeddingResponseError() from exc
+
+            outputs.embeddings = embeddings
+            return embeddings
