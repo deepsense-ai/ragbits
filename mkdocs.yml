@@ -24,8 +24,8 @@ nav:
         - "Set preferred components in project": how-to/project/component_preferences.md
         - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
-        - "Ingest documents": how-to/document_search/ingest.md
-        - "Search documents": how-to/document_search/search.md
+        - "Ingest documents": how-to/document_search/ingest-documents.md
+        - "Search documents": how-to/document_search/search-documents.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Evaluate:
