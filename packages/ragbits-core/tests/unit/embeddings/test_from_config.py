@@ -1,3 +1,5 @@
+import litellm
+
 from ragbits.core.embeddings import Embedder, NoopEmbedder
 from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
@@ -58,3 +60,42 @@ def test_subclass_from_config_bag_of_tokens():
         option1="value1",
         option2="value2",
     )  # type: ignore
+
+
+def test_from_config_with_router():
+    config = ObjectConstructionConfig(
+        type="ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+        config={
+            "model": "text-embedding-3-small",
+            "api_key": "test_api_key",
+            "router": [
+                {
+                    "model_name": "small",
+                    "litellm_params": {
+                        "model": "text-embedding-3-small",
+                        "dimensions": 3000,
+                        "api_key": "test_api_key",
+                    },
+                },
+                {
+                    "model_name": "large",
+                    "litellm_params": {
+                        "model": "text-embedding-3-large",
+                        "api_key": "test_api_key",
+                    },
+                },
+            ],
+        },
+    )
+
+    embedder: Embedder = Embedder.subclass_from_config(config)
+    assert isinstance(embedder, LiteLLMEmbedder)
+    assert embedder.api_base is None
+    assert embedder.model == "text-embedding-3-small"
+    assert embedder.api_key == "test_api_key"
+    assert isinstance(embedder.router, litellm.router.Router)
+    assert len(embedder.router.model_list) == 2
+    assert embedder.router.model_list[0]["model_name"] == "small"
+    assert embedder.router.model_list[0]["litellm_params"]["dimensions"] == 3000
+    assert embedder.router.model_list[1]["model_name"] == "large"
+    assert embedder.router.model_list[1]["litellm_params"]["model"] == "text-embedding-3-large"
