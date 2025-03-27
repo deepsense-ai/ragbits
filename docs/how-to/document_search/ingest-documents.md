@@ -4,7 +4,7 @@ The Ragbits document ingest pipeline consists of four main steps: loading, parsi
 
 ## Loading sources
 
-Before a document can be processed, it must be defined and downloaded. In Ragbits, there are a few ways to do this: you can provide a source URI, or a source instance.
+Before a document can be processed, it must be defined and downloaded. In Ragbits, there are a few ways to do this: you can specify the source URI, the source instance, the document metadata or the document itself.
 
 === "URI"
 
@@ -49,9 +49,21 @@ Before a document can be processed, it must be defined and downloaded. In Ragbit
     await document_search.ingest([Document(...), ...])
     ```
 
-There are multiple ways to define a document depending on the available data. You can explore the full API [`here`][ragbits.document_search.DocumentSearch.ingest] or check the provided [examples](https://github.com/deepsense-ai/ragbits/tree/main/examples/document-search). Generally, the key idea is to supply metadata about the document's location, and Ragbits will handle the rest.
+### Supported sources
 
-Ragbits supports various popular data sources, including S3, GSC, and Azure Blob Storage. To define a new sources, extend the [`Source`][ragbits.document_search.documents.sources.Source] class.
+This is the list of currently supported sources by Ragbits.
+
+| Source | URI Schema | Class |
+|-|-|-|
+| Azure Blob Storage | `azure://https://account_name.blob.core.windows.net/<container-name>|<blob-name>` | [`AzureBlobStorageSource`][ragbits.document_search.documents.sources.AzureBlobStorageSource] |
+| Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.document_search.documents.sources.GCSSource] |
+| Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.document_search.documents.sources.GitSource] |
+| Hugging Face | `huggingface://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.document_search.documents.sources.HuggingFaceSource] |
+| Local file | `file://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.document_search.documents.sources.LocalFileSource] |
+| Amazon S3 | `s3://<bucket-name>/<prefix>` | [`S3Source`][ragbits.document_search.documents.sources.S3Source] |
+| Web | `web://<https-url>` | [`WebSource`][ragbits.document_search.documents.sources.WebSource] |
+
+To define a new sources, extend the [`Source`][ragbits.document_search.documents.sources.Source] class.
 
 ```python
 from ragbits.document_search.documents.sources import Source
@@ -151,7 +163,7 @@ document_search = DocumentSearch(parser_router=parser_router, ...)
 
 ## Enriching elements
 
-After parsing the document, the resulting elements can optionally be enriched. Element enrichers generate additional information about elements, such as text summaries or image descriptions. Most enrichers are lightweight wrappers around LLMs that process elements in a specific format. By default, Ragbit enriches image elements with descriptions using the preferred VLM.
+After parsing the document, the resulting elements can optionally be enriched. Element enrichers generate additional information about elements, such as text summaries or image descriptions. Most enrichers are lightweight wrappers around LLMs that process elements in a specific format. By default, Ragbits enriches image elements with descriptions using the preferred VLM.
 
 To define a new enricher, extend the [`ElementEnricher`][ragbits.document_search.ingestion.enrichers.base.ElementEnricher] class.
 
@@ -162,7 +174,7 @@ from ragbits.document_search.ingestion.enrichers import ElementEnricher
 
 class TextElementEnricher(ElementEnricher[TextElement]):
     """
-    Enricher that sumarizes text elements using LLM.
+    Enricher that summarizes text elements using LLM.
     """
 
     async def enrich(self, elements: list[TextElement]) -> list[TextElement]:
