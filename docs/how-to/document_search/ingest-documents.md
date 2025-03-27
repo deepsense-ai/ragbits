@@ -6,15 +6,48 @@ The Ragbits document ingest pipeline consists of four main steps: loading, parsi
 
 Before a document can be processed, it must be defined and downloaded. In Ragbits, there are a few ways to do this: you can provide a source URI, or a source instance.
 
-```python
-from ragbits.document_search.documents.sources import WebSource
-from ragbits.document_search import DocumentSearch
+=== "URI"
 
-document_search = DocumentSearch(...)
+    ```python
+    from ragbits.document_search import DocumentSearch
 
-await document_search.ingest("s3://")
-await document_search.ingest([WebSource(...), ...])
-```
+    document_search = DocumentSearch(...)
+
+    await document_search.ingest("s3://")
+    ```
+
+=== "Source"
+
+    ```python
+    from ragbits.document_search.documents.sources import WebSource
+    from ragbits.document_search import DocumentSearch
+
+    document_search = DocumentSearch(...)
+
+    await document_search.ingest([WebSource(...), ...])
+    ```
+
+=== "Metadata"
+
+    ```python
+    from ragbits.document_search.documents.document import DocumentMeta
+    from ragbits.document_search import DocumentSearch
+
+    document_search = DocumentSearch(...)
+
+    await document_search.ingest([DocumentMeta.from_local_path(...), ...])
+    ```
+
+=== "Document"
+
+    ```python
+    from ragbits.document_search.documents.document import Document
+    from ragbits.document_search import DocumentSearch
+
+    document_search = DocumentSearch(...)
+
+    await document_search.ingest([Document(...), ...])
+    ```
 
 There are multiple ways to define a document depending on the available data. You can explore the full API [`here`][ragbits.document_search.DocumentSearch.ingest] or check the provided [examples](https://github.com/deepsense-ai/ragbits/tree/main/examples/document-search). Generally, the key idea is to supply metadata about the document's location, and Ragbits will handle the rest.
 
@@ -35,6 +68,9 @@ class CustomSource(Source):
 
     @property
     def id(self) -> str:
+        """
+        Source unique identifier.
+        """
         return f"{self.protocol}:{self.source_url}"
 
     @classmethod
@@ -57,10 +93,6 @@ class CustomSource(Source):
         Returns:
             The local path to the downloaded file.
         """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.source_url) as response:
-                with open(f"/tmp/{self.source_url}", "w") as f:
-                    f.write(await response.text())
         ...
         return Path(f"/tmp/{self.source_url}")
 ```
