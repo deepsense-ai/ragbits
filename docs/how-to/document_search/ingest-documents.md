@@ -18,7 +18,7 @@ await document_search.ingest([WebSource(...), ...])
 
 There are multiple ways to define a document depending on the available data. You can explore the full API [`here`][ragbits.document_search.DocumentSearch.ingest] or check the provided [examples](https://github.com/deepsense-ai/ragbits/tree/main/examples/document-search). Generally, the key idea is to supply metadata about the document's location, and Ragbits will handle the rest.
 
-Ragbits supports various popular data sources, including S3, GSC, and Azure Blob Storage. You can also add support for custom sources by extending the [`Source`][ragbits.document_search.documents.sources.Source] class.
+Ragbits supports various popular data sources, including S3, GSC, and Azure Blob Storage. To define a new sources, extend the [`Source`][ragbits.document_search.documents.sources.Source] class.
 
 ```python
 from ragbits.document_search.documents.sources import Source
@@ -67,7 +67,9 @@ class CustomSource(Source):
 
 ## Parsing documents
 
-Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the  [`unstructured`](https://github.com/Unstructured-IO/unstructured) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOC, JPG). If you need to implement a custom parser, you must extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class.
+Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the  [`unstructured`](https://github.com/Unstructured-IO/unstructured) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOC, JPG).
+
+To define a new parser, extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class.
 
 ```python
 from bs4 import BeautifulSoup
@@ -101,7 +103,7 @@ class HTMLDocumentParser(DocumentParser):
         ]
 ```
 
-To apply the new parser, define a parser router and assign it to the document search instance.
+To apply the new parser, define a [`DocumentParserRouter`][ragbits.document_search.ingestion.parsers.DocumentParserRouter] and assign it to the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
 
 ```python
 from ragbits.document_search import DocumentSearch
@@ -117,7 +119,9 @@ document_search = DocumentSearch(parser_router=parser_router, ...)
 
 ## Enriching elements
 
-After parsing the document, the resulting elements can optionally be enriched. Element enrichers generate additional information about elements, such as text summaries or image descriptions. Most enrichers are lightweight wrappers around LLMs that process elements in a specific format. By default, Ragbit enriches image elements with descriptions using the preferred VLM. To define a new element enricher, extend the [`ElementEnricher`][ragbits.document_search.ingestion.enrichers.base.ElementEnricher] class.
+After parsing the document, the resulting elements can optionally be enriched. Element enrichers generate additional information about elements, such as text summaries or image descriptions. Most enrichers are lightweight wrappers around LLMs that process elements in a specific format. By default, Ragbit enriches image elements with descriptions using the preferred VLM.
+
+To define a new enricher, extend the [`ElementEnricher`][ragbits.document_search.ingestion.enrichers.base.ElementEnricher] class.
 
 ```python
 from ragbits.document_search.documents.element import TextElement
@@ -150,7 +154,7 @@ class TextElementEnricher(ElementEnricher[TextElement]):
         ]
 ```
 
-To apply the new enriche, define a enricher router and assign it to the document search instance.
+To apply the new enricher, define a [`ElementEnricherRouter`][ragbits.document_search.ingestion.enrichers.ElementEnricherRouter] and assign it to the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
 
 ```python
 from ragbits.document_search import DocumentSearch
@@ -250,12 +254,12 @@ Running an ingest pipeline can be time-consuming, depending on your expected loa
 To define a new ingest strategy, extend the [`IngestStrategy`][ragbits.document_search.ingestion.strategies.IngestStrategy] class.
 
 ```python
-from ragbits.core.vector_stores.base import VectorStore
+from ragbits.core.vector_stores import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies.base import (
+from ragbits.document_search.ingestion.enrichers import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers import DocumentParserRouter
+from ragbits.document_search.ingestion.strategies import (
     IngestDocumentResult,
     IngestError,
     IngestExecutionResult,
@@ -310,15 +314,4 @@ class DelayedIngestStrategy(IngestStrategy):
                 results.successful.append(IngestDocumentResult(...))
 
         return results
-```
-
-To use your custom ingest strategy, you need to specify it when creating the [`DocumentSearch`][ragbits.document_search.DocumentSearch] instance.
-
-```python
-from ragbits.document_search import DocumentSearch
-
-ingest_strategy = DelayedIngestStrategy()
-document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
-
-await document_search.ingest("s3://")
 ```
