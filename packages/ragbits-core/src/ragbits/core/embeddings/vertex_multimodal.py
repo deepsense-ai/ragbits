@@ -33,7 +33,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         model: str = "multimodalembedding",
         api_base: str | None = None,
         api_key: str | None = None,
-        concurency: int = 10,
+        concurrency: int = 10,
         default_options: LiteLLMEmbedderOptions | None = None,
     ) -> None:
         """
@@ -43,7 +43,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             model: One of the VertexAI multimodal models to be used. Default is "multimodalembedding".
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. If not specified, an environment variable will be used.
-            concurency: The number of concurrent requests to make to the API.
+            concurrency: The number of concurrent requests to make to the API.
             default_options: Additional options to pass to the API.
 
         Raises:
@@ -60,7 +60,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         self.model = model
         self.api_base = api_base
         self.api_key = api_key
-        self.concurency = concurency
+        self.concurrency = concurrency
 
         supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
         if model not in supported_models:
@@ -90,7 +90,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             api_base=self.api_base,
             options=merged_options.dict(),
         ) as outputs:
-            semaphore = asyncio.Semaphore(self.concurency)
+            semaphore = asyncio.Semaphore(self.concurrency)
             try:
                 response = await asyncio.gather(
                     *[self._call_litellm(instance, semaphore, merged_options) for instance in data],
