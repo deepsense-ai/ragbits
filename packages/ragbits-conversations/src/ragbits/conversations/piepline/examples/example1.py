@@ -8,7 +8,7 @@ from ragbits.core.llms.litellm import LiteLLM
 
 async def main() -> None:
     """
-    Example of using convcrsation pipeline
+    Example of using conversation pipeline
     """
     llm = LiteLLM("gpt-4o")
     pipeline = ConversationPiepline(llm)

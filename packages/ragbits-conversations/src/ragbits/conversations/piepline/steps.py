@@ -61,7 +61,7 @@ class AddHistoryStep(Step):
 class HistoryCompressionStep(Step):
     """
     A plugin that removes history from the conversation pipeline state
-    and adds any nesseseaty context from history to the user question.
+    and adds any necessary context from history to the user question.
     """
 
     def __init__(self, llm: LLM, compressor: ConversationHistoryCompressor | None = None) -> None:

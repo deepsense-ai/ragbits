@@ -47,8 +47,8 @@ class Pipeline(Step[InputT, OutputT]):
         """
         Validate that the output type of each step is compatible with the input type of the next step.
 
-        Doesn't validate the first step input type and the last step output type because those are not know
-        durint the initialization of the pipeline (due to the generic types and the specifics
+        Doesn't validate the first step input type and the last step output type because those are not known
+        during the initialization of the pipeline (due to the generic types and the specifics
         of the Python typing system).
         """
         for i, step in enumerate(self.steps):
@@ -63,7 +63,7 @@ class Pipeline(Step[InputT, OutputT]):
             if not self._issubtype(previous_output_type, input_type):
                 raise TypeError(
                     f"Step {i} input type {input_type} is not compatible with "
-                    "previous step output type {previous_output_type}"
+                    f"previous step output type {previous_output_type}"
                 )
 
     def _validate_input_output_types(self, input_type: Type, output_type: Type) -> None:

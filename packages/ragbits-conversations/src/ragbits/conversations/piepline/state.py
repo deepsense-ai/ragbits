@@ -14,7 +14,7 @@ class ConversationPipelineState(BaseModel):
 
     user_question: str
     session_id: str | None = None
-    client_metada: dict[str, Any] = {}
+    client_metadata: dict[str, Any] = {}
     history: ChatFormat = []
     rag_context: list[str] = []
 
