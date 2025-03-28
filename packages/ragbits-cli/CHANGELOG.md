@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+## 0.12.0 (2025-03-25)
+
+### Changed
+
+- ragbits-core updated to version v0.12.0
+
+## 0.11.0 (2025-03-25)
+
+### Changed
+
+- ragbits-core updated to version v0.11.0
+
+## 0.10.2 (2025-03-21)
+
+### Changed
+
+- ragbits-core updated to version v0.10.2
+
+## 0.10.1 (2025-03-19)
+
+### Changed
+
+- ragbits-core updated to version v0.10.1
+
+## 0.10.0 (2025-03-17)
+
+### Changed
+
+- ragbits-core updated to version v0.10.0
+
+- ragbits-conversations added traceable
+- ragbits-core added traceable
+- ragbits-document-search added traceable
+- ragbits-evaluate added traceable
+
+## 0.9.0 (2025-02-25)
+
+### Changed
+
+- ragbits-core updated to version v0.9.0
+
 ## 0.8.0 (2025-01-29)
 
 ### Changed

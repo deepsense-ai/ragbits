@@ -1,9 +1,12 @@
-import typing
 from unittest.mock import AsyncMock
+from uuid import UUID
 
 import pytest
+from pydantic import ValidationError
 from qdrant_client.http import models
 
+from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
@@ -13,24 +16,37 @@ def mock_qdrant_store() -> QdrantVectorStore:
     return QdrantVectorStore(
         client=AsyncMock(),
         index_name="test_collection",
+        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]], image_return_values=[[[0.7, 0.8, 0.9]]]),
     )
 
 
 async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     data = [
         VectorStoreEntry(
-            id="1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-            key="test_key",
-            vector=[0.1, 0.2, 0.3],
+            id=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+            text="test_key",
             metadata={
                 "content": "test content",
-                "document": {
+                "document_meta": {
                     "title": "test title",
                     "source": {"path": "/test/path"},
                     "document_type": "test_type",
                 },
             },
-        )
+        ),
+        VectorStoreEntry(
+            id=UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+            text="some other key",
+            image_bytes=b"image",
+            metadata={
+                "content": "test content",
+                "document_meta": {
+                    "title": "test title",
+                    "source": {"path": "/test/path"},
+                    "document_type": "test_type",
+                },
+            },
+        ),
     ]
 
     mock_qdrant_store._client.collection_exists.return_value = False  # type: ignore
@@ -38,19 +54,41 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
 
     mock_qdrant_store._client.collection_exists.assert_called_once()  # type: ignore
     mock_qdrant_store._client.create_collection.assert_called_once()  # type: ignore
-    mock_qdrant_store._client.upload_collection.assert_called_with(  # type: ignore
-        collection_name="test_collection",
-        vectors=[[0.1, 0.2, 0.3]],
-        payload=[
-            {
-                "document": "test_key",
-                "metadata": '{"content": "test content", '
-                '"document": {"title": "test title", "source": {"path": "/test/path"}, "document_type": "test_type"}}',
-            }
-        ],
-        ids=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"],
-        wait=True,
-    )
+    mock_qdrant_store._client.upload_points.assert_called_once()  # type: ignore
+    call_kwargs = mock_qdrant_store._client.upload_points.call_args.kwargs  # type: ignore
+    call_points = list(call_kwargs["points"])
+
+    assert call_kwargs["collection_name"] == "test_collection"
+    assert len(call_points) == 2
+    assert call_points[0].id == "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"
+    assert call_points[0].vector == [0.1, 0.2, 0.3]
+    assert call_points[0].payload == {
+        "id": UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+        "text": "test_key",
+        "metadata": {
+            "content": "test content",
+            "document_meta": {
+                "title": "test title",
+                "source": {"path": "/test/path"},
+                "document_type": "test_type",
+            },
+        },
+    }
+    assert call_points[1].id == "827cad0b-058f-4b85-b8ed-ac741948d502"
+    assert call_points[1].vector == [0.1, 0.2, 0.3]
+    assert call_points[1].payload == {
+        "id": UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+        "text": "some other key",
+        "metadata": {
+            "content": "test content",
+            "document_meta": {
+                "title": "test title",
+                "source": {"path": "/test/path"},
+                "document_type": "test_type",
+            },
+        },
+        "image_bytes": _pydantic_bytes_to_hex(b"image"),
+    }
 
 
 async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
@@ -62,52 +100,69 @@ async def test_retrieve(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.12, 0.25, 0.29],
                 score=0.9,
                 payload={
-                    "document": "test_key 1",
-                    "metadata": '{"content": "test content 1",'
-                    '"document": {"title": "test title 1", '
-                    '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
+                    "id": "1f908deb-bc9f-4b5a-8b73-2e72d8b44dc5",
+                    "text": "test_key 1",
+                    "metadata": {
+                        "content": "test content 1",
+                        "document_meta": {
+                            "title": "test title 1",
+                            "source": {"path": "/test/path-1"},
+                            "document_type": "txt",
+                        },
+                    },
                 },
             ),
             models.ScoredPoint(
                 version=1,
                 id="827cad0b-058f-4b85-b8ed-ac741948d502",
-                vector=[0.13, 0.26, 0.30],
-                score=0.9,
+                vector=[0.7, 0.8, 0.9],
+                score=0.7,
                 payload={
-                    "document": "test_key 2",
-                    "metadata": '{"content": "test content 2", '
-                    '"document": {"title": "test title 2", '
-                    '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
+                    "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
+                    "text": "test_key 2",
+                    "image_bytes": _pydantic_bytes_to_hex(b"image"),
+                    "metadata": {
+                        "content": "test content 2",
+                        "document_meta": {
+                            "title": "test title 2",
+                            "source": {"path": "/test/path-2"},
+                            "document_type": "txt",
+                        },
+                    },
                 },
             ),
         ]
     )
 
     results = [
-        {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]},
-        {"content": "test content 2", "title": "test title 2", "vector": [0.13, 0.26, 0.30]},
+        {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29], "score": 0.9},
+        {
+            "content": "test content 2",
+            "title": "test title 2",
+            "vector": [0.7, 0.8, 0.9],
+            "score": 0.7,
+        },
     ]
 
-    entries = await mock_qdrant_store.retrieve([0.12, 0.25, 0.29])
+    query_results = await mock_qdrant_store.retrieve("query")
 
-    assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=True):
-        assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document"]["title"] == result["title"]
-        assert entry.vector == result["vector"]
+    assert len(query_results) == len(results)
+    for query_result, result in zip(query_results, results, strict=True):
+        assert query_result.entry.metadata["content"] == result["content"]
+        assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
+        assert query_result.vector == result["vector"]
+        assert query_result.score == result["score"]
 
 
 async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
-    ids_to_remove = ["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
+    ids_to_remove = [UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")]
 
     await mock_qdrant_store.remove(ids_to_remove)
 
     mock_qdrant_store._client.delete.assert_called_once()  # type: ignore
     mock_qdrant_store._client.delete.assert_called_with(  # type: ignore
         collection_name="test_collection",
-        points_selector=models.PointIdsList(
-            points=typing.cast(list[int | str], ids_to_remove),
-        ),
+        points_selector=models.PointIdsList(points=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]),
     )
 
 
@@ -121,36 +176,96 @@ async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
                 vector=[0.12, 0.25, 0.29],
                 score=0.9,
                 payload={
-                    "document": "test_key 1",
-                    "metadata": '{"content": "test content 1",'
-                    '"document": {"title": "test title 1", '
-                    '"source": {"path": "/test/path-1"}, "document_type": "txt"}}',
+                    "id": "1f908deb-bc9f-4b5a-8b73-2e72d8b44dc5",
+                    "text": "test_key 1",
+                    "metadata": {
+                        "content": "test content 1",
+                        "document_meta": {
+                            "title": "test title 1",
+                            "source": {"path": "/test/path-1"},
+                            "document_type": "txt",
+                        },
+                    },
                 },
             ),
             models.ScoredPoint(
                 version=1,
                 id="827cad0b-058f-4b85-b8ed-ac741948d502",
                 vector=[0.13, 0.26, 0.30],
-                score=0.9,
+                score=0.7,
                 payload={
-                    "document": "test_key 2",
-                    "metadata": '{"content": "test content 2", '
-                    '"document": {"title": "test title 2", '
-                    '"source": {"path": "/test/path-2"}, "document_type": "txt"}}',
+                    "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
+                    "text": "test_key 2",
+                    "image_bytes": _pydantic_bytes_to_hex(b"image"),
+                    "metadata": {
+                        "content": "test content 2",
+                        "document_meta": {
+                            "title": "test title 2",
+                            "source": {"path": "/test/path-2"},
+                            "document_type": "txt",
+                        },
+                    },
                 },
             ),
         ]
     )
 
-    results = [
-        {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]},
-        {"content": "test content 2", "title": "test title 2", "vector": [0.13, 0.26, 0.30]},
+    results: list[dict] = [
+        {"content": "test content 1", "title": "test title 1", "image": None},
+        {
+            "content": "test content 2",
+            "title": "test title 2",
+            "image": b"image",
+        },
     ]
 
-    entries = await mock_qdrant_store.list()
+    entries = await mock_qdrant_store.list(where={"document_type": "txt"})
 
     assert len(entries) == len(results)
-    for entry, result in zip(entries, results, strict=True):
+    for i, (entry, result) in enumerate(zip(entries, results, strict=True)):
         assert entry.metadata["content"] == result["content"]
-        assert entry.metadata["document"]["title"] == result["title"]
-        assert entry.vector == result["vector"]
+        assert entry.metadata["document_meta"]["title"] == result["title"]
+        assert entry.image_bytes == result["image"]
+        assert entry.text == f"test_key {i + 1}"
+
+
+def test_create_qdrant_filter() -> None:
+    where = {"a": "A", "b": 3, "c": True}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="metadata.a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="metadata.b", match=models.MatchValue(value=3)),
+        models.FieldCondition(key="metadata.c", match=models.MatchValue(value=True)),
+    ]
+    assert qdrant_filter.must == expected_conditions
+
+
+def test_create_qdrant_filter_nested_dict() -> None:
+    where = {"a": "A", "b": {"c": "d"}}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="metadata.a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="metadata.b.c", match=models.MatchValue(value="d")),
+    ]
+    assert qdrant_filter.must == expected_conditions
+
+
+def test_create_qdrant_filter_with_list() -> None:
+    where = {"a": "A", "b": ["c", "d"]}
+    qdrant_filter = QdrantVectorStore._create_qdrant_filter(where)  # type: ignore
+    print(qdrant_filter)
+    assert isinstance(qdrant_filter, models.Filter)
+    expected_conditions = [
+        models.FieldCondition(key="metadata.a", match=models.MatchValue(value="A")),
+        models.FieldCondition(key="metadata.b[0]", match=models.MatchValue(value="c")),
+        models.FieldCondition(key="metadata.b[1]", match=models.MatchValue(value="d")),
+    ]
+    assert qdrant_filter.must == expected_conditions
+
+
+def test_create_qdrant_filter_raises_error() -> None:
+    wrong_where_query = {"a": "A", "b": 1.345}
+    with pytest.raises(ValidationError):
+        QdrantVectorStore._create_qdrant_filter(where=wrong_where_query)  # type: ignore

@@ -1,6 +1,0 @@
-type: ragbits.core.embeddings.litellm:LiteLLMEmbeddings
-config:
-  model: "text-embedding-3-small"
-  default_options:
-    dimensions: 768
-    encoding_format: float

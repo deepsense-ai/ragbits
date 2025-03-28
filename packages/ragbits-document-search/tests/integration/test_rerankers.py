@@ -1,5 +1,6 @@
 import pytest
 
+from ragbits.core import audit
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
@@ -23,15 +24,17 @@ async def test_litellm_cohere_reranker_rerank() -> None:
         default_options=options,
     )
     elements = [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        [
+            TextElement(
+                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+        ]
     ]
     query = "Test query"
 
@@ -41,6 +44,7 @@ async def test_litellm_cohere_reranker_rerank() -> None:
 
 
 async def test_answerdotai_reranker_rerank() -> None:
+    audit.set_trace_handlers("cli")
     options = RerankerOptions(top_n=2)
     reranker = AnswerAIReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",
@@ -48,15 +52,17 @@ async def test_answerdotai_reranker_rerank() -> None:
         model_type="cross-encoder",
     )
     elements = [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        [
+            TextElement(
+                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+            TextElement(
+                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+            ),
+        ]
     ]
     query = "Test query"
 

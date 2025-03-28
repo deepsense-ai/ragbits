@@ -79,7 +79,7 @@ def test_get_config_instance_factories():
         current_dir=projects_dir / "factory_project",
     )
 
-    assert config.default_llm_factories == {
+    assert config.llm_preference_factories == {
         LLMType.TEXT: "ragbits.core.llms.factory:simple_litellm_factory",
         LLMType.VISION: "ragbits.core.llms.factory:simple_litellm_vision_factory",
         LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory:simple_litellm_vision_factory",

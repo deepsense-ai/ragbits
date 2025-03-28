@@ -2,6 +2,43 @@
 
 ## Unreleased
 
+- Add router option to LiteLLMEmbedder (#440)
+
+## 0.12.0 (2025-03-25)
+- Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
+- Fix from_config for LiteLLM class (#441)
+- Fix Qdrant vector store serialization (#419)
+
+## 0.11.0 (2025-03-25)
+
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
+
+## 0.10.2 (2025-03-21)
+
+## 0.10.1 (2025-03-19)
+
+- Better handling of cases when text and image embeddings are mixed in VectorStore
+
+## 0.10.0 (2025-03-17)
+
+- BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
+- Qdrant vector store can now be serialized during Ray processing (#394)
+- Improve cli trace handler
+- Add traceable to some method
+- Add support for images in few shot prompts (#155)
+- Add instruction on how to use local servers for LLMs (#395).
+- Introduce intermediate image elements (#139)
+- Correct typos in doc strings (#398)
+- Enable GPU support and (un)pickling for fastembed embedders (#409).
+
+## 0.9.0 (2025-02-25)
+
+- Add support to fastembed dense & sparse embeddings.
+- Rename "default configuration" to "preferred configuration" (#361).
+- Allow to pass str or dict to LLM.generate() (#286)
+- Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
+- Rename all embedders to have `Embedder` in their name (instead of `Embeddings`).
+
 ## 0.8.0 (2025-01-29)
 
 ### Added
@@ -89,7 +126,7 @@
 ### Added
 
 - Initial release of the package.
-- Introduce core components: Prompts, LLMs, Embeddings and VectorStores.
+- Introduce core components: Prompts, LLMs, Embedder and VectorStores.
 - `Prompt` class integration with promptfoo.
 - LiteLLM integration.
 - ChromaDB integration.

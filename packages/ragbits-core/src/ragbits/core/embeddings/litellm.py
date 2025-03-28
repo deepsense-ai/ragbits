@@ -1,7 +1,10 @@
+from typing import Any
+
 import litellm
+from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embeddings
+from ragbits.core.embeddings import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
     EmbeddingEmptyResponseError,
@@ -12,7 +15,7 @@ from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LiteLLMEmbeddingsOptions(Options):
+class LiteLLMEmbedderOptions(Options):
     """
     Dataclass that represents available call options for the LiteLLMEmbeddingClient client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding#optional-litellm-fields).
@@ -24,20 +27,21 @@ class LiteLLMEmbeddingsOptions(Options):
     encoding_format: str | None | NotGiven = NOT_GIVEN
 
 
-class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
+class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """
 
-    options_cls = LiteLLMEmbeddingsOptions
+    options_cls = LiteLLMEmbedderOptions
 
     def __init__(
         self,
         model: str = "text-embedding-3-small",
-        default_options: LiteLLMEmbeddingsOptions | None = None,
+        default_options: LiteLLMEmbedderOptions | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
         api_version: str | None = None,
+        router: litellm.Router | None = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.
@@ -45,20 +49,22 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
         Args:
             model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
-            default_options: Defualt options to pass to the LiteLLM API.
+            default_options: Default options to pass to the LiteLLM API.
             api_base: The API endpoint you want to call the model with.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
+            router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
         """
         super().__init__(default_options=default_options)
         self.model = model
         self.api_base = api_base
         self.api_key = api_key
         self.api_version = api_version
+        self.router = router
 
-    async def embed_text(self, data: list[str], options: LiteLLMEmbeddingsOptions | None = None) -> list[list[float]]:
+    async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
         Creates embeddings for the given strings.
 
@@ -85,7 +91,8 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
             options=merged_options.dict(),
         ) as outputs:
             try:
-                response = await litellm.aembedding(
+                entrypoint = self.router or litellm
+                response = await entrypoint.aembedding(
                     input=data,
                     model=self.model,
                     api_base=self.api_base,
@@ -110,3 +117,19 @@ class LiteLLMEmbeddings(Embeddings[LiteLLMEmbeddingsOptions]):
                 outputs.total_tokens = response.usage.total_tokens
 
         return outputs.embeddings
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:
+        """
+        Creates and returns a LiteLLMEmbedder instance.
+
+        Args:
+            config: A configuration object containing the configuration for initializing the LiteLLMEmbedder instance.
+
+        Returns:
+            LiteLLMEmbedder: An initialized LiteLLMEmbedder instance.
+        """
+        if "router" in config:
+            router = litellm.router.Router(model_list=config["router"])
+            config["router"] = router
+        return super().from_config(config)

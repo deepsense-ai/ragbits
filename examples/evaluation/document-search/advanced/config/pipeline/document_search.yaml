@@ -1,9 +1,8 @@
 defaults:
-  - embedder@config.embedder: litellm
   - vector_store@config.vector_store: chroma
   - rephraser@config.rephraser: noop
   - reranker@config.reranker: noop
-  - providers@config.providers: unstructured
+  - parser_router@config.parser_router: unstructured
   - source@config.source: hf
   - _self_
 

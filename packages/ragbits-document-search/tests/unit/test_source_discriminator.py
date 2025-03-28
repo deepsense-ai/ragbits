@@ -4,7 +4,8 @@ from typing import Annotated
 import pydantic
 import pytest
 
-from ragbits.document_search.documents.sources import LocalFileSource, Source, SourceDiscriminator
+from ragbits.document_search.documents.sources import LocalFileSource, Source
+from ragbits.document_search.documents.sources.base import SourceDiscriminator
 
 
 class ModelWithSource(pydantic.BaseModel):

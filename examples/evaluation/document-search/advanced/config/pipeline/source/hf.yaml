@@ -1,4 +1,4 @@
-type: ragbits.document_search.documents.sources:HuggingFaceSource
+type: ragbits.document_search.documents.sources.hf:HuggingFaceSource
 config:
   path: "micpst/hf-docs"
   split: "train[:5]"

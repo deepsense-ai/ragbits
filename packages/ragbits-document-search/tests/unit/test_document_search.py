@@ -1,6 +1,6 @@
 import os
 import tempfile
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from pathlib import Path
 from typing import cast
 from unittest import mock
@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -17,23 +18,24 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import (
-    GCSSource,
-    LocalFileSource,
+from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
+from ragbits.document_search.ingestion.parsers import DocumentParser
+from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+from ragbits.document_search.ingestion.strategies.batched import (
+    BatchedIngestStrategy,
 )
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.processor_strategies.batched import (
-    BatchedAsyncProcessing,
-)
-from ragbits.document_search.ingestion.providers import BaseProvider
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
 
 CONFIG = {
-    "embedder": {"type": "NoopEmbeddings"},
-    "vector_store": {"type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore"},
+    "vector_store": {
+        "type": "ragbits.core.vector_stores.in_memory:InMemoryVectorStore",
+        "config": {
+            "embedder": {"type": "NoopEmbedder"},
+        },
+    },
     "reranker": {"type": "NoopReranker"},
-    "providers": {"txt": {"type": "DummyProvider"}},
-    "processing_strategy": {"type": "SequentialProcessing"},
+    "parsers": {"txt": {"type": "TextDocumentParser"}},
+    "ingest_strategy": {"type": "SequentialIngestStrategy"},
 }
 
 
@@ -56,39 +58,32 @@ async def test_document_search_from_config(document: DocumentMeta, expected: str
     document_search = DocumentSearch.from_config(CONFIG)
 
     await document_search.ingest([document])
+
     results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == expected
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == expected
 
 
 async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    providers: Mapping[DocumentType, Callable[[], BaseProvider] | BaseProvider] = {DocumentType.TXT: DummyProvider()}
-    router = DocumentProcessorRouter.from_config(providers)
-
     document_search = DocumentSearch(
-        embedder=embeddings_mock, vector_store=InMemoryVectorStore(), document_processor_router=router
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
         f.write(b"Name of Peppa's brother is George")
         f.seek(0)
-
         source = LocalFileSource(path=Path(f.name))
-
         await document_search.ingest([source])
 
-        results = await document_search.search("Peppa's brother")
+    results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == "Name of Peppa's brother is George"
 
 
 @pytest.mark.parametrize(
@@ -104,44 +99,20 @@ async def test_document_search_ingest_from_source():
 async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
-
-    await document_search.ingest([document], document_processor=DummyProvider())
-
-    results = await document_search.search("Peppa's brother")
-
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
-
-
-async def test_document_search_insert_elements():
-    embeddings_mock = AsyncMock()
-    embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
-
-    await document_search.insert_elements(
-        [
-            TextElement(
-                content="Name of Peppa's brother is George",
-                document_meta=DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
-            )
-        ]
+    document_search = DocumentSearch(
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
+    await document_search.ingest([document])
 
     results = await document_search.search("Peppa's brother")
 
-    first_result = results[0]
-
-    assert isinstance(first_result, TextElement)
-    assert first_result.content == "Name of Peppa's brother is George"
+    assert isinstance(results[0], TextElement)
+    assert results[0].content == "Name of Peppa's brother is George"
 
 
 async def test_document_search_with_no_results():
-    document_search = DocumentSearch(embedder=AsyncMock(), vector_store=InMemoryVectorStore())
+    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=AsyncMock()))
 
     results = await document_search.search("Peppa's sister")
 
@@ -151,13 +122,11 @@ async def test_document_search_with_no_results():
 async def test_document_search_with_search_config():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-
-    document_search = DocumentSearch(embedder=embeddings_mock, vector_store=InMemoryVectorStore())
-
-    await document_search.ingest(
-        [DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")],
-        document_processor=DummyProvider(),
+    document_search = DocumentSearch(
+        vector_store=InMemoryVectorStore(embedder=embeddings_mock),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
+    await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
     results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
 
@@ -170,10 +139,7 @@ async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent / "example_files"
 
-    await document_search.ingest(
-        LocalFileSource.list_sources(examples_files, file_pattern="*.md"),
-        document_processor=DummyProvider(),
-    )
+    await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
@@ -198,16 +164,12 @@ async def test_document_search_with_batched():
         DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Alexander Pig"),
     ]
 
-    embeddings_mock = AsyncMock()
-    embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
-
-    processing_strategy = BatchedAsyncProcessing(batch_size=5)
-    vectore_store = InMemoryVectorStore()
+    ingest_strategy = BatchedIngestStrategy(batch_size=5)
+    vectore_store = InMemoryVectorStore(embedder=NoopEmbedder())
 
     document_search = DocumentSearch(
-        embedder=embeddings_mock,
         vector_store=vectore_store,
-        processing_strategy=processing_strategy,
+        ingest_strategy=ingest_strategy,
     )
 
     await document_search.ingest(documents)
@@ -470,11 +432,11 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
 
-    # Create providers dict with actual provider instance
-    providers: Mapping[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
+    # Create parsers dict with actual provider instance
+    parsers: Mapping[DocumentType, DocumentParser] = {DocumentType.TXT: TextDocumentParser()}
 
     # Mock vector store to track operations
-    vector_store = InMemoryVectorStore()
+    vector_store = InMemoryVectorStore(embedder=embeddings_mock)
 
     # Create a temporary directory for storing test files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -490,18 +452,20 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.document_search.documents.sources.load_dataset", return_value=dataset),
-            mock.patch("ragbits.document_search.documents.sources.get_local_storage_dir", return_value=storage_dir),
+            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
+            mock.patch(
+                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
+            ),
         ):
             document_search = DocumentSearch(
-                embedder=embeddings_mock,
                 vector_store=vector_store,
-                document_processor_router=DocumentProcessorRouter.from_config(providers),
+                parser_router=DocumentParserRouter(parsers),
             )
 
             await document_search.ingest("huggingface://dataset_name/train/0")
 
             results = await document_search.search("HuggingFace test content")
+
             assert len(results) == 1
             assert isinstance(results[0], TextElement)
             assert results[0].content == "HuggingFace test content"

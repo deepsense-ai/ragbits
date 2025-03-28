@@ -32,7 +32,7 @@ class Reranker(ConfigurableComponent[RerankerOptionsT], ABC):
     @abstractmethod
     async def rerank(
         self,
-        elements: Sequence[Element],
+        elements: Sequence[Sequence[Element]],
         query: str,
         options: RerankerOptionsT | None = None,
     ) -> Sequence[Element]:

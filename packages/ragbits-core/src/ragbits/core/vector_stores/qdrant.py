@@ -1,19 +1,30 @@
-import json
-import typing
+import contextlib
+from collections.abc import Callable
+from typing import cast
+from uuid import UUID
 
 import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
-from qdrant_client.models import Distance, Filter, VectorParams
+from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
-from ragbits.core.metadata_stores.base import MetadataStore
-from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
-from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions
+from ragbits.core.audit import trace
+from ragbits.core.embeddings.base import Embedder
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
+from ragbits.core.utils.dict_transformations import flatten_dict
+from ragbits.core.vector_stores.base import (
+    EmbeddingType,
+    VectorStoreEntry,
+    VectorStoreOptions,
+    VectorStoreOptionsT,
+    VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
+    WhereQuery,
+)
 
 
-class QdrantVectorStore(VectorStore[VectorStoreOptions]):
+class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
@@ -24,9 +35,10 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         self,
         client: AsyncQdrantClient,
         index_name: str,
+        embedder: Embedder,
+        embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
-        metadata_store: MetadataStore | None = None,
     ) -> None:
         """
         Constructs a new QdrantVectorStore instance.
@@ -34,14 +46,53 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Args:
             client: An instance of the Qdrant client.
             index_name: The name of the index.
+            embedder: The embedder to use for converting entries to vectors.
+            embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
-            metadata_store: The metadata store to use. If None, the metadata will be stored in Qdrant.
         """
-        super().__init__(default_options=default_options, metadata_store=metadata_store)
+        super().__init__(
+            default_options=default_options,
+            embedder=embedder,
+            embedding_type=embedding_type,
+        )
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
+
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        """
+        Enables the QdrantVectorStore to be pickled and unpickled.
+
+        Returns:
+            The tuple of function and its arguments that allows reconstruction of the QdrantVectorStore.
+        """
+
+        def _reconstruct(
+            client_params: dict,
+            index_name: str,
+            embedder: Embedder,
+            distance_method: Distance,
+            default_options: VectorStoreOptions,
+        ) -> QdrantVectorStore:
+            return QdrantVectorStore(
+                client=AsyncQdrantClient(**client_params),
+                index_name=index_name,
+                embedder=embedder,
+                distance_method=distance_method,
+                default_options=default_options,
+            )
+
+        return (
+            _reconstruct,
+            (
+                self._client._init_options,
+                self._index_name,
+                self._embedder,
+                self._distance_method,
+                self.default_options,
+            ),
+        )
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -53,12 +104,8 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
 
         Returns:
             An instance of the class initialized with the provided configuration.
-
-        Raises:
-            ValidationError: The client or metadata_store configuration doesn't follow the expected format.
-            InvalidConfigError: The client or metadata_store class can't be found or is not the correct type.
         """
-        client_options = ObjectContructionConfig.model_validate(config["client"])
+        client_options = ObjectConstructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, qdrant_client)
         if "limits" in client_options.config:
             limits = httpx.Limits(**client_options.config["limits"])
@@ -66,7 +113,6 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 
-    @traceable
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
@@ -77,84 +123,88 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Raises:
             QdrantException: If upload to collection fails.
         """
-        if not entries:
-            return
+        with trace(
+            entries=entries,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
+        ):
+            if not entries:
+                return
 
-        if not await self._client.collection_exists(self._index_name):
-            await self._client.create_collection(
-                collection_name=self._index_name,
-                vectors_config=VectorParams(size=len(entries[0].vector), distance=self._distance_method),
+            embeddings: dict = await self._create_embeddings(entries)
+
+            if not await self._client.collection_exists(self._index_name):
+                vector_size = len(next(iter(embeddings.values())))
+                await self._client.create_collection(
+                    collection_name=self._index_name,
+                    vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
+                )
+
+            points = (
+                models.PointStruct(
+                    id=str(entry.id),
+                    vector=embeddings[entry.id],
+                    payload=entry.model_dump(exclude_none=True),
+                )
+                for entry in entries
+                if entry.id in embeddings
             )
 
-        ids = [entry.id for entry in entries]
-        embeddings = [entry.vector for entry in entries]
-        payloads = [{"document": entry.key} for entry in entries]
-        metadatas = [entry.metadata for entry in entries]
+            self._client.upload_points(
+                collection_name=self._index_name,
+                points=points,
+                wait=True,
+            )
 
-        metadatas = (
-            [{"metadata": json.dumps(metadata, default=str)} for metadata in metadatas]
-            if self._metadata_store is None
-            else await self._metadata_store.store(ids, metadatas)  # type: ignore
-        )
-        if metadatas is not None:
-            payloads = [{**payload, **metadata} for (payload, metadata) in zip(payloads, metadatas, strict=True)]
-
-        self._client.upload_collection(
-            collection_name=self._index_name,
-            vectors=embeddings,
-            payload=payloads,
-            ids=ids,
-            wait=True,
-        )
-
-    @traceable
-    async def retrieve(self, vector: list[float], options: VectorStoreOptions | None = None) -> list[VectorStoreEntry]:
+    async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Qdrant collection based on vector similarity.
 
         Args:
-            vector: The vector to query.
+            text: The text to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
             The retrieved entries.
-
-        Raises:
-            MetadataNotFoundError: If metadata cannot be retrieved
         """
         merged_options = (self.default_options | options) if options else self.default_options
         score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
+        with trace(
+            text=text,
+            options=merged_options,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
+        ) as outputs:
+            query_vector = (await self._embedder.embed_text([text]))[0]
 
-        results = await self._client.query_points(
-            collection_name=self._index_name,
-            query=vector,
-            limit=merged_options.k,
-            score_threshold=score_threshold,
-            with_payload=True,
-            with_vectors=True,
-        )
-
-        ids = [point.id for point in results.points]
-        vectors = [point.vector for point in results.points]
-        documents = [point.payload["document"] for point in results.points]  # type: ignore
-        metadatas = (
-            [json.loads(point.payload["metadata"]) for point in results.points]  # type: ignore
-            if self._metadata_store is None
-            else await self._metadata_store.get(ids)  # type: ignore
-        )
-
-        return [
-            VectorStoreEntry(
-                id=str(id),
-                key=document,
-                vector=vector,  # type: ignore
-                metadata=metadata,
+            query_results = await self._client.query_points(
+                collection_name=self._index_name,
+                query=query_vector,
+                limit=merged_options.k,
+                score_threshold=score_threshold,
+                with_payload=True,
+                with_vectors=True,
             )
-            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
-        ]
 
-    @traceable
-    async def remove(self, ids: list[str]) -> None:
+            outputs.results = []
+            for point in query_results.points:
+                entry = VectorStoreEntry.model_validate(point.payload)
+
+                outputs.results.append(
+                    VectorStoreResult(
+                        entry=entry,
+                        score=point.score,
+                        vector=cast(list[float], point.vector),
+                    )
+                )
+
+            return outputs.results
+
+    async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
 
@@ -164,17 +214,38 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Raises:
             ValueError: If collection named `self._index_name` is not present in the vector store.
         """
-        await self._client.delete(
-            collection_name=self._index_name,
-            points_selector=models.PointIdsList(
-                points=typing.cast(list[int | str], ids),
-            ),
+        with (
+            trace(ids=ids, index_name=self._index_name),
+            contextlib.suppress(KeyError),  # it's ok if a point already doesn't exist
+        ):
+            await self._client.delete(
+                collection_name=self._index_name,
+                points_selector=models.PointIdsList(points=[str(id) for id in ids]),
+            )
+
+    @staticmethod
+    def _create_qdrant_filter(where: WhereQuery) -> Filter:
+        """
+        Creates the QdrantFilter from the given WhereQuery.
+
+        Args:
+            where: The WhereQuery to filter.
+
+        Returns:
+            The created filter.
+        """
+        where = flatten_dict(where)  # type: ignore
+
+        return Filter(
+            must=[
+                FieldCondition(key=f"metadata.{key}", match=MatchValue(value=cast(str | int | bool, value)))
+                for key, value in where.items()
+            ]
         )
 
-    @traceable
-    async def list(  # type: ignore
+    async def list(
         self,
-        where: Filter | None = None,  # type: ignore
+        where: WhereQuery | None = None,
         limit: int | None = None,
         offset: int = 0,
     ) -> list[VectorStoreEntry]:
@@ -193,36 +264,24 @@ class QdrantVectorStore(VectorStore[VectorStoreOptions]):
         Raises:
             MetadataNotFoundError: If the metadata is not found.
         """
-        collection_exists = await self._client.collection_exists(collection_name=self._index_name)
-        if not collection_exists:
-            return []
+        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+            collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+            if not collection_exists:
+                return []
 
-        limit = limit or (await self._client.count(collection_name=self._index_name)).count
+            limit = limit or (await self._client.count(collection_name=self._index_name)).count
 
-        results = await self._client.query_points(
-            collection_name=self._index_name,
-            query_filter=where,
-            limit=limit,
-            offset=offset,
-            with_payload=True,
-            with_vectors=True,
-        )
+            qdrant_filter = self._create_qdrant_filter(where) if where else None
 
-        ids = [point.id for point in results.points]
-        vectors = [point.vector for point in results.points]
-        documents = [point.payload["document"] for point in results.points]  # type: ignore
-        metadatas = (
-            [json.loads(point.payload["metadata"]) for point in results.points]  # type: ignore
-            if self._metadata_store is None
-            else await self._metadata_store.get(ids)  # type: ignore
-        )
-
-        return [
-            VectorStoreEntry(
-                id=str(id),
-                key=document,
-                vector=vector,  # type: ignore
-                metadata=metadata,
+            results = await self._client.query_points(
+                collection_name=self._index_name,
+                query_filter=qdrant_filter,
+                limit=limit,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
             )
-            for id, document, vector, metadata in zip(ids, documents, vectors, metadatas, strict=True)
-        ]
+
+            outputs.results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+
+            return outputs.results

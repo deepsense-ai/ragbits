@@ -18,19 +18,13 @@ config = {
     "dataloader": {
         "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
         "config": {
-            "path": "micpst/hf-docs-retrieval",
+            "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
             "split": "train",
         },
     },
     "pipeline": {
         "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
         "config": {
-            "embedder": {
-                "type": "ragbits.core.embeddings.litellm:LiteLLMEmbeddings",
-                "config": {
-                    "model": "text-embedding-3-small",
-                },
-            },
             "vector_store": {
                 "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
                 "config": {
@@ -43,17 +37,23 @@ config = {
                         "k": 3,
                         "max_distance": 1.2,
                     },
+                    "embedder": {
+                        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                        "config": {
+                            "model": "text-embedding-3-small",
+                        },
+                    },
                 },
             },
-            "providers": {
-                "txt": {
-                    "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
-                },
-            },
-            "processing_strategy": {
-                "type": "ragbits.document_search.ingestion.processor_strategies.batched:BatchedAsyncProcessing",
+            "ingest_strategy": {
+                "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,
+                },
+            },
+            "parser_router": {
+                "txt": {
+                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                 },
             },
             "source": {

@@ -22,16 +22,16 @@ class InvalidConfigError(Exception):
     """
 
 
-class NoDefaultConfigError(InvalidConfigError):
+class NoPreferredConfigError(InvalidConfigError):
     """
-    An exception to be raised when no falling back to default configuration is not possible.
+    An exception to be raised when no falling back to preferred configuration is not possible.
     """
 
 
 def import_by_path(path: str, default_module: ModuleType | None = None) -> Any:  # noqa: ANN401
     """
     Retrieves and returns an object based on the string in the format of "module.submodule:object_name".
-    If the first part is ommited, the default module is used.
+    If the first part is omitted, the default module is used.
 
     Args:
         path: A string representing the path to the object. This can either be a
@@ -63,7 +63,7 @@ def import_by_path(path: str, default_module: ModuleType | None = None) -> Any: 
         raise InvalidConfigError(f"{path} not found in module {default_module}") from err
 
 
-class ObjectContructionConfig(BaseModel):
+class ObjectConstructionConfig(BaseModel):
     """
     A model for object construction configuration.
     """
@@ -87,7 +87,7 @@ class WithConstructionConfig(abc.ABC):
     configuration_key: ClassVar[str]
 
     @classmethod
-    def subclass_from_config(cls, config: ObjectContructionConfig) -> Self:
+    def subclass_from_config(cls, config: ObjectConstructionConfig) -> Self:
         """
         Initializes the class with the provided configuration. May return a subclass of the class,
         if requested by the configuration.
@@ -131,15 +131,15 @@ class WithConstructionConfig(abc.ABC):
         return obj
 
     @classmethod
-    def subclass_from_defaults(
-        cls, defaults: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
+    def preferred_subclass(
+        cls, config: CoreConfig, factory_path_override: str | None = None, yaml_path_override: Path | None = None
     ) -> Self:
         """
-        Tries to create an instance by looking at default configuration file, and default factory function.
-        Takes optional overrides for both, which takes a higher precedence.
+        Tries to create an instance by looking at project's component preferences, either from YAML
+        or from the factory. Takes optional overrides for both, which takes a higher precedence.
 
         Args:
-            defaults: The CoreConfig instance containing default factory and configuration details.
+            config: The CoreConfig instance containing preferred factory and configuration details.
             factory_path_override: A string representing the path to the factory function
                 in the format of "module.submodule:factory_name".
             yaml_path_override: A string representing the path to the YAML file containing
@@ -149,20 +149,20 @@ class WithConstructionConfig(abc.ABC):
             InvalidConfigError: If the default factory or configuration can't be found.
         """
         if yaml_path_override:
-            config = get_config_from_yaml(yaml_path_override)
-            if type_config := config.get(cls.configuration_key):
-                return cls.subclass_from_config(ObjectContructionConfig.model_validate(type_config))
+            preferences = get_config_from_yaml(yaml_path_override)
+            if type_config := preferences.get(cls.configuration_key):
+                return cls.subclass_from_config(ObjectConstructionConfig.model_validate(type_config))
 
         if factory_path_override:
             return cls.subclass_from_factory(factory_path_override)
 
-        if default_factory := defaults.default_factories.get(cls.configuration_key):
-            return cls.subclass_from_factory(default_factory)
+        if preferred_factory := config.component_preference_factories.get(cls.configuration_key):
+            return cls.subclass_from_factory(preferred_factory)
 
-        if default_config := defaults.default_instances_config.get(cls.configuration_key):
-            return cls.subclass_from_config(ObjectContructionConfig.model_validate(default_config))
+        if preferred_config := config.preferred_instances_config.get(cls.configuration_key):
+            return cls.subclass_from_config(ObjectConstructionConfig.model_validate(preferred_config))
 
-        raise NoDefaultConfigError(f"Could not find default factory or configuration for {cls.configuration_key}")
+        raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -195,7 +195,7 @@ class ConfigurableComponent(Generic[OptionsT], WithConstructionConfig):
         self.default_options: OptionsT = default_options or self.options_cls()
 
     @classmethod
-    def from_config(cls, config: dict[str, Any]) -> ConfigurableComponent:
+    def from_config(cls, config: dict[str, Any]) -> Self:
         """
         Initializes the class with the provided configuration.
 

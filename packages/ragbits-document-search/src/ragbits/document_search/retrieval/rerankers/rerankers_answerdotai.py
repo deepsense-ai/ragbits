@@ -1,8 +1,9 @@
 from collections.abc import Sequence
+from itertools import chain
 
 from rerankers import Reranker as AnswerReranker
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit import trace
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
@@ -27,10 +28,9 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
         self.model = model
         self.ranker = AnswerReranker(self.model, **rerankers_kwargs)
 
-    @traceable
     async def rerank(
         self,
-        elements: Sequence[Element],
+        elements: Sequence[Sequence[Element]],
         query: str,
         options: RerankerOptions | None = None,
     ) -> Sequence[Element]:
@@ -51,12 +51,17 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
             IndexError: Raised if docs is an empty List.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        documents = [element.text_representation for element in elements]
+        element_list = list(chain.from_iterable(elements))
+        documents = [element.text_representation for element in element_list]
+        with trace(
+            query=query, documents=documents, elements=elements, model=self.model, options=merged_options
+        ) as outputs:
+            response = self.ranker.rank(
+                query=query,
+                docs=documents,
+            )
+            if merged_options.top_n:
+                response = response.top_k(merged_options.top_n)
+            outputs.results = [element_list[result.document.doc_id] for result in response]
 
-        response = self.ranker.rank(
-            query=query,
-            docs=documents,
-        )
-        if merged_options.top_n:
-            response = response.top_k(merged_options.top_n)
-        return [elements[result.document.doc_id] for result in response]
+            return outputs.results
