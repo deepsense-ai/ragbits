@@ -1,12 +1,14 @@
+from typing import Any
+
 import pytest
 
-from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
+from ragbits.core.utils.dict_transformations import SimpleTypes, flatten_dict, unflatten_dict
 
 
 def test_flatten_dict_simple():
     """Test flattening a simple dictionary."""
-    input_dict = {"key1": "value1", "key2": "value2"}
-    expected = {"key1": "value1", "key2": "value2"}
+    input_dict: dict[str, Any] = {"key1": "value1", "key2": "value2"}
+    expected: dict[str, SimpleTypes] = {"key1": "value1", "key2": "value2"}
     assert flatten_dict(input_dict) == expected
 
 
@@ -46,11 +48,11 @@ def test_flatten_dict_empty():
 
 def test_flatten_dict_with_non_dict_values():
     """Test flattening a dictionary with various value types."""
-    input_dict = {
+    input_dict: dict[str, Any] = {
         "key1": "value1",
         "nested": {"subkey1": 42, "subkey2": [1, 2, 3], "subkey3": {"a": 1}, "subkey4": True, "subkey5": 3.14},
     }
-    expected = {
+    expected: dict[str, SimpleTypes] = {
         "key1": "value1",
         "nested.subkey1": 42,
         "nested.subkey2[0]": 1,
@@ -65,7 +67,7 @@ def test_flatten_dict_with_non_dict_values():
 
 def test_flatten_unflatten():
     """Test flattening and unflattening a dictionary."""
-    input_dict = {
+    input_dict: dict[str, Any] = {
         "key1": "value1",
         "nested": {
             "subkey1": "subvalue1",
@@ -154,8 +156,8 @@ def test_mixed_array_and_object():
 def test_unflatten_dict_notation_based_types():
     """Test that unflatten_dict uses notation to determine types, not heuristics."""
     # Test that numeric keys without array notation stay as dict
-    input_dict = {"0": "first", "1": "second", "2": "third"}
-    expected = {"0": "first", "1": "second", "2": "third"}
+    input_dict: dict[str, SimpleTypes] = {"0": "first", "1": "second", "2": "third"}
+    expected: dict[str, Any] = {"0": "first", "1": "second", "2": "third"}
     assert unflatten_dict(input_dict) == expected
 
     # Test that array notation creates lists
@@ -171,31 +173,18 @@ def test_unflatten_dict_notation_based_types():
         "nested[0].name": "John",
         "nested[0].age": 30,
         "nested[1].name": "Jane",
-        "nested[1].age": 25
+        "nested[1].age": 25,
     }
     expected = {
         "dict_key": "value",
         "list_key": ["first", "second"],
-        "nested": [
-            {"name": "John", "age": 30},
-            {"name": "Jane", "age": 25}
-        ]
+        "nested": [{"name": "John", "age": 30}, {"name": "Jane", "age": 25}],
     }
     assert unflatten_dict(input_dict) == expected
 
     # Test that numeric keys in nested dicts stay as dict
-    input_dict = {
-        "config.0.name": "first",
-        "config.1.name": "second",
-        "config.2.name": "third"
-    }
-    expected = {
-        "config": {
-            "0": {"name": "first"},
-            "1": {"name": "second"},
-            "2": {"name": "third"}
-        }
-    }
+    input_dict = {"config.0.name": "first", "config.1.name": "second", "config.2.name": "third"}
+    expected = {"config": {"0": {"name": "first"}, "1": {"name": "second"}, "2": {"name": "third"}}}
     assert unflatten_dict(input_dict) == expected
 
 
