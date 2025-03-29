@@ -22,7 +22,7 @@ def test_subclass_from_config_litellm():
     )
     embedder: Embedder = Embedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
-    assert embedder.model == "some_model"
+    assert embedder.model_name == "some_model"
     assert embedder.default_options == LiteLLMEmbedderOptions(
         dimensions=NOT_GIVEN,
         timeout=NOT_GIVEN,
@@ -90,8 +90,8 @@ def test_from_config_with_router():
 
     embedder: Embedder = Embedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
-    assert embedder.api_base is None
-    assert embedder.model == "text-embedding-3-small"
+    assert embedder.base_url is None
+    assert embedder.model_name == "text-embedding-3-small"
     assert embedder.api_key == "test_api_key"
     assert isinstance(embedder.router, litellm.router.Router)
     assert len(embedder.router.model_list) == 2

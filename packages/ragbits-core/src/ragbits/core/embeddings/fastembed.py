@@ -57,7 +57,7 @@ class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
         """
         merged_options = (self.default_options | options) if options else self.default_options
         with trace(
-            data=data, model_name=self.model_name, model=repr(self._model), options=merged_options.dict()
+            data=data, model_name=self.model_name, model_obj=repr(self._model), options=merged_options.dict()
         ) as outputs:
             embeddings = [[float(x) for x in result] for result in self._model.embed(data, **merged_options.dict())]
             outputs.embeddings = embeddings
@@ -104,7 +104,7 @@ class FastEmbedSparseEmbedder(SparseEmbedder[FastEmbedOptions]):
         """
         merged_options = (self.default_options | options) if options else self.default_options
         with trace(
-            data=data, model_name=self.model_name, model=repr(self._model), options=merged_options.dict()
+            data=data, model_name=self.model_name, model_obj=repr(self._model), options=merged_options.dict()
         ) as outputs:
             outputs.embeddings = [
                 SparseVector(values=[float(x) for x in result.values], indices=[int(x) for x in result.indices])

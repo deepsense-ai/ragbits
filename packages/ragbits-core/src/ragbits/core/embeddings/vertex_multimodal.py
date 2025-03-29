@@ -1,5 +1,8 @@
 import asyncio
 import base64
+from typing import Any
+
+from typing_extensions import Self
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbedderOptions
 
@@ -35,9 +38,6 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         api_key: str | None = None,
         concurency: int = 10,
         default_options: LiteLLMEmbedderOptions | None = None,
-        # Deprecated parameters, will be removed in a future version
-        model: str | None = None,
-        api_base: str | None = None,
     ) -> None:
         """
         Constructs the embedding client for multimodal VertexAI models.
@@ -48,8 +48,6 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             api_key: API key to be used. If not specified, an environment variable will be used.
             concurency: The number of concurrent requests to make to the API.
             default_options: Additional options to pass to the API.
-            model: (Deprecated) Use model_name instead.
-            api_base: (Deprecated) Use base_url instead.
 
         Raises:
             ImportError: If the 'litellm' extra requirements are not installed.
@@ -60,13 +58,6 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
         super().__init__(default_options=default_options)
 
-        # Handle deprecated parameters
-        if model is not None:
-            model_name = model
-
-        if api_base is not None:
-            base_url = api_base
-
         if model_name.startswith(self.VERTEX_AI_PREFIX):
             model_name = model_name[len(self.VERTEX_AI_PREFIX) :]
 
@@ -74,10 +65,6 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         self.base_url = base_url
         self.api_key = api_key
         self.concurency = concurency
-
-        # For backward compatibility
-        self.model = self.model_name
-        self.api_base = self.base_url
 
         supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
         if model_name not in supported_models:
@@ -104,7 +91,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         with trace(
             data=data,
             model=self.model_name,
-            api_base=self.base_url,
+            base_url=self.base_url,
             options=merged_options.dict(),
         ) as outputs:
             semaphore = asyncio.Semaphore(self.concurency)
@@ -141,7 +128,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             response = await litellm.aembedding(
                 input=[instance],
                 model=f"{self.VERTEX_AI_PREFIX}{self.model_name}",
-                api_base=self.base_url,
+                base_url=self.base_url,
                 api_key=self.api_key,
                 **options.dict(),
             )
@@ -197,3 +184,24 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             [{"image": {"bytesBase64Encoded": image}} for image in images_b64], options=options
         )
         return [embedding["embedding"] for embedding in response]
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:
+        """
+        Creates and returns a VertexAIMultimodelEmbedder instance.
+
+        Args:
+            config: A configuration object containing the configuration for initializing
+                the VertexAIMultimodelEmbedder instance.
+
+        Returns:
+            VertexAIMultimodelEmbedder: An initialized VertexAIMultimodelEmbedder instance.
+        """
+        # Handle parameter name mapping for config
+        if "model" in config:
+            config["model_name"] = config.pop("model")
+
+        if "api_base" in config:
+            config["base_url"] = config.pop("api_base")
+
+        return super().from_config(config)
