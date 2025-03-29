@@ -184,8 +184,8 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
             metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
 
-            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+            # Convert metadata back to nested structure
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
 
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
@@ -253,8 +253,8 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             documents = results.get("documents") or []
             metadatas: Sequence = results.get("metadatas") or []
 
-            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+            # Convert metadata back to nested structure
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
 
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
