@@ -269,3 +269,21 @@ class LiteLLM(LLM[LiteLLMOptions]):
             router = litellm.router.Router(model_list=config["router"])
             config["router"] = router
         return super().from_config(config)
+
+    def __reduce__(self):
+        print("reducing")
+        args = (
+            self.model_name,
+            self.default_options,
+        )
+
+        kwargs = {
+            "base_url": self.base_url,
+            "api_key": self.api_key,
+            "api_version": self.api_version,
+            "use_structured_output": self.use_structured_output,
+            "router": self.router,
+            "custom_model_cost_config": self.custom_model_cost_config,
+        }
+
+        return (lambda args, kwargs: self.__class__(*args, **kwargs)), (args, kwargs)
