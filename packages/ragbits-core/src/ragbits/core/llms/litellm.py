@@ -272,6 +272,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     def __reduce__(self):
         print("reducing")
+        init = self.__class__
+
         args = (
             self.model_name,
             self.default_options,
@@ -286,4 +288,4 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "custom_model_cost_config": self.custom_model_cost_config,
         }
 
-        return (lambda args, kwargs: self.__class__(*args, **kwargs)), (args, kwargs)
+        return (lambda args, kwargs: init(*args, **kwargs)), (args, kwargs)
