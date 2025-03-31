@@ -116,7 +116,7 @@ class S3Source(Source):
         cls._set_client(bucket_name)
         if cls._s3_client is None:
             raise RuntimeError("S3 client is not initialized.")
-        with trace(bucket=cls.bucket_name, key=cls.key) as outputs:
+        with trace(bucket=bucket_name, key=prefix) as outputs:
             try:
                 aws_sources_list = []
                 paginator = cls._s3_client.get_paginator("list_objects_v2")

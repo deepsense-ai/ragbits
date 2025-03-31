@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
     "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector]",
-    "ragbits-document-search[gcs,huggingface,distributed,azure,s3]",
+    "ragbits-document-search[azure,gcs,huggingface,ray,s3]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
@@ -32,6 +32,7 @@ dev-dependencies = [
     "griffe-typingdoc>=0.2.7",
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
+    "moto~=4.2.7",
 ]
 
 [tool.uv.sources]

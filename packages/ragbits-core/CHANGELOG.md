@@ -1,10 +1,31 @@
 # CHANGELOG
 
 ## Unreleased
-- improve cli trace handler
-- added traceable to some method
-- Add support for images in few shot prompts (#155)
+
+- Add router option to LiteLLMEmbedder (#440)
+
+## 0.12.0 (2025-03-25)
+- Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
+- Fix from_config for LiteLLM class (#441)
+- Fix Qdrant vector store serialization (#419)
+
+## 0.11.0 (2025-03-25)
+
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
+
+## 0.10.2 (2025-03-21)
+
+## 0.10.1 (2025-03-19)
+
+- Better handling of cases when text and image embeddings are mixed in VectorStore
+
+## 0.10.0 (2025-03-17)
+
 - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
+- Qdrant vector store can now be serialized during Ray processing (#394)
+- Improve cli trace handler
+- Add traceable to some method
+- Add support for images in few shot prompts (#155)
 - Add instruction on how to use local servers for LLMs (#395).
 - Introduce intermediate image elements (#139)
 - Correct typos in doc strings (#398)

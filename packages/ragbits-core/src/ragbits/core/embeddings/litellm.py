@@ -1,4 +1,7 @@
+from typing import Any
+
 import litellm
+from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder
@@ -38,6 +41,7 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         api_base: str | None = None,
         api_key: str | None = None,
         api_version: str | None = None,
+        router: litellm.Router | None = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.
@@ -51,12 +55,14 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
+            router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
         """
         super().__init__(default_options=default_options)
         self.model = model
         self.api_base = api_base
         self.api_key = api_key
         self.api_version = api_version
+        self.router = router
 
     async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
@@ -85,7 +91,8 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
             options=merged_options.dict(),
         ) as outputs:
             try:
-                response = await litellm.aembedding(
+                entrypoint = self.router or litellm
+                response = await entrypoint.aembedding(
                     input=data,
                     model=self.model,
                     api_base=self.api_base,
@@ -110,3 +117,19 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
                 outputs.total_tokens = response.usage.total_tokens
 
         return outputs.embeddings
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:
+        """
+        Creates and returns a LiteLLMEmbedder instance.
+
+        Args:
+            config: A configuration object containing the configuration for initializing the LiteLLMEmbedder instance.
+
+        Returns:
+            LiteLLMEmbedder: An initialized LiteLLMEmbedder instance.
+        """
+        if "router" in config:
+            router = litellm.router.Router(model_list=config["router"])
+            config["router"] = router
+        return super().from_config(config)

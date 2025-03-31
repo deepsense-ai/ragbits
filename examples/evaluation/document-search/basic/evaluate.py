@@ -45,15 +45,15 @@ config = {
                     },
                 },
             },
-            "providers": {
-                "txt": {
-                    "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
-                },
-            },
-            "processing_strategy": {
-                "type": "ragbits.document_search.ingestion.processor_strategies.batched:BatchedAsyncProcessing",
+            "ingest_strategy": {
+                "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,
+                },
+            },
+            "parser_router": {
+                "txt": {
+                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                 },
             },
             "source": {

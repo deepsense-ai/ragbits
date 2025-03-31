@@ -6,15 +6,16 @@ import numpy as np
 from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
 
-class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
@@ -24,9 +25,8 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
     def __init__(
         self,
         embedder: Embedder,
+        embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new InMemoryVectorStore instance.
@@ -34,17 +34,15 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         Args:
             default_options: The default options for querying the vector store.
             embedder: The embedder to use for converting entries to vectors.
-            embedding_name_text: The name under which the text embedding is stored in the resulting object.
-            embedding_name_image: The name under which the image embedding is stored in the resulting object.
+            embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
-            embedding_name_text=embedding_name_text,
-            embedding_name_image=embedding_name_image,
+            embedding_type=embedding_type,
         )
         self._entries: dict[UUID, VectorStoreEntry] = {}
-        self._embeddings: dict[UUID, dict[str, list[float]]] = {}
+        self._embeddings: dict[UUID, list[float]] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -56,61 +54,46 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         with trace(
             entries=entries,
             embedder=repr(self._embedder),
-            embedding_name_text=self._embedding_name_text,
-            embedding_name_image=self._embedding_name_image,
-            mbedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
+            embedding_type=self._embedding_type,
         ) as outputs:
-            for entry in entries:
-                self._entries[entry.id] = entry
             embeddings = await self._create_embeddings(entries)
             self._embeddings.update(embeddings)
+            self._entries.update({entry.id: entry for entry in entries if entry.id in embeddings})
             outputs.embeddings = self._embeddings
             outputs.entries = self._entries
 
     async def retrieve(
         self,
-        text: str | None = None,
-        image: bytes | None = None,
+        text: str,
         options: VectorStoreOptions | None = None,
     ) -> list[VectorStoreResult]:
         """
-        Retrieve entries from the vector store most similar to the provided entry.
-        Requires either text or image to be provided.
-
-        Compare stored entries looking both at their text and image embeddings
-        (if both are available chooses the one with the smallest distance).
+        Retrieve entries from the vector store most similar to the provided text.
 
         Args:
             text: The text to query the vector store with.
-            image: The image to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
             The entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        with trace(text=text, image=image, options=merged_options.dict(), embedder=repr(self._embedder)) as outputs:
-            if image and text:
-                raise ValueError("Either text or image should be provided, not both.")
-
-            if text:
-                vector = await self._embedder.embed_text([text])
-            elif image:
-                vector = await self._embedder.embed_image([image])
-            else:
-                raise ValueError("Either text or image should be provided.")
-
+        with trace(
+            text=text,
+            options=merged_options.dict(),
+            embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
+        ) as outputs:
+            query_vector = await self._embedder.embed_text([text])
             results: list[VectorStoreResult] = []
 
-            for entry_id, vectors in self._embeddings.items():
-                distances = [float(np.linalg.norm(np.array(v) - np.array(vector))) for v in vectors.values()]
-                result = VectorStoreResult(entry=self._entries[entry_id], vectors=vectors, score=min(distances))
+            for entry_id, vector in self._embeddings.items():
+                distance = float(np.linalg.norm(np.array(vector) - np.array(query_vector)))
+                result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=distance)
                 if merged_options.max_distance is None or result.score <= merged_options.max_distance:
                     results.append(result)
 
-            results = sorted(results, key=lambda r: r.score)
-            outputs.results = results[: merged_options.k]
+            outputs.results = sorted(results, key=lambda r: r.score)[: merged_options.k]
             return outputs.results
 
     @traceable
@@ -142,6 +125,8 @@ class InMemoryVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             The entries.
         """
         entries = iter(self._entries.values())
+
+        entries = (entry for entry in entries if entry.id in self._embeddings)
 
         if where:
             entries = (

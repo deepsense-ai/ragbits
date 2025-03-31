@@ -163,7 +163,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             raw_response = await self.generate_raw(prompt, options=options)
             if isinstance(prompt, BasePromptWithParser):
-                response = prompt.parse_response(raw_response["response"])
+                response = await prompt.parse_response(raw_response["response"])
             else:
                 response = cast(OutputT, raw_response["response"])
             raw_response["response"] = response
@@ -225,7 +225,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             response = await self.generate_raw(prompt, options=options)
             content = response.pop("response")
             if isinstance(prompt, BasePromptWithParser):
-                content = prompt.parse_response(content)
+                content = await prompt.parse_response(content)
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
                 metadata=response,

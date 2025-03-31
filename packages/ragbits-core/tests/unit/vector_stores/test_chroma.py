@@ -5,6 +5,7 @@ from uuid import UUID
 import pytest
 
 from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 
@@ -14,7 +15,7 @@ def mock_chromadb_store() -> ChromaVectorStore:
     return ChromaVectorStore(
         client=MagicMock(),
         index_name="test_index",
-        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]]),
+        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]], image_return_values=[[[0.7, 0.8, 0.9]]]),
     )
 
 
@@ -23,6 +24,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
         VectorStoreEntry(
             id=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             text="test content",
+            image_bytes=b"test image",
             metadata={
                 "content": "test content",
                 "document_meta": {
@@ -46,9 +48,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.title": "test title",
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
-                "__embeddings.text[0]": 0.1,
-                "__embeddings.text[1]": 0.2,
-                "__embeddings.text[2]": 0.3,
+                "__image": _pydantic_bytes_to_hex(b"test image"),
             }
         ],
         documents=["test content"],
@@ -62,7 +62,12 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
             None,
             [
                 {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]},
-                {"content": "test content 2", "title": "test title 2", "vector": [0.13, 0.26, 0.30]},
+                {
+                    "content": "test content 2",
+                    "title": "test title 2",
+                    "vector": [0.13, 0.26, 0.30],
+                    "image": b"test image",
+                },
             ],
         ),
         (0.1, [{"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]}]),
@@ -72,6 +77,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
 async def test_retrieve(
     mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
 ) -> None:
+    ids = [str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 1")), str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 2"))]
     mock_chromadb_store._collection.query.return_value = {  # type: ignore
         "metadatas": [
             [
@@ -80,25 +86,22 @@ async def test_retrieve(
                     "document_meta.title": "test title 1",
                     "document_meta.source.path": "/test/path-1",
                     "document_meta.document_type": "txt",
-                    "__embeddings.text[0]": 0.12,
-                    "__embeddings.text[1]": 0.25,
-                    "__embeddings.text[2]": 0.29,
+                    "__id": ids[0],
                 },
                 {
                     "content": "test content 2",
                     "document_meta.title": "test title 2",
                     "document_meta.source.path": "/test/path-2",
                     "document_meta.document_type": "txt",
-                    "__embeddings.text[0]": 0.13,
-                    "__embeddings.text[1]": 0.26,
-                    "__embeddings.text[2]": 0.30,
+                    "__id": ids[1],
+                    "__image": _pydantic_bytes_to_hex(b"test image"),
                 },
             ]
         ],
         "embeddings": [[[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]]],
         "distances": [[0.1, 0.2]],
         "documents": [["test content 1", "test content 2"]],
-        "ids": [[uuid.uuid5(uuid.NAMESPACE_OID, "test id 1"), uuid.uuid5(uuid.NAMESPACE_OID, "test id 2")]],
+        "ids": [ids],
     }
 
     query_results = await mock_chromadb_store.retrieve("query", options=VectorStoreOptions(max_distance=max_distance))
@@ -107,9 +110,12 @@ async def test_retrieve(
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
-        assert query_result.vectors["text"] == result["vector"]
+        assert query_result.vector == result["vector"]
+        assert query_result.score in [0.1, 0.2]
+
         assert query_result.entry.id == uuid.uuid5(uuid.NAMESPACE_OID, f"test id {results.index(result) + 1}")
         assert query_result.entry.text == result["content"]
+        assert query_result.entry.image_bytes == result.get("image")
 
 
 async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
@@ -119,7 +125,7 @@ async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:
 
     mock_chromadb_store._client.get_or_create_collection().delete.assert_called_once()  # type: ignore
     mock_chromadb_store._client.get_or_create_collection().delete.assert_called_with(  # type: ignore
-        ids=[str(id) for id in ids_to_remove]
+        ids=["1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"]
     )
 
 
@@ -131,17 +137,23 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
                 "document_meta.title": "test title",
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
+                "__id": "d8184a66-94c2-4bd1-8aeb-7f8a6d4917f0",
             },
             {
                 "content": "test content 2",
                 "document_meta.title": "test title 2",
                 "document_meta.source.path": "/test/path",
                 "document_meta.document_type": "test_type",
+                "__id": "ee64bd1c-1096-4cca-98fe-78406f8c3ce5",
+                "__image": _pydantic_bytes_to_hex(b"test image"),
             },
         ],
         "embeddings": [[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]],
-        "documents": ["test content 1", "test content2"],
-        "ids": ["d8184a66-94c2-4bd1-8aeb-7f8a6d4917f0", "ee64bd1c-1096-4cca-98fe-78406f8c3ce5"],
+        "documents": ["test content 1", "test content 2"],
+        "ids": [
+            "d8184a66-94c2-4bd1-8aeb-7f8a6d4917f0",
+            "ee64bd1c-1096-4cca-98fe-78406f8c3ce5",
+        ],
     }
 
     entries = await mock_chromadb_store.list()
@@ -153,7 +165,7 @@ async def test_list(mock_chromadb_store: ChromaVectorStore) -> None:
     assert entries[0].id == UUID("d8184a66-94c2-4bd1-8aeb-7f8a6d4917f0")
     assert entries[1].metadata["content"] == "test content 2"
     assert entries[1].metadata["document_meta"]["title"] == "test title 2"
-    assert entries[1].text == "test content2"
+    assert entries[1].text == "test content 2"
     assert entries[1].id == UUID("ee64bd1c-1096-4cca-98fe-78406f8c3ce5")
 
 

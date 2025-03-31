@@ -1,6 +1,5 @@
 import json
 import re
-import warnings
 from typing import Any
 from uuid import UUID
 
@@ -10,11 +9,12 @@ from pydantic.json import pydantic_encoder
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.vector_stores.base import (
+    EmbeddingType,
     VectorStoreEntry,
-    VectorStoreNeedingEmbedder,
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
+    VectorStoreWithExternalEmbedder,
     WhereQuery,
 )
 
@@ -31,7 +31,7 @@ DISTANCE_OPS = {
 
 
 # TODO: Add support for image embeddings
-class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
+class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
 
@@ -47,11 +47,10 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         table_name: str,
         vector_size: int,
         embedder: Embedder,
+        embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: str = "cosine",
         hnsw_params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
-        embedding_name_text: str = "text",
-        embedding_name_image: str = "image",
     ) -> None:
         """
         Constructs a new PgVectorStore instance.
@@ -61,18 +60,16 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             table_name: The name of the table.
             vector_size: The size of the vectors.
             embedder: The embedder to use for converting entries to vectors.
+            embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance method to use.
             hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
-            embedding_name_text: The name of the embedding for text.
-            embedding_name_image: The name of the embedding for images.
         """
         (
             super().__init__(
                 default_options=default_options,
                 embedder=embedder,
-                embedding_name_text=embedding_name_text,
-                embedding_name_image=embedding_name_image,
+                embedding_type=embedding_type,
             ),
         )
 
@@ -97,6 +94,13 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
         self._vector_size = vector_size
         self._distance_method = distance_method
         self._hnsw_params = hnsw_params
+
+    def __reduce__(self) -> tuple:
+        """
+        Enables the PgVectorStore to be pickled and unpickled.
+        """
+        # TODO: To be implemented. Required for Ray processing.
+        raise NotImplementedError
 
     def _create_retrieve_query(
         self, vector: list[float], query_options: VectorStoreOptions | None = None
@@ -229,23 +233,21 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
             entries=entries,
             vector_size=self._vector_size,
             embedder=repr(self._embedder),
-            embedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
+            embedding_type=self._embedding_type,
         ):
             embeddings = await self._create_embeddings(entries)
 
             try:
                 async with self._client.acquire() as conn:
                     for entry in entries:
-                        if entry.id not in embeddings or self._embedding_name_text not in embeddings[entry.id]:
-                            warnings.warn(f"Skipping entry {entry.id} as it has no text embeddings.")
+                        if entry.id not in embeddings:
                             continue
 
                         await conn.execute(
                             insert_query,
                             str(entry.id),
                             entry.text,
-                            str(embeddings[entry.id][self._embedding_name_text]),
+                            str(embeddings[entry.id]),
                             json.dumps(entry.metadata, default=pydantic_encoder),
                         )
             except asyncpg.exceptions.UndefinedTableError:
@@ -312,8 +314,7 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
     async def retrieve(
         self,
-        text: str | None = None,
-        image: bytes | None = None,
+        text: str,
         options: VectorStoreOptionsT | None = None,
     ) -> list[VectorStoreResult]:
         """
@@ -321,47 +322,38 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
         Args:
             text: The text to query the vector store with.
-            image: The image to query the vector store with (not supported yet).
             options: The options for querying the vector store.
 
         Returns:
             The retrieved entries.
         """
-        if text is None:
-            raise ValueError("Text must be provided for retrieval.")
-
-        if image is not None:
-            warnings.warn("Image retrieval is not supported yet. Ignoring the image.")
         query_options = (self.default_options | options) if options else self.default_options
         with trace(
             text=text,
-            image=image,
             table_name=self._table_name,
             query_options=query_options,
             vector_size=self._vector_size,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
-            embedder_for_text=self._embedding_name_text,
-            embedder_for_image=self._embedding_name_image,
+            embedding_type=self._embedding_type,
         ) as outputs:
             vector = (await self._embedder.embed_text([text]))[0]
 
+            query_options = (self.default_options | options) if options else self.default_options
             retrieve_query, values = self._create_retrieve_query(vector, query_options)
 
             try:
                 async with self._client.acquire() as conn:
                     results = await conn.fetch(retrieve_query, *values)
 
-                retrieved_entries = [
+                outputs.results = [
                     VectorStoreResult(
                         entry=VectorStoreEntry(
                             id=record["id"],
                             text=record["key"],
                             metadata=json.loads(record["metadata"]),
                         ),
-                        vectors={
-                            self._embedding_name_text: json.loads(record["vector"]),
-                        },
+                        vector=json.loads(record["vector"]),
                         score=record["distance"],
                     )
                     for record in results
@@ -369,9 +361,8 @@ class PgVectorStore(VectorStoreNeedingEmbedder[VectorStoreOptions]):
 
             except asyncpg.exceptions.UndefinedTableError:
                 print(f"Table {self._table_name} does not exist.")
-                retrieved_entries = []
-            outputs.retrieved_entries = retrieved_entries
-            return retrieved_entries
+                outputs.results = []
+            return outputs.results
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0

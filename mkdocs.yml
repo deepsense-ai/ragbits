@@ -1,41 +1,40 @@
 site_name: ragbits docs
-site_description: Library for fast RAG application development
+site_description: Building blocks for rapid development of GenAI applications
 site_url: https://ragbits.deepsense.ai
 repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
-copyright: Copyright &copy; 2024 deepsense.ai
+copyright: Copyright &copy; 2025 deepsense.ai
 nav:
   - ragbits: index.md
-  - Quick Start:
+  - Quickstart:
       - quickstart/quickstart1_prompts.md
       - quickstart/quickstart2_rag.md
-  - How-to Guides:
-      - Core:
-        - how-to/core/use_prompting.md
-        - how-to/core/use_images_in_prompts.md
-        - how-to/core/component_preferrences.md
-        - how-to/core/prompts_lab.md
-        - how-to/core/promptfoo.md
-        - how-to/core/use_tracing.md
-        - how-to/core/use_llms.md
-        - how-to/core/use_local_llms.md
-        - how-to/core/use_pgVector_store.md
+  - How-to:
+      - Prompting:
+          - "Define and use prompts": how-to/prompts/use_prompting.md
+          - "Use images in prompts": how-to/prompts/use_images_in_prompts.md
+          - "Manage prompts using GUI": how-to/prompts/prompts_lab.md
+          - "Test prompts with promptfoo": how-to/prompts/promptfoo.md
+      - LLMs:
+        - "Interact with LLMs": how-to/llms/use_llms.md
+        - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
+      - Vector Stores:
+        - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
+      - Project configuration:
+        - "Set preferred components in project": how-to/project/component_preferences.md
+        - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
-          - how-to/document_search/async_processing.md
-          - how-to/document_search/create_custom_execution_strategy.md
-          - how-to/document_search/search_documents.md
-          - how-to/document_search/use_rephraser.md
-          - how-to/document_search/use_reranker.md
-          - how-to/document_search/distributed_ingestion.md
-      - Guardrails: how-to/guardrails/use_guardrails.md
+        - "Ingest documents": how-to/document_search/ingest-documents.md
+        - "Search documents": how-to/document_search/search-documents.md
+      - Guardrails:
+        - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Evaluate:
-          - how-to/evaluate/optimize.md
-          - how-to/evaluate/generate_dataset.md
-          - how-to/evaluate/evaluate.md
-          - how-to/evaluate/custom_metric.md
-          - how-to/evaluate/custom_evaluation_pipeline.md
-          - how-to/evaluate/custom_metric.md
-          - how-to/evaluate/custom_dataloader.md
+          - "Evaluate pipelines": how-to/evaluate/evaluate.md
+          - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
+          - "Create custom evaluation metric": how-to/evaluate/custom_metric.md
+          - "Create custom data loader": how-to/evaluate/custom_dataloader.md
+          - "Generate new dataset with LLM": how-to/evaluate/generate_dataset.md
+          - "Auto-optimize hyperparameter tuning": how-to/evaluate/optimize.md
   - CLI:
       - cli/main.md
   - API Reference:
@@ -47,9 +46,10 @@ nav:
       - Document Search:
           - api_reference/document_search/index.md
           - api_reference/document_search/documents.md
-          - Ingestion:
-            - api_reference/document_search/processing.md
-            - api_reference/document_search/execution_strategies.md
+          - Ingest:
+            - api_reference/document_search/ingest/parsers.md
+            - api_reference/document_search/ingest/enrichers.md
+            - api_reference/document_search/ingest/strategies.md
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md
             - api_reference/document_search/retrieval/rerankers.md
@@ -66,18 +66,22 @@ theme:
     repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme)"
+      primary: black
+      accent: custom
       toggle:
         icon: material/lightbulb-auto
         name: Switch to light mode
     - media: '(prefers-color-scheme: light)'
       scheme: default
-      primary: primary
+      primary: black
+      accent: custom
       toggle:
         icon: material/lightbulb
         name: Switch to dark mode
     - media: '(prefers-color-scheme: dark)'
       scheme: slate
-      primary: primary
+      primary: black
+      accent: custom
       toggle:
         icon: material/lightbulb-outline
         name: Switch to system preference
