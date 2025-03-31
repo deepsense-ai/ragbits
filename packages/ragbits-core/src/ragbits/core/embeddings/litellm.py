@@ -131,13 +131,6 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         Returns:
             LiteLLMEmbedder: An initialized LiteLLMEmbedder instance.
         """
-        # Handle parameter name mapping for config
-        if "model" in config:
-            config["model_name"] = config.pop("model")
-
-        if "api_base" in config:
-            config["base_url"] = config.pop("api_base")
-
         if "router" in config:
             router = litellm.router.Router(model_list=config["router"])
             config["router"] = router

@@ -1,8 +1,5 @@
 import asyncio
 import base64
-from typing import Any
-
-from typing_extensions import Self
 
 from ragbits.core.embeddings.litellm import LiteLLMEmbedderOptions
 
@@ -184,24 +181,3 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             [{"image": {"bytesBase64Encoded": image}} for image in images_b64], options=options
         )
         return [embedding["embedding"] for embedding in response]
-
-    @classmethod
-    def from_config(cls, config: dict[str, Any]) -> Self:
-        """
-        Creates and returns a VertexAIMultimodelEmbedder instance.
-
-        Args:
-            config: A configuration object containing the configuration for initializing
-                the VertexAIMultimodelEmbedder instance.
-
-        Returns:
-            VertexAIMultimodelEmbedder: An initialized VertexAIMultimodelEmbedder instance.
-        """
-        # Handle parameter name mapping for config
-        if "model" in config:
-            config["model_name"] = config.pop("model")
-
-        if "api_base" in config:
-            config["base_url"] = config.pop("api_base")
-
-        return super().from_config(config)
