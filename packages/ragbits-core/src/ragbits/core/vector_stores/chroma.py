@@ -21,7 +21,7 @@ from ragbits.core.vector_stores.base import (
 
 # The metrics for which smaller values are considered better.
 # This is used to determine whether to reverse the score.
-# (since Ragbits allways follows the "biggest is better" convention)
+# (since Ragbits always follows the "biggest is better" convention)
 _SMALLER_IS_BETTER_METRICS = {"l2"}
 
 
