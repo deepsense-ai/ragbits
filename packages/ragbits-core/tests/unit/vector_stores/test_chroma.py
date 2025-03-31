@@ -19,6 +19,16 @@ def mock_chromadb_store() -> ChromaVectorStore:
     )
 
 
+@pytest.fixture
+def mock_chromadb_l2_store() -> ChromaVectorStore:
+    return ChromaVectorStore(
+        client=MagicMock(),
+        index_name="test_index",
+        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]], image_return_values=[[[0.7, 0.8, 0.9]]]),
+        distance_method="l2",
+    )
+
+
 async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
     data = [
         VectorStoreEntry(
@@ -56,7 +66,7 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
 
 
 @pytest.mark.parametrize(
-    ("max_distance", "results"),
+    ("score_threshold", "results"),
     [
         (
             None,
@@ -70,12 +80,12 @@ async def test_store(mock_chromadb_store: ChromaVectorStore) -> None:
                 },
             ],
         ),
-        (0.1, [{"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]}]),
-        (0.09, []),
+        (0.85, [{"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29]}]),
+        (0.95, []),
     ],
 )
 async def test_retrieve(
-    mock_chromadb_store: ChromaVectorStore, max_distance: float | None, results: list[dict]
+    mock_chromadb_store: ChromaVectorStore, score_threshold: float | None, results: list[dict]
 ) -> None:
     ids = [str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 1")), str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 2"))]
     mock_chromadb_store._collection.query.return_value = {  # type: ignore
@@ -104,18 +114,62 @@ async def test_retrieve(
         "ids": [ids],
     }
 
-    query_results = await mock_chromadb_store.retrieve("query", options=VectorStoreOptions(max_distance=max_distance))
+    query_results = await mock_chromadb_store.retrieve(
+        "query", options=VectorStoreOptions(score_threshold=score_threshold)
+    )
 
     assert len(query_results) == len(results)
     for query_result, result in zip(query_results, results, strict=True):
         assert query_result.entry.metadata["content"] == result["content"]
         assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
         assert query_result.vector == result["vector"]
-        assert query_result.score in [0.1, 0.2]
+        assert query_result.score in [0.8, 0.9]
 
         assert query_result.entry.id == uuid.uuid5(uuid.NAMESPACE_OID, f"test id {results.index(result) + 1}")
         assert query_result.entry.text == result["content"]
         assert query_result.entry.image_bytes == result.get("image")
+
+
+async def test_retrieve_l2(mock_chromadb_l2_store: ChromaVectorStore) -> None:
+    ids = [str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 1")), str(uuid.uuid5(uuid.NAMESPACE_OID, "test id 2"))]
+    mock_chromadb_l2_store._collection.query.return_value = {  # type: ignore
+        "metadatas": [
+            [
+                {
+                    "content": "test content 1",
+                    "document_meta.title": "test title 1",
+                    "document_meta.source.path": "/test/path-1",
+                    "document_meta.document_type": "txt",
+                    "__id": ids[0],
+                },
+                {
+                    "content": "test content 2",
+                    "document_meta.title": "test title 2",
+                    "document_meta.source.path": "/test/path-2",
+                    "document_meta.document_type": "txt",
+                    "__id": ids[1],
+                    "__image": _pydantic_bytes_to_hex(b"test image"),
+                },
+            ]
+        ],
+        "embeddings": [[[0.12, 0.25, 0.29], [0.13, 0.26, 0.30]]],
+        "distances": [[0.2, 0.1]],
+        "documents": [["test content 1", "test content 2"]],
+        "ids": [ids],
+    }
+
+    query_results = await mock_chromadb_l2_store.retrieve("query")
+
+    assert len(query_results) == 2
+    assert query_results[0].entry.metadata["content"] == "test content 1"
+    assert query_results[0].score == -0.2
+    assert query_results[1].entry.metadata["content"] == "test content 2"
+    assert query_results[1].score == -0.1
+
+    query_results = await mock_chromadb_l2_store.retrieve("query", options=VectorStoreOptions(score_threshold=-0.15))
+    assert len(query_results) == 1
+    assert query_results[0].entry.metadata["content"] == "test content 2"
+    assert query_results[0].score == -0.1
 
 
 async def test_remove(mock_chromadb_store: ChromaVectorStore) -> None:

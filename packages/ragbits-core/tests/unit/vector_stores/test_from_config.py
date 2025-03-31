@@ -17,7 +17,7 @@ def test_subclass_from_config():
             "config": {
                 "default_options": {
                     "k": 10,
-                    "max_distance": 0.22,
+                    "score_threshold": 0.22,
                 },
                 "embedder": {
                     "type": "ragbits.core.embeddings.noop:NoopEmbedder",
@@ -29,7 +29,7 @@ def test_subclass_from_config():
     assert isinstance(store, InMemoryVectorStore)
     assert isinstance(store.default_options, VectorStoreOptions)
     assert store.default_options.k == 10
-    assert store.default_options.max_distance == 0.22
+    assert store.default_options.score_threshold == 0.22
 
 
 def test_subclass_from_config_default_path():
@@ -54,7 +54,7 @@ def test_subclass_from_config_chroma_client():
                 "index_name": "some_index",
                 "default_options": {
                     "k": 10,
-                    "max_distance": 0.22,
+                    "score_threshold": 0.22,
                 },
                 "embedder": {"type": "NoopEmbedder"},
             },
@@ -65,7 +65,7 @@ def test_subclass_from_config_chroma_client():
     assert store._index_name == "some_index"
     assert isinstance(store._client, ClientAPI)
     assert store.default_options.k == 10
-    assert store.default_options.max_distance == 0.22
+    assert store.default_options.score_threshold == 0.22
 
 
 def test_subclass_from_config_qdrant_client():
@@ -83,7 +83,7 @@ def test_subclass_from_config_qdrant_client():
                 "index_name": "some_index",
                 "default_options": {
                     "k": 10,
-                    "max_distance": 0.22,
+                    "score_threshold": 0.22,
                 },
                 "embedder": {"type": "NoopEmbedder"},
             },
@@ -98,4 +98,4 @@ def test_subclass_from_config_qdrant_client():
     assert store._client.init_options["limits"].max_keepalive_connections == 0
     assert isinstance(store._client._client, AsyncQdrantLocal)
     assert store.default_options.k == 10
-    assert store.default_options.max_distance == 0.22
+    assert store.default_options.score_threshold == 0.22

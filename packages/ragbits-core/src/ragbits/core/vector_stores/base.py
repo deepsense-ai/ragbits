@@ -44,6 +44,11 @@ class VectorStoreResult(BaseModel):
     """
     An object representing a query result from a vector store.
     Contains the entry, its vector, and the similarity score.
+
+    The bigger the score, the more similar the entry is to the query.
+    This holds even when using metrics that naturally follow the
+    opposite convention (e.g. Euclidean distance). In this case,
+    the score is simply the negative of the distance.
     """
 
     entry: VectorStoreEntry
@@ -54,10 +59,17 @@ class VectorStoreResult(BaseModel):
 class VectorStoreOptions(Options):
     """
     An object representing the options for the vector store.
+
+    Attributes:
+        k: The number of entries to return.
+        score_threshold: The minimum similarity score for an entry to be returned.
+            Note that this is based on score, which may be different from the raw
+            similarity metric used by the vector store (see `VectorStoreResult`
+            for more details).
     """
 
     k: int = 5
-    max_distance: float | None = None
+    score_threshold: float | None = None
 
 
 VectorStoreOptionsT = TypeVar("VectorStoreOptionsT", bound=VectorStoreOptions)

@@ -6,7 +6,14 @@ from uuid import UUID
 import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
-from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
+from qdrant_client.local.distances import DistanceOrder, distance_to_order
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    VectorParams,
+)
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
@@ -170,7 +177,14 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             The retrieved entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
+
+        # Ragbits has a "larger is better" convention for all scores, so we need to reverse the score if the distance
+        # method is "smaller is better".
+        reverse_score = distance_to_order(self._distance_method) == DistanceOrder.SMALLER_IS_BETTER
+        score_multiplier = -1 if reverse_score else 1
+        score_threshold = (
+            None if merged_options.score_threshold is None else merged_options.score_threshold * score_multiplier
+        )
         with trace(
             text=text,
             options=merged_options,
@@ -197,7 +211,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 outputs.results.append(
                     VectorStoreResult(
                         entry=entry,
-                        score=point.score,
+                        score=point.score * score_multiplier,
                         vector=cast(list[float], point.vector),
                     )
                 )
