@@ -130,9 +130,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
         """
-        pprint(litellm.model_cost)
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError()
+        if prompt.list_images():
+            pprint(litellm.model_cost)
+            if not litellm.supports_vision(self.model_name):
+                raise LLMNotSupportingImagesError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
