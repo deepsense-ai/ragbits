@@ -140,7 +140,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
         values: list[Any] = [str(vector)]
 
-        if query_options.score_threshold:
+        if query_options.score_threshold is not None:
             query += " WHERE score >= $2"
             values.extend([query_options.score_threshold])
 
