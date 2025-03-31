@@ -12,7 +12,7 @@ def test_subclass_from_config_litellm():
         {
             "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
             "config": {
-                "model": "some_model",
+                "model_name": "some_model",
                 "default_options": {
                     "option1": "value1",
                     "option2": "value2",
@@ -66,7 +66,7 @@ def test_from_config_with_router():
     config = ObjectConstructionConfig(
         type="ragbits.core.embeddings.litellm:LiteLLMEmbedder",
         config={
-            "model": "text-embedding-3-small",
+            "model_name": "text-embedding-3-small",
             "api_key": "test_api_key",
             "router": [
                 {
