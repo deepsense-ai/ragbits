@@ -1,5 +1,4 @@
 from collections.abc import AsyncGenerator
-from pprint import pprint
 from typing import Any
 
 import litellm
@@ -89,7 +88,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.router = router
         self.custom_model_cost_config = custom_model_cost_config
         if custom_model_cost_config:
-            print("registering model", custom_model_cost_config)
             litellm.register_model(custom_model_cost_config)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
@@ -130,10 +128,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
         """
-        if prompt.list_images():
-            pprint(litellm.model_cost)
-            if not litellm.supports_vision(self.model_name):
-                raise LLMNotSupportingImagesError()
+        if prompt.list_images() and not litellm.supports_vision(self.model_name):
+            raise LLMNotSupportingImagesError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
@@ -271,7 +267,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         return super().from_config(config)
 
     def __reduce__(self):
-        print("reducing")
         init = self.__class__
 
         args = (
@@ -288,4 +283,5 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "custom_model_cost_config": self.custom_model_cost_config,
         }
 
+        # Due to the fact we have keyword arguments, we need to use a lambda to pass them to the constructor.
         return (lambda args, kwargs: init(*args, **kwargs)), (args, kwargs)
