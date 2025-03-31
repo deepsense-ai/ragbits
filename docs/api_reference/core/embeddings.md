@@ -6,6 +6,6 @@
 
 ::: ragbits.core.embeddings.litellm.LiteLLMEmbedder
 
-::: ragbits.core.embeddings.fastembed.FastembedEmbedder
+::: ragbits.core.embeddings.fastembed.FastEmbedEmbedder
 
-::: ragbits.core.embeddings.fastembed.FastembedSparseEmbedder
+::: ragbits.core.embeddings.fastembed.FastEmbedSparseEmbedder
