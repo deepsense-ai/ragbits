@@ -1,8 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
-- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 - Make the score in VectorStoreResult consistent (always bigger is better)
+- Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
 
