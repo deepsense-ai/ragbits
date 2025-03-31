@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add router option to LiteLLMEmbedder (#440)
+- Make LLM / Embedder APIs consistent (#463)
 
 ## 0.12.0 (2025-03-25)
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
