@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from pprint import pprint
 from typing import Any
 
 import litellm
@@ -88,6 +89,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.router = router
         self.custom_model_cost_config = custom_model_cost_config
         if custom_model_cost_config:
+            print("registering model", custom_model_cost_config)
             litellm.register_model(custom_model_cost_config)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
@@ -128,6 +130,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
         """
+        pprint(litellm.model_cost)
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
