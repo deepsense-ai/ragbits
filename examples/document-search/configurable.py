@@ -90,7 +90,7 @@ config = {
             },
         },
     },
-    "providers": {"txt": {"type": "DummyProvider"}},
+    "parser_router": {"txt": {"type": "TextDocumentParser"}},
     "rephraser": {
         "type": "LLMQueryRephraser",
         "config": {
