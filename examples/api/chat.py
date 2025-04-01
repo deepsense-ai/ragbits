@@ -4,54 +4,46 @@
 #     "ragbits-api",
 # ]
 # ///
-import asyncio
+from collections.abc import AsyncGenerator
 
-from pydantic import BaseModel
-
-from ragbits.core.llms.litellm import LiteLLM
-from ragbits.core.prompt import Prompt
-
-
-class ChatInput(BaseModel):
-    """
-    Input format for the Chat message.
-    """
-
-    question: str
+from ragbits.api.interface import ChatInterface
+from ragbits.api.interface.types import (
+    ChatResponse,
+    Message,
+)
+from ragbits.core.llms import LiteLLM
 
 
-class ChatOutput(BaseModel):
-    """
-    Output format for the Chat message.
-    """
+class MyChat(ChatInterface):
+    """A simple example implementation of the ChatInterface that demonstrates different response types."""
 
-    answer: str
+    def __init__(self) -> None:
+        self.llm = LiteLLM(model_name="gpt-4o-mini")
 
+    async def chat(
+        self,
+        message: str,
+        history: list[Message] | None = None,
+        context: dict | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        """
+        Example implementation of the ChatInterface.
 
-class ChatPrompt(Prompt[ChatInput, ChatOutput]):
-    """
-    A prompt that generates answers for asked questions.
-    """
+        Args:
+            message: The current user message
+            history: Optional list of previous messages in the conversation
+            context: Optional context
 
-    system_prompt = """
-    You are a wise person that answers questions. The answer should be serious and based on true statistics/knowledge.
-    """
+        Yields:
+            ChatResponse objects containing different types of content:
+            - Text chunks for the actual response
+            - Reference documents used to generate the response
+        """
+        yield self.create_reference(
+            title="Example Reference",
+            content="This is an example reference document that might be relevant to your query.",
+            url="https://example.com/reference1",
+        )
 
-    user_prompt = """
-     question: {{ question }}
-    """
-
-
-async def main(question: str) -> None:
-    """
-    Example of using the LiteLLM client with a Chat class. Requires the OPENAI_API_KEY environment variable to be set.
-    """
-    llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
-    prompt = ChatPrompt(ChatInput(question=question))
-    response = await llm.generate(prompt)
-
-    return response.answer
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
+            yield self.create_text_response(chunk)
