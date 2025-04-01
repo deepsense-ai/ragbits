@@ -71,7 +71,7 @@ from ragbits.core.prompt.base import SimplePrompt
 
 
 async def main() -> None:
-    llm = LiteLLM(model_name="openai/local", api_key="<api_key>", base_url="http://127.0.0.1:8080")
+    llm = LiteLLM(model_name="openai/local", api_key="<api_key>", api_base="http://127.0.0.1:8080")
     prompt = SimplePrompt("Tell me a joke about software developers.")
     response = await llm.generate(prompt)
     print(response)
@@ -99,7 +99,7 @@ from ragbits.core.prompt.base import SimplePrompt
 
 
 async def main() -> None:
-    llm = LiteLLM(model_name="hosted_vllm/<model_name>", base_url="http://127.0.0.1:8000/v1")
+    llm = LiteLLM(model_name="hosted_vllm/<model_name>", api_base="http://127.0.0.1:8000/v1")
     prompt = SimplePrompt("Tell me a joke about software developers.")
     response = await llm.generate(prompt)
     print(response)
@@ -123,7 +123,7 @@ from ragbits.core.embeddings.litellm import LiteLLMEmbedder
 
 
 async def main() -> None:
-    embedder = LiteLLMEmbedder(model_name="hosted_vllm/<model_name>", base_url="http://127.0.0.1:8000/v1")
+    embedder = LiteLLMEmbedder(model_name="hosted_vllm/<model_name>", api_base="http://127.0.0.1:8000/v1")
     embeddings = await embedder.embed_text(["Hello"])
     print(len(embeddings[0]))
 
