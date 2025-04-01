@@ -4,6 +4,7 @@
 - Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)
 - Make LLM / Embedder APIs consistent (#463)
+- New methods in Prompt class for appending conversation history (#480)
 - Fix: make unflatten_dict symmetric to flatten_dict (#461)
 - Cost and capabilities config for custom litellm models (#481)
 
