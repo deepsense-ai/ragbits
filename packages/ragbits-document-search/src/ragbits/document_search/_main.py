@@ -222,8 +222,8 @@ class DocumentSearch(WithConstructionConfig):
                        - "file:///path/to/files/*.txt"
                        - "gcs://bucket/folder/*"
                        - "huggingface://dataset/split/row"
-            fail_on_error: If True, raises the first error encountered during ingestion. If False, returns all
-                           errors encountered in the IngestExecutionResult.
+            fail_on_error: If True, raises IngestExecutionError when any errors are encountered during ingestion.
+                           If False, returns all errors encountered in the IngestExecutionResult.
 
         Returns:
             An IngestExecutionResult containing the results of the ingestion process.

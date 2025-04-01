@@ -72,7 +72,7 @@ class IngestExecutionError(Exception):
     Represents an error that occurred during the documents ingest execution.
     """
 
-    def __init__(self, results: IngestExecutionResult) -> None:
+    def __init__(self, results: list[IngestDocumentResult]) -> None:
         self.results = results
 
 
