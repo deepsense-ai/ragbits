@@ -67,6 +67,15 @@ class IngestExecutionResult:
     failed: list[IngestDocumentResult] = field(default_factory=list)
 
 
+class IngestExecutionError(Exception):
+    """
+    Represents an error that occurred during the documents ingest execution.
+    """
+
+    def __init__(self, results: IngestExecutionResult) -> None:
+        self.results = results
+
+
 class IngestStrategy(WithConstructionConfig, ABC):
     """
     Base class for ingest strategies, responsible for orchiesting the tasks required to index the document.
