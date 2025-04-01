@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 import litellm
@@ -266,22 +266,16 @@ class LiteLLM(LLM[LiteLLMOptions]):
             config["router"] = router
         return super().from_config(config)
 
-    def __reduce__(self):
-        init = self.__class__
-
-        args = (
-            self.model_name,
-            self.default_options,
-        )
-
-        kwargs = {
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        config = {
+            "model_name": self.model_name,
+            "default_options": self.default_options.dict(),
             "base_url": self.base_url,
             "api_key": self.api_key,
             "api_version": self.api_version,
             "use_structured_output": self.use_structured_output,
-            "router": self.router,
             "custom_model_cost_config": self.custom_model_cost_config,
         }
-
-        # Due to the fact we have keyword arguments, we need to use a lambda to pass them to the constructor.
-        return (lambda args, kwargs: init(*args, **kwargs)), (args, kwargs)
+        if self.router:
+            config["router"] = self.router.model_list
+        return self.from_config, (config,)
