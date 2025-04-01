@@ -27,7 +27,7 @@ from ragbits.document_search.ingestion.strategies import (
     IngestStrategy,
     SequentialIngestStrategy,
 )
-from ragbits.document_search.ingestion.strategies.base import IngestExecutionResult
+from ragbits.document_search.ingestion.strategies.base import IngestExecutionError, IngestExecutionResult
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -210,25 +210,36 @@ class DocumentSearch(WithConstructionConfig):
             return outputs.search_results
 
     @traceable
-    async def ingest(self, documents: str | Iterable[DocumentMeta | Document | Source]) -> IngestExecutionResult:
+    async def ingest(
+        self, documents: str | Iterable[DocumentMeta | Document | Source], fail_on_error: bool = True
+    ) -> IngestExecutionResult:
         """
         Ingest documents into the search index.
 
         Args:
-            documents: Either:
-                - A iterable of `Document`, `DocumentMetadata`, or `Source` objects
-                - A source-specific URI string (e.g., "gcs://bucket/*") to specify source location(s), for example:
-                    - "file:///path/to/files/*.txt"
-                    - "gcs://bucket/folder/*"
-                    - "huggingface://dataset/split/row"
+            documents: A string representing a source-specific URI (e.g., "gcs://bucket/*") or an iterable of
+                       `Document`, `DocumentMeta`, or `Source` objects. Examples of URI formats include:
+                       - "file:///path/to/files/*.txt"
+                       - "gcs://bucket/folder/*"
+                       - "huggingface://dataset/split/row"
+            fail_on_error: If True, raises IngestExecutionError when any errors are encountered during ingestion.
+                           If False, returns all errors encountered in the IngestExecutionResult.
 
         Returns:
-            The ingest execution result.
+            An IngestExecutionResult containing the results of the ingestion process.
+
+        Raises:
+            IngestExecutionError: If fail_on_error is True and any errors are encountered during ingestion.
         """
         resolved_documents = await SourceResolver.resolve(documents) if isinstance(documents, str) else documents
-        return await self.ingest_strategy(
+        results = await self.ingest_strategy(
             documents=resolved_documents,
             vector_store=self.vector_store,
             parser_router=self.parser_router,
             enricher_router=self.enricher_router,
         )
+
+        if fail_on_error and results.failed:
+            raise IngestExecutionError(results.failed)
+
+        return results
