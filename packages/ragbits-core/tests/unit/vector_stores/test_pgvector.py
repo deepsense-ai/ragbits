@@ -84,7 +84,7 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
 
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
-    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} ORDER BY distance LIMIT $2;"""  # noqa S608
+    expected_query = f"""SELECT *, vector <=> $1 as distance, 1 - (vector <=> $1) as score FROM {TEST_TABLE_NAME} ORDER BY distance LIMIT $2;"""  # noqa S608
     expected_values = ["[0.1, 0.2, 0.3]", 5]
     assert result == expected_query
     assert values == expected_values
@@ -92,9 +92,9 @@ def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
 
 def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(
-        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
+        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(score_threshold=0.1, k=10)
     )
-    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance < $2 ORDER BY distance LIMIT $3;"""  # noqa S608
+    expected_query = f"""SELECT *, vector <=> $1 as distance, 1 - (vector <=> $1) as score FROM {TEST_TABLE_NAME} WHERE score >= $2 ORDER BY distance LIMIT $3;"""  # noqa S608
     expected_values = ["[0.1, 0.2, 0.3]", 0.1, 10]
     assert result == expected_query
     assert values == expected_values
@@ -103,10 +103,10 @@ def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) 
 def test_create_retrieve_query_with_options_for_ip_distance(mock_pgvector_store: PgVectorStore) -> None:
     mock_pgvector_store._distance_method = "ip"
     result, values = mock_pgvector_store._create_retrieve_query(
-        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
+        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(score_threshold=0.1, k=10)
     )
-    expected_query = f"""SELECT *, vector <#> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance BETWEEN $2 AND $3 ORDER BY distance LIMIT $4;"""  # noqa S608
-    expected_values = ["[0.1, 0.2, 0.3]", -0.1, 0.1, 10]
+    expected_query = f"""SELECT *, vector <#> $1 as distance, (vector <#> $1) * -1 as score FROM {TEST_TABLE_NAME} WHERE score >= $2 ORDER BY distance LIMIT $3;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", 0.1, 10]
     assert result == expected_query
     assert values == expected_values
 

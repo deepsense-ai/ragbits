@@ -130,4 +130,4 @@ async def test_hybrid_retrieve(entries: list[VectorStoreEntry]):
         entries[0],
     ]
     assert [r.entry for r in results] == entries_order
-    assert results[0].score == pytest.approx(4.52, rel=1e-2)
+    assert results[0].score == pytest.approx(-4.52, rel=1e-2)

@@ -36,16 +36,7 @@ class OrderedHybridRetrivalStrategy(HybridRetrivalStrategy):
     A class that orders the results by score and deduplicates them by choosing the first occurrence of each entry.
     """
 
-    def __init__(self, reverse: bool = False) -> None:
-        """
-        Constructs a new OrderedHybridRetrivalStrategy instance.
-
-        Args:
-            reverse: if True orders the results in descending order by score, otherwise in ascending order.
-        """
-        self._reverse = reverse
-
-    def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:
+    def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:  # noqa: PLR6301
         """
         Joins the multiple lists of results into a single list.
 
@@ -56,7 +47,7 @@ class OrderedHybridRetrivalStrategy(HybridRetrivalStrategy):
             The joined list of results.
         """
         all_results = [result for sublist in results for result in sublist]
-        all_results.sort(key=lambda result: result.score, reverse=self._reverse)
+        all_results.sort(key=lambda result: result.score, reverse=True)
 
         return list({result.entry.id: result for result in all_results}.values())
 
