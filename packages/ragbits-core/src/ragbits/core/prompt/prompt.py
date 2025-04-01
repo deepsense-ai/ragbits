@@ -268,7 +268,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         if isinstance(message, BaseModel):
             message = message.model_dump_json()
-        self._conversation_history.append({"role": "assistant", "content": message})
+        self._conversation_history.append({"role": "assistant", "content": str(message)})
         return self
 
     def list_images(self) -> list[str]:
