@@ -3,7 +3,8 @@ import pytest
 from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.document import DocumentMeta, DocumentType
+from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import IngestExecutionError
@@ -14,7 +15,8 @@ class FailingParser(DocumentParser):
 
     supported_document_types = {DocumentType.TXT}
 
-    async def parse(self, document):
+    @classmethod
+    async def parse(cls, document: Document) -> list[Element]:
         raise ValueError("This parser always fails")
 
 
@@ -38,7 +40,7 @@ async def test_ingest_fails_on_error():
     assert failed_result.document_uri == document.id
     assert failed_result.num_elements == 0
     assert failed_result.error is not None
-    assert failed_result.error.type == ValueError
+    assert isinstance(failed_result.error.type, type(ValueError))
     assert failed_result.error.message == "This parser always fails"
 
 
@@ -62,5 +64,5 @@ async def test_ingest_returns_errors_when_fail_on_error_false():
     assert failed_result.document_uri == document.id
     assert failed_result.num_elements == 0
     assert failed_result.error is not None
-    assert failed_result.error.type == ValueError
+    assert isinstance(failed_result.error.type, type(ValueError))
     assert failed_result.error.message == "This parser always fails"
