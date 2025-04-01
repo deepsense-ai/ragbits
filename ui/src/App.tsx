@@ -14,6 +14,7 @@ import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { SubmitHandler } from "react-hook-form";
 import { ChatResponseType } from "./types/api.ts";
+import { omit } from "lodash";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -87,10 +88,7 @@ export default function Component() {
               {messages.map((message, idx) => (
                 <ChatMessage
                   key={idx}
-                  classNames={{
-                    base: "bg-default-50",
-                  }}
-                  {...message}
+                  {...omit(message, "name")}
                   onOpenFeedbackForm={
                     isFeedbackFormPluginActivated
                       ? onOpenFeedbackForm
