@@ -121,7 +121,7 @@ async def main() -> None:
     query = "I'm boiling my water and I need a joke"
     vector_store_kwargs = {
         "k": 2,
-        "max_distance": None,
+        "score_threshold": None,
     }
     results = await document_search.search(
         query,
