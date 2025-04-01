@@ -90,7 +90,7 @@ def test_from_config_with_router():
 
     embedder: Embedder = Embedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
-    assert embedder.base_url is None
+    assert embedder.api_base is None
     assert embedder.model_name == "text-embedding-3-small"
     assert embedder.api_key == "test_api_key"
     assert isinstance(embedder.router, litellm.router.Router)

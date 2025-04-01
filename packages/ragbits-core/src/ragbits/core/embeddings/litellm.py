@@ -39,7 +39,8 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         model_name: str = "text-embedding-3-small",
         default_options: LiteLLMEmbedderOptions | None = None,
         *,
-        base_url: str | None = None,
+        api_base: str | None = None,
+        base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         api_version: str | None = None,
         router: litellm.Router | None = None,
@@ -51,7 +52,8 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
             model_name: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
             default_options: Default options to pass to the LiteLLM API.
-            base_url: The API endpoint you want to call the model with.
+            api_base: The API endpoint you want to call the model with.
+            base_url: Alias for api_base. If both are provided, api_base takes precedence.
             api_key: API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
@@ -61,7 +63,7 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         super().__init__(default_options=default_options)
 
         self.model_name = model_name
-        self.base_url = base_url
+        self.api_base = api_base or base_url
         self.api_key = api_key
         self.api_version = api_version
         self.router = router
@@ -88,7 +90,7 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         with trace(
             data=data,
             model=self.model_name,
-            base_url=self.base_url,
+            api_base=self.api_base,
             api_version=self.api_version,
             options=merged_options.dict(),
         ) as outputs:
@@ -97,7 +99,7 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
                 response = await entrypoint.aembedding(
                     input=data,
                     model=self.model_name,
-                    base_url=self.base_url,
+                    api_base=self.api_base,
                     api_key=self.api_key,
                     api_version=self.api_version,
                     **merged_options.dict(),
@@ -134,5 +136,9 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
         if "router" in config:
             router = litellm.router.Router(model_list=config["router"])
             config["router"] = router
+
+        # Map base_url to api_base if present
+        if "base_url" in config and "api_base" not in config:
+            config["api_base"] = config.pop("base_url")
 
         return super().from_config(config)

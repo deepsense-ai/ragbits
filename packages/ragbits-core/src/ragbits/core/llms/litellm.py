@@ -52,7 +52,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         model_name: str = "gpt-3.5-turbo",
         default_options: LiteLLMOptions | None = None,
         *,
-        base_url: str | None = None,
+        api_base: str | None = None,
+        base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         api_version: str | None = None,
         use_structured_output: bool = False,
@@ -65,7 +66,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             model_name: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/providers) to be used.\
                 Default is "gpt-3.5-turbo".
             default_options: Default options to be used.
-            base_url: Base URL of the LLM API.
+            api_base: Base URL of the LLM API.
+            base_url: Alias for api_base. If both are provided, api_base takes precedence.
             api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/providers).
@@ -76,7 +78,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
         """
         super().__init__(model_name, default_options)
-        self.base_url = base_url
+        self.api_base = api_base or base_url
         self.api_key = api_key
         self.api_version = api_version
         self.use_structured_output = use_structured_output
@@ -179,7 +181,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         with trace(
             messages=prompt.chat,
             model=self.model_name,
-            base_url=self.base_url,
+            base_url=self.api_base,
             api_version=self.api_version,
             response_format=response_format,
             options=options.dict(),
@@ -214,7 +216,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             response = await entrypoint.acompletion(
                 messages=conversation,
                 model=self.model_name,
-                base_url=self.base_url,
+                base_url=self.api_base,
                 api_key=self.api_key,
                 api_version=self.api_version,
                 response_format=response_format,
@@ -256,4 +258,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if "router" in config:
             router = litellm.router.Router(model_list=config["router"])
             config["router"] = router
+
+        # Map base_url to api_base if present
+        if "base_url" in config and "api_base" not in config:
+            config["api_base"] = config.pop("base_url")
+
         return super().from_config(config)
