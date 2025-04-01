@@ -63,4 +63,4 @@ async def test_ingest_returns_errors_when_fail_on_error_false():
     assert failed_result.num_elements == 0
     assert failed_result.error is not None
     assert failed_result.error.type == ValueError
-    assert failed_result.error.message == "This parser always fails" 
+    assert failed_result.error.message == "This parser always fails"
