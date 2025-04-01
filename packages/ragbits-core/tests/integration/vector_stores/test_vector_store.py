@@ -161,9 +161,12 @@ async def test_vector_store_retrieve(
     sorted_results = sorted(result_entries, key=lambda r: r.entry.id)
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
 
+    prev_score = float("inf")
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
         assert result.score != 0
+        assert result.score <= prev_score  # Ensure that the results are sorted by score and bigger is better
+        prev_score = result.score
 
         # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
         assert result.entry.text == expected.text or (expected.text is None and result.entry.text == "")
