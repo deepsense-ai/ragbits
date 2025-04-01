@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- DocumentSearch.ingest now raises IngestExecutionError when any errors are encountered during ingestion. 
+- DocumentSearch.ingest now raises IngestExecutionError when any errors are encountered during ingestion.
 
 ## 0.12.0 (2025-03-25)
 
