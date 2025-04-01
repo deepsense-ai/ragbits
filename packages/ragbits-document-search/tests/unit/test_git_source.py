@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -10,6 +11,18 @@ from ragbits.document_search.documents.sources.git import GitSource
 
 # Set the local storage directory for tests
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_test_dirs():
+    """Clean up test directories after each test."""
+    yield
+    # Get the test directory path
+    test_dir = Path(__file__).parent
+    # Remove the git directory if it exists
+    git_dir = test_dir / "git"
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
 
 
 def test_id():
