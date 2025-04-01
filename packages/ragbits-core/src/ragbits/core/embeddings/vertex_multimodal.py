@@ -31,7 +31,8 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
     def __init__(
         self,
         model_name: str = "multimodalembedding",
-        base_url: str | None = None,
+        api_base: str | None = None,
+        base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         concurency: int = 10,
         default_options: LiteLLMEmbedderOptions | None = None,
@@ -41,7 +42,8 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
         Args:
             model_name: One of the VertexAI multimodal models to be used. Default is "multimodalembedding".
-            base_url: The API endpoint you want to call the model with.
+            api_base: The API endpoint you want to call the model with.
+            base_url: Alias for api_base. If both are provided, api_base takes precedence.
             api_key: API key to be used. If not specified, an environment variable will be used.
             concurency: The number of concurrent requests to make to the API.
             default_options: Additional options to pass to the API.
@@ -59,7 +61,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             model_name = model_name[len(self.VERTEX_AI_PREFIX) :]
 
         self.model_name = model_name
-        self.base_url = base_url
+        self.api_base = api_base or base_url
         self.api_key = api_key
         self.concurency = concurency
 
@@ -88,7 +90,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         with trace(
             data=data,
             model=self.model_name,
-            base_url=self.base_url,
+            api_base=self.api_base,
             options=merged_options.dict(),
         ) as outputs:
             semaphore = asyncio.Semaphore(self.concurency)
@@ -125,7 +127,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             response = await litellm.aembedding(
                 input=[instance],
                 model=f"{self.VERTEX_AI_PREFIX}{self.model_name}",
-                base_url=self.base_url,
+                api_base=self.api_base,
                 api_key=self.api_key,
                 **options.dict(),
             )
