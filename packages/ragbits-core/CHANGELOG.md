@@ -4,6 +4,7 @@
 
 - Add router option to LiteLLMEmbedder (#440)
 - New methods in Prompt class for appending conversation history (#480)
+- Fix: make unflatten_dict symmetric to flatten_dict (#461)
 
 ## 0.12.0 (2025-03-25)
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
