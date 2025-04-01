@@ -88,12 +88,12 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             results: list[VectorStoreResult] = []
 
             for entry_id, vector in self._embeddings.items():
-                distance = float(np.linalg.norm(np.array(vector) - np.array(query_vector)))
-                result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=distance)
-                if merged_options.max_distance is None or result.score <= merged_options.max_distance:
+                score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
+                result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)
+                if merged_options.score_threshold is None or result.score >= merged_options.score_threshold:
                     results.append(result)
 
-            outputs.results = sorted(results, key=lambda r: r.score)[: merged_options.k]
+            outputs.results = sorted(results, key=lambda r: r.score, reverse=True)[: merged_options.k]
             return outputs.results
 
     @traceable

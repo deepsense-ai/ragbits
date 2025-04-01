@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 import litellm
@@ -58,6 +58,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_version: str | None = None,
         use_structured_output: bool = False,
         router: litellm.Router | None = None,
+        custom_model_cost_config: dict | None = None,
     ) -> None:
         """
         Constructs a new LiteLLM instance.
@@ -76,6 +77,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 [structured output](https://docs.litellm.ai/docs/completion/json_mode#pass-in-json_schema)
                 from the model. Default is False. Can only be combined with models that support structured output.
             router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
+            custom_model_cost_config: Custom cost and capabilities configuration for the model.
+                Necessary for custom model cost and capabilities tracking in LiteLLM.
+                See the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/token_usage#9-register_model)
+                for more information.
         """
         super().__init__(model_name, default_options)
         self.api_base = api_base or base_url
@@ -83,6 +88,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.api_version = api_version
         self.use_structured_output = use_structured_output
         self.router = router
+        self.custom_model_cost_config = custom_model_cost_config
+        if custom_model_cost_config:
+            litellm.register_model(custom_model_cost_config)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
@@ -264,3 +272,17 @@ class LiteLLM(LLM[LiteLLMOptions]):
             config["api_base"] = config.pop("base_url")
 
         return super().from_config(config)
+
+    def __reduce__(self) -> tuple[Callable, tuple]:
+        config = {
+            "model_name": self.model_name,
+            "default_options": self.default_options.dict(),
+            "base_url": self.base_url,
+            "api_key": self.api_key,
+            "api_version": self.api_version,
+            "use_structured_output": self.use_structured_output,
+            "custom_model_cost_config": self.custom_model_cost_config,
+        }
+        if self.router:
+            config["router"] = self.router.model_list
+        return self.from_config, (config,)

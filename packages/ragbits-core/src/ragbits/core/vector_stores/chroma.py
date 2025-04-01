@@ -19,6 +19,11 @@ from ragbits.core.vector_stores.base import (
     WhereQuery,
 )
 
+# The metrics for which smaller values are considered better.
+# This is used to determine whether to reverse the score.
+# (since Ragbits always follows the "biggest is better" convention)
+_SMALLER_IS_BETTER_METRICS = {"l2"}
+
 
 class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
     """
@@ -136,6 +141,24 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 documents=documents,
             )
 
+    def _calculate_score(self, distance: float) -> float:
+        """
+        Calculates the score based on the distance.
+
+        Args:
+            distance: The distance.
+
+        Returns:
+            The score.
+        """
+        if self._distance_method in _SMALLER_IS_BETTER_METRICS:
+            # We need "bigger is better" convention, so we reverse the distance
+            return -1 * distance
+
+        # Chroma converts "bigger is better" metrics to "smaller is better" by subtracting the distance from 1
+        # So we need to reverse this operation
+        return 1 - distance
+
     async def retrieve(
         self,
         text: str,
@@ -155,6 +178,7 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             MetadataNotFoundError: If the metadata is not found.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+
         with trace(
             text=text,
             options=merged_options.dict(),
@@ -178,20 +202,20 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             )
 
             ids = [id for batch in results.get("ids", []) for id in batch]
-            distances = [distance for batch in results.get("distances") or [] for distance in batch]
+            scores = [self._calculate_score(distance) for batch in results.get("distances") or [] for distance in batch]
             documents = [document for batch in results.get("documents") or [] for document in batch]
             embeddings = [embedding for batch in results.get("embeddings") or [] for embedding in batch]
 
             metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
 
-            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+            # Convert metadata back to nested structure
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
 
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
             outputs.results = [
                 VectorStoreResult(
-                    score=distance,
+                    score=score,
                     vector=vector,
                     entry=VectorStoreEntry(
                         id=id,
@@ -200,10 +224,10 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                         metadata=metadata,
                     ),
                 )
-                for id, metadata, distance, document, image, vector in zip(
-                    ids, unflattened_metadatas, distances, documents, images, embeddings, strict=True
+                for id, metadata, score, document, image, vector in zip(
+                    ids, unflattened_metadatas, scores, documents, images, embeddings, strict=True
                 )
-                if merged_options.max_distance is None or distance <= merged_options.max_distance
+                if merged_options.score_threshold is None or score >= merged_options.score_threshold
             ]
 
             return outputs.results
@@ -253,8 +277,8 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             documents = results.get("documents") or []
             metadatas: Sequence = results.get("metadatas") or []
 
-            # Remove the `# type: ignore` comment when https://github.com/deepsense-ai/ragbits/pull/379/files resolved
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]  # type: ignore[misc]
+            # Convert metadata back to nested structure
+            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
 
             images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
 
