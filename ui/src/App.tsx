@@ -5,7 +5,6 @@ import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
-import axiosWrapper from "./core/utils/axiosWrapper";
 import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
 import {
   FeedbackFormPlugin,
@@ -14,6 +13,7 @@ import {
 import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { SubmitHandler } from "react-hook-form";
+import { ChatResponseType } from "./types/api.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -34,7 +34,7 @@ export default function Component() {
   const handleSubmit = async () => {
     setIsLoading(true);
 
-    const id = createMessage({
+    createMessage({
       name: "You",
       message,
       isRTL: true,
@@ -49,38 +49,30 @@ export default function Component() {
       });
     };
 
-    const [, error] = await axiosWrapper({
-      url: "http://localhost:8000/api/chat",
-      method: "POST",
-      body: { message },
-    });
-
-    if (error) {
-      console.error("Failed to send message:", error);
-      onError();
-      return () => {
-        setIsLoading(false);
-      };
-    }
-
-    createMessage({
-      id: id,
+    const id = createMessage({
       name: "Ragbits",
       message: "",
     });
 
-    const cleanUp = createEventSource<string>(
+    createEventSource(
       `http://localhost:8000/api/chat`,
       (streamData) => {
-        updateMessage(id, streamData);
+        if (!streamData) {
+          return;
+        }
+
+        if (streamData.type === ChatResponseType.TEXT) {
+          updateMessage(id, streamData.content);
+        }
       },
       onError,
+      {
+        method: "POST",
+        body: {
+          message,
+        },
+      },
     );
-
-    return () => {
-      cleanUp();
-      setIsLoading(false);
-    };
   };
 
   return (
@@ -88,9 +80,9 @@ export default function Component() {
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
           <Button color="primary" onPress={clearMessages}>
-          Clear chat
-        </Button>
-        <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+            Clear chat
+          </Button>
+          <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             <ScrollShadow className="flex h-full flex-col gap-6">
               {messages.map((message, idx) => (
                 <ChatMessage
