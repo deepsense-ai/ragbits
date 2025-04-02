@@ -253,7 +253,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         return response_format
 
     @property
-    def base_url(self) -> str:
+    def base_url(self) -> str | None:
         """
         Returns the base URL of the LLM API. Alias for `api_base`.
         """
