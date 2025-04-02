@@ -30,8 +30,9 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
     def __init__(
         self,
-        model: str = "multimodalembedding",
+        model_name: str = "multimodalembedding",
         api_base: str | None = None,
+        base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         concurency: int = 10,
         default_options: LiteLLMEmbedderOptions | None = None,
@@ -40,8 +41,9 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         Constructs the embedding client for multimodal VertexAI models.
 
         Args:
-            model: One of the VertexAI multimodal models to be used. Default is "multimodalembedding".
+            model_name: One of the VertexAI multimodal models to be used. Default is "multimodalembedding".
             api_base: The API endpoint you want to call the model with.
+            base_url: Alias for api_base. If both are provided, api_base takes precedence.
             api_key: API key to be used. If not specified, an environment variable will be used.
             concurency: The number of concurrent requests to make to the API.
             default_options: Additional options to pass to the API.
@@ -54,17 +56,18 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
             raise ImportError("You need to install the 'litellm' extra requirements to use LiteLLM embeddings models")
 
         super().__init__(default_options=default_options)
-        if model.startswith(self.VERTEX_AI_PREFIX):
-            model = model[len(self.VERTEX_AI_PREFIX) :]
 
-        self.model = model
-        self.api_base = api_base
+        if model_name.startswith(self.VERTEX_AI_PREFIX):
+            model_name = model_name[len(self.VERTEX_AI_PREFIX) :]
+
+        self.model_name = model_name
+        self.api_base = api_base or base_url
         self.api_key = api_key
         self.concurency = concurency
 
         supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
-        if model not in supported_models:
-            raise ValueError(f"Model {model} is not supported by VertexAI multimodal embeddings")
+        if model_name not in supported_models:
+            raise ValueError(f"Model {model_name} is not supported by VertexAI multimodal embeddings")
 
     async def _embed(self, data: list[dict], options: LiteLLMEmbedderOptions | None = None) -> list[dict]:
         """
@@ -86,7 +89,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         merged_options = (self.default_options | options) if options else self.default_options
         with trace(
             data=data,
-            model=self.model,
+            model=self.model_name,
             api_base=self.api_base,
             options=merged_options.dict(),
         ) as outputs:
@@ -123,7 +126,7 @@ class VertexAIMultimodelEmbedder(Embedder[LiteLLMEmbedderOptions]):
         async with semaphore:
             response = await litellm.aembedding(
                 input=[instance],
-                model=f"{self.VERTEX_AI_PREFIX}{self.model}",
+                model=f"{self.VERTEX_AI_PREFIX}{self.model_name}",
                 api_base=self.api_base,
                 api_key=self.api_key,
                 **options.dict(),
