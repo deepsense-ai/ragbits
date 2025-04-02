@@ -10,10 +10,4 @@ export const FeedbackFormPlugin: Plugin<FeedbackFormPluginComponents> = {
   components: {
     FeedbackFormComponent: lazy(() => import("./FeedbackFormPluginComponent")),
   },
-  onActivate: () => {
-    console.log("FormPlugin activated");
-  },
-  onDeactivate: () => {
-    console.log("FormPlugin deactivated");
-  },
 };

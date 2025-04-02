@@ -5,7 +5,6 @@ import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
-import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
 import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
@@ -13,14 +12,14 @@ import {
 import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { SubmitHandler } from "react-hook-form";
-import { ChatResponseType } from "./types/api.ts";
-import { omit } from "lodash";
+import { ChatResponseType, MessageRole } from "./types/api.ts";
+import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const { messages, createMessage, updateMessage, clearMessages } =
-    useChatHistory();
+    useHistoryContext();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -36,35 +35,28 @@ export default function Component() {
     setIsLoading(true);
 
     createMessage({
-      name: "You",
-      message,
-      isRTL: true,
+      content: message,
+      role: MessageRole.USER,
+    });
+
+    const assistantResponseId = createMessage({
+      content: "",
+      role: MessageRole.ASSISTANT,
     });
 
     const onError = () => {
       setIsLoading(false);
       // Add error message
-      createMessage({
-        name: "Ragbits",
-        message: "An error occurred. Please try again.",
+      updateMessage(assistantResponseId, {
+        type: ChatResponseType.TEXT,
+        content: "An error occurred. Please try again.",
       });
     };
-
-    const id = createMessage({
-      name: "Ragbits",
-      message: "",
-    });
 
     createEventSource(
       `http://localhost:8000/api/chat`,
       (streamData) => {
-        if (!streamData) {
-          return;
-        }
-
-        if (streamData.type === ChatResponseType.TEXT) {
-          updateMessage(id, streamData.content);
-        }
+        updateMessage(assistantResponseId, streamData);
       },
       onError,
       {
@@ -88,7 +80,7 @@ export default function Component() {
               {messages.map((message, idx) => (
                 <ChatMessage
                   key={idx}
-                  {...omit(message, "name")}
+                  chatMessage={message}
                   onOpenFeedbackForm={
                     isFeedbackFormPluginActivated
                       ? onOpenFeedbackForm

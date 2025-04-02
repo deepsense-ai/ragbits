@@ -8,7 +8,7 @@ import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
-import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContext.tsx";
+import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContextProvider";
 
 // Register plugins
 pluginManager.register(FeedbackFormPlugin);
