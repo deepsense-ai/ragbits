@@ -14,4 +14,3 @@ def configure_local_storage_dir():
     os.environ[LOCAL_STORAGE_DIR_ENV] = random_tmp_dir.as_posix()
     yield
     shutil.rmtree(random_tmp_dir)
-
