@@ -12,22 +12,12 @@ export type TChatMessage = HTMLAttributes<HTMLDivElement> & {
 };
 
 export type ChatMessageProps = TChatMessage & {
-  isFeedbackPluginActivated?: boolean;
   onOpenFeedbackForm?: () => void;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
-    {
-      name,
-      time,
-      message,
-      isRTL,
-      className,
-      classNames,
-      onOpenFeedbackForm,
-      isFeedbackPluginActivated,
-    },
+    { name, time, message, isRTL, className, classNames, onOpenFeedbackForm },
     ref,
   ) => {
     const messageRef = React.useRef<HTMLDivElement>(null);
@@ -58,7 +48,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   {message}
                 </Markdown>
                 <div>
-                  {isFeedbackPluginActivated && (
+                  {!!onOpenFeedbackForm && (
                     <Button color="primary" onPress={onOpenFeedbackForm}>
                       Open Feedback Form
                     </Button>

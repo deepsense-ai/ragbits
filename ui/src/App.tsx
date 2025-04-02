@@ -1,7 +1,7 @@
 import { ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage, { TChatMessage } from "./core/components/ChatMessage";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
@@ -20,6 +20,10 @@ export default function Component() {
   const [message, setMessage] = useState<string>("");
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
+  const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
+    FeedbackFormPluginName,
+  );
 
   const onOpenFeedbackForm = () => {
     onOpen();
@@ -106,10 +110,11 @@ export default function Component() {
                     base: "bg-default-50",
                   }}
                   {...message}
-                  onOpenFeedbackForm={onOpenFeedbackForm}
-                  isFeedbackPluginActivated={pluginManager.isPluginActivated(
-                    FeedbackFormPluginName,
-                  )}
+                  onOpenFeedbackForm={
+                    isFeedbackFormPluginActivated
+                      ? onOpenFeedbackForm
+                      : undefined
+                  }
                 />
               ))}
             </ScrollShadow>
