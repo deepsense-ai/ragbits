@@ -8,6 +8,7 @@ interface PluginWrapperProps<T extends Plugin> {
   component: keyof T["components"];
   skeletonSize?: { width: string; height: string };
   disableSkeleton?: boolean;
+  pluginProps?: Record<string, unknown>;
 }
 
 const PluginWrapper = <T extends Plugin>({
@@ -15,6 +16,7 @@ const PluginWrapper = <T extends Plugin>({
   component,
   skeletonSize,
   disableSkeleton,
+  pluginProps,
 }: PluginWrapperProps<T>) => {
   const managedPlugin = usePluginManager(plugin.name);
   const skeletonStyle = skeletonSize
@@ -35,7 +37,7 @@ const PluginWrapper = <T extends Plugin>({
           )
         }
       >
-        {Component ? <Component /> : null}
+        {Component ? <Component {...pluginProps} /> : null}
       </Suspense>
     );
   } catch (error) {

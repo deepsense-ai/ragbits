@@ -3,11 +3,11 @@ import ReactDOM from "react-dom/client";
 import { HeroUIProvider } from "@heroui/react";
 import App from "./App";
 import "./globals.css";
-import { ExamplePlugin } from "./plugins/ExamplePlugin";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
+import { FeedbackFormPlugin } from "./plugins/FeedbackFormPlugin";
 
 // Register plugins
-pluginManager.register(ExamplePlugin);
+pluginManager.register(FeedbackFormPlugin);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
