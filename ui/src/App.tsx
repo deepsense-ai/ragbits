@@ -1,28 +1,33 @@
-import { ScrollShadow } from "@heroui/react";
+import { ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
-import ChatMessage, { ChatMessageProps } from "./core/components/ChatMessage";
-import { useEffect, useState } from "react";
-import { ExamplePluginName } from "./plugins/ExamplePlugin";
+import ChatMessage, { TChatMessage } from "./core/components/ChatMessage";
+import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
 import axiosWrapper from "./core/utils/axiosWrapper";
+import {
+  FeedbackFormPlugin,
+  FeedbackFormPluginName,
+} from "./plugins/FeedbackFormPlugin";
+import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
+import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
+import { SubmitHandler } from "react-hook-form";
 
 export default function Component() {
-  const [messages, setMessages] = useState<Array<ChatMessageProps>>([]);
+  const [messages, setMessages] = useState<Array<TChatMessage>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
 
-  useEffect(() => {
-    // Delay loading of plugin to demonstrate lazy loading
-    const timeout = setTimeout(() => {
-      pluginManager.activate(ExamplePluginName);
-    }, 5000);
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, []);
+  const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
+    FeedbackFormPluginName,
+  );
+
+  const onOpenFeedbackForm = () => {
+    onOpen();
+  };
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -93,30 +98,50 @@ export default function Component() {
   };
 
   return (
-    <div className="h-full w-full max-w-full">
-      <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-        <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
-          <ScrollShadow className="flex h-full flex-col gap-6">
-            {messages.map((message, idx) => (
-              <ChatMessage
-                key={idx}
-                classNames={{
-                  base: "bg-default-50",
-                }}
-                {...message}
+    <>
+      <div className="h-full w-full max-w-full">
+        <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
+          <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+            <ScrollShadow className="flex h-full flex-col gap-6">
+              {messages.map((message, idx) => (
+                <ChatMessage
+                  key={idx}
+                  classNames={{
+                    base: "bg-default-50",
+                  }}
+                  {...message}
+                  onOpenFeedbackForm={
+                    isFeedbackFormPluginActivated
+                      ? onOpenFeedbackForm
+                      : undefined
+                  }
+                />
+              ))}
+            </ScrollShadow>
+            <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
+              <PromptInput
+                isLoading={isLoading}
+                submit={handleSubmit}
+                message={message}
+                setMessage={setMessage}
               />
-            ))}
-          </ScrollShadow>
-          <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
-            <PromptInput
-              isLoading={isLoading}
-              submit={handleSubmit}
-              message={message}
-              setMessage={setMessage}
-            />
+            </div>
           </div>
-        </div>
-      </Layout>
-    </div>
+        </Layout>
+      </div>
+      <PluginWrapper
+        plugin={FeedbackFormPlugin}
+        component="FeedbackFormComponent"
+        pluginProps={{
+          title: "Feedback Form",
+          schema: mockSchema,
+          isOpen,
+          onClose: onOpenChange,
+          onSubmit: (data: SubmitHandler<Record<string, string>>) => {
+            console.log("Feedback form submitted:", data);
+          },
+        }}
+      />
+    </>
   );
 }

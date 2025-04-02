@@ -23,6 +23,7 @@ class PluginManager {
 
   activate(name: string) {
     const plugin = this.plugins[name];
+
     if (!plugin || plugin.isActivated) {
       return;
     }
@@ -45,6 +46,11 @@ class PluginManager {
       plugin.config.onDeactivate();
     }
     this.notify();
+  }
+
+  isPluginActivated(name: string): boolean {
+    const plugin = this.plugins[name];
+    return !!plugin && plugin.isActivated;
   }
 
   getPlugin(name: string): Plugin | null {

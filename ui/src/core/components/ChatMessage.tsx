@@ -1,9 +1,9 @@
 import React, { forwardRef, HTMLAttributes } from "react";
-import { cn } from "@heroui/react";
+import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export type ChatMessageProps = HTMLAttributes<HTMLDivElement> & {
+export type TChatMessage = HTMLAttributes<HTMLDivElement> & {
   name: string;
   message: string;
   time?: string;
@@ -11,8 +11,15 @@ export type ChatMessageProps = HTMLAttributes<HTMLDivElement> & {
   classNames?: Record<"base", string>;
 };
 
+export type ChatMessageProps = TChatMessage & {
+  onOpenFeedbackForm?: () => void;
+};
+
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  ({ name, time, message, isRTL, className, classNames, ...props }, ref) => {
+  (
+    { name, time, message, isRTL, className, classNames, onOpenFeedbackForm },
+    ref,
+  ) => {
     const messageRef = React.useRef<HTMLDivElement>(null);
 
     const Message = () => (
@@ -33,12 +40,21 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             {isRTL ? (
               <div className="whitespace-pre-line">{message}</div>
             ) : (
-              <Markdown
-                className="prose max-w-full"
-                remarkPlugins={[remarkGfm]}
-              >
-                {message}
-              </Markdown>
+              <>
+                <Markdown
+                  className="prose max-w-full"
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {message}
+                </Markdown>
+                <div>
+                  {!!onOpenFeedbackForm && (
+                    <Button color="primary" onPress={onOpenFeedbackForm}>
+                      Open Feedback Form
+                    </Button>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -47,7 +63,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     return (
       <div
-        {...props}
         ref={ref}
         className={cn("flex gap-3", { "flex-row-reverse": isRTL }, className)}
       >
