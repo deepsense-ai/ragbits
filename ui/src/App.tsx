@@ -86,7 +86,7 @@ export default function Component() {
         </Button>
         <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
           <ScrollShadow className="flex h-full flex-col gap-6">
-            {Array.from(messages.values()).map((message, idx) => (
+            {messages.map((message, idx) => (
               <ChatMessage
                 key={idx}
                 classNames={{

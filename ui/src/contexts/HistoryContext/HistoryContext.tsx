@@ -43,7 +43,12 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <ChatHistoryContext.Provider
-      value={{ messages, createMessage, updateMessage, clearMessages }}
+      value={{
+        messages: Array.from(messages.values()),
+        createMessage,
+        updateMessage,
+        clearMessages,
+      }}
     >
       {children}
     </ChatHistoryContext.Provider>
