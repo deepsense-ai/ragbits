@@ -24,8 +24,6 @@ class PluginManager {
   activate(name: string) {
     const plugin = this.plugins[name];
 
-    console.log(plugin);
-
     if (!plugin || plugin.isActivated) {
       return;
     }
