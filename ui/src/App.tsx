@@ -1,4 +1,4 @@
-import { ScrollShadow } from "@heroui/react";
+import { Button, ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage, { ChatMessageProps } from "./core/components/ChatMessage";
 import { useEffect, useState } from "react";
@@ -7,11 +7,13 @@ import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
 import axiosWrapper from "./core/utils/axiosWrapper";
+import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
 
 export default function Component() {
   const [messages, setMessages] = useState<Array<ChatMessageProps>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const { clearMessages } = useChatHistory();
 
   useEffect(() => {
     // Delay loading of plugin to demonstrate lazy loading
@@ -95,6 +97,9 @@ export default function Component() {
   return (
     <div className="h-full w-full max-w-full">
       <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
+        <Button color="primary" onPress={clearMessages}>
+          Clear chat
+        </Button>
         <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
           <ScrollShadow className="flex h-full flex-col gap-6">
             {messages.map((message, idx) => (

@@ -5,6 +5,7 @@ import App from "./App";
 import "./globals.css";
 import { ExamplePlugin } from "./plugins/ExamplePlugin";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
+import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContext.tsx";
 
 // Register plugins
 pluginManager.register(ExamplePlugin);
@@ -12,9 +13,11 @@ pluginManager.register(ExamplePlugin);
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HeroUIProvider>
-      <div className="flex h-screen w-screen items-start justify-center">
-        <App />
-      </div>
+      <ChatHistoryProvider>
+        <div className="flex h-screen w-screen items-start justify-center">
+          <App />
+        </div>
+      </ChatHistoryProvider>
     </HeroUIProvider>
   </React.StrictMode>,
 );
