@@ -28,13 +28,19 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const updateMessage = (id: string, message: string): void => {
-    const updatedMap = new Map<string, ChatMessageProps>(messages);
-
-    if (updatedMap.has(id)) {
-      updatedMap.set(id, { ...updatedMap.get(id)!, message });
-    }
-
-    setMessages(updatedMap);
+    setMessages((state) => {
+      const updatedMessages = new Map(state);
+      if (updatedMessages.has(id)) {
+        // TODO: We should handle updates for different message types
+        // TODO: Throw error if message is not found, this should not happen and should be handled explicitly
+        const existingMessage = updatedMessages.get(id)!;
+        updatedMessages.set(id, {
+          ...existingMessage,
+          message: `${existingMessage.message}${message}`,
+        });
+      }
+      return updatedMessages;
+    });
   };
 
   const clearMessages = (): void => {
