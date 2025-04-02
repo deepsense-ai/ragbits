@@ -1,5 +1,3 @@
-import os
-from pathlib import Path
 from types import TracebackType
 from typing import Any, TypeVar
 from unittest.mock import MagicMock, patch
@@ -7,10 +5,6 @@ from unittest.mock import MagicMock, patch
 from aiohttp import ClientSession
 
 from ragbits.document_search.documents.sources import GCSSource, HuggingFaceSource
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
-
 
 try:
     from gcloud.aio.storage import Storage as StorageClient

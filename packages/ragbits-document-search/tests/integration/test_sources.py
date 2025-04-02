@@ -1,15 +1,9 @@
-import os
-from pathlib import Path
-
 import pytest
 
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
 from ragbits.document_search.documents.sources import HuggingFaceSource
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
 
 from ..helpers import env_vars_not_set
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 HF_TOKEN_ENV = "HF_TOKEN"  # noqa: S105
 HF_DATASET_PATH = "micpst/hf-docs"
