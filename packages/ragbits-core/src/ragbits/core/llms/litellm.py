@@ -252,6 +252,13 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 response_format = {"type": "json_object"}
         return response_format
 
+    @property
+    def base_url(self) -> str:
+        """
+        Returns the base URL of the LLM API. Alias for `api_base`.
+        """
+        return self.api_base
+
     @classmethod
     def from_config(cls, config: dict[str, Any]) -> Self:
         """
@@ -277,7 +284,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         config = {
             "model_name": self.model_name,
             "default_options": self.default_options.dict(),
-            "base_url": self.base_url,
+            "api_base": self.api_base,
             "api_key": self.api_key,
             "api_version": self.api_version,
             "use_structured_output": self.use_structured_output,
