@@ -11,7 +11,7 @@ import PromptInputAssets from "./PromptInputAssets";
 
 interface PromptInputProps {
   isLoading: boolean;
-  submit: () => Promise<() => void>;
+  submit: () => Promise<void>;
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
