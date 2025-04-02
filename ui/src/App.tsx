@@ -1,4 +1,4 @@
-import { Button, ScrollShadow, useDisclosure } from "@heroui/react";
+import { ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState } from "react";
@@ -17,8 +17,7 @@ import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.t
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
-  const { messages, createMessage, updateMessage, clearMessages } =
-    useHistoryContext();
+  const { messages, createMessage, updateMessage } = useHistoryContext();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -71,9 +70,6 @@ export default function Component() {
     <>
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-          <Button color="primary" onPress={clearMessages}>
-            Clear chat
-          </Button>
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             <ScrollShadow className="flex h-full flex-col gap-6">
               {messages.map((message, idx) => (
