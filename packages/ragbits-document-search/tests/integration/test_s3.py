@@ -1,15 +1,10 @@
-import os
 from collections.abc import Generator
-from pathlib import Path
 
 import boto3
 import pytest
 from moto import mock_s3
 
 from ragbits.document_search.documents.sources import S3Source
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 TEST_BUCKET = "test-bucket"
 TEST_KEY = "test-file.txt"
