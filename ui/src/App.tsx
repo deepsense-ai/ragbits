@@ -21,17 +21,6 @@ export default function Component() {
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
-  useEffect(() => {
-    // Delay loading of plugin to demonstrate lazy loading
-    const timeout = setTimeout(() => {
-      pluginManager.activate(FeedbackFormPluginName);
-    }, 5000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, []);
-
   const onOpenFeedbackForm = () => {
     onOpen();
   };

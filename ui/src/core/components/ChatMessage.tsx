@@ -27,7 +27,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       classNames,
       onOpenFeedbackForm,
       isFeedbackPluginActivated,
-      ...props
     },
     ref,
   ) => {
@@ -74,7 +73,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     return (
       <div
-        {...props}
         ref={ref}
         className={cn("flex gap-3", { "flex-row-reverse": isRTL }, className)}
       >

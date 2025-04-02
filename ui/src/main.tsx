@@ -4,10 +4,16 @@ import { HeroUIProvider } from "@heroui/react";
 import App from "./App";
 import "./globals.css";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
-import { FeedbackFormPlugin } from "./plugins/FeedbackFormPlugin";
+import {
+  FeedbackFormPlugin,
+  FeedbackFormPluginName,
+} from "./plugins/FeedbackFormPlugin";
 
 // Register plugins
 pluginManager.register(FeedbackFormPlugin);
+
+// Activate plugins
+pluginManager.activate(FeedbackFormPluginName);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

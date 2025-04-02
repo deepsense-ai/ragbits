@@ -43,6 +43,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     onClose();
   };
 
+  // TODO: switch to separate file or some kind of form builder with methods eg. renderSelect/Checkbox/TextField etc.
   const renderField = (field: FormSchema["fields"][0]) => {
     const error = errors[field.name]?.message as string;
 
