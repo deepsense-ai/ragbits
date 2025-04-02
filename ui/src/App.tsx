@@ -1,11 +1,12 @@
-import { ScrollShadow, useDisclosure } from "@heroui/react";
+import { Button, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
-import ChatMessage, { TChatMessage } from "./core/components/ChatMessage";
+import ChatMessage from "./core/components/ChatMessage";
 import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
 import axiosWrapper from "./core/utils/axiosWrapper";
+import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
 import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
@@ -15,9 +16,10 @@ import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { SubmitHandler } from "react-hook-form";
 
 export default function Component() {
-  const [messages, setMessages] = useState<Array<TChatMessage>>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const { messages, createMessage, updateMessage, clearMessages } =
+    useChatHistory();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -32,28 +34,22 @@ export default function Component() {
   const handleSubmit = async () => {
     setIsLoading(true);
 
-    setMessages((state) => [
-      ...state,
-      {
-        name: "You",
-        message,
-        isRTL: true,
-      },
-    ]);
+    const id = createMessage({
+      name: "You",
+      message,
+      isRTL: true,
+    });
 
     const onError = () => {
       setIsLoading(false);
       // Add error message
-      setMessages((state) => [
-        ...state,
-        {
-          name: "Ragbits",
-          message: "An error occurred. Please try again.",
-        },
-      ]);
+      createMessage({
+        name: "Ragbits",
+        message: "An error occurred. Please try again.",
+      });
     };
 
-    const [data, error] = await axiosWrapper<{ id: string }>({
+    const [, error] = await axiosWrapper({
       url: "http://localhost:8000/api/chat",
       method: "POST",
       body: { message },
@@ -67,26 +63,16 @@ export default function Component() {
       };
     }
 
+    createMessage({
+      id: id,
+      name: "Ragbits",
+      message: "",
+    });
+
     const cleanUp = createEventSource<string>(
-      `http://localhost:8000/api/chat/${data.id}`,
-      (data) => {
-        setMessages((state) => {
-          if (state[state.length - 1].name === "You") {
-            return [
-              ...state,
-              {
-                name: "Ragbits",
-                message: data,
-              },
-            ];
-          } else {
-            return state.map((item, index) =>
-              index === state.length - 1
-                ? { ...item, message: item.message + data }
-                : item,
-            );
-          }
-        });
+      `http://localhost:8000/api/chat`,
+      (streamData) => {
+        updateMessage(id, streamData);
       },
       onError,
     );
@@ -101,7 +87,10 @@ export default function Component() {
     <>
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-          <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+          <Button color="primary" onPress={clearMessages}>
+          Clear chat
+        </Button>
+        <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             <ScrollShadow className="flex h-full flex-col gap-6">
               {messages.map((message, idx) => (
                 <ChatMessage

@@ -22,6 +22,7 @@
     "react-hook-form": "^7.55.0",
     "react-markdown": "^9.0.3",
     "remark-gfm": "^4.0.0",
+    "uuid": "^11.1.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

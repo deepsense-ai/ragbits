@@ -8,6 +8,7 @@ import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
+import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContext.tsx";
 
 // Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -18,9 +19,11 @@ pluginManager.activate(FeedbackFormPluginName);
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HeroUIProvider>
-      <div className="flex h-screen w-screen items-start justify-center">
-        <App />
-      </div>
+      <ChatHistoryProvider>
+        <div className="flex h-screen w-screen items-start justify-center">
+          <App />
+        </div>
+      </ChatHistoryProvider>
     </HeroUIProvider>
   </React.StrictMode>,
 );
