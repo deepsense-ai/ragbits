@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.13.0 (2025-04-02)
+
+### Changed
+
+- ragbits-core updated to version v0.13.0
+
+- DocumentSearch.ingest now raises IngestExecutionError when any errors are encountered during ingestion.
+
 ## 0.12.0 (2025-03-25)
 
 ### Changed
