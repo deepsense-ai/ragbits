@@ -4,6 +4,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export type ChatMessageProps = HTMLAttributes<HTMLDivElement> & {
+  id: string;
   name: string;
   message: string;
   time?: string;

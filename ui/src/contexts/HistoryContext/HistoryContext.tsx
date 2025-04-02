@@ -11,17 +11,31 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [messages, setMessages] = useState<ChatMessageProps[]>([]);
 
-  const addMessage = (message: ChatMessageProps) => {
-    setMessages((prevMessages) => [...prevMessages, message]);
-  };
+  const createMessage = (message: ChatMessageProps): void =>
+    setMessages((state) => [...state, message]);
 
-  const clearMessages = () => {
+  const updateMessage = (id: string, data: string): void =>
+    setMessages((state) => {
+      const updatedMessages = [...state];
+
+      const index = updatedMessages.findIndex((msg) => msg.id === id);
+      if (index !== -1) {
+        updatedMessages[index] = {
+          ...updatedMessages[index],
+          message: updatedMessages[index].message + data,
+        };
+      }
+
+      return updatedMessages;
+    });
+
+  const clearMessages = (): void => {
     setMessages([]);
   };
 
   return (
     <ChatHistoryContext.Provider
-      value={{ messages, addMessage, clearMessages }}
+      value={{ messages, createMessage, updateMessage, clearMessages }}
     >
       {children}
     </ChatHistoryContext.Provider>
