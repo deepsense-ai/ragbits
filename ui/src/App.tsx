@@ -8,7 +8,6 @@ import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
 import axiosWrapper from "./core/utils/axiosWrapper";
 import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
-import { v4 as uuidv4 } from "uuid";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -30,8 +29,7 @@ export default function Component() {
   const handleSubmit = async () => {
     setIsLoading(true);
 
-    createMessage({
-      id: uuidv4(),
+    const id = createMessage({
       name: "You",
       message,
       isRTL: true,
@@ -41,13 +39,12 @@ export default function Component() {
       setIsLoading(false);
       // Add error message
       createMessage({
-        id: uuidv4(),
         name: "Ragbits",
         message: "An error occurred. Please try again.",
       });
     };
 
-    const [data, error] = await axiosWrapper<{ id: string }>({
+    const [, error] = await axiosWrapper({
       url: "http://localhost:8000/api/chat",
       method: "POST",
       body: { message },
@@ -62,15 +59,15 @@ export default function Component() {
     }
 
     createMessage({
-      id: data.id,
+      id: id,
       name: "Ragbits",
       message: "",
     });
 
     const cleanUp = createEventSource<string>(
-      `http://localhost:8000/api/chat/${data.id}`,
+      `http://localhost:8000/api/chat`,
       (streamData) => {
-        updateMessage(data.id, streamData);
+        updateMessage(id, streamData);
       },
       onError,
     );
@@ -89,7 +86,7 @@ export default function Component() {
         </Button>
         <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
           <ScrollShadow className="flex h-full flex-col gap-6">
-            {messages.map((message, idx) => (
+            {Array.from(messages.values()).map((message, idx) => (
               <ChatMessage
                 key={idx}
                 classNames={{

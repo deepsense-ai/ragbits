@@ -1,6 +1,7 @@
 import { IChatHistoryContext } from "./types.ts";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { ChatMessageProps } from "../../core/components/ChatMessage.tsx";
+import { v4 as uuidv4 } from "uuid";
 
 const ChatHistoryContext = createContext<IChatHistoryContext | undefined>(
   undefined,
@@ -9,28 +10,35 @@ const ChatHistoryContext = createContext<IChatHistoryContext | undefined>(
 export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [messages, setMessages] = useState<ChatMessageProps[]>([]);
+  const [messages, setMessages] = useState(
+    new Map<string, ChatMessageProps>([]),
+  );
 
-  const createMessage = (message: ChatMessageProps): void =>
-    setMessages((state) => [...state, message]);
+  const createMessage = (message: ChatMessageProps): string => {
+    const id = uuidv4();
 
-  const updateMessage = (id: string, data: string): void =>
     setMessages((state) => {
-      const updatedMessages = [...state];
-
-      const index = updatedMessages.findIndex((msg) => msg.id === id);
-      if (index !== -1) {
-        updatedMessages[index] = {
-          ...updatedMessages[index],
-          message: updatedMessages[index].message + data,
-        };
-      }
+      const updatedMessages = new Map(state);
+      updatedMessages.set(id, { ...message });
 
       return updatedMessages;
     });
 
+    return id;
+  };
+
+  const updateMessage = (id: string, message: string): void => {
+    const updatedMap = new Map<string, ChatMessageProps>(messages);
+
+    if (updatedMap.has(id)) {
+      updatedMap.set(id, { ...updatedMap.get(id)!, message });
+    }
+
+    setMessages(updatedMap);
+  };
+
   const clearMessages = (): void => {
-    setMessages([]);
+    setMessages(new Map([]));
   };
 
   return (
