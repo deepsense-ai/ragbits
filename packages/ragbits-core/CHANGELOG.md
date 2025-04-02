@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+
+## 0.13.0 (2025-04-02)
 - Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)
 - Make LLM / Embedder APIs consistent (#463)
