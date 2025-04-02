@@ -101,7 +101,7 @@ def remove(
 def query(
     text: Annotated[str, typer.Argument(help="Text to query the vector store with")],
     k: Annotated[int, typer.Option(help="Number of entries to retrieve")] = 5,
-    max_distance: Annotated[float | None, typer.Option(help="Maximum distance to the query vector")] = None,
+    score_threshold: Annotated[float | None, typer.Option(help="Minimum score for result to be returned")] = None,
     columns: Annotated[
         str,
         typer.Option(
@@ -117,7 +117,7 @@ def query(
     async def run() -> None:
         if state.vector_store is None:
             raise ValueError("Vector store not initialized")
-        options = VectorStoreOptions(k=k, max_distance=max_distance)
+        options = VectorStoreOptions(k=k, score_threshold=score_threshold)
 
         entries = await state.vector_store.retrieve(
             text=text,
