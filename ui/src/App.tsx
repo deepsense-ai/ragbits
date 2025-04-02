@@ -11,7 +11,6 @@ import {
 } from "./plugins/FeedbackFormPlugin";
 import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { SubmitHandler } from "react-hook-form";
 import { ChatResponseType, MessageRole } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 
@@ -103,12 +102,12 @@ export default function Component() {
       <PluginWrapper
         plugin={FeedbackFormPlugin}
         component="FeedbackFormComponent"
-        pluginProps={{
+        componentProps={{
           title: "Feedback Form",
           schema: mockSchema,
-          isOpen,
           onClose: onOpenChange,
-          onSubmit: (data: SubmitHandler<Record<string, string>>) => {
+          isOpen,
+          onSubmit: (data: Record<string, string>) => {
             console.log("Feedback form submitted:", data);
           },
         }}
