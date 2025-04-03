@@ -133,9 +133,9 @@ class DistributionBasedScoreFusion(HybridRetrivalStrategy):
 
         Args:
             sum_scores: if True sums the scores of the same entries, otherwise keeps the best score.
-            (i.e., the biggest one). Summing scores boosts the results that are present in results
-            from multiple vector stores. The original DBSF article remains neutral on this matter,
-            so the default value is False. Many implementations (like Qdrant) use summing.
+                (i.e., the biggest one). Summing scores boosts the results that are present in results
+                from multiple vector stores. The original DBSF article remains neutral on this matter,
+                so the default value is False. Many implementations (like Qdrant) use summing.
         """
         self._sum_scores = sum_scores
 
