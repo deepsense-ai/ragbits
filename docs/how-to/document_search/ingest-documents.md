@@ -2,9 +2,9 @@
 
 The Ragbits document ingest pipeline consists of four main steps: loading, parsing, enrichment, and indexing. All of these steps can be orchestrated using different strategies, depending on the expected load.
 
-## Loading sources
+## Loading dataset
 
-Before a document can be processed, it must be defined and downloaded. In Ragbits, there are a few ways to do this: you can specify the source URI, the source instance, the document metadata or the document itself.
+Before processing a document in Ragbits, it must first be defined and downloaded. This can be done in several ways: by specifying a source URI or using an instance of [`Source`][ragbits.core.sources.base.Source], [`DocumentMeta`][ragbits.document_search.documents.document.DocumentMeta] or [`Document`][ragbits.document_search.documents.document.Document].
 
 === "URI"
 
@@ -49,65 +49,7 @@ Before a document can be processed, it must be defined and downloaded. In Ragbit
     await document_search.ingest([Document(...), ...])
     ```
 
-### Supported sources
-
-This is the list of currently supported sources by Ragbits.
-
-| Source | URI Schema | Class |
-|-|-|-|
-| Azure Blob Storage | `azure://https://account_name.blob.core.windows.net/<container-name>|<blob-name>` | [`AzureBlobStorageSource`][ragbits.core.sources.AzureBlobStorageSource] |
-| Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.core.sources.GCSSource] |
-| Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.core.sources.GitSource] |
-| Hugging Face | `huggingface://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.core.sources.HuggingFaceSource] |
-| Local file | `file://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.core.sources.LocalFileSource] |
-| Amazon S3 | `s3://<bucket-name>/<prefix>` | [`S3Source`][ragbits.core.sources.S3Source] |
-| Web | `web://<https-url>` | [`WebSource`][ragbits.core.sources.WebSource] |
-
-To define a new sources, extend the [`Source`][ragbits.core.sources.Source] class.
-
-```python
-from ragbits.core.sources import Source
-
-
-class CustomSource(Source):
-    """
-    Source that downloads file from the web.
-    """
-
-    protocol: ClassVar[str] = "custom"
-    source_url: str
-    ...
-
-    @property
-    def id(self) -> str:
-        """
-        Source unique identifier.
-        """
-        return f"{self.protocol}:{self.source_url}"
-
-    @classmethod
-    async def from_uri(cls, uri: str) -> list[Self]:
-        """
-        Create source instances from a URI path.
-
-        Args:
-            uri: The URI path.
-
-        Returns:
-            The list of sources.
-        """
-        return [cls(...), ...]
-
-    async def fetch(self) -> Path:
-        """
-        Download a file for the given url.
-
-        Returns:
-            The local path to the downloaded file.
-        """
-        ...
-        return Path(f"/tmp/{self.source_url}")
-```
+All sources supported by Ragbits are available [here](../sources/load-dataset.md#supported-sources).
 
 ## Parsing documents
 
