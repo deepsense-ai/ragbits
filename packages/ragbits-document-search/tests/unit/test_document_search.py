@@ -136,15 +136,15 @@ async def test_document_search_with_search_config():
 
 async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
-    examples_files = Path(__file__).parent / "example_files"
+    examples_files = Path(__file__).parent.parent / "assets" / "md"
 
     await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
-    assert len(results) == 2
+    assert len(results) == 3
     assert all(isinstance(result, TextElement) for result in results)
-    assert {cast(TextElement, result).content for result in results} == {"foo", "bar"}
+    assert {cast(TextElement, result).content for result in results} == {"foo", "bar", "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."}
 
 
 async def test_document_search_with_batched():

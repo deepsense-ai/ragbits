@@ -31,7 +31,7 @@ image_embeddings = [
     [[0.7, 0.8, 0.9], [1.0, 0.81, 0.84]],
 ]
 
-IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
+IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
 # TODO: Add PgVectorStore
