@@ -43,9 +43,12 @@ nav:
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
           - api_reference/core/vector-stores.md
+          - api_reference/core/sources.md
       - Document Search:
           - api_reference/document_search/index.md
-          - api_reference/document_search/documents.md
+          - Documents:
+            - api_reference/document_search/documents/documents.md
+            - api_reference/document_search/documents/elements.md
           - Ingest:
             - api_reference/document_search/ingest/parsers.md
             - api_reference/document_search/ingest/enrichers.md
