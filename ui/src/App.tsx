@@ -1,25 +1,25 @@
-import { Button, ScrollShadow, useDisclosure } from "@heroui/react";
+import { cn, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
-import { useChatHistory } from "./contexts/HistoryContext/HistoryContext.tsx";
 import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { SubmitHandler } from "react-hook-form";
-import { ChatResponseType } from "./types/api.ts";
+import { ChatRequest, ChatResponseType, MessageRole } from "./types/api.ts";
+import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
+import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
-  const { messages, createMessage, updateMessage, clearMessages } =
-    useChatHistory();
+  const { messages, createMessage, updateMessage } = useHistoryContext();
+  const { theme } = useThemeContext();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -35,62 +35,61 @@ export default function Component() {
     setIsLoading(true);
 
     createMessage({
-      name: "You",
-      message,
-      isRTL: true,
+      content: message,
+      role: MessageRole.USER,
+    });
+
+    const assistantResponseId = createMessage({
+      content: "",
+      role: MessageRole.ASSISTANT,
     });
 
     const onError = () => {
       setIsLoading(false);
       // Add error message
-      createMessage({
-        name: "Ragbits",
-        message: "An error occurred. Please try again.",
+      updateMessage(assistantResponseId, {
+        type: ChatResponseType.TEXT,
+        content: "An error occurred. Please try again.",
       });
     };
 
-    const id = createMessage({
-      name: "Ragbits",
-      message: "",
-    });
-
-    createEventSource(
+    createEventSource<ChatRequest>(
       `http://localhost:8000/api/chat`,
       (streamData) => {
-        if (!streamData) {
-          return;
-        }
-
-        if (streamData.type === ChatResponseType.TEXT) {
-          updateMessage(id, streamData.content);
-        }
+        updateMessage(assistantResponseId, streamData);
       },
       onError,
+      () => {
+        setIsLoading(false);
+      },
       {
         method: "POST",
         body: {
           message,
+          history: messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
         },
       },
     );
   };
 
   return (
-    <>
+    <div
+      className={cn(
+        "flex h-screen w-screen items-start justify-center bg-background",
+        theme,
+      )}
+    >
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-          <Button color="primary" onPress={clearMessages}>
-            Clear chat
-          </Button>
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             <ScrollShadow className="flex h-full flex-col gap-6">
               {messages.map((message, idx) => (
                 <ChatMessage
                   key={idx}
-                  classNames={{
-                    base: "bg-default-50",
-                  }}
-                  {...message}
+                  chatMessage={message}
                   onOpenFeedbackForm={
                     isFeedbackFormPluginActivated
                       ? onOpenFeedbackForm
@@ -113,16 +112,16 @@ export default function Component() {
       <PluginWrapper
         plugin={FeedbackFormPlugin}
         component="FeedbackFormComponent"
-        pluginProps={{
+        componentProps={{
           title: "Feedback Form",
           schema: mockSchema,
-          isOpen,
           onClose: onOpenChange,
-          onSubmit: (data: SubmitHandler<Record<string, string>>) => {
+          isOpen,
+          onSubmit: (data: Record<string, string>) => {
             console.log("Feedback form submitted:", data);
           },
         }}
       />
-    </>
+    </div>
   );
 }

@@ -1,10 +1,8 @@
 import { lazy } from "react";
-import { Plugin } from "../../core/utils/plugins/PluginManager";
+import { createPlugin } from "../../core/utils/plugins/utils";
 
 export const ExamplePluginName = "ExamplePlugin";
-
-type ExamplePluginComponents = "ExampleComponent";
-export const ExamplePlugin: Plugin<ExamplePluginComponents> = {
+export const ExamplePlugin = createPlugin({
   name: ExamplePluginName,
   components: {
     ExampleComponent: lazy(() => import("./ExamplePluginComponent")),
@@ -15,4 +13,4 @@ export const ExamplePlugin: Plugin<ExamplePluginComponents> = {
   onDeactivate: () => {
     console.log("ExamplePlugin deactivated");
   },
-};
+});

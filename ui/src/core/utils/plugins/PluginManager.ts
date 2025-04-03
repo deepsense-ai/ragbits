@@ -1,11 +1,4 @@
-import { FunctionComponent, LazyExoticComponent } from "react";
-
-export interface Plugin<Components extends string = string> {
-  name: string;
-  onActivate?: () => void;
-  onDeactivate?: () => void;
-  components: Record<Components, LazyExoticComponent<FunctionComponent>>;
-}
+import { Plugin } from "../../../types/plugins";
 
 type PluginState = Record<string, { isActivated: boolean; config: Plugin }>;
 

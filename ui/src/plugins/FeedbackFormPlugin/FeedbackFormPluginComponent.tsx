@@ -11,8 +11,10 @@ import {
   Input,
   Select,
   SelectItem,
+  cn,
 } from "@heroui/react";
 import { FormSchema, generateZodSchema } from "./types";
+import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
 
 interface IFormPluginComponentProps {
   title: string;
@@ -27,6 +29,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
 ) => {
   const { title, schema, isOpen, onClose, onSubmit } = props;
   const zodSchema = React.useMemo(() => generateZodSchema(schema), [schema]);
+  const { theme } = useThemeContext();
 
   const {
     register,
@@ -80,11 +83,13 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose}>
+    <Modal isOpen={isOpen} onOpenChange={onClose} className={cn(theme)}>
       <ModalContent>
         {(onClose) => (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
+            <ModalHeader className="flex flex-col gap-1 text-default-900">
+              {title}
+            </ModalHeader>
             <ModalBody>
               <div className="flex flex-col gap-4">
                 {schema.fields.map(renderField)}
