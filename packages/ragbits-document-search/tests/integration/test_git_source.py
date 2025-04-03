@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
-from ragbits.core.sources.git import GitSource
 from ragbits.core.sources.exceptions import SourceNotFoundError
+from ragbits.core.sources.git import GitSource
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 

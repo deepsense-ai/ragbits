@@ -13,8 +13,8 @@ with suppress(ImportError):
     from azure.storage.blob import BlobServiceClient
 
 from ragbits.core.sources.base import Source, get_local_storage_dir
-from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.sources.exceptions import SourceConnectionError, SourceNotFoundError
+from ragbits.core.utils.decorators import requires_dependencies
 
 
 class AzureBlobStorageSource(Source):

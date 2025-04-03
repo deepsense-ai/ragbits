@@ -1,8 +1,8 @@
 from ragbits.core.sources.exceptions import (
     SourceConnectionError,
+    SourceDownloadError,
     SourceError,
     SourceNotFoundError,
-    SourceDownloadError,
 )
 
 

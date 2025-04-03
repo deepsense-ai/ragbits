@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from ragbits.core.sources.web import WebSource
 from ragbits.core.sources.exceptions import SourceNotFoundError
+from ragbits.core.sources.web import WebSource
 
 
 def test_id():
