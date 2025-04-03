@@ -50,7 +50,7 @@ const PromptInput = ({
 
   return (
     <Form
-      className="flex w-full flex-col items-start gap-0 rounded-medium bg-default-100 dark:bg-default-100"
+      className="flex w-full flex-row items-start rounded-medium bg-default-100 dark:bg-default-100"
       validationBehavior="native"
       onSubmit={onSubmit}
     >
@@ -73,7 +73,7 @@ const PromptInput = ({
         onKeyDown={handleKeyDown}
         onValueChange={setMessage}
       />
-      <div className="flex w-full flex-row items-center justify-between px-3 pb-3">
+      <div className="flex flex-row items-center justify-end p-3">
         <Button
           isIconOnly
           color={!prompt ? "default" : "primary"}

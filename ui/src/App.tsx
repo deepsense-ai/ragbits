@@ -1,4 +1,4 @@
-import { ScrollShadow, useDisclosure } from "@heroui/react";
+import { cn, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState } from "react";
@@ -13,11 +13,13 @@ import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { ChatResponseType, MessageRole } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
+import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const { messages, createMessage, updateMessage } = useHistoryContext();
+  const { theme } = useThemeContext();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -67,7 +69,12 @@ export default function Component() {
   };
 
   return (
-    <>
+    <div
+      className={cn(
+        "flex h-screen w-screen items-start justify-center bg-background",
+        theme,
+      )}
+    >
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
@@ -108,6 +115,6 @@ export default function Component() {
           },
         }}
       />
-    </>
+    </div>
   );
 }

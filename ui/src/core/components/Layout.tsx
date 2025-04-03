@@ -2,6 +2,8 @@ import React from "react";
 import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useHistoryContext } from "../../contexts/HistoryContext/useHistoryContext";
+import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
+import { Theme } from "../../contexts/ThemeContext/ThemeContext";
 
 export default function Layout({
   children,
@@ -17,9 +19,19 @@ export default function Layout({
   classNames?: Record<string, string>;
 }) {
   const { clearMessages } = useHistoryContext();
+  const { setTheme, theme } = useThemeContext();
+
+  const toggleTheme = () => {
+    setTheme(theme === Theme.DARK ? Theme.LIGHT : Theme.DARK);
+  };
 
   return (
-    <div className="flex h-full min-h-[48rem] justify-center py-4">
+    <div
+      className={cn(
+        "flex h-full min-h-[48rem] justify-center py-4",
+        theme === Theme.DARK && "dark",
+      )}
+    >
       <div className="flex w-full flex-col px-4 sm:max-w-[1200px]">
         <header
           className={cn(
@@ -43,14 +55,26 @@ export default function Layout({
             </div>
           )}
           {header}
-          <div>
+          <div className="flex items-center gap-2">
             <Button
               isIconOnly
               aria-label="Clear chat"
-              color="default"
+              variant="ghost"
               onPress={clearMessages}
             >
               <Icon icon="heroicons:arrow-path" />
+            </Button>
+            <Button
+              isIconOnly
+              aria-label="Clear chat"
+              variant="ghost"
+              onPress={toggleTheme}
+            >
+              {theme === Theme.DARK ? (
+                <Icon icon="heroicons:sun" />
+              ) : (
+                <Icon icon="heroicons:moon" />
+              )}
             </Button>
           </div>
         </header>

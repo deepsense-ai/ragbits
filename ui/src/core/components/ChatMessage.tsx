@@ -19,8 +19,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       <div className={cn("flex flex-col gap-4", rightAlign && "max-w-[75%]")}>
         <div
           className={cn(
-            "relative w-full rounded-medium px-4 py-3 text-default-600",
-            rightAlign && "bg-default-50",
+            "relative w-full rounded-medium px-4 py-3 text-default",
+            rightAlign && "bg-default-100",
           )}
         >
           <div className={cn("text-small text-default-900")}>
@@ -29,14 +29,14 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             ) : (
               <>
                 <Markdown
-                  className="prose max-w-full"
+                  className="max-w-full text-default-900"
                   remarkPlugins={[remarkGfm]}
                 >
                   {content}
                 </Markdown>
-                <div>
+                <div className="mt-2">
                   {!!onOpenFeedbackForm && (
-                    <Button color="primary" onPress={onOpenFeedbackForm}>
+                    <Button variant="ghost" onPress={onOpenFeedbackForm}>
                       Open Feedback Form
                     </Button>
                   )}
