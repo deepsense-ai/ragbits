@@ -9,6 +9,7 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit import trace, traceable
 from ragbits.core.config import CoreConfig
+from ragbits.core.sources.base import Source, SourceResolver
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import (
     NoPreferredConfigError,
@@ -19,8 +20,6 @@ from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.documents.sources.base import SourceResolver
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies import (

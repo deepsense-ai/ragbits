@@ -34,12 +34,12 @@ import asyncio
 from pathlib import Path
 
 from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.sources import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
-from ragbits.document_search.documents.sources import LocalFileSource
 from ragbits.document_search.ingestion.parsers.base import ImageDocumentParser
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 

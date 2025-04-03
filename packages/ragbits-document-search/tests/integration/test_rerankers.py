@@ -1,13 +1,12 @@
 import pytest
 
 from ragbits.core import audit
+from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
 from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
-
-from ..helpers import env_vars_not_set
 
 COHERE_API_KEY_ENV = "COHERE_API_KEY"  # noqa: S105
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105

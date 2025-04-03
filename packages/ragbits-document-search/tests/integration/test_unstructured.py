@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
+from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.parsers.unstructured import (
     UNSTRUCTURED_API_KEY_ENV,
     UNSTRUCTURED_SERVER_URL_ENV,
     UnstructuredDocumentParser,
 )
-from tests.helpers import env_vars_not_set
 
 
 @pytest.mark.parametrize(

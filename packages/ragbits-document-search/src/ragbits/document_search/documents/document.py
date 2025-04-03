@@ -5,8 +5,8 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel
 
-from ragbits.document_search.documents.sources import LocalFileSource, Source
-from ragbits.document_search.documents.sources.base import SourceDiscriminator
+from ragbits.core.sources.base import Source, SourceDiscriminator
+from ragbits.core.sources.local import LocalFileSource
 
 
 class DocumentType(str, Enum):
