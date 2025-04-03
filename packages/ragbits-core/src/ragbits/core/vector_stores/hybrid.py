@@ -1,4 +1,3 @@
-import abc
 import asyncio
 from uuid import UUID
 
@@ -10,46 +9,7 @@ from ragbits.core.vector_stores.base import (
     VectorStoreResult,
     WhereQuery,
 )
-
-
-class HybridRetrivalStrategy(abc.ABC):
-    """
-    A class that can join vectors retrieved from different vector stores into a single list,
-    allowing for different strategies for combining results.
-    """
-
-    @abc.abstractmethod
-    def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:
-        """
-        Joins the multiple lists of results into a single list.
-
-        Args:
-            results: The lists of results to join.
-
-        Returns:
-            The joined list of results.
-        """
-
-
-class OrderedHybridRetrivalStrategy(HybridRetrivalStrategy):
-    """
-    A class that orders the results by score and deduplicates them by choosing the first occurrence of each entry.
-    """
-
-    def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:  # noqa: PLR6301
-        """
-        Joins the multiple lists of results into a single list.
-
-        Args:
-            results: The lists of results to join.
-
-        Returns:
-            The joined list of results.
-        """
-        all_results = [result for sublist in results for result in sublist]
-        all_results.sort(key=lambda result: result.score, reverse=True)
-
-        return list({result.entry.id: result for result in all_results}.values())
+from ragbits.core.vector_stores.hybrid_strategies import HybridRetrivalStrategy, OrderedHybridRetrivalStrategy
 
 
 class HybridSearchVectorStore(VectorStore):
