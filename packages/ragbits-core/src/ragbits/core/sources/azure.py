@@ -12,10 +12,9 @@ with suppress(ImportError):
     from azure.identity import DefaultAzureCredential
     from azure.storage.blob import BlobServiceClient
 
+from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
-from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.documents.sources.base import get_local_storage_dir
 
 
 class AzureBlobStorageSource(Source):

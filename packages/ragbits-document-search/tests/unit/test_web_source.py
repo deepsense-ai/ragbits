@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from ragbits.core.sources.web import WebSource
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources.web import WebSource
 
 
 def test_id():
@@ -41,7 +41,7 @@ async def test_invalid_url_raises_exception():
             await WebSource(url=url).fetch()
 
 
-@patch("ragbits.document_search.documents.sources.web.aiohttp.ClientSession")
+@patch("ragbits.core.sources.web.aiohttp.ClientSession")
 async def test_url_and_headers_are_passed_correctly(client_session_mock: MagicMock) -> None:
     session_mock = MagicMock()
     get_mock = MagicMock()
@@ -59,7 +59,7 @@ async def test_url_and_headers_are_passed_correctly(client_session_mock: MagicMo
     assert session_mock.get.call_args.kwargs["headers"] == expected_headers
 
 
-@patch("ragbits.document_search.documents.sources.web.aiohttp.ClientSession")
+@patch("ragbits.core.sources.web.aiohttp.ClientSession")
 async def test_passed_headers_are_none_by_default(client_session_mock: MagicMock) -> None:
     session_mock = MagicMock()
     get_mock = MagicMock()

@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
+from ragbits.core.sources.git import GitSource
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
-from ragbits.document_search.documents.sources.git import GitSource
 
 # Set the local storage directory for tests
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
@@ -80,7 +80,7 @@ async def test_from_uri():
     assert result[0].file_path == "docs/api/index.md"
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_new_repository(git_mock: MagicMock):
     """Test fetching a file from a new git repository"""
     # Setup mocks
@@ -109,7 +109,7 @@ async def test_fetch_new_repository(git_mock: MagicMock):
     assert isinstance(result, Path)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_existing_repository(git_mock: MagicMock):
     """Test fetching a file from an existing git repository"""
     # Setup mocks
@@ -144,7 +144,7 @@ async def test_fetch_existing_repository(git_mock: MagicMock):
     assert isinstance(result, Path)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_with_branch(git_mock: MagicMock):
     """Test fetching a file from a repository with a specific branch"""
     # Setup mocks
@@ -174,7 +174,7 @@ async def test_fetch_with_branch(git_mock: MagicMock):
     assert isinstance(result, Path)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_file_not_found(git_mock: MagicMock):
     """Test fetching a file that doesn't exist in the repository"""
     # Setup mocks
@@ -197,7 +197,7 @@ async def test_fetch_file_not_found(git_mock: MagicMock):
     assert "File non_existent.md not found in repository" in str(exc_info.value)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_not_a_file(git_mock: MagicMock):
     """Test fetching a path that isn't a file in the repository"""
     # Setup mocks
@@ -221,7 +221,7 @@ async def test_fetch_not_a_file(git_mock: MagicMock):
     assert "File docs not found in repository" in str(exc_info.value)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_fetch_clone_error(git_mock: MagicMock):
     """Test handling of git command errors during clone"""
     # Setup mocks
@@ -244,7 +244,7 @@ async def test_fetch_clone_error(git_mock: MagicMock):
     assert "Failed to clone repository" in str(exc_info.value)
 
 
-@patch("ragbits.document_search.documents.sources.git.git")
+@patch("ragbits.core.sources.git.git")
 async def test_list_sources(git_mock: MagicMock):
     """Test listing files from a git repository"""
     # Setup mocks

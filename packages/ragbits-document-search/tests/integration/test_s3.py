@@ -6,8 +6,8 @@ import boto3
 import pytest
 from moto import mock_s3
 
-from ragbits.document_search.documents.sources import S3Source
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
+from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
+from ragbits.core.sources.s3 import S3Source
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 

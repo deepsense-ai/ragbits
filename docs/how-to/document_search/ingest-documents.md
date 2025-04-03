@@ -19,7 +19,7 @@ Before a document can be processed, it must be defined and downloaded. In Ragbit
 === "Source"
 
     ```python
-    from ragbits.document_search.documents.sources import WebSource
+    from ragbits.core.sources import WebSource
     from ragbits.document_search import DocumentSearch
 
     document_search = DocumentSearch(...)
@@ -55,18 +55,18 @@ This is the list of currently supported sources by Ragbits.
 
 | Source | URI Schema | Class |
 |-|-|-|
-| Azure Blob Storage | `azure://https://account_name.blob.core.windows.net/<container-name>|<blob-name>` | [`AzureBlobStorageSource`][ragbits.document_search.documents.sources.AzureBlobStorageSource] |
-| Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.document_search.documents.sources.GCSSource] |
-| Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.document_search.documents.sources.GitSource] |
-| Hugging Face | `huggingface://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.document_search.documents.sources.HuggingFaceSource] |
-| Local file | `file://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.document_search.documents.sources.LocalFileSource] |
-| Amazon S3 | `s3://<bucket-name>/<prefix>` | [`S3Source`][ragbits.document_search.documents.sources.S3Source] |
-| Web | `web://<https-url>` | [`WebSource`][ragbits.document_search.documents.sources.WebSource] |
+| Azure Blob Storage | `azure://https://account_name.blob.core.windows.net/<container-name>|<blob-name>` | [`AzureBlobStorageSource`][ragbits.core.sources.AzureBlobStorageSource] |
+| Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.core.sources.GCSSource] |
+| Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.core.sources.GitSource] |
+| Hugging Face | `huggingface://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.core.sources.HuggingFaceSource] |
+| Local file | `file://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.core.sources.LocalFileSource] |
+| Amazon S3 | `s3://<bucket-name>/<prefix>` | [`S3Source`][ragbits.core.sources.S3Source] |
+| Web | `web://<https-url>` | [`WebSource`][ragbits.core.sources.WebSource] |
 
-To define a new sources, extend the [`Source`][ragbits.document_search.documents.sources.Source] class.
+To define a new sources, extend the [`Source`][ragbits.core.sources.Source] class.
 
 ```python
-from ragbits.document_search.documents.sources import Source
+from ragbits.core.sources import Source
 
 
 class CustomSource(Source):
@@ -300,7 +300,7 @@ To define a new ingest strategy, extend the [`IngestStrategy`][ragbits.document_
 ```python
 from ragbits.core.vector_stores import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.sources import Source
+from ragbits.core.sources import Source
 from ragbits.document_search.ingestion.enrichers import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies import (

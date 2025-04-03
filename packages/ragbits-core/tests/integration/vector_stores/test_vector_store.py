@@ -8,6 +8,7 @@ from chromadb import EphemeralClient
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStore,
@@ -20,7 +21,6 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources import LocalFileSource
 
 text_embbedings = [
     [[0.1, 0.2, 0.3], [0.9, 0.9, 0.9]],  # for storage

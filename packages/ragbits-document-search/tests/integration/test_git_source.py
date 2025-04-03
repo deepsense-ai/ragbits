@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
+from ragbits.core.sources.git import GitSource
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources import GitSource
-from ragbits.document_search.documents.sources.base import LOCAL_STORAGE_DIR_ENV
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 

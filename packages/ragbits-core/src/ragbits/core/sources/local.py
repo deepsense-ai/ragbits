@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import ClassVar
 
 from ragbits.core.audit import traceable
+from ragbits.core.sources.base import Source
 from ragbits.document_search.documents.exceptions import SourceNotFoundError
-from ragbits.document_search.documents.sources import Source
 
 
 class LocalFileSource(Source):
