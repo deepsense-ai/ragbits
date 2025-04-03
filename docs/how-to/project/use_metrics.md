@@ -52,7 +52,7 @@ Once the OpenTelemetry backend and Ragbits are configured, you can start trackin
 
 Ragbits automatically tracks the following metrics during LLM interactions: the time taken to process a prompt and receive a response (`prompt_throughput`), the number of input tokens sent to the LLM (`input_tokens`), the number of tokens processed per second (`token_throughput`) and the time taken (in seconds) to receive the first token in a streaming response (`time_to_first_token`).
 
-Each metric is tagged with the following **labels** (attributes) for better filtering and analysis: the class name of the prompt being processed (`promp`) and the name of the LLM being used (`model`).
+Each metric is tagged with the following **labels** (attributes) for better filtering and analysis: the class name of the prompt being processed (`prompt`) and the name of the LLM being used (`model`).
 
 ## Visualize Metrics in Grafana
 
