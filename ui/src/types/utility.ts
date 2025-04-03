@@ -6,4 +6,4 @@ export type PropsOf<T> =
       ? undefined
       : P
     : undefined;
-export type NoProps<T> = [keyof T] extends [never] ? true : false;
+export type NoProps<T> = keyof T extends never ? true : false;
