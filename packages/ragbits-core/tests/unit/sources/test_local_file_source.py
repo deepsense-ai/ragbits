@@ -14,7 +14,7 @@ async def test_local_source_fetch():
 
 
 async def test_local_source_list_sources():
-    example_files = TEST_FILE_PATH.parent / "example_files"
+    example_files = TEST_FILE_PATH.parent.parent.parent / "assets" / "md"
 
     sources = LocalFileSource.list_sources(example_files, file_pattern="*.md")
 

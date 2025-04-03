@@ -6,8 +6,7 @@ import pytest
 from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.exceptions import SourceNotFoundError
 from ragbits.core.sources.hf import HuggingFaceSource
-
-from ..helpers import env_vars_not_set
+from ragbits.core.utils.helpers import env_vars_not_set
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
