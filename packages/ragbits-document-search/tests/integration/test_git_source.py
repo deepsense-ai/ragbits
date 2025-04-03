@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,18 @@ os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 # A public repository that's unlikely to disappear and has a stable structure
 TEST_REPO_URL = "https://github.com/psf/requests.git"
 TEST_REPO_SSH_URL = "git@github.com:psf/requests.git"
+
+
+@pytest.fixture(autouse=True)
+def cleanup_test_dirs():
+    """Clean up test directories after each test."""
+    yield
+    # Get the test directory path
+    test_dir = Path(__file__).parent
+    # Remove the git directory if it exists
+    git_dir = test_dir / "git"
+    if git_dir.exists():
+        shutil.rmtree(git_dir)
 
 
 async def test_git_source_fetch_file():

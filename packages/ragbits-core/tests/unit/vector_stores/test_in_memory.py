@@ -173,15 +173,15 @@ async def vector_store_fixture(request: pytest.FixtureRequest) -> InMemoryVector
 
 
 @pytest.mark.parametrize(
-    ("k", "max_distance", "results"),
+    ("k", "score_threshold", "results"),
     [
         (5, None, ["spikey", "fluffy", "slimy", "spotty", "scaly"]),
         (2, None, ["spikey", "fluffy"]),
-        (5, 0.3, ["spikey", "fluffy"]),
+        (5, -0.3, ["spikey", "fluffy"]),
     ],
 )
-async def test_retrieve(store: InMemoryVectorStore, k: int, max_distance: float | None, results: list[str]) -> None:
-    query_results = await store.retrieve("query", options=VectorStoreOptions(k=k, max_distance=max_distance))
+async def test_retrieve(store: InMemoryVectorStore, k: int, score_threshold: float | None, results: list[str]) -> None:
+    query_results = await store.retrieve("query", options=VectorStoreOptions(k=k, score_threshold=score_threshold))
 
     assert len(query_results) == len(results)
     for query_result, result in zip(query_results, results, strict=True):

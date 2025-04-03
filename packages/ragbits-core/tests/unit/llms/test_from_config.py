@@ -65,7 +65,7 @@ def test_from_config_with_router():
 
     llm: LLM = LLM.subclass_from_config(config)
     assert isinstance(llm, LiteLLM)
-    assert llm.base_url is None
+    assert llm.api_base is None
     assert llm.model_name == "gpt-4-turbo"
     assert llm.api_key == "test_api_key"
     assert isinstance(llm.router, litellm.router.Router)

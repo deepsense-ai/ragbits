@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+## 0.13.0 (2025-04-02)
+- Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)
+- Make LLM / Embedder APIs consistent (#463)
+- New methods in Prompt class for appending conversation history (#480)
+- Fix: make unflatten_dict symmetric to flatten_dict (#461)
+- Cost and capabilities config for custom litellm models (#481)
 
 ## 0.12.0 (2025-03-25)
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
@@ -10,7 +16,6 @@
 - Fix Qdrant vector store serialization (#419)
 
 ## 0.11.0 (2025-03-25)
-
 - Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
