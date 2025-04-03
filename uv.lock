@@ -4291,6 +4291,7 @@ name = "ragbits-core"
 version = "0.13.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
+    { name = "aiohttp" },
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
@@ -4299,6 +4300,11 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+azure = [
+    { name = "azure-core" },
+    { name = "azure-identity" },
+    { name = "azure-storage-blob" },
+]
 chroma = [
     { name = "chromadb" },
 ]
@@ -4309,6 +4315,12 @@ fastembed = [
 fastembed-gpu = [
     { name = "fastembed-gpu", version = "0.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "fastembed-gpu", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+]
+gcs = [
+    { name = "gcloud-aio-storage" },
+]
+huggingface = [
+    { name = "datasets" },
 ]
 lab = [
     { name = "gradio" },
@@ -4330,6 +4342,9 @@ promptfoo = [
 qdrant = [
     { name = "qdrant-client" },
 ]
+s3 = [
+    { name = "boto3" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -4342,10 +4357,17 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.10.8,<4.0.0" },
     { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0,<1.0.0" },
+    { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0,<2.0.0" },
+    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0,<2.0.0" },
+    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
+    { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42,<2.0.0" },
     { name = "chromadb", marker = "extra == 'chroma'", specifier = ">=0.6.3,<1.0.0" },
+    { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3.0.1,<4.0.0" },
     { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "gradio", marker = "extra == 'lab'", specifier = "~=4.44.0,<5.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
@@ -4359,7 +4381,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu"]
+provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "huggingface", "s3"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4375,7 +4397,6 @@ name = "ragbits-document-search"
 version = "0.13.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
-    { name = "aiohttp" },
     { name = "ragbits-core" },
     { name = "rerankers" },
     { name = "unstructured" },
@@ -4383,22 +4404,8 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-azure = [
-    { name = "azure-core" },
-    { name = "azure-identity" },
-    { name = "azure-storage-blob" },
-]
-gcs = [
-    { name = "gcloud-aio-storage" },
-]
-huggingface = [
-    { name = "datasets" },
-]
 ray = [
     { name = "ray", extra = ["data"] },
-]
-s3 = [
-    { name = "boto3" },
 ]
 
 [package.dev-dependencies]
@@ -4413,20 +4420,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.10.8" },
-    { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0,<2.0.0" },
-    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0,<2.0.0" },
-    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
-    { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42,<2.0.0" },
-    { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3.0.1,<4.0.0" },
-    { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1" },
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
-provides-extras = ["azure", "gcs", "huggingface", "ray", "s3"]
+provides-extras = ["ray"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4529,8 +4529,8 @@ source = { virtual = "." }
 dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
-    { name = "ragbits-core", extra = ["chroma", "fastembed", "lab", "local", "otel", "pgvector", "qdrant"] },
-    { name = "ragbits-document-search", extra = ["azure", "gcs", "huggingface", "ray", "s3"] },
+    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "huggingface", "lab", "local", "otel", "pgvector", "qdrant", "s3"] },
+    { name = "ragbits-document-search", extra = ["ray"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4561,8 +4561,8 @@ dev = [
 requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
-    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["azure", "gcs", "huggingface", "ray", "s3"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "huggingface", "s3"], editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", extras = ["ray"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]

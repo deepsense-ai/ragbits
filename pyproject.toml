@@ -6,8 +6,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector]",
-    "ragbits-document-search[azure,gcs,huggingface,ray,s3]",
+    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector,azure,gcs,huggingface,s3]",
+    "ragbits-document-search[ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-conversations",
