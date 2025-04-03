@@ -144,7 +144,11 @@ async def test_document_search_ingest_multiple_from_sources():
 
     assert len(results) == 3
     assert all(isinstance(result, TextElement) for result in results)
-    assert {cast(TextElement, result).content for result in results} == {"foo", "bar", "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework."}
+    assert {cast(TextElement, result).content for result in results} == {
+        "foo",
+        "bar",
+        "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework.",
+    }
 
 
 async def test_document_search_with_batched():
