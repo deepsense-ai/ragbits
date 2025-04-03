@@ -62,20 +62,27 @@ export const createEventSource = (
             return;
           }
 
-          try {
-            // Parse the value
-            const jsonData = value.split("data: ")[1];
-            if (!jsonData) {
-              console.error("Invalid message format");
-              onError();
-              return;
+          const lines = value.split("\n");
+
+          if (lines.length === 0) {
+            console.error("Received empty message");
+            onError();
+            return;
+          }
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) {
+              continue;
             }
 
-            const parsedValue = JSON.parse(jsonData);
-            onMessage(parsedValue);
-          } catch (error) {
-            console.error("Error parsing JSON:", error);
-            onError();
+            try {
+              const jsonString = line.replace("data: ", "").trim();
+              const parsedValue = JSON.parse(jsonString);
+              onMessage(parsedValue);
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
+              onError();
+            }
           }
         }
       })
