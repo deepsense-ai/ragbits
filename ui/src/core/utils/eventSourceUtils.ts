@@ -1,14 +1,14 @@
 import axios, { AxiosResponse } from "axios";
 import { ChatResponse } from "../../types/api";
 
-export const createEventSource = (
+export const createEventSource = <T extends object>(
   url: string,
   onMessage: (data: ChatResponse) => void,
   onError: () => void,
   onClose?: () => void,
   config: {
     method: "GET" | "POST";
-    body?: Record<string, unknown>;
+    body?: T;
   } = { method: "GET" },
 ) => {
   const axiosClient = axios.create({

@@ -11,7 +11,7 @@ import {
 } from "./plugins/FeedbackFormPlugin";
 import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { ChatResponseType, MessageRole } from "./types/api.ts";
+import { ChatRequest, ChatResponseType, MessageRole } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 
@@ -53,7 +53,7 @@ export default function Component() {
       });
     };
 
-    createEventSource(
+    createEventSource<ChatRequest>(
       `http://localhost:8000/api/chat`,
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
@@ -66,6 +66,10 @@ export default function Component() {
         method: "POST",
         body: {
           message,
+          history: messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
         },
       },
     );

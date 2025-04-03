@@ -20,6 +20,12 @@ export enum ChatResponseType {
   REFERENCE = "reference",
 }
 
+export interface ChatRequest {
+  message: string;
+  history: Message[];
+  context?: object;
+}
+
 interface TextChatResponse {
   type: ChatResponseType.TEXT;
   content: string;
