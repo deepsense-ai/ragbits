@@ -27,9 +27,9 @@ class SourceNotFoundError(SourceError):
         self.source_id = source_id
 
 
-class WebDownloadError(SourceError):
+class SourceDownloadError(SourceError):
     """
-    Raised when an error occurs during the download of a file from an Web source.
+    Raised when an error occurs during the download of the source.
     """
 
     def __init__(self, url: str, code: int):

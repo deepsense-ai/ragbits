@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceNotFoundError
 
 
 class LocalFileSource(Source):

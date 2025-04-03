@@ -10,7 +10,7 @@ with suppress(ImportError):
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceNotFoundError
 
 # Constants for URI parts
 _REPO_AND_FILE_PARTS = 2

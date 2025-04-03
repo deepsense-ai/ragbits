@@ -14,7 +14,7 @@ with suppress(ImportError):
 
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
-from ragbits.document_search.documents.exceptions import SourceConnectionError, SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceConnectionError, SourceNotFoundError
 
 
 class AzureBlobStorageSource(Source):

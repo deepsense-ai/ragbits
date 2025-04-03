@@ -10,7 +10,7 @@ with suppress(ImportError):
 
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
-from ragbits.document_search.documents.exceptions import SourceNotFoundError, WebDownloadError
+from ragbits.core.sources.exceptions import SourceNotFoundError, SourceDownloadError
 
 
 class WebSource(Source):
@@ -38,7 +38,7 @@ class WebSource(Source):
             Path: The local path to the downloaded file.
 
         Raises:
-            WebDownloadError: If the download failed.
+            SourceDownloadError: If the download failed.
             SourceNotFoundError: If the URL is invalid.
         """
         parsed_url = urlparse(self.url)
@@ -58,7 +58,7 @@ class WebSource(Source):
                         async for chunk in response.content.iter_chunked(1024):
                             f.write(chunk)
                 else:
-                    raise WebDownloadError(url=self.url, code=response.status)
+                    raise SourceDownloadError(url=self.url, code=response.status)
         except (aiohttp.ClientError, IsADirectoryError) as e:
             raise SourceNotFoundError(self.id) from e
 

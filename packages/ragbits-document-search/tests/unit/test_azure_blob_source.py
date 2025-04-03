@@ -6,7 +6,7 @@ from azure.core.exceptions import ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 
 from ragbits.core.sources.azure import AzureBlobStorageSource
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceNotFoundError
 
 ACCOUNT_NAME = "test_account"
 BLOB_NAME = "test_blob.txt"

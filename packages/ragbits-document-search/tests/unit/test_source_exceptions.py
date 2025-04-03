@@ -1,8 +1,8 @@
-from ragbits.document_search.documents.exceptions import (
+from ragbits.core.sources.exceptions import (
     SourceConnectionError,
     SourceError,
     SourceNotFoundError,
-    WebDownloadError,
+    SourceDownloadError,
 )
 
 
@@ -28,7 +28,7 @@ def test_source_not_found_error_init():
 def test_web_download_error_init():
     url = "https://example.com/file.pdf"
     code = 404
-    error = WebDownloadError(url, code)
+    error = SourceDownloadError(url, code)
 
     assert error.url == url
     assert error.code == code

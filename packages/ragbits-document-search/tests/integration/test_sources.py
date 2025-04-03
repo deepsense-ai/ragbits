@@ -5,7 +5,7 @@ import pytest
 
 from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.hf import HuggingFaceSource
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceNotFoundError
 
 from ..helpers import env_vars_not_set
 

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from ragbits.core.sources.web import WebSource
-from ragbits.document_search.documents.exceptions import SourceNotFoundError
+from ragbits.core.sources.exceptions import SourceNotFoundError
 
 
 def test_id():
