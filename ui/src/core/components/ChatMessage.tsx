@@ -1,55 +1,42 @@
-import React, { forwardRef, HTMLAttributes } from "react";
+import { forwardRef } from "react";
 import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import type { ChatMessage } from "../../types/chat";
+import { MessageRole } from "../../types/api";
 
-export type TChatMessage = HTMLAttributes<HTMLDivElement> & {
-  name: string;
-  message: string;
-  time?: string;
-  isRTL?: boolean;
-  classNames?: Record<"base", string>;
-};
-
-export type ChatMessageProps = TChatMessage & {
+export type ChatMessageProps = {
+  classNames?: string[];
+  chatMessage: ChatMessage;
   onOpenFeedbackForm?: () => void;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  (
-    { name, time, message, isRTL, className, classNames, onOpenFeedbackForm },
-    ref,
-  ) => {
-    const messageRef = React.useRef<HTMLDivElement>(null);
+  ({ chatMessage: { content, role }, onOpenFeedbackForm, classNames }, ref) => {
+    const rightAlign = role === MessageRole.USER;
 
     const Message = () => (
-      <div className="flex max-w-[70%] flex-col gap-4">
+      <div className={cn("flex flex-col gap-4", rightAlign && "max-w-[75%]")}>
         <div
           className={cn(
-            "relative w-full rounded-medium bg-content2 px-4 py-3 text-default-600",
-            classNames?.base,
+            "relative w-full rounded-medium px-4 py-3 text-default",
+            rightAlign && "bg-default-100",
           )}
         >
-          <div className="flex">
-            <div className="w-full text-small font-semibold text-default-foreground">
-              {name}
-            </div>
-            <div className="flex-end text-small text-default-400">{time}</div>
-          </div>
-          <div ref={messageRef} className="mt-2 text-small text-default-900">
-            {isRTL ? (
-              <div className="whitespace-pre-line">{message}</div>
+          <div className={cn("text-small text-default-900")}>
+            {rightAlign ? (
+              <div className="whitespace-pre-line">{content}</div>
             ) : (
               <>
                 <Markdown
-                  className="prose max-w-full"
+                  className="max-w-full text-default-900"
                   remarkPlugins={[remarkGfm]}
                 >
-                  {message}
+                  {content}
                 </Markdown>
-                <div>
+                <div className="mt-2">
                   {!!onOpenFeedbackForm && (
-                    <Button color="primary" onPress={onOpenFeedbackForm}>
+                    <Button variant="ghost" onPress={onOpenFeedbackForm}>
                       Open Feedback Form
                     </Button>
                   )}
@@ -64,7 +51,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     return (
       <div
         ref={ref}
-        className={cn("flex gap-3", { "flex-row-reverse": isRTL }, className)}
+        className={cn(
+          "flex gap-3",
+          { "flex-row-reverse": rightAlign },
+          ...(classNames ? classNames : []),
+        )}
       >
         <Message />
       </div>
@@ -72,6 +63,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   },
 );
 
-ChatMessage.displayName = "MessagingChatMessage";
+ChatMessage.displayName = "ChatMessage";
 
 export default ChatMessage;

@@ -1,23 +1,27 @@
 import { Suspense } from "react";
-import { Plugin } from "./PluginManager";
+import { Plugin } from "../../../types/plugins";
 import { Skeleton } from "@heroui/react";
 import { usePluginManager } from "./usePluginManager";
+import { PropsOf } from "../../../types/utility";
 
-interface PluginWrapperProps<T extends Plugin> {
+interface PluginWrapperProps<
+  T extends Plugin,
+  C extends keyof T["components"],
+> {
   plugin: T;
-  component: keyof T["components"];
+  component: C;
+  componentProps: PropsOf<T["components"][C]>;
   skeletonSize?: { width: string; height: string };
   disableSkeleton?: boolean;
-  pluginProps?: Record<string, unknown>;
 }
 
-const PluginWrapper = <T extends Plugin>({
+const PluginWrapper = <T extends Plugin, C extends keyof T["components"]>({
   plugin,
   component,
   skeletonSize,
   disableSkeleton,
-  pluginProps,
-}: PluginWrapperProps<T>) => {
+  componentProps,
+}: PluginWrapperProps<T, C>) => {
   const managedPlugin = usePluginManager(plugin.name);
   const skeletonStyle = skeletonSize
     ? { width: skeletonSize.width, height: skeletonSize.height }
@@ -37,7 +41,7 @@ const PluginWrapper = <T extends Plugin>({
           )
         }
       >
-        {Component ? <Component {...pluginProps} /> : null}
+        {Component ? <Component {...(componentProps || {})} /> : null}
       </Suspense>
     );
   } catch (error) {

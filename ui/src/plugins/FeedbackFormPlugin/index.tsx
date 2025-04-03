@@ -1,19 +1,13 @@
 import { lazy } from "react";
-import { Plugin } from "../../core/utils/plugins/PluginManager";
+import { createPlugin } from "../../core/utils/plugins/utils";
 
 export const FeedbackFormPluginName = "FeedbackFormPlugin";
-
-type FeedbackFormPluginComponents = "FeedbackFormComponent";
-
-export const FeedbackFormPlugin: Plugin<FeedbackFormPluginComponents> = {
+export const FeedbackFormPlugin = createPlugin({
   name: FeedbackFormPluginName,
   components: {
     FeedbackFormComponent: lazy(() => import("./FeedbackFormPluginComponent")),
+    ExampleComponent: lazy(
+      () => import("../ExamplePlugin/ExamplePluginComponent"),
+    ),
   },
-  onActivate: () => {
-    console.log("FormPlugin activated");
-  },
-  onDeactivate: () => {
-    console.log("FormPlugin deactivated");
-  },
-};
+});
