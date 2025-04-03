@@ -8,10 +8,11 @@ from typing import Any, ParamSpec, TypeVar
 
 from opentelemetry.metrics import Meter
 
-from ragbits.core.audit.otel_metric_handler import OtelMetricHandler
+from ragbits.core.audit.otel_metric_handler import MetricName, OtelMetricHandler
 from ragbits.core.audit.trace_handlers.base import TraceHandler
 
 __all__ = [
+    "MetricName",
     "OtelMetricHandler",
     "TraceHandler",
     "record_metric",

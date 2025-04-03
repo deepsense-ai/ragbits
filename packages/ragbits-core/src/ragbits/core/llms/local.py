@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragbits.core.audit import record_metric
+from ragbits.core.audit import MetricName, record_metric
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt
@@ -123,10 +123,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
         prompt_throughput = time.perf_counter() - start_time
 
         attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
-        record_metric("prompt_throughput", prompt_throughput, attributes)
-        record_metric("input_tokens", input_ids.shape[-1], attributes)
+        record_metric(MetricName.PROMPT_THROUGHPUT, prompt_throughput, attributes)
+        record_metric(MetricName.INPUT_TOKENS, input_ids.shape[-1], attributes)
         token_throughput = outputs.total_tokens / prompt_throughput
-        record_metric("token_throughput", token_throughput, attributes)
+        record_metric(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
 
         return {"response": decoded_response}
 
@@ -158,7 +158,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
         attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
 
-        record_metric("input_tokens", input_tokens, attributes)
+        record_metric(MetricName.INPUT_TOKENS, input_tokens, attributes)
 
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
@@ -178,7 +178,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
                     if not first_token_received:
                         time_to_first_token = time.perf_counter() - start_time
-                        record_metric("time_to_first_token", time_to_first_token, attributes)
+                        record_metric(MetricName.TIME_TO_FIRST_TOKEN, time_to_first_token, attributes)
                         first_token_received = True
 
                 yield text_piece
@@ -187,7 +187,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
             total_time = time.perf_counter() - start_time
             token_throughput = output_tokens / total_time
-            record_metric("prompt_throughput", total_time, attributes)
-            record_metric("token_throughput", token_throughput, attributes)
+            record_metric(MetricName.PROMPT_THROUGHPUT, total_time, attributes)
+            record_metric(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)
