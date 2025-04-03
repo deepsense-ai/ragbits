@@ -1,22 +1,15 @@
 import os
 from pathlib import Path
 from types import TracebackType
-from typing import Any, TypeVar
-from unittest.mock import MagicMock, patch
+from typing import Any
 
 from aiohttp import ClientSession
+from gcloud.aio.storage import Storage as StorageClient
 
 from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.gcs import GCSSource
-from ragbits.core.sources.hf import HuggingFaceSource
 
 os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
-
-
-try:
-    from gcloud.aio.storage import Storage as StorageClient
-except ImportError:
-    StorageClient = TypeVar("StorageClient")  # type: ignore
 
 
 class MockStorage(StorageClient):
@@ -84,21 +77,5 @@ async def test_gcs_source_fetch() -> None:
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
     assert mock_storage.downloaded_files == [("test-bucket", "doc.md")]
-
-    path.unlink()
-
-
-async def test_huggingface_source_fetch() -> None:
-    take = MagicMock(return_value=[{"content": "This is the content of the file.", "source": "doc.md"}])
-    skip = MagicMock(return_value=MagicMock(take=take))
-    data = MagicMock(skip=skip)
-    source = HuggingFaceSource(path="org/docs", split="train", row=1)
-
-    with patch("ragbits.core.sources.hf.load_dataset", return_value=data):
-        path = await source.fetch()
-
-    assert source.id == "huggingface:org/docs/train/1"
-    assert path.name == "doc.md"
-    assert path.read_text() == "This is the content of the file."
 
     path.unlink()
