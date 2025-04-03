@@ -59,6 +59,9 @@ export default function Component() {
         updateMessage(assistantResponseId, streamData);
       },
       onError,
+      () => {
+        setIsLoading(false);
+      },
       {
         method: "POST",
         body: {

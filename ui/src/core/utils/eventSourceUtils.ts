@@ -1,10 +1,11 @@
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { ChatResponse } from "../../types/api";
 
 export const createEventSource = (
   url: string,
   onMessage: (data: ChatResponse) => void,
   onError: () => void,
+  onClose?: () => void,
   config: {
     method: "GET" | "POST";
     body?: Record<string, unknown>;
@@ -22,79 +23,59 @@ export const createEventSource = (
   const { method, body } = config;
   const message = body ? JSON.stringify(body) : null;
 
-  if (method === "GET") {
-    const eventSource = new EventSource(url);
+  let isCancelled = false;
+  const handleStream = async (response: AxiosResponse) => {
+    const stream = response.data;
+    const reader: ReadableStreamDefaultReader<string> = stream
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
 
-    eventSource.onmessage = (event) => {
-      const { data } = event;
-      onMessage(data);
-    };
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done || isCancelled) {
+        onClose?.();
+        return;
+      }
 
-    eventSource.onerror = (error) => {
-      console.error("EventSource failed:", error);
-      eventSource.close();
-      onError();
-    };
+      const lines = value.split("\n");
 
-    return () => {
-      eventSource.close();
-    };
-  }
-
-  if (method === "POST") {
-    let isCancelled = false;
-
-    axiosClient
-      .post(url, message)
-      .then(async (response) => {
-        const stream = response.data;
-        const reader: ReadableStreamDefaultReader<string> = stream
-          .pipeThrough(new TextDecoderStream())
-          .getReader();
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done || isCancelled) break;
-
-          if (!value) {
-            console.error("Received empty message");
-            onError();
-            return;
-          }
-
-          const lines = value.split("\n");
-
-          if (lines.length === 0) {
-            console.error("Received empty message");
-            onError();
-            return;
-          }
-
-          for (const line of lines) {
-            if (!line.startsWith("data: ")) {
-              continue;
-            }
-
-            try {
-              const jsonString = line.replace("data: ", "").trim();
-              const parsedValue = JSON.parse(jsonString);
-              onMessage(parsedValue);
-            } catch (error) {
-              console.error("Error parsing JSON:", error);
-              onError();
-            }
-          }
-        }
-      })
-      .catch((error) => {
-        console.error("Error in createEventSource:", error);
+      if (lines.length === 0) {
+        console.error("Received empty message");
         onError();
-      });
+        return;
+      }
 
-    return () => {
-      isCancelled = true;
-    };
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) {
+          continue;
+        }
+
+        try {
+          const jsonString = line.replace("data: ", "").trim();
+          const parsedValue = JSON.parse(jsonString);
+          onMessage(parsedValue);
+        } catch (error) {
+          console.error("Error parsing JSON:", error);
+          onError();
+        }
+      }
+    }
+  };
+
+  const handleError = (error: Error) => {
+    console.error("Error in createEventSource:", error);
+    onError();
+  };
+
+  if (method === "GET") {
+    axiosClient.get(url).then(handleStream).catch(handleError);
+  } else if (method === "POST") {
+    axiosClient.post(url, message).then(handleStream).catch(handleError);
+  } else {
+    throw new Error("Invalid method. Use GET or POST.");
   }
 
-  throw new Error("Invalid method. Use GET or POST.");
+  return () => {
+    isCancelled = true;
+  };
 };

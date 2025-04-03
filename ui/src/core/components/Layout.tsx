@@ -78,7 +78,7 @@ export default function Layout({
             </Button>
           </div>
         </header>
-        <main className="flex h-full">
+        <main className="flex h-full overflow-hidden">
           <div className="flex h-full w-full flex-col gap-4 rounded-none rounded-b-medium border-0 border-b border-l border-r border-divider py-3">
             {children}
           </div>
