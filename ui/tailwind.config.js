@@ -13,6 +13,15 @@ export default {
         dark: "#1A1A1A",
         light: "#FFFFFF",
       },
+      keyframes: {
+        "pop-in": {
+          "0%": { transform: "scale(0.8)", opacity: 0 },
+          "100%": { transform: "scale(1)", opacity: 1 },
+        },
+      },
+      animation: {
+        "pop-in": "pop-in 0.2s ease-out forwards",
+      },
     },
   },
   plugins: [
