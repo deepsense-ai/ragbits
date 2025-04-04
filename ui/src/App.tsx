@@ -14,6 +14,8 @@ import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
 import { ChatRequest, ChatResponseType, MessageRole } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -75,6 +77,41 @@ export default function Component() {
     );
   };
 
+  // TODO: Fetch this from the server
+  const heroMessage = `Hello! I'm your AI assistant. How can I help you today? You can ask me anything!
+I also support markdown formatting. Which you can see **here**.`;
+
+  const historyComponent = (
+    <ScrollShadow className="flex h-full flex-col gap-6">
+      {messages.map((message, idx) => (
+        <ChatMessage
+          key={idx}
+          chatMessage={message}
+          onOpenFeedbackForm={
+            isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
+          }
+        />
+      ))}
+    </ScrollShadow>
+  );
+
+  const heroComponent = (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="flex w-full max-w-[600px] flex-col gap-4">
+        <Markdown
+          className="text-large text-default-900"
+          remarkPlugins={[remarkGfm]}
+        >
+          {heroMessage}
+        </Markdown>
+        <div className="text-center text-small text-default-500">
+          You can start a conversation by typing in the input box below.
+        </div>
+      </div>
+    </div>
+  );
+  const content = messages.length > 0 ? historyComponent : heroComponent;
+
   return (
     <div
       className={cn(
@@ -85,19 +122,7 @@ export default function Component() {
       <div className="h-full w-full max-w-full">
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
-            <ScrollShadow className="flex h-full flex-col gap-6">
-              {messages.map((message, idx) => (
-                <ChatMessage
-                  key={idx}
-                  chatMessage={message}
-                  onOpenFeedbackForm={
-                    isFeedbackFormPluginActivated
-                      ? onOpenFeedbackForm
-                      : undefined
-                  }
-                />
-              ))}
-            </ScrollShadow>
+            {content}
             <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
               <PromptInput
                 isLoading={isLoading}
