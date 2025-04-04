@@ -1,7 +1,7 @@
-import { cn, ScrollShadow, useDisclosure } from "@heroui/react";
+import { Button, cn, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
@@ -16,11 +16,13 @@ import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.t
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const { messages, createMessage, updateMessage } = useHistoryContext();
   const { theme } = useThemeContext();
 
@@ -28,6 +30,9 @@ export default function Component() {
   const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
     FeedbackFormPluginName,
   );
+  const showHistory = useMemo(() => {
+    return messages.length > 0;
+  }, [messages.length]);
 
   useEffect(() => {
     if (!scrollContainerRef.current) {
@@ -36,6 +41,31 @@ export default function Component() {
     const scrollHeight = scrollContainerRef.current.scrollHeight;
     scrollContainerRef.current.scrollTop = scrollHeight;
   }, [messages]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!scrollContainerRef.current) return;
+      const container = scrollContainerRef.current;
+      const offsetFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      setShowScrollDownButton(offsetFromBottom > 100);
+    };
+
+    const container = scrollContainerRef.current;
+    container?.addEventListener("scroll", handleScroll);
+
+    return () => {
+      container?.removeEventListener("scroll", handleScroll);
+    };
+  }, [showHistory]);
+
+  const scrollToBottom = () => {
+    if (!scrollContainerRef.current) return;
+    scrollContainerRef.current.scrollTo({
+      top: scrollContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  };
 
   const onOpenFeedbackForm = () => {
     onOpen();
@@ -88,7 +118,7 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
 
   const historyComponent = (
     <ScrollShadow
-      className="flex h-full flex-col gap-6 pb-32"
+      className="relative flex h-full flex-col gap-6 pb-8"
       ref={scrollContainerRef}
     >
       {messages.map((message, idx) => (
@@ -119,7 +149,7 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
     </div>
   );
 
-  const content = messages.length > 0 ? historyComponent : heroComponent;
+  const content = showHistory ? historyComponent : heroComponent;
 
   return (
     <div
@@ -132,6 +162,22 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
         <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             {content}
+
+            <Button
+              variant="solid"
+              onPress={scrollToBottom}
+              className={cn(
+                "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
+                showScrollDownButton
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0",
+              )}
+              tabIndex={-1}
+              startContent={<Icon icon="heroicons:arrow-down" />}
+            >
+              Scroll to bottom
+            </Button>
+
             <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
               <PromptInput
                 isLoading={isLoading}

@@ -25,6 +25,7 @@ loadIcons([
   "heroicons:arrow-path",
   "heroicons:sun",
   "heroicons:moon",
+  "heroicons:arrow-down",
 ]);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
