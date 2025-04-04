@@ -1,7 +1,7 @@
 import { cn, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
@@ -20,14 +20,22 @@ import remarkGfm from "remark-gfm";
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const { messages, createMessage, updateMessage } = useHistoryContext();
   const { theme } = useThemeContext();
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
   const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
     FeedbackFormPluginName,
   );
+
+  useEffect(() => {
+    if (!scrollContainerRef.current) {
+      return;
+    }
+    const scrollHeight = scrollContainerRef.current.scrollHeight;
+    scrollContainerRef.current.scrollTop = scrollHeight;
+  }, [messages]);
 
   const onOpenFeedbackForm = () => {
     onOpen();
@@ -35,7 +43,6 @@ export default function Component() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-
     createMessage({
       content: message,
       role: MessageRole.USER,
@@ -48,7 +55,6 @@ export default function Component() {
 
     const onError = () => {
       setIsLoading(false);
-      // Add error message
       updateMessage(assistantResponseId, {
         type: ChatResponseType.TEXT,
         content: "An error occurred. Please try again.",
@@ -56,7 +62,7 @@ export default function Component() {
     };
 
     createEventSource<ChatRequest>(
-      `http://localhost:8000/api/chat`,
+      "http://localhost:8000/api/chat",
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
       },
@@ -68,21 +74,23 @@ export default function Component() {
         method: "POST",
         body: {
           message,
-          history: messages.map((message) => ({
-            role: message.role,
-            content: message.content,
+          history: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
           })),
         },
       },
     );
   };
 
-  // TODO: Fetch this from the server
-  const heroMessage = `Hello! I'm your AI assistant. How can I help you today? You can ask me anything!
-I also support markdown formatting. Which you can see **here**.`;
+  const heroMessage = `Hello! I'm your AI assistant. How can I help you today?
+You can ask me anything! I also support markdown formatting. **Like this**.`;
 
   const historyComponent = (
-    <ScrollShadow className="flex h-full flex-col gap-6">
+    <ScrollShadow
+      className="flex h-full flex-col gap-6 pb-32"
+      ref={scrollContainerRef}
+    >
       {messages.map((message, idx) => (
         <ChatMessage
           key={idx}
@@ -110,6 +118,7 @@ I also support markdown formatting. Which you can see **here**.`;
       </div>
     </div>
   );
+
   const content = messages.length > 0 ? historyComponent : heroComponent;
 
   return (
