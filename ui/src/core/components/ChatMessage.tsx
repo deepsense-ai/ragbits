@@ -1,4 +1,4 @@
-import { forwardRef, useState } from "react";
+import { forwardRef, useRef, useState } from "react";
 import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,9 +17,18 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ chatMessage: { content, role }, onOpenFeedbackForm, classNames }, ref) => {
     const rightAlign = role === MessageRole.USER;
     const [didAnimate, setDidAnimate] = useState(false);
+    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
 
     const onCopyClick = () => {
       navigator.clipboard.writeText(content);
+      setCopyIcon("heroicons:check");
+      if (copyIconTimerRef.current) {
+        clearTimeout(copyIconTimerRef.current);
+      }
+      copyIconTimerRef.current = setTimeout(() => {
+        setCopyIcon("heroicons:clipboard");
+      }, 2000);
     };
 
     return (
@@ -65,7 +74,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         aria-label="Copy message"
                         onPress={onCopyClick}
                       >
-                        <Icon icon="heroicons:clipboard" />
+                        <Icon icon={copyIcon} />
                       </Button>
                     </DelayedTooltip>
                     {!!onOpenFeedbackForm && (
