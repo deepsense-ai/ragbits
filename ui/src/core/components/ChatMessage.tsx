@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,8 +15,17 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ chatMessage: { content, role }, onOpenFeedbackForm, classNames }, ref) => {
     const rightAlign = role === MessageRole.USER;
 
+    const [didAnimate, setDidAnimate] = useState(false);
+
     const Message = () => (
-      <div className={cn("flex flex-col gap-4", rightAlign && "max-w-[75%]")}>
+      <div
+        className={cn(
+          !didAnimate && "motion-safe:animate-pop-in",
+          "flex flex-col gap-4",
+          rightAlign && "max-w-[75%]",
+        )}
+        onAnimationEnd={() => setDidAnimate(true)}
+      >
         <div
           className={cn(
             "relative w-full rounded-medium px-4 py-3 text-default",
