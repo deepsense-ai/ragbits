@@ -11,16 +11,27 @@ from ragbits.document_search.ingestion.enrichers.exceptions import EnricherEleme
 from ragbits.document_search.ingestion.enrichers.image import ImageDescriberPrompt, ImageElementEnricher
 
 
-def test_enricher_validates_supported_element_types_passes() -> None:
+def test_enricher_validates_supported_element_types() -> None:
     ImageElementEnricher.validate_element_type(ImageElement)
 
+    with pytest.raises(EnricherElementNotSupportedError):
+        ImageElementEnricher.validate_element_type(TextElement)
 
-def test_enricher_validates_supported_document_types_fails() -> None:
+
+def test_enricher_validates_supported_document_union_types() -> None:
     class CustomElement(Element):
+        @property
+        def text_representation(self) -> str:
+            return ""
+
+    class CustomElementEnricher(ElementEnricher[CustomElement | TextElement]):
         pass
 
+    CustomElementEnricher.validate_element_type(CustomElement)
+    CustomElementEnricher.validate_element_type(TextElement)
+
     with pytest.raises(EnricherElementNotSupportedError):
-        ImageElementEnricher.validate_element_type(CustomElement)  # type: ignore
+        CustomElementEnricher.validate_element_type(ImageElement)
 
 
 @pytest.mark.parametrize(
