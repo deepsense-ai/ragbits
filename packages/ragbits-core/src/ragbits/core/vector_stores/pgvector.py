@@ -204,7 +204,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
-            (id UUID, key TEXT, vector VECTOR({self._vector_size}), metadata JSONB);
+            (id UUID, text TEXT, image_bytes BYTEA, vector VECTOR({self._vector_size}), metadata JSONB);
             """
             # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
             create_index_query = f"""
@@ -239,8 +239,8 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             return
         # _table_name has been validated in the class constructor, and it is a valid table name.
         insert_query = f"""
-        INSERT INTO {self._table_name} (id, key, vector, metadata)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO {self._table_name} (id, text, image_bytes, vector, metadata)
+        VALUES ($1, $2, $3, $4, $5)
         """  # noqa S608
         with trace(
             table_name=self._table_name,
@@ -268,6 +268,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                         insert_query,
                         str(entry.id),
                         entry.text,
+                        entry.image_bytes,
                         str(embeddings[entry.id]),
                         json.dumps(entry.metadata, default=pydantic_encoder),
                     )
@@ -333,7 +334,8 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                     VectorStoreResult(
                         entry=VectorStoreEntry(
                             id=record["id"],
-                            text=record["key"],
+                            text=record["text"] or "",
+                            image_bytes=record["image_bytes"],
                             metadata=json.loads(record["metadata"]),
                         ),
                         vector=json.loads(record["vector"]),
@@ -367,11 +369,11 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             try:
                 async with self._client.acquire() as conn:
                     results = await conn.fetch(list_query, *values)
-
                 outputs.listed_entries = [
                     VectorStoreEntry(
                         id=record["id"],
-                        text=record["key"],
+                        text=record["text"] or None,
+                        image_bytes=record["image_bytes"],
                         metadata=json.loads(record["metadata"]),
                     )
                     for record in results
