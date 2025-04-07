@@ -28,7 +28,7 @@ vector_store_image = InMemoryVectorStore(embedder=embedder, embedding_type=Embed
 vector_store_hybrid = HybridSearchVectorStore(vector_store_text, vector_store_image)
 ```
 
-You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbit's Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the text embedding and the other will store the image embedding.
+You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbits' Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the text embedding and the other will store the image embedding.
 
 ## Using a Hybrid Vector Store with Different Types of Embeddings
 
@@ -46,7 +46,7 @@ vector_store_mistral = InMemoryVectorStore(embedder=LiteLLMEmbedder(model="mistr
 vector_store_hybrid = HybridSearchVectorStore(vector_store_openai, vector_store_mistral)
 ```
 
-You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbit's Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the embedding using the OpenAI model and the other will store the embedding using the Mistral model.
+You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbits' Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the embedding using the OpenAI model and the other will store the embedding using the Mistral model.
 
 Note that you can pass an arbitrary number of vector stores to the `HybridSearchVectorStore` constructor, and they can be of any type as long as they implement the `VectorStore` interface. For example, this combines three vector stores—one Chroma vector store, one Qdrant vector store, and one PgVector vector store:
 
