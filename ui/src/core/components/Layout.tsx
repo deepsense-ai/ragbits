@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { useHistoryContext } from "../../contexts/HistoryContext/useHistoryContext";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext";
+import DelayedTooltip from "./DelayedTooltip";
 
 export default function Layout({
   children,
@@ -56,26 +57,30 @@ export default function Layout({
           )}
           {header}
           <div className="flex items-center gap-2">
-            <Button
-              isIconOnly
-              aria-label="Clear chat"
-              variant="ghost"
-              onPress={clearMessages}
-            >
-              <Icon icon="heroicons:arrow-path" />
-            </Button>
-            <Button
-              isIconOnly
-              aria-label="Clear chat"
-              variant="ghost"
-              onPress={toggleTheme}
-            >
-              {theme === Theme.DARK ? (
-                <Icon icon="heroicons:sun" />
-              ) : (
-                <Icon icon="heroicons:moon" />
-              )}
-            </Button>
+            <DelayedTooltip content="Clear chat" placement="bottom">
+              <Button
+                isIconOnly
+                aria-label="Clear chat"
+                variant="ghost"
+                onPress={clearMessages}
+              >
+                <Icon icon="heroicons:arrow-path" />
+              </Button>
+            </DelayedTooltip>
+            <DelayedTooltip content="Change theme" placement="bottom">
+              <Button
+                isIconOnly
+                aria-label="Clear chat"
+                variant="ghost"
+                onPress={toggleTheme}
+              >
+                {theme === Theme.DARK ? (
+                  <Icon icon="heroicons:sun" />
+                ) : (
+                  <Icon icon="heroicons:moon" />
+                )}
+              </Button>
+            </DelayedTooltip>
           </div>
         </header>
         <main className="flex h-full overflow-hidden">

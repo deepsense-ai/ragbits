@@ -61,7 +61,14 @@ class RagbitsAPI:
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["http://localhost:8000", "http://localhost:5173", "http://localhost:8081"],
+            allow_origins=[
+                "http://localhost:8000",
+                "http://localhost:5173",
+                "http://localhost:8081",
+                "http://127.0.1:8000",
+                "http://127.0.0.1:5173",
+                "http://127.0.0.1:8081",
+            ],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
