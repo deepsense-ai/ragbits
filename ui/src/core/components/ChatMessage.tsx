@@ -60,7 +60,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               ) : (
                 <>
                   <Markdown
-                    className="prose max-w-full lg:prose-xl"
+                    className="prose max-w-full text-default-900 lg:prose-xl"
                     remarkPlugins={[remarkGfm]}
                   >
                     {content}
