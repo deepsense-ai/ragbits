@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry
 
 ## 0.13.0 (2025-04-02)
 - Make the score in VectorStoreResult consistent (always bigger is better)

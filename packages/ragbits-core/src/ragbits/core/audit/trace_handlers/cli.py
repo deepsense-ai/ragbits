@@ -8,7 +8,7 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
-from ragbits.core.audit.base import AttributeFormatter, TraceHandler
+from ragbits.core.audit.trace_handlers.base import AttributeFormatter, TraceHandler
 
 
 class SpanStatus(Enum):
