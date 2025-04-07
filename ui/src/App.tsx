@@ -101,7 +101,7 @@ export default function Component() {
     };
 
     createEventSource<ChatRequest>(
-      "http://localhost:8000/api/chat",
+      "http://127.0.0.1:8000/api/chat",
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
       },
