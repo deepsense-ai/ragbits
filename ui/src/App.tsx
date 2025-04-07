@@ -122,8 +122,8 @@ export default function Component() {
     );
   };
 
-  const heroMessage = `Hello! I'm your AI assistant. How can I help you today?
-You can ask me anything! I also support markdown formatting. **Like this**.`;
+  const heroMessage = `Hello! I'm your AI assistant.\n\n How can I help you today?
+You can ask me anything! I can provide information, answer questions, and assist you with various tasks.`;
 
   const historyComponent = (
     <ScrollShadow
@@ -178,7 +178,7 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
               onPress={scrollToBottom}
               className={cn(
                 "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
-                showScrollDownButton
+                showScrollDownButton && showHistory
                   ? "opacity-100"
                   : "pointer-events-none opacity-0",
               )}
