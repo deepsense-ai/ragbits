@@ -1,7 +1,7 @@
 import { Button, cn, ScrollShadow, useDisclosure } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { createEventSource } from "./core/utils/eventSourceUtils";
@@ -23,6 +23,7 @@ export default function Component() {
   const [message, setMessage] = useState<string>("");
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const { messages, createMessage, updateMessage } = useHistoryContext();
   const { theme } = useThemeContext();
 
@@ -30,53 +31,61 @@ export default function Component() {
   const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
     FeedbackFormPluginName,
   );
-  const showHistory = useMemo(() => {
-    return messages.length > 0;
+  const showHistory = useMemo(() => messages.length > 0, [messages.length]);
+
+  const handleScroll = useCallback(() => {
+    const AUTO_SCROLL_THRESHOLD = 25;
+    const SCROLL_DOWN_THRESHOLD = 100;
+    if (!scrollContainerRef.current) return;
+    const container = scrollContainerRef.current;
+    const offsetFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    setShowScrollDownButton(offsetFromBottom > SCROLL_DOWN_THRESHOLD);
+    setShouldAutoScroll(false);
+    if (offsetFromBottom > AUTO_SCROLL_THRESHOLD) {
+      setShouldAutoScroll(false);
+    } else {
+      setShouldAutoScroll(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    setShouldAutoScroll(true);
   }, [messages.length]);
 
   useEffect(() => {
-    if (!scrollContainerRef.current) {
-      return;
+    if (!scrollContainerRef.current) return;
+
+    if (shouldAutoScroll) {
+      const container = scrollContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
-    const scrollHeight = scrollContainerRef.current.scrollHeight;
-    scrollContainerRef.current.scrollTop = scrollHeight;
-  }, [messages]);
+  }, [handleScroll, messages, shouldAutoScroll]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (!scrollContainerRef.current) return;
-      const container = scrollContainerRef.current;
-      const offsetFromBottom =
-        container.scrollHeight - container.scrollTop - container.clientHeight;
-      setShowScrollDownButton(offsetFromBottom > 100);
-    };
-
     const container = scrollContainerRef.current;
     container?.addEventListener("scroll", handleScroll);
 
     return () => {
       container?.removeEventListener("scroll", handleScroll);
     };
-  }, [showHistory]);
+  }, [handleScroll, showHistory]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     if (!scrollContainerRef.current) return;
     scrollContainerRef.current.scrollTo({
       top: scrollContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
-  };
+    setShouldAutoScroll(true);
+  }, []);
 
-  const onOpenFeedbackForm = () => {
-    onOpen();
-  };
+  const onOpenFeedbackForm = () => onOpen();
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    createMessage({
-      content: message,
-      role: MessageRole.USER,
-    });
+    createMessage({ content: message, role: MessageRole.USER });
 
     const assistantResponseId = createMessage({
       content: "",
@@ -121,10 +130,10 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
       className="relative flex h-full flex-col gap-6 pb-8"
       ref={scrollContainerRef}
     >
-      {messages.map((message, idx) => (
+      {messages.map((m, idx) => (
         <ChatMessage
           key={idx}
-          chatMessage={message}
+          chatMessage={m}
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
@@ -163,6 +172,7 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             {content}
 
+            {/* Floating Scroll-to-bottom button */}
             <Button
               variant="solid"
               onPress={scrollToBottom}
