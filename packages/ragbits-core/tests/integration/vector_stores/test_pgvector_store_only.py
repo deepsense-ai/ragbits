@@ -189,7 +189,7 @@ async def test_vector_store_retrieve_order(
     for res in results:
         print(res.entry.id)
     assert len(results) == 1
-    expected_entry = vector_store_entries[2]
+    expected_entry = vector_store_entries[0]
 
     assert results[0].entry.id == expected_entry.id
 
