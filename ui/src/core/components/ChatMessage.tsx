@@ -54,7 +54,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         >
           <div
             className={cn(
-              "relative w-full rounded-medium px-4 py-3 text-default",
+              "relative rounded-medium px-4 py-3 text-default",
               rightAlign && "bg-default-100",
             )}
           >
