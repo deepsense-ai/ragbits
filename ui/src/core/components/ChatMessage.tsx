@@ -6,6 +6,8 @@ import type { ChatMessage } from "../../types/chat";
 import { MessageRole } from "../../types/api";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "./DelayedTooltip";
+import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
+import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 
 export type ChatMessageProps = {
   classNames?: string[];
@@ -19,6 +21,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const [didAnimate, setDidAnimate] = useState(false);
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
+    const { theme } = useThemeContext();
 
     const onCopyClick = () => {
       navigator.clipboard.writeText(content);
@@ -44,6 +47,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           className={cn(
             !didAnimate && "motion-safe:animate-pop-in",
             "flex flex-col gap-4",
+            "w-full",
             rightAlign && "max-w-[75%]",
           )}
           onAnimationEnd={() => setDidAnimate(true)}
@@ -54,13 +58,23 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               rightAlign && "bg-default-100",
             )}
           >
-            <div className={cn("text-small text-default-900")}>
+            <div>
               {rightAlign ? (
-                <div className="whitespace-pre-line">{content}</div>
+                <div
+                  className={cn(
+                    "prose whitespace-pre-line",
+                    theme === Theme.DARK && "dark:prose-invert",
+                  )}
+                >
+                  {content}
+                </div>
               ) : (
                 <>
                   <Markdown
-                    className="prose max-w-full text-default-900 lg:prose-xl"
+                    className={cn(
+                      "prose max-w-full",
+                      theme === Theme.DARK && "dark:prose-invert",
+                    )}
                     remarkPlugins={[remarkGfm]}
                   >
                     {content}
