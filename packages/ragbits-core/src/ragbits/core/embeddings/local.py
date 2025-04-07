@@ -56,7 +56,7 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         self.model_name = model_name
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
+        self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key, trust_remote_code=True).to(self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
 
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
@@ -79,22 +79,25 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
             options=merged_options.dict(),
         ) as outputs:
             embeddings = []
+            # for batch in self._batch(data, merged_options.batch_size):
+            #     batch_dict = self.tokenizer(
+            #         batch,
+            #         max_length=self.tokenizer.model_max_length,
+            #         padding=True,
+            #         truncation=True,
+            #         return_tensors="pt",
+            #     ).to(self.device)
+            #     with torch.no_grad():
+            #         model_outputs = self.model(**batch_dict)
+            #         batch_embeddings = self._average_pool(model_outputs.last_hidden_state, batch_dict["attention_mask"])
+            #         batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
+            #     embeddings.extend(batch_embeddings.to("cpu").tolist())
+            #
+            # torch.cuda.empty_cache()
+            # outputs.embeddings = embeddings
             for batch in self._batch(data, merged_options.batch_size):
-                batch_dict = self.tokenizer(
-                    batch,
-                    max_length=self.tokenizer.model_max_length,
-                    padding=True,
-                    truncation=True,
-                    return_tensors="pt",
-                ).to(self.device)
-                with torch.no_grad():
-                    model_outputs = self.model(**batch_dict)
-                    batch_embeddings = self._average_pool(model_outputs.last_hidden_state, batch_dict["attention_mask"])
-                    batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
-                embeddings.extend(batch_embeddings.to("cpu").tolist())
-
-            torch.cuda.empty_cache()
-            outputs.embeddings = embeddings
+                batch_embeddings = self.model.encode(batch, task="retrieval.passage")
+                embeddings.extend(batch_embeddings)
         return embeddings
 
     @staticmethod
