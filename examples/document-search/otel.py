@@ -99,7 +99,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
     )
     vector_store = ChromaVectorStore(
         client=EphemeralClient(),
