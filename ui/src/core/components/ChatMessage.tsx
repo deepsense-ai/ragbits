@@ -47,8 +47,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           className={cn(
             !didAnimate && "motion-safe:animate-pop-in",
             "flex flex-col gap-4",
-            "w-full",
             rightAlign && "max-w-[75%]",
+            !rightAlign && "w-full",
           )}
           onAnimationEnd={() => setDidAnimate(true)}
         >
@@ -58,48 +58,46 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               rightAlign && "bg-default-100",
             )}
           >
-            <div>
-              {rightAlign ? (
-                <div
+            {rightAlign ? (
+              <div
+                className={cn(
+                  "prose whitespace-pre-line",
+                  theme === Theme.DARK && "dark:prose-invert",
+                )}
+              >
+                {content}
+              </div>
+            ) : (
+              <>
+                <Markdown
                   className={cn(
-                    "prose whitespace-pre-line",
+                    "markdown-container prose max-w-full",
                     theme === Theme.DARK && "dark:prose-invert",
                   )}
+                  remarkPlugins={[remarkGfm]}
                 >
                   {content}
+                </Markdown>
+                <div className="mt-2 flex items-center gap-2">
+                  <DelayedTooltip content="Copy" placement="bottom">
+                    <Button
+                      isIconOnly
+                      variant="ghost"
+                      className="p-0"
+                      aria-label="Copy message"
+                      onPress={onCopyClick}
+                    >
+                      <Icon icon={copyIcon} />
+                    </Button>
+                  </DelayedTooltip>
+                  {!!onOpenFeedbackForm && (
+                    <Button variant="ghost" onPress={onOpenFeedbackForm}>
+                      Open Feedback Form
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <Markdown
-                    className={cn(
-                      "prose max-w-full",
-                      theme === Theme.DARK && "dark:prose-invert",
-                    )}
-                    remarkPlugins={[remarkGfm]}
-                  >
-                    {content}
-                  </Markdown>
-                  <div className="mt-2 flex items-center gap-2">
-                    <DelayedTooltip content="Copy" placement="bottom">
-                      <Button
-                        isIconOnly
-                        variant="ghost"
-                        className="p-0"
-                        aria-label="Copy message"
-                        onPress={onCopyClick}
-                      >
-                        <Icon icon={copyIcon} />
-                      </Button>
-                    </DelayedTooltip>
-                    {!!onOpenFeedbackForm && (
-                      <Button variant="ghost" onPress={onOpenFeedbackForm}>
-                        Open Feedback Form
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-pre {
+.markdown-container pre {
     overflow: auto;
     max-width: 100%;
 }
