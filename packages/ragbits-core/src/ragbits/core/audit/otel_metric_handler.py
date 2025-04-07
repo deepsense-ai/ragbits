@@ -13,11 +13,6 @@ class MetricName(Enum):
     INPUT_TOKENS = ("input_tokens", "Tracks the number of input tokens per request", "tokens")
     TIME_TO_FIRST_TOKEN = ("time_to_first_token", "Tracks the time to first token in seconds", "s")
 
-    def __init__(self, value: str, description: str, unit: str):
-        self._value_ = value
-        self.description = description
-        self.unit = unit
-
 
 class OtelMetricHandler:
     """
@@ -32,7 +27,7 @@ class OtelMetricHandler:
         """
         self._meter = meter
         self._metric_prefix = metric_prefix
-        self.histograms: dict[str, Histogram] = {}
+        self.histograms: dict[MetricName, Histogram] = {}
 
     def setup_histograms(self) -> None:
         """
@@ -40,9 +35,9 @@ class OtelMetricHandler:
         """
         self.histograms = {
             metric: self._meter.create_histogram(
-                name=f"{self._metric_prefix}_{metric.value}",
-                description=metric.description,
-                unit=metric.unit,
+                name=f"{self._metric_prefix}_{metric.value[0]}",
+                description=metric.value[1],
+                unit=metric.value[2],
             )
             for metric in MetricName
         }

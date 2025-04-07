@@ -44,7 +44,7 @@ def set_metric_handler(meter: Meter) -> None:
     _metric_handler.setup_histograms()
 
 
-def record_metric(metric_name: str, value: float, attributes: dict | None = None) -> None:
+def record_metric(metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
     """
     Records a metric using the global metric handler.
 
