@@ -146,7 +146,7 @@ You can ask me anything! I also support markdown formatting. **Like this**.`;
     <div className="flex h-full w-full items-center justify-center">
       <div className="flex w-full max-w-[600px] flex-col gap-4">
         <Markdown
-          className="text-large text-default-900"
+          className="text-center text-large text-default-900"
           remarkPlugins={[remarkGfm]}
         >
           {heroMessage}
