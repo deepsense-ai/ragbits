@@ -10,4 +10,7 @@ export const FeedbackFormPlugin = createPlugin({
       () => import("../ExamplePlugin/ExamplePluginComponent"),
     ),
   },
+  onActivate: () => {
+    console.log("FeedbackFormPlugin activated");
+  },
 });
