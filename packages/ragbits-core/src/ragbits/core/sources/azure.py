@@ -60,23 +60,22 @@ class AzureBlobStorageSource(Source):
             credential = DefaultAzureCredential()
             account_url = f"https://{account_name}.blob.core.windows.net"
             cls._blob_service = BlobServiceClient(account_url=account_url, credential=credential)
+            cls._blob_service.get_account_information()
             return cls._blob_service
         except Exception as e:
-            print(f"Warning: Failed to authenticate using DefaultAzureCredential. \nError: {str(e)}")
+            print(f"DefaultAzureCredential failed: {e}")
 
         connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         if connection_string:
             try:
                 cls._blob_service = BlobServiceClient.from_connection_string(conn_str=connection_string)
+                cls._blob_service.get_account_information()
                 return cls._blob_service
             except Exception as e:
-                raise ValueError("Failed to authenticate using connection string.") from e
+                print(f"Connection string failed: {e}")
 
         # If neither method works, raise an error
-        raise ValueError(
-            "No authentication method available. "
-            "Provide an account_name for identity-based authentication or a connection string."
-        )
+        raise ValueError("Unable to connect to Azure Blob Storage.")
 
     @requires_dependencies(["azure.storage.blob", "azure.core.exceptions"], "azure")
     async def fetch(self) -> Path:
