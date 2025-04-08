@@ -87,7 +87,7 @@ async def test_get_blob_service_no_credentials():
     with (
         patch.object(DefaultAzureCredential, "__init__", side_effect=Exception("Authentication failed")),
         patch("os.getenv", return_value=None),
-        pytest.raises(ValueError, match="No authentication method available"),
+        pytest.raises(ValueError, match="Unable to connect to Azure Blob Storage."),
     ):
         await AzureBlobStorageSource._get_blob_service(account_name=ACCOUNT_NAME)
 
