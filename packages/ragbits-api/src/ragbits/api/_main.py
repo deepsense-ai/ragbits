@@ -1,5 +1,7 @@
 import importlib
+import os
 import json
+import yaml
 import logging
 from collections.abc import AsyncGenerator
 from pathlib import Path
@@ -16,6 +18,8 @@ from ragbits.api.interface import ChatInterface
 from ragbits.api.interface.types import ChatResponse, Message
 
 logger = logging.getLogger(__name__)
+
+STARTED_FROM_DIR = Path(os.getcwd()).resolve()
 
 
 class ChatMessageRequest(BaseModel):
@@ -40,7 +44,7 @@ class RagbitsAPI:
     RagbitsAPI class for running API with Demo UI for testing purposes
     """
 
-    def __init__(self, chat_implementation: type[ChatInterface] | str) -> None:
+    def __init__(self, chat_implementation: type[ChatInterface] | str, config_path: str) -> None:
         """
         Initialize the RagbitsAPI.
 
@@ -50,6 +54,7 @@ class RagbitsAPI:
         """
         self.app = FastAPI()
         self.chat_implementation: ChatInterface | None = None
+        self.config_path = (STARTED_FROM_DIR / config_path).resolve()
         self.dist_dir = Path(__file__).parent / "ui-build"
         self.configure_app()
         self.setup_routes()
@@ -112,6 +117,22 @@ class RagbitsAPI:
             )
 
             return StreamingResponse(response_streamer(response_generator), media_type="text/event-stream")  # type: ignore
+
+        @self.app.get("/api/config", response_class=JSONResponse)
+        async def config() -> JSONResponse:
+            if self.config_path:
+                try:
+                    with open(self.config_path, "r") as file:
+                        config_data = yaml.safe_load(file)
+                    return JSONResponse(content=config_data)
+                except Exception as e:
+                    logger.error(f"Error reading config file: {e}")
+                    return JSONResponse(
+                        status_code=500,
+                        content={"detail": f"Error reading config file: {e}"},
+                    )
+            else:
+                return JSONResponse(content={})
 
     def initialize_chat_implementation(self, implementation: type[ChatInterface] | str) -> None:
         """Initialize the chat implementation from either a class directly or a module path.

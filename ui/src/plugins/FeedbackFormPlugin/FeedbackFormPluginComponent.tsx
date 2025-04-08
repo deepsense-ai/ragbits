@@ -37,9 +37,15 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm({
     resolver: zodResolver(zodSchema),
   });
+
+  const onOpenChange = () => {
+    reset();
+    onClose();
+  };
 
   const handleFormSubmit: SubmitHandler<Record<string, string>> = (data) => {
     onSubmit(data);
@@ -83,7 +89,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} className={cn(theme)}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} className={cn(theme)}>
       <ModalContent>
         {(onClose) => (
           <form onSubmit={handleSubmit(handleFormSubmit)}>

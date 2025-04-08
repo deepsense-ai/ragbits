@@ -8,15 +8,27 @@ import { Icon } from "@iconify/react";
 import DelayedTooltip from "./DelayedTooltip";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
+import { FormSchema } from "../../plugins/FeedbackFormPlugin/types.ts";
 
 export type ChatMessageProps = {
   classNames?: string[];
   chatMessage: ChatMessage;
-  onOpenFeedbackForm?: () => void;
+  onOpenFeedbackForm?: (name: "like_form" | "dislike_form") => void;
+  likeForm: FormSchema | null | undefined;
+  dislikeForm: FormSchema | null | undefined;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  ({ chatMessage: { content, role }, onOpenFeedbackForm, classNames }, ref) => {
+  (
+    {
+      chatMessage: { content, role },
+      onOpenFeedbackForm,
+      classNames,
+      likeForm,
+      dislikeForm,
+    },
+    ref,
+  ) => {
     const rightAlign = role === MessageRole.USER;
     const [didAnimate, setDidAnimate] = useState(false);
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,10 +102,35 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       <Icon icon={copyIcon} />
                     </Button>
                   </DelayedTooltip>
-                  {!!onOpenFeedbackForm && (
-                    <Button variant="ghost" onPress={onOpenFeedbackForm}>
-                      Open Feedback Form
-                    </Button>
+                  {onOpenFeedbackForm && (
+                    <>
+                      {likeForm !== undefined && (
+                        <DelayedTooltip content="Like" placement="bottom">
+                          <Button
+                            isIconOnly
+                            variant="ghost"
+                            className="p-0"
+                            aria-label="Like message"
+                            onPress={() => onOpenFeedbackForm("like_form")}
+                          >
+                            <Icon icon="heroicons:hand-thumb-up" />
+                          </Button>
+                        </DelayedTooltip>
+                      )}
+                      {dislikeForm !== undefined && (
+                        <DelayedTooltip content="Dislike" placement="bottom">
+                          <Button
+                            isIconOnly
+                            variant="ghost"
+                            className="p-0"
+                            aria-label="Dislike message"
+                            onPress={() => onOpenFeedbackForm("dislike_form")}
+                          >
+                            <Icon icon="heroicons:hand-thumb-down" />
+                          </Button>
+                        </DelayedTooltip>
+                      )}
+                    </>
                   )}
                 </div>
               </>

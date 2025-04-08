@@ -6,13 +6,11 @@ import "./globals.css";
 import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContextProvider";
 import { ThemeContextProvider } from "./contexts/ThemeContext/ThemeContextProvider";
 import { loadIcons } from "@iconify/react";
+import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
+import { FeedbackFormPlugin } from "./plugins/FeedbackFormPlugin";
 
-// FIXME: Plugins are disabled for now as there is no way to toggle them in the built version.
-// Register plugins
-// pluginManager.register(FeedbackFormPlugin);
-
-// Activate plugins
-// pluginManager.activate(FeedbackFormPluginName);
+//Register plugins
+pluginManager.register(FeedbackFormPlugin);
 
 // Preload icons
 loadIcons([
