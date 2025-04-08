@@ -111,7 +111,7 @@ export default function Component() {
     };
 
     cancelRef.current = createEventSource<ChatRequest>(
-      "http://127.0.0.1:8000/api/chat",
+      "/api/chat",
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
       },
