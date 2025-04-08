@@ -1,8 +1,11 @@
 # CHANGELOG
 
 ## Unreleased
-- Image embeddings in PgVectorStore
-- Add PgVectorStore to vector store integration tests
+
+- Image embeddings in PgVectorStore (#502)
+- Add PgVectorStore to vector store integration tests (#502)
+- Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)
+
 
 ## 0.13.0 (2025-04-02)
 - Make the score in VectorStoreResult consistent (always bigger is better)
