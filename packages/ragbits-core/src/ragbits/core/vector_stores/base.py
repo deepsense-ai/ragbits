@@ -55,6 +55,9 @@ class VectorStoreResult(BaseModel):
     vector: list[float]
     score: float
 
+    # If the results were created by combining multiple results, this field will contain the subresults.
+    subresults: list["VectorStoreResult"] = []
+
 
 class VectorStoreOptions(Options):
     """
