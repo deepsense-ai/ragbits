@@ -22,6 +22,7 @@ export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const { messages, createMessage, updateMessage } = useHistoryContext();
@@ -52,6 +53,15 @@ export default function Component() {
 
   useEffect(() => {
     setShouldAutoScroll(true);
+    if (messages.length === 0) {
+      // Stop the generation when user resets the chat
+      if (cancelRef.current) {
+        cancelRef.current();
+        cancelRef.current = null;
+      }
+
+      setShowScrollDownButton(false);
+    }
   }, [messages.length]);
 
   useEffect(() => {
@@ -100,7 +110,7 @@ export default function Component() {
       });
     };
 
-    createEventSource<ChatRequest>(
+    cancelRef.current = createEventSource<ChatRequest>(
       "http://127.0.0.1:8000/api/chat",
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
