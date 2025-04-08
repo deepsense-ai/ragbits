@@ -17,6 +17,7 @@ import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { buildApiUrl } from "./core/utils/api.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -111,7 +112,7 @@ export default function Component() {
     };
 
     cancelRef.current = createEventSource<ChatRequest>(
-      "/api/chat",
+      buildApiUrl("/api/chat"),
       (streamData) => {
         updateMessage(assistantResponseId, streamData);
       },
