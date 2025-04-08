@@ -16,9 +16,12 @@ def register(app: typer.Typer) -> None:
 
 
 @ds_app.command()
-def run(chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function")) -> None:
+def run(
+    chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function"),
+    config_path: str = typer.Option(..., "--config-path", help="Path to a module with API config")
+) -> None:
     """
     Run API service with UI demo
     """
-    api = RagbitsAPI(chat_implementation=chat_path)
+    api = RagbitsAPI(chat_implementation=chat_path, config_path=config_path)
     api.run()
