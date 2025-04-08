@@ -19,6 +19,7 @@ nav:
         - "Interact with LLMs": how-to/llms/use_llms.md
         - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
       - Vector Stores:
+        - "Perform hybrid search": how-to/vector_stores/hybrid.md
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Dataset Loading:
         - "Load dataset with sources": how-to/sources/load-dataset.md
@@ -45,6 +46,7 @@ nav:
           - api_reference/core/llms.md
           - api_reference/core/embeddings.md
           - api_reference/core/vector-stores.md
+          - api_reference/core/hybrid.md
           - api_reference/core/sources.md
       - Document Search:
           - api_reference/document_search/index.md

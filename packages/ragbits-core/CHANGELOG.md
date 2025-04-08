@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)
 
 - move sources from ragbits-document-search to ragbits-core (#496)
 
