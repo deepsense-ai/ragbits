@@ -76,8 +76,10 @@ class RagbitsAPI:
 
         assets_dir = self.dist_dir / "assets"
         static_dir = self.dist_dir / "static"
-        self.app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static")
-        self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+        # Note: Assets directory is always produced by the build process, but static directory is optional
+        self.app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+        if static_dir.exists():
+            self.app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     def setup_exception_handlers(self) -> None:
         """Setup custom exception handlers."""

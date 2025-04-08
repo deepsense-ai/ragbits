@@ -6,5 +6,6 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: "../packages/ragbits-api/src/ragbits/api/ui-build",
+    emptyOutDir: true,
   },
 });
