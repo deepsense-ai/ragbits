@@ -59,7 +59,7 @@ config = {
                     },
                 },
                 "source": {
-                    "type": "ragbits.document_search.documents.sources:HuggingFaceSource",
+                    "type": "ragbits.core.sources:HuggingFaceSource",
                     "config": {
                         "path": "micpst/hf-docs",
                         "split": "train[:5]",
