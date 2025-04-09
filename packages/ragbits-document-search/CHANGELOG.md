@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- move sources from ragbits-document-search to ragbits-core (#496)
 - fix union types validation in element enricher (#499)
 
 ## 0.13.0 (2025-04-02)

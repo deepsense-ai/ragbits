@@ -4,11 +4,11 @@ import pytest
 from pydantic import computed_field
 
 from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType, VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import LocalFileSource
 
 
 class AnimalElement(Element):

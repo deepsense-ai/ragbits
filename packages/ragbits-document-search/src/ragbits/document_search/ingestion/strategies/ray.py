@@ -1,10 +1,10 @@
 import asyncio
 from collections.abc import Iterable
 
+from ragbits.core.sources.base import Source
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (

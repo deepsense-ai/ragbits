@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["unstructured>=0.16.9", "unstructured-client>=0.26.0", "rerankers>=0.6.1", "aiohttp>=3.10.8", "ragbits-core==0.13.0"]
+dependencies = ["unstructured>=0.16.9", "unstructured-client>=0.26.0", "rerankers>=0.6.1", "ragbits-core==0.13.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -40,22 +40,8 @@ dependencies = ["unstructured>=0.16.9", "unstructured-client>=0.26.0", "reranker
 "Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
-azure=[
-    "azure-storage-blob>=12.24.1,<13.0.0",
-    "azure-identity>=1.19.0,<2.0.0",
-    "azure-core>=1.32.0,<2.0.0"
-]
-gcs = [
-    "gcloud-aio-storage>=9.3.0,<10.0.0"
-]
-huggingface = [
-    "datasets>=3.0.1,<4.0.0",
-]
 ray = [
     "ray[data]>=2.43.0,<3.0.0",
-]
-s3 = [
-    "boto3>=1.35.42,<2.0.0",
 ]
 
 [tool.uv]

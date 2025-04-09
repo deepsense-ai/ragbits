@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- move sources from ragbits-document-search to ragbits-core (#496)
+
 ## 0.13.0 (2025-04-02)
 
 ### Changed
