@@ -10,6 +10,7 @@ from psycopg import Connection
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStore,
@@ -23,7 +24,6 @@ from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources import LocalFileSource
 
 text_embbedings = [
     [[0.1, 0.2, 0.3], [0.9, 0.9, 0.9]],  # for storage
@@ -34,7 +34,7 @@ image_embeddings = [
     [[0.7, 0.8, 0.9], [1.0, 0.81, 0.84]],
 ]
 
-IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
+IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
 @pytest.fixture
