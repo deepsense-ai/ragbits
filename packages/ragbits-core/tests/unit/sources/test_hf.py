@@ -17,7 +17,7 @@ async def test_huggingface_source_fetch() -> None:
     with patch("ragbits.core.sources.hf.load_dataset", return_value=data):
         path = await source.fetch()
 
-    assert source.id == "huggingface:org/docs/train/1"
+    assert source.id == "hf:org/docs/train/1"
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
 

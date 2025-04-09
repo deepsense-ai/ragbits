@@ -84,7 +84,7 @@ azure=[
 gcs = [
     "gcloud-aio-storage>=9.3.0,<10.0.0"
 ]
-huggingface = [
+hf = [
     "datasets>=3.0.1,<4.0.0",
 ]
 s3 = [

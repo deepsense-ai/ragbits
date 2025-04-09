@@ -4319,7 +4319,7 @@ fastembed-gpu = [
 gcs = [
     { name = "gcloud-aio-storage" },
 ]
-huggingface = [
+hf = [
     { name = "datasets" },
 ]
 lab = [
@@ -4364,7 +4364,7 @@ requires-dist = [
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
     { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42,<2.0.0" },
     { name = "chromadb", marker = "extra == 'chroma'", specifier = ">=0.6.3,<1.0.0" },
-    { name = "datasets", marker = "extra == 'huggingface'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "datasets", marker = "extra == 'hf'", specifier = ">=3.0.1,<4.0.0" },
     { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
@@ -4381,7 +4381,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "huggingface", "s3"]
+provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4529,7 +4529,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "ragbits-cli" },
     { name = "ragbits-conversations" },
-    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "huggingface", "lab", "local", "otel", "pgvector", "qdrant", "s3"] },
+    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "hf", "lab", "local", "otel", "pgvector", "qdrant", "s3"] },
     { name = "ragbits-document-search", extra = ["ray"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
@@ -4561,7 +4561,7 @@ dev = [
 requires-dist = [
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-conversations", editable = "packages/ragbits-conversations" },
-    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "huggingface", "s3"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma", "lab", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "hf", "s3"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["ray"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },

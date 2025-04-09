@@ -463,7 +463,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
                 parser_router=DocumentParserRouter(parsers),
             )
 
-            await document_search.ingest("huggingface://dataset_name/train/0")
+            await document_search.ingest("hf://dataset_name/train/0")
 
             results = await document_search.search("HuggingFace test content")
 
