@@ -2,9 +2,9 @@
 
 ## Unreleased
 - Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)
-
 - move sources from ragbits-document-search to ragbits-core (#496)
 - adding connection check to Azure get_blob_service (#502)
+
 ## 0.13.0 (2025-04-02)
 - Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)

@@ -42,4 +42,4 @@ async def test_huggingface_source_fetch_not_found() -> None:
     with pytest.raises(SourceNotFoundError) as exc:
         await source.fetch()
 
-    assert str(exc.value) == "Source with ID huggingface:micpst/hf-docs/train/1000 not found."
+    assert str(exc.value) == "Source with ID hf:micpst/hf-docs/train/1000 not found."

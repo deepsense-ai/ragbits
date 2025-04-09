@@ -232,7 +232,7 @@ Running an ingest pipeline can be time-consuming, depending on your expected loa
         --address http://<cluster_address>:8265 \
         --runtime-env '{"pip": ["ragbits-core", "ragbits-document-search[ray]"]}' \
         --working-dir . \
-        --python script.py
+        -- python script.py
     ```
 
     There are also other ways to submit jobs to the Ray cluster. For more information, please refer to the [Ray documentation](https://docs.ray.io/en/latest/ray-overview/index.html).

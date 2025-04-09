@@ -22,7 +22,7 @@ class HuggingFaceSource(Source):
     path: str
     split: str = "train"
     row: int
-    protocol: ClassVar[str] = "huggingface"
+    protocol: ClassVar[str] = "hf"
 
     @property
     def id(self) -> str:
@@ -32,10 +32,10 @@ class HuggingFaceSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"huggingface:{self.path}/{self.split}/{self.row}"
+        return f"{self.protocol}:{self.path}/{self.split}/{self.row}"
 
     @traceable
-    @requires_dependencies(["datasets"], "huggingface")
+    @requires_dependencies(["datasets"], "hf")
     async def fetch(self) -> Path:
         """
         Fetch the file from Hugging Face and store it locally.
@@ -75,19 +75,20 @@ class HuggingFaceSource(Source):
     @classmethod
     @traceable
     async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
-        """Create HuggingFaceSource instances from a URI path.
+        """
+        Create HuggingFaceSource instances from a URI path.
 
         Pattern matching is not supported. The path must be in the format:
-        huggingface://dataset_path/split/row
+        hf://dataset_path/split/row
 
         Args:
-            path: The path part of the URI (after huggingface://)
+            path: The path part of the URI (after hf://).
 
         Returns:
-            A sequence containing a single HuggingFaceSource
+            A sequence containing a single HuggingFaceSource.
 
         Raises:
-            ValueError: If the path contains patterns or has invalid format
+            ValueError: If the path contains patterns or has invalid format.
         """
         if "*" in path or "?" in path:
             raise ValueError(
