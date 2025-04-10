@@ -1,5 +1,5 @@
 from pathlib import Path, PosixPath
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import ANY, AsyncMock, MagicMock, mock_open, patch
 
 import pytest
 from azure.core.exceptions import ResourceNotFoundError
@@ -81,31 +81,28 @@ async def test_from_uri_listing():
         )
 
 
-@pytest.mark.asyncio
-async def test_get_blob_service_no_credentials():
-    """Test that ValueError is raised when no credentials are set."""
+def test_get_blob_service_no_credentials():
+    """Test that Exception propageted when no credentials are set."""
     with (
         patch.object(DefaultAzureCredential, "__init__", side_effect=Exception("Authentication failed")),
         patch("os.getenv", return_value=None),
-        pytest.raises(ValueError, match="Unable to connect to Azure Blob Storage."),
+        pytest.raises(Exception, match="Authentication failed"),
     ):
-        await AzureBlobStorageSource._get_blob_service(account_name=ACCOUNT_NAME)
+        AzureBlobStorageSource._get_blob_service(account_name=ACCOUNT_NAME)
 
 
-@pytest.mark.asyncio
-async def test_get_blob_service_with_connection_string():
+def test_get_blob_service_with_connection_string():
     """Test that connection string is used when AZURE_STORAGE_ACCOUNT_NAME is not set."""
     with (
         patch.object(DefaultAzureCredential, "__init__", side_effect=Exception("Authentication failed")),
         patch("os.getenv", return_value="mock_connection_string"),
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,
     ):
-        await AzureBlobStorageSource._get_blob_service(account_name="account_name")
-        mock_from_connection_string.assert_called_once_with(conn_str="mock_connection_string")
+        AzureBlobStorageSource._get_blob_service(account_name="account_name")
+        mock_from_connection_string.assert_called_once_with(conn_str="mock_connection_string", retry_policy=ANY)
 
 
-@pytest.mark.asyncio
-async def test_get_blob_service_with_default_credentials():
+def test_get_blob_service_with_default_credentials():
     """Test that default credentials are used when the account_name and credentials are available."""
     account_url = f"https://{ACCOUNT_NAME}.blob.core.windows.net"
 
@@ -114,10 +111,14 @@ async def test_get_blob_service_with_default_credentials():
         patch("ragbits.core.sources.azure.BlobServiceClient") as mock_blob_client,
         patch("azure.storage.blob.BlobServiceClient.from_connection_string") as mock_from_connection_string,
     ):
-        await AzureBlobStorageSource._get_blob_service(ACCOUNT_NAME)
+        AzureBlobStorageSource._get_blob_service(ACCOUNT_NAME)
 
         mock_credential.assert_called_once()
-        mock_blob_client.assert_called_once_with(account_url=account_url, credential=mock_credential.return_value)
+        mock_blob_client.assert_called_once_with(
+            account_url=account_url,
+            credential=mock_credential.return_value,
+            retry_policy=ANY,
+        )
         mock_from_connection_string.assert_not_called()
 
 
