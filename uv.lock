@@ -1,5 +1,4 @@
 version = 1
-revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -3094,6 +3093,7 @@ name = "nvidia-nvjitlink-cu12"
 version = "12.6.77"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/11/8c/386018fdffdce2ff8d43fedf192ef7d14cab7501cbf78a106dd2e9f1fc1f/nvidia_nvjitlink_cu12-12.6.77-py3-none-manylinux2014_aarch64.whl", hash = "sha256:3bf10d85bb1801e9c894c6e197e44dd137d2a0a9e43f8450e9ad13f2df0dd52d", size = 19270432 },
     { url = "https://files.pythonhosted.org/packages/fe/e4/486de766851d58699bcfeb3ba6a3beb4d89c3809f75b9d423b9508a8760f/nvidia_nvjitlink_cu12-12.6.77-py3-none-manylinux2014_x86_64.whl", hash = "sha256:9ae346d16203ae4ea513be416495167a0101d33d2d14935aa9c1829a3fb45142", size = 19745114 },
 ]
 
@@ -4327,6 +4327,7 @@ lab = [
 ]
 local = [
     { name = "numpy" },
+    { name = "sentence-transformers" },
     { name = "torch" },
     { name = "transformers" },
 ]
@@ -4376,12 +4377,12 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.9.1,<3.0.0" },
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
+    { name = "sentence-transformers", marker = "extra == 'local'", specifier = "==4.0.2" },
     { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
     { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "lab", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4426,7 +4427,6 @@ requires-dist = [
     { name = "unstructured", specifier = ">=0.16.9" },
     { name = "unstructured-client", specifier = ">=0.26.0" },
 ]
-provides-extras = ["ray"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4473,7 +4473,6 @@ requires-dist = [
     { name = "optuna", specifier = "==4.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
-provides-extras = ["relari"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4511,7 +4510,6 @@ requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.3,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
-provides-extras = ["openai"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -5167,6 +5165,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/31/f2289ce78b9b473d582568c234e104d2a342fd658cc288a7553d83bb8595/semantic_version-2.10.0.tar.gz", hash = "sha256:bdabb6d336998cbb378d4b9db3a4b56a1e3235701dc05ea2690d9a997ed5041c", size = 52289 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/23/8146aad7d88f4fcb3a6218f41a60f6c2d4e3a72de72da1825dc7c8f7877c/semantic_version-2.10.0-py2.py3-none-any.whl", hash = "sha256:de78a3b8e0feda74cabc54aab2da702113e33ac9d9eb9d2389bcf1f58b7d9177", size = 15552 },
+]
+
+[[package]]
+name = "sentence-transformers"
+version = "4.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "pillow" },
+    { name = "scikit-learn" },
+    { name = "scipy" },
+    { name = "torch" },
+    { name = "tqdm" },
+    { name = "transformers" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3c/74/606783c6b2e80a609af25d2c487bbe32eb8f0970b0f7519fbb1a099f3ab8/sentence_transformers-4.0.2.tar.gz", hash = "sha256:d33d0c5a69ae0d682115c90e74fc1dc24c4786aeea78e26f5889b037e5921880", size = 267724 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/58/770e1e762893abbfe3cd048f1ed1ea6e00122a195651ea98fb27f55ad17a/sentence_transformers-4.0.2-py3-none-any.whl", hash = "sha256:25f5086d0746c22177f9fb7d431f3eebe6375f3afe1dc7c341c4ca9061e98771", size = 340618 },
 ]
 
 [[package]]
