@@ -73,7 +73,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
         default_options=LiteLLMEmbedderOptions(
             dimensions=1024,
             timeout=1000,

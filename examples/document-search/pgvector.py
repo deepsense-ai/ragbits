@@ -82,7 +82,7 @@ async def main() -> None:
     database_url = "postgresql://ragbits_example:ragbits_example@localhost/ragbits_example"
     async with asyncpg.create_pool(dsn=database_url) as pool:
         embedder = LiteLLMEmbedder(
-            model="text-embedding-3-small",
+            model_name="text-embedding-3-small",
         )
         vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="example", vector_size=1536)
         document_search = DocumentSearch(
