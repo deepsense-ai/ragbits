@@ -8,4 +8,4 @@ rerankers
 py_rust_stemmers
 mirakuru
 psycopg
-pytest-postgres
+pytest-postgresql
