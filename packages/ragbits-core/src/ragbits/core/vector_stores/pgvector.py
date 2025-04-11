@@ -334,7 +334,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                     VectorStoreResult(
                         entry=VectorStoreEntry(
                             id=record["id"],
-                            text=record["text"] or "",
+                            text=record["text"],
                             image_bytes=record["image_bytes"],
                             metadata=json.loads(record["metadata"]),
                         ),
@@ -372,7 +372,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 outputs.listed_entries = [
                     VectorStoreEntry(
                         id=record["id"],
-                        text=record["text"] or None,
+                        text=record["text"],
                         image_bytes=record["image_bytes"],
                         metadata=json.loads(record["metadata"]),
                     )
