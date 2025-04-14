@@ -176,7 +176,7 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         if self._embedding_type == EmbeddingType.IMAGE and not self._embedder.image_support():
             raise ValueError("Embedder does not support image embeddings")
 
-    async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float]]:
+    async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, Union[list[float], SparseVector]]:
         """
         Create embeddings for the given entry, using the provided embedder and embedding type.
 
