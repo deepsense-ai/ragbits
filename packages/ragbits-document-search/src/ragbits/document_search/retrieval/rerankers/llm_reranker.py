@@ -27,9 +27,9 @@ class LLMReranker(Reranker):
     def __init__(
         self,
         model_name: str = "gpt-3.5-turbo",
-        prompt_template: Optional[str] | None = None,
-        reranker_options: Optional[RerankerOptions] | None = None,
-        llm_options: Optional[LiteLLMOptions] | None = None,
+        prompt_template: str | None = None,
+        reranker_options: RerankerOptions | None = None,
+        llm_options: LiteLLMOptions | None = None,
     ):
         self.reranker_options = reranker_options or self.reranker_default_options
         super().__init__(default_options=self.reranker_options)
