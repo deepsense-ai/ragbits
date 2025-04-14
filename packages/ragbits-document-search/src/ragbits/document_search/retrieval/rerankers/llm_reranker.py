@@ -14,6 +14,7 @@ class LLMReranker(Reranker):
     """
     Reranking algorithm for documents - based on relevance to the query.
     """
+
     options_cls = LiteLLMOptions
     default_prompt_template: str = """Is the following document relevant to the query?\n
         Query: {query}\n
