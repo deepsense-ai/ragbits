@@ -10,28 +10,28 @@ import {
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { ChatRequest, ChatResponseType, MessageRole } from "./types/api.ts";
+import {
+  ChatRequest,
+  ChatResponseType,
+  ConfigResponse,
+  FormType,
+  MessageRole,
+} from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import axiosWrapper from "./core/utils/axiosWrapper.ts";
-import { FormSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import { buildApiUrl } from "./core/utils/api.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [config, setConfig] = useState<{
-    like_form?: FormSchema | null;
-    dislike_form?: FormSchema | null;
-  } | null>(null);
+  const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [feedbackName, setFeedbackName] = useState<
-    "like_form" | "dislike_form"
-  >();
+  const [feedbackName, setFeedbackName] = useState<FormType>();
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
@@ -66,8 +66,8 @@ export default function Component() {
     const handleFetchConfig = async () => {
       setIsLoading(true);
 
-      const [data] = await axiosWrapper<Record<string, unknown>>({
-        url: "http://127.0.0.1:8000/api/config",
+      const [data] = await axiosWrapper<ConfigResponse>({
+        url: buildApiUrl("/api/config"),
         method: "GET",
       });
 
@@ -80,13 +80,15 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
-    if (config) {
-      if (
-        config.hasOwnProperty("like_form") ||
-        config.hasOwnProperty("dislike_form")
-      ) {
-        pluginManager.activate(FeedbackFormPluginName);
-      }
+    if (!config) {
+      return;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(config, FormType.LIKE) ||
+      Object.prototype.hasOwnProperty.call(config, FormType.DISLIKE)
+    ) {
+      pluginManager.activate(FeedbackFormPluginName);
     }
   }, [config]);
 
@@ -270,10 +272,10 @@ You can ask me anything! I can provide information, answer questions, and assist
           title: "Feedback Form",
           schema:
             config && feedbackName
-              ? config![feedbackName as keyof typeof config] === null
-                ? { fields: [] }
-                : config![feedbackName as keyof typeof config] === null
-              : { fields: [] },
+              ? !config[feedbackName]
+                ? { title: "", fields: [] }
+                : config[feedbackName]
+              : { title: "", fields: [] },
           onClose: onOpenChange,
           onSubmit: onFeedbackFormSubmit,
           isOpen,

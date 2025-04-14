@@ -3,19 +3,18 @@ import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "../../types/chat";
-import { MessageRole } from "../../types/api";
+import { ConfigResponse, FormType, MessageRole } from "../../types/api";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "./DelayedTooltip";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
-import { FormSchema } from "../../plugins/FeedbackFormPlugin/types.ts";
 
 export type ChatMessageProps = {
   classNames?: string[];
   chatMessage: ChatMessage;
-  onOpenFeedbackForm?: (name: "like_form" | "dislike_form") => void;
-  likeForm: FormSchema | null | undefined;
-  dislikeForm: FormSchema | null | undefined;
+  onOpenFeedbackForm?: (name: FormType) => void;
+  likeForm: ConfigResponse[FormType.LIKE];
+  dislikeForm: ConfigResponse[FormType.DISLIKE];
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
@@ -111,7 +110,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             variant="ghost"
                             className="p-0"
                             aria-label="Like message"
-                            onPress={() => onOpenFeedbackForm("like_form")}
+                            onPress={() => onOpenFeedbackForm(FormType.LIKE)}
                           >
                             <Icon icon="heroicons:hand-thumb-up" />
                           </Button>
@@ -124,7 +123,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             variant="ghost"
                             className="p-0"
                             aria-label="Dislike message"
-                            onPress={() => onOpenFeedbackForm("dislike_form")}
+                            onPress={() => onOpenFeedbackForm(FormType.DISLIKE)}
                           >
                             <Icon icon="heroicons:hand-thumb-down" />
                           </Button>

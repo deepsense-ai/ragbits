@@ -1,20 +1,7 @@
 import { z } from "zod";
+import { FormSchemaResponse } from "../../types/api.ts";
 
-export type FieldType = "text" | "select";
-
-export interface FormField {
-  name: string;
-  label: string;
-  type: FieldType;
-  required: boolean;
-  options?: { label: string; value: string }[];
-}
-
-export interface FormSchema {
-  fields: FormField[];
-}
-
-export const generateZodSchema = (formSchema: FormSchema) => {
+export const generateZodSchema = (formSchema: FormSchemaResponse) => {
   const schemaMap: Record<string, z.ZodTypeAny> = {};
 
   formSchema.fields.forEach((field) => {
