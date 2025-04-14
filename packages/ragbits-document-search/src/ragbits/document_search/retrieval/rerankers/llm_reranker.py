@@ -1,6 +1,5 @@
 import math
 from collections.abc import Sequence
-from typing import Optional
 
 import tiktoken
 
