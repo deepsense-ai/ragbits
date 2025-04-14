@@ -87,7 +87,7 @@ results = await vector_store.retrieve("sample document keywords")
 # Process results
 for result in results:
     print(f"Score: {result.score}, Text: {result.entry.text}")
-    
+
     # Access the sparse vector if needed
     if hasattr(result.vector, "indices"):
         print(f"Sparse vector with {len(result.vector.indices)} non-zero elements")

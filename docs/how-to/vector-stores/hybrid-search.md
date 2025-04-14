@@ -66,10 +66,10 @@ async def hybrid_search(query: str, k: int = 5):
     # Get results from both stores
     dense_results = await dense_store.retrieve(query)
     sparse_results = await sparse_store.retrieve(query)
-    
+
     # Combine results using the chosen strategy
     combined_results = strategy.join([dense_results, sparse_results])
-    
+
     # Return top k results
     return combined_results[:k]
 ```
@@ -88,16 +88,16 @@ class WeightedHybridStrategy(HybridRetrivalStrategy):
     def __init__(self, dense_weight: float = 0.7, sparse_weight: float = 0.3):
         self.dense_weight = dense_weight
         self.sparse_weight = sparse_weight
-    
+
     def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:
         if len(results) != 2:
             raise ValueError("WeightedHybridStrategy expects exactly 2 result lists")
-        
+
         dense_results, sparse_results = results
-        
+
         # Create a dictionary to store combined scores
         combined_entries = {}
-        
+
         # Process dense results
         for result in dense_results:
             entry_id = result.entry.id
@@ -107,7 +107,7 @@ class WeightedHybridStrategy(HybridRetrivalStrategy):
                 "score": result.score * self.dense_weight,
                 "subresults": [result]
             }
-        
+
         # Process sparse results
         for result in sparse_results:
             entry_id = result.entry.id
@@ -123,7 +123,7 @@ class WeightedHybridStrategy(HybridRetrivalStrategy):
                     "score": result.score * self.sparse_weight,
                     "subresults": [result]
                 }
-        
+
         # Convert to VectorStoreResult objects and sort
         combined_results = [
             VectorStoreResult(
@@ -134,7 +134,7 @@ class WeightedHybridStrategy(HybridRetrivalStrategy):
             )
             for data in combined_entries.values()
         ]
-        
+
         return sorted(combined_results, key=lambda x: x.score, reverse=True)
 ```
 
@@ -155,7 +155,7 @@ class DynamicWeightedStrategy(HybridRetrivalStrategy):
             # Longer queries likely benefit more from semantic search
             self.dense_weight = 0.7
             self.sparse_weight = 0.3
-    
+
     def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:
         # Implementation similar to WeightedHybridStrategy
         # ...
