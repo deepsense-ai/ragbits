@@ -1,0 +1,32 @@
+name: ✨ AI Agent Powered Issue
+description: Enhance your workflow with AI-Teammate — your coding assistant for implementing features and resolving issues.
+title: "ai-agent: <short_name>"
+labels: ["ai-agent"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tried AI-Teammate? Tell us how it went — we’re building it even better with you!
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: Describe how the system behaves now. Be specific and provide examples.
+      placeholder: Currently, when a user submits a form with invalid data, the system displays a generic error message instead of highlighting specific issues.
+    validations:
+      required: true
+  - type: textarea
+    id: desired-behavior
+    attributes:
+      label: Desired behavior
+      description: Explain how the system should work after the change. Use concrete scenarios to illustrate.
+      placeholder: When a user submits a form with invalid data, the system should display a validation message next to each incorrect field, such as `Email format is invalid` or `Password must be at least 8 characters`.
+    validations:
+      required: true
+  - type: textarea
+    id: affected-files
+    attributes:
+        label: Affected files or modules
+        description: List components or files that might be impacted by this change. If unsure, mention areas where the behavior occurs.
+        placeholder: src/common/*, src/utils/data_extraction.py
+        render: bash
