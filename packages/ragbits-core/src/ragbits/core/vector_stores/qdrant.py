@@ -155,10 +155,10 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             for entry in entries:
                 if entry.id not in embeddings:
                     continue
-                
+
                 vector = embeddings[entry.id]
                 payload = entry.model_dump(exclude_none=True)
-                
+
                 if isinstance(vector, SparseVector):
                     # Store sparse vector in payload for Qdrant
                     payload["_sparse_vector"] = vector.model_dump()
@@ -229,7 +229,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             outputs.results = []
             for point in query_results.points:
                 entry = VectorStoreEntry.model_validate(point.payload)
-                
+
                 # Check if this point has a sparse vector stored in payload
                 if "_sparse_vector" in point.payload:
                     sparse_data = point.payload["_sparse_vector"]

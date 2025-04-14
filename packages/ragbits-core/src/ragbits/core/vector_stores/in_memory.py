@@ -104,7 +104,7 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 else:
                     # Both are dense vectors
                     score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
-                
+
                 result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)
                 if merged_options.score_threshold is None or result.score >= merged_options.score_threshold:
                     results.append(result)
