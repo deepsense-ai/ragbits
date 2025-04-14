@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import ClassVar, TypeVar
+from typing import ClassVar, TypeVar, Union
 from uuid import UUID
 
 import pydantic
@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
+from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
@@ -52,7 +53,7 @@ class VectorStoreResult(BaseModel):
     """
 
     entry: VectorStoreEntry
-    vector: list[float]
+    vector: Union[list[float], SparseVector]
     score: float
 
     # If the results were created by combining multiple results, this field will contain the subresults.

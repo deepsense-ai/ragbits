@@ -1,10 +1,12 @@
 import contextlib
 from collections.abc import Callable
-from typing import cast
+from typing import cast, Union
 from uuid import UUID
 
 import httpx
+import json
 import qdrant_client
+from ragbits.core.embeddings.sparse import SparseVector
 from qdrant_client import AsyncQdrantClient, models
 from qdrant_client.local.distances import DistanceOrder, distance_to_order
 from qdrant_client.models import (
@@ -149,15 +151,35 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                     vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
                 )
 
-            points = (
-                models.PointStruct(
-                    id=str(entry.id),
-                    vector=embeddings[entry.id],
-                    payload=entry.model_dump(exclude_none=True),
-                )
-                for entry in entries
-                if entry.id in embeddings
-            )
+            points = []
+            for entry in entries:
+                if entry.id not in embeddings:
+                    continue
+                
+                vector = embeddings[entry.id]
+                payload = entry.model_dump(exclude_none=True)
+                
+                if isinstance(vector, SparseVector):
+                    # Store sparse vector in payload for Qdrant
+                    payload["_sparse_vector"] = vector.model_dump()
+                    # Use a placeholder dense vector for Qdrant's vector field
+                    # This is needed because Qdrant requires a vector, but we'll use the sparse one from payload
+                    placeholder_vector = [0.0] * 1  # Minimal placeholder
+                    points.append(
+                        models.PointStruct(
+                            id=str(entry.id),
+                            vector=placeholder_vector,
+                            payload=payload,
+                        )
+                    )
+                else:
+                    points.append(
+                        models.PointStruct(
+                            id=str(entry.id),
+                            vector=vector,
+                            payload=payload,
+                        )
+                    )
 
             self._client.upload_points(
                 collection_name=self._index_name,
@@ -207,12 +229,19 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             outputs.results = []
             for point in query_results.points:
                 entry = VectorStoreEntry.model_validate(point.payload)
+                
+                # Check if this point has a sparse vector stored in payload
+                if "_sparse_vector" in point.payload:
+                    sparse_data = point.payload["_sparse_vector"]
+                    vector = SparseVector.model_validate(sparse_data)
+                else:
+                    vector = cast(list[float], point.vector)
 
                 outputs.results.append(
                     VectorStoreResult(
                         entry=entry,
                         score=point.score * score_multiplier,
-                        vector=cast(list[float], point.vector),
+                        vector=vector,
                     )
                 )
 

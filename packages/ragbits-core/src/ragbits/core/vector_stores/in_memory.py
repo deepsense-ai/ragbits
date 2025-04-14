@@ -1,10 +1,12 @@
 from itertools import islice
+from typing import Union
 from uuid import UUID
 
 import numpy as np
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
@@ -42,7 +44,7 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedding_type=embedding_type,
         )
         self._entries: dict[UUID, VectorStoreEntry] = {}
-        self._embeddings: dict[UUID, list[float]] = {}
+        self._embeddings: dict[UUID, Union[list[float], SparseVector]] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -88,7 +90,21 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             results: list[VectorStoreResult] = []
 
             for entry_id, vector in self._embeddings.items():
-                score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
+                if isinstance(vector, SparseVector) and isinstance(query_vector, list):
+                    # Convert dense query vector to sparse for comparison
+                    sparse_query = SparseVector(indices=list(range(len(query_vector))), values=query_vector)
+                    score = vector.dot_product(sparse_query)
+                elif isinstance(vector, list) and isinstance(query_vector, SparseVector):
+                    # Convert dense stored vector to sparse for comparison
+                    sparse_vector = SparseVector(indices=list(range(len(vector))), values=vector)
+                    score = sparse_vector.dot_product(query_vector)
+                elif isinstance(vector, SparseVector) and isinstance(query_vector, SparseVector):
+                    # Both are sparse vectors
+                    score = vector.dot_product(query_vector)
+                else:
+                    # Both are dense vectors
+                    score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
+                
                 result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)
                 if merged_options.score_threshold is None or result.score >= merged_options.score_threshold:
                     results.append(result)
