@@ -8,11 +8,11 @@ from dataclasses import dataclass, field
 from types import ModuleType
 from typing import ClassVar, ParamSpec, TypeVar
 
+from ragbits.core.sources.base import Source
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
-from ragbits.document_search.documents.sources import Source
 from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
@@ -65,6 +65,15 @@ class IngestExecutionResult:
 
     successful: list[IngestDocumentResult] = field(default_factory=list)
     failed: list[IngestDocumentResult] = field(default_factory=list)
+
+
+class IngestExecutionError(Exception):
+    """
+    Represents an error that occurred during the documents ingest execution.
+    """
+
+    def __init__(self, results: list[IngestDocumentResult]) -> None:
+        self.results = results
 
 
 class IngestStrategy(WithConstructionConfig, ABC):

@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[chroma]",
-#     "ragbits-document-search[huggingface]",
+#     "ragbits-core[chroma,hf]",
+#     "ragbits-document-search",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///

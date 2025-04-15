@@ -7,22 +7,26 @@ import pytest
 
 from ragbits.core.embeddings.noop import NoopEmbedder
 from ragbits.core.vector_stores import WhereQuery
-from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, VectorStoreResult
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 
 VECTOR_EXAMPLE = [0.1, 0.2, 0.3]
 DATA_JSON_EXAMPLE = [
     {
         "id": "8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-        "key": "test_key_1",
+        "text": "test_text_1",
+        "image_bytes": b"test_image_bytes_1",
         "vector": "[0.1, 0.2, 0.3]",
         "metadata": '{"key1": "value1"}',
+        "score": 0.21,
     },
     {
         "id": "9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
-        "key": "test_key_2",
+        "text": "test_text_2",
+        "image_bytes": b"test_image_bytes_2",
         "vector": "[0.4, 0.5, 0.6]",
         "metadata": '{"key2": "value2"}',
+        "score": 0.23,
     },
 ]
 TEST_TABLE_NAME = "test_table"
@@ -84,7 +88,7 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
 
 def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(vector=VECTOR_EXAMPLE)
-    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} ORDER BY distance LIMIT $2;"""  # noqa S608
+    expected_query = f"""SELECT *, vector <=> $1 as distance, 1 - (vector <=> $1) as score FROM {TEST_TABLE_NAME} ORDER BY distance LIMIT $2;"""  # noqa S608
     expected_values = ["[0.1, 0.2, 0.3]", 5]
     assert result == expected_query
     assert values == expected_values
@@ -92,9 +96,9 @@ def test_create_retrieve_query(mock_pgvector_store: PgVectorStore) -> None:
 
 def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) -> None:
     result, values = mock_pgvector_store._create_retrieve_query(
-        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
+        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(score_threshold=0.1, k=10)
     )
-    expected_query = f"""SELECT *, vector <=> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance < $2 ORDER BY distance LIMIT $3;"""  # noqa S608
+    expected_query = f"""SELECT *, vector <=> $1 as distance, 1 - (vector <=> $1) as score FROM {TEST_TABLE_NAME} WHERE score >= $2 ORDER BY distance LIMIT $3;"""  # noqa S608
     expected_values = ["[0.1, 0.2, 0.3]", 0.1, 10]
     assert result == expected_query
     assert values == expected_values
@@ -103,10 +107,10 @@ def test_create_retrieve_query_with_options(mock_pgvector_store: PgVectorStore) 
 def test_create_retrieve_query_with_options_for_ip_distance(mock_pgvector_store: PgVectorStore) -> None:
     mock_pgvector_store._distance_method = "ip"
     result, values = mock_pgvector_store._create_retrieve_query(
-        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(max_distance=0.1, k=10)
+        vector=VECTOR_EXAMPLE, query_options=VectorStoreOptions(score_threshold=0.1, k=10)
     )
-    expected_query = f"""SELECT *, vector <#> $1 as distance FROM {TEST_TABLE_NAME} WHERE distance BETWEEN $2 AND $3 ORDER BY distance LIMIT $4;"""  # noqa S608
-    expected_values = ["[0.1, 0.2, 0.3]", -0.1, 0.1, 10]
+    expected_query = f"""SELECT *, vector <#> $1 as distance, (vector <#> $1) * -1 as score FROM {TEST_TABLE_NAME} WHERE score >= $2 ORDER BY distance LIMIT $3;"""  # noqa S608
+    expected_values = ["[0.1, 0.2, 0.3]", 0.1, 10]
     assert result == expected_query
     assert values == expected_values
 
@@ -133,32 +137,19 @@ async def test_create_table_when_table_exist(
     mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
 ) -> None:
     _, mock_conn = mock_db_pool
-    mock_conn.fetchval = AsyncMock(return_value=True)
-    await mock_pgvector_store.create_table()
-    mock_conn.fetchval.assert_called_once()
-    calls = mock_conn.execute.mock_calls
-    assert any("CREATE EXTENSION" in str(call) for call in calls)
-    assert not any("CREATE TABLE" in str(call) for call in calls)
-    assert not any("CREATE INDEX" in str(call) for call in calls)
-
-
-# TODO: correct test below
-# @pytest.mark.asyncio
-# async def test_create_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
-#     _, mock_conn = mock_db_pool
-#     mock_conn.fetchval = AsyncMock(return_value=False)
-#     await mock_pgvector_store.create_table()
-#     mock_conn.fetchval.assert_called_once()
-#     calls = mock_conn.execute.mock_calls
-#     assert any("CREATE EXTENSION" in str(call) for call in calls)
-#     assert any("CREATE TABLE" in str(call) for call in calls)
-#     assert any("CREATE INDEX" in str(call) for call in calls)
+    with patch.object(mock_pgvector_store, "_check_table_exists", new=AsyncMock(return_value=True)):
+        await mock_pgvector_store.create_table()
+        mock_conn.fetchval.assert_not_called()
+        calls = mock_conn.execute.mock_calls
+        assert not any("CREATE EXTENSION" in str(call) for call in calls)
+        assert not any("CREATE TABLE" in str(call) for call in calls)
+        assert not any("CREATE INDEX" in str(call) for call in calls)
 
 
 @pytest.mark.asyncio
 async def test_store(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    data = [VectorStoreEntry(id=UUID("64144806-e080-4f9c-b46d-682fe4871497"), text="test_key_1", metadata={})]
+    data = [VectorStoreEntry(id=UUID("64144806-e080-4f9c-b46d-682fe4871497"), text="test_text_1", metadata={})]
     await mock_pgvector_store.store(data)
     mock_conn.execute.assert_called()
     calls = mock_conn.execute.mock_calls
@@ -178,13 +169,17 @@ async def test_store_no_entries(mock_pgvector_store: PgVectorStore, mock_db_pool
 @pytest.mark.asyncio
 async def test_store_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
-    mock_conn.execute.side_effect = [asyncpg.exceptions.UndefinedTableError, None]
-    data = [VectorStoreEntry(id=UUID("eeb67aa6-0411-4dc3-9647-c7b3182e0594"), text="test_key_1", metadata={})]
+    # mock_conn.execute.side_effect = [asyncpg.exceptions.UndefinedTableError, None]
+    data = [VectorStoreEntry(id=UUID("eeb67aa6-0411-4dc3-9647-c7b3182e0594"), text="test_text_1", metadata={})]
 
-    with patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table:
+    with (
+        patch.object(mock_pgvector_store, "create_table", new=AsyncMock()) as mock_create_table,
+        patch.object(mock_pgvector_store, "_check_table_exists", new=AsyncMock(return_value=False)) as mock_check_table,
+    ):
         await mock_pgvector_store.store(data)
         mock_create_table.assert_called_once()
-    assert mock_conn.execute.call_count == 2
+        mock_check_table.assert_called_once()
+        mock_conn.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -215,46 +210,72 @@ async def test_remove_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool:
 
 
 @pytest.mark.asyncio
-async def test_fetch_records(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
-    query = f"SELECT * FROM {TEST_TABLE_NAME};"  # noqa S608
-    data = DATA_JSON_EXAMPLE
-    _, mock_conn = mock_db_pool
-    mock_conn.fetch = AsyncMock(return_value=data)
-
-    results = await mock_pgvector_store._fetch_records(query=query, values=[])
-    mock_conn.fetch.assert_called_once()
-    calls = mock_conn.fetch.mock_calls
-    assert any("SELECT * FROM" in str(call) for call in calls)
-    assert len(results) == 2
-    assert results[0].id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
-    assert results[0].text == "test_key_1"
-    assert results[0].metadata == {"key1": "value1"}
-    assert results[1].id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
-    assert results[1].text == "test_key_2"
-    assert results[1].metadata == {"key2": "value2"}
-
-
-@pytest.mark.asyncio
-async def test_fetch_records_no_table(
-    mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
-) -> None:
+async def test_retrieve_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
     mock_conn.fetch.side_effect = asyncpg.exceptions.UndefinedTableError
-    query = "SELECT * FROM some_table;"  # noqa S608
-    with patch("builtins.print") as mock_print:
-        results = await mock_pgvector_store._fetch_records(query=query, values=[])
+    with (
+        patch("builtins.print") as mock_print,
+        patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
+    ):
+        mock_create_retrieve_query.return_value = ("query_string", [["[0.1, 0.2, 0.3]", 0.1, 10]])
+        results = await mock_pgvector_store.retrieve(text="some_text")
         assert results == []
         mock_conn.fetch.assert_called_once()
         mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
 @pytest.mark.asyncio
-async def test_list(mock_pgvector_store: PgVectorStore) -> None:
+async def test_retrieve(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    data = DATA_JSON_EXAMPLE
+    query = "SQL RETRIEVE QUERY"
+    _, mock_conn = mock_db_pool
+    with patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query:
+        mock_conn.fetch = AsyncMock(return_value=data)
+        mock_create_retrieve_query.return_value = (query, [["[0.1, 0.2, 0.3]", 0.1, 1]])
+        results = await mock_pgvector_store.retrieve(text="some_text")
+        mock_create_retrieve_query.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        assert len(results) == 2
+        assert isinstance(results[0], VectorStoreResult)
+        assert isinstance(results[1], VectorStoreResult)
+        assert results[0].entry.id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[1].entry.id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+
+
+@pytest.mark.asyncio
+async def test_list_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    _, mock_conn = mock_db_pool
+    mock_conn.fetch.side_effect = asyncpg.exceptions.UndefinedTableError
     with (
+        patch("builtins.print") as mock_print,
         patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query,
-        patch.object(mock_pgvector_store, "_fetch_records") as mock_fetch_records,
     ):
         mock_create_list_query.return_value = ("query_string", [1, 0])
-        await mock_pgvector_store.list(where=None, limit=1, offset=0)
+
+        results = await mock_pgvector_store.list(where=None, limit=1, offset=0)
+        assert results == []
+        mock_conn.fetch.assert_called_once()
+        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
+
+
+@pytest.mark.asyncio
+async def test_list(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    query = f"SELECT * FROM {TEST_TABLE_NAME};"  # noqa S608
+    data = DATA_JSON_EXAMPLE
+    _, mock_conn = mock_db_pool
+    with patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query:
+        mock_create_list_query.return_value = (query, [None, 0])
+        mock_conn.fetch = AsyncMock(return_value=data)
+
+        results = await mock_pgvector_store.list(where=None, limit=None, offset=0)
         mock_create_list_query.assert_called_once()
-        mock_fetch_records.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        calls = mock_conn.fetch.mock_calls
+        assert any("SELECT * FROM" in str(call) for call in calls)
+        assert len(results) == 2
+        assert results[0].id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[0].text == "test_text_1"
+        assert results[0].metadata == {"key1": "value1"}
+        assert results[1].id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[1].text == "test_text_2"
+        assert results[1].metadata == {"key2": "value2"}

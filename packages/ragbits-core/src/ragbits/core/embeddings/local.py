@@ -73,7 +73,7 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         with trace(
             data=data,
             model_name=self.model_name,
-            model=repr(self.model),
+            model_obj=repr(self.model),
             tokenizer=repr(self.tokenizer),
             device=self.device,
             options=merged_options.dict(),

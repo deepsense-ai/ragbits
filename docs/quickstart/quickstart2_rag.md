@@ -1,6 +1,6 @@
 # Quickstart 2: Adding RAG Capabilities
 
-In this chapter, we will explore how to use Ragbit's Document Search capabilities to retrieve relevant documents for your prompts. This technique is based on the Retrieval Augmented Generation (RAG) architecture, which allows the LLM to generate responses informed by relevant information from your documents.
+In this chapter, we will explore how to use Ragbits' Document Search capabilities to retrieve relevant documents for your prompts. This technique is based on the Retrieval Augmented Generation (RAG) architecture, which allows the LLM to generate responses informed by relevant information from your documents.
 
 To work with document content, we first need to "ingest" them (i.e., process, embed, and store them in a vector database). Afterwards, we can search for relevant documents based on the user's input and use the retrieved information to enhance the LLM's response.
 
@@ -43,7 +43,7 @@ We first need to direct Ragbits to the location of the documents to load them. T
 
 ```python
 from pathlib import Path
-from ragbits.document_search.documents.sources import LocalFileSource
+from ragbits.core.sources import LocalFileSource
 
 # Path to the directory with markdown files to ingest
 documents_path = Path(__file__).parent / "pb-source/en"
