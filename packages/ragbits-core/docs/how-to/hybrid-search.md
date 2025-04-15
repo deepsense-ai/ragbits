@@ -13,7 +13,7 @@ By combining these approaches, you can create more robust search systems that ha
 
 ## Implementing Hybrid Search in Ragbits
 
-Ragbits supports hybrid search through the `HybridSearchVectorStore` class, which can combine results from multiple vector stores.
+Ragbits supports hybrid search through the `HybridVectorStore` class, which can combine results from multiple vector stores using different fusion strategies.
 
 ### Step 1: Create Dense and Sparse Embedders
 
@@ -21,19 +21,18 @@ First, set up both dense and sparse embedders:
 
 ```python
 from ragbits.core.embeddings.base import Embedder
-from ragbits.core.embeddings.sparse import SparseEmbedder
+from ragbits.core.embeddings.sparse import BM25Embedder
 
 # Dense embedder (example using a pre-configured embedder)
 dense_embedder = Embedder.from_config({
-    "type": "ragbits.core.embeddings.openai.OpenAIEmbedder",
+    "type": "ragbits.core.embeddings.litellm.LiteLLMEmbedder",
     "config": {
-        "api_key": "your-api-key",
         "model": "text-embedding-ada-002"
     }
 })
 
 # Sparse embedder
-sparse_embedder = SparseEmbedder()
+sparse_embedder = BM25Embedder()
 ```
 
 ### Step 2: Create Vector Stores for Each Embedder Type
@@ -59,16 +58,18 @@ sparse_store = InMemoryVectorStore(
 )
 ```
 
-### Step 3: Create a Hybrid Search Vector Store
+### Step 3: Create a Hybrid Vector Store
 
-Combine the vector stores using `HybridSearchVectorStore`:
+Combine the vector stores using `HybridVectorStore` with a fusion strategy:
 
 ```python
-from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
+from ragbits.core.vector_stores.hybrid import HybridVectorStore
+from ragbits.core.vector_stores.hybrid_strategies import ReciprocalRankFusion
 
-hybrid_store = HybridSearchVectorStore(
-    stores=[dense_store, sparse_store],
-    weights=[0.7, 0.3]  # Weights for each store (must sum to 1.0)
+# Using Reciprocal Rank Fusion strategy
+hybrid_store = HybridVectorStore(
+    vector_stores=[dense_store, sparse_store],
+    strategy=ReciprocalRankFusion()
 )
 ```
 
@@ -105,24 +106,39 @@ results = await hybrid_store.retrieve("AI algorithms for big data")
 for result in results:
     print(f"Text: {result.entry.text}")
     print(f"Score: {result.score}")
-    print(f"Vector type: {type(result.vector).__name__}")
+    
+    # If you want to see the individual scores from each vector store
+    if result.subresults:
+        for i, subresult in enumerate(result.subresults):
+            store_type = "Dense" if i == 0 else "Sparse"
+            print(f"  - {store_type} score: {subresult.score}")
 ```
+
+## Fusion Strategies
+
+Ragbits provides several strategies for combining results:
+
+1. **OrderedHybridRetrivalStrategy**: Orders results by score and deduplicates them by choosing the first occurrence. This is also known as "Relative Score Fusion".
+
+2. **ReciprocalRankFusion**: Combines results based on their ranks rather than raw scores. This strategy is often more robust to differences in scoring scales between different vector stores.
+
+3. **DistributionBasedScoreFusion**: Normalizes scores based on their distribution before combining them, which can help when different vector stores have very different score distributions.
+
+Choose the strategy that works best for your specific use case.
 
 ## Fine-tuning Hybrid Search
 
-You can adjust the weights of each vector store to optimize for your specific use case:
+You can experiment with different fusion strategies to optimize for your specific use case:
 
-- Higher weight for dense store: Better semantic understanding but might miss exact keyword matches
-- Higher weight for sparse store: Better keyword matching but might miss semantically related content
-- Equal weights: Balanced approach
-
-Experiment with different weights to find the optimal configuration for your data and queries.
+- **OrderedHybridRetrivalStrategy**: Simple and effective when scores are comparable
+- **ReciprocalRankFusion**: More robust when scores have different scales
+- **DistributionBasedScoreFusion**: Best when score distributions vary significantly
 
 ## Advanced Hybrid Search Techniques
 
-### Reranking
+### Custom Reranking
 
-For more sophisticated hybrid search, you can implement a reranking step:
+For more sophisticated hybrid search, you can implement a custom reranking step:
 
 ```python
 from ragbits.core.vector_stores.base import VectorStoreResult
@@ -137,26 +153,6 @@ raw_results = await hybrid_store.retrieve("your query")
 final_results = await rerank_results("your query", raw_results)
 ```
 
-### Query Expansion
-
-You can also implement query expansion to improve search results:
-
-```python
-async def expand_query(query: str) -> list[str]:
-    # Generate variations of the query
-    return [query, f"about {query}", f"{query} explanation"]
-
-expanded_queries = await expand_query("artificial intelligence")
-all_results = []
-
-for expanded_query in expanded_queries:
-    results = await hybrid_store.retrieve(expanded_query)
-    all_results.extend(results)
-
-# Deduplicate and rerank
-# ...
-```
-
 ## Performance Considerations
 
 - Hybrid search requires multiple embedding operations and searches, which can increase latency
@@ -166,4 +162,4 @@ for expanded_query in expanded_queries:
 ## Next Steps
 
 - Explore [Sparse Vectors with Vector Stores](sparse-vectors-with-vector-stores.md) for more details on sparse embeddings
-- Learn about [Vector Store Configuration](vector-store-configuration.md) to optimize your vector stores
+- Learn about the different [Hybrid Retrieval Strategies](https://github.com/deepsense-ai/ragbits/blob/main/packages/ragbits-core/src/ragbits/core/vector_stores/hybrid_strategies.py) available in Ragbits

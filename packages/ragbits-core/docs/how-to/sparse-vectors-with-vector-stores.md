@@ -20,10 +20,10 @@ Ragbits supports sparse embeddings through the `SparseVector` class and vector s
 First, you need an embedder that produces sparse vectors:
 
 ```python
-from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
+from ragbits.core.embeddings.sparse import BM25Embedder, SparseVector
 
-# Example of a simple sparse embedder
-sparse_embedder = SparseEmbedder()
+# Create a sparse embedder implementation
+sparse_embedder = BM25Embedder()
 ```
 
 ### Step 2: Initialize a Vector Store with the Sparse Embedder
@@ -97,7 +97,6 @@ for result in results:
 
 ## Limitations
 
-- Not all vector databases natively support sparse vectors; Ragbits implements workarounds for those cases
 - Some advanced vector operations may not be available for sparse vectors
 - Performance may vary depending on the specific vector store implementation
 
