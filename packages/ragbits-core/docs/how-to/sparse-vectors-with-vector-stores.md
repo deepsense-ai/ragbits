@@ -1,75 +1,58 @@
-# How to Use Sparse Embeddings with Vector Stores
+# Using Sparse Vectors with Vector Stores
 
-This guide explains how to use sparse embeddings with Ragbits vector stores.
+This guide explains how to use sparse embeddings with vector stores in Ragbits.
 
-## What are Sparse Embeddings?
+## What are Sparse Vectors?
 
-Sparse embeddings are vector representations where most of the values are zero. They are efficient for representing high-dimensional data where only a few dimensions have non-zero values. In contrast to dense embeddings (which are arrays of floating-point numbers), sparse embeddings store only the indices and values of non-zero elements.
+Sparse vectors are embeddings where most elements are zero. They're particularly useful for:
 
-Sparse embeddings are particularly useful for:
-- Lexical search (keyword matching)
-- Representing large vocabularies efficiently
-- Complementing dense embeddings in hybrid search approaches
+- **Lexical search**: Capturing exact keyword matches
+- **Interpretability**: Each dimension often corresponds to a specific term
+- **Efficiency**: Only non-zero elements need to be stored
+
+Unlike dense vectors (where all dimensions have values), sparse vectors excel at preserving exact term matches, making them complementary to dense vectors in search applications.
 
 ## Using Sparse Embeddings in Ragbits
 
-Ragbits supports sparse embeddings through the `SparseVector` class and vector stores that can handle both dense and sparse embeddings.
+Ragbits supports sparse embeddings through the `BM25Embedder` class, which implements a popular sparse embedding algorithm.
 
-### Step 1: Create a Sparse Embedder
-
-First, you need an embedder that produces sparse vectors:
+### Creating a Sparse Embedder
 
 ```python
-from ragbits.core.embeddings.sparse import BM25Embedder, SparseVector
+from ragbits.core.embeddings.sparse import BM25Embedder
 
-# Create a sparse embedder implementation
+# Create a BM25 sparse embedder
 sparse_embedder = BM25Embedder()
 ```
 
-### Step 2: Initialize a Vector Store with the Sparse Embedder
+### Using Sparse Embeddings with Vector Stores
 
-You can use any of the supported vector stores with sparse embeddings:
+Ragbits vector stores support sparse embeddings. Here's how to use them:
 
 ```python
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.vector_stores.base import EmbeddingType
+from ragbits.core.vector_stores.base import EmbeddingType, VectorStoreOptions
+import uuid
 
-# Using InMemoryVectorStore with sparse embeddings
+# Create a vector store with sparse embedder
 vector_store = InMemoryVectorStore(
     embedder=sparse_embedder,
-    embedding_type=EmbeddingType.TEXT
+    embedding_type=EmbeddingType.TEXT,
+    default_options=VectorStoreOptions(k=5)
 )
 
-# Or using QdrantVectorStore with sparse embeddings
-from qdrant_client import AsyncQdrantClient
-qdrant_client = AsyncQdrantClient(location=":memory:")
-qdrant_store = QdrantVectorStore(
-    client=qdrant_client,
-    index_name="sparse_vectors",
-    embedder=sparse_embedder,
-    embedding_type=EmbeddingType.TEXT
-)
-```
-
-### Step 3: Store and Retrieve Entries
-
-The process for storing and retrieving entries is the same as with dense embeddings:
-
-```python
-import uuid
+# Create and store entries
 from ragbits.core.vector_stores.base import VectorStoreEntry
 
-# Create entries
 entries = [
     VectorStoreEntry(
         id=uuid.uuid4(),
-        text="This is a sample document about artificial intelligence",
-        metadata={"category": "AI"}
+        text="Machine learning algorithms can process large datasets",
+        metadata={"category": "ML"}
     ),
     VectorStoreEntry(
         id=uuid.uuid4(),
-        text="Sparse vectors are efficient for keyword matching",
+        text="Natural language processing helps computers understand human language",
         metadata={"category": "NLP"}
     )
 ]
@@ -77,29 +60,43 @@ entries = [
 # Store entries
 await vector_store.store(entries)
 
-# Retrieve similar entries
-results = await vector_store.retrieve("artificial intelligence")
+# Retrieve entries using sparse embeddings
+results = await vector_store.retrieve("language processing algorithms")
 
-# Access results
+# Process results
 for result in results:
     print(f"Text: {result.entry.text}")
     print(f"Score: {result.score}")
-    print(f"Vector type: {type(result.vector).__name__}")
-    if isinstance(result.vector, SparseVector):
-        print(f"Non-zero elements: {len(result.vector.indices)}")
+    print(f"Metadata: {result.entry.metadata}")
+    print("---")
 ```
+
+## Supported Vector Stores
+
+The following vector stores in Ragbits support sparse embeddings:
+
+- **InMemoryVectorStore**: For in-memory storage and retrieval
+- **QdrantVectorStore**: For persistent storage using Qdrant
+
+## When to Use Sparse Embeddings
+
+Sparse embeddings are particularly useful when:
+
+1. **Exact keyword matching is important**: When you need to find documents containing specific terms
+2. **Interpretability matters**: When you need to understand why certain results were returned
+3. **As part of hybrid search**: Combined with dense embeddings for better overall results
+
+## Combining with Dense Embeddings (Hybrid Search)
+
+For the best results, consider using both sparse and dense embeddings together in a hybrid approach. See the [Hybrid Search guide](hybrid-search.md) for details.
 
 ## Performance Considerations
 
-- Sparse vectors are more efficient for storage when the dimensionality is high but most values are zero
-- Similarity calculations with sparse vectors can be faster than with dense vectors of the same dimensionality
-- For optimal performance with Qdrant, consider using a hybrid approach where both sparse and dense vectors are stored
-
-## Limitations
-
-- Some advanced vector operations may not be available for sparse vectors
-- Performance may vary depending on the specific vector store implementation
+- Sparse vectors can be more memory-efficient for storage but may require specialized indexing
+- The BM25 algorithm needs to build a vocabulary from your corpus, which requires an initial processing step
+- For very large datasets, consider using a vector database that natively supports sparse vectors
 
 ## Next Steps
 
-For more advanced use cases, check out the guide on [Hybrid Search with Dense and Sparse Embeddings](hybrid-search.md).
+- Explore [Hybrid Search with Vector Stores](hybrid-search.md) to combine sparse and dense embeddings
+- Learn about different embedding models available in Ragbits
