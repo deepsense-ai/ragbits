@@ -33,6 +33,7 @@ dev-dependencies = [
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
     "moto~=4.2.7",
+    "pytest-postgresql>=7.0.1"
 ]
 
 [tool.uv.sources]
