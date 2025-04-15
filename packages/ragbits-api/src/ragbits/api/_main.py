@@ -1,12 +1,12 @@
 import importlib
-import os
 import json
-import yaml
 import logging
+import os
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import uvicorn
+import yaml
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,6 +51,7 @@ class RagbitsAPI:
         Args:
             chat_implementation: Either a ChatInterface class (recommended) or a string path to a class
                                 in format "module.path:ClassName" (legacy support)
+            config_path: Path to the api configuration file (YAML format).
         """
         self.app = FastAPI()
         self.chat_implementation: ChatInterface | None = None
@@ -122,7 +123,7 @@ class RagbitsAPI:
         async def config() -> JSONResponse:
             if self.config_path:
                 try:
-                    with open(self.config_path, "r") as file:
+                    with open(self.config_path) as file:
                         config_data = yaml.safe_load(file)
                     return JSONResponse(content=config_data)
                 except Exception as e:
