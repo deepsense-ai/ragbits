@@ -6,11 +6,11 @@ alwaysApply: true
 
 # Repository setup and pre-commit checks
 
-This repository is using `uv` for package managements. Rather than using `pip` use `uv pip` to install any packages or run python.
+This repository is using `uv` for package management. Rather than using `pip` use `uv pip` to install any packages or run python.
 
 Run following checks after implementing any changes:
 
 uv run ruff format
-uv run ruff check
+uv run ruff check --fix
 uv run mypy <PATH>
 pytest
