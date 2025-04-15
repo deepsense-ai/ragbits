@@ -3,7 +3,7 @@ import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "../../types/chat";
-import { MessageRole } from "../../types/api";
+import { ConfigResponse, FormType, MessageRole } from "../../types/api";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "./DelayedTooltip";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
@@ -12,11 +12,22 @@ import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 export type ChatMessageProps = {
   classNames?: string[];
   chatMessage: ChatMessage;
-  onOpenFeedbackForm?: () => void;
+  onOpenFeedbackForm?: (name: FormType) => void;
+  likeForm: ConfigResponse[FormType.LIKE];
+  dislikeForm: ConfigResponse[FormType.DISLIKE];
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  ({ chatMessage: { content, role }, onOpenFeedbackForm, classNames }, ref) => {
+  (
+    {
+      chatMessage: { content, role },
+      onOpenFeedbackForm,
+      classNames,
+      likeForm,
+      dislikeForm,
+    },
+    ref,
+  ) => {
     const rightAlign = role === MessageRole.USER;
     const [didAnimate, setDidAnimate] = useState(false);
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,10 +101,35 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       <Icon icon={copyIcon} />
                     </Button>
                   </DelayedTooltip>
-                  {!!onOpenFeedbackForm && (
-                    <Button variant="ghost" onPress={onOpenFeedbackForm}>
-                      Open Feedback Form
-                    </Button>
+                  {onOpenFeedbackForm && (
+                    <>
+                      {likeForm !== undefined && (
+                        <DelayedTooltip content="Like" placement="bottom">
+                          <Button
+                            isIconOnly
+                            variant="ghost"
+                            className="p-0"
+                            aria-label="Like message"
+                            onPress={() => onOpenFeedbackForm(FormType.LIKE)}
+                          >
+                            <Icon icon="heroicons:hand-thumb-up" />
+                          </Button>
+                        </DelayedTooltip>
+                      )}
+                      {dislikeForm !== undefined && (
+                        <DelayedTooltip content="Dislike" placement="bottom">
+                          <Button
+                            isIconOnly
+                            variant="ghost"
+                            className="p-0"
+                            aria-label="Dislike message"
+                            onPress={() => onOpenFeedbackForm(FormType.DISLIKE)}
+                          >
+                            <Icon icon="heroicons:hand-thumb-down" />
+                          </Button>
+                        </DelayedTooltip>
+                      )}
+                    </>
                   )}
                 </div>
               </>

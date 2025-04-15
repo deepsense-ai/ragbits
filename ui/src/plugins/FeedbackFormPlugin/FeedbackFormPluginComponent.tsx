@@ -13,12 +13,13 @@ import {
   SelectItem,
   cn,
 } from "@heroui/react";
-import { FormSchema, generateZodSchema } from "./types";
+import { generateZodSchema } from "./types";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
+import { FormSchemaResponse } from "../../types/api.ts";
 
 interface IFormPluginComponentProps {
   title: string;
-  schema: FormSchema;
+  schema: FormSchemaResponse;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Record<string, string>) => void;
@@ -37,9 +38,15 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     formState: { errors },
     setValue,
     watch,
+    reset,
   } = useForm({
     resolver: zodResolver(zodSchema),
   });
+
+  const onOpenChange = () => {
+    reset();
+    onClose();
+  };
 
   const handleFormSubmit: SubmitHandler<Record<string, string>> = (data) => {
     onSubmit(data);
@@ -47,7 +54,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
   };
 
   // TODO: switch to separate file or some kind of form builder with methods eg. renderSelect/Checkbox/TextField etc.
-  const renderField = (field: FormSchema["fields"][0]) => {
+  const renderField = (field: FormSchemaResponse["fields"][0]) => {
     const error = errors[field.name]?.message as string;
 
     if (field.type === "select" && field.options) {
@@ -83,7 +90,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
   };
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onClose} className={cn(theme)}>
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} className={cn(theme)}>
       <ModalContent>
         {(onClose) => (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
@@ -92,7 +99,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
             </ModalHeader>
             <ModalBody>
               <div className="flex flex-col gap-4">
-                {schema.fields.map(renderField)}
+                {schema!.fields.map(renderField)}
               </div>
             </ModalBody>
             <ModalFooter>

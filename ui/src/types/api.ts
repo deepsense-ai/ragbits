@@ -26,6 +26,11 @@ export interface ChatRequest {
   context?: object;
 }
 
+export enum FormType {
+  LIKE = "like_form",
+  DISLIKE = "dislike_form",
+}
+
 interface TextChatResponse {
   type: ChatResponseType.TEXT;
   content: string;
@@ -35,4 +40,28 @@ interface ReferenceChatResponse {
   type: ChatResponseType.REFERENCE;
   content: Reference;
 }
+
 export type ChatResponse = TextChatResponse | ReferenceChatResponse;
+
+export enum FormFieldType {
+  TEXT = "text",
+  SELECT = "select",
+}
+
+interface FormFieldResponse {
+  name: string;
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  options?: { label: string; value: string }[];
+}
+
+export interface FormSchemaResponse {
+  title: string;
+  fields: FormFieldResponse[];
+}
+
+export interface ConfigResponse {
+  [FormType.LIKE]?: FormSchemaResponse | null;
+  [FormType.DISLIKE]?: FormSchemaResponse | null;
+}

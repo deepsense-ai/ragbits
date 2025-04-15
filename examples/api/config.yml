@@ -1,0 +1,22 @@
+like_form:
+  title: "Like Form"
+  fields:
+    - name: "user_name"
+      type: "text"
+      required: true
+      label: "Enter your name"
+    - name: "like_reason"
+      type: "text"
+      required: true
+      label: "Why do you like this?"
+    - name: "category"
+      type: "select"
+      required: true
+      label: "Category"
+      options:
+        - "Music"
+        - "Movies"
+        - "Books"
+        - "Other"
+
+dislike_form:

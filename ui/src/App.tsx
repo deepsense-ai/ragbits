@@ -9,27 +9,37 @@ import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
-import { mockSchema } from "./plugins/FeedbackFormPlugin/types.ts";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { ChatRequest, ChatResponseType, MessageRole } from "./types/api.ts";
+import {
+  ChatRequest,
+  ChatResponseType,
+  ConfigResponse,
+  FormType,
+  MessageRole,
+} from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import axiosWrapper from "./core/utils/axiosWrapper.ts";
 import { buildApiUrl } from "./core/utils/api.ts";
 
 export default function Component() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [message, setMessage] = useState<string>("");
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const cancelRef = useRef<(() => void) | null>(null);
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [feedbackName, setFeedbackName] = useState<FormType>();
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+
   const { messages, createMessage, updateMessage } = useHistoryContext();
   const { theme } = useThemeContext();
-
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+
   const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
     FeedbackFormPluginName,
   );
@@ -51,6 +61,36 @@ export default function Component() {
       setShouldAutoScroll(true);
     }
   }, []);
+
+  useEffect(() => {
+    const handleFetchConfig = async () => {
+      setIsLoading(true);
+
+      const [data] = await axiosWrapper<ConfigResponse>({
+        url: buildApiUrl("/api/config"),
+        method: "GET",
+      });
+
+      setConfig(data);
+
+      setIsLoading(false);
+    };
+
+    handleFetchConfig();
+  }, []);
+
+  useEffect(() => {
+    if (!config) {
+      return;
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(config, FormType.LIKE) ||
+      Object.prototype.hasOwnProperty.call(config, FormType.DISLIKE)
+    ) {
+      pluginManager.activate(FeedbackFormPluginName);
+    }
+  }, [config]);
 
   useEffect(() => {
     setShouldAutoScroll(true);
@@ -92,7 +132,20 @@ export default function Component() {
     setShouldAutoScroll(true);
   }, []);
 
-  const onOpenFeedbackForm = () => onOpen();
+  const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
+    console.log("Feedback form submitted:", data);
+  };
+
+  const onOpenFeedbackForm = async (name: typeof feedbackName) => {
+    setFeedbackName(name);
+
+    if (config![name as keyof typeof config] === null) {
+      await onFeedbackFormSubmit(null);
+      return;
+    }
+
+    onOpen();
+  };
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -148,6 +201,8 @@ You can ask me anything! I can provide information, answer questions, and assist
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
+          likeForm={config?.["like_form"]}
+          dislikeForm={config?.["dislike_form"]}
         />
       ))}
     </ScrollShadow>
@@ -215,12 +270,15 @@ You can ask me anything! I can provide information, answer questions, and assist
         component="FeedbackFormComponent"
         componentProps={{
           title: "Feedback Form",
-          schema: mockSchema,
+          schema:
+            config && feedbackName
+              ? !config[feedbackName]
+                ? { title: "", fields: [] }
+                : config[feedbackName]
+              : { title: "", fields: [] },
           onClose: onOpenChange,
+          onSubmit: onFeedbackFormSubmit,
           isOpen,
-          onSubmit: (data: Record<string, string>) => {
-            console.log("Feedback form submitted:", data);
-          },
         }}
       />
     </div>
