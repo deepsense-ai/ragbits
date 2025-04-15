@@ -20,9 +20,12 @@ def run(
     chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function"),
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the API server to"),
     port: int = typer.Option(8000, "--port", help="Port to bind the API server to"),
+    root_path: str = typer.Option(
+        "/", "--root-path", help="ASGI 'root_path' for applications submounted below a given URL path"
+    ),
 ) -> None:
     """
     Run API service with UI demo
     """
     api = RagbitsAPI(chat_implementation=chat_path)
-    api.run(host=host, port=port)
+    api.run(host=host, port=port, root_path=root_path)

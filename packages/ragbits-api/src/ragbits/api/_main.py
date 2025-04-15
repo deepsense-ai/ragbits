@@ -135,8 +135,8 @@ class RagbitsAPI:
         self.chat_implementation = implementation_class()
         logger.info(f"Initialized chat implementation: {implementation_class.__name__}")
 
-    def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:
+    def run(self, host: str = "127.0.0.1", port: int = 8000, root_path: str = "/") -> None:
         """
         Used for starting the API
         """
-        uvicorn.run(self.app, host=host, port=port)
+        uvicorn.run(self.app, host=host, port=port, root_path=root_path)
