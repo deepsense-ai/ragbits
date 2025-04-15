@@ -88,19 +88,19 @@ class WeightedFusionStrategy(HybridRetrivalStrategy):
     def __init__(self, weights: list[float]):
         """
         Initialize with weights for each result list.
-        
+
         Args:
             weights: List of weights corresponding to each vector store's results
         """
         self.weights = weights
-        
+
     def join(self, results: list[list[VectorStoreResult]]) -> list[VectorStoreResult]:
         if len(results) != len(self.weights):
             raise ValueError(f"Expected {len(self.weights)} result lists, got {len(results)}")
-            
+
         # Create a dictionary to store combined scores
         combined_entries = {}
-        
+
         # Process results from each store with its corresponding weight
         for result_list, weight in zip(results, self.weights):
             for result in result_list:
@@ -117,7 +117,7 @@ class WeightedFusionStrategy(HybridRetrivalStrategy):
                         "score": result.score * weight,
                         "subresults": [result]
                     }
-        
+
         # Convert to VectorStoreResult objects and sort
         combined_results = [
             VectorStoreResult(
@@ -128,7 +128,7 @@ class WeightedFusionStrategy(HybridRetrivalStrategy):
             )
             for data in combined_entries.values()
         ]
-        
+
         return sorted(combined_results, key=lambda x: x.score, reverse=True)
 ```
 

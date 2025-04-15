@@ -28,33 +28,33 @@ class BM25SparseEmbedder(SparseEmbedder):
     def __init__(self):
         # Initialize with your specific parameters
         self.vocabulary = {}  # Map of terms to indices
-        
+
     async def embed_text(self, texts: List[str]) -> List[SparseVector]:
         results = []
         for text in texts:
             # Simple tokenization
             tokens = text.lower().split()
-            
+
             # Count term frequencies
             term_freqs = {}
             for token in tokens:
                 if token not in term_freqs:
                     term_freqs[token] = 0
                 term_freqs[token] += 1
-                
+
                 # Add to vocabulary if new
                 if token not in self.vocabulary:
                     self.vocabulary[token] = len(self.vocabulary)
-            
+
             # Create sparse vector
             indices = []
             values = []
             for term, freq in term_freqs.items():
                 indices.append(self.vocabulary[term])
                 values.append(freq)
-                
+
             results.append(SparseVector(indices=indices, values=values))
-            
+
         return results
 ```
 
