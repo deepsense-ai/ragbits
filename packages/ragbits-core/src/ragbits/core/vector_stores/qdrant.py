@@ -145,11 +145,28 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collection_exists(self._index_name):
-                vector_size = len(next(iter(embeddings.values())))
-                await self._client.create_collection(
-                    collection_name=self._index_name,
-                    vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
-                )
+                # Check if we're using sparse vectors
+                first_vector = next(iter(embeddings.values()))
+                if isinstance(first_vector, SparseVector):
+                    # Create collection with sparse vector support
+                    await self._client.create_collection(
+                        collection_name=self._index_name,
+                        vectors_config={},  # No dense vectors config
+                        sparse_vectors_config={
+                            "default": {
+                                "index": {
+                                    "on_disk": False,
+                                }
+                            }
+                        },
+                    )
+                else:
+                    # Create collection with dense vector support
+                    vector_size = len(first_vector)
+                    await self._client.create_collection(
+                        collection_name=self._index_name,
+                        vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
+                    )
 
             points = []
             for entry in entries:
@@ -160,15 +177,16 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 payload = entry.model_dump(exclude_none=True)
 
                 if isinstance(vector, SparseVector):
-                    # Store sparse vector in payload for Qdrant
-                    payload["_sparse_vector"] = vector.model_dump()
-                    # Use a placeholder dense vector for Qdrant's vector field
-                    # This is needed because Qdrant requires a vector, but we'll use the sparse one from payload
-                    placeholder_vector = [0.0] * 1  # Minimal placeholder
+                    # Use Qdrant's native sparse vector support
+                    sparse_vector = models.SparseVector(
+                        indices=vector.indices,
+                        values=vector.values,
+                    )
                     points.append(
                         models.PointStruct(
                             id=str(entry.id),
-                            vector=placeholder_vector,
+                            vector=None,  # No dense vector
+                            sparse_vector=sparse_vector,  # Use sparse vector
                             payload=payload,
                         )
                     )
@@ -217,23 +235,42 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
 
-            query_results = await self._client.query_points(
-                collection_name=self._index_name,
-                query=query_vector,
-                limit=merged_options.k,
-                score_threshold=score_threshold,
-                with_payload=True,
-                with_vectors=True,
-            )
+            # Determine if we're using sparse vectors
+            if isinstance(query_vector, SparseVector):
+                # For sparse vectors, use Qdrant's sparse search
+                sparse_query = models.SparseVector(
+                    indices=query_vector.indices,
+                    values=query_vector.values,
+                )
+                query_results = await self._client.query_points(
+                    collection_name=self._index_name,
+                    query_sparse_vector=sparse_query,
+                    limit=merged_options.k,
+                    score_threshold=score_threshold,
+                    with_payload=True,
+                    with_vectors=True,
+                )
+            else:
+                # For dense vectors, use regular search
+                query_results = await self._client.query_points(
+                    collection_name=self._index_name,
+                    query=query_vector,
+                    limit=merged_options.k,
+                    score_threshold=score_threshold,
+                    with_payload=True,
+                    with_vectors=True,
+                )
 
             outputs.results = []
             for point in query_results.points:
                 entry = VectorStoreEntry.model_validate(point.payload)
 
-                # Check if this point has a sparse vector stored in payload
-                if "_sparse_vector" in point.payload:
-                    sparse_data = point.payload["_sparse_vector"]
-                    vector = SparseVector.model_validate(sparse_data)
+                # Determine the vector type based on what's available
+                if point.sparse_vector:
+                    vector = SparseVector(
+                        indices=point.sparse_vector.indices,
+                        values=point.sparse_vector.values,
+                    )
                 else:
                     vector = cast(list[float], point.vector)
 

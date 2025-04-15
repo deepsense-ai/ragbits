@@ -86,23 +86,26 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            query_vector = await self._embedder.embed_text([text])
+            query_vector = (await self._embedder.embed_text([text]))[0]
             results: list[VectorStoreResult] = []
 
             for entry_id, vector in self._embeddings.items():
-                if isinstance(vector, SparseVector) and isinstance(query_vector, list):
-                    # Convert dense query vector to sparse for comparison
-                    sparse_query = SparseVector(indices=list(range(len(query_vector))), values=query_vector)
-                    score = vector.dot_product(sparse_query)
-                elif isinstance(vector, list) and isinstance(query_vector, SparseVector):
-                    # Convert dense stored vector to sparse for comparison
-                    sparse_vector = SparseVector(indices=list(range(len(vector))), values=vector)
-                    score = sparse_vector.dot_product(query_vector)
-                elif isinstance(vector, SparseVector) and isinstance(query_vector, SparseVector):
-                    # Both are sparse vectors
-                    score = vector.dot_product(query_vector)
+                # Both vectors will be of the same type since we use the same embedder
+                if isinstance(vector, SparseVector) and isinstance(query_vector, SparseVector):
+                    # For sparse vectors, use cosine similarity
+                    # Calculate dot product between sparse vectors
+                    indices_intersection = set(vector.indices).intersection(set(query_vector.indices))
+                    dot_product = sum(
+                        vector.values[vector.indices.index(idx)] * query_vector.values[query_vector.indices.index(idx)]
+                        for idx in indices_intersection
+                    )
+                    # Calculate magnitudes
+                    magnitude_a = sum(val * val for val in vector.values) ** 0.5
+                    magnitude_b = sum(val * val for val in query_vector.values) ** 0.5
+                    # Calculate cosine similarity
+                    score = dot_product / (magnitude_a * magnitude_b) if magnitude_a > 0 and magnitude_b > 0 else 0.0
                 else:
-                    # Both are dense vectors
+                    # For dense vectors, use negative Euclidean distance
                     score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
 
                 result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)

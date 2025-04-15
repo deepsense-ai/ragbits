@@ -1,6 +1,6 @@
 # Using Sparse Vectors with Vector Stores
 
-Ragbits supports sparse embeddings through the `SparseVector` and `SparseEmbedder` classes. This guide explains how to use sparse embeddings with vector stores.
+Ragbits supports sparse embeddings through the `SparseVector` class and implementations of the `SparseEmbedder` abstract class. This guide explains how to use sparse embeddings with vector stores.
 
 ## What are Sparse Embeddings?
 
@@ -15,18 +15,47 @@ Sparse embeddings are particularly useful for:
 
 Ragbits vector stores (Qdrant and InMemory) support both dense and sparse embeddings. Here's how to use them:
 
-### 1. Create a Sparse Embedder
+### 1. Create a Sparse Embedder Implementation
 
-First, create a sparse embedder:
+First, create an implementation of the sparse embedder abstract class:
 
 ```python
-from ragbits.core.embeddings.sparse import SparseEmbedder
+from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
+from typing import List
 
-# Example sparse embedder configuration
-sparse_embedder = SparseEmbedder(
-    vocabulary_size=10000,
-    tokenizer_name="bert-base-uncased"
-)
+# Example implementation of SparseEmbedder
+class BM25SparseEmbedder(SparseEmbedder):
+    def __init__(self):
+        # Initialize with your specific parameters
+        self.vocabulary = {}  # Map of terms to indices
+        
+    async def embed_text(self, texts: List[str]) -> List[SparseVector]:
+        results = []
+        for text in texts:
+            # Simple tokenization
+            tokens = text.lower().split()
+            
+            # Count term frequencies
+            term_freqs = {}
+            for token in tokens:
+                if token not in term_freqs:
+                    term_freqs[token] = 0
+                term_freqs[token] += 1
+                
+                # Add to vocabulary if new
+                if token not in self.vocabulary:
+                    self.vocabulary[token] = len(self.vocabulary)
+            
+            # Create sparse vector
+            indices = []
+            values = []
+            for term, freq in term_freqs.items():
+                indices.append(self.vocabulary[term])
+                values.append(freq)
+                
+            results.append(SparseVector(indices=indices, values=values))
+            
+        return results
 ```
 
 ### 2. Initialize a Vector Store with the Sparse Embedder
@@ -36,13 +65,16 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.vector_stores.base import EmbeddingType
 
+# Create your sparse embedder implementation
+sparse_embedder = BM25SparseEmbedder()
+
 # Using InMemoryVectorStore
 in_memory_store = InMemoryVectorStore(
     embedder=sparse_embedder,
     embedding_type=EmbeddingType.TEXT
 )
 
-# Or using QdrantVectorStore
+# Or using QdrantVectorStore with native sparse vector support
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance
 
@@ -89,7 +121,7 @@ for result in results:
     print(f"Score: {result.score}, Text: {result.entry.text}")
 
     # Access the sparse vector if needed
-    if hasattr(result.vector, "indices"):
+    if isinstance(result.vector, SparseVector):
         print(f"Sparse vector with {len(result.vector.indices)} non-zero elements")
 ```
 
@@ -98,14 +130,13 @@ for result in results:
 ### How Sparse Vectors are Stored
 
 - **InMemoryVectorStore**: Sparse vectors are stored directly in memory as `SparseVector` objects.
-- **QdrantVectorStore**: Since Qdrant doesn't natively support sparse vectors, they are stored in the payload of each point with a special key `_sparse_vector`.
+- **QdrantVectorStore**: Qdrant natively supports sparse vectors, and Ragbits uses this native support.
 
 ### Similarity Calculation
 
 When comparing vectors:
-- If both vectors are sparse, dot product is used
-- If both vectors are dense, Euclidean distance is used
-- If one vector is sparse and the other is dense, the dense vector is converted to a sparse representation before comparison
+- For sparse vectors, cosine similarity is used
+- For dense vectors, the configured distance metric is used (typically cosine similarity or Euclidean distance)
 
 ## Best Practices
 
