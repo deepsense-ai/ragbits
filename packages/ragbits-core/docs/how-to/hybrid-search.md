@@ -106,7 +106,7 @@ results = await hybrid_store.retrieve("AI algorithms for big data")
 for result in results:
     print(f"Text: {result.entry.text}")
     print(f"Score: {result.score}")
-    
+
     # If you want to see the individual scores from each vector store
     if result.subresults:
         for i, subresult in enumerate(result.subresults):
