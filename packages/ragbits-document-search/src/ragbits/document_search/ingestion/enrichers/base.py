@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from types import ModuleType
-from typing import ClassVar, Generic, TypeVar
+from types import ModuleType, UnionType
+from typing import ClassVar, Generic, TypeVar, get_args, get_origin
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search.documents.element import Element
@@ -47,5 +47,18 @@ class ElementEnricher(Generic[ElementT], WithConstructionConfig, ABC):
         Raises:
             EnricherElementNotSupportedError: If the element type is not supported.
         """
-        if element_type != cls.__orig_bases__[0].__args__[0]:  # type: ignore
-            raise EnricherElementNotSupportedError(enricher_name=cls.__name__, element_type=element_type)
+        expected_element_type = cls.__orig_bases__[0].__args__[0]  # type: ignore
+
+        # Check if expected_element_type is a Union and if element_type is in that Union
+        if (
+            (origin := get_origin(expected_element_type))
+            and origin == UnionType
+            and element_type in get_args(expected_element_type)
+        ):
+            return
+
+        # Check if element_type matches expected_element_type exactly
+        if element_type == expected_element_type:
+            return
+
+        raise EnricherElementNotSupportedError(enricher_name=cls.__name__, element_type=element_type)

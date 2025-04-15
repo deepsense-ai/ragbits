@@ -43,7 +43,7 @@ dependencies = ["ragbits-document-search==0.13.0", "ragbits-cli==0.13.0", "ragbi
 chroma = [
     "chromadb>=0.6.3,<1.0.0",
 ]
-huggingface = [
+hf = [
     "datasets>=3.0.1,<4.0.0",
 ]
 s3 = [
@@ -79,9 +79,6 @@ qdrant = [
 ]
 relari = [
     "continuous-eval>=0.3.12,<1.0.0",
-]
-distributed = [
-    "ray>=2.39.0",
 ]
 fastembed = [
     "fastembed>=0.4.2,<1.0.0"
