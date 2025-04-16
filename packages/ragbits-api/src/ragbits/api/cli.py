@@ -21,7 +21,7 @@ def run(
     config_path: str = typer.Option(..., "--config-path", help="Path to a module with API config"),
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the API server to"),
     port: int = typer.Option(8000, "--port", help="Port to bind the API server to"),
-    cors_origins: list[str] = typer.Option(
+    cors_origins: list[str] = typer.Option(  # noqa: B008
         None,
         "--cors-origin",
         help="Allowed CORS origins. Can be specified multiple times.",
