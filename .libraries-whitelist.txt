@@ -6,3 +6,4 @@ rouge
 distilabel
 rerankers
 py_rust_stemmers
+python-bidi

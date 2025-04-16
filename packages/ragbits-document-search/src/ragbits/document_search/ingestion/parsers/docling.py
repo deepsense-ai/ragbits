@@ -1,6 +1,15 @@
+from docling.chunking import HierarchicalChunker
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions
-from docling.document_converter import DocumentConverter, PdfFormatOption
+from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions, PipelineOptions
+from docling.document_converter import (
+    DocumentConverter,
+    ExcelFormatOption,
+    HTMLFormatOption,
+    MarkdownFormatOption,
+    PdfFormatOption,
+    PowerpointFormatOption,
+    WordFormatOption,
+)
 from docling_core.types.doc import DocItem, DoclingDocument
 
 from ragbits.document_search.documents.document import Document, DocumentType
@@ -13,8 +22,16 @@ class DoclingDocumentParser(DocumentParser):
     Parser that uses the Docling to process the documents.
     """
 
-    # NOTE: For now this parser supports only PDF files
-    supported_document_types = {DocumentType.PDF}
+    supported_document_types = {
+        DocumentType.DOCX,
+        DocumentType.PPTX,
+        DocumentType.XLSX,
+        DocumentType.MD,
+        DocumentType.PNG,
+        DocumentType.JPG,
+        DocumentType.HTML,
+        DocumentType.PDF,
+    }
 
     def __init__(self, ignore_images: bool = False, num_threads: int = 1) -> None:
         """
@@ -51,16 +68,23 @@ class DoclingDocumentParser(DocumentParser):
         Returns:
             The docling document.
         """
-        pipeline_options = PdfPipelineOptions(
+        accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
+        pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
+        pdf_pipeline_options = PdfPipelineOptions(
             images_scale=2,
             generate_page_images=True,
             ocr_options=EasyOcrOptions(),
-            accelerator_options=AcceleratorOptions(num_threads=self.num_threads),
+            accelerator_options=accelerator_options,
         )
-        # TODO: Check pipeline options for other document types
         converter = DocumentConverter(
             format_options={
-                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
+                InputFormat.XLSX: ExcelFormatOption(pipeline_options=pipeline_options),
+                InputFormat.DOCX: WordFormatOption(pipeline_options=pipeline_options),
+                InputFormat.PPTX: PowerpointFormatOption(pipeline_options=pipeline_options),
+                InputFormat.HTML: HTMLFormatOption(pipeline_options=pipeline_options),
+                InputFormat.MD: MarkdownFormatOption(pipeline_options=pipeline_options),
+                InputFormat.IMAGE: PdfFormatOption(pipeline_options=pdf_pipeline_options),
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
             },
         )
         return converter.convert(document.local_path).document
@@ -76,13 +100,14 @@ class DoclingDocumentParser(DocumentParser):
         Returns:
             The list of chunked elements.
         """
+        chunker = HierarchicalChunker()
         text_elements: list[Element] = [
             TextElement(
                 document_meta=document.metadata,
-                location=self._extract_element_location(element),
-                content=element.text,
+                location=self._extract_element_location(chunk.meta.doc_items[0]),  # type: ignore
+                content=chunk.text,
             )
-            for element in partitioned_document.texts
+            for chunk in chunker.chunk(partitioned_document)
         ]
 
         if self.ignore_images:
