@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 from uuid import UUID
 
 import asyncpg
@@ -8,6 +8,7 @@ from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
@@ -321,10 +322,22 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            vector = (await self._embedder.embed_text([text]))[0]
+            query_vector = (await self._embedder.embed_text([text]))[0]
 
             query_options = (self.default_options | options) if options else self.default_options
-            retrieve_query, values = self._create_retrieve_query(vector, query_options)
+
+            # For now, if we get a SparseVector from a SparseEmbedder, convert it to a dense vector
+            # by creating a zero vector and setting only the indices with non-zero values
+            if isinstance(query_vector, SparseVector):
+                # Create a vector of zeros with the right size
+                dense_vector = [0.0] * self._vector_size
+                # Set the non-zero values
+                for i, idx in enumerate(query_vector.indices):
+                    if idx < self._vector_size:
+                        dense_vector[idx] = query_vector.values[i]
+                retrieve_query, values = self._create_retrieve_query(dense_vector, query_options)
+            else:
+                retrieve_query, values = self._create_retrieve_query(cast(list[float], query_vector), query_options)
 
             try:
                 async with self._client.acquire() as conn:

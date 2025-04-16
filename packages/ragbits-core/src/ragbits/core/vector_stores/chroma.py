@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 import chromadb
@@ -8,6 +8,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
@@ -190,8 +191,21 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
 
+            # If we got a sparse vector, convert it to a dense vector for Chroma
+            # by creating a zero vector with the right length and setting only the indices with non-zero values
+            query_vector_for_chroma: list[float]
+            if isinstance(query_vector, SparseVector):
+                # Use a reasonable size for the dense vector
+                # This is a temporary solution until Chroma supports sparse vectors natively
+                vector_size = max(query_vector.indices) + 1 if query_vector.indices else 1024
+                query_vector_for_chroma = [0.0] * vector_size
+                for i, idx in enumerate(query_vector.indices):
+                    query_vector_for_chroma[idx] = query_vector.values[i]
+            else:
+                query_vector_for_chroma = cast(list[float], query_vector)
+
             results = self._collection.query(
-                query_embeddings=query_vector,
+                query_embeddings=query_vector_for_chroma,
                 n_results=merged_options.k,
                 include=[
                     types.IncludeEnum.metadatas,

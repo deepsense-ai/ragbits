@@ -18,6 +18,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
@@ -42,7 +43,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         self,
         client: AsyncQdrantClient,
         index_name: str,
-        embedder: Embedder,
+        embedder: Embedder | SparseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
@@ -53,7 +54,8 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Args:
             client: An instance of the Qdrant client.
             index_name: The name of the index.
-            embedder: The embedder to use for converting entries to vectors.
+            embedder: The embedder to use for converting entries to vectors. Can be a regular Embedder for dense vectors
+                     or a SparseEmbedder for sparse vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
@@ -193,26 +195,55 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            query_vector = (await self._embedder.embed_text([text]))[0]
+            if isinstance(self._embedder, SparseEmbedder):
+                sparse_query_vector = (await self._embedder.embed_text([text]))[0]
 
-            query_results = await self._client.query_points(
-                collection_name=self._index_name,
-                query=query_vector,
-                limit=merged_options.k,
-                score_threshold=score_threshold,
-                with_payload=True,
-                with_vectors=True,
-            )
+                # Convert SparseVector to Qdrant's sparse vector format if needed
+                if isinstance(sparse_query_vector, SparseVector):
+                    # Qdrant accepts sparse vectors in the form {"indices": [...], "values": [...]}
+                    qdrant_query_vector = models.SparseVector(
+                        indices=sparse_query_vector.indices, values=sparse_query_vector.values
+                    )
+                    query_results = await self._client.query_points(
+                        collection_name=self._index_name,
+                        query=None,  # None because we're using sparse_query
+                        sparse_query=qdrant_query_vector,
+                        limit=merged_options.k,
+                        score_threshold=score_threshold,
+                        with_payload=True,
+                        with_vectors=True,
+                    )
+                else:
+                    raise ValueError("Expected SparseVector from SparseEmbedder, got list[float]")
+            else:
+                dense_query_vector = (await self._embedder.embed_text([text]))[0]
+                query_results = await self._client.query_points(
+                    collection_name=self._index_name,
+                    query=dense_query_vector,
+                    limit=merged_options.k,
+                    score_threshold=score_threshold,
+                    with_payload=True,
+                    with_vectors=True,
+                )
 
             outputs.results = []
             for point in query_results.points:
                 entry = VectorStoreEntry.model_validate(point.payload)
 
+                # Convert vector back to appropriate format
+                vector: list[float] | SparseVector
+                if hasattr(point, "sparse_vector") and point.sparse_vector is not None:
+                    vector = SparseVector(
+                        indices=list(point.sparse_vector.indices), values=list(point.sparse_vector.values)
+                    )
+                else:
+                    vector = cast(list[float], point.vector)
+
                 outputs.results.append(
                     VectorStoreResult(
                         entry=entry,
                         score=point.score * score_multiplier,
-                        vector=cast(list[float], point.vector),
+                        vector=vector,
                     )
                 )
 

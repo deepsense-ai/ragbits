@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import ClassVar, TypeVar
+from typing import ClassVar, TypeVar, cast
 from uuid import UUID
 
 import pydantic
@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from ragbits.core import vector_stores
 from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
@@ -52,7 +53,7 @@ class VectorStoreResult(BaseModel):
     """
 
     entry: VectorStoreEntry
-    vector: list[float]
+    vector: list[float] | SparseVector
     score: float
 
     # If the results were created by combining multiple results, this field will contain the subresults.
@@ -156,7 +157,7 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
 
     def __init__(
         self,
-        embedder: Embedder,
+        embedder: Embedder | SparseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptionsT | None = None,
     ) -> None:
@@ -164,7 +165,8 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         Constructs a new VectorStore instance.
 
         Args:
-            embedder: The embedder to use for converting entries to vectors.
+            embedder: The embedder to use for converting entries to vectors. Can be a regular Embedder for dense vectors
+                     or a SparseEmbedder for sparse vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             default_options: The default options for querying the vector store.
         """
@@ -172,10 +174,13 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         self._embedder = embedder
         self._embedding_type = embedding_type
 
-        if self._embedding_type == EmbeddingType.IMAGE and not self._embedder.image_support():
-            raise ValueError("Embedder does not support image embeddings")
+        if self._embedding_type == EmbeddingType.IMAGE:
+            if isinstance(self._embedder, Embedder) and not self._embedder.image_support():
+                raise ValueError("Embedder does not support image embeddings")
+            if isinstance(self._embedder, SparseEmbedder):
+                raise ValueError("SparseEmbedder does not support image embeddings")
 
-    async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float]]:
+    async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float] | SparseVector]:
         """
         Create embeddings for the given entry, using the provided embedder and embedding type.
 
@@ -183,15 +188,22 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
             entries: The entries to create embeddings for.
 
         Returns:
-            The embeddings mapped by entry ID
+            The embeddings mapped by entry ID. Returns either dense vectors as list[float] or
+            sparse vectors as SparseVector depending on the type of embedder used.
         """
         if self._embedding_type == EmbeddingType.TEXT:
             entries = [e for e in entries if e.text is not None]
-            embeddings = await self._embedder.embed_text([e.text for e in entries if e.text is not None])
-            return {e.id: v for e, v in zip(entries, embeddings, strict=True)}
+            if isinstance(self._embedder, SparseEmbedder):
+                sparse_embeddings = await self._embedder.embed_text([e.text for e in entries if e.text is not None])
+                return {e.id: v for e, v in zip(entries, sparse_embeddings, strict=True)}
+            else:
+                embedder = cast(Embedder, self._embedder)
+                dense_embeddings = await embedder.embed_text([e.text for e in entries if e.text is not None])
+                return {e.id: v for e, v in zip(entries, dense_embeddings, strict=True)}
         elif self._embedding_type == EmbeddingType.IMAGE:
             entries = [e for e in entries if e.image_bytes is not None]
-            embeddings = await self._embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
+            embedder = cast(Embedder, self._embedder)  # Only Embedder supports images, not SparseEmbedder
+            embeddings = await embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
             return {e.id: v for e, v in zip(entries, embeddings, strict=True)}
         else:
             raise ValueError(f"Unsupported embedding type: {self._embedding_type}")
