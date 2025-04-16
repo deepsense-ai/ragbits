@@ -20,7 +20,6 @@ class LocalEmbedderOptions(Options):
     """
 
     batch_size: int = 1
-    model_init_kwargs: dict[str, Any] = field(default_factory=dict)
     encode_kwargs: dict[str, Any] = field(default_factory=dict)
 
 
@@ -33,16 +32,13 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
 
     options_cls = LocalEmbedderOptions
 
-    def __init__(
-        self,
-        model_name: str,
-        default_options: LocalEmbedderOptions | None = None,
-    ) -> None:
+    def __init__(self, model_name: str, default_options: LocalEmbedderOptions | None = None, **kwargs: Any) -> None:  # noqa: ANN401
         """Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
             default_options: Default options for the embedding model.
+            kwargs: Additional arguments to pass to the SentenceTransformer.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -53,13 +49,7 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         super().__init__(default_options=default_options)
 
         self.model_name = model_name
-
-        init_kwargs = {}
-        if default_options and default_options.model_init_kwargs:
-            init_kwargs = default_options.model_init_kwargs
-
-        # Initialize the model with all provided parameters
-        self.model = SentenceTransformer(self.model_name, **init_kwargs)
+        self.model = SentenceTransformer(self.model_name, **kwargs)
 
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
         """Calls the appropriate encoder endpoint with the given data and options.

@@ -20,11 +20,16 @@ async def test_local_embedder_embed_text():
 @pytest.mark.asyncio
 async def test_local_embedder_with_custom_encode_kwargs():
     # Test with custom encode parameters
-    options = LocalEmbedderOptions(
-        encode_kwargs={"prompt": "Represent this sentence for searching relevant passages: "}
+    embedder = LocalEmbedder(
+        "BAAI/bge-small-en-v1.5",
+        prompts={
+            "classification": "Classify the following text: ",
+            "retrieval": "Retrieve semantically similar text: ",
+            "clustering": "Identify the topic or theme based on the text: ",
+        },
     )
-    embedder = LocalEmbedder("BAAI/bge-small-en-v1.5", default_options=options)
-    result = await embedder.embed_text(["test text"])
+    options = LocalEmbedderOptions(encode_kwargs={"prompt_name": "retrieval"})
+    result = await embedder.embed_text(["test text"], options=options)
 
     assert len(result) == 1
     assert len(result[0]) > 0
@@ -32,6 +37,7 @@ async def test_local_embedder_with_custom_encode_kwargs():
     embedder = LocalEmbedder("BAAI/bge-small-en-v1.5")
     result_no_prompt = await embedder.embed_text(["test text"])
 
+    # Check that the embeddings with custom prompt are different from the default ones
     assert not np.array_equal(result[0], result_no_prompt[0])
 
 
