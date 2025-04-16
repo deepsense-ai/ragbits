@@ -6,4 +6,7 @@ rouge
 distilabel
 rerankers
 py_rust_stemmers
+mirakuru
+psycopg
+pytest-postgresql
 python-bidi

@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+
+- Image embeddings in PgVectorStore (#495)
+- Add PgVectorStore to vector store integration tests (#495)
 - Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)
 - move sources from ragbits-document-search to ragbits-core (#496)
 - adding connection check to Azure get_blob_service (#502)
