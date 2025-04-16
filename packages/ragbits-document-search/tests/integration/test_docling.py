@@ -18,7 +18,7 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
             DocumentMeta.from_local_path(
                 Path(__file__).parent.parent / "assets" / "img" / "transformers_paper_page.png"
             ),
-            5,
+            6,
             id="ImageDocument",
         ),
         pytest.param(
