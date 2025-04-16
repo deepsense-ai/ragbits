@@ -44,7 +44,12 @@ class RagbitsAPI:
     RagbitsAPI class for running API with Demo UI for testing purposes
     """
 
-    def __init__(self, chat_implementation: type[ChatInterface] | str, config_path: str) -> None:
+    def __init__(
+        self,
+        chat_implementation: type[ChatInterface] | str,
+        config_path: str,
+        cors_origins: list[str] | None = None,
+    ) -> None:
         """
         Initialize the RagbitsAPI.
 
@@ -52,11 +57,14 @@ class RagbitsAPI:
             chat_implementation: Either a ChatInterface class (recommended) or a string path to a class
                                 in format "module.path:ClassName" (legacy support)
             config_path: Path to the api configuration file (YAML format).
+            cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
         """
         self.app = FastAPI()
         self.chat_implementation: ChatInterface | None = None
         self.config_path = (STARTED_FROM_DIR / config_path).resolve()
         self.dist_dir = Path(__file__).parent / "ui-build"
+        self.cors_origins = cors_origins or []
+
         self.configure_app()
         self.setup_routes()
         self.setup_exception_handlers()
@@ -67,14 +75,7 @@ class RagbitsAPI:
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=[
-                "http://localhost:8000",
-                "http://localhost:5173",
-                "http://localhost:8081",
-                "http://127.0.0.1:8000",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:8081",
-            ],
+            allow_origins=self.cors_origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -142,7 +143,6 @@ class RagbitsAPI:
             implementation: Either a ChatInterface class or a string path in format "module:class"
         """
         if isinstance(implementation, str):
-            # Handle string path case (legacy support)
             module_stringified, object_stringified = implementation.split(":")
             logger.info(f"Loading chat implementation from path: {module_stringified}, class: {object_stringified}")
 

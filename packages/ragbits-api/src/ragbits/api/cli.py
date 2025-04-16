@@ -21,9 +21,11 @@ def run(
     config_path: str = typer.Option(..., "--config-path", help="Path to a module with API config"),
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the API server to"),
     port: int = typer.Option(8000, "--port", help="Port to bind the API server to"),
+    cors_origins: list[str] | None = None,
 ) -> None:
     """
     Run API service with UI demo
     """
-    api = RagbitsAPI(chat_implementation=chat_path, config_path=config_path)
+    cors_origins = cors_origins or []
+    api = RagbitsAPI(chat_implementation=chat_path, config_path=config_path, cors_origins=cors_origins)
     api.run(host=host, port=port)
