@@ -44,37 +44,40 @@ class RagbitsAPI:
     RagbitsAPI class for running API with Demo UI for testing purposes
     """
 
-    def __init__(self, chat_implementation: type[ChatInterface] | str, config_path: str) -> None:
+    def __init__(
+        self,
+        chat_interface: type[ChatInterface] | str,
+        config_path: str,
+        cors_origins: list[str] | None = None,
+        ui_build_dir: str | None = None,
+    ) -> None:
         """
         Initialize the RagbitsAPI.
 
         Args:
-            chat_implementation: Either a ChatInterface class (recommended) or a string path to a class
+            chat_interface: Either a ChatInterface class (recommended) or a string path to a class
                                 in format "module.path:ClassName" (legacy support)
             config_path: Path to the api configuration file (YAML format).
+            cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
+            ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
         """
         self.app = FastAPI()
-        self.chat_implementation: ChatInterface | None = None
+        self.chat_interface: ChatInterface | None = None
         self.config_path = (STARTED_FROM_DIR / config_path).resolve()
-        self.dist_dir = Path(__file__).parent / "ui-build"
+        self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
+        self.cors_origins = cors_origins or []
+
         self.configure_app()
         self.setup_routes()
         self.setup_exception_handlers()
 
-        self.initialize_chat_implementation(chat_implementation)
+        self.initialize_chat_interface(chat_interface)
 
     def configure_app(self) -> None:
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=[
-                "http://localhost:8000",
-                "http://localhost:5173",
-                "http://localhost:8081",
-                "http://127.0.0.1:8000",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:8081",
-            ],
+            allow_origins=self.cors_origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -110,10 +113,10 @@ class RagbitsAPI:
 
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
-            if not self.chat_implementation:
+            if not self.chat_interface:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
-            response_generator = self.chat_implementation.chat(
+            response_generator = self.chat_interface.chat(
                 message=request.message, history=request.history, context=request.context
             )
 
@@ -135,14 +138,13 @@ class RagbitsAPI:
             else:
                 return JSONResponse(content={})
 
-    def initialize_chat_implementation(self, implementation: type[ChatInterface] | str) -> None:
+    def initialize_chat_interface(self, implementation: type[ChatInterface] | str) -> None:
         """Initialize the chat implementation from either a class directly or a module path.
 
         Args:
             implementation: Either a ChatInterface class or a string path in format "module:class"
         """
         if isinstance(implementation, str):
-            # Handle string path case (legacy support)
             module_stringified, object_stringified = implementation.split(":")
             logger.info(f"Loading chat implementation from path: {module_stringified}, class: {object_stringified}")
 
@@ -154,7 +156,7 @@ class RagbitsAPI:
         if not issubclass(implementation_class, ChatInterface):
             raise TypeError("Implementation must inherit from ChatInterface")
 
-        self.chat_implementation = implementation_class()
+        self.chat_interface = implementation_class()
         logger.info(f"Initialized chat implementation: {implementation_class.__name__}")
 
     def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:

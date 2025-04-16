@@ -17,13 +17,28 @@ def register(app: typer.Typer) -> None:
 
 @ds_app.command()
 def run(
-    chat_path: str = typer.Option(..., "--chat-path", help="Path to a module with chat function"),
+    chat_interface: str = typer.Argument(..., help="Path to a module with chat function"),
     config_path: str = typer.Option(..., "--config-path", help="Path to a module with API config"),
     host: str = typer.Option("127.0.0.1", "--host", help="Host to bind the API server to"),
     port: int = typer.Option(8000, "--port", help="Port to bind the API server to"),
+    cors_origins: list[str] = typer.Option(  # noqa: B008
+        None,
+        "--cors-origin",
+        help="Allowed CORS origins. Can be specified multiple times.",
+    ),
+    ui_build_dir: str = typer.Option(
+        None,
+        "--ui-build-dir",
+        help="Path to a custom UI build directory. If not specified, uses the default package UI.",
+    ),
 ) -> None:
     """
     Run API service with UI demo
     """
-    api = RagbitsAPI(chat_implementation=chat_path, config_path=config_path)
+    api = RagbitsAPI(
+        chat_interface=chat_interface,
+        config_path=config_path,
+        cors_origins=cors_origins,
+        ui_build_dir=ui_build_dir,
+    )
     api.run(host=host, port=port)
