@@ -78,10 +78,9 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
             model_obj=repr(self.model),
             options=merged_options.dict(),
         ) as outputs:
-            embeddings = []
-            for batch in self._batch(data, merged_options.batch_size):
-                batch_embeddings = self.model.encode(batch, **merged_options.encode_kwargs)
-                embeddings.extend(batch_embeddings)
+            embeddings = [
+                [float(x) for x in result] for result in self.model.encode(data, **merged_options.encode_kwargs)
+            ]
             outputs.embeddings = embeddings
         return embeddings
 
