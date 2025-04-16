@@ -44,7 +44,7 @@ class _PromptOutput(pydantic.BaseModel):
 
 def _get_image_bytes() -> bytes:
     """Get the test image as bytes."""
-    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
+    with open(Path(__file__).parent.parent.parent / "assets" / "img" / "test.png", "rb") as f:
         return f.read()
 
 

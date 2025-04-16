@@ -22,6 +22,28 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 
     One of the simplest vector search strategies used in Ragbits is dense search. This approach leverages an embedding model to generate vector representations of search queries and compares them against the dense vector representations of ingested elements. It is a straightforward method and often serves as a good starting point for developing a retrieval pipeline.
 
+=== "Hybrid search"
+
+    ```python
+    from ragbits.core.embeddings import LiteLLMEmbedder
+    from ragbits.core.vector_stores.qdrant import QdrantVectorStore
+    from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
+    from ragbits.document_search import DocumentSearch
+
+    embedder = LiteLLMEmbedder(model="text-embedding-3-small", ...)
+    vector_store_text = InMemoryVectorStore(embedder=embedder, index_name="text_index", embedding_type=EmbeddingType.TEXT)
+    vector_store_image = InMemoryVectorStore(embedder=embedder, index_name="image_index", embedding_type=EmbeddingType.IMAGE)
+    vector_store = HybridSearchVectorStore(vector_store_text, vector_store_image)
+
+    document_search = DocumentSearch(vector_store=vector_store, ...)
+
+    elements = await document_search.search("What is the capital of Poland?")
+    ```
+
+    Hybrid search is a more advanced strategy that combines multiple vector stores, each optimized for different types of data or embedding models. This approach allows for more flexible and efficient retrieval, as it can leverage the strengths of different vector stores to improve search results. For example, you can combine dense and sparse vector stores or use different embedding models for different data types, or like in this example, use one store for text embeddings and another for image embeddings of the same entry.
+
+    To learn more about using Hybrid Search, refer to [How to Perform Hybrid Search with Multiple Vector Stores](../vector_stores/hybrid.md).
+
 ## Rephrase query
 
 By default, the input query is provided directly to the embedding model. However, there is an option to add an additional step before vector search. Ragbits offers several common rephrasing techniques that can be utilized to refine the query and generate better embeddings for retrieval.

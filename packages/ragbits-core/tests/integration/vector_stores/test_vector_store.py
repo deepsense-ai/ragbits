@@ -3,11 +3,14 @@ from pathlib import Path
 from typing import cast
 from uuid import UUID
 
+import asyncpg
 import pytest
 from chromadb import EphemeralClient
+from psycopg import Connection
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStore,
@@ -17,10 +20,10 @@ from ragbits.core.vector_stores.base import (
 )
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.sources import LocalFileSource
 
 text_embbedings = [
     [[0.1, 0.2, 0.3], [0.9, 0.9, 0.9]],  # for storage
@@ -31,25 +34,34 @@ image_embeddings = [
     [[0.7, 0.8, 0.9], [1.0, 0.81, 0.84]],
 ]
 
-IMAGES_PATH = Path(__file__).parent.parent.parent / "test-images"
+IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
-# TODO: Add PgVectorStore
+@pytest.fixture
+async def pgvector_test_db(postgresql: Connection) -> asyncpg.pool:
+    dsn = f"postgresql://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
+    async with asyncpg.create_pool(dsn) as pool:
+        yield pool
+
+
 @pytest.fixture(
     name="vector_store_cls",
     params=[
-        lambda: partial(InMemoryVectorStore),
-        lambda: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
-        lambda: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda _: partial(InMemoryVectorStore),
+        lambda _: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
+        lambda _: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda pg_pool: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=3),
     ],
-    ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore"],
+    ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "PgVectorStore"],
 )
-def vector_store_cls_fixture(request: pytest.FixtureRequest) -> type[VectorStoreWithExternalEmbedder]:
+def vector_store_cls_fixture(
+    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool
+) -> type[VectorStoreWithExternalEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithExternalEmbedder left to be set.
     """
-    return request.param()
+    return request.param(pgvector_test_db)
 
 
 @pytest.fixture(name="vector_store", params=[EmbeddingType.TEXT, EmbeddingType.IMAGE], ids=["Text", "Image"])

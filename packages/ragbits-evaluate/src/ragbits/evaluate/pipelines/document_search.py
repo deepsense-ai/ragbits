@@ -3,8 +3,8 @@ from uuid import uuid4
 
 from typing_extensions import Self
 
+from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.sources import HuggingFaceSource
 from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
 
 
