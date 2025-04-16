@@ -26,9 +26,19 @@ def run(
         "--cors-origin",
         help="Allowed CORS origins. Can be specified multiple times.",
     ),
+    ui_build_dir: str = typer.Option(
+        None,
+        "--ui-build-dir",
+        help="Path to a custom UI build directory. If not specified, uses the default package UI.",
+    ),
 ) -> None:
     """
     Run API service with UI demo
     """
-    api = RagbitsAPI(chat_implementation=chat_path, config_path=config_path, cors_origins=cors_origins)
+    api = RagbitsAPI(
+        chat_implementation=chat_path,
+        config_path=config_path,
+        cors_origins=cors_origins,
+        ui_build_dir=ui_build_dir,
+    )
     api.run(host=host, port=port)

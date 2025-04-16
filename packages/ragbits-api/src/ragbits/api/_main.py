@@ -49,6 +49,7 @@ class RagbitsAPI:
         chat_implementation: type[ChatInterface] | str,
         config_path: str,
         cors_origins: list[str] | None = None,
+        ui_build_dir: str | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -58,11 +59,12 @@ class RagbitsAPI:
                                 in format "module.path:ClassName" (legacy support)
             config_path: Path to the api configuration file (YAML format).
             cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
+            ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
         """
         self.app = FastAPI()
         self.chat_implementation: ChatInterface | None = None
         self.config_path = (STARTED_FROM_DIR / config_path).resolve()
-        self.dist_dir = Path(__file__).parent / "ui-build"
+        self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
 
         self.configure_app()
