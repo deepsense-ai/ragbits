@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from dataclasses import field
 from typing import Any
 
@@ -19,26 +18,31 @@ class LocalEmbedderOptions(Options):
     Dataclass that represents available call options for the LocalEmbedder client.
     """
 
-    batch_size: int = 1
-    encode_kwargs: dict[str, Any] = field(default_factory=dict)
+    encode_kwargs: dict = field(default_factory=dict)
 
 
 class LocalEmbedder(Embedder[LocalEmbedderOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
 
-    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation
+    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation.
     """
 
     options_cls = LocalEmbedderOptions
 
-    def __init__(self, model_name: str, default_options: LocalEmbedderOptions | None = None, **kwargs: Any) -> None:  # noqa: ANN401
-        """Constructs a new local LLM instance.
+    def __init__(
+        self,
+        model_name: str,
+        default_options: LocalEmbedderOptions | None = None,
+        **model_kwargs: Any,  # noqa: ANN401
+    ) -> None:
+        """
+        Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
             default_options: Default options for the embedding model.
-            kwargs: Additional arguments to pass to the SentenceTransformer.
+            model_kwargs: Additional arguments to pass to the SentenceTransformer.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -49,10 +53,11 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         super().__init__(default_options=default_options)
 
         self.model_name = model_name
-        self.model = SentenceTransformer(self.model_name, **kwargs)
+        self.model = SentenceTransformer(self.model_name, **model_kwargs)
 
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
-        """Calls the appropriate encoder endpoint with the given data and options.
+        """
+        Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.
@@ -68,14 +73,5 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
             model_obj=repr(self.model),
             options=merged_options.dict(),
         ) as outputs:
-            embeddings = [
-                [float(x) for x in result] for result in self.model.encode(data, **merged_options.encode_kwargs)
-            ]
-            outputs.embeddings = embeddings
-        return embeddings
-
-    @staticmethod
-    def _batch(data: list[str], batch_size: int) -> Iterator[list[str]]:
-        length = len(data)
-        for ndx in range(0, length, batch_size):
-            yield data[ndx : min(ndx + batch_size, length)]
+            outputs.embeddings = self.model.encode(data, **merged_options.encode_kwargs).tolist()
+        return outputs.embeddings

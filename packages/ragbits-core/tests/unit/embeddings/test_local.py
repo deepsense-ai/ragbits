@@ -1,12 +1,10 @@
 import pickle
 
 import numpy as np
-import pytest
 
 from ragbits.core.embeddings.local import LocalEmbedder, LocalEmbedderOptions
 
 
-@pytest.mark.asyncio
 async def test_local_embedder_embed_text():
     embedder = LocalEmbedder("sentence-transformers/all-MiniLM-L6-v2")
 
@@ -17,7 +15,6 @@ async def test_local_embedder_embed_text():
     assert len(result[0]) == 384  # This dimension depends on the model
 
 
-@pytest.mark.asyncio
 async def test_local_embedder_with_custom_encode_kwargs():
     # Test with custom encode parameters
     embedder = LocalEmbedder(
