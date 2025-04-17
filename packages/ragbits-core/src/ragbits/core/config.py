@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLMType
 from ragbits.core.utils._pyproject import get_config_from_yaml, get_config_instance
+from ragbits.core.utils.config_handling import import_by_path
 
 
 class CoreConfig(BaseModel):
@@ -31,6 +32,8 @@ class CoreConfig(BaseModel):
     # Path to a YAML file with preferred configuration of varius Ragbits objects
     component_preference_config_path: Path | None = None
 
+    modules_to_import: dict[str, list[str]] = {}
+
     @cached_property
     def preferred_instances_config(self) -> dict:
         """
@@ -46,3 +49,16 @@ class CoreConfig(BaseModel):
 
 
 core_config = get_config_instance(CoreConfig, subproject="core")
+
+
+def import_modules_from_config(config_key: str, config: CoreConfig = core_config) -> None:
+    """
+    A function that imports all modules specified in config instance for given key
+    Args:
+        config_key: str configuration key
+        config: CoreConfig instance of configuration
+    """
+    paths_to_import = config.modules_to_import.get(config_key)
+    if paths_to_import:
+        for path in paths_to_import:
+            import_by_path(path)
