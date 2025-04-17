@@ -73,7 +73,7 @@ config = {
             "distance_method": "l2",
             "default_options": {
                 "k": 3,
-                "max_distance": 1.2,
+                "score_threshold": -1.2,
             },
             "embedder": {
                 "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
@@ -90,7 +90,7 @@ config = {
             },
         },
     },
-    "providers": {"txt": {"type": "DummyProvider"}},
+    "parser_router": {"txt": {"type": "TextDocumentParser"}},
     "rephraser": {
         "type": "LLMQueryRephraser",
         "config": {

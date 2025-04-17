@@ -33,7 +33,7 @@ class DogNamePrompt(Prompt[Dog, str]):
 async def main() -> None:
     llm = LiteLLM("gpt-4o")
     dog = Dog(breed="Golden Retriever", age=3, temperament="friendly")
-    prompt = JokePrompt(dog)
+    prompt = DogNamePrompt(dog)
     response = await llm.generate(prompt)
     print(response)
 
@@ -44,5 +44,5 @@ if __name__ == "__main__":
 
 ## Documentation
 * [Quickstart 1: Working with Prompts and LLMs](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/)
-* [How-To Guildes - Core](https://ragbits.deepsense.ai/how-to/core/use_prompting/)
+* [How-To Guides - Core](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/)
 * [API Reference - Core](https://ragbits.deepsense.ai/api_reference/core/prompt/)

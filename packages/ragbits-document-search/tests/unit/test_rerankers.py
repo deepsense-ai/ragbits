@@ -2,7 +2,7 @@ from argparse import Namespace
 from collections.abc import Sequence
 from unittest.mock import Mock, patch
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -186,7 +186,7 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
 
 
 def test_subclass_from_config():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rerankers:NoopReranker",
             "config": {
@@ -205,13 +205,13 @@ def test_subclass_from_config():
 
 
 def test_subclass_from_config_default_path():
-    config = ObjectContructionConfig.model_validate({"type": "NoopReranker"})
+    config = ObjectConstructionConfig.model_validate({"type": "NoopReranker"})
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, NoopReranker)
 
 
 def test_subclass_from_config_llm():
-    config = ObjectContructionConfig.model_validate(
+    config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
             "config": {

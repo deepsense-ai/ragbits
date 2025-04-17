@@ -44,7 +44,7 @@ class _PromptOutput(pydantic.BaseModel):
 
 def _get_image_bytes() -> bytes:
     """Get the test image as bytes."""
-    with open(Path(__file__).parent.parent.parent / "test-images" / "test.png", "rb") as f:
+    with open(Path(__file__).parent.parent.parent / "assets" / "img" / "test.png", "rb") as f:
         return f.read()
 
 
@@ -77,7 +77,7 @@ def test_raises_when_system_variable_with_no_input():
             system_prompt = "Hello, {{ name }}"
 
 
-def test_raises_when_unknow_user_template_variable():
+def test_raises_when_unknown_user_template_variable():
     """Test that a ValueError is raised when an unknown template variable is provided."""
     with pytest.raises(ValueError):
 
@@ -87,7 +87,7 @@ def test_raises_when_unknow_user_template_variable():
             user_prompt = "Hello, {{ foo }}"
 
 
-def test_raises_when_unknow_system_template_variable():
+def test_raises_when_unknown_system_template_variable():
     """Test that a ValueError is raised when an unknown template variable is provided."""
     with pytest.raises(ValueError):
 
@@ -514,4 +514,122 @@ def test_two_instances_do_not_share_few_shots():
         {"role": "user", "content": "Theme for the song is 90s pop."},
         {"role": "assistant", "content": "Why do I know all the words?"},
         {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
+async def test_response_parser():
+    class TestPrompt(Prompt):
+        user_prompt = "Hello AI"
+
+    async def async_parser(response: str) -> str:
+        return response.upper()
+
+    def sync_parser(response: str) -> str:
+        return response.lower()
+
+    test_prompt = TestPrompt()
+
+    resp = "Hello Human"
+    test_prompt.response_parser = async_parser
+    resp_async = await test_prompt.parse_response(resp)
+    assert resp_async == "HELLO HUMAN"
+
+    test_prompt.response_parser = sync_parser
+    resp_sync = await test_prompt.parse_response(resp)
+    assert resp_sync == "hello human"
+
+
+def test_add_user_message_with_string():
+    """Test adding a user message with a string content."""
+
+    class TestPrompt(Prompt):
+        user_prompt = "Hello"
+
+    prompt = TestPrompt()
+    prompt.add_user_message("Additional message")
+
+    assert prompt.chat == [{"role": "user", "content": "Hello"}, {"role": "user", "content": "Additional message"}]
+
+
+def test_add_user_message_with_input_model():
+    """Test adding a user message with an input model."""
+
+    class TestPrompt(Prompt[_PromptInput, str]):
+        user_prompt = "Hello {{ name }}"
+
+    prompt = TestPrompt(_PromptInput(name="Alice", age=30, theme="rock"))
+    prompt.add_user_message(_PromptInput(name="Bob", age=25, theme="jazz"))
+
+    assert prompt.chat == [{"role": "user", "content": "Hello Alice"}, {"role": "user", "content": "Hello Bob"}]
+
+
+def test_add_user_message_with_image():
+    """Test adding a user message with an image."""
+
+    class ImagePrompt(Prompt):
+        user_prompt = "What is on this image?"
+        image_input_fields = ["image"]
+
+    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
+    prompt.add_user_message(_ImagePromptInput(image=_get_image_bytes()))
+
+    assert len(prompt.chat) == 2
+    assert prompt.chat[0]["role"] == "user"
+    assert prompt.chat[1]["role"] == "user"
+    assert len(prompt.chat[0]["content"]) == 2  # text + image
+    assert len(prompt.chat[1]["content"]) == 2  # text + image
+
+
+def test_add_assistant_message():
+    """Test adding an assistant message."""
+
+    class TestPrompt(Prompt[_PromptInput, _PromptOutput]):
+        user_prompt = "Hello {{ name }}"
+
+    prompt = TestPrompt(_PromptInput(name="Alice", age=30, theme="rock"))
+    prompt.add_assistant_message("Assistant response")
+
+    assert prompt.chat == [
+        {"role": "user", "content": "Hello Alice"},
+        {"role": "assistant", "content": "Assistant response"},
+    ]
+
+
+def test_add_assistant_message_with_model():
+    """Test adding an assistant message with a model output."""
+
+    class TestPrompt(Prompt[_PromptInput, _PromptOutput]):
+        user_prompt = "Hello {{ name }}"
+
+    prompt = TestPrompt(_PromptInput(name="Alice", age=30, theme="rock"))
+    output = _PromptOutput(song_title="Test Song", song_lyrics="Test Lyrics")
+    prompt.add_assistant_message(output)
+
+    assert prompt.chat == [
+        {"role": "user", "content": "Hello Alice"},
+        {"role": "assistant", "content": output.model_dump_json()},
+    ]
+
+
+def test_conversation_history():
+    """Test building a complete conversation history with multiple messages."""
+
+    class TestPrompt(Prompt[_PromptInput, _PromptOutput]):
+        user_prompt = "Hello {{ name }}"
+
+    prompt = TestPrompt(_PromptInput(name="Alice", age=30, theme="rock"))
+    prompt.add_user_message("How are you?")
+    prompt.add_assistant_message("I'm doing well!")
+    prompt.add_user_message(_PromptInput(name="Bob", age=25, theme="jazz"))
+    prompt.add_assistant_message(_PromptOutput(song_title="Jazz Song", song_lyrics="Jazz lyrics"))
+
+    assert prompt.chat == [
+        {"role": "user", "content": "Hello Alice"},
+        {"role": "user", "content": "How are you?"},
+        {"role": "assistant", "content": "I'm doing well!"},
+        {"role": "user", "content": "Hello Bob"},
+        {
+            "role": "assistant",
+            "content": _PromptOutput(song_title="Jazz Song", song_lyrics="Jazz lyrics").model_dump_json(),
+        },
     ]

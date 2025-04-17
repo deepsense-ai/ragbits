@@ -1,4 +1,8 @@
+import pickle
+from unittest.mock import patch
+
 import pytest
+from litellm import Router
 from pydantic import BaseModel
 
 from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
@@ -57,7 +61,7 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         return [{"content": self.message, "role": "user"}]
 
     @staticmethod
-    def parse_response(response: str) -> int:
+    async def parse_response(response: str) -> int:
         """
         Parser for the prompt.
 
@@ -176,3 +180,85 @@ async def test_generation_without_image_support():
     prompt = MockPromptWithImage("Hello, what is on this image?")
     with pytest.raises(LLMNotSupportingImagesError):
         await llm.generate(prompt)
+
+
+async def test_pickling():
+    """Test pickling of the LiteLLM class."""
+    llm = LiteLLM(
+        model_name="gpt-3.5-turbo",
+        default_options=LiteLLMOptions(mock_response="I'm fine, thank you."),
+        custom_model_cost_config={
+            "gpt-3.5-turbo": {
+                "support_vision": True,
+            }
+        },
+        use_structured_output=True,
+        router=Router(),
+        base_url="https://api.litellm.ai",
+        api_key="test_key",
+        api_version="v1",
+    )
+    llm_pickled = pickle.loads(pickle.dumps(llm))  # noqa: S301
+    assert llm_pickled.model_name == "gpt-3.5-turbo"
+    assert llm_pickled.default_options.mock_response == "I'm fine, thank you."
+    assert llm_pickled.custom_model_cost_config == {
+        "gpt-3.5-turbo": {
+            "support_vision": True,
+        }
+    }
+    assert llm_pickled.use_structured_output
+    assert llm_pickled.router.model_list == []
+    assert llm_pickled.base_url == "https://api.litellm.ai"
+    assert llm_pickled.api_key == "test_key"
+    assert llm_pickled.api_version == "v1"
+
+
+async def test_init_registers_model_with_custom_cost_config():
+    """Test that custom model cost config properly registers the model with LiteLLM."""
+    custom_config = {
+        "some_model": {
+            "support_vision": True,
+            "input_cost_per_token": 0.0015,
+            "output_cost_per_token": 0.002,
+            "max_tokens": 4096,
+        }
+    }
+
+    with patch("litellm.register_model") as mock_register:
+        # Create LLM instance with custom config
+        LiteLLM(
+            model_name="some_model",
+            custom_model_cost_config=custom_config,
+        )
+
+        # Verify register_model was called with the correct config
+        mock_register.assert_called_once_with(custom_config)
+
+
+async def test_init_does_not_register_model_if_no_cost_config_is_provided():
+    """Test that the model is not registered if no cost config is provided."""
+    with patch("litellm.register_model") as mock_register:
+        LiteLLM(
+            model_name="some_model",
+        )
+        mock_register.assert_not_called()
+
+
+async def test_pickling_registers_model_with_custom_cost_config():
+    """Test that the model is registered with LiteLLM when unpickled."""
+    custom_config = {
+        "some_model": {
+            "support_vision": True,
+            "input_cost_per_token": 0.0015,
+            "output_cost_per_token": 0.002,
+            "max_tokens": 4096,
+        }
+    }
+    llm = LiteLLM(
+        model_name="some_model",
+        custom_model_cost_config=custom_config,
+    )
+    with patch("litellm.register_model") as mock_register:
+        llm_pickled = pickle.loads(pickle.dumps(llm))  # noqa: S301
+        assert llm_pickled.custom_model_cost_config == custom_config
+        mock_register.assert_called_once_with(custom_config)

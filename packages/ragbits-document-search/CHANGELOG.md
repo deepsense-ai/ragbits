@@ -2,20 +2,59 @@
 
 ## Unreleased
 
-- Configured source classes are auto-imported (#343)
+- move sources from ragbits-document-search to ragbits-core (#496)
+- fix union types validation in element enricher (#499)
+
+## 0.13.0 (2025-04-02)
+
+### Changed
+
+- ragbits-core updated to version v0.13.0
+- DocumentSearch.ingest now raises IngestExecutionError when any errors are encountered during ingestion.
+
+## 0.12.0 (2025-03-25)
+
+### Changed
+
+- ragbits-core updated to version v0.12.0
+- BREAKING CHANGE: Providers and intermediate handlers refactored to parsers and enrichers (#419)
+
+## 0.11.0 (2025-03-25)
+
+### Changed
+
+- ragbits-core updated to version v0.11.0
+- Introduce picklable ingest error wrapper (#448)
+- Add support for Git source to fetch files from Git repositories (#439)
+
+## 0.10.2 (2025-03-21)
+
+### Changed
+
+- ragbits-core updated to version v0.10.2
+- Remove obsolete ImageDescriber and llm from UnstructuredImageProvider (#430)
+- Make SourceError and its subclasses picklable (#435)
+- Allow for setting custom headers in WebSource (#437)
+
+## 0.10.1 (2025-03-19)
+
+### Changed
+
+- ragbits-core updated to version v0.10.1
+- BREAKING CHANGE: Renamed HttpSource to WebSource and changed property names (#420)
+- Better error distinction for WebSource (#421)
+
 ## 0.10.0 (2025-03-17)
 
 ### Changed
 
 - ragbits-core updated to version v0.10.0
-
 - BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
 - Compability with the new Vector Store interface from ragbits-core (#288)
 - Fix docstring formatting to resolve Griffe warnings
 - Introduce intermediate image elements (#139)
 - Add HTTP source type, which downloads a file from the provided URL (#397)
-
- - added traceable
+- added traceable
 
 ## 0.9.0 (2025-02-25)
 

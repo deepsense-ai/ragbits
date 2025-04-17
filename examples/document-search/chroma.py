@@ -73,7 +73,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
         default_options=LiteLLMEmbedderOptions(
             dimensions=1024,
             timeout=1000,
@@ -84,7 +84,7 @@ async def main() -> None:
         index_name="jokes",
         default_options=VectorStoreOptions(
             k=10,
-            max_distance=0.22,
+            score_threshold=0.88,
         ),
         embedder=embedder,
     )
@@ -103,7 +103,7 @@ async def main() -> None:
     query = "I'm boiling my water and I need a joke"
     vector_store_kwargs = {
         "k": 2,
-        "max_distance": 0.6,
+        "score_threshold": 0.4,
     }
     results = await document_search.search(
         query,

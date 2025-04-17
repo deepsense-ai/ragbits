@@ -1,4 +1,7 @@
+from typing import Any
+
 import litellm
+from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder
@@ -33,30 +36,37 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
     def __init__(
         self,
-        model: str = "text-embedding-3-small",
+        model_name: str = "text-embedding-3-small",
         default_options: LiteLLMEmbedderOptions | None = None,
+        *,
         api_base: str | None = None,
+        base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         api_version: str | None = None,
+        router: litellm.Router | None = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.
 
         Args:
-            model: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
+            model_name: Name of the [LiteLLM supported model](https://docs.litellm.ai/docs/embedding/supported_embedding)\
                 to be used. Default is "text-embedding-3-small".
             default_options: Default options to pass to the LiteLLM API.
             api_base: The API endpoint you want to call the model with.
-            api_key: API key to be used. API key to be used. If not specified, an environment variable will be used,
+            base_url: Alias for api_base. If both are provided, api_base takes precedence.
+            api_key: API key to be used. If not specified, an environment variable will be used,
                 for more information, follow the instructions for your specific vendor in the\
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
+            router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
         """
         super().__init__(default_options=default_options)
-        self.model = model
-        self.api_base = api_base
+
+        self.model_name = model_name
+        self.api_base = api_base or base_url
         self.api_key = api_key
         self.api_version = api_version
+        self.router = router
 
     async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
@@ -79,15 +89,16 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
 
         with trace(
             data=data,
-            model=self.model,
+            model=self.model_name,
             api_base=self.api_base,
             api_version=self.api_version,
             options=merged_options.dict(),
         ) as outputs:
             try:
-                response = await litellm.aembedding(
+                entrypoint = self.router or litellm
+                response = await entrypoint.aembedding(
                     input=data,
-                    model=self.model,
+                    model=self.model_name,
                     api_base=self.api_base,
                     api_key=self.api_key,
                     api_version=self.api_version,
@@ -110,3 +121,24 @@ class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
                 outputs.total_tokens = response.usage.total_tokens
 
         return outputs.embeddings
+
+    @classmethod
+    def from_config(cls, config: dict[str, Any]) -> Self:
+        """
+        Creates and returns a LiteLLMEmbedder instance.
+
+        Args:
+            config: A configuration object containing the configuration for initializing the LiteLLMEmbedder instance.
+
+        Returns:
+            LiteLLMEmbedder: An initialized LiteLLMEmbedder instance.
+        """
+        if "router" in config:
+            router = litellm.router.Router(model_list=config["router"])
+            config["router"] = router
+
+        # Map base_url to api_base if present
+        if "base_url" in config and "api_base" not in config:
+            config["api_base"] = config.pop("base_url")
+
+        return super().from_config(config)
