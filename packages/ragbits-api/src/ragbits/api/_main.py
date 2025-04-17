@@ -64,7 +64,6 @@ class RagbitsAPI:
         self.setup_routes()
         self.setup_exception_handlers()
 
-
     def configure_app(self) -> None:
         """Configures middleware, CORS, and other settings."""
         self.app.add_middleware(
