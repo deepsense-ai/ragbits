@@ -4297,6 +4297,10 @@ wheels = [
 name = "ragbits-api"
 version = "0.13.0"
 source = { editable = "packages/ragbits-api" }
+dependencies = [
+    { name = "fastapi" },
+    { name = "ragbits-core" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -4308,6 +4312,10 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "fastapi", specifier = ">=0.115.0,<1.0.0" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+]
 
 [package.metadata.requires-dev]
 dev = [
