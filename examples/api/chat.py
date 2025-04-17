@@ -7,15 +7,37 @@
 from collections.abc import AsyncGenerator
 
 from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.types import (
-    ChatResponse,
-    Message,
-)
+from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.api.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
 
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""
+
+    feedback_config = FeedbackConfig(
+        like_enabled=True,
+        like_form=FeedbackForm(
+            title="Like Form",
+            fields=[
+                FormField(name="like_reason", type="text", required=True, label="Why do you like this?"),
+            ],
+        ),
+        dislike_enabled=True,
+        dislike_form=FeedbackForm(
+            title="Dislike Form",
+            fields=[
+                FormField(
+                    name="issue_type",
+                    type="select",
+                    required=True,
+                    label="What was the issue?",
+                    options=["Incorrect information", "Not helpful", "Unclear", "Other"],
+                ),
+                FormField(name="feedback", type="text", required=True, label="Please provide more details"),
+            ],
+        ),
+    )
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")

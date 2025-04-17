@@ -1,7 +1,12 @@
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
+from typing import Literal
 
+from .forms import FeedbackConfig
 from .types import ChatResponse, ChatResponseType, Message, Reference
+
+logger = logging.getLogger(__name__)
 
 
 class ChatInterface(ABC):
@@ -14,6 +19,8 @@ class ChatInterface(ABC):
     * Text: Regular text responses streamed chunk by chunk
     * References: Source documents used to generate the answer
     """
+
+    feedback_config: FeedbackConfig = FeedbackConfig()
 
     @staticmethod
     def create_text_response(text: str) -> ChatResponse:
@@ -63,3 +70,19 @@ class ChatInterface(ABC):
             ```
         """
         raise NotImplementedError("Chat implementations must implement this method")
+
+    async def save_feedback(
+        self,
+        message_id: str,
+        feedback: Literal["like", "dislike"],
+        payload: dict,
+    ) -> None:
+        """
+        Save feedback about a chat message.
+
+        Args:
+            message_id: The ID of the message
+            feedback: The type of feedback
+            payload: The payload of the feedback
+        """
+        logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")

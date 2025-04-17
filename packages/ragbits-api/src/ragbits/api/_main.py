@@ -1,12 +1,10 @@
 import importlib
 import json
 import logging
-import os
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import uvicorn
-import yaml
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,8 +16,6 @@ from ragbits.api.interface import ChatInterface
 from ragbits.api.interface.types import ChatResponse, Message
 
 logger = logging.getLogger(__name__)
-
-STARTED_FROM_DIR = Path(os.getcwd()).resolve()
 
 
 class ChatMessageRequest(BaseModel):
@@ -47,7 +43,6 @@ class RagbitsAPI:
     def __init__(
         self,
         chat_interface: type[ChatInterface] | str,
-        config_path: str,
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
     ) -> None:
@@ -57,13 +52,11 @@ class RagbitsAPI:
         Args:
             chat_interface: Either a ChatInterface class (recommended) or a string path to a class
                                 in format "module.path:ClassName" (legacy support)
-            config_path: Path to the api configuration file (YAML format).
             cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
             ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
         """
         self.app = FastAPI()
         self.chat_interface: ChatInterface | None = None
-        self.config_path = (STARTED_FROM_DIR / config_path).resolve()
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
 
@@ -124,19 +117,15 @@ class RagbitsAPI:
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
-            if self.config_path:
-                try:
-                    with open(self.config_path) as file:
-                        config_data = yaml.safe_load(file)
-                    return JSONResponse(content=config_data)
-                except Exception as e:
-                    logger.error(f"Error reading config file: {e}")
-                    return JSONResponse(
-                        status_code=500,
-                        content={"detail": f"Error reading config file: {e}"},
-                    )
-            else:
-                return JSONResponse(content={})
+            config_dict = {}
+
+            if self.chat_interface.feedback_config.like_enabled:
+                config_dict["like_form"] = self.chat_interface.feedback_config.like_form.model_dump()
+
+            if self.chat_interface.feedback_config.dislike_enabled:
+                config_dict["dislike_form"] = self.chat_interface.feedback_config.dislike_form.model_dump()
+
+            return JSONResponse(content=config_dict)
 
     def initialize_chat_interface(self, implementation: type[ChatInterface] | str) -> None:
         """Initialize the chat implementation from either a class directly or a module path.
