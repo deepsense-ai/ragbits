@@ -196,4 +196,4 @@ class MyChat(ChatInterface):
         # Stream the response from the LLM
         async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
             yield self.create_text_response(chunk)
-``` 
+```
