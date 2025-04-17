@@ -3,6 +3,7 @@ from collections.abc import Sequence
 
 import tiktoken
 
+from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt.base import SimplePrompt
 from ragbits.document_search.documents.element import Element
@@ -70,15 +71,25 @@ class LLMReranker(Reranker):
         Returns:
             A sequence of assigned scores.
         """
-        self.llm_options.logit_bias = self.get_yes_no_token_ids()
-
+        try:
+            self.llm_options.logit_bias = self.get_yes_no_token_ids()
+        except KeyError:
+            print("No tokenizer found")
         lite_llm = LiteLLM(model_name=self.model_name, default_options=self.llm_options)
         scored_elements = []
         for doc in elements:
             full_prompt = self.prompt_template.format(query=query, document=doc.text_representation)
 
             prompt = SimplePrompt(content=full_prompt)
-            res = await lite_llm._call(prompt=prompt, options=self.llm_options)
+
+            try:
+                res = await lite_llm._call(prompt=prompt, options=self.llm_options)
+            except LLMStatusError as e:
+                raise NotImplementedError(
+                    f"Model {self.model_name} doesn't support logprobs, "
+                    "which are crucial for this reranking method. Try to use other reranker."
+                ) from e
+
             answer = res["response"]
             logprob = res["logprobs"][0]["logprob"]
             prob = math.exp(logprob) if answer == "Yes" else math.exp(logprob)
