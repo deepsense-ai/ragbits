@@ -77,7 +77,7 @@ yield self.create_reference(
 
 ## Step 4: Launch the API Server
 
-You can start the API server using the RAGbits CLI:
+You can start the API server using the Ragbits CLI:
 
 ```bash
 ragbits api run path.to.your.module:MyChat
