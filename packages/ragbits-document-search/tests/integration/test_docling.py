@@ -10,6 +10,11 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
     ("document_metadata", "expected_num_elements"),
     [
         pytest.param(
+            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George."),
+            1,
+            id="TextDocument",
+        ),
+        pytest.param(
             DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "md" / "test_file.md"),
             1,
             id="MarkdownDocument",

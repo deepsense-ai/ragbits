@@ -30,6 +30,7 @@ class DoclingDocumentParser(DocumentParser):
         DocumentType.PNG,
         DocumentType.JPG,
         DocumentType.HTML,
+        DocumentType.TXT,
         DocumentType.PDF,
     }
 
@@ -67,6 +68,9 @@ class DoclingDocumentParser(DocumentParser):
 
         Returns:
             The docling document.
+
+        Raises:
+            ConversionError: If converting the document to the Docling format fails.
         """
         accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
         pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
@@ -87,7 +91,18 @@ class DoclingDocumentParser(DocumentParser):
                 InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
             },
         )
-        return converter.convert(document.local_path).document
+        # For txt files, temporarily rename to .md extension. Docling doesn't support text files natively.
+        if document.metadata.document_type == DocumentType.TXT:
+            original_suffix = document.local_path.suffix
+            document.local_path = document.local_path.rename(document.local_path.with_suffix(".md"))
+
+        partitioned_document = converter.convert(document.local_path).document
+
+        # Convert back to the original file.
+        if document.metadata.document_type == DocumentType.TXT:
+            document.local_path = document.local_path.rename(document.local_path.with_suffix(original_suffix))
+
+        return partitioned_document
 
     def _chunk(self, partitioned_document: DoclingDocument, document: Document) -> list[Element]:
         """
