@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- add docling document parser (#509)
 - move sources from ragbits-document-search to ragbits-core (#496)
 - fix union types validation in element enricher (#499)
 
