@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry
 
 - Image embeddings in PgVectorStore (#495)
 - Add PgVectorStore to vector store integration tests (#495)
