@@ -1,4 +1,4 @@
-# Setting up an API Server with UI for a Chatbot
+# How-To: Set up an API Server with UI for a chatbot in Ragbits
 
 This guide shows you how to set up a Ragbits API server with a web UI for your chatbot application.
 

@@ -1,6 +1,7 @@
 import importlib
 import json
 import logging
+import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Literal
@@ -37,21 +38,6 @@ class FeedbackRequest(BaseModel):
     message_id: str = Field(..., description="ID of the message receiving feedback")
     feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
     payload: dict = Field(default_factory=dict, description="Additional feedback details")
-
-
-async def chat_response_to_sse(responses: AsyncGenerator[ChatResponse]) -> AsyncGenerator[str, None]:
-    """
-    Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
-    Each response is converted to JSON and wrapped in the SSE 'data:' prefix.
-    """
-    async for response in responses:
-        data = json.dumps(
-            {
-                "type": response.type.value,
-                "content": response.content if isinstance(response.content, str) else response.content.model_dump(),
-            }
-        )
-        yield f"data: {data}\n\n"
 
 
 class RagbitsAPI:
@@ -126,11 +112,20 @@ class RagbitsAPI:
             if not self.chat_interface:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
+            # Generate a unique message ID for this conversation message
+            message_id = str(uuid.uuid4())
+
+            # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
-                message=request.message, history=request.history, context=request.context
+                message=request.message,
+                history=[msg.model_dump() for msg in request.history],
+                context=request.context
             )
 
-            return StreamingResponse(chat_response_to_sse(response_generator), media_type="text/event-stream")  # type: ignore
+            # Pass the generator to the SSE formatter
+            return StreamingResponse(
+                RagbitsAPI._chat_response_to_sse(response_generator, message_id), media_type="text/event-stream"
+            )
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
         async def feedback(request: FeedbackRequest) -> JSONResponse:
@@ -157,6 +152,31 @@ class RagbitsAPI:
                 config_dict["dislike_form"] = self.chat_interface.feedback_config.dislike_form.model_dump()
 
             return JSONResponse(content=config_dict)
+
+    @staticmethod
+    async def _chat_response_to_sse(
+        responses: AsyncGenerator[ChatResponse], message_id: str
+    ) -> AsyncGenerator[str, None]:
+        """
+        Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
+        Each response is converted to JSON and wrapped in the SSE 'data:' prefix.
+
+        Args:
+            responses: The chat response generator
+            message_id: The unique identifier for this message
+        """
+        # Send the message_id as the first SSE event
+        data = json.dumps({"type": "message_id", "content": message_id})
+        yield f"data: {data}\n\n"
+
+        async for response in responses:
+            data = json.dumps(
+                {
+                    "type": response.type.value,
+                    "content": response.content if isinstance(response.content, str) else response.content.model_dump(),
+                }
+            )
+            yield f"data: {data}\n\n"
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

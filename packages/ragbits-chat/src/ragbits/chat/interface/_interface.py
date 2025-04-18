@@ -3,8 +3,10 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import Literal
 
+from ragbits.core.prompt.base import ChatFormat
+
 from .forms import FeedbackConfig
-from .types import ChatResponse, ChatResponseType, Message, Reference
+from .types import ChatResponse, ChatResponseType, Reference
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class ChatInterface(ABC):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
+        history: list[ChatFormat] | None = None,
         context: dict | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
@@ -69,7 +71,8 @@ class ChatInterface(ABC):
                     print(f"Reference: {ref.title}")
             ```
         """
-        raise NotImplementedError("Chat implementations must implement this method")
+        yield ChatResponse(type=ChatResponseType.TEXT, content="Ragbits cannot respond - please implement chat method!")
+        raise NotImplementedError("Chat implementations must implement chat method")
 
     async def save_feedback(
         self,

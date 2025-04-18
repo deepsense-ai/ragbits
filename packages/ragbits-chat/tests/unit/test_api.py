@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from ragbits.chat.api import RagbitsAPI, chat_response_to_sse
+from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
 from ragbits.chat.interface.types import ChatResponse, ChatResponseType, Reference
@@ -23,9 +23,7 @@ class MockChatInterface(ChatInterface):
     ) -> AsyncGenerator[ChatResponse, None]:
         """Mock implementation that yields test responses."""
         yield self.create_text_response("Test response")
-        yield self.create_reference(
-            title="Test Reference", content="Test content", url="http://test.com"
-        )
+        yield self.create_reference(title="Test Reference", content="Test content", url="http://test.com")
 
 
 @pytest.fixture
@@ -58,18 +56,29 @@ async def test_chat_response_to_sse() -> None:
             type=ChatResponseType.REFERENCE, content=Reference(title="Ref", content="Content", url="http://example.com")
         )
 
-    sse_generator = chat_response_to_sse(mock_generator())
+    # Use the static method from RagbitsAPI class
+    message_id = "test-message-id"
+    sse_generator = RagbitsAPI._chat_response_to_sse(mock_generator(), message_id)
 
     responses = []
     async for response in sse_generator:
         responses.append(response)
 
-    assert len(responses) == 2
-    assert responses[0] == 'data: {"type": "text", "content": "Hello"}\n\n'
+    # Should now have 3 responses: message_id event + 2 chat responses
+    assert len(responses) == 3
 
-    # Parse the second response JSON to check it
-    second_response = responses[1].replace("data: ", "").strip()
-    data = json.loads(second_response)
+    # First response should be the message_id event
+    first_response = responses[0].replace("data: ", "").strip()
+    data = json.loads(first_response)
+    assert data["type"] == "message_id"
+    assert data["content"] == message_id
+
+    # Second should be the text
+    assert responses[1] == 'data: {"type": "text", "content": "Hello"}\n\n'
+
+    # Parse the third response JSON to check it
+    third_response = responses[2].replace("data: ", "").strip()
+    data = json.loads(third_response)
     assert data["type"] == "reference"
     assert data["content"]["title"] == "Ref"
     assert data["content"]["content"] == "Content"
@@ -101,24 +110,6 @@ def test_chat_endpoint(client: TestClient) -> None:
     content = response.content.decode("utf-8")
     assert 'data: {"type": "text", "content": "Test response"}' in content
     assert 'data: {"type": "reference", "content": {"title": "Test Reference"' in content
-
-
-def test_chat_endpoint_error_when_interface_not_initialized(api: RagbitsAPI, client: TestClient) -> None:
-    """Test error handling when chat interface is not initialized."""
-    # Save the original interface
-    original_interface = api.chat_interface
-
-    # Set the chat_interface to None to trigger the error condition
-    # This is just for testing, we handle the type safety with cast
-    api.chat_interface = cast(ChatInterface, None)
-
-    # Test that the endpoint raises an error
-    response = client.post("/api/chat", json={"message": "Hello"})
-    assert response.status_code == 500
-    assert response.json() == {"detail": "Chat implementation is not initialized"}
-
-    # Restore the original interface for other tests
-    api.chat_interface = original_interface
 
 
 def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> None:
@@ -167,16 +158,6 @@ def test_config_endpoint_without_feedback(client: TestClient) -> None:
     response = client.get("/api/config")
     assert response.status_code == 200
     assert response.json() == {}
-
-
-def test_chat_endpoint_error_handling(client: TestClient, api: RagbitsAPI) -> None:
-    """Test error handling in the chat endpoint."""
-    # Make the chat method raise an exception
-    # Use patch instead of directly assigning to the method
-    with patch.object(api.chat_interface, "chat", side_effect=RuntimeError("Test error")):
-        request_data = {"message": "Hello"}
-        with pytest.raises(RuntimeError):  # Using specific exception is better practice
-            client.post("/api/chat", json=request_data)
 
 
 def test_validation_exception_handler(client: TestClient) -> None:

@@ -1,16 +1,16 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-api",
+#     "ragbits-chat",
 # ]
 # ///
 from collections.abc import AsyncGenerator
 
-from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
-from ragbits.api.interface.types import ChatResponse, Message
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.chat.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
-
+from ragbits.document_search import DocumentSearch
 
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""

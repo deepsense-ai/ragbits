@@ -31,8 +31,8 @@ nav:
         - "Search documents": how-to/document_search/search-documents.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
-      - API:
-        - "Setup API Server with UI for Chatbot": how-to/api/chatbot_ui.md
+      - Chatbots:
+        - "Setup API & UI": how-to/chatbots/chatbot_ui.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
           - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
@@ -62,9 +62,9 @@ nav:
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md
             - api_reference/document_search/retrieval/rerankers.md
-      - Conversations:
-          - api_reference/conversations/compressors/base.md
-          - api_reference/conversations/compressors/llm.md
+      - Chatbots:
+          - api_reference/chat/compressors/base.md
+          - api_reference/chat/compressors/llm.md
       - Guardrails:
           - api_reference/guardrails/index.md
 hooks:
