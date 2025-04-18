@@ -1,17 +1,24 @@
 import contextlib
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable
 from typing import cast
 from uuid import UUID
 
 import httpx
 import qdrant_client
 from qdrant_client import AsyncQdrantClient, models
-from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, VectorParams
+from qdrant_client.local.distances import DistanceOrder, distance_to_order
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    VectorParams,
+)
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings.base import Embedder
-from ragbits.core.utils.config_handling import ObjectContructionConfig, import_by_path
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
@@ -36,6 +43,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         client: AsyncQdrantClient,
         index_name: str,
         embedder: Embedder,
+        embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
     ) -> None:
@@ -46,12 +54,14 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             client: An instance of the Qdrant client.
             index_name: The name of the index.
             embedder: The embedder to use for converting entries to vectors.
+            embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
+            embedding_type=embedding_type,
         )
         self._client = client
         self._index_name = index_name
@@ -71,8 +81,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder: Embedder,
             distance_method: Distance,
             default_options: VectorStoreOptions,
-            embedding_name_text: str,
-            embedding_name_image: str,
         ) -> QdrantVectorStore:
             return QdrantVectorStore(
                 client=AsyncQdrantClient(**client_params),
@@ -104,27 +112,13 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Returns:
             An instance of the class initialized with the provided configuration.
         """
-        client_options = ObjectContructionConfig.model_validate(config["client"])
+        client_options = ObjectConstructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, qdrant_client)
         if "limits" in client_options.config:
             limits = httpx.Limits(**client_options.config["limits"])
             client_options.config["limits"] = limits
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
-
-    @staticmethod
-    def _detect_vector_size(vectors: Iterable[Mapping[str, list[float]]]) -> int:
-        """
-        Detects the size of the vectors from the input. Assumes all vectors have the same size.
-        """
-        for vector_map in vectors:
-            for vector in vector_map.values():
-                return len(vector)
-        raise ValueError("No vectors found in the input")
-
-    @staticmethod
-    def _internal_id(entry_id: UUID, embedding_type: EmbeddingType) -> UUID:
-        return UUID(int=entry_id.int + list(EmbeddingType).index(embedding_type))
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -141,6 +135,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             index_name=self._index_name,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ):
             if not entries:
                 return
@@ -148,7 +143,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collection_exists(self._index_name):
-                vector_size = self._detect_vector_size(embeddings.values())
+                vector_size = len(next(iter(embeddings.values())))
                 await self._client.create_collection(
                     collection_name=self._index_name,
                     vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
@@ -156,13 +151,12 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
             points = (
                 models.PointStruct(
-                    id=str(self._internal_id(entry.id, embedding_type)),
-                    vector=embeddings[entry.id][embedding_type],
+                    id=str(entry.id),
+                    vector=embeddings[entry.id],
                     payload=entry.model_dump(exclude_none=True),
                 )
                 for entry in entries
-                for embedding_type in EmbeddingType
-                if entry.id in embeddings and embedding_type in embeddings[entry.id]
+                if entry.id in embeddings
             )
 
             self._client.upload_points(
@@ -171,67 +165,56 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 wait=True,
             )
 
-    async def retrieve(
-        self, text: str | None = None, image: bytes | None = None, options: VectorStoreOptionsT | None = None
-    ) -> list[VectorStoreResult]:
+    async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Qdrant collection based on vector similarity.
 
         Args:
             text: The text to query the vector store with.
-            image: The image to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
             The retrieved entries.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        score_threshold = 1 - merged_options.max_distance if merged_options.max_distance else None
+
+        # Ragbits has a "larger is better" convention for all scores, so we need to reverse the score if the distance
+        # method is "smaller is better".
+        reverse_score = distance_to_order(self._distance_method) == DistanceOrder.SMALLER_IS_BETTER
+        score_multiplier = -1 if reverse_score else 1
+        score_threshold = (
+            None if merged_options.score_threshold is None else merged_options.score_threshold * score_multiplier
+        )
         with trace(
             text=text,
-            image=image,
             options=merged_options,
             index_name=self._index_name,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
         ) as outputs:
-            if image and text:
-                raise ValueError("Either text or image should be provided, not both.")
-
-            if text:
-                vector = await self._embedder.embed_text([text])
-            elif image:
-                vector = await self._embedder.embed_image([image])
-            else:
-                raise ValueError("Either text or image should be provided.")
+            query_vector = (await self._embedder.embed_text([text]))[0]
 
             query_results = await self._client.query_points(
                 collection_name=self._index_name,
-                query=vector[0],
-                limit=merged_options.k * 2,  # *2 to account for possible duplicates
+                query=query_vector,
+                limit=merged_options.k,
                 score_threshold=score_threshold,
                 with_payload=True,
                 with_vectors=True,
             )
 
             outputs.results = []
-            seen_ids = set()
             for point in query_results.points:
                 entry = VectorStoreEntry.model_validate(point.payload)
-                if entry.id in seen_ids:
-                    continue
-                seen_ids.add(entry.id)
 
                 outputs.results.append(
                     VectorStoreResult(
                         entry=entry,
-                        score=point.score,
+                        score=point.score * score_multiplier,
                         vector=cast(list[float], point.vector),
                     )
                 )
-
-                if len(outputs.results) >= merged_options.k:
-                    break
 
             return outputs.results
 
@@ -251,11 +234,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         ):
             await self._client.delete(
                 collection_name=self._index_name,
-                points_selector=models.PointIdsList(
-                    points=[
-                        str(self._internal_id(id, embedding_type)) for id in ids for embedding_type in EmbeddingType
-                    ],
-                ),
+                points_selector=models.PointIdsList(points=[str(id) for id in ids]),
             )
 
     @staticmethod
@@ -317,7 +296,6 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 with_vectors=True,
             )
 
-            vs_results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
-            outputs.results = list({r.id: r for r in vs_results}.values())
+            outputs.results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
 
             return outputs.results

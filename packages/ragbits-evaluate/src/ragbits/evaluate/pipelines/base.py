@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from pydantic import BaseModel
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.config import EvaluateConfig
 
@@ -25,7 +25,7 @@ class EvaluationDatapointSchema(WithConstructionConfig, BaseModel, ABC):
         schema_config = datapoint_schemas.get(pipeline_type)
         if schema_config is None:
             raise ValueError(f"No default schema for {pipeline_type}")
-        return cls.subclass_from_config(ObjectContructionConfig.model_validate(schema_config))
+        return cls.subclass_from_config(ObjectConstructionConfig.model_validate(schema_config))
 
 
 EvaluationDatapointSchemaT = TypeVar("EvaluationDatapointSchemaT", bound=EvaluationDatapointSchema)
@@ -37,9 +37,9 @@ class EvaluationConfig(BaseModel):
     Schema for for the dict taken by `Evaluator.run_from_config` method.
     """
 
-    dataloader: ObjectContructionConfig
-    pipeline: ObjectContructionConfig
-    metrics: dict[str, ObjectContructionConfig]
+    dataloader: ObjectConstructionConfig
+    pipeline: ObjectConstructionConfig
+    metrics: dict[str, ObjectConstructionConfig]
     batch_size: int = 10
 
 

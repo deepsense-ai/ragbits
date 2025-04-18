@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[chroma]",
-#     "ragbits-document-search[huggingface]",
+#     "ragbits-core[chroma,hf]",
+#     "ragbits-document-search",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
@@ -53,13 +53,13 @@ config = {
                         },
                     },
                 },
-                "providers": {
+                "parser_router": {
                     "txt": {
-                        "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
+                        "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
                     },
                 },
                 "source": {
-                    "type": "ragbits.document_search.documents.sources:HuggingFaceSource",
+                    "type": "ragbits.core.sources:HuggingFaceSource",
                     "config": {
                         "path": "micpst/hf-docs",
                         "split": "train[:5]",

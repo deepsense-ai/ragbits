@@ -1,13 +1,12 @@
-from collections.abc import Iterator
+from dataclasses import field
+from typing import Any
 
 from ragbits.core.audit import trace
 from ragbits.core.embeddings import Embedder
 from ragbits.core.options import Options
 
 try:
-    import torch
-    import torch.nn.functional as F
-    from transformers import AutoModel, AutoTokenizer
+    from sentence_transformers import SentenceTransformer
 
     HAS_LOCAL_EMBEDDINGS = True
 except ImportError:
@@ -19,14 +18,14 @@ class LocalEmbedderOptions(Options):
     Dataclass that represents available call options for the LocalEmbedder client.
     """
 
-    batch_size: int = 1
+    encode_kwargs: dict = field(default_factory=dict)
 
 
 class LocalEmbedder(Embedder[LocalEmbedderOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
 
-    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation
+    Note: Local implementation is not dedicated for production. Use it only in experiments / evaluation.
     """
 
     options_cls = LocalEmbedderOptions
@@ -34,15 +33,16 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
     def __init__(
         self,
         model_name: str,
-        api_key: str | None = None,
         default_options: LocalEmbedderOptions | None = None,
+        **model_kwargs: Any,  # noqa: ANN401
     ) -> None:
-        """Constructs a new local LLM instance.
+        """
+        Constructs a new local LLM instance.
 
         Args:
             model_name: Name of the model to use.
-            api_key: The API key for Hugging Face authentication.
             default_options: Default options for the embedding model.
+            model_kwargs: Additional arguments to pass to the SentenceTransformer.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -52,15 +52,12 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
 
         super().__init__(default_options=default_options)
 
-        self.hf_api_key = api_key
         self.model_name = model_name
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_api_key).to(self.device)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_api_key)
+        self.model = SentenceTransformer(self.model_name, **model_kwargs)
 
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
-        """Calls the appropriate encoder endpoint with the given data and options.
+        """
+        Calls the appropriate encoder endpoint with the given data and options.
 
         Args:
             data: List of strings to get embeddings for.
@@ -73,37 +70,8 @@ class LocalEmbedder(Embedder[LocalEmbedderOptions]):
         with trace(
             data=data,
             model_name=self.model_name,
-            model=repr(self.model),
-            tokenizer=repr(self.tokenizer),
-            device=self.device,
+            model_obj=repr(self.model),
             options=merged_options.dict(),
         ) as outputs:
-            embeddings = []
-            for batch in self._batch(data, merged_options.batch_size):
-                batch_dict = self.tokenizer(
-                    batch,
-                    max_length=self.tokenizer.model_max_length,
-                    padding=True,
-                    truncation=True,
-                    return_tensors="pt",
-                ).to(self.device)
-                with torch.no_grad():
-                    model_outputs = self.model(**batch_dict)
-                    batch_embeddings = self._average_pool(model_outputs.last_hidden_state, batch_dict["attention_mask"])
-                    batch_embeddings = F.normalize(batch_embeddings, p=2, dim=1)
-                embeddings.extend(batch_embeddings.to("cpu").tolist())
-
-            torch.cuda.empty_cache()
-            outputs.embeddings = embeddings
-        return embeddings
-
-    @staticmethod
-    def _batch(data: list[str], batch_size: int) -> Iterator[list[str]]:
-        length = len(data)
-        for ndx in range(0, length, batch_size):
-            yield data[ndx : min(ndx + batch_size, length)]
-
-    @staticmethod
-    def _average_pool(last_hidden_states: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-        last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
-        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+            outputs.embeddings = self.model.encode(data, **merged_options.encode_kwargs).tolist()
+        return outputs.embeddings

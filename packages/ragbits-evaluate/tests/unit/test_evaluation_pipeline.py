@@ -4,7 +4,7 @@ from typing import cast
 import pytest
 from datasets import Dataset
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.evaluate import EvaluationResult
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.evaluator import Evaluator
@@ -63,19 +63,19 @@ class MockMetric(Metric):
 @pytest.fixture
 def experiment_config(datapoint_schema_config: dict) -> dict:
     config = {
-        "dataloader": ObjectContructionConfig.model_validate(
+        "dataloader": ObjectConstructionConfig.model_validate(
             {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 3}}
         ),
         "pipeline": {
             "type": f"{__name__}:MockEvaluationPipeline",
             "config": {
-                "evaluation_target": ObjectContructionConfig.model_validate(
+                "evaluation_target": ObjectConstructionConfig.model_validate(
                     {"type": f"{__name__}:MockEvaluationTarget", "config": {"model_name": "config_model"}}
                 )
             },
         },
         "metrics": {
-            "main_metric": ObjectContructionConfig.model_validate({"type": f"{__name__}:MockMetric", "config": {}})
+            "main_metric": ObjectConstructionConfig.model_validate({"type": f"{__name__}:MockMetric", "config": {}})
         },
         "schema_config": datapoint_schema_config,
     }
@@ -107,7 +107,7 @@ async def test_result_structure(datapoint_schema_config: dict) -> None:
     target = MockEvaluationTarget()
     pipeline = MockEvaluationPipeline(target)
     schema = EvaluationDatapointSchema.subclass_from_config(
-        ObjectContructionConfig.model_validate(datapoint_schema_config)
+        ObjectConstructionConfig.model_validate(datapoint_schema_config)
     )
     result = await pipeline({"input": 2}, schema=schema)  # type: ignore[arg-type]
 

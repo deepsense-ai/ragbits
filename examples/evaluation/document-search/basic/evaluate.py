@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[chroma]",
-#     "ragbits-document-search[huggingface]",
+#     "ragbits-core[chroma,hf]",
+#     "ragbits-document-search",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
@@ -35,7 +35,7 @@ config = {
                     "distance_method": "l2",
                     "default_options": {
                         "k": 3,
-                        "max_distance": 1.2,
+                        "score_threshold": -1.2,
                     },
                     "embedder": {
                         "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
@@ -45,19 +45,19 @@ config = {
                     },
                 },
             },
-            "providers": {
-                "txt": {
-                    "type": "ragbits.document_search.ingestion.providers.unstructured:UnstructuredDefaultProvider",
-                },
-            },
             "ingest_strategy": {
                 "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
                 "config": {
                     "batch_size": 10,
                 },
             },
+            "parser_router": {
+                "txt": {
+                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
+                },
+            },
             "source": {
-                "type": "ragbits.document_search.documents.sources:HuggingFaceSource",
+                "type": "ragbits.core.sources:HuggingFaceSource",
                 "config": {
                     "path": "micpst/hf-docs",
                     "split": "train[:5]",

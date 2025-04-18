@@ -1,4 +1,4 @@
-# How to Evaluate with Ragbits
+# How-To: Evaluate pipelines with Ragbits
 
 Ragbits provides an interface for evaluating pipelines using specified metrics. Generally, you can create any evaluation pipeline and metrics that comply with the interface.
 

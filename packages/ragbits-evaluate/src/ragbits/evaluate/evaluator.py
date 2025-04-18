@@ -7,7 +7,7 @@ from typing import Generic, cast
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig, WithConstructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.evaluate.config import eval_config
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
@@ -25,9 +25,9 @@ class EvaluatorConfig(BaseModel):
     Schema for for the dict taken by `Evaluator.run_from_config` method.
     """
 
-    dataloader: ObjectContructionConfig
-    pipeline: ObjectContructionConfig
-    metrics: dict[str, ObjectContructionConfig]
+    dataloader: ObjectConstructionConfig
+    pipeline: ObjectConstructionConfig
+    metrics: dict[str, ObjectConstructionConfig]
     schema_config: dict | None = None
 
 
@@ -43,7 +43,7 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
             self.schema: EvaluationDatapointSchemaT = cast(
                 EvaluationDatapointSchemaT,
                 EvaluationDatapointSchema.subclass_from_config(
-                    config=ObjectContructionConfig.model_validate(schema_config)
+                    config=ObjectConstructionConfig.model_validate(schema_config)
                 ),
             )
         elif pipeline_type:

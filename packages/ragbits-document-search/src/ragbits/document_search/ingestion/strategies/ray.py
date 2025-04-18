@@ -1,13 +1,12 @@
 import asyncio
 from collections.abc import Iterable
 
+from ragbits.core.sources.base import Source
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
-from ragbits.document_search.documents.element import IntermediateElement
-from ragbits.document_search.documents.sources import Source
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.intermediate_handlers.base import BaseIntermediateHandler
+from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
 from ragbits.document_search.ingestion.strategies.base import (
     IngestDocumentResult,
     IngestExecutionResult,
@@ -53,8 +52,8 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         self,
         documents: Iterable[DocumentMeta | Document | Source],
         vector_store: VectorStore,
-        parser_router: DocumentProcessorRouter,
-        enricher_router: dict[type[IntermediateElement], BaseIntermediateHandler],
+        parser_router: DocumentParserRouter,
+        enricher_router: ElementEnricherRouter,
     ) -> IngestExecutionResult:
         """
         Ingest documents in parallel in batches.
@@ -83,16 +82,16 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         successfully_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestTaskResult))
         failed_parsed = parse_results.filter(lambda data: isinstance(data["results"], IngestDocumentResult))
 
-        # Further split valid documents into intermediate and ready
-        intermediate_parsed = successfully_parsed.filter(
-            lambda data: any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+        # Further split valid documents into to enrich and ready
+        to_enrich = successfully_parsed.filter(
+            lambda data: any(type(element) in enricher_router for element in data["results"].elements)
         )
         ready_parsed = successfully_parsed.filter(
-            lambda data: not any(isinstance(element, IntermediateElement) for element in data["results"].elements)
+            lambda data: not any(type(element) in enricher_router for element in data["results"].elements)
         )
 
-        # Enrich intermediate documents
-        enrich_results = intermediate_parsed.map_batches(
+        # Enrich documents
+        enrich_results = to_enrich.map_batches(
             fn=lambda batch: {"results": asyncio.run(self._enrich_batch(batch["results"], enricher_router))},
             batch_size=self.io_batch_size,
             num_cpus=0,

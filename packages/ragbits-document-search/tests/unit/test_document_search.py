@@ -8,6 +8,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.sources.gcs import GCSSource
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -17,13 +20,10 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
-from ragbits.document_search.ingestion.document_processor import DocumentProcessorRouter
-from ragbits.document_search.ingestion.providers import BaseProvider
-from ragbits.document_search.ingestion.providers.dummy import DummyProvider
-from ragbits.document_search.ingestion.strategies.batched import (
-    BatchedIngestStrategy,
-)
+from ragbits.document_search.ingestion.parsers import DocumentParser
+from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
+from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
 
 CONFIG = {
     "vector_store": {
@@ -33,7 +33,7 @@ CONFIG = {
         },
     },
     "reranker": {"type": "NoopReranker"},
-    "providers": {"txt": {"type": "DummyProvider"}},
+    "parsers": {"txt": {"type": "TextDocumentParser"}},
     "ingest_strategy": {"type": "SequentialIngestStrategy"},
 }
 
@@ -70,7 +70,7 @@ async def test_document_search_ingest_from_source():
 
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter.from_config({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
 
     with tempfile.NamedTemporaryFile(suffix=".txt") as f:
@@ -100,7 +100,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
     await document_search.ingest([document])
 
@@ -123,7 +123,7 @@ async def test_document_search_with_search_config():
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
     document_search = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
-        parser_router=DocumentProcessorRouter({DocumentType.TXT: DummyProvider()}),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
@@ -136,15 +136,19 @@ async def test_document_search_with_search_config():
 
 async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
-    examples_files = Path(__file__).parent / "example_files"
+    examples_files = Path(__file__).parent.parent / "assets" / "md"
 
     await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
-    assert len(results) == 2
+    assert len(results) == 3
     assert all(isinstance(result, TextElement) for result in results)
-    assert {cast(TextElement, result).content for result in results} == {"foo", "bar"}
+    assert {cast(TextElement, result).content for result in results} == {
+        "foo",
+        "bar",
+        "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework.",
+    }
 
 
 async def test_document_search_with_batched():
@@ -163,11 +167,8 @@ async def test_document_search_with_batched():
         DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Alexander Pig"),
     ]
 
-    embeddings_mock = AsyncMock()
-    embeddings_mock.embed_text.return_value = [[0.1, 0.1]] * len(documents)
-
     ingest_strategy = BatchedIngestStrategy(batch_size=5)
-    vectore_store = InMemoryVectorStore(embedder=embeddings_mock)
+    vectore_store = InMemoryVectorStore(embedder=NoopEmbedder())
 
     document_search = DocumentSearch(
         vector_store=vectore_store,
@@ -434,8 +435,8 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]  # Non-zero embeddings
 
-    # Create providers dict with actual provider instance
-    providers: Mapping[DocumentType, BaseProvider] = {DocumentType.TXT: DummyProvider()}
+    # Create parsers dict with actual provider instance
+    parsers: Mapping[DocumentType, DocumentParser] = {DocumentType.TXT: TextDocumentParser()}
 
     # Mock vector store to track operations
     vector_store = InMemoryVectorStore(embedder=embeddings_mock)
@@ -454,17 +455,15 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
-            mock.patch(
-                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
-            ),
+            mock.patch("ragbits.core.sources.hf.load_dataset", return_value=dataset),
+            mock.patch("ragbits.core.sources.base.get_local_storage_dir", return_value=storage_dir),
         ):
             document_search = DocumentSearch(
                 vector_store=vector_store,
-                parser_router=DocumentProcessorRouter.from_config(providers),
+                parser_router=DocumentParserRouter(parsers),
             )
 
-            await document_search.ingest("huggingface://dataset_name/train/0")
+            await document_search.ingest("hf://dataset_name/train/0")
 
             results = await document_search.search("HuggingFace test content")
 

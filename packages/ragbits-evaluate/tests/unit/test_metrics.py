@@ -8,7 +8,7 @@ from continuous_eval.metrics.retrieval.matching_strategy import (
     RougeSentenceMatch,
 )
 
-from ragbits.core.utils.config_handling import ObjectContructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.document_search import DocumentSearchPrecisionRecallF1
 from ragbits.evaluate.pipelines.document_search import DocumentSearchResult
@@ -138,13 +138,13 @@ def test_mixed_results_with_multiple_queries(matching_strategy: MatchingStrategy
 
 def test_metric_set_with_different_strategies() -> None:
     config = {
-        "exact_chunk": ObjectContructionConfig.model_validate(
+        "exact_chunk": ObjectConstructionConfig.model_validate(
             {
                 "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
                 "config": {"matching_strategy": {"type": "ExactChunkMatch", "config": {}}, "weight": 0.6},
             }
         ),
-        "rouge_sentence": ObjectContructionConfig.model_validate(
+        "rouge_sentence": ObjectConstructionConfig.model_validate(
             {
                 "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
                 "config": {

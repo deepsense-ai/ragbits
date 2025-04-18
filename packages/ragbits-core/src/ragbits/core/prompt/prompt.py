@@ -1,8 +1,9 @@
+import asyncio
 import base64
 import imghdr
 import textwrap
 from abc import ABCMeta
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any, Generic, cast, get_args, get_origin, overload
 
 from jinja2 import Environment, Template, meta
@@ -34,7 +35,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
-    response_parser: Callable[[str], OutputT]
+    response_parser: Callable[[str], OutputT | Awaitable[OutputT]]
 
     # Automatically set in __init_subclass__
     input_type: type[InputT] | None
@@ -98,7 +99,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return textwrap.dedent(message).strip()
 
     @classmethod
-    def _detect_response_parser(cls) -> Callable[[str], OutputT]:
+    def _detect_response_parser(cls) -> Callable[[str], OutputT | Awaitable[OutputT]]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
         if issubclass(cls.output_type, BaseModel):
@@ -141,6 +142,9 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
         self._instance_few_shots: list[FewShotExample[InputT, OutputT]] = []
+
+        # Additional conversation history that can be added dynamically using methods
+        self._conversation_history: list[dict[str, Any]] = []
         super().__init__()
 
     @property
@@ -165,6 +169,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             ),
             *self.list_few_shots(),
             {"role": "user", "content": user_content},
+            *self._conversation_history,
         ]
         return chat
 
@@ -214,6 +219,57 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "user", "content": user_content})
             result.append({"role": "assistant", "content": assistant_content})
         return result
+
+    def add_user_message(self, message: str | dict[str, Any] | InputT) -> "Prompt[InputT, OutputT]":
+        """
+        Add a user message to the conversation history.
+
+        Args:
+            message (str | dict[str, Any] | InputT): The user message content. Can be:
+                - A string: Used directly as content
+                - A dictionary: With format {"type": "text", "text": "message"} or image content
+                - An InputT model: Will be rendered using the user prompt template
+
+        Returns:
+            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+        """
+        content: str | list[dict[str, Any]] | dict[str, Any] | InputT
+
+        if isinstance(message, BaseModel):
+            # Type checking to ensure we're passing InputT to the methods
+            input_model: InputT = cast(InputT, message)
+
+            # Render the message using the template if it's an input model
+            rendered_text = self._render_template(self.user_prompt_template, input_model)
+            images_in_input = self._get_images_from_input_data(input_model)
+
+            if images_in_input:
+                content = [{"type": "text", "text": rendered_text}] + [
+                    self._create_message_with_image(image) for image in images_in_input
+                ]
+            else:
+                content = rendered_text
+        else:
+            # Use the message directly if it's a string or dict
+            content = message
+
+        self._conversation_history.append({"role": "user", "content": content})
+        return self
+
+    def add_assistant_message(self, message: str | OutputT) -> "Prompt[InputT, OutputT]":
+        """
+        Add an assistant message to the conversation history.
+
+        Args:
+            message (str): The assistant message content.
+
+        Returns:
+            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+        """
+        if isinstance(message, BaseModel):
+            message = message.model_dump_json()
+        self._conversation_history.append({"role": "assistant", "content": str(message)})
+        return self
 
     def list_images(self) -> list[str]:
         """
@@ -265,7 +321,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         return issubclass(self.output_type, BaseModel)
 
-    def parse_response(self, response: str) -> OutputT:
+    async def parse_response(self, response: str) -> OutputT:
         """
         Parse the response from the LLM to the desired output type.
 
@@ -278,7 +334,11 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Raises:
             ResponseParsingError: If the response cannot be parsed.
         """
-        return self.response_parser(response)
+        if asyncio.iscoroutinefunction(self.response_parser):
+            result = await self.response_parser(response)
+        else:
+            result = self.response_parser(response)
+        return result
 
     @classmethod
     def to_promptfoo(cls, config: dict[str, Any]) -> ChatFormat:

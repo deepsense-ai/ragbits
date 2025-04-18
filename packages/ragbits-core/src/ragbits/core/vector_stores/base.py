@@ -1,6 +1,4 @@
-import warnings
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from enum import Enum
 from typing import ClassVar, TypeVar
 from uuid import UUID
@@ -12,7 +10,7 @@ from typing_extensions import Self
 from ragbits.core import vector_stores
 from ragbits.core.embeddings.base import Embedder
 from ragbits.core.options import Options
-from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectContructionConfig
+from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
 
 WhereQuery = dict[str, str | int | float | bool]
@@ -46,20 +44,35 @@ class VectorStoreResult(BaseModel):
     """
     An object representing a query result from a vector store.
     Contains the entry, its vector, and the similarity score.
+
+    The bigger the score, the more similar the entry is to the query.
+    This holds even when using metrics that naturally follow the
+    opposite convention (e.g. Euclidean distance). In this case,
+    the score is simply the negative of the distance.
     """
 
     entry: VectorStoreEntry
     vector: list[float]
     score: float
 
+    # If the results were created by combining multiple results, this field will contain the subresults.
+    subresults: list["VectorStoreResult"] = []
+
 
 class VectorStoreOptions(Options):
     """
     An object representing the options for the vector store.
+
+    Attributes:
+        k: The number of entries to return.
+        score_threshold: The minimum similarity score for an entry to be returned.
+            Note that this is based on score, which may be different from the raw
+            similarity metric used by the vector store (see `VectorStoreResult`
+            for more details).
     """
 
     k: int = 5
-    max_distance: float | None = None
+    score_threshold: float | None = None
 
 
 VectorStoreOptionsT = TypeVar("VectorStoreOptionsT", bound=VectorStoreOptions)
@@ -86,17 +99,14 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
     @abstractmethod
     async def retrieve(
         self,
-        text: str | None = None,
-        image: bytes | None = None,
+        text: str,
         options: VectorStoreOptionsT | None = None,
     ) -> list[VectorStoreResult]:
         """
-        Retrieve entries from the vector store most similar to the provided entry.
-        Requires either text or image to be provided.
+        Retrieve entries from the vector store most similar to the provided text.
 
         Args:
             text: The text to query the vector store with.
-            image: The image to query the vector store with.
             options: The options for querying the vector store.
 
         Returns:
@@ -132,7 +142,7 @@ class VectorStore(ConfigurableComponent[VectorStoreOptionsT], ABC):
 
 class EmbeddingType(Enum):
     """
-    Types of embbedings supported by the vector store.
+    Types of embeddings supported by vector stores
     """
 
     TEXT = "text"
@@ -147,6 +157,7 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
     def __init__(
         self,
         embedder: Embedder,
+        embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptionsT | None = None,
     ) -> None:
         """
@@ -154,46 +165,36 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
 
         Args:
             embedder: The embedder to use for converting entries to vectors.
+            embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             default_options: The default options for querying the vector store.
-            embedder: The embedder to use for converting entries to vectors.
         """
         super().__init__(default_options=default_options)
         self._embedder = embedder
+        self._embedding_type = embedding_type
 
-    async def _create_embeddings(
-        self, entries: list[VectorStoreEntry] | list[VectorStoreEntry]
-    ) -> dict[UUID, dict[EmbeddingType, list[float]]]:
+        if self._embedding_type == EmbeddingType.IMAGE and not self._embedder.image_support():
+            raise ValueError("Embedder does not support image embeddings")
+
+    async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float]]:
         """
-        Create embeddings for the given entry.
+        Create embeddings for the given entry, using the provided embedder and embedding type.
 
         Args:
             entries: The entries to create embeddings for.
 
         Returns:
-            The embeddings mapped by entry ID. The format for each entry is the same
-                as the one in VectorStoreResult.vectors.
+            The embeddings mapped by entry ID
         """
-        text_entries = {e.id: e.text for e in entries if e.text}
-        image_entries = {e.id: e.image_bytes for e in entries if e.image_bytes}
-
-        embeddings: defaultdict[UUID, dict[EmbeddingType, list[float]]] = defaultdict(dict)
-        if text_entries:
-            embedded = await self._embedder.embed_text(list(text_entries.values()))
-            for i, id in enumerate(text_entries.keys()):
-                embeddings[id][EmbeddingType.TEXT] = embedded[i]
-
-        if image_entries and self._embedder.image_support():
-            embedded = await self._embedder.embed_image(list(image_entries.values()))
-            for i, id in enumerate(image_entries.keys()):
-                embeddings[id][EmbeddingType.IMAGE] = embedded[i]
-
-        image_only_ids = set(image_entries.keys()) - set(text_entries.keys())
-        if image_only_ids and not self._embedder.image_support():
-            warnings.warn(
-                f"Can't embed the following image-only entries as the embedder doesn't support images: {image_only_ids}"
-            )
-
-        return dict(embeddings)
+        if self._embedding_type == EmbeddingType.TEXT:
+            entries = [e for e in entries if e.text is not None]
+            embeddings = await self._embedder.embed_text([e.text for e in entries if e.text is not None])
+            return {e.id: v for e, v in zip(entries, embeddings, strict=True)}
+        elif self._embedding_type == EmbeddingType.IMAGE:
+            entries = [e for e in entries if e.image_bytes is not None]
+            embeddings = await self._embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
+            return {e.id: v for e, v in zip(entries, embeddings, strict=True)}
+        else:
+            raise ValueError(f"Unsupported embedding type: {self._embedding_type}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -210,6 +211,6 @@ class VectorStoreWithExternalEmbedder(VectorStore[VectorStoreOptionsT]):
         options = cls.options_cls(**default_options) if default_options else None
 
         embedder_config = config.pop("embedder")
-        embedder: Embedder = Embedder.subclass_from_config(ObjectContructionConfig.model_validate(embedder_config))
+        embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
 
         return cls(**config, default_options=options, embedder=embedder)

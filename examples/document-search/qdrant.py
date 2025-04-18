@@ -72,7 +72,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
     )
     vector_store = QdrantVectorStore(
         client=AsyncQdrantClient(location=":memory:"),
@@ -94,7 +94,7 @@ async def main() -> None:
     query = "I'm boiling my water and I need a joke"
     vector_store_kwargs = {
         "k": 2,
-        "max_distance": 0.6,
+        "score_threshold": 0.6,
     }
     results = await document_search.search(
         query,

@@ -20,7 +20,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
-          version: "0.4.20"
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -155,6 +155,21 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -182,7 +197,14 @@ jobs:
           path: ~/nltk_data
           key: nltk-${{ runner.os }}
 
+      - name: Install PostgreSQL + pgvector
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-16-pgvector
+
       - name: Run Tests With Coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         run: |
           # run with coverage to not execute tests twice
           uv run coverage run -m pytest -v -p no:warnings --junitxml=report.xml
