@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ragbits.conversations.history.compressors import ConversationHistoryCompressor
+from ragbits.chat.history.compressors import ConversationHistoryCompressor
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import ChatFormat, Prompt
 

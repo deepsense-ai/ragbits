@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
-from ragbits.conversations.history.stores.base import HistoryStore
+from ragbits.chat.history.stores.base import HistoryStore
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.utils.config_handling import ObjectConstructionConfig

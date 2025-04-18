@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, TypeVar
 
-from ragbits.conversations.history import stores
+from ragbits.chat.history import stores
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.utils.config_handling import ConfigurableComponent

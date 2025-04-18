@@ -1,6 +1,6 @@
 import pytest
 
-from ragbits.conversations.history.compressors.llm import LastMessageAndHistory, StandaloneMessageCompressor
+from ragbits.chat.history.compressors.llm import LastMessageAndHistory, StandaloneMessageCompressor
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.prompt import Prompt

@@ -12,19 +12,27 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.types import ChatResponse, Message
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatResponse, Message
 
 logger = logging.getLogger(__name__)
 
 
 class ChatMessageRequest(BaseModel):
+    """
+    Request body for chat message
+    """
+
     message: str = Field(..., description="The current user message")
     history: list[Message] = Field(default_factory=list, description="Previous message history")
     context: dict[str, str | None] = Field(default_factory=dict, description="User context information")
 
 
-async def response_streamer(responses: AsyncGenerator[ChatResponse]) -> AsyncGenerator[str, None]:
+async def chat_response_to_sse(responses: AsyncGenerator[ChatResponse]) -> AsyncGenerator[str, None]:
+    """
+    Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
+    Each response is converted to JSON and wrapped in the SSE 'data:' prefix.
+    """
     async for response in responses:
         data = json.dumps(
             {
@@ -111,7 +119,7 @@ class RagbitsAPI:
                 message=request.message, history=request.history, context=request.context
             )
 
-            return StreamingResponse(response_streamer(response_generator), media_type="text/event-stream")  # type: ignore
+            return StreamingResponse(chat_response_to_sse(response_generator), media_type="text/event-stream")  # type: ignore
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:

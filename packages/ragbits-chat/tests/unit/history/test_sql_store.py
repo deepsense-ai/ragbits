@@ -1,7 +1,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
-from ragbits.conversations.history.stores.sql import (
+from ragbits.chat.history.stores.sql import (
     ChatFormat,
     Conversation,
     Message,

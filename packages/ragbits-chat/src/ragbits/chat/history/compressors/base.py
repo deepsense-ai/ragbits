@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar
 
-from ragbits.conversations.history import compressors
+from ragbits.chat.history import compressors
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils.config_handling import WithConstructionConfig
 
