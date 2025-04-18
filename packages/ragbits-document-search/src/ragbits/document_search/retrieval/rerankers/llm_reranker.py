@@ -1,7 +1,9 @@
 import math
 from collections.abc import Sequence
 
+import litellm
 import tiktoken
+from transformers import AutoTokenizer
 
 from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
@@ -26,7 +28,7 @@ class LLMReranker(Reranker):
 
     def __init__(
         self,
-        model_name: str = "gpt-3.5-turbo",
+        llm: LiteLLM,
         prompt_template: str | None = None,
         reranker_options: RerankerOptions | None = None,
         llm_options: LiteLLMOptions | None = None,
@@ -35,7 +37,7 @@ class LLMReranker(Reranker):
         super().__init__(default_options=self.reranker_options)
         self.llm_options = llm_options or self.llm_default_options
         self.prompt_template = prompt_template or self.default_prompt_template
-        self.model_name = model_name
+        self.llm = llm
 
     async def rerank(
         self,
@@ -71,11 +73,10 @@ class LLMReranker(Reranker):
         Returns:
             A sequence of assigned scores.
         """
-        try:
-            self.llm_options.logit_bias = self.get_yes_no_token_ids()
-        except KeyError:
-            print("No tokenizer found")
-        lite_llm = LiteLLM(model_name=self.model_name, default_options=self.llm_options)
+        logit_bias = self.get_yes_no_token_ids()
+        if logit_bias is not None:
+            self.llm_options.logit_bias = logit_bias
+
         scored_elements = []
         for doc in elements:
             full_prompt = self.prompt_template.format(query=query, document=doc.text_representation)
@@ -83,23 +84,50 @@ class LLMReranker(Reranker):
             prompt = SimplePrompt(content=full_prompt)
 
             try:
-                res = await lite_llm._call(prompt=prompt, options=self.llm_options)
+                res = await self.llm.generate_raw(prompt=prompt, options=self.llm_options)
+                answer = res["response"]
+                logprob = res["logprobs"][0]["logprob"]
+                prob = math.exp(logprob) if answer == "Yes" else 1 - math.exp(logprob)
+                scored_elements.append(prob)
             except LLMStatusError as e:
                 raise NotImplementedError(
-                    f"Model {self.model_name} doesn't support logprobs, "
+                    f"Model {self.llm.model_name} doesn't support logprobs, "
                     "which are crucial for this reranking method. Try to use other reranker."
                 ) from e
 
-            answer = res["response"]
-            logprob = res["logprobs"][0]["logprob"]
-            prob = math.exp(logprob) if answer == "Yes" else math.exp(logprob)
-            scored_elements.append(prob)
-
         return scored_elements
 
-    def get_yes_no_token_ids(self) -> dict[int, int]:
-        """Get token IDs for ' Yes' and ' No' with leading spaces"""
+    def get_yes_no_token_ids(self) -> dict[int, int] | None:
+        """
+        Getting token ids for yes/no.
+
+        Returns:
+            logit_bias dict
+        """
         tokens = [" Yes", " No"]
-        tokenizer = tiktoken.encoding_for_model(self.model_name)
-        ids = [tokenizer.encode(token) for token in tokens]
-        return {ids[0][0]: 1, ids[1][0]: 1}
+        try:
+            model_name = litellm.get_llm_provider(self.llm.model_name)[0]
+        except Exception:
+            model_name = self.llm.model_name
+            pass
+
+        try:
+            tokenizer = tiktoken.encoding_for_model(model_name)
+            ids = [tokenizer.encode(token) for token in tokens]
+            print(ids)
+            return {ids[0][0]: 1, ids[1][0]: 1}
+        except Exception as e:
+            print(f"tiktoken tokenizer doesn't work {e}")
+
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            ids = [tokenizer.encode(token) for token in tokens]
+
+            if len(ids[0]) == 1:
+                return {ids[0][0]: 1, ids[1][0]: 1}
+            if len(ids[0]) > 1:
+                return {ids[0][1]: 1, ids[1][1]: 1}
+        except Exception as e:
+            print(f"tiktoken tokenizer doesn't work {e}")
+        print("No tokenizer found")
+        return None
