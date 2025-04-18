@@ -6,7 +6,7 @@ from typing import Annotated
 
 # litellm downloads cost map on import, which creates extra latency in CLI.
 # This config disables it.
-os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = True
+os.environ["LITELLM_LOCAL_MODEL_COST_MAP"] = "True"
 
 import click
 import typer
