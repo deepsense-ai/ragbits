@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- support configuring datapoint schema for evaluator (#390)
+- add testing for ragbits-evaluate module (#390)
 - move sources from ragbits-document-search to ragbits-core (#496)
 
 ## 0.13.0 (2025-04-02)
@@ -42,6 +44,8 @@
 - Compability with the new Vector Store interface from ragbits-core (#288)
 - chore: fix typo in README.
 - fix typos in doc strings
+
+
 
 ## 0.9.0 (2025-02-25)
 

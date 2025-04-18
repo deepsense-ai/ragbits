@@ -2,14 +2,22 @@ import asyncio
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
+from typing import Generic, cast
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
+from ragbits.evaluate.config import eval_config
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
+from ragbits.evaluate.pipelines.base import (
+    EvaluationDatapointSchema,
+    EvaluationDatapointSchemaT,
+    EvaluationPipeline,
+    EvaluationResult,
+    EvaluationTargetT,
+)
 
 
 class EvaluatorConfig(BaseModel):
@@ -20,14 +28,31 @@ class EvaluatorConfig(BaseModel):
     dataloader: ObjectConstructionConfig
     pipeline: ObjectConstructionConfig
     metrics: dict[str, ObjectConstructionConfig]
+    schema_config: dict | None = None
 
 
-class Evaluator(WithConstructionConfig):
+class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithConstructionConfig):
     """
     Evaluator class.
     """
 
     CONCURRENCY: int = 10
+
+    def __init__(self, schema_config: dict | None = None, pipeline_type: str | None = None):
+        if schema_config:
+            self.schema: EvaluationDatapointSchemaT = cast(
+                EvaluationDatapointSchemaT,
+                EvaluationDatapointSchema.subclass_from_config(
+                    config=ObjectConstructionConfig.model_validate(schema_config)
+                ),
+            )
+        elif pipeline_type:
+            self.schema: EvaluationDatapointSchemaT = cast(  # type: ignore[no-redef]
+                EvaluationDatapointSchemaT,
+                EvaluationDatapointSchema.get_default_for_pipeline(config=eval_config, pipeline_type=pipeline_type),
+            )
+        else:
+            raise ValueError("Either schema_config or pipeline_type needs to be provided")
 
     @classmethod
     async def run_from_config(cls, config: dict) -> dict:
@@ -45,7 +70,7 @@ class Evaluator(WithConstructionConfig):
         pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
         metrics: MetricSet = MetricSet.from_config(model.metrics)
 
-        return await cls().compute(
+        return await cls(schema_config=model.schema_config, pipeline_type=pipeline.configuration_key).compute(
             pipeline=pipeline,
             dataloader=dataloader,
             metrics=metrics,
@@ -53,7 +78,7 @@ class Evaluator(WithConstructionConfig):
 
     async def compute(
         self,
-        pipeline: EvaluationPipeline,
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDatapointSchemaT],
         dataloader: DataLoader,
         metrics: MetricSet,
     ) -> dict:
@@ -83,7 +108,7 @@ class Evaluator(WithConstructionConfig):
 
     async def _call_pipeline(
         self,
-        pipeline: EvaluationPipeline,
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDatapointSchemaT],
         dataset: Iterable[dict],
     ) -> tuple[list[EvaluationResult], dict]:
         """
@@ -100,7 +125,7 @@ class Evaluator(WithConstructionConfig):
 
         async def _call_pipeline_with_semaphore(data: dict) -> EvaluationResult:
             async with semaphore:
-                return await pipeline(data)
+                return await pipeline(data=data, schema=self.schema)
 
         start_time = time.perf_counter()
         pipe_outputs = await tqdm.gather(*[_call_pipeline_with_semaphore(data) for data in dataset], desc="Evaluation")

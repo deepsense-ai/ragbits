@@ -4,7 +4,7 @@ from typing import Generic, TypeVar
 from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
-from ragbits.evaluate.pipelines.base import EvaluationResult
+from ragbits.evaluate import EvaluationResult
 
 ResultT = TypeVar("ResultT", bound=EvaluationResult)
 
