@@ -3,6 +3,7 @@ import json
 import logging
 from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Literal
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
@@ -26,6 +27,16 @@ class ChatMessageRequest(BaseModel):
     message: str = Field(..., description="The current user message")
     history: list[Message] = Field(default_factory=list, description="Previous message history")
     context: dict[str, str | None] = Field(default_factory=dict, description="User context information")
+
+
+class FeedbackRequest(BaseModel):
+    """
+    Request body for feedback submission
+    """
+
+    message_id: str = Field(..., description="ID of the message receiving feedback")
+    feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
+    payload: dict = Field(default_factory=dict, description="Additional feedback details")
 
 
 async def chat_response_to_sse(responses: AsyncGenerator[ChatResponse]) -> AsyncGenerator[str, None]:
@@ -120,6 +131,20 @@ class RagbitsAPI:
             )
 
             return StreamingResponse(chat_response_to_sse(response_generator), media_type="text/event-stream")  # type: ignore
+
+        @self.app.post("/api/feedback", response_class=JSONResponse)
+        async def feedback(request: FeedbackRequest) -> JSONResponse:
+            """Handle user feedback for chat messages."""
+            if not self.chat_interface:
+                raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
+
+            await self.chat_interface.save_feedback(
+                message_id=request.message_id,
+                feedback=request.feedback,
+                payload=request.payload,
+            )
+
+            return JSONResponse(content={"status": "success"})
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
