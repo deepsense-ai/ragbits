@@ -1,6 +1,6 @@
 import typer
 
-from ragbits.api._main import RagbitsAPI
+from ragbits.chat._main import RagbitsAPI
 
 ds_app = typer.Typer(no_args_is_help=True)
 
