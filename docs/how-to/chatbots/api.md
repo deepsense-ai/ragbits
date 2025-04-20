@@ -117,6 +117,7 @@ api = RagbitsAPI(
     chat_interface="path.to.your.module:MyChat",
     ui_build_dir="/path/to/your/ui/build",
 )
+api.run(host="127.0.0.1", port=8000)
 ```
 
 ### CORS Configuration
@@ -128,6 +129,7 @@ api = RagbitsAPI(
     chat_interface="path.to.your.module:MyChat",
     cors_origins=["http://localhost:3000", "https://your-domain.com"],
 )
+api.run(host="127.0.0.1", port=8000)
 ```
 
 ## API Endpoints
