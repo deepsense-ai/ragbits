@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
     "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector,azure,gcs,hf,s3]",
-    "ragbits-document-search[ray]",
+    "ragbits-document-search[docling,ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
@@ -85,6 +85,12 @@ addopts = [
 addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+omit = [
+    "config.py",
+    "config-3.py",
+]
 
 [tool.mypy]
 warn_unused_configs = true
