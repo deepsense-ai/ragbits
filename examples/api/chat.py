@@ -10,7 +10,6 @@ from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
 from ragbits.chat.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
-from ragbits.document_search import DocumentSearch
 
 
 class MyChat(ChatInterface):

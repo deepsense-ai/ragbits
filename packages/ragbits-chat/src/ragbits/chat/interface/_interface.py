@@ -45,7 +45,7 @@ class ChatInterface(ABC):
     async def chat(
         self,
         message: str,
-        history: list[ChatFormat] | None = None,
+        history: ChatFormat | None = None,
         context: dict | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """

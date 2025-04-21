@@ -1,6 +1,6 @@
 import json
 from collections.abc import AsyncGenerator
-from typing import Any, cast
+from typing import Any
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
