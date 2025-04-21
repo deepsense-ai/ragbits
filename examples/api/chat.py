@@ -12,6 +12,7 @@ from ragbits.chat.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 from ragbits.document_search import DocumentSearch
 
+
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""
 

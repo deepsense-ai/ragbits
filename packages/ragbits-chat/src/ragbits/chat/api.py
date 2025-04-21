@@ -117,9 +117,7 @@ class RagbitsAPI:
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
-                message=request.message,
-                history=[msg.model_dump() for msg in request.history],
-                context=request.context
+                message=request.message, history=[msg.model_dump() for msg in request.history], context=request.context
             )
 
             # Pass the generator to the SSE formatter
