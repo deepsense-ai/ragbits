@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- do not download litellm costmap in CLI commands (#521)
+
 ## 0.13.0 (2025-04-02)
 
 ### Changed
