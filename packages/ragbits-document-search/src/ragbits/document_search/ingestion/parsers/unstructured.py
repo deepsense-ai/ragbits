@@ -5,6 +5,15 @@ from io import BytesIO
 
 from PIL import Image
 from typing_extensions import Self
+
+try:
+    from unstructured import utils
+finally:
+    # Unstructured does super slow call to scarf analytics, including checking nvidia-smi,
+    # which adds couple of seconds of importing time.
+    # This is a hack to disable it.
+    utils.scarf_analytics = lambda *args: True
+
 from unstructured.chunking.basic import chunk_elements
 from unstructured.documents.elements import Element as UnstructuredElement
 from unstructured.documents.elements import ElementType
