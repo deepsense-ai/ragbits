@@ -19,4 +19,4 @@ __all__ = [
     "WebSource",
 ]
 
-import_modules_from_config("sources")
+import_modules_from_config()
