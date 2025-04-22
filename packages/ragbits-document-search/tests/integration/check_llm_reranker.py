@@ -4,6 +4,7 @@ from pathlib import Path
 
 import arxiv
 
+from ragbits.core.llms import LiteLLM
 from ragbits.core.sources import LocalFileSource
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import TextElement
@@ -45,8 +46,8 @@ elements_seq = [elements_list]
 
 #### reranking
 print("RERANK STARTS")
-
-reranker = LLMReranker(model_name=OPENAI_MODEL)
+litellm = LiteLLM(model_name=OPENAI_MODEL)
+reranker = LLMReranker(litellm)
 
 res = asyncio.run(reranker.rerank(elements=elements_seq, query=QUERY))
 print(len(res))
