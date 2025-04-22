@@ -5,6 +5,7 @@ import litellm
 import tiktoken
 from transformers import AutoTokenizer
 
+from ragbits.core.audit import traceable
 from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt.base import SimplePrompt
@@ -17,28 +18,27 @@ class LLMReranker(Reranker):
     Reranking algorithm for documents - based on relevance to the query.
     """
 
-    options_cls = LiteLLMOptions
+    options_cls = RerankerOptions
     default_prompt_template: str = """Is the following document relevant to the query?\n
         Query: {query}\n
         Document: {document}\n
         Answer: Yes or No."""
 
     llm_default_options = LiteLLMOptions(temperature=0.0, logprobs=True, max_tokens=1)
-    reranker_default_options = RerankerOptions(top_n=5)
 
     def __init__(
         self,
         llm: LiteLLM,
         prompt_template: str | None = None,
-        reranker_options: RerankerOptions | None = None,
+        default_options: RerankerOptions | None = None,
         llm_options: LiteLLMOptions | None = None,
     ):
-        self.reranker_options = reranker_options or self.reranker_default_options
-        super().__init__(default_options=self.reranker_options)
+        super().__init__(default_options=default_options)
         self.llm_options = llm_options or self.llm_default_options
         self.prompt_template = prompt_template or self.default_prompt_template
         self.llm = llm
 
+    @traceable
     async def rerank(
         self,
         elements: Sequence[Sequence[Element]],
@@ -114,7 +114,6 @@ class LLMReranker(Reranker):
         try:
             tokenizer = tiktoken.encoding_for_model(model_name)
             ids = [tokenizer.encode(token) for token in tokens]
-            print(ids)
             return {ids[0][0]: 1, ids[1][0]: 1}
         except Exception as e:
             print(f"tiktoken tokenizer doesn't work {e}")
@@ -122,12 +121,11 @@ class LLMReranker(Reranker):
         try:
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             ids = [tokenizer.encode(token) for token in tokens]
-
             if len(ids[0]) == 1:
                 return {ids[0][0]: 1, ids[1][0]: 1}
             if len(ids[0]) > 1:
                 return {ids[0][1]: 1, ids[1][1]: 1}
         except Exception as e:
-            print(f"tiktoken tokenizer doesn't work {e}")
+            print(f"Auto tokenizer doesn't work {e}")
         print("No tokenizer found")
         return None

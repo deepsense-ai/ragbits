@@ -1,15 +1,35 @@
 import pytest
 
 from ragbits.core import audit
+from ragbits.core.llms import LiteLLM
 from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
+from ragbits.document_search.retrieval.rerankers.llm_reranker import LLMReranker
 from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
 COHERE_API_KEY_ENV = "COHERE_API_KEY"  # noqa: S105
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105
+
+ELEMENTS = [
+    [
+        TextElement(
+            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+        ),
+        TextElement(
+            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+        ),
+        TextElement(
+            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
+        ),
+    ]
+]
+
+QUERY = "Test query"
+
+TOP_N = 2
 
 
 @pytest.mark.skipif(
@@ -17,54 +37,42 @@ OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105
     reason="Cohere API KEY environment variables not set",
 )
 async def test_litellm_cohere_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    options = RerankerOptions(top_n=TOP_N, max_chunks_per_doc=None)
     reranker = LiteLLMReranker(
         model="cohere/rerank-english-v3.0",
         default_options=options,
     )
-    elements = [
-        [
-            TextElement(
-                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-            TextElement(
-                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-            TextElement(
-                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-        ]
-    ]
-    query = "Test query"
 
-    results = await reranker.rerank(elements, query)
-
-    assert len(results) == 2
+    results = await reranker.rerank(ELEMENTS, QUERY)
+    assert len(results) == TOP_N
 
 
 async def test_answerdotai_reranker_rerank() -> None:
     audit.set_trace_handlers("cli")
-    options = RerankerOptions(top_n=2)
+    options = RerankerOptions(top_n=TOP_N)
     reranker = AnswerAIReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",
         default_options=options,
         model_type="cross-encoder",
     )
-    elements = [
-        [
-            TextElement(
-                content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-            TextElement(
-                content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-            TextElement(
-                content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-            ),
-        ]
-    ]
-    query = "Test query"
 
-    results = await reranker.rerank(elements, query)
+    results = await reranker.rerank(ELEMENTS, QUERY)
 
-    assert len(results) == 2
+    assert len(results) == TOP_N
+
+
+@pytest.mark.skipif(
+    env_vars_not_set([OPENAI_API_KEY_ENV]),
+    reason="OPENAI API KEY environment variables not set",
+)
+async def test_llm_reranker_rerank() -> None:
+    audit.set_trace_handlers("cli")
+    options = RerankerOptions(top_n=TOP_N)
+
+    open_ai_model = "gpt-3.5-turbo"
+
+    litellm = LiteLLM(model_name=open_ai_model)
+    reranker = LLMReranker(litellm, default_options=options)
+
+    results = await reranker.rerank(elements=ELEMENTS, query=QUERY)
+    assert len(results) == TOP_N
