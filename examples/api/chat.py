@@ -4,6 +4,10 @@
 #     "ragbits-chat",
 # ]
 # ///
+#
+# To run this example execute following CLI command:
+# ragbits api run examples.api.chat:MyChat
+
 from collections.abc import AsyncGenerator
 
 from ragbits.chat.interface import ChatInterface
