@@ -165,7 +165,7 @@ This is the list of component types for which you can set a preferred configurat
 | `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.Embedder]    |                                              |
 | `llm`                | `ragbits-core`            | [`LLM`][ragbits.core.llms.LLM]                    | Specifics: [Configuration](#llm-configuration), [Usage](#llm-usage)|
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |
-| `history_compressor` | `ragbits-conversations`   | [`ConversationHistoryCompressor`][ragbits.conversations.history.compressors.base.ConversationHistoryCompressor]|          |
+| `history_compressor` | `ragbits-chat`   | [`ConversationHistoryCompressor`][ragbits.chat.history.compressors.base.ConversationHistoryCompressor]|          |
 | `document_search`    | `ragbits-document-search` | [`DocumentSearch`][ragbits.document_search.DocumentSearch]| Specifics: [Configuration](#ds-configuration)|
 | `parser`           | `ragbits-document-search` | [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser]|                                              |
 | `rephraser`          | `ragbits-document-search` | [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.QueryRephraser]|                                          |
