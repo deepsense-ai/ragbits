@@ -32,7 +32,7 @@ nav:
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Chatbots:
-        - "Setup API & UI": how-to/chatbots/chatbot_ui.md
+        - "Setup API & UI": how-to/chatbots/api.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
           - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
@@ -65,6 +65,7 @@ nav:
       - Chatbots:
           - api_reference/chat/compressors/base.md
           - api_reference/chat/compressors/llm.md
+          - api_reference/chat/interface/chat_interface.md
       - Guardrails:
           - api_reference/guardrails/index.md
 hooks:
