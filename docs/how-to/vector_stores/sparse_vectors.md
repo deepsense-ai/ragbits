@@ -106,7 +106,7 @@ vector = SparseVector(
     indices=[1, 5, 10],
     values=[0.5, 0.3, 0.8]
 )
-``` 
+```
 
 The vector above represents a very large vector where only positions 1, 5, and 10
 have non-zero values (0.5, 0.3, and 0.8 respectively).
