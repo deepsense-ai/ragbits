@@ -43,7 +43,7 @@ vector_store_dense = InMemoryVectorStore(
 
 # Create a sparse vector store using sparse embeddings
 vector_store_sparse = InMemoryVectorStore(
-    embedder=FastEmbedSparseEmbedder(model_name="sentence-transformers/all-MiniLM-L6-v2-sparse")
+    embedder=FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
 )
 
 # Combine them into a hybrid search vector store
@@ -51,10 +51,6 @@ vector_store_hybrid = HybridSearchVectorStore(vector_store_dense, vector_store_s
 ```
 
 You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbits' Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the dense embedding and the other will store the sparse embedding.
-
-Combining dense and sparse embeddings can significantly improve search quality by leveraging the strengths of both approaches:
-- Dense embeddings capture semantic similarity and are good at understanding the meaning of text
-- Sparse embeddings excel at lexical matching and can better handle rare terms or specific keywords
 
 For more details about using sparse vectors with vector stores, see [How to Use Sparse Vectors with Vector Stores](./sparse_vectors.md).
 

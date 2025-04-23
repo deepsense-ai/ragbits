@@ -9,3 +9,5 @@
 ::: ragbits.core.embeddings.fastembed.FastEmbedEmbedder
 
 ::: ragbits.core.embeddings.fastembed.FastEmbedSparseEmbedder
+
+::: ragbits.core.embeddings.sparse.BagOfTokens
