@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.14.0 (2025-04-22)
+
 - Image embeddings in PgVectorStore (#495)
 - Add PgVectorStore to vector store integration tests (#495)
 - Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)

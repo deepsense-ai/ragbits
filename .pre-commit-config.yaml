@@ -7,7 +7,7 @@ repos:
           - id: check-case-conflict
           - id: check-merge-conflict
           - id: trailing-whitespace
-            exclude: .cursor/
+            exclude: .cursor/|ui-build/*
           - id: check-ast
           - id: check-added-large-files
           - id: check-toml
