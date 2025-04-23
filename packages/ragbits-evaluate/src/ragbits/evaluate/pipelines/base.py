@@ -2,9 +2,18 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
+from pydantic import BaseModel
+
 from ragbits.core.utils.config_handling import WithConstructionConfig
 
-EvaluationTargetT = TypeVar("EvaluationTargetT", bound=WithConstructionConfig)
+EvaluationDataT = TypeVar("EvaluationDataT", bound="EvaluationData")
+EvaluationResultT = TypeVar("EvaluationResultT", bound="EvaluationResult")
+
+
+class EvaluationData(BaseModel, ABC):
+    """
+    Represents the data for a single evaluation.
+    """
 
 
 @dataclass
@@ -14,16 +23,19 @@ class EvaluationResult(ABC):
     """
 
 
-class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC):
+class EvaluationPipeline(Generic[EvaluationDataT, EvaluationResultT], WithConstructionConfig, ABC):
     """
-    Collection evaluation pipeline.
+    Evaluation pipeline.
     """
 
-    def __init__(self, evaluation_target: EvaluationTargetT):
-        self.evaluation_target = evaluation_target
+    async def prepare(self) -> None:
+        """
+        Prepares pipeline for evaluation. Optional step.
+        """
+        pass
 
     @abstractmethod
-    async def __call__(self, data: dict) -> EvaluationResult:
+    async def __call__(self, data: EvaluationDataT) -> EvaluationResultT:
         """
         Runs the evaluation pipeline.
 
@@ -33,9 +45,3 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         Returns:
             The evaluation result.
         """
-
-    async def prepare(self) -> None:
-        """
-        Prepares pipeline for evaluation.
-        """
-        pass

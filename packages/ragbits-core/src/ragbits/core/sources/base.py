@@ -9,10 +9,12 @@ from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
 
+from ragbits.core.utils.config_handling import WithConstructionConfig
+
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
 
-class Source(BaseModel, ABC):
+class Source(BaseModel, WithConstructionConfig, ABC):
     """
     An object representing a source.
     """

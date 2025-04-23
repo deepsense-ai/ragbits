@@ -5,7 +5,17 @@ from typing_extensions import Self
 
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.document_search import DocumentSearch
-from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
+from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
+
+
+# @dataclass
+class DocumentSearchData(EvaluationData):
+    """
+    Represents the evaluation data for document search.
+    """
+
+    question: str
+    reference_passages: list[str]
 
 
 @dataclass
@@ -19,20 +29,20 @@ class DocumentSearchResult(EvaluationResult):
     predicted_passages: list[str]
 
 
-class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
+class DocumentSearchPipeline(EvaluationPipeline[DocumentSearchData, DocumentSearchResult]):
     """
     Document search evaluation pipeline.
     """
 
-    def __init__(self, evaluation_target: DocumentSearch, source: dict | None = None) -> None:
+    def __init__(self, document_search: DocumentSearch, source: dict | None = None) -> None:
         """
         Initializes the document search pipeline.
 
         Args:
-            evaluation_target: Document Search instance.
+            document_search: Document Search instance.
             source: Source data config for ingest.
         """
-        super().__init__(evaluation_target=evaluation_target)
+        self.document_search = document_search
         self.source = source or {}
 
     @classmethod
@@ -52,7 +62,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
         if config.get("source"):
             config["vector_store"]["config"]["index_name"] = str(uuid4())
         document_search = DocumentSearch.from_config(config)
-        return cls(evaluation_target=document_search, source=config.get("source"))
+        return cls(document_search=document_search, source=config.get("source"))
 
     async def prepare(self) -> None:
         """
@@ -65,9 +75,9 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
                 path=self.source["config"]["path"],
                 split=self.source["config"]["split"],
             )
-            await self.evaluation_target.ingest(sources)
+            await self.document_search.ingest(sources)
 
-    async def __call__(self, data: dict) -> DocumentSearchResult:
+    async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
         """
         Runs the document search evaluation pipeline.
 
@@ -77,10 +87,11 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch]):
         Returns:
             The evaluation result.
         """
-        elements = await self.evaluation_target.search(data["question"])
+        elements = await self.document_search.search(data.question)
         predicted_passages = [element.text_representation for element in elements if element.text_representation]
+
         return DocumentSearchResult(
-            question=data["question"],
-            reference_passages=data["passage"],
+            question=data.question,
+            reference_passages=data.reference_passages,
             predicted_passages=predicted_passages,
         )

@@ -22,5 +22,5 @@ def get_evaluation_pipeline_for_target(evaluation_target: WithConstructionConfig
     """
     for supported_type, evaluation_pipeline_type in _target_to_evaluation_pipeline.items():
         if isinstance(evaluation_target, supported_type):
-            return evaluation_pipeline_type(evaluation_target=evaluation_target)
+            return evaluation_pipeline_type()
     raise ValueError(f"Evaluation pipeline not implemented for {evaluation_target.__class__}")

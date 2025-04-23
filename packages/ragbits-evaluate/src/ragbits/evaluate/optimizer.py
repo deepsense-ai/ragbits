@@ -20,7 +20,7 @@ class OptimizerConfig(BaseModel):
     Schema for the dict taken by `Optimizer.run_from_config` method.
     """
 
-    experiment: EvaluatorConfig
+    evaluator: EvaluatorConfig
     optimizer: dict | None = None
     neptune_callback: bool = False
 
@@ -58,16 +58,16 @@ class Optimizer(WithConstructionConfig):
             List of tested configs with associated scores and metrics.
         """
         optimizer_config = OptimizerConfig.model_validate(config)
-        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.experiment)
+        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.evaluator)
 
-        dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.dataloader)
-        metrics: MetricSet = MetricSet.from_config(evaluator_config.metrics)
+        dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.evaluation.dataloader)
+        metrics: MetricSet = MetricSet.from_config(evaluator_config.evaluation.metrics)
 
-        pipeline_class = import_by_path(evaluator_config.pipeline.type)
-        pipeline_config = dict(optimizer_config.experiment.pipeline.config)
+        pipeline_class = import_by_path(evaluator_config.evaluation.pipeline.type)
+        pipeline_config = dict(evaluator_config.evaluation.pipeline.config)
         callbacks = [setup_optuna_neptune_callback()] if optimizer_config.neptune_callback else []
 
-        optimizer = cls.from_config(config.get("optimizer", {}))
+        optimizer = cls.from_config(optimizer_config.optimizer or {})
         return optimizer.optimize(
             pipeline_class=pipeline_class,
             pipeline_config=pipeline_config,
