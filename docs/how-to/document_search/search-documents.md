@@ -175,7 +175,22 @@ To register protocol for your custom source class please update `pyproject.toml`
 
 ```toml
 [tool.ragbits.core]
-modules_to_import = {sources=["python.path.to.custom_source:CustomSource"]}
+modules_to_import = ["python.path.to.custom_source"]
 ```
 
-You can specify any number of custom source classes in that list - they would be imported and registered whenever you import `ragbits.document_search.documents.sources.base:SourceResolver`
+You can specify any number of custom source classes in that list - they would be imported and registered.
+
+
+## Retrieving Data with Custom Elements
+
+To register your custom element classes, simply add their module paths to the same `modules_to_import` section in your `pyproject.toml` file:
+
+```toml
+[tool.ragbits.core]
+modules_to_import = [
+    "python.path.to.custom_source",
+    "python.path.to.custom_element",
+]
+```
+
+This configuration allows you to register both custom sources and custom elements in a single location, making your extensions automatically available to the system.
