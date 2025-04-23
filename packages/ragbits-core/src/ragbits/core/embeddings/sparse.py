@@ -1,43 +1,47 @@
 from abc import ABC, abstractmethod
 from collections import Counter
-from typing import ClassVar, TypeVar
+from typing import TypeVar
 
 import tiktoken
-from pydantic import BaseModel
 
-from ragbits.core import embeddings
 from ragbits.core.audit import trace
+from ragbits.core.embeddings import SparseDenseEmbedder, SparseVector
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
-from ragbits.core.utils.config_handling import ConfigurableComponent
 
 SparseEmbedderOptionsT = TypeVar("SparseEmbedderOptionsT", bound=Options)
 
 
-class SparseVector(BaseModel):
-    """Sparse Vector representation"""
-
-    indices: list[int]
-    values: list[float]
-
-    def __post_init__(self) -> None:
-        if len(self.indices) != len(self.values):
-            raise ValueError("There should be the same number of non-zero values as non-zero positions")
-
-    def __repr__(self) -> str:
-        return f"SparseVector(indices={self.indices}, values={self.values})"
-
-
-class SparseEmbedder(ConfigurableComponent[SparseEmbedderOptionsT], ABC):
+class SparseEmbedder(SparseDenseEmbedder[SparseEmbedderOptionsT], ABC):
     """Sparse embedding interface"""
-
-    options_cls: type[SparseEmbedderOptionsT]
-    default_module: ClassVar = embeddings
-    configuration_key: ClassVar = "sparse_embedder"
 
     @abstractmethod
     async def embed_text(self, texts: list[str], options: SparseEmbedderOptionsT | None = None) -> list[SparseVector]:
-        """Transforms a list of texts into sparse vectors"""
+        """
+        Transforms a list of texts into sparse vectors.
+
+        Args:
+            texts: list of input texts.
+            options: optional embedding options
+
+        Returns:
+            list of sparse embeddings.
+        """
+
+    async def embed_image(
+        self, images: list[bytes], options: SparseEmbedderOptionsT | None = None
+    ) -> list[SparseVector]:
+        """
+        Creates embeddings for the given images.
+
+        Args:
+            images: List of images to get embeddings for.
+            options: Additional settings used by the Embedder model.
+
+        Returns:
+            List of sparse embeddings for the given images.
+        """
+        raise NotImplementedError("Image embeddings are not supported by this model.")
 
 
 class BagOfTokensOptions(Options):

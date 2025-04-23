@@ -20,6 +20,7 @@ nav:
         - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
       - Vector Stores:
         - "Perform hybrid search": how-to/vector_stores/hybrid.md
+        - "Use sparse retrieval": how-to/vector_stores/sparse_vectors.md
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Dataset Loading:
         - "Load dataset with sources": how-to/sources/load-dataset.md

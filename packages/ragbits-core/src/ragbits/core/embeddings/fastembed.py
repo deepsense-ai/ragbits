@@ -3,8 +3,7 @@ from collections.abc import Callable
 from fastembed import SparseTextEmbedding, TextEmbedding
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder, EmbedderOptionsT, SparseEmbedder
-from ragbits.core.embeddings.sparse import SparseVector
+from ragbits.core.embeddings import Embedder, EmbedderOptionsT, SparseEmbedder, SparseVector
 from ragbits.core.options import Options
 
 

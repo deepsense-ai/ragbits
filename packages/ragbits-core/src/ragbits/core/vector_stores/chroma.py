@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 import chromadb
@@ -7,7 +7,7 @@ from chromadb.api import ClientAPI, types
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings import Embedder
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
@@ -15,7 +15,7 @@ from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreResult,
-    VectorStoreWithExternalEmbedder,
+    VectorStoreWithDenseEmbedder,
     WhereQuery,
 )
 
@@ -25,7 +25,7 @@ from ragbits.core.vector_stores.base import (
 _SMALLER_IS_BETTER_METRICS = {"l2"}
 
 
-class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
+class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Chroma](https://docs.trychroma.com).
     """
@@ -120,7 +120,9 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                 if not raw_embeddings.get(entry.id):
                     continue
 
-                embeddings.append(raw_embeddings[entry.id])
+                # The class doesn't support sparse embeddings, so we can safely cast
+                embedding = cast(list[float], raw_embeddings[entry.id])
+                embeddings.append(embedding)
                 ids.append(str(entry.id))
                 documents.append(entry.text or "")
                 metadatas.append(
@@ -189,6 +191,7 @@ class ChromaVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedding_type=self._embedding_type,
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
+            query_vector = cast(list[float], query_vector)
 
             results = self._collection.query(
                 query_embeddings=query_vector,

@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
 from typing import cast
@@ -16,7 +17,7 @@ from ragbits.core.vector_stores.base import (
     VectorStore,
     VectorStoreEntry,
     VectorStoreOptions,
-    VectorStoreWithExternalEmbedder,
+    VectorStoreWithDenseEmbedder,
 )
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -38,7 +39,7 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
 @pytest.fixture
-async def pgvector_test_db(postgresql: Connection) -> asyncpg.pool:
+async def pgvector_test_db(postgresql: Connection) -> AsyncGenerator[asyncpg.Pool, None]:
     dsn = f"postgresql://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
     async with asyncpg.create_pool(dsn) as pool:
         yield pool
@@ -56,19 +57,19 @@ async def pgvector_test_db(postgresql: Connection) -> asyncpg.pool:
 )
 def vector_store_cls_fixture(
     request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool
-) -> type[VectorStoreWithExternalEmbedder]:
+) -> type[VectorStoreWithDenseEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
-    but parameters common to VectorStoreWithExternalEmbedder left to be set.
+    but parameters common to VectorStoreWithDenseEmbedder left to be set.
     """
     return request.param(pgvector_test_db)
 
 
 @pytest.fixture(name="vector_store", params=[EmbeddingType.TEXT, EmbeddingType.IMAGE], ids=["Text", "Image"])
 def vector_store_fixture(
-    vector_store_cls: type[VectorStoreWithExternalEmbedder],
+    vector_store_cls: type[VectorStoreWithDenseEmbedder],
     request: pytest.FixtureRequest,
-) -> VectorStoreWithExternalEmbedder:
+) -> VectorStoreWithDenseEmbedder:
     """
     For each vector store in `vector_store_cls`, returns two instances of it, one for text and one for image embeddings.
     """
@@ -88,8 +89,8 @@ def vector_store_fixture(
 
 @pytest.fixture(name="text_vector_store")
 def text_vector_store_fixture(
-    vector_store_cls: type[VectorStoreWithExternalEmbedder],
-) -> VectorStoreWithExternalEmbedder:
+    vector_store_cls: type[VectorStoreWithDenseEmbedder],
+) -> VectorStoreWithDenseEmbedder:
     """
     For each vector store in `vector_store_cls`, returns an instance of it for text embeddings.
     """
@@ -123,7 +124,7 @@ def vector_store_entries_fixture() -> list[VectorStoreEntry]:
 
 
 async def test_vector_store_list(
-    vector_store: VectorStoreWithExternalEmbedder,
+    vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -147,7 +148,7 @@ async def test_vector_store_list(
 
 
 async def test_vector_store_remove(
-    vector_store: VectorStoreWithExternalEmbedder,
+    vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -159,7 +160,7 @@ async def test_vector_store_remove(
 
 
 async def test_vector_store_retrieve(
-    vector_store: VectorStoreWithExternalEmbedder,
+    vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -187,7 +188,7 @@ async def test_vector_store_retrieve(
 
 
 async def test_vector_store_retrieve_order(
-    vector_store: VectorStoreWithExternalEmbedder,
+    vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -201,7 +202,7 @@ async def test_vector_store_retrieve_order(
     assert results[0].entry.id == expected_entry.id
 
 
-def test_image_store_with_non_image_embedder(vector_store_cls: type[VectorStoreWithExternalEmbedder]) -> None:
+def test_image_store_with_non_image_embedder(vector_store_cls: type[VectorStoreWithDenseEmbedder]) -> None:
     # When an image vector store is created with a text-only embedder, it should raise a ValueError
     with pytest.raises(ValueError):
         vector_store_cls(embedder=NoopEmbedder(return_values=text_embbedings), embedding_type=EmbeddingType.IMAGE)

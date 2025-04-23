@@ -1,5 +1,5 @@
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings import Embedder
 from ragbits.core.options import Options, OptionsT
 
 

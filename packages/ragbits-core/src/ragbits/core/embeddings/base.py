@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import ClassVar, TypeVar
 
+from pydantic import BaseModel
+
 from ragbits.core import embeddings
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -8,9 +10,23 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 EmbedderOptionsT = TypeVar("EmbedderOptionsT", bound=Options)
 
 
-class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
+class SparseVector(BaseModel):
+    """Sparse Vector representation"""
+
+    indices: list[int]
+    values: list[float]
+
+    def __post_init__(self) -> None:
+        if len(self.indices) != len(self.values):
+            raise ValueError("There should be the same number of non-zero values as non-zero positions")
+
+    def __repr__(self) -> str:
+        return f"SparseVector(indices={self.indices}, values={self.values})"
+
+
+class SparseDenseEmbedder(ConfigurableComponent[EmbedderOptionsT], ABC):
     """
-    Abstract client for communication with embedding models.
+    Abstract class that defines a common interface for both sparse and dense embedding models.
     """
 
     options_cls: type[EmbedderOptionsT]
@@ -18,7 +34,9 @@ class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
     configuration_key: ClassVar = "embedder"
 
     @abstractmethod
-    async def embed_text(self, data: list[str], options: EmbedderOptionsT | None = None) -> list[list[float]]:
+    async def embed_text(
+        self, data: list[str], options: EmbedderOptionsT | None = None
+    ) -> list[list[float]] | list[SparseVector]:
         """
         Creates embeddings for the given strings.
 
@@ -39,7 +57,9 @@ class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
         """
         return False
 
-    async def embed_image(self, images: list[bytes], options: EmbedderOptionsT | None = None) -> list[list[float]]:
+    async def embed_image(
+        self, images: list[bytes], options: EmbedderOptionsT | None = None
+    ) -> list[list[float]] | list[SparseVector]:
         """
         Creates embeddings for the given images.
 

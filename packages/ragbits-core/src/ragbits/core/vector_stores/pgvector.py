@@ -1,20 +1,20 @@
 import json
 import re
-from typing import Any, NamedTuple
+from typing import Any, NamedTuple, cast
 from uuid import UUID
 
 import asyncpg
 from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings import Embedder
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
-    VectorStoreWithExternalEmbedder,
+    VectorStoreWithDenseEmbedder,
     WhereQuery,
 )
 
@@ -42,7 +42,7 @@ DISTANCE_OPS = {
 
 
 # TODO: Add support for image embeddings
-class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
+class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
 
@@ -322,6 +322,7 @@ class PgVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedding_type=self._embedding_type,
         ) as outputs:
             vector = (await self._embedder.embed_text([text]))[0]
+            vector = cast(list[float], vector)
 
             query_options = (self.default_options | options) if options else self.default_options
             retrieve_query, values = self._create_retrieve_query(vector, query_options)

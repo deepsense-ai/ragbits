@@ -1,21 +1,23 @@
 from itertools import islice
+from typing import cast
 from uuid import UUID
 
 import numpy as np
 
 from ragbits.core.audit import trace, traceable
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.base import SparseDenseEmbedder
+from ragbits.core.embeddings.sparse import SparseVector
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreResult,
-    VectorStoreWithExternalEmbedder,
+    VectorStoreWithSparseDenseEmbedder,
     WhereQuery,
 )
 
 
-class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
@@ -24,7 +26,7 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
     def __init__(
         self,
-        embedder: Embedder,
+        embedder: SparseDenseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptions | None = None,
     ) -> None:
@@ -33,7 +35,8 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
         Args:
             default_options: The default options for querying the vector store.
-            embedder: The embedder to use for converting entries to vectors.
+            embedder: The embedder to use for converting entries to vectors. Can be a regular Embedder for dense vectors
+                     or a SparseEmbedder for sparse vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
         """
         super().__init__(
@@ -42,7 +45,7 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedding_type=embedding_type,
         )
         self._entries: dict[UUID, VectorStoreEntry] = {}
-        self._embeddings: dict[UUID, list[float]] = {}
+        self._embeddings: dict[UUID, list[float] | SparseVector] = {}
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -84,11 +87,27 @@ class InMemoryVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            query_vector = await self._embedder.embed_text([text])
+            query_vector = (await self._embedder.embed_text([text]))[0]
             results: list[VectorStoreResult] = []
 
             for entry_id, vector in self._embeddings.items():
-                score = float(np.linalg.norm(np.array(vector) - np.array(query_vector))) * -1
+                # Calculate score based on vector type
+                if isinstance(query_vector, SparseVector) and isinstance(vector, SparseVector):
+                    # For sparse vectors, use dot product between query and document vectors
+                    # Create dictionaries for efficient lookup
+                    vector_dict = dict(zip(vector.indices, vector.values, strict=False))
+
+                    # Calculate dot product of overlapping indices
+                    score = 0.0
+                    for idx, val in zip(query_vector.indices, query_vector.values, strict=False):
+                        if idx in vector_dict:
+                            score += val * vector_dict[idx]
+                else:
+                    # For dense vectors, use negative L2 distance
+                    query_vector_dense = cast(list[float], query_vector)
+                    vector_dense = cast(list[float], vector)
+                    score = float(np.linalg.norm(np.array(vector_dense) - np.array(query_vector_dense))) * -1
+
                 result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)
                 if merged_options.score_threshold is None or result.score >= merged_options.score_threshold:
                     results.append(result)

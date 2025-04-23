@@ -1,6 +1,6 @@
 import contextlib
-from collections.abc import Callable
-from typing import cast
+from collections.abc import Callable, Mapping
+from typing import Any, cast
 from uuid import UUID
 
 import httpx
@@ -17,7 +17,8 @@ from qdrant_client.models import (
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings import Embedder, SparseDenseEmbedder
+from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
@@ -26,12 +27,12 @@ from ragbits.core.vector_stores.base import (
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
-    VectorStoreWithExternalEmbedder,
+    VectorStoreWithSparseDenseEmbedder,
     WhereQuery,
 )
 
 
-class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
+class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
@@ -42,7 +43,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         self,
         client: AsyncQdrantClient,
         index_name: str,
-        embedder: Embedder,
+        embedder: SparseDenseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
@@ -53,7 +54,8 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         Args:
             client: An instance of the Qdrant client.
             index_name: The name of the index.
-            embedder: The embedder to use for converting entries to vectors.
+            embedder: The embedder to use for converting entries to vectors. Can be a regular Embedder for dense vectors
+                     or a SparseEmbedder for sparse vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance metric to use when creating the collection.
             default_options: The default options for querying the vector store.
@@ -120,6 +122,44 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
         config["client"] = client_cls(**client_options.config)
         return super().from_config(config)
 
+    @staticmethod
+    def _to_qdrant_vector(vector: list[float] | SparseVector) -> models.SparseVector | list[float]:
+        """
+        Converts the vector to the Qdrant format.
+
+        Args:
+            vector: The vector to convert.
+
+        Returns:
+            The converted vector.
+        """
+        if isinstance(vector, SparseVector):
+            return models.SparseVector(
+                indices=vector.indices,
+                values=vector.values,
+            )
+        return cast(list[float], vector)
+
+    @staticmethod
+    def _from_qdrant_vector(vector: Any) -> list[float] | SparseVector:  # noqa: ANN401
+        """
+        Converts the Qdrant vector to the appropriate format.
+
+        Args:
+            vector: The Qdrant vector to convert.
+
+        Returns:
+            The converted vector.
+        """
+        if isinstance(vector, models.SparseVector):
+            return SparseVector(
+                indices=list(vector.indices),
+                values=list(vector.values),
+            )
+        if not isinstance(vector, list):
+            raise TypeError(f"Expected a vector of type list or SparseVector, Qdrant returned {type(vector)}")
+        return cast(list[float], vector)
+
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
         Stores vector entries in the Qdrant collection.
@@ -143,16 +183,24 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collection_exists(self._index_name):
-                vector_size = len(next(iter(embeddings.values())))
+                vectors_config: VectorParams | Mapping = {}
+                sparse_vector_config = None
+                if isinstance(self._embedder, SparseEmbedder):
+                    sparse_vector_config = models.SparseVectorParams()
+                else:
+                    vector_size = len(next(iter(embeddings.values())))
+                    vectors_config = VectorParams(size=vector_size, distance=self._distance_method)
+
                 await self._client.create_collection(
                     collection_name=self._index_name,
-                    vectors_config=VectorParams(size=vector_size, distance=self._distance_method),
+                    vectors_config=vectors_config,
+                    sparse_vector_config=sparse_vector_config,
                 )
 
             points = (
                 models.PointStruct(
                     id=str(entry.id),
-                    vector=embeddings[entry.id],
+                    vector=self._to_qdrant_vector(embeddings[entry.id]),  # type: ignore
                     payload=entry.model_dump(exclude_none=True),
                 )
                 for entry in entries
@@ -197,7 +245,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
 
             query_results = await self._client.query_points(
                 collection_name=self._index_name,
-                query=query_vector,
+                query=self._to_qdrant_vector(query_vector),
                 limit=merged_options.k,
                 score_threshold=score_threshold,
                 with_payload=True,
@@ -212,7 +260,7 @@ class QdrantVectorStore(VectorStoreWithExternalEmbedder[VectorStoreOptions]):
                     VectorStoreResult(
                         entry=entry,
                         score=point.score * score_multiplier,
-                        vector=cast(list[float], point.vector),
+                        vector=self._from_qdrant_vector(point.vector),
                     )
                 )
 
