@@ -31,7 +31,7 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 
     # Create a sparse embedder
     sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
-    
+
     # Create a vector store with the sparse embedder
     vector_store = QdrantVectorStore(embedder=sparse_embedder, index_name="sparse_index", ...)
     document_search = DocumentSearch(vector_store=vector_store, ...)
@@ -40,7 +40,7 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
     ```
 
     Sparse search uses sparse vector representations where only non-zero values are stored along with their indices. This approach is particularly effective for lexical search, as it can directly represent term frequencies or TF-IDF weights. Sparse vectors often provide better interpretability, as each dimension typically corresponds to a specific token or feature.
-    
+
     For more details about using sparse vectors with vector stores, see [How to Use Sparse Vectors with Vector Stores](../vector_stores/sparse_vectors.md).
 
 === "Hybrid search"
@@ -54,14 +54,14 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 
     # Create a dense embedder
     dense_embedder = LiteLLMEmbedder(model="text-embedding-3-small", ...)
-    
+
     # Create a sparse embedder
     sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
-    
+
     # Create vector stores with different embedders
     vector_store_dense = InMemoryVectorStore(embedder=dense_embedder)
     vector_store_sparse = InMemoryVectorStore(embedder=sparse_embedder)
-    
+
     # Combine them into a hybrid vector store
     vector_store = HybridSearchVectorStore(vector_store_dense, vector_store_sparse)
     document_search = DocumentSearch(vector_store=vector_store, ...)
