@@ -1,5 +1,5 @@
 import contextlib
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from typing import Any, cast
 from uuid import UUID
 
@@ -17,7 +17,7 @@ from qdrant_client.models import (
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder, SparseDenseEmbedder
+from ragbits.core.embeddings import SparseDenseEmbedder
 from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
@@ -68,6 +68,8 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
+        self.is_sparse = isinstance(embedder, SparseEmbedder)
+        self._vector_name = "sparse" if self.is_sparse else "dense"
 
     def __reduce__(self) -> tuple[Callable, tuple]:
         """
@@ -80,7 +82,7 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
         def _reconstruct(
             client_params: dict,
             index_name: str,
-            embedder: Embedder,
+            embedder: SparseDenseEmbedder,
             distance_method: Distance,
             default_options: VectorStoreOptions,
         ) -> QdrantVectorStore:
@@ -183,24 +185,24 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collection_exists(self._index_name):
-                vectors_config: VectorParams | Mapping = {}
-                sparse_vector_config = None
-                if isinstance(self._embedder, SparseEmbedder):
-                    sparse_vector_config = models.SparseVectorParams()
+                vectors_config = {}
+                sparse_vectors_config = None
+                if self.is_sparse:
+                    sparse_vectors_config = {self._vector_name: models.SparseVectorParams()}
                 else:
                     vector_size = len(next(iter(embeddings.values())))
-                    vectors_config = VectorParams(size=vector_size, distance=self._distance_method)
+                    vectors_config = {self._vector_name: VectorParams(size=vector_size, distance=self._distance_method)}
 
                 await self._client.create_collection(
                     collection_name=self._index_name,
                     vectors_config=vectors_config,
-                    sparse_vector_config=sparse_vector_config,
+                    sparse_vectors_config=sparse_vectors_config,
                 )
 
             points = (
                 models.PointStruct(
                     id=str(entry.id),
-                    vector=self._to_qdrant_vector(embeddings[entry.id]),  # type: ignore
+                    vector={self._vector_name: self._to_qdrant_vector(embeddings[entry.id])},  # type: ignore
                     payload=entry.model_dump(exclude_none=True),
                 )
                 for entry in entries
@@ -246,6 +248,7 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
             query_results = await self._client.query_points(
                 collection_name=self._index_name,
                 query=self._to_qdrant_vector(query_vector),
+                using=self._vector_name,
                 limit=merged_options.k,
                 score_threshold=score_threshold,
                 with_payload=True,
@@ -260,7 +263,9 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
                     VectorStoreResult(
                         entry=entry,
                         score=point.score * score_multiplier,
-                        vector=self._from_qdrant_vector(point.vector),
+                        vector=self._from_qdrant_vector(point.vector[self._vector_name])
+                        if isinstance(point.vector, dict)
+                        else self._from_qdrant_vector(point.vector),
                     )
                 )
 
