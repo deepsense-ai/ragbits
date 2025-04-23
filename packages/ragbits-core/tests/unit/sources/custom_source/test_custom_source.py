@@ -1,3 +1,5 @@
+import os
+import sys
 from unittest.mock import AsyncMock
 from uuid import UUID
 
@@ -41,6 +43,19 @@ def mock_vector_store():
     return mock_store
 
 
+@pytest.fixture
+def add_custom_source_to_path():
+    original_path = sys.path.copy()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if current_dir not in sys.path:
+        sys.path.append(current_dir)
+
+    yield
+
+    sys.path = original_path
+
+
 async def test_document_search_fails_with_custom_source_without_module_import(mock_vector_store: AsyncMock):
     document_search = DocumentSearch(vector_store=mock_vector_store)
 
@@ -50,7 +65,10 @@ async def test_document_search_fails_with_custom_source_without_module_import(mo
         )
 
 
-async def test_document_search_succeeds_with_custom_source_with_module_import(mock_vector_store: AsyncMock):
+async def test_document_search_succeeds_with_custom_source_with_module_import(
+    mock_vector_store: AsyncMock,
+    add_custom_source_to_path,  # noqa: ANN001
+):
     core_config = get_config_instance(CoreConfig)
     core_config.modules_to_import = ["custom_source"]
     import_modules_from_config(core_config)
