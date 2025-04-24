@@ -3,21 +3,26 @@ import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
+from types import ModuleType
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
 
+from ragbits.core import sources
 from ragbits.core.utils.config_handling import WithConstructionConfig
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
 
-class Source(BaseModel, WithConstructionConfig, ABC):
+class Source(WithConstructionConfig, BaseModel, ABC):
     """
     An object representing a source.
     """
+
+    default_module: ClassVar[ModuleType | None] = sources
+    configuration_key: ClassVar[str] = "source"
 
     # Registry of all subclasses by their unique identifier
     _registry: ClassVar[dict[str, type["Source"]]] = {}

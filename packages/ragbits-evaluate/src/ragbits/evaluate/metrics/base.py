@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from types import ModuleType
 from typing import ClassVar, Generic
 
 from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.evaluate import metrics
 from ragbits.evaluate.pipelines.base import EvaluationResultT
 
 
@@ -11,6 +13,9 @@ class Metric(WithConstructionConfig, Generic[EvaluationResultT], ABC):
     """
     Base class for metrics.
     """
+
+    default_module: ClassVar[ModuleType | None] = metrics
+    configuration_key: ClassVar[str] = "metric"
 
     def __init__(self, weight: float = 1.0) -> None:
         """
@@ -41,6 +46,7 @@ class MetricSet(WithConstructionConfig, Generic[EvaluationResultT]):
     """
 
     configuration_key: ClassVar[str] = "metrics"
+    default_module: ClassVar[ModuleType | None] = metrics
 
     def __init__(self, *metrics: Metric[EvaluationResultT]) -> None:
         """

@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from types import ModuleType
+from typing import ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.evaluate import pipelines
 
 EvaluationDataT = TypeVar("EvaluationDataT", bound="EvaluationData")
 EvaluationResultT = TypeVar("EvaluationResultT", bound="EvaluationResult")
@@ -23,10 +25,13 @@ class EvaluationResult(ABC):
     """
 
 
-class EvaluationPipeline(Generic[EvaluationDataT, EvaluationResultT], WithConstructionConfig, ABC):
+class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationDataT, EvaluationResultT], ABC):
     """
     Evaluation pipeline.
     """
+
+    default_module: ClassVar[ModuleType | None] = pipelines
+    configuration_key: ClassVar[str] = "pipeline"
 
     async def prepare(self) -> None:
         """

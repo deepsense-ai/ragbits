@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from types import ModuleType
 from typing import ClassVar, Generic
 
 from typing_extensions import Self
 
 from ragbits.core.sources.base import Source
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
+from ragbits.evaluate import dataloaders
 from ragbits.evaluate.pipelines.base import EvaluationDataT
 
 
@@ -13,6 +15,7 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
     Evaluation data loader.
     """
 
+    default_module: ClassVar[ModuleType | None] = dataloaders
     configuration_key: ClassVar[str] = "dataloader"
 
     def __init__(self, source: Source) -> None:

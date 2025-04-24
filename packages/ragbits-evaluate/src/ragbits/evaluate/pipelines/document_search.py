@@ -8,7 +8,6 @@ from ragbits.document_search import DocumentSearch
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
-# @dataclass
 class DocumentSearchData(EvaluationData):
     """
     Represents the evaluation data for document search.
