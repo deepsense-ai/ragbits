@@ -19,9 +19,7 @@ async def test_from_uri_one_file():
     ]
     for path in one_file_paths:
         result = await S3Source.from_uri(path)
-        assert result == [
-            S3Source(bucket_name="bucket", key="path/to/file")
-        ]
+        assert result == [S3Source(bucket_name="bucket", key="path/to/file")]
 
 
 async def test_from_uri_with_prefix():

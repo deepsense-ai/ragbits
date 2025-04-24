@@ -54,8 +54,8 @@ async def test_s3_source_list_sources(s3_mock: boto3.client):
 
     sources = await S3Source.list_sources(bucket_name=TEST_BUCKET, prefix="folder1/")
     assert sources == [
-        S3Source(bucket_name='test-bucket', key='folder1/file1.txt'),
-        S3Source(bucket_name='test-bucket', key='folder1/file2.txt'),
+        S3Source(bucket_name="test-bucket", key="folder1/file1.txt"),
+        S3Source(bucket_name="test-bucket", key="folder1/file2.txt"),
     ]
 
 
