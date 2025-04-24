@@ -12,7 +12,7 @@ config:
     config:
       optimize: true
       choices:
-        - model: "text-embedding-3-small"
+        - model_name: "text-embedding-3-small"
           default_options:
             dimensions:
               optimize: true
@@ -20,7 +20,7 @@ config:
                 - 32
                 - 512
             encoding_format: float
-        - model: "text-embedding-3-large"
+        - model_name: "text-embedding-3-large"
           default_options:
             dimensions:
               optimize: true

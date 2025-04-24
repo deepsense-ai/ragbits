@@ -26,6 +26,15 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
+        """
+        Create an instance of `DataLoader` from a configuration dictionary.
+
+        Args:
+            config: A dictionary containing configuration settings for the data loader.
+
+        Returns:
+            An instance of the data loader class initialized with the provided configuration.
+        """
         source_config = ObjectConstructionConfig.model_validate(config["source"])
         config["source"] = Source.subclass_from_config(source_config)
         return super().from_config(config)

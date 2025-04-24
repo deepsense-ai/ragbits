@@ -1,4 +1,7 @@
-type: ragbits.evaluate.dataloaders.hf:HFDataLoader
+type: ragbits.evaluate.dataloaders.document_search:DocumentSearchDataLoader
 config:
-  path: "deepsense-ai/synthetic-rag-dataset_v1.0"
-  split: "train"
+  source:
+    type: ragbits.core.sources:HuggingFaceSource
+    config:
+      path: "deepsense-ai/synthetic-rag-dataset_v1.0"
+      split: "train"
