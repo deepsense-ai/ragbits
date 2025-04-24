@@ -178,7 +178,7 @@ To register protocol for your custom source class please update `pyproject.toml`
 modules_to_import = ["python.path.to.custom_source"]
 ```
 
-You can specify any number of custom source classes in that list - they would be imported and registered.
+You can specify any number of files in that list - sources present in there would be imported and registered.
 
 
 ## Retrieving Data with Custom Elements
