@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore

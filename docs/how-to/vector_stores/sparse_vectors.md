@@ -23,7 +23,7 @@ Currently, Ragbits supports sparse embeddings with the following vector stores:
 Ragbits provides several implementations of `SparseEmbedder`:
 
 1. **[BagOfTokens][ragbits.core.embeddings.sparse.BagOfTokens]**: A simple implementation that creates sparse vectors based on token counts
-2. **[FastEmbedSparseEmbedder][ragbits.core.embeddings.fastembed.FastEmbedSparseEmbedder]**: Uses the [FastEmbed library](https://github.com/qdrant/fastembed) for efficient sparse embedding generation
+2. **[FastEmbedSparseEmbedder][ragbits.core.embeddings.sparse.fastembed.FastEmbedSparseEmbedder]**: Uses the [FastEmbed library](https://github.com/qdrant/fastembed) for efficient sparse embedding generation
 
 Here's an example of creating a sparse embedder using BagOfTokens:
 
@@ -42,7 +42,7 @@ sparse_embedder = BagOfTokens(
 Or using FastEmbedSparseEmbedder:
 
 ```python
-from ragbits.core.embeddings.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
+from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
 
 # Create a sparse embedder using FastEmbed
 sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
@@ -75,7 +75,7 @@ results = await vector_store.retrieve("test query")
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.embeddings.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
+from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
 
 # Create a sparse embedder
 sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")

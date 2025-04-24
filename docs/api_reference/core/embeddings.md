@@ -1,13 +1,13 @@
 # Embedders
 
-::: ragbits.core.embeddings.Embedder
+::: ragbits.core.embeddings.dense.Embedder
 
-::: ragbits.core.embeddings.local.LocalEmbedder
+::: ragbits.core.embeddings.dense.local.LocalEmbedder
 
-::: ragbits.core.embeddings.litellm.LiteLLMEmbedder
+::: ragbits.core.embeddings.dense.litellm.LiteLLMEmbedder
 
-::: ragbits.core.embeddings.fastembed.FastEmbedEmbedder
+::: ragbits.core.embeddings.dense.fastembed.FastEmbedEmbedder
 
-::: ragbits.core.embeddings.fastembed.FastEmbedSparseEmbedder
+::: ragbits.core.embeddings.sparse.fastembed.FastEmbedSparseEmbedder
 
-::: ragbits.core.embeddings.sparse.BagOfTokens
+::: ragbits.core.embeddings.sparse.bag_of_tokens.BagOfTokens

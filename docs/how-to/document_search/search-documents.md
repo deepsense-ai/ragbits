@@ -25,7 +25,7 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 === "Sparse search"
 
     ```python
-    from ragbits.core.embeddings.fastembed import FastEmbedSparseEmbedder
+    from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
     from ragbits.core.vector_stores.qdrant import QdrantVectorStore
     from ragbits.document_search import DocumentSearch
 
@@ -46,8 +46,8 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 === "Hybrid search"
 
     ```python
-    from ragbits.core.embeddings import LiteLLMEmbedder
-    from ragbits.core.embeddings.fastembed import FastEmbedSparseEmbedder
+    from ragbits.core.embeddings.dense import LiteLLMEmbedder
+    from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
     from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
     from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
     from ragbits.document_search import DocumentSearch

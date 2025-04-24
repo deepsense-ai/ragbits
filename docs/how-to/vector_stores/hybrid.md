@@ -14,7 +14,7 @@ To create a hybrid vector store, you need to pass a list of vector stores to the
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
 
 embedder = VertexAIMultimodelEmbedder()
 
@@ -33,8 +33,8 @@ You can create a hybrid vector store with different types of embeddings, includi
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
-from ragbits.core.embeddings.fastembed import FastEmbedSparseEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
 
 # Create a dense vector store using OpenAI embeddings
 vector_store_dense = InMemoryVectorStore(
@@ -65,7 +65,7 @@ from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 
 postgres_pool = await asyncpg.create_pool("postgresql://user:password@localhost/db")
 
@@ -108,7 +108,7 @@ To specify a retrieval strategy when searching a hybrid vector store, you can pa
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.hybrid_strategies import DistributionBasedScoreFusion
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 
 embedder = LiteLLMEmbedder()
 

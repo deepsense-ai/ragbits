@@ -8,8 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
-from ragbits.core.embeddings import Embedder, SparseDenseEmbedder
-from ragbits.core.embeddings.sparse import SparseVector
+from ragbits.core.embeddings import Embedder, SparseDenseEmbedder, SparseVector
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes

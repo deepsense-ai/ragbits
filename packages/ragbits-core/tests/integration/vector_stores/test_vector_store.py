@@ -10,7 +10,7 @@ from chromadb import EphemeralClient
 from psycopg import Connection
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import (
     EmbeddingType,

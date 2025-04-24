@@ -4,7 +4,7 @@ import litellm
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings.dense.base import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
     EmbeddingEmptyResponseError,

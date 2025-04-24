@@ -1,7 +1,7 @@
 import litellm
 
 from ragbits.core.embeddings import Embedder, NoopEmbedder
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
+from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
 from ragbits.core.types import NOT_GIVEN
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
@@ -10,7 +10,7 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig
 def test_subclass_from_config_litellm():
     config = ObjectConstructionConfig.model_validate(
         {
-            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
             "config": {
                 "model_name": "some_model",
                 "default_options": {
@@ -64,7 +64,7 @@ def test_subclass_from_config_bag_of_tokens():
 
 def test_from_config_with_router():
     config = ObjectConstructionConfig(
-        type="ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+        type="ragbits.core.embeddings.dense:LiteLLMEmbedder",
         config={
             "model_name": "text-embedding-3-small",
             "api_key": "test_api_key",

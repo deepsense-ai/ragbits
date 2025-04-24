@@ -17,8 +17,7 @@ from qdrant_client.models import (
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import SparseDenseEmbedder
-from ragbits.core.embeddings.sparse import SparseEmbedder, SparseVector
+from ragbits.core.embeddings import SparseDenseEmbedder, SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (

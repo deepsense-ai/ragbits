@@ -2,7 +2,7 @@ from dataclasses import field
 from typing import Any
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings.dense.base import Embedder
 from ragbits.core.options import Options
 
 try:

@@ -1,7 +1,7 @@
 import asyncio
 import base64
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbedderOptions
+from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedderOptions
 
 try:
     import litellm
@@ -13,7 +13,7 @@ except ImportError:
     HAS_LITELLM = False
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings.dense.base import Embedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,
     EmbeddingStatusError,
