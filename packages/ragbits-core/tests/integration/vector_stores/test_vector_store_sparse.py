@@ -117,7 +117,7 @@ async def test_vector_store_retrieve_order(
     expected_entry = vector_store_entries[0]
     assert results[0].entry.id == expected_entry.id
 
-    results = await vector_store.retrieve(text="entry consisting text and image", options=VectorStoreOptions(k=1))
+    results = await vector_store.retrieve(text="entry containing text and image", options=VectorStoreOptions(k=1))
     assert len(results) == 1
     expected_entry = vector_store_entries[2]
     assert results[0].entry.id == expected_entry.id
