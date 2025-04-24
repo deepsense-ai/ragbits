@@ -24,7 +24,7 @@ class SparseVector(BaseModel):
         return f"SparseVector(indices={self.indices}, values={self.values})"
 
 
-class SparseDenseEmbedder(ConfigurableComponent[EmbedderOptionsT], ABC):
+class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
     """
     Abstract class that defines a common interface for both sparse and dense embedding models.
     """

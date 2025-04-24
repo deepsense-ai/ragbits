@@ -1,9 +1,9 @@
-from .base import Embedder
+from .base import DenseEmbedder
 from .litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from .noop import NoopEmbedder
 
 __all__ = [
-    "Embedder",
+    "DenseEmbedder",
     "LiteLLMEmbedder",
     "LiteLLMEmbedderOptions",
     "NoopEmbedder",

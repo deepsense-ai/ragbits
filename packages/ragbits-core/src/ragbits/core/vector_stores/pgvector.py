@@ -7,7 +7,7 @@ import asyncpg
 from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings import DenseEmbedder
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
@@ -57,7 +57,7 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         client: asyncpg.Pool,
         table_name: str,
         vector_size: int,
-        embedder: Embedder,
+        embedder: DenseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: str = "cosine",
         hnsw_params: dict | None = None,

@@ -17,7 +17,7 @@ from qdrant_client.models import (
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import SparseDenseEmbedder, SparseEmbedder, SparseVector
+from ragbits.core.embeddings import Embedder, SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import (
@@ -26,12 +26,12 @@ from ragbits.core.vector_stores.base import (
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
-    VectorStoreWithSparseDenseEmbedder,
+    VectorStoreWithEmbedder,
     WhereQuery,
 )
 
 
-class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
+class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Qdrant](https://qdrant.tech).
     """
@@ -42,7 +42,7 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
         self,
         client: AsyncQdrantClient,
         index_name: str,
-        embedder: SparseDenseEmbedder,
+        embedder: Embedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Distance = Distance.COSINE,
         default_options: VectorStoreOptions | None = None,
@@ -81,7 +81,7 @@ class QdrantVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
         def _reconstruct(
             client_params: dict,
             index_name: str,
-            embedder: SparseDenseEmbedder,
+            embedder: Embedder,
             distance_method: Distance,
             default_options: VectorStoreOptions,
         ) -> QdrantVectorStore:

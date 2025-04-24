@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from ragbits.core.embeddings.base import SparseDenseEmbedder, SparseVector
+from ragbits.core.embeddings.base import Embedder, SparseVector
 from ragbits.core.options import Options
 
 SparseEmbedderOptionsT = TypeVar("SparseEmbedderOptionsT", bound=Options)
 
 
-class SparseEmbedder(SparseDenseEmbedder[SparseEmbedderOptionsT], ABC):
+class SparseEmbedder(Embedder[SparseEmbedderOptionsT], ABC):
     """Sparse embedding interface"""
 
     @abstractmethod

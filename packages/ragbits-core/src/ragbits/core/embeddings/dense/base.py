@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-from ragbits.core.embeddings.base import EmbedderOptionsT, SparseDenseEmbedder
+from ragbits.core.embeddings.base import Embedder, EmbedderOptionsT
 
 
-class Embedder(SparseDenseEmbedder[EmbedderOptionsT], ABC):  # noqa: F821
+class DenseEmbedder(Embedder[EmbedderOptionsT], ABC):  # noqa: F821
     """
     Abstract client for communication with dense embedding models.
     """

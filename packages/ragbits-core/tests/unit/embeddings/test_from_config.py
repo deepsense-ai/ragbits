@@ -1,6 +1,6 @@
 import litellm
 
-from ragbits.core.embeddings import Embedder, NoopEmbedder
+from ragbits.core.embeddings import DenseEmbedder, NoopEmbedder
 from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
 from ragbits.core.types import NOT_GIVEN
@@ -20,7 +20,7 @@ def test_subclass_from_config_litellm():
             },
         }
     )
-    embedder: Embedder = Embedder.subclass_from_config(config)
+    embedder: DenseEmbedder = DenseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
     assert embedder.model_name == "some_model"
     assert embedder.default_options == LiteLLMEmbedderOptions(
@@ -35,7 +35,7 @@ def test_subclass_from_config_litellm():
 
 def test_subclass_from_config_default_path_litellm():
     config = ObjectConstructionConfig.model_validate({"type": "NoopEmbedder"})
-    embedder: Embedder = Embedder.subclass_from_config(config)
+    embedder: DenseEmbedder = DenseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, NoopEmbedder)
 
 
@@ -88,7 +88,7 @@ def test_from_config_with_router():
         },
     )
 
-    embedder: Embedder = Embedder.subclass_from_config(config)
+    embedder: DenseEmbedder = DenseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
     assert embedder.api_base is None
     assert embedder.model_name == "text-embedding-3-small"

@@ -1,12 +1,16 @@
 # Embedders
 
-::: ragbits.core.embeddings.dense.Embedder
+::: ragbits.core.embeddings.base.Embedder
+
+::: ragbits.core.embeddings.dense.DenseEmbedder
 
 ::: ragbits.core.embeddings.dense.local.LocalEmbedder
 
 ::: ragbits.core.embeddings.dense.litellm.LiteLLMEmbedder
 
 ::: ragbits.core.embeddings.dense.fastembed.FastEmbedEmbedder
+
+::: ragbits.core.embeddings.sparse.base.SparseEmbedder
 
 ::: ragbits.core.embeddings.sparse.fastembed.FastEmbedSparseEmbedder
 

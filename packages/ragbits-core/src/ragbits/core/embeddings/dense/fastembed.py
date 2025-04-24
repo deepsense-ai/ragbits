@@ -3,7 +3,7 @@ from collections.abc import Callable
 from fastembed import TextEmbedding
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.dense.base import Embedder, EmbedderOptionsT
+from ragbits.core.embeddings.dense.base import DenseEmbedder, EmbedderOptionsT
 from ragbits.core.options import Options
 
 
@@ -16,7 +16,7 @@ class FastEmbedOptions(Options):
     parallel: int | None = None
 
 
-class FastEmbedEmbedder(Embedder[FastEmbedOptions]):
+class FastEmbedEmbedder(DenseEmbedder[FastEmbedOptions]):
     """
     Class for creating dense text embeddings using FastEmbed library.
     For more information, see the [FastEmbed GitHub](https://github.com/qdrant/fastembed).

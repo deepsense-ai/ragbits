@@ -7,7 +7,7 @@ from chromadb.api import ClientAPI, types
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings import DenseEmbedder
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
@@ -36,7 +36,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         self,
         client: ClientAPI,
         index_name: str,
-        embedder: Embedder,
+        embedder: DenseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: Literal["l2", "ip", "cosine"] = "cosine",
         default_options: VectorStoreOptions | None = None,

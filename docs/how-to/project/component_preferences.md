@@ -162,7 +162,7 @@ This is the list of component types for which you can set a preferred configurat
 
 | Key                  | Package                   | Base class                                        | Notes                                        |
 |----------------------|---------------------------|---------------------------------------------------|----------------------------------------------|
-| `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.dense.Embedder]    |                                              |
+| `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.base.Embedder]    |                                              |
 | `llm`                | `ragbits-core`            | [`LLM`][ragbits.core.llms.LLM]                    | Specifics: [Configuration](#llm-configuration), [Usage](#llm-usage)|
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |
 | `history_compressor` | `ragbits-chat`   | [`ConversationHistoryCompressor`][ragbits.chat.history.compressors.base.ConversationHistoryCompressor]|          |

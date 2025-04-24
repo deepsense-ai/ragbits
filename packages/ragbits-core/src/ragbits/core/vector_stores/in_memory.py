@@ -5,18 +5,18 @@ from uuid import UUID
 import numpy as np
 
 from ragbits.core.audit import trace, traceable
-from ragbits.core.embeddings import SparseDenseEmbedder, SparseVector
+from ragbits.core.embeddings import Embedder, SparseVector
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreResult,
-    VectorStoreWithSparseDenseEmbedder,
+    VectorStoreWithEmbedder,
     WhereQuery,
 )
 
 
-class InMemoryVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]):
+class InMemoryVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     """
     A simple in-memory implementation of Vector Store, storing vectors in memory.
     """
@@ -25,7 +25,7 @@ class InMemoryVectorStore(VectorStoreWithSparseDenseEmbedder[VectorStoreOptions]
 
     def __init__(
         self,
-        embedder: SparseDenseEmbedder,
+        embedder: Embedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptions | None = None,
     ) -> None:

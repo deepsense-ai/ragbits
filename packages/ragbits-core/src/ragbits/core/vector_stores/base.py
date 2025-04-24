@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core import vector_stores
-from ragbits.core.embeddings import Embedder, SparseDenseEmbedder, SparseVector
+from ragbits.core.embeddings import DenseEmbedder, Embedder, SparseVector
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
@@ -156,7 +156,7 @@ class VectorStoreWithDenseEmbedder(VectorStore[VectorStoreOptionsT]):
 
     def __init__(
         self,
-        embedder: Embedder,
+        embedder: DenseEmbedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptionsT | None = None,
     ) -> None:
@@ -211,12 +211,14 @@ class VectorStoreWithDenseEmbedder(VectorStore[VectorStoreOptionsT]):
         options = cls.options_cls(**default_options) if default_options else None
 
         embedder_config = config.pop("embedder")
-        embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
+        embedder: DenseEmbedder = DenseEmbedder.subclass_from_config(
+            ObjectConstructionConfig.model_validate(embedder_config)
+        )
 
         return cls(**config, default_options=options, embedder=embedder)
 
 
-class VectorStoreWithSparseDenseEmbedder(VectorStore[VectorStoreOptionsT]):
+class VectorStoreWithEmbedder(VectorStore[VectorStoreOptionsT]):
     """
     Base class for vector stores that take either a dense or sparse embedder as an argument.
     This class is used for vector stores that can handle both types of embeddings.
@@ -224,7 +226,7 @@ class VectorStoreWithSparseDenseEmbedder(VectorStore[VectorStoreOptionsT]):
 
     def __init__(
         self,
-        embedder: SparseDenseEmbedder,
+        embedder: Embedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         default_options: VectorStoreOptionsT | None = None,
     ) -> None:
@@ -281,8 +283,6 @@ class VectorStoreWithSparseDenseEmbedder(VectorStore[VectorStoreOptionsT]):
         options = cls.options_cls(**default_options) if default_options else None
 
         embedder_config = config.pop("embedder")
-        embedder: SparseDenseEmbedder = SparseDenseEmbedder.subclass_from_config(
-            ObjectConstructionConfig.model_validate(embedder_config)
-        )
+        embedder: Embedder = Embedder.subclass_from_config(ObjectConstructionConfig.model_validate(embedder_config))
 
         return cls(**config, default_options=options, embedder=embedder)

@@ -8,7 +8,7 @@ from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
-    VectorStoreWithSparseDenseEmbedder,
+    VectorStoreWithEmbedder,
 )
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
@@ -24,18 +24,18 @@ from .test_vector_store import vector_store_entries_fixture  # noqa: F401
     ],
     ids=["InMemoryVectorStore", "QdrantVectorStore"],
 )
-def vector_store_cls_fixture(request: pytest.FixtureRequest) -> type[VectorStoreWithSparseDenseEmbedder]:
+def vector_store_cls_fixture(request: pytest.FixtureRequest) -> type[VectorStoreWithEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
-    but parameters common to VectorStoreWithSparseDenseEmbedder left to be set.
+    but parameters common to VectorStoreWithEmbedder left to be set.
     """
     return request.param()
 
 
 @pytest.fixture(name="vector_store")
 def vector_store_fixture(
-    vector_store_cls: type[VectorStoreWithSparseDenseEmbedder],
-) -> VectorStoreWithSparseDenseEmbedder:
+    vector_store_cls: type[VectorStoreWithEmbedder],
+) -> VectorStoreWithEmbedder:
     """
     For each vector store in `vector_store_cls`, returns an instance with sparse embedder for text embeddings
     """
@@ -43,7 +43,7 @@ def vector_store_fixture(
 
 
 async def test_vector_store_list(
-    vector_store: VectorStoreWithSparseDenseEmbedder,
+    vector_store: VectorStoreWithEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -67,7 +67,7 @@ async def test_vector_store_list(
 
 
 async def test_vector_store_remove(
-    vector_store: VectorStoreWithSparseDenseEmbedder,
+    vector_store: VectorStoreWithEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -79,7 +79,7 @@ async def test_vector_store_remove(
 
 
 async def test_vector_store_retrieve(
-    vector_store: VectorStoreWithSparseDenseEmbedder,
+    vector_store: VectorStoreWithEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
@@ -107,7 +107,7 @@ async def test_vector_store_retrieve(
 
 
 async def test_vector_store_retrieve_order(
-    vector_store: VectorStoreWithSparseDenseEmbedder,
+    vector_store: VectorStoreWithEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
     await vector_store.store(vector_store_entries)
