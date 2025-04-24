@@ -107,7 +107,7 @@ def vector_store_entries_fixture() -> list[VectorStoreEntry]:
     return [
         VectorStoreEntry(
             id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"),
-            text="Text-only entry",
+            text="This is text only entry",
             metadata={"foo": "bar", "nested_foo": {"nested_bar": "nested_baz"}, "some_list": [1, 2, 3]},
         ),
         VectorStoreEntry(
@@ -117,7 +117,7 @@ def vector_store_entries_fixture() -> list[VectorStoreEntry]:
         VectorStoreEntry(
             id=UUID("d9d11902-f26a-409b-967b-46c30f0b65de"),
             image_bytes=second_image_bytes,
-            text="Text and image entry",
+            text="This is text and image entry",
             metadata={"baz": "qux"},
         ),
     ]
