@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Integrate sources with dataloaders (#529)
+
 ## 0.14.0 (2025-04-22)
 
 ### Changed

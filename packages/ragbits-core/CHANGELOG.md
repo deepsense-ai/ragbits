@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Make HuggingFaceSource row optional (#529)
+- Allow Source to be constructed from config (#529)
+
 ## 0.14.0 (2025-04-22)
 
 - Image embeddings in PgVectorStore (#495)
