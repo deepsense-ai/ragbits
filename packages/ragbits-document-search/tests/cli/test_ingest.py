@@ -63,14 +63,14 @@ def test_ingest(pattern: str, num_expected: int) -> None:
     assert len(asyncio.run(state.document_search.vector_store.list())) == num_expected  # type: ignore
 
 
-def test_ingest_fails_with_custom_source_without_module_import(add_custom_source_to_path) -> None:  # noqa: ANN001
+def test_ingest_fails_with_custom_source_without_module_import() -> None:
     runner = CliRunner()
     with tempfile.TemporaryDirectory() as temp_dir:
         file_path = Path(temp_dir) / "CustomSource.txt"
         content = "Test content"
         file_path.write_text(content)
 
-        source_path = f"custom_protocol://{file_path}"
+        source_path = f"custom_cli_protocol://{file_path}"
         result = runner.invoke(
             ds_app,
             ["--factory-path", factory_path, "ingest", source_path],
@@ -78,12 +78,12 @@ def test_ingest_fails_with_custom_source_without_module_import(add_custom_source
 
     assert result.exit_code != 0
     assert isinstance(result.exception, ValueError)
-    assert "Unsupported protocol: custom_protocol." in str(result.exception)
+    assert "Unsupported protocol: custom_cli_protocol." in str(result.exception)
 
 
 def test_ingest_succeeds_with_custom_source_with_module_import(add_custom_source_to_path) -> None:  # noqa: ANN001
     core_config = get_config_instance(CoreConfig)
-    core_config.modules_to_import = ["custom_source"]
+    core_config.modules_to_import = ["custom_cli_source"]
     import_modules_from_config(core_config)
 
     runner = CliRunner()
@@ -92,7 +92,7 @@ def test_ingest_succeeds_with_custom_source_with_module_import(add_custom_source
         content = "Test content"
         file_path.write_text(content)
 
-        source_path = f"custom_protocol://{file_path}"
+        source_path = f"custom_cli_protocol://{file_path}"
         result = runner.invoke(
             ds_app,
             ["--factory-path", factory_path, "ingest", source_path],
