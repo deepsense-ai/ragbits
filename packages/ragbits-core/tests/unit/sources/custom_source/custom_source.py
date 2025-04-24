@@ -8,7 +8,7 @@ from ragbits.core.sources.base import Source
 
 class CustomSource(Source):
     """
-    An object representing a custom source.
+    An object representing a custom source for testing.
     """
 
     path: Path
@@ -17,7 +17,7 @@ class CustomSource(Source):
     @property
     def id(self) -> str:
         """Get unique identifier of the object in the custom source."""
-        return f"cs:{self.path}"
+        return f"custom_source:{self.path}"
 
     @traceable
     async def fetch(self) -> Path:

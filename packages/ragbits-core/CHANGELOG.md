@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Configured source classes are auto-imported (#343)
+- Configured source and element classes are auto-imported (#343)
 
 ## 0.14.0 (2025-04-22)
 

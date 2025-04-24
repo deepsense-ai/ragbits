@@ -28,7 +28,7 @@ def mock_vector_store():
                         "source": {
                             "path": "/path/to/file.txt",
                             "source_type": "custom_source",
-                            "id": "cs:/path/to/file.txt",
+                            "id": "custom_source:/path/to/file.txt",
                         },
                     },
                     "content": "Sample text",
