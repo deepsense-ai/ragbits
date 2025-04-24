@@ -1,8 +1,10 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 
@@ -96,7 +98,7 @@ class S3Source(Source):
 
     @classmethod
     @requires_dependencies(["boto3"], "s3")
-    async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["S3Source"]:
+    async def list_sources(cls, bucket_name: str, prefix: str) -> Iterable[Self]:
         """
         List all files under the given bucket name and with the given prefix.
 
@@ -105,7 +107,7 @@ class S3Source(Source):
             prefix: The path to the files and prefix to look for.
 
         Returns:
-            Sequence: The Sequence of AWS S3 sources.
+            The iterable of sources from the S3 bucket.
 
         Raises:
             ClientError: If the source doesn't exist.
@@ -132,7 +134,7 @@ class S3Source(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["S3Source"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create S3Source instances from a URI path.
         The supported paths formats are:
@@ -145,11 +147,10 @@ class S3Source(Source):
             path: The URI path.
 
         Returns:
-            A sequence containing a S3Source instances.
+            The iterable of sources from the S3 bucket.
 
         Raises:
             ValueError: If the path has invalid format
-
         """
         if "**" in path or "?" in path:
             raise ValueError(

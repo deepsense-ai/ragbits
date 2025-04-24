@@ -1,8 +1,10 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -32,7 +34,7 @@ class HuggingFaceSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"{self.protocol}:{self.path}/{self.split}/{self.row}"
+        return f"hf:{self.path}/{self.split}/{self.row}"
 
     @traceable
     @requires_dependencies(["datasets"], "hf")
@@ -41,7 +43,7 @@ class HuggingFaceSource(Source):
         Fetch the file from Hugging Face and store it locally.
 
         Returns:
-            Path: The local path to the downloaded file.
+            The local path to the downloaded file.
 
         Raises:
             ImportError: If the 'huggingface' extra is not installed.
@@ -74,7 +76,7 @@ class HuggingFaceSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create HuggingFaceSource instances from a URI path.
 
@@ -85,7 +87,7 @@ class HuggingFaceSource(Source):
             path: The path part of the URI (after hf://).
 
         Returns:
-            A sequence containing a single HuggingFaceSource.
+           The iterable of sources from the Hugging Face repository.
 
         Raises:
             ValueError: If the path contains patterns or has invalid format.
@@ -103,7 +105,7 @@ class HuggingFaceSource(Source):
 
     @classmethod
     @traceable
-    async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
+    async def list_sources(cls, path: str, split: str) -> Iterable[Self]:
         """
         List all sources in the given Hugging Face repository.
 
@@ -112,9 +114,9 @@ class HuggingFaceSource(Source):
             split: Dataset split.
 
         Returns:
-            List of source objects.
+            The iterable of sources from the Hugging Face repository.
         """
-        sources = load_dataset(path, split=split)  # type: ignore
+        sources = load_dataset(path, split=split)
         cleaned_split = re.sub(r"\[.*?\]", "", split)
         return [
             cls(
@@ -122,5 +124,5 @@ class HuggingFaceSource(Source):
                 split=cleaned_split,
                 row=row,
             )
-            for row in range(len(sources))  # type: ignore
+            for row in range(len(sources))
         ]

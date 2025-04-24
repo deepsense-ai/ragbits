@@ -1,9 +1,11 @@
 import os
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -67,15 +69,15 @@ class AzureBlobStorageSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["AzureBlobStorageSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorageSource.
 
         Args:
-            path (str): The Azure Blob Storage URI.
+            path: The Azure Blob Storage URI.
 
         Returns:
-            Sequence["AzureBlobStorageSource"]: The parsed Azure Blob Storage URI.
+            The iterable of sources from the Azure Blob Storage container.
 
         Raises:
             ValueError: If the Azure Blob Storage URI is invalid.
@@ -116,17 +118,21 @@ class AzureBlobStorageSource(Source):
     @classmethod
     @requires_dependencies(["azure.storage.blob"], "azure")
     async def list_sources(
-        cls, account_name: str, container: str, blob_name: str = ""
-    ) -> list["AzureBlobStorageSource"]:
-        """List all sources in the given Azure container, matching the prefix.
+        cls,
+        account_name: str,
+        container: str,
+        blob_name: str = "",
+    ) -> Iterable[Self]:
+        """
+        List all sources in the given Azure container, matching the prefix.
 
         Args:
-            account_name (str): The Azure storage account name.
+            account_name: The Azure storage account name.
             container: The Azure container name.
             blob_name: The prefix to match.
 
         Returns:
-            List of source objects.
+            The iterable of sources from the Azure Blob Storage container.
 
         Raises:
             SourceConnectionError: If there's an error connecting to Azure
@@ -137,8 +143,7 @@ class AzureBlobStorageSource(Source):
                 container_client = blob_service.get_container_client(container)
                 blobs = container_client.list_blobs(name_starts_with=blob_name)
                 outputs.results = [
-                    AzureBlobStorageSource(container_name=container, blob_name=blob.name, account_name=account_name)
-                    for blob in blobs
+                    cls(container_name=container, blob_name=blob.name, account_name=account_name) for blob in blobs
                 ]
                 return outputs.results
             except Exception as e:

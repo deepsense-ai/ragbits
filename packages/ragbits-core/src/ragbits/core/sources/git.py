@@ -1,8 +1,10 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 with suppress(ImportError):
     import git
@@ -139,9 +141,7 @@ class GitSource(Source):
 
     @classmethod
     @traceable
-    async def list_sources(
-        cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None
-    ) -> list["GitSource"]:
+    async def list_sources(cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None) -> Iterable[Self]:
         """
         List all files in the repository matching the pattern.
 
@@ -151,7 +151,7 @@ class GitSource(Source):
             branch: Optional branch name.
 
         Returns:
-            List of GitSource objects, one for each file matching the pattern.
+            The iterable of sources from the git repository.
         """
         repo_dir = cls._get_repo_dir(repo_url, branch)
         cls._ensure_repo(repo_url, repo_dir, branch)
@@ -170,7 +170,7 @@ class GitSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, uri: str) -> Sequence["GitSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create GitSource instances from a URI path.
 
@@ -181,16 +181,16 @@ class GitSource(Source):
         - git@github.com:username/repo.git:branch:path/to/file.txt
 
         Args:
-            uri: The URI path in the format described above.
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence containing a GitSource instance.
+            The iterable of sources from the git repository.
         """
         # Check if URI starts with git:// protocol
-        if uri.startswith("git://"):
-            uri = uri[6:]  # Remove the git:// prefix
+        if path.startswith("git://"):
+            path = path[6:]  # Remove the git:// prefix
 
-        parts = uri.split(":")
+        parts = path.split(":")
         sources = []
 
         if len(parts) == _REPO_AND_FILE_PARTS:

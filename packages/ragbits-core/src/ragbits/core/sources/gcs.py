@@ -1,7 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -86,15 +88,16 @@ class GCSSource(Source):
 
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
-    async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
-        """List all sources in the given GCS bucket, matching the prefix.
+    async def list_sources(cls, bucket: str, prefix: str = "") -> Iterable[Self]:
+        """
+        List all sources in the given GCS bucket, matching the prefix.
 
         Args:
             bucket: The GCS bucket.
             prefix: The prefix to match.
 
         Returns:
-            List of source objects.
+            The iterable of sources from the GCS bucket.
 
         Raises:
             ImportError: If the required 'gcloud-aio-storage' package is not installed
@@ -110,8 +113,9 @@ class GCSSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["GCSSource"]:
-        """Create GCSSource instances from a URI path.
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create GCSSource instances from a URI path.
 
         Supports simple prefix matching with '*' at the end of path.
         For example:
@@ -124,7 +128,7 @@ class GCSSource(Source):
             path: The path part of the URI (after gcs://). Can end with '*' for pattern matching.
 
         Returns:
-            A sequence of GCSSource objects matching the pattern
+            The iterable of sources from the GCS bucket.
 
         Raises:
             ValueError: If an unsupported pattern is used

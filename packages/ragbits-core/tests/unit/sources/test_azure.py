@@ -64,10 +64,13 @@ async def test_from_uri():
     """Test creating an Azure Blob Storage from URI."""
     good_path = f"https://{ACCOUNT_NAME}.blob.core.windows.net/{CONTAINER_NAME}/{BLOB_NAME}"
     sources = await AzureBlobStorageSource.from_uri(good_path)
-    assert len(sources) == 1
-    assert sources[0].account_name == ACCOUNT_NAME
-    assert sources[0].blob_name == BLOB_NAME
-    assert sources[0].container_name == CONTAINER_NAME
+    assert sources == [
+        AzureBlobStorageSource(
+            account_name=ACCOUNT_NAME,
+            blob_name=BLOB_NAME,
+            container_name=CONTAINER_NAME,
+        )
+    ]
 
 
 @pytest.mark.asyncio

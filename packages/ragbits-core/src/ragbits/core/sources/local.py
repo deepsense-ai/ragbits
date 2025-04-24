@@ -1,6 +1,8 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source
@@ -12,16 +14,13 @@ class LocalFileSource(Source):
     An object representing a local file source.
     """
 
-    path: Path
     protocol: ClassVar[str] = "file"
+    path: Path
 
     @property
     def id(self) -> str:
         """
         Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
         """
         return f"local_file:{self.path.absolute()}"
 
@@ -42,7 +41,7 @@ class LocalFileSource(Source):
 
     @classmethod
     @traceable
-    def list_sources(cls, path: Path, file_pattern: str = "*") -> list["LocalFileSource"]:
+    async def list_sources(cls, path: Path, file_pattern: str = "*") -> Iterable[Self]:
         """
         List all sources in the given directory, matching the file pattern.
 
@@ -51,14 +50,15 @@ class LocalFileSource(Source):
             file_pattern: The file pattern to match.
 
         Returns:
-            List of source objects.
+            The iterable of sources from the local file system.
         """
         return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
-        """Create LocalFileSource instances from a URI path.
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create LocalFileSource instances from a URI path.
 
         Supports full glob patterns via Path.glob:
         - "**/*.txt" - all .txt files in any subdirectory
@@ -70,7 +70,7 @@ class LocalFileSource(Source):
             path: The path part of the URI (after file://). Pattern support depends on source type.
 
         Returns:
-            A sequence of LocalFileSource objects
+            The iterable of sources from the local file system.
         """
         path_obj: Path = Path(path)
         base_path, pattern = cls._split_path_and_pattern(path=path_obj)

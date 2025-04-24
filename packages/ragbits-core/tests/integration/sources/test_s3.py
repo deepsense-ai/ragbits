@@ -53,26 +53,21 @@ async def test_s3_source_list_sources(s3_mock: boto3.client):
     s3_mock.put_object(Bucket=TEST_BUCKET, Key="folder1/file2.txt", Body="test2")
 
     sources = await S3Source.list_sources(bucket_name=TEST_BUCKET, prefix="folder1/")
-
-    assert len(sources) == 2
-    source_ids = {source.id for source in sources}
-    assert f"s3://{TEST_BUCKET}/folder1/file1.txt" in source_ids
-    assert f"s3://{TEST_BUCKET}/folder1/file2.txt" in source_ids
+    assert sources == [
+        S3Source(bucket_name='test-bucket', key='folder1/file1.txt'),
+        S3Source(bucket_name='test-bucket', key='folder1/file2.txt'),
+    ]
 
 
 async def test_s3_source_from_uri():
     """Test creating S3Source from URI."""
     # Test s3:// URI
     sources = await S3Source.from_uri(f"s3://{TEST_BUCKET}/{TEST_KEY}")
-    assert len(sources) == 1
-    assert sources[0].bucket_name == TEST_BUCKET
-    assert sources[0].key == TEST_KEY
+    assert sources == [S3Source(bucket_name=TEST_BUCKET, key=TEST_KEY)]
 
     # Test https:// URI
     sources = await S3Source.from_uri(f"https://{TEST_BUCKET}.s3.amazonaws.com/{TEST_KEY}")
-    assert len(sources) == 1
-    assert sources[0].bucket_name == TEST_BUCKET
-    assert sources[0].key == TEST_KEY
+    assert sources == [S3Source(bucket_name=TEST_BUCKET, key=TEST_KEY)]
 
     # Test wildcard pattern
     with pytest.raises(ValueError) as exc:

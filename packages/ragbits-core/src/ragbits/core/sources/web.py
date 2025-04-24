@@ -1,9 +1,11 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
+
+from typing_extensions import Self
 
 with suppress(ImportError):
     import aiohttp
@@ -65,7 +67,7 @@ class WebSource(Source):
         return path
 
     @classmethod
-    async def list_sources(cls, url: str) -> Sequence["WebSource"]:
+    async def list_sources(cls, url: str) -> Iterable[Self]:
         """
         List the file under the given URL.
 
@@ -73,21 +75,21 @@ class WebSource(Source):
             url: The URL to the file.
 
         Returns:
-            Sequence: The Sequence with Web source.
+            The iterable of sources from the web.
         """
         return [cls(url=url)]
 
     @classmethod
-    async def from_uri(cls, uri: str) -> Sequence["WebSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create WebSource instances from a URI path.
         The supported uri format is:
         <protocol>://<domain>/<path>/<filename>.<file_extension>
 
         Args:
-            uri: The URI path. Needs to include the protocol.
+            path: The URI path. Needs to include the protocol.
 
         Returns:
-            A sequence containing a WebSource instance.
+            The iterable of sources from the web.
         """
-        return [cls(url=uri)]
+        return [cls(url=path)]

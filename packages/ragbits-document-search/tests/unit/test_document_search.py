@@ -138,7 +138,7 @@ async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent.parent / "assets" / "md"
 
-    await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
+    await document_search.ingest(await LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
