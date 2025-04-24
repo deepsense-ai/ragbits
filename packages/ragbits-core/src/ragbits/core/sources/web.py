@@ -22,7 +22,7 @@ class WebSource(Source):
 
     url: str
     headers: dict[str, str] | None = None
-    protocol: ClassVar[str] = "https"
+    protocol: ClassVar[str] = "web"
 
     @property
     def id(self) -> str:

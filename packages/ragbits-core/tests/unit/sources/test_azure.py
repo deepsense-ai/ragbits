@@ -11,7 +11,7 @@ from ragbits.core.sources.exceptions import SourceNotFoundError
 ACCOUNT_NAME = "test_account"
 BLOB_NAME = "test_blob.txt"
 CONTAINER_NAME = "test_container"
-SOURCE_ID = "azure://test_account/test_container/test_blob.txt"
+SOURCE_ID = "azure:test_account/test_container/test_blob.txt"
 
 
 def test_id():

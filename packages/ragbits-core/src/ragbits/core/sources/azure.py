@@ -33,7 +33,7 @@ class AzureBlobStorageSource(Source):
         """
         Get the source ID, which is the full blob URL.
         """
-        return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
+        return f"azure:{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @requires_dependencies(["azure.storage.blob", "azure.core.exceptions"], "azure")
     async def fetch(self) -> Path:

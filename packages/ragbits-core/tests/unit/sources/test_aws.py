@@ -7,7 +7,7 @@ from ragbits.core.sources.s3 import S3Source
 
 def test_id():
     source = S3Source(bucket_name="AA", key="bb/cc.pdf")
-    expected_id = "s3://AA/bb/cc.pdf"
+    expected_id = "s3:AA/bb/cc.pdf"
     assert source.id == expected_id
 
 

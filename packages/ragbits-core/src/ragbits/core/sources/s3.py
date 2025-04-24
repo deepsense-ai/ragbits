@@ -32,7 +32,7 @@ class S3Source(Source):
         """
         Get the source ID, which is the full URL to the file in s3.
         """
-        return f"s3://{self.bucket_name}/{self.key}"
+        return f"s3:{self.bucket_name}/{self.key}"
 
     @classmethod
     @requires_dependencies(["boto3"], "s3")

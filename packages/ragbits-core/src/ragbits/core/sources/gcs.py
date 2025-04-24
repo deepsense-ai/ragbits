@@ -52,7 +52,7 @@ class GCSSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"gcs:gs://{self.bucket}/{self.object_name}"
+        return f"gcs:{self.bucket}/{self.object_name}"
 
     @traceable
     @requires_dependencies(["gcloud.aio.storage"], "gcs")

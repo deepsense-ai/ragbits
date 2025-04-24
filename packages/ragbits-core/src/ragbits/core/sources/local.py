@@ -14,7 +14,7 @@ class LocalFileSource(Source):
     An object representing a local file source.
     """
 
-    protocol: ClassVar[str] = "file"
+    protocol: ClassVar[str] = "local"
     path: Path
 
     @property
@@ -22,7 +22,7 @@ class LocalFileSource(Source):
         """
         Get unique identifier of the object in the source.
         """
-        return f"local_file:{self.path.absolute()}"
+        return f"local:{self.path.absolute()}"
 
     @traceable
     async def fetch(self) -> Path:
