@@ -37,11 +37,15 @@ $ uv run pytest
 Running integration tests requires PostgreSQL with the pgvector extention installed.
 Minimal version of pgvector is 0.7.0, which added support for sparse vectors.
 
-On Ubuntu Linux you can get in by installing the `postgresql-16-pgvector` package.
+On Ubuntu Linux you can get in by installing the `postgresql-17-pgvector` package.
 
-If the version in your system's default repositories doesn't include the required version
-of pgvector, you can instead install `postgresql-17-pgvector`
-from [the official PostgreSQL APT repository](https://wiki.postgresql.org/wiki/Apt).
+If it is not in your system's default repositories, you can install it from the official PostgreSQL Apt Repository:
+
+```bash
+sudo apt install postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+sudo apt install postgresql-17-pgvector
+```
 
 ## Install pre-commit or pre-push hooks
 
