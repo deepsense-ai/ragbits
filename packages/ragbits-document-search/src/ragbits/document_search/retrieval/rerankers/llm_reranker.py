@@ -18,6 +18,7 @@ class RerankerPrompt(Prompt):
     """
     A prompt for relevance ranking.
     """
+
     user_prompt: str = """Is the following document relevant to the query?\n
             Query: {query}\n
             Document: {document}\n
