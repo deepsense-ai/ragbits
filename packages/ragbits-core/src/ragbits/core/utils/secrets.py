@@ -15,9 +15,7 @@ DEFAULT_KEY_LENGTH = 32
 
 
 @lru_cache(maxsize=1)
-def get_secret_key(
-    env_var: str = RAGBITS_KEY_ENV_VAR, key_length: int = DEFAULT_KEY_LENGTH
-) -> str:
+def get_secret_key(env_var: str = RAGBITS_KEY_ENV_VAR, key_length: int = DEFAULT_KEY_LENGTH) -> str:
     """
     Get a secret key from environment variable with fallback to a default or randomly generated key.
 

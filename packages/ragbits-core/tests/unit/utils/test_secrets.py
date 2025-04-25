@@ -13,13 +13,6 @@ def test_get_secret_key_from_env():
         assert get_secret_key() == test_key
 
 
-def test_get_secret_key_from_default():
-    """Test getting the secret key with a default when env var is not set."""
-    default_key = "test-default-key"
-    with patch.dict(os.environ, {}, clear=True):
-        assert get_secret_key(default=default_key) == default_key
-
-
 def test_get_secret_key_generates_random():
     """Test that a random key is generated when neither env var nor default is provided."""
     with patch.dict(os.environ, {}, clear=True):
