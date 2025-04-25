@@ -161,7 +161,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test
+          POSTGRES_DB: tests
         ports:
           - 5432:5432
         options: >-
