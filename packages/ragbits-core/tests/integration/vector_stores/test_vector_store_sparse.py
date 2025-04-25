@@ -2,6 +2,7 @@ from functools import partial
 
 import asyncpg
 import pytest
+import tiktoken
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.base import SparseVector
@@ -100,6 +101,8 @@ async def test_vector_store_retrieve(
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
 
     prev_score = float("inf")
+
+    tokenizer = tiktoken.encoding_for_model(model_name="gpt-4o")
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
         # assert result.score != 0
@@ -107,6 +110,8 @@ async def test_vector_store_retrieve(
         prev_score = result.score
 
         assert isinstance(result.vector, SparseVector)
+        expected_tokens = set(tokenizer.encode(expected.text or ""))
+        assert set(result.vector.indices) == expected_tokens
 
         assert result.entry.text == expected.text
         assert result.entry.metadata == expected.metadata
