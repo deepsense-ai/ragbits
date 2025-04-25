@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Allow using sparse embeddings with Qdrant and local vector stores (#493)
 
 - Configured source and element classes are auto-imported (#343)
 

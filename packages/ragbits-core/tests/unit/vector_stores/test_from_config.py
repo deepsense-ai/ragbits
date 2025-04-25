@@ -20,7 +20,7 @@ def test_subclass_from_config():
                     "score_threshold": 0.22,
                 },
                 "embedder": {
-                    "type": "ragbits.core.embeddings.noop:NoopEmbedder",
+                    "type": "ragbits.core.embeddings:NoopEmbedder",
                 },
             },
         }

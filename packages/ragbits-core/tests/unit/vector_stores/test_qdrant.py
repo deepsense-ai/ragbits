@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from qdrant_client.http import models
 from qdrant_client.models import Distance
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
@@ -72,7 +72,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     assert call_kwargs["collection_name"] == "test_collection"
     assert len(call_points) == 2
     assert call_points[0].id == "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"
-    assert call_points[0].vector == [0.1, 0.2, 0.3]
+    assert call_points[0].vector == {"dense": [0.1, 0.2, 0.3]}
     assert call_points[0].payload == {
         "id": UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
         "text": "test_key",
@@ -86,7 +86,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
         },
     }
     assert call_points[1].id == "827cad0b-058f-4b85-b8ed-ac741948d502"
-    assert call_points[1].vector == [0.1, 0.2, 0.3]
+    assert call_points[1].vector == {"dense": [0.1, 0.2, 0.3]}
     assert call_points[1].payload == {
         "id": UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
         "text": "some other key",

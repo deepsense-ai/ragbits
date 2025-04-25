@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import computed_field
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType, VectorStoreOptions
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
