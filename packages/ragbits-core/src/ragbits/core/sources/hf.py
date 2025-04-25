@@ -37,7 +37,7 @@ class HuggingFaceSource(Source):
         Returns:
             Unique identifier.
         """
-        return f"{self.protocol}:{self.path}/{self.split}" + f"/{self.row}" if self.row is not None else ""
+        return f"{self.protocol}:{self.path}/{self.split}{f'/{self.row}' if self.row is not None else ''}"
 
     @requires_dependencies(["datasets"], "hf")
     async def fetch(self) -> Path:
