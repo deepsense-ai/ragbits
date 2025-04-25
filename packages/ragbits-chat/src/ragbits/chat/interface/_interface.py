@@ -48,13 +48,14 @@ class ChatInterface(ABC):
 
     def create_state_update(self, state: dict[str, Any]) -> ChatResponse:
         """Helper method to create a state update response with signature."""
-        signature = self._sign_state(state)
+        signature = ChatInterface._sign_state(state)
         return ChatResponse(
             type=ChatResponseType.STATE_UPDATE,
             content=StateUpdate(state=state, signature=signature),
         )
 
-    def _sign_state(self, state: dict[str, Any]) -> str:
+    @staticmethod
+    def _sign_state(state: dict[str, Any]) -> str:
         """
         Sign the state with HMAC to ensure integrity.
 
@@ -69,7 +70,8 @@ class ChatInterface(ABC):
         signature = hmac.new(secret_key.encode(), state_json.encode(), digestmod="sha256").digest()
         return base64.b64encode(signature).decode()
 
-    def verify_state(self, state: dict[str, Any], signature: str) -> bool:
+    @staticmethod
+    def verify_state(state: dict[str, Any], signature: str) -> bool:
         """
         Verify that a state and signature match.
 
@@ -80,7 +82,7 @@ class ChatInterface(ABC):
         Returns:
             True if the signature is valid, False otherwise
         """
-        expected_signature = self._sign_state(state)
+        expected_signature = ChatInterface._sign_state(state)
         return hmac.compare_digest(expected_signature, signature)
 
     @abstractmethod

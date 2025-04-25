@@ -3,13 +3,13 @@ from unittest.mock import patch
 
 import pytest
 
-from ragbits.core.utils.secrets import RAGBITS_SECRET_KEY_ENV, get_secret_key
+from ragbits.core.utils.secrets import RAGBITS_KEY_ENV_VAR, get_secret_key
 
 
 def test_get_secret_key_from_env():
     """Test getting the secret key from an environment variable."""
     test_key = "test-env-secret-key"
-    with patch.dict(os.environ, {RAGBITS_SECRET_KEY_ENV: test_key}, clear=True):
+    with patch.dict(os.environ, {RAGBITS_KEY_ENV_VAR: test_key}, clear=True):
         assert get_secret_key() == test_key
 
 
@@ -35,9 +35,11 @@ def test_get_secret_key_generates_random():
 
 def test_get_secret_key_warning():
     """Test that a warning is emitted when generating a random key."""
-    with patch.dict(os.environ, {}, clear=True):
-        with pytest.warns(UserWarning, match=f"No secret key found in environment variable {RAGBITS_SECRET_KEY_ENV}"):
-            get_secret_key(env_var=RAGBITS_SECRET_KEY_ENV)
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        pytest.warns(UserWarning, match=f"No secret key found in environment variable {RAGBITS_KEY_ENV_VAR}"),
+    ):
+        get_secret_key(env_var=RAGBITS_KEY_ENV_VAR)
 
 
 def test_get_secret_key_caching():

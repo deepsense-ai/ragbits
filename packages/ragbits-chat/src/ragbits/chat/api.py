@@ -119,7 +119,7 @@ class RagbitsAPI:
             if "state" in request.context and "signature" in request.context:
                 state = request.context["state"]
                 signature = request.context["signature"]
-                if not self.chat_interface.verify_state(state, signature):
+                if not ChatInterface.verify_state(state, signature):
                     logger.warning(f"Invalid state signature received for message {message_id}")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,

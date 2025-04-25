@@ -4,12 +4,11 @@ import os
 import secrets
 import warnings
 from functools import lru_cache
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 # Environment variable name for the secret key
-RAGBITS_SECRET_KEY_ENV = "RAGBITS_SECRET_KEY"
+RAGBITS_KEY_ENV_VAR = "RAGBITS_SECRET_KEY"
 
 # Default key length in bytes (32 bytes = 256 bits)
 DEFAULT_KEY_LENGTH = 32
@@ -17,7 +16,7 @@ DEFAULT_KEY_LENGTH = 32
 
 @lru_cache(maxsize=1)
 def get_secret_key(
-    env_var: str = RAGBITS_SECRET_KEY_ENV, default: Optional[str] = None, key_length: int = DEFAULT_KEY_LENGTH
+    env_var: str = RAGBITS_KEY_ENV_VAR, default: str | None = None, key_length: int = DEFAULT_KEY_LENGTH
 ) -> str:
     """
     Get a secret key from environment variable with fallback to a default or randomly generated key.
