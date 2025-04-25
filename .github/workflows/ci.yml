@@ -157,7 +157,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg17
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -196,12 +196,6 @@ jobs:
         with:
           path: ~/nltk_data
           key: nltk-${{ runner.os }}
-
-      - name: Install PostgreSQL + pgvector
-        uses: cpunion/setup-pgvector@main
-        with:
-          postgres-version: '17'
-          postgres-db: 'test_db'
 
       - name: Run Tests With Coverage
         env:
