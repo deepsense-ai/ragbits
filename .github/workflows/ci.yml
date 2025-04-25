@@ -200,7 +200,7 @@ jobs:
       - name: Run Tests With Coverage
         run: |
           # run with coverage to not execute tests twice
-          uv run coverage run -m pytest --postgresql-host postgres --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
           uv run coverage report
           uv run coverage xml
 
