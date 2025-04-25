@@ -1,5 +1,6 @@
 import math
 from collections.abc import Sequence
+from urllib.error import HTTPError
 
 import litellm
 import tiktoken
@@ -8,9 +9,34 @@ from transformers import AutoTokenizer
 from ragbits.core.audit import traceable
 from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.prompt.base import SimplePrompt
+from ragbits.core.prompt.prompt import FewShotExample, Prompt
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
+
+
+class RerankerPrompt(Prompt):
+    """
+    A prompt for relevance ranking.
+    """
+    user_prompt: str = """Is the following document relevant to the query?\n
+            Query: {query}\n
+            Document: {document}\n
+            Answer: Yes or No."""
+
+    def __init__(
+        self,
+        custom_user_prompt: str | None = None,
+        system_prompt: str | None = None,
+        few_shots: list[FewShotExample] | None = None,
+    ):
+        super().__init__()
+        self.user_prompt = custom_user_prompt or self.user_prompt
+        self.system_prompt = system_prompt
+        self.few_shots = few_shots or []
+
+    def format(self, query: str, document: str) -> str:
+        """Formats the user_prompt with the given query and document."""
+        return self.user_prompt.format(query=query, document=document)
 
 
 class LLMReranker(Reranker):
@@ -19,23 +45,18 @@ class LLMReranker(Reranker):
     """
 
     options_cls = RerankerOptions
-    default_prompt_template: str = """Is the following document relevant to the query?\n
-        Query: {query}\n
-        Document: {document}\n
-        Answer: Yes or No."""
-
-    llm_default_options = LiteLLMOptions(temperature=0.0, logprobs=True, max_tokens=1)
 
     def __init__(
         self,
         llm: LiteLLM,
-        prompt_template: str | None = None,
+        prompt_template: RerankerPrompt | None = None,
         default_options: RerankerOptions | None = None,
         llm_options: LiteLLMOptions | None = None,
     ):
         super().__init__(default_options=default_options)
-        self.llm_options = llm_options or self.llm_default_options
-        self.prompt_template = prompt_template or self.default_prompt_template
+
+        self.llm_options = llm_options or LiteLLMOptions(temperature=0.0, logprobs=True, max_tokens=1)
+        self.prompt_template = prompt_template or RerankerPrompt()
         self.llm = llm
 
     @traceable
@@ -79,10 +100,10 @@ class LLMReranker(Reranker):
 
         scored_elements = []
         for doc in elements:
-            full_prompt = self.prompt_template.format(query=query, document=doc.text_representation)
-
-            prompt = SimplePrompt(content=full_prompt)
-
+            if doc.text_representation is None:
+                scored_elements.append(0.0)
+                continue
+            prompt = self.prompt_template.format(query=query, document=doc.text_representation)
             try:
                 res = await self.llm.generate_raw(prompt=prompt, options=self.llm_options)
                 answer = res["response"]
@@ -107,7 +128,7 @@ class LLMReranker(Reranker):
         tokens = [" Yes", " No"]
         try:
             model_name = litellm.get_llm_provider(self.llm.model_name)[0]
-        except Exception:
+        except litellm.exceptions.BadRequestError:
             model_name = self.llm.model_name
             pass
 
@@ -115,7 +136,7 @@ class LLMReranker(Reranker):
             tokenizer = tiktoken.encoding_for_model(model_name)
             ids = [tokenizer.encode(token) for token in tokens]
             return {ids[0][0]: 1, ids[1][0]: 1}
-        except Exception as e:
+        except KeyError as e:
             print(f"tiktoken tokenizer doesn't work {e}")
 
         try:
@@ -125,7 +146,7 @@ class LLMReranker(Reranker):
                 return {ids[0][0]: 1, ids[1][0]: 1}
             if len(ids[0]) > 1:
                 return {ids[0][1]: 1, ids[1][1]: 1}
-        except Exception as e:
+        except HTTPError as e:
             print(f"Auto tokenizer doesn't work {e}")
         print("No tokenizer found")
         return None

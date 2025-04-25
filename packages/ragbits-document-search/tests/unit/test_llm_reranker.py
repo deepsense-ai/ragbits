@@ -10,7 +10,7 @@ from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
-from ragbits.document_search.retrieval.rerankers.llm_reranker import LLMReranker
+from ragbits.document_search.retrieval.rerankers.llm_reranker import LLMReranker, RerankerPrompt
 
 
 @pytest.fixture
@@ -72,7 +72,7 @@ async def test_llm_reranker_from_config() -> None:
 
 
 def test_init_with_custom_options(mock_llm: AsyncMock) -> None:
-    custom_prompt = "Custom prompt {query} {document}"
+    custom_prompt = RerankerPrompt(custom_user_prompt="Custom prompt {query} {document}")
     custom_reranker_options = RerankerOptions(top_n=2)
     custom_llm_options = LiteLLMOptions(temperature=0.5, max_tokens=5)
 
@@ -92,7 +92,7 @@ def test_init_with_custom_options(mock_llm: AsyncMock) -> None:
 
 def test_init_with_default_options(mock_llm: AsyncMock) -> None:
     reranker = LLMReranker(llm=mock_llm)
-    assert reranker.prompt_template == LLMReranker.default_prompt_template
+    assert reranker.prompt_template.user_prompt.strip() == RerankerPrompt.user_prompt.strip()
     assert reranker.default_options.top_n is None
     assert mock_llm.max_tokens == 20
     assert reranker.llm_options.max_tokens == 1
