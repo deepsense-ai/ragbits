@@ -46,7 +46,8 @@ class ChatInterface(ABC):
             content=Reference(title=title, content=content, url=url),
         )
 
-    def create_state_update(self, state: dict[str, Any]) -> ChatResponse:
+    @staticmethod
+    def create_state_update(state: dict[str, Any]) -> ChatResponse:
         """Helper method to create a state update response with signature."""
         signature = ChatInterface._sign_state(state)
         return ChatResponse(
