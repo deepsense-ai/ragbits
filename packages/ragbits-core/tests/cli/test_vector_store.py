@@ -8,7 +8,7 @@ from typer.testing import CliRunner
 from ragbits.cli import app as root_app
 from ragbits.cli import autoregister
 from ragbits.cli.state import CliState, cli_state
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores import InMemoryVectorStore, VectorStore
 from ragbits.core.vector_stores._cli import vector_stores_app
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreResult

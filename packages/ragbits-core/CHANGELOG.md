@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Allow using sparse embeddings with Qdrant and local vector stores (#493)
 
 - Fix source interface definition (#535)
 

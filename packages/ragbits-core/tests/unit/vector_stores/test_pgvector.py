@@ -5,7 +5,7 @@ from uuid import UUID
 import asyncpg
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores import WhereQuery
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, VectorStoreResult
 from ragbits.core.vector_stores.pgvector import PgVectorStore

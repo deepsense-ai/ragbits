@@ -1,9 +1,9 @@
 from ragbits.core.audit import trace
-from ragbits.core.embeddings.base import Embedder
+from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.options import Options, OptionsT
 
 
-class NoopEmbedder(Embedder[Options]):
+class NoopEmbedder(DenseEmbedder[Options]):
     """
     A no-op implementation of the Embedder class.
 

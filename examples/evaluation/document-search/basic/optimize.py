@@ -40,7 +40,7 @@ config = {
                         },
                         "index_name": "baseline",
                         "embedder": {
-                            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
                             "config": {
                                 "model": "text-embedding-3-small",
                                 "default_options": {

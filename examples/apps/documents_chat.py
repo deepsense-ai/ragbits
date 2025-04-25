@@ -13,7 +13,7 @@ import gradio as gr
 from chromadb import PersistentClient
 from pydantic import BaseModel
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores.chroma import ChromaVectorStore

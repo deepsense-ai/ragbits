@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.gcs import GCSSource
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
