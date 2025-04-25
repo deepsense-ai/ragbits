@@ -16,7 +16,7 @@ DEFAULT_KEY_LENGTH = 32
 
 @lru_cache(maxsize=1)
 def get_secret_key(
-    env_var: str = RAGBITS_KEY_ENV_VAR, default: str | None = None, key_length: int = DEFAULT_KEY_LENGTH
+    env_var: str = RAGBITS_KEY_ENV_VAR, key_length: int = DEFAULT_KEY_LENGTH
 ) -> str:
     """
     Get a secret key from environment variable with fallback to a default or randomly generated key.
@@ -35,11 +35,6 @@ def get_secret_key(
     if secret_key:
         logger.debug(f"Using secret key from environment variable: {env_var}")
         return secret_key
-
-    # Use the default if provided
-    if default:
-        logger.debug("Using default secret key")
-        return default
 
     # Generate a random key
     random_key = base64.urlsafe_b64encode(secrets.token_bytes(key_length)).decode("utf-8")

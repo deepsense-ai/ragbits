@@ -67,7 +67,7 @@ class ChatInterface(ABC):
             Base64-encoded signature
         """
         state_json = json.dumps(state, sort_keys=True)
-        secret_key = get_secret_key(default="ragbits-default-key")
+        secret_key = get_secret_key()
         signature = hmac.new(secret_key.encode(), state_json.encode(), digestmod="sha256").digest()
         return base64.b64encode(signature).decode()
 
