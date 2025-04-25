@@ -1,12 +1,16 @@
+import base64
+import hmac
+import json
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import Literal
+from typing import Any, Literal
 
 from ragbits.core.prompt.base import ChatFormat
+from ragbits.core.utils import get_secret_key
 
 from .forms import FeedbackConfig
-from .types import ChatResponse, ChatResponseType, Reference
+from .types import ChatResponse, ChatResponseType, Reference, StateUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +24,7 @@ class ChatInterface(ABC):
 
     * Text: Regular text responses streamed chunk by chunk
     * References: Source documents used to generate the answer
+    * State updates: Updates to the conversation state
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
@@ -41,6 +46,43 @@ class ChatInterface(ABC):
             content=Reference(title=title, content=content, url=url),
         )
 
+    def create_state_update(self, state: dict[str, Any]) -> ChatResponse:
+        """Helper method to create a state update response with signature."""
+        signature = self._sign_state(state)
+        return ChatResponse(
+            type=ChatResponseType.STATE_UPDATE,
+            content=StateUpdate(state=state, signature=signature),
+        )
+
+    def _sign_state(self, state: dict[str, Any]) -> str:
+        """
+        Sign the state with HMAC to ensure integrity.
+
+        Args:
+            state: The state dictionary to sign
+
+        Returns:
+            Base64-encoded signature
+        """
+        state_json = json.dumps(state, sort_keys=True)
+        secret_key = get_secret_key(default="ragbits-default-key")
+        signature = hmac.new(secret_key.encode(), state_json.encode(), digestmod="sha256").digest()
+        return base64.b64encode(signature).decode()
+
+    def verify_state(self, state: dict[str, Any], signature: str) -> bool:
+        """
+        Verify that a state and signature match.
+
+        Args:
+            state: The state dictionary to verify
+            signature: The signature to check against
+
+        Returns:
+            True if the signature is valid, False otherwise
+        """
+        expected_signature = self._sign_state(state)
+        return hmac.compare_digest(expected_signature, signature)
+
     @abstractmethod
     async def chat(
         self,
@@ -54,12 +96,13 @@ class ChatInterface(ABC):
         Args:
             message: The current user message
             history: Optional list of previous messages in the conversation
-            context: Optional context
+            context: Optional context with optional 'state' field containing conversation state
 
         Yields:
             ChatResponse objects containing different types of content:
             - Text chunks for the actual response
             - Reference documents used to generate the response
+            - State updates when the conversation state changes
 
         Example:
             ```python
@@ -69,6 +112,10 @@ class ChatInterface(ABC):
                     print(f"Text: {text}")
                 elif ref := response.as_reference():
                     print(f"Reference: {ref.title}")
+                elif state := response.as_state_update():
+                    if verify_state(state.state, state.signature):
+                        # Update client state
+                        pass
             ```
         """
         yield ChatResponse(type=ChatResponseType.TEXT, content="Ragbits cannot respond - please implement chat method!")

@@ -195,6 +195,38 @@ def test_load_chat_interface_from_string(mock_import: MagicMock) -> None:
     assert isinstance(api.chat_interface, TestChatInterface)
 
 
+def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> None:
+    """Test state verification succeeds with valid signature."""
+    state = {"user_data": "test_value"}
+    signature = api.chat_interface._sign_state(state)
+
+    request_data = {
+        "message": "Hello",
+        "history": [{"role": "user", "content": "Previous message"}],
+        "context": {"state": state, "signature": signature},
+    }
+
+    response = client.post("/api/chat", json=request_data)
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+
+
+def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
+    """Test state verification fails with invalid signature."""
+    state = {"user_data": "test_value"}
+    invalid_signature = "invalid-signature"
+
+    request_data = {
+        "message": "Hello",
+        "history": [{"role": "user", "content": "Previous message"}],
+        "context": {"state": state, "signature": invalid_signature},
+    }
+
+    response = client.post("/api/chat", json=request_data)
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid state signature"
+
+
 def test_load_chat_interface_invalid_type() -> None:
     """Test error when loading an invalid chat interface type."""
 

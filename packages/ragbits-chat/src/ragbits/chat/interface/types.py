@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import cast
+from typing import Any, cast
 
 from pydantic import BaseModel
 
@@ -27,18 +27,26 @@ class Reference(BaseModel):
     url: str | None = None
 
 
+class StateUpdate(BaseModel):
+    """Represents an update to conversation state."""
+
+    state: dict[str, Any]
+    signature: str
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface."""
 
     TEXT = "text"
     REFERENCE = "reference"
+    STATE_UPDATE = "state_update"
 
 
 class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference
+    content: str | Reference | StateUpdate
 
     def as_text(self) -> str | None:
         """
@@ -59,3 +67,13 @@ class ChatResponse(BaseModel):
                 print(f"Got reference: {ref.title}")
         """
         return cast(Reference, self.content) if self.type == ChatResponseType.REFERENCE else None
+
+    def as_state_update(self) -> StateUpdate | None:
+        """
+        Return the content as StateUpdate if this is a state update, else None.
+
+        Example:
+            if state_update := response.as_state_update():
+                state = verify_state(state_update)
+        """
+        return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
