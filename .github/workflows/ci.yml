@@ -198,11 +198,9 @@ jobs:
           key: nltk-${{ runner.os }}
 
       - name: Run Tests With Coverage
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
         run: |
           # run with coverage to not execute tests twice
-          uv run coverage run -m pytest -v -p no:warnings --junitxml=report.xml
+          uv run coverage run -m pytest --postgresql-host postgres --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
           uv run coverage report
           uv run coverage xml
 
