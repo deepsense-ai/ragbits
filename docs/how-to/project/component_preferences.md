@@ -15,7 +15,7 @@ For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdran
 
 ```python
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings import LiteLLMEmbedder
 from qdrant_client import AsyncQdrantClient
 
 def get_qdrant_vector_store():
@@ -162,7 +162,7 @@ This is the list of component types for which you can set a preferred configurat
 
 | Key                  | Package                   | Base class                                        | Notes                                        |
 |----------------------|---------------------------|---------------------------------------------------|----------------------------------------------|
-| `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.Embedder]    |                                              |
+| `embedder`           | `ragbits-core`            | [`Embedder`][ragbits.core.embeddings.base.Embedder]    |                                              |
 | `llm`                | `ragbits-core`            | [`LLM`][ragbits.core.llms.LLM]                    | Specifics: [Configuration](#llm-configuration), [Usage](#llm-usage)|
 | `vector_store`       | `ragbits-core`            | [`VectorStore`][ragbits.core.vector_stores.base.VectorStore]|                                          |
 | `history_compressor` | `ragbits-chat`   | [`ConversationHistoryCompressor`][ragbits.chat.history.compressors.base.ConversationHistoryCompressor]|          |

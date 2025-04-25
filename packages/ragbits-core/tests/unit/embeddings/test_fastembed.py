@@ -1,6 +1,7 @@
 import pickle
 
-from ragbits.core.embeddings.fastembed import FastEmbedEmbedder, FastEmbedSparseEmbedder
+from ragbits.core.embeddings.dense.fastembed import FastEmbedEmbedder
+from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
 
 
 async def test_fastembed_dense_embeddings():

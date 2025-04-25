@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Allow using sparse embeddings with Qdrant and local vector stores (#493)
 
 ## 0.14.0 (2025-04-22)
 

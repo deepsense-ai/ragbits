@@ -36,7 +36,7 @@ import asyncio
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core import audit
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta

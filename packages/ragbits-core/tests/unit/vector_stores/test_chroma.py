@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore

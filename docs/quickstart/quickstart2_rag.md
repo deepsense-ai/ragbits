@@ -18,10 +18,10 @@ The short stories are in Markdown format. Ragbits supports [various document for
 
 ## Defining the Document Search Object
 
-The [`DocumentSearch`][ragbits.document_search.DocumentSearch] class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the [`LiteLLMEmbedder`][ragbits.core.embeddings.litellm.LiteLLMEmbedder] embedder and the [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] vector store:
+The [`DocumentSearch`][ragbits.document_search.DocumentSearch] class serves as the main entry point for working with documents in Ragbits. It requires an embedder and a vector store to work. This example uses the [`LiteLLMEmbedder`][ragbits.core.embeddings.dense.LiteLLMEmbedder] embedder and the [`InMemoryVectorStore`][ragbits.core.vector_stores.in_memory.InMemoryVectorStore] vector store:
 
 ```python
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
