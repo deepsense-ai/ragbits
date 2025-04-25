@@ -2,7 +2,7 @@ from dataclasses import field
 from typing import Any
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.options import Options
 
 try:
@@ -21,7 +21,7 @@ class LocalEmbedderOptions(Options):
     encode_kwargs: dict = field(default_factory=dict)
 
 
-class LocalEmbedder(Embedder[LocalEmbedderOptions]):
+class LocalEmbedder(DenseEmbedder[LocalEmbedderOptions]):
     """
     Class for interaction with any encoder available in HuggingFace.
 

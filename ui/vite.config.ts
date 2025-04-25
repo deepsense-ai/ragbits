@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: "../packages/ragbits-api/src/ragbits/api/ui-build",
+    outDir: "../packages/ragbits-chat/src/ragbits/chat/ui-build",
     emptyOutDir: true,
   },
 });

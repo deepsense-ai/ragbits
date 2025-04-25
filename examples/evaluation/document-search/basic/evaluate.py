@@ -44,7 +44,7 @@ config = {
                             "score_threshold": -1.2,
                         },
                         "embedder": {
-                            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
                             "config": {
                                 "model_name": "text-embedding-3-small",
                             },

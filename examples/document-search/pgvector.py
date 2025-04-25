@@ -44,7 +44,7 @@ import asyncio
 import asyncpg
 
 from ragbits.core import audit
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta

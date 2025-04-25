@@ -2,7 +2,7 @@ import pickle
 
 import numpy as np
 
-from ragbits.core.embeddings.local import LocalEmbedder, LocalEmbedderOptions
+from ragbits.core.embeddings.dense.local import LocalEmbedder, LocalEmbedderOptions
 
 
 async def test_local_embedder_embed_text():

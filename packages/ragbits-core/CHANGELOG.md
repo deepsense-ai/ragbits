@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Allow using sparse embeddings with Qdrant and local vector stores (#493)
 
 - Make HuggingFaceSource row optional (#529)
 - Allow Source to be constructed from config (#529)
