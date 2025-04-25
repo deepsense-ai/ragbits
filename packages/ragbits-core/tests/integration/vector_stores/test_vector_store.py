@@ -42,12 +42,12 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGenerator[asyncpg.Pool, None]:
     if os.getenv("GITHUB_ACTIONS") == "true":
         # in CI, connect to a separate service
-        pg = request.getfixturevalue("postgresql_noproc")
+        pg_info = request.getfixturevalue("postgresql_noproc")
     else:
         # in local dev, use the local postgres process
-        pg = request.getfixturevalue("postgresql")
+        pg_info = request.getfixturevalue("postgresql").info
 
-    dsn = f"postgresql://{pg.info.user}:{pg.info.password}@{pg.info.host}:{pg.info.port}/{pg.info.dbname}"
+    dsn = f"postgresql://{pg_info.user}:{pg_info.password}@{pg_info.host}:{pg_info.port}/{pg_info.dbname}"
     async with asyncpg.create_pool(dsn) as pool:
         yield pool
 
