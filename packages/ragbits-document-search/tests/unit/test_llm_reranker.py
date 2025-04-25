@@ -1,7 +1,7 @@
 import math
 from collections.abc import Sequence
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -158,52 +158,3 @@ async def test_score_elements_errors(reranker: LLMReranker, mock_llm: AsyncMock)
         await reranker._score_elements(elements, query)
 
     assert "doesn't support logprobs" in str(exc_info.value)
-
-
-def test_get_yes_no_token_ids_with_tiktoken(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    test_model_name = "some_openai_model"
-    with (
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.litellm") as mock_litellm,
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.tiktoken") as mock_tiktoken,
-    ):
-        mock_litellm.get_llm_provider.return_value = [test_model_name]
-
-        mock_encoder = MagicMock()
-        mock_encoder.encode.side_effect = lambda token: [123] if token == " Yes" else [456]  # noqa: S105
-        mock_tiktoken.encoding_for_model.return_value = mock_encoder
-        token_ids = reranker.get_yes_no_token_ids()
-        assert token_ids == {123: 1, 456: 1}
-        mock_tiktoken.encoding_for_model.assert_called_once_with(test_model_name)
-
-
-def test_get_yes_no_token_ids_with_autotokenizer(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    test_model_name = "some_hf_model"
-    with (
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.litellm") as mock_litellm,
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.tiktoken") as mock_tiktoken,
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.AutoTokenizer") as mock_auto_tokenizer,
-    ):
-        mock_litellm.get_llm_provider.return_value = [test_model_name]
-
-        mock_tiktoken.encoding_for_model.side_effect = Exception("Tokenizer not found")
-        mock_tokenizer = MagicMock()
-        mock_tokenizer.encode.side_effect = lambda token: [789] if token == " Yes" else [102]  # noqa: S105
-        mock_auto_tokenizer.from_pretrained.return_value = mock_tokenizer
-        token_ids = reranker.get_yes_no_token_ids()
-
-        assert token_ids == {789: 1, 102: 1}
-        mock_auto_tokenizer.from_pretrained.assert_called_once_with(test_model_name)
-
-
-def test_get_yes_no_token_ids_no_tokenizer(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    test_model_name = "some_other_model"
-    with (
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.litellm") as mock_litellm,
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.tiktoken") as mock_tiktoken,
-        patch("ragbits.document_search.retrieval.rerankers.llm_reranker.AutoTokenizer") as mock_auto_tokenizer,
-    ):
-        mock_litellm.get_llm_provider.return_value = [test_model_name]
-        mock_tiktoken.encoding_for_model.side_effect = Exception("Tokenizer not found")
-        mock_auto_tokenizer.from_pretrained.side_effect = Exception("AutoTokenizer not found")
-        token_ids = reranker.get_yes_no_token_ids()
-        assert token_ids is None
