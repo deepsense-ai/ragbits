@@ -161,7 +161,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tests
+          POSTGRES_DB: tests_tmpl
         ports:
           - 5433:5432
         options: >-
@@ -200,7 +200,7 @@ jobs:
       - name: Run Tests With Coverage
         run: |
           # run with coverage to not execute tests twice
-          uv run coverage run -m pytest --postgresql-password postgres --postgresql-port 5433 -v -p no:warnings --junitxml=report.xml
+          uv run coverage run -m pytest --postgresql-password postgres --postgresql-drop-test-database -v -p no:warnings --junitxml=report.xml
           uv run coverage report
           uv run coverage xml
 
