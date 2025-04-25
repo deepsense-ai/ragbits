@@ -200,6 +200,7 @@ jobs:
       - name: Install PostgreSQL + pgvector
         run: |
           sudo apt-get install -y postgresql-common
+          sudo mkdir /etc/apt/sources.list.d/
           sudo yes | /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
           sudo apt-get install -y postgresql-17-pgvector
 
