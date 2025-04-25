@@ -124,7 +124,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             str: The string representation of the vector.
         """
         if isinstance(vector, SparseVector):
-            points_str = ", ".join(f"{i}:{v}" for i, v in zip(vector.indices, vector.values, strict=False))
+            points_str = ",".join(f"{i}:{v}" for i, v in zip(vector.indices, vector.values, strict=False))
             return f"{{{points_str}}}/{self._vector_size}"
         return json.dumps(vector)
 
