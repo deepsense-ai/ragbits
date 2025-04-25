@@ -38,8 +38,8 @@ image_embeddings = [
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
-@pytest.fixture
-async def pgvector_test_db(postgresql: Connection) -> AsyncGenerator[asyncpg.Pool, None]:
+@pytest.fixture(name="pgvector_test_db")
+async def pgvector_test_db_fixture(postgresql: Connection) -> AsyncGenerator[asyncpg.Pool, None]:
     dsn = f"postgresql://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
     async with asyncpg.create_pool(dsn) as pool:
         yield pool
@@ -180,6 +180,8 @@ async def test_vector_store_retrieve(
         assert result.score != 0
         assert result.score <= prev_score  # Ensure that the results are sorted by score and bigger is better
         prev_score = result.score
+
+        assert isinstance(result.vector, list)
 
         # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
         assert result.entry.text == expected.text or (expected.text is None and result.entry.text == "")
