@@ -66,7 +66,7 @@ The connection pool created with asyncpg.create_pool will be used to initialize 
 ```python
 import asyncpg
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:
@@ -85,7 +85,8 @@ import asyncpg
 import asyncio
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
+
 async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:

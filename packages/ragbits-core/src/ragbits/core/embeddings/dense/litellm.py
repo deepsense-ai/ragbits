@@ -4,7 +4,7 @@ import litellm
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import Embedder
+from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
     EmbeddingEmptyResponseError,
@@ -27,7 +27,7 @@ class LiteLLMEmbedderOptions(Options):
     encoding_format: str | None | NotGiven = NOT_GIVEN
 
 
-class LiteLLMEmbedder(Embedder[LiteLLMEmbedderOptions]):
+class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
     """
     Client for creating text embeddings using LiteLLM API.
     """

@@ -34,6 +34,8 @@ We use `pytest` for testing. To run the tests, simply run:
 $ uv run pytest
 ```
 
+Running integration tests requires PostgreSQL with the pgvector extention installed.
+On Ubuntu Linux you can install it with `sudo apt-get install postgresql-16-pgvector`.
 
 ## Install pre-commit or pre-push hooks
 

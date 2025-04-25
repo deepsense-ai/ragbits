@@ -33,7 +33,7 @@ To run the script, execute the following command:
 import asyncio
 from pathlib import Path
 
-from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense import VertexAIMultimodelEmbedder
 from ragbits.core.sources import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
