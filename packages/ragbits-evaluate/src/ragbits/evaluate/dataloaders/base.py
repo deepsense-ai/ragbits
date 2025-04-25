@@ -2,12 +2,21 @@ from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import ClassVar, Generic
 
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core.sources.base import Source
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.evaluate import dataloaders
 from ragbits.evaluate.pipelines.base import EvaluationDataT
+
+
+class DataLoaderConfig(BaseModel):
+    """
+    Schema for the data loader config.
+    """
+
+    source: ObjectConstructionConfig
 
 
 class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
@@ -38,8 +47,8 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
         Returns:
             An instance of the data loader class initialized with the provided configuration.
         """
-        source_config = ObjectConstructionConfig.model_validate(config["source"])
-        config["source"] = Source.subclass_from_config(source_config)
+        dataloader_config = DataLoaderConfig.model_validate(config)
+        config["source"] = Source.subclass_from_config(dataloader_config.source)
         return super().from_config(config)
 
     @abstractmethod
