@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)
+- Find ids for " yes" and " no" tokens in liteLLM class for openai and hf models 
 
 ## 0.14.0 (2025-04-22)
 
