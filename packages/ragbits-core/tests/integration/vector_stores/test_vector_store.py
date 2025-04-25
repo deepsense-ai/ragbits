@@ -48,7 +48,13 @@ async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGener
         pg_info = request.getfixturevalue("postgresql").info
 
     dsn = f"postgresql://{pg_info.user}:{pg_info.password}@{pg_info.host}:{pg_info.port}/{pg_info.dbname}"
+
     async with asyncpg.create_pool(dsn) as pool:
+        # Drop all tables in the database to ensure a clean state
+        async with pool.acquire() as connection, connection.transaction():
+            await connection.execute("DROP SCHEMA public CASCADE;")
+            await connection.execute("CREATE SCHEMA public;")
+
         yield pool
 
 
