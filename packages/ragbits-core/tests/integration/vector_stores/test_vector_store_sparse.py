@@ -96,7 +96,6 @@ async def test_vector_store_retrieve(
     prev_score = float("inf")
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
-        print(result.score, result.entry.text, result.vector)
         # assert result.score != 0
         assert result.score <= prev_score  # Ensure that the results are sorted by score and bigger is better
         prev_score = result.score
