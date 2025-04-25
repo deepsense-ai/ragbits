@@ -26,7 +26,7 @@ def test_get_secret_key_generates_random():
         # The function is cached, so we need to test with different env_var names
         key1 = get_secret_key(env_var="TEST_KEY_1")
         key2 = get_secret_key(env_var="TEST_KEY_2")
-        
+
         # Keys should be different and not empty
         assert key1 != key2
         assert key1
@@ -46,4 +46,4 @@ def test_get_secret_key_caching():
         # The same env_var should produce the same key due to caching
         key1 = get_secret_key(env_var="TEST_CACHE_KEY")
         key2 = get_secret_key(env_var="TEST_CACHE_KEY")
-        assert key1 == key2 
+        assert key1 == key2
