@@ -1,6 +1,7 @@
 from datasets import load_dataset
 
 from ragbits.evaluate.dataloaders.base import DataLoader
+from ragbits.evaluate.dataloaders.exceptions import DataLoaderIncorrectFormatDataError
 from ragbits.evaluate.pipelines.document_search import DocumentSearchData
 
 
@@ -18,16 +19,25 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
 
         Returns:
             The document search evaluation data.
+
+        Raises:
+            DataLoaderIncorrectFormatDataError: If evaluation dataset is incorrectly formatted.
         """
         data_path = await self.source.fetch()
         dataset = load_dataset(
             path=str(data_path.parent),
             split=data_path.stem,
         )
+        if "question" not in dataset.features or "passages" not in dataset.features:
+            raise DataLoaderIncorrectFormatDataError(
+                required_features=["question", "passages"],
+                data_path=data_path,
+            )
+
         return [
             DocumentSearchData(
                 question=data["question"],
-                reference_passages=data["chunks"],
+                reference_passages=data["passages"],
             )
             for data in dataset
         ]
