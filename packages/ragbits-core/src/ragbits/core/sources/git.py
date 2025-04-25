@@ -6,13 +6,13 @@ from typing import ClassVar
 
 from typing_extensions import Self
 
-with suppress(ImportError):
-    import git
-
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.sources.exceptions import SourceNotFoundError
 from ragbits.core.utils.decorators import requires_dependencies
+
+with suppress(ImportError):
+    import git
 
 # Constants for URI parts
 _REPO_AND_FILE_PARTS = 2
@@ -21,29 +21,26 @@ _MIN_PARTS_WITH_PROTOCOL = 3
 
 class GitSource(Source):
     """
-    An object representing a file in a Git repository.
+    Source for data stored in the Git repository.
     """
 
+    protocol: ClassVar[str] = "git"
     repo_url: str
     file_path: str
     branch: str | None = None
-    protocol: ClassVar[str] = "git"
 
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is a unique identifier of the object.
-
-        Returns:
-            The source ID.
+        Get the source identifier.
         """
         repo_name = self.repo_url.rstrip("/").split("/")[-1]
         if repo_name.endswith(".git"):
             repo_name = repo_name[:-4]
 
-        branch_part = f":{self.branch}" if self.branch else ""
+        branch_part = f"/{self.branch}" if self.branch else ""
 
-        return f"git:{repo_name}{branch_part}:{self.file_path}"
+        return f"git:{repo_name}{branch_part}/{self.file_path}"
 
     @classmethod
     def _get_repo_dir(cls, repo_url: str, branch: str | None = None) -> Path:
@@ -124,7 +121,7 @@ class GitSource(Source):
         Clone the Git repository and return the path to the specific file.
 
         Returns:
-            The local path to the specific file in the cloned repository.
+            The local path to the downloaded file.
 
         Raises:
             SourceNotFoundError: If the repository cannot be cloned or the file doesn't exist.

@@ -36,7 +36,7 @@ class CustomSource(Source):
     @property
     def id(self) -> str:
         """
-        Source unique identifier.
+        Get the source identifier.
         """
         return f"{self.protocol}:{self.source_url}"
 

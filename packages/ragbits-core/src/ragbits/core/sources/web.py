@@ -1,43 +1,38 @@
 import re
 from collections.abc import Iterable
-from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
 
+import aiohttp
 from typing_extensions import Self
-
-with suppress(ImportError):
-    import aiohttp
 
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.sources.exceptions import SourceDownloadError, SourceNotFoundError
-from ragbits.core.utils.decorators import requires_dependencies
 
 
 class WebSource(Source):
     """
-    An object representing a Web dataset source.
+    Source for data stored in the web.
     """
 
+    protocol: ClassVar[str] = "web"
     url: str
     headers: dict[str, str] | None = None
-    protocol: ClassVar[str] = "web"
 
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is an unique identifier of the object.
+        Get the source identifier.
         """
         return f"web:{self.url}"
 
-    @requires_dependencies(["aiohttp"])
     async def fetch(self) -> Path:
         """
         Download a file available in the given url.
 
         Returns:
-            Path: The local path to the downloaded file.
+            The local path to the downloaded file.
 
         Raises:
             SourceDownloadError: If the download failed.
@@ -71,7 +66,7 @@ class WebSource(Source):
         """
         List the file under the given URL.
 
-        Arguments:
+        Args:
             url: The URL to the file.
 
         Returns:
@@ -83,11 +78,12 @@ class WebSource(Source):
     async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create WebSource instances from a URI path.
-        The supported uri format is:
-        <protocol>://<domain>/<path>/<filename>.<file_extension>
+
+        The supported URI formats:
+        - <protocol>://<domain>/<path>/<filename>.<file_extension>
 
         Args:
-            path: The URI path. Needs to include the protocol.
+            path: The URI path in the format described above.
 
         Returns:
             The iterable of sources from the web.

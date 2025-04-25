@@ -18,21 +18,18 @@ with suppress(ImportError):
 
 class HuggingFaceSource(Source):
     """
-    An object representing a Hugging Face dataset source.
+    Source for data stored in the Hugging Face repository.
     """
 
+    protocol: ClassVar[str] = "hf"
     path: str
     split: str = "train"
     row: int
-    protocol: ClassVar[str] = "hf"
 
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
+        Get the source identifier.
         """
         return f"hf:{self.path}/{self.split}/{self.row}"
 
@@ -46,7 +43,6 @@ class HuggingFaceSource(Source):
             The local path to the downloaded file.
 
         Raises:
-            ImportError: If the 'huggingface' extra is not installed.
             SourceConnectionError: If the source connection fails.
             SourceNotFoundError: If the source document is not found.
         """
@@ -76,38 +72,9 @@ class HuggingFaceSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Iterable[Self]:
-        """
-        Create HuggingFaceSource instances from a URI path.
-
-        Pattern matching is not supported. The path must be in the format:
-        hf://dataset_path/split/row
-
-        Args:
-            path: The path part of the URI (after hf://).
-
-        Returns:
-           The iterable of sources from the Hugging Face repository.
-
-        Raises:
-            ValueError: If the path contains patterns or has invalid format.
-        """
-        if "*" in path or "?" in path:
-            raise ValueError(
-                "HuggingFaceSource does not support patterns. Path must be in format: dataset_path/split/row"
-            )
-
-        try:
-            dataset_path, split, row = path.split("/")
-            return [cls(path=dataset_path, split=split, row=int(row))]
-        except ValueError as err:
-            raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err
-
-    @classmethod
-    @traceable
     async def list_sources(cls, path: str, split: str) -> Iterable[Self]:
         """
-        List all sources in the given Hugging Face repository.
+        List all sources in the Hugging Face repository.
 
         Args:
             path: Path or name of the dataset.
@@ -126,3 +93,32 @@ class HuggingFaceSource(Source):
             )
             for row in range(len(sources))
         ]
+
+    @classmethod
+    @traceable
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create HuggingFaceSource instances from a URI path.
+
+        The supported URI formats:
+        - <dataset-path>/<split>/<row>
+
+        Args:
+            path: The URI path in the format described above.
+
+        Returns:
+           The iterable of sources from the Hugging Face repository.
+
+        Raises:
+            ValueError: If the path contains patterns or has invalid format.
+        """
+        if "*" in path or "?" in path:
+            raise ValueError(
+                "HuggingFaceSource does not support patterns. Path must be in format: dataset_path/split/row"
+            )
+
+        try:
+            dataset_path, split, row = path.split("/")
+            return [cls(path=dataset_path, split=split, row=int(row))]
+        except ValueError as err:
+            raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err

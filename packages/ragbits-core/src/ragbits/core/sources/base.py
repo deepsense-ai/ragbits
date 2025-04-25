@@ -15,12 +15,31 @@ LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
 class Source(BaseModel, ABC):
     """
-    An object representing a source.
+    Base class for data sources.
     """
 
     # Registry of all subclasses by their unique identifier
     _registry: ClassVar[dict[str, type["Source"]]] = {}
     protocol: ClassVar[str]
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+        """
+        This method is automatically called when a subclass is defined. It performs the following tasks:
+        - Validates that the subclass has a 'protocol' attribute defined
+        - Registers the subclass in Source._registry using its class identifier
+        - Registers the subclass protocol with the SourceResolver
+
+        Raises:
+            TypeError: If the subclass does not define a 'protocol' attribute.
+        """
+        super().__init_subclass__(**kwargs)
+
+        if not hasattr(cls, "protocol"):
+            raise TypeError(f"Class {cls.__name__} is missing the 'protocol' attribute")
+
+        Source._registry[cls.class_identifier()] = cls
+        SourceResolver.register_protocol(cls.protocol, cls)
 
     @classmethod
     def class_identifier(cls) -> str:
@@ -40,7 +59,7 @@ class Source(BaseModel, ABC):
     @abstractmethod
     def id(self) -> str:
         """
-        Get the source ID.
+        Get the source identifier.
         """
 
     @abstractmethod
@@ -69,31 +88,14 @@ class Source(BaseModel, ABC):
         Create Source instances from a URI path.
 
         The path can contain glob patterns (asterisks) to match multiple sources, but pattern support
-        varies by source type. Each source implementation defines which patterns it supports:
-
-        - LocalFileSource: Supports full glob patterns ('*', '**', etc.) via Path.glob
-        - GCSSource: Supports simple prefix matching with '*' at the end of path
-        - HuggingFaceSource: Does not support glob patterns
+        varies by source type. Each source implementation defines which patterns it supports.
 
         Args:
             path: The path part of the URI (after protocol://). Pattern support depends on source type.
 
         Returns:
             The iterable of Source objects matching the path pattern.
-
-        Raises:
-            ValueError: If the path contains unsupported pattern for this source type.
         """
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
-        super().__init_subclass__(**kwargs)
-
-        if not hasattr(cls, "protocol"):
-            raise TypeError(f"Class {cls.__name__} is missing the 'protocol' attribute")
-
-        Source._registry[cls.class_identifier()] = cls
-        SourceResolver.register_protocol(cls.protocol, cls)
 
 
 class SourceDiscriminator:

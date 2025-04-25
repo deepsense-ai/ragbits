@@ -29,23 +29,23 @@ def test_id():
     """Test the ID property for GitSource"""
     # Test basic case
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
     # Test with branch
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="README.md", branch="main")
-    assert source.id == "git:repo:main:README.md"
+    assert source.id == "git:repo/main/README.md"
 
     # Test with deeper file path
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="docs/index.md", branch="main")
-    assert source.id == "git:repo:main:docs/index.md"
+    assert source.id == "git:repo/main/docs/index.md"
 
     # Test without .git extension
     source = GitSource(repo_url="https://github.com/user/repo", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
     # Test with trailing slash
     source = GitSource(repo_url="https://github.com/user/repo/", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
 
 async def test_from_uri():

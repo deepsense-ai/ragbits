@@ -11,7 +11,7 @@ from ragbits.core.sources.exceptions import SourceNotFoundError
 
 class LocalFileSource(Source):
     """
-    An object representing a local file source.
+    Source for data stored on the local disk.
     """
 
     protocol: ClassVar[str] = "local"
@@ -20,7 +20,7 @@ class LocalFileSource(Source):
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
+        Get the source identifier.
         """
         return f"local:{self.path.absolute()}"
 
@@ -30,7 +30,7 @@ class LocalFileSource(Source):
         Fetch the source.
 
         Returns:
-            The local path to the object fetched from the source.
+            The local path to the file.
 
         Raises:
             SourceNotFoundError: If the source document is not found.
@@ -60,14 +60,14 @@ class LocalFileSource(Source):
         """
         Create LocalFileSource instances from a URI path.
 
-        Supports full glob patterns via Path.glob:
+        The supported URI formats:
         - "**/*.txt" - all .txt files in any subdirectory
         - "*.py" - all Python files in the current directory
         - "**/*" - all files in any subdirectory
         - '?' matches exactly one character
 
         Args:
-            path: The path part of the URI (after file://). Pattern support depends on source type.
+            path: The URI path in the format described above.
 
         Returns:
             The iterable of sources from the local file system.

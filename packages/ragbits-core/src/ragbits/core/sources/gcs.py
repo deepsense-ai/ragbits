@@ -14,43 +14,35 @@ with suppress(ImportError):
 
 
 class GCSSource(Source):
-    """An object representing a GCS file source."""
+    """
+    Source for data stored in the Google Cloud Storage.
+    """
 
+    protocol: ClassVar[str] = "gcs"
     bucket: str
     object_name: str
-    protocol: ClassVar[str] = "gcs"
-    _storage: ClassVar["StorageClient | None"] = None  # Storage client for dependency injection
+
+    _storage: ClassVar["StorageClient | None"] = None
 
     @classmethod
     def set_storage(cls, storage: "StorageClient | None") -> None:
-        """Set the storage client for all instances.
-
-        Args:
-            storage: The `gcloud-aio-storage` `Storage` object to use as the storage client.
-                By default, the object will be created automatically.
+        """
+        Set the storage client for all instances.
         """
         cls._storage = storage
 
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def _get_storage(cls) -> "StorageClient":
-        """Get the storage client.
-
-        Returns:
-            The storage client to use. If none was injected, creates a new one.
         """
-        if cls._storage is not None:
-            return cls._storage
-
-        return StorageClient()
+        Get the storage client.
+        """
+        return cls._storage if cls._storage is not None else StorageClient()
 
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
+        Get the source identifier.
         """
         return f"gcs:{self.bucket}/{self.object_name}"
 
@@ -66,10 +58,7 @@ class GCSSource(Source):
         variable is not set, a temporary directory is used.
 
         Returns:
-            Path: The local path to the downloaded file.
-
-        Raises:
-            ImportError: If the 'gcp' extra is not installed.
+            The local path to the downloaded file.
         """
         local_dir = get_local_storage_dir()
         bucket_local_dir = local_dir / self.bucket
@@ -98,9 +87,6 @@ class GCSSource(Source):
 
         Returns:
             The iterable of sources from the GCS bucket.
-
-        Raises:
-            ImportError: If the required 'gcloud-aio-storage' package is not installed
         """
         with trace() as outputs:
             async with await cls._get_storage() as storage:
@@ -117,15 +103,12 @@ class GCSSource(Source):
         """
         Create GCSSource instances from a URI path.
 
-        Supports simple prefix matching with '*' at the end of path.
-        For example:
-        - "bucket/folder/*" - matches all files in the folder
-        - "bucket/folder/prefix*" - matches all files starting with prefix
-
-        More complex patterns like '**' or '?' are not supported.
+        The supported URI formats:
+        - <bucket>/<folder>/*" - matches all files in the folder
+        - <bucket>/<folder>/<prefix>*" - matches all files starting with prefix
 
         Args:
-            path: The path part of the URI (after gcs://). Can end with '*' for pattern matching.
+            path: The URI path in the format described above.
 
         Returns:
             The iterable of sources from the GCS bucket.
