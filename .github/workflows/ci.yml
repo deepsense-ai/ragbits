@@ -163,7 +163,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: tests
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
@@ -200,7 +200,7 @@ jobs:
       - name: Run Tests With Coverage
         run: |
           # run with coverage to not execute tests twice
-          uv run coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run coverage run -m pytest --postgresql-password postgres --postgresql-port 5433 -v -p no:warnings --junitxml=report.xml
           uv run coverage report
           uv run coverage xml
 
