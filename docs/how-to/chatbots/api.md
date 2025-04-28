@@ -160,7 +160,7 @@ When receiving a state update from the API:
 // Example client-side handling of state updates
 eventSource.addEventListener('message', (event) => {
   const data = JSON.parse(event.data);
-  
+
   if (data.type === 'state_update') {
     // Store both state and signature
     localStorage.setItem('chatState', JSON.stringify(data.content.state));
@@ -176,7 +176,7 @@ When sending a request that includes state:
 const sendMessage = async (message) => {
   const state = JSON.parse(localStorage.getItem('chatState') || '{}');
   const signature = localStorage.getItem('stateSignature');
-  
+
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -189,7 +189,7 @@ const sendMessage = async (message) => {
       }
     })
   });
-  
+
   // Handle response...
 };
 ```
