@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.15.0 (2025-04-28)
+
+### Changed
+
+- ragbits-core updated to version v0.15.0
+
 ### Added
 
 - Added support for state updates in chat interfaces with automatic signature generation (#537).
