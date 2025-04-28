@@ -1,16 +1,18 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
-with suppress(ImportError):
-    import git
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.sources.exceptions import SourceNotFoundError
 from ragbits.core.utils.decorators import requires_dependencies
+
+with suppress(ImportError):
+    import git
 
 # Constants for URI parts
 _REPO_AND_FILE_PARTS = 2
@@ -19,29 +21,26 @@ _MIN_PARTS_WITH_PROTOCOL = 3
 
 class GitSource(Source):
     """
-    An object representing a file in a Git repository.
+    Source for data stored in the Git repository.
     """
 
+    protocol: ClassVar[str] = "git"
     repo_url: str
     file_path: str
     branch: str | None = None
-    protocol: ClassVar[str] = "git"
 
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is a unique identifier of the object.
-
-        Returns:
-            The source ID.
+        Get the source identifier.
         """
         repo_name = self.repo_url.rstrip("/").split("/")[-1]
         if repo_name.endswith(".git"):
             repo_name = repo_name[:-4]
 
-        branch_part = f":{self.branch}" if self.branch else ""
+        branch_part = f"/{self.branch}" if self.branch else ""
 
-        return f"git:{repo_name}{branch_part}:{self.file_path}"
+        return f"git:{repo_name}{branch_part}/{self.file_path}"
 
     @classmethod
     def _get_repo_dir(cls, repo_url: str, branch: str | None = None) -> Path:
@@ -122,7 +121,7 @@ class GitSource(Source):
         Clone the Git repository and return the path to the specific file.
 
         Returns:
-            The local path to the specific file in the cloned repository.
+            The local path to the downloaded file.
 
         Raises:
             SourceNotFoundError: If the repository cannot be cloned or the file doesn't exist.
@@ -139,9 +138,7 @@ class GitSource(Source):
 
     @classmethod
     @traceable
-    async def list_sources(
-        cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None
-    ) -> list["GitSource"]:
+    async def list_sources(cls, repo_url: str, file_pattern: str = "**/*", branch: str | None = None) -> Iterable[Self]:
         """
         List all files in the repository matching the pattern.
 
@@ -151,7 +148,7 @@ class GitSource(Source):
             branch: Optional branch name.
 
         Returns:
-            List of GitSource objects, one for each file matching the pattern.
+            The iterable of sources from the git repository.
         """
         repo_dir = cls._get_repo_dir(repo_url, branch)
         cls._ensure_repo(repo_url, repo_dir, branch)
@@ -170,7 +167,7 @@ class GitSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, uri: str) -> Sequence["GitSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create GitSource instances from a URI path.
 
@@ -181,16 +178,16 @@ class GitSource(Source):
         - git@github.com:username/repo.git:branch:path/to/file.txt
 
         Args:
-            uri: The URI path in the format described above.
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence containing a GitSource instance.
+            The iterable of sources from the git repository.
         """
         # Check if URI starts with git:// protocol
-        if uri.startswith("git://"):
-            uri = uri[6:]  # Remove the git:// prefix
+        if path.startswith("git://"):
+            path = path[6:]  # Remove the git:// prefix
 
-        parts = uri.split(":")
+        parts = path.split(":")
         sources = []
 
         if len(parts) == _REPO_AND_FILE_PARTS:

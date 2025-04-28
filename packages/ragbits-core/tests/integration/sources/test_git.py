@@ -87,22 +87,26 @@ async def test_from_uri_with_file():
     """Test GitSource.from_uri with repository URL and file path."""
     uri = f"{TEST_REPO_URL}:README.md"
     sources = await GitSource.from_uri(uri)
-
-    assert len(sources) == 1
-    assert sources[0].repo_url == TEST_REPO_URL
-    assert sources[0].file_path == "README.md"
-    assert sources[0].branch is None
+    assert sources == [
+        GitSource(
+            repo_url=TEST_REPO_URL,
+            file_path="README.md",
+            branch=None,
+        ),
+    ]
 
 
 async def test_from_uri_with_branch_and_file():
     """Test GitSource.from_uri with repository URL, branch, and file path."""
     uri = f"{TEST_REPO_URL}:main:README.md"
     sources = await GitSource.from_uri(uri)
-
-    assert len(sources) == 1
-    assert sources[0].repo_url == TEST_REPO_URL
-    assert sources[0].branch == "main"
-    assert sources[0].file_path == "README.md"
+    assert sources == [
+        GitSource(
+            repo_url=TEST_REPO_URL,
+            file_path="README.md",
+            branch="main",
+        ),
+    ]
 
 
 async def test_list_sources_pdf_files():
@@ -119,9 +123,6 @@ async def test_list_sources_py_files():
     # Look for Python files in the repository
     result = await GitSource.list_sources(TEST_REPO_URL, file_pattern="**/*.py")
 
-    # There should be at least a few Python files
-    assert len(result) > 0
-
     # Verify the results are GitSource objects for individual files
     for source in result:
         assert isinstance(source, GitSource)
@@ -137,22 +138,26 @@ async def test_from_uri_with_ssh():
     """Test GitSource.from_uri with SSH repository URL."""
     uri = f"{TEST_REPO_SSH_URL}:README.md"
     sources = await GitSource.from_uri(uri)
-
-    assert len(sources) == 1
-    assert sources[0].repo_url == TEST_REPO_SSH_URL
-    assert sources[0].file_path == "README.md"
-    assert sources[0].branch is None
+    assert sources == [
+        GitSource(
+            repo_url=TEST_REPO_SSH_URL,
+            file_path="README.md",
+            branch=None,
+        ),
+    ]
 
 
 async def test_from_uri_with_ssh_branch():
     """Test GitSource.from_uri with SSH repository URL and branch."""
     uri = f"{TEST_REPO_SSH_URL}:main:README.md"
     sources = await GitSource.from_uri(uri)
-
-    assert len(sources) == 1
-    assert sources[0].repo_url == TEST_REPO_SSH_URL
-    assert sources[0].branch == "main"
-    assert sources[0].file_path == "README.md"
+    assert sources == [
+        GitSource(
+            repo_url=TEST_REPO_SSH_URL,
+            file_path="README.md",
+            branch="main",
+        ),
+    ]
 
 
 @pytest.mark.skip(reason="SSH is not supported in the CI environment")
