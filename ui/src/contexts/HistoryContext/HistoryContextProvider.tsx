@@ -13,8 +13,6 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [messages, setMessages] = useState(new Map<string, ChatMessage>([]));
 
-  console.log(messages);
-
   const createMessage = (message: Partial<ChatMessage>): string => {
     const messageId = uuidv4();
 
@@ -22,10 +20,11 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
       const updatedMessages = new Map(state);
 
       const messageToAdd: ChatMessage = {
-        id: message.id || "",
+        id: messageId,
         role: message.role || MessageRole.USER,
         content: message.content || "",
         references: message.references || [],
+        serverId: message.serverId || "",
         ...message,
       };
 
@@ -64,7 +63,7 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
 
         updatedMessages.set(id, {
           ...messageToUpdate,
-          id: content,
+          serverId: content,
         });
       }
       return updatedMessages;
