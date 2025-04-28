@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)
+- Add support for sparse embeddings in the Pgvector Vector Store (#493)
 
 ## 0.14.0 (2025-04-22)
 
