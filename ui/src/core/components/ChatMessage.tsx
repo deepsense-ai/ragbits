@@ -95,7 +95,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       {references.map((reference, index) => (
                         <li key={index}>
                           <a
-                            href={reference.content}
+                            href={reference.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"
