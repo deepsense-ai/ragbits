@@ -8,6 +8,7 @@ from ragbits.core.utils.secrets import RAGBITS_KEY_ENV_VAR, get_secret_key
 
 def test_get_secret_key_from_env():
     """Test getting the secret key from an environment variable."""
+    get_secret_key.cache_clear()
     test_key = "test-env-secret-key"
     with patch.dict(os.environ, {RAGBITS_KEY_ENV_VAR: test_key}, clear=True):
         assert get_secret_key() == test_key
