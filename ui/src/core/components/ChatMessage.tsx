@@ -20,7 +20,7 @@ export type ChatMessageProps = {
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
     {
-      chatMessage: { content, role },
+      chatMessage: { content, role, references },
       onOpenFeedbackForm,
       classNames,
       likeForm,
@@ -89,6 +89,24 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 >
                   {content}
                 </Markdown>
+                {references && references.length > 0 && (
+                  <div className="text-xs">
+                    <ul className="list-disc pl-4">
+                      {references.map((reference, index) => (
+                        <li key={index}>
+                          <a
+                            href={reference.content}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline"
+                          >
+                            {reference.title}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="mt-2 flex items-center gap-2">
                   <DelayedTooltip content="Copy" placement="bottom">
                     <Button
