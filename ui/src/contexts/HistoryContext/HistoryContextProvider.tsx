@@ -13,7 +13,9 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [messages, setMessages] = useState(new Map<string, ChatMessage>([]));
 
-  const createMessage = (message: Partial<ChatMessage>): string => {
+  const createMessage = (
+    message: Partial<Omit<ChatMessage, "id" | "serverId">>,
+  ): string => {
     const messageId = uuidv4();
 
     setMessages((state) => {
@@ -24,7 +26,6 @@ export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
         role: message.role || MessageRole.USER,
         content: message.content || "",
         references: message.references || [],
-        serverId: message.serverId || "",
         ...message,
       };
 
