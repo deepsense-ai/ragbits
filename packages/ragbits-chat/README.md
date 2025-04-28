@@ -1,4 +1,4 @@
-# ragbits-chat
+# Ragbits Chat
 
 ragbits-chat is a Python package that provides tools for building conversational AI applications.
 
