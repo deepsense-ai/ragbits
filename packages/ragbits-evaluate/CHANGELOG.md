@@ -4,6 +4,12 @@
 
 - Integrate sources with dataloaders (#529)
 
+## 0.15.0 (2025-04-28)
+
+### Changed
+
+- ragbits-core updated to version v0.15.0
+
 ## 0.14.0 (2025-04-22)
 
 ### Changed

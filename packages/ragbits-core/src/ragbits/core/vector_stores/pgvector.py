@@ -7,14 +7,15 @@ import asyncpg
 from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit import trace
-from ragbits.core.embeddings import DenseEmbedder
+from ragbits.core.embeddings.base import Embedder, SparseVector
+from ragbits.core.embeddings.sparse.base import SparseEmbedder
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
     VectorStoreOptionsT,
     VectorStoreResult,
-    VectorStoreWithDenseEmbedder,
+    VectorStoreWithEmbedder,
     WhereQuery,
 )
 
@@ -41,13 +42,9 @@ DISTANCE_OPS = {
 }
 
 
-# TODO: Add support for image embeddings
-class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
+class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [pgvector]
-
-    Currently, doesn't support image embeddings when storing and retrieving entries.
-    This will be added in the future.
     """
 
     options_cls = VectorStoreOptions
@@ -57,9 +54,9 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         client: asyncpg.Pool,
         table_name: str,
         vector_size: int,
-        embedder: DenseEmbedder,
+        embedder: Embedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
-        distance_method: str = "cosine",
+        distance_method: str | None = None,
         hnsw_params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
     ) -> None:
@@ -72,7 +69,8 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             vector_size: The size of the vectors.
             embedder: The embedder to use for converting entries to vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
-            distance_method: The distance method to use.
+            distance_method: The distance method to use, default is "cosine" for dense vectors
+                and "sparsevec_l2" for sparse vectors.
             hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
         """
@@ -100,6 +98,8 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         elif not isinstance(hnsw_params["ef_construction"], int) or hnsw_params["ef_construction"] <= 0:
             raise ValueError("ef_construction must be a positive integer.")
 
+        if distance_method is None:
+            distance_method = "sparsevec_l2" if isinstance(embedder, SparseEmbedder) else "cosine"
         self._client = client
         self._table_name = table_name
         self._vector_size = vector_size
@@ -113,8 +113,43 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         # TODO: To be implemented. Required for Ray processing.
         raise NotImplementedError
 
+    def _vector_to_string(self, vector: list[float] | SparseVector) -> str:
+        """
+        Converts a vector to a string representation.
+
+        Args:
+            vector: The vector to convert.
+
+        Returns:
+            str: The string representation of the vector.
+        """
+        if isinstance(vector, SparseVector):
+            points_str = ",".join(f"{i}:{v}" for i, v in zip(vector.indices, vector.values, strict=False))
+            return f"{{{points_str}}}/{self._vector_size}"
+        return json.dumps(vector)
+
+    @staticmethod
+    def _string_to_vector(vector_str: str) -> list[float] | SparseVector:
+        """
+        Converts a string representation of a vector to a list of floats.
+
+        Args:
+            vector_str: The string representation of the vector.
+
+        Returns:
+            list[float] | SparseVector: The vector as a list of floats.
+        """
+        if vector_str.startswith("{"):
+            # Sparse vector
+            points = re.findall(r"(\d+):([\d.]+)", vector_str)
+            indices, values = zip(*[(int(i), float(v)) for i, v in points], strict=False)
+            return SparseVector(indices=list(indices), values=list(values))
+        else:
+            # Dense vector
+            return json.loads(vector_str)
+
     def _create_retrieve_query(
-        self, vector: list[float], query_options: VectorStoreOptions | None = None
+        self, vector: list[float] | SparseVector, query_options: VectorStoreOptions | None = None
     ) -> tuple[str, list[Any]]:
         """
         Create sql query for retrieving entries from the pgVector collection.
@@ -138,7 +173,9 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT *, vector {distance_operator} $1 as distance, {score_formula} as score FROM {self._table_name}"  # noqa S608
 
-        values: list[Any] = [str(vector)]
+        values: list[Any] = [
+            self._vector_to_string(vector),
+        ]
 
         if query_options.score_threshold is not None:
             query += " WHERE score >= $2"
@@ -202,9 +239,12 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             # _table_name and has been validated in the class constructor, and it is a valid table name.
             # _vector_size has been validated in the class constructor, and it is a valid vector size.
 
+            is_sparse = isinstance(self._embedder, SparseEmbedder)
+            vector_func = "VECTOR" if not is_sparse else "SPARSEVEC"
+
             create_table_query = f"""
             CREATE TABLE {self._table_name}
-            (id UUID, text TEXT, image_bytes BYTEA, vector VECTOR({self._vector_size}), metadata JSONB);
+            (id UUID, text TEXT, image_bytes BYTEA, vector {vector_func}({self._vector_size}), metadata JSONB);
             """
             # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
             create_index_query = f"""
@@ -269,7 +309,7 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                         str(entry.id),
                         entry.text,
                         entry.image_bytes,
-                        str(embeddings[entry.id]),
+                        self._vector_to_string(embeddings[entry.id]),
                         json.dumps(entry.metadata, default=pydantic_encoder),
                     )
 
@@ -339,7 +379,7 @@ class PgVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                             image_bytes=record["image_bytes"],
                             metadata=json.loads(record["metadata"]),
                         ),
-                        vector=json.loads(record["vector"]),
+                        vector=self._string_to_vector(record["vector"]),
                         score=record["score"],
                     )
                     for record in results

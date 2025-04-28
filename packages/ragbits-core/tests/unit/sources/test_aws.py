@@ -7,7 +7,7 @@ from ragbits.core.sources.s3 import S3Source
 
 def test_id():
     source = S3Source(bucket_name="AA", key="bb/cc.pdf")
-    expected_id = "s3://AA/bb/cc.pdf"
+    expected_id = "s3:AA/bb/cc.pdf"
     assert source.id == expected_id
 
 
@@ -17,10 +17,9 @@ async def test_from_uri_one_file():
         "https://s3.us-west-2.amazonaws.com/bucket/path/to/file",
         "https://bucket.s3-us-west-2.amazonaws.com/path/to/file",
     ]
-    expected_result = S3Source(bucket_name="bucket", key="path/to/file")
     for path in one_file_paths:
         result = await S3Source.from_uri(path)
-        assert result[0] == expected_result
+        assert result == [S3Source(bucket_name="bucket", key="path/to/file")]
 
 
 async def test_from_uri_with_prefix():

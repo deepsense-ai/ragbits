@@ -1,8 +1,10 @@
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -16,7 +18,7 @@ with suppress(ImportError):
 
 class HuggingFaceSource(Source):
     """
-    An object representing a Hugging Face dataset source.
+    Source for data stored in the Hugging Face repository.
 
     Supports two formats:
     1. Complete dataset: When no row is specified, downloads the entire dataset. Used for QA datasets.
@@ -24,20 +26,17 @@ class HuggingFaceSource(Source):
         (requires "content" and "source" columns).
     """
 
+    protocol: ClassVar[str] = "hf"
     path: str
     split: str = "train"
     row: int | None = None
-    protocol: ClassVar[str] = "hf"
 
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
+        Get the source identifier.
         """
-        return f"{self.protocol}:{self.path}/{self.split}{f'/{self.row}' if self.row is not None else ''}"
+        return f"hf:{self.path}/{self.split}{f'/{self.row}' if self.row is not None else ''}"
 
     @requires_dependencies(["datasets"], "hf")
     async def fetch(self) -> Path:
@@ -45,7 +44,7 @@ class HuggingFaceSource(Source):
         Fetch the file from Hugging Face and store it locally.
 
         Returns:
-            Path: The local path to the downloaded file.
+            The local path to the downloaded file.
 
         Raises:
             SourceConnectionError: If the source connection fails.
@@ -95,18 +94,42 @@ class HuggingFaceSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["HuggingFaceSource"]:
+    async def list_sources(cls, path: str, split: str) -> Iterable[Self]:
+        """
+        List all sources in the Hugging Face repository.
+
+        Args:
+            path: Path or name of the dataset.
+            split: Dataset split.
+
+        Returns:
+            The iterable of sources from the Hugging Face repository.
+        """
+        sources = load_dataset(path, split=split)
+        cleaned_split = re.sub(r"\[.*?\]", "", split)
+        return [
+            cls(
+                path=path,
+                split=cleaned_split,
+                row=row,
+            )
+            for row in range(len(sources))
+        ]
+
+    @classmethod
+    @traceable
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create HuggingFaceSource instances from a URI path.
 
-        Pattern matching is not supported. The path must be in the format:
-        hf://dataset_path/split/row
+        The supported URI formats:
+        - <dataset-path>/<split>/<row>
 
         Args:
-            path: The path part of the URI (after hf://).
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence containing a single HuggingFaceSource.
+           The iterable of sources from the Hugging Face repository.
 
         Raises:
             ValueError: If the path contains patterns or has invalid format.
@@ -121,28 +144,3 @@ class HuggingFaceSource(Source):
             return [cls(path=dataset_path, split=split, row=int(row))]
         except ValueError as err:
             raise ValueError("Invalid HuggingFace path format. Expected: dataset_path/split/row") from err
-
-    @classmethod
-    @requires_dependencies(["datasets"], "hf")
-    @traceable
-    async def list_sources(cls, path: str, split: str) -> list["HuggingFaceSource"]:
-        """
-        List all sources in the given Hugging Face repository.
-
-        Args:
-            path: Path or name of the dataset.
-            split: Dataset split.
-
-        Returns:
-            List of source objects.
-        """
-        sources = load_dataset(path, split=split)  # type: ignore
-        cleaned_split = re.sub(r"\[.*?\]", "", split)
-        return [
-            cls(
-                path=path,
-                split=cleaned_split,
-                row=row,
-            )
-            for row in range(len(sources))  # type: ignore
-        ]

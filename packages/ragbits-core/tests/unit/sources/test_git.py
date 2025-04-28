@@ -29,68 +29,86 @@ def test_id():
     """Test the ID property for GitSource"""
     # Test basic case
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
     # Test with branch
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="README.md", branch="main")
-    assert source.id == "git:repo:main:README.md"
+    assert source.id == "git:repo/main/README.md"
 
     # Test with deeper file path
     source = GitSource(repo_url="https://github.com/user/repo.git", file_path="docs/index.md", branch="main")
-    assert source.id == "git:repo:main:docs/index.md"
+    assert source.id == "git:repo/main/docs/index.md"
 
     # Test without .git extension
     source = GitSource(repo_url="https://github.com/user/repo", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
     # Test with trailing slash
     source = GitSource(repo_url="https://github.com/user/repo/", file_path="README.md")
-    assert source.id == "git:repo:README.md"
+    assert source.id == "git:repo/README.md"
 
 
 async def test_from_uri():
     """Test creating GitSource instances from URI"""
     # Test with repo URL and file path
     result = await GitSource.from_uri("https://github.com/user/repo.git:README.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "https://github.com/user/repo.git"
-    assert result[0].file_path == "README.md"
-    assert result[0].branch is None
+    assert result == [
+        GitSource(
+            repo_url="https://github.com/user/repo.git",
+            branch=None,
+            file_path="README.md",
+        )
+    ]
 
     # Test with repo URL, branch, and file path
     result = await GitSource.from_uri("https://github.com/user/repo.git:main:README.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "https://github.com/user/repo.git"
-    assert result[0].branch == "main"
-    assert result[0].file_path == "README.md"
+    assert result == [
+        GitSource(
+            repo_url="https://github.com/user/repo.git",
+            branch="main",
+            file_path="README.md",
+        )
+    ]
 
     # Test with deep file path
     result = await GitSource.from_uri("https://github.com/user/repo.git:main:docs/api/index.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "https://github.com/user/repo.git"
-    assert result[0].branch == "main"
-    assert result[0].file_path == "docs/api/index.md"
+    assert result == [
+        GitSource(
+            repo_url="https://github.com/user/repo.git",
+            branch="main",
+            file_path="docs/api/index.md",
+        )
+    ]
 
     # Test with SSH format and file path
     result = await GitSource.from_uri("git@github.com:user/repo.git:README.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "git@github.com:user/repo.git"
-    assert result[0].file_path == "README.md"
-    assert result[0].branch is None
+    assert result == [
+        GitSource(
+            repo_url="git@github.com:user/repo.git",
+            branch=None,
+            file_path="README.md",
+        )
+    ]
 
-    # Test with SSH format, branch, and file path
+    # # Test with SSH format, branch, and file path
     result = await GitSource.from_uri("git@github.com:user/repo.git:main:README.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "git@github.com:user/repo.git"
-    assert result[0].branch == "main"
-    assert result[0].file_path == "README.md"
+    assert result == [
+        GitSource(
+            repo_url="git@github.com:user/repo.git",
+            branch="main",
+            file_path="README.md",
+        )
+    ]
 
     # Test with SSH format and deep file path
     result = await GitSource.from_uri("git@github.com:user/repo.git:main:docs/api/index.md")
-    assert len(result) == 1
-    assert result[0].repo_url == "git@github.com:user/repo.git"
-    assert result[0].branch == "main"
-    assert result[0].file_path == "docs/api/index.md"
+    assert result == [
+        GitSource(
+            repo_url="git@github.com:user/repo.git",
+            branch="main",
+            file_path="docs/api/index.md",
+        )
+    ]
 
 
 @patch("ragbits.core.sources.git.git")
@@ -285,9 +303,14 @@ async def test_list_sources(git_mock: MagicMock):
         result = await GitSource.list_sources(repo_url="https://github.com/user/repo.git", file_pattern="**/*.pdf")
 
     # Verify result
-    assert len(result) == 2
+    assert result == [
+        GitSource(
+            repo_url="https://github.com/user/repo.git",
+            file_path="file1.pdf",
+        ),
+        GitSource(
+            repo_url="https://github.com/user/repo.git",
+            file_path="docs/file2.pdf",
+        ),
+    ]
     assert all(isinstance(source, GitSource) for source in result)
-    assert result[0].repo_url == "https://github.com/user/repo.git"
-    assert result[0].file_path == "file1.pdf"
-    assert result[1].repo_url == "https://github.com/user/repo.git"
-    assert result[1].file_path == "docs/file2.pdf"
