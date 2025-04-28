@@ -5,6 +5,8 @@
 - Add support for sparse embeddings in the Pgvector Vector Store (#493)
 - Added secret key environment variable / generation for signatures across ragbits packages (#537)
 
+- Fix source interface definition (#535)
+
 ## 0.14.0 (2025-04-22)
 
 - Image embeddings in PgVectorStore (#495)

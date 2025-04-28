@@ -38,7 +38,7 @@ def test_ingest(pattern: str, num_expected: int) -> None:
         ]
         for file_path, content in test_files:
             file_path.write_text(content)
-        source_pattern = f"file://{temp_dir}/{pattern}"
+        source_pattern = f"local://{temp_dir}/{pattern}"
         result = runner.invoke(
             ds_app,
             ["--factory-path", factory_path, "ingest", source_pattern],
