@@ -4,7 +4,9 @@ import { ChatMessage } from "../../types/chat";
 
 export interface IChatHistoryContext {
   messages: ChatMessage[];
-  createMessage: (message: Partial<ChatMessage>) => string;
+  createMessage: (
+    message: Partial<Omit<ChatMessage, "id" | "serverId">>,
+  ) => string;
   // TODO: We can add additional argument that would allow custom modification
   // of the message before updating
   // TODO: We can add flag to allow replacing the message instead of appending
