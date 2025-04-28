@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Added support for state updates in chat interfaces with automatic signature generation (#537).
+
 ## 0.14.0 (2025-04-22)
 
 ### Changed
