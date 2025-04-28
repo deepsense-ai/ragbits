@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
@@ -7,7 +8,6 @@ from uuid import UUID
 import asyncpg
 import pytest
 from chromadb import EphemeralClient
-from psycopg import Connection
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.embeddings.dense import NoopEmbedder
@@ -38,10 +38,23 @@ image_embeddings = [
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
-@pytest.fixture
-async def pgvector_test_db(postgresql: Connection) -> AsyncGenerator[asyncpg.Pool, None]:
-    dsn = f"postgresql://{postgresql.info.user}:{postgresql.info.password}@{postgresql.info.host}:{postgresql.info.port}/{postgresql.info.dbname}"
+@pytest.fixture(name="pgvector_test_db")
+async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGenerator[asyncpg.Pool, None]:
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        # in CI, connect to a separate service
+        pg_info = request.getfixturevalue("postgresql_noproc")
+    else:
+        # in local dev, use the local postgres process
+        pg_info = request.getfixturevalue("postgresql").info
+
+    dsn = f"postgresql://{pg_info.user}:{pg_info.password}@{pg_info.host}:{pg_info.port}/{pg_info.dbname}"
+
     async with asyncpg.create_pool(dsn) as pool:
+        # Drop all tables in the database to ensure a clean state
+        async with pool.acquire() as connection, connection.transaction():
+            await connection.execute("DROP SCHEMA public CASCADE;")
+            await connection.execute("CREATE SCHEMA public;")
+
         yield pool
 
 
@@ -180,6 +193,8 @@ async def test_vector_store_retrieve(
         assert result.score != 0
         assert result.score <= prev_score  # Ensure that the results are sorted by score and bigger is better
         prev_score = result.score
+
+        assert isinstance(result.vector, list)
 
         # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
         assert result.entry.text == expected.text or (expected.text is None and result.entry.text == "")
