@@ -3,6 +3,7 @@
 ## Unreleased
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)
 - Add support for sparse embeddings in the Pgvector Vector Store (#493)
+- Added secret key environment variable / generation for signatures across ragbits packages (#537)
 
 - Fix source interface definition (#535)
 
