@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-- Find ids for " yes" and " no" tokens in liteLLM class for openai and hf models
+- Add support for tokenization of given token in LLM class for openai and hf models
 
 ## 0.15.0 (2025-04-28)
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)

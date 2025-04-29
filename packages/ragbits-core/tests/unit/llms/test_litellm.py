@@ -1,6 +1,5 @@
 import pickle
-from unittest.mock import MagicMock, patch
-from urllib.error import HTTPError
+from unittest.mock import patch
 
 import pytest
 from litellm import Router
@@ -263,48 +262,3 @@ async def test_pickling_registers_model_with_custom_cost_config():
         llm_pickled = pickle.loads(pickle.dumps(llm))  # noqa: S301
         assert llm_pickled.custom_model_cost_config == custom_config
         mock_register.assert_called_once_with(custom_config)
-
-
-def test_get_yes_no_token_ids_with_tiktoken() -> None:
-    test_model_name = "some_openai_model"
-    llm = LiteLLM(model_name="some_openai_model")
-    with patch("ragbits.core.llms.litellm.tiktoken") as mock_tiktoken:
-        mock_encoder = MagicMock()
-        mock_encoder.encode.side_effect = lambda token: [123] if token == " Yes" else [456]  # noqa: S105
-        mock_tiktoken.encoding_for_model.return_value = mock_encoder
-        token_ids = llm.get_yes_no_token_ids()
-        assert token_ids == {123: 1, 456: 1}
-        mock_tiktoken.encoding_for_model.assert_called_once_with(test_model_name)
-
-
-def test_get_yes_no_token_ids_with_autotokenizer() -> None:
-    """Test with HuggingFace model using AutoTokenizer"""
-    test_model_name = "bert-base-uncased"
-    llm = LiteLLM(model_name=test_model_name)
-
-    with (
-        patch("ragbits.core.llms.litellm.AutoTokenizer") as mock_autotokenizer,
-        patch("ragbits.core.llms.litellm.tiktoken.encoding_for_model", side_effect=ValueError),
-    ):
-        # Setup mock tokenizer
-        mock_tokenizer = MagicMock()
-        mock_tokenizer.encode.side_effect = lambda token: [1, 789] if token == " Yes" else [1, 987]  # noqa: S105
-        mock_autotokenizer.from_pretrained.return_value = mock_tokenizer
-
-        # Mock tiktoken to fail first
-        # with patch("ragbits.core.llms.litellm.tiktoken.encoding_for_model", side_effect=ValueError):
-        token_ids = llm.get_yes_no_token_ids()
-
-        assert token_ids == {789: 1, 987: 1}
-        mock_autotokenizer.from_pretrained.assert_called_once_with(test_model_name)
-
-
-def test_get_yes_no_token_ids_no_tokenizer() -> None:
-    test_model_name = "some_other_model"
-    llm = LiteLLM(model_name=test_model_name)
-    with (
-        patch("ragbits.core.llms.litellm.AutoTokenizer", side_effect=HTTPError),
-        patch("ragbits.core.llms.litellm.tiktoken.encoding_for_model", side_effect=ValueError),
-    ):
-        token_ids = llm.get_yes_no_token_ids()
-        assert token_ids is None

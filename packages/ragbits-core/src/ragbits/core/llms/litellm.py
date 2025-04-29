@@ -1,12 +1,9 @@
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
-from urllib.error import HTTPError
 
 import litellm
-import tiktoken
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
-from transformers import AutoTokenizer
 from typing_extensions import Self
 
 from ragbits.core.audit import trace
@@ -296,31 +293,3 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if self.router:
             config["router"] = self.router.model_list
         return self.from_config, (config,)
-
-    def get_yes_no_token_ids(self) -> dict[int, int] | None:
-        """
-        Getting token ids for yes/no.
-
-        Returns:
-            logit_bias dict
-        """
-        tokens = [" Yes", " No"]
-
-        try:
-            tokenizer = tiktoken.encoding_for_model(self.model_name)
-            ids = [tokenizer.encode(token) for token in tokens]
-            return {ids[0][0]: 1, ids[1][0]: 1}
-        except (KeyError, ValueError) as e:
-            print(f"tiktoken tokenizer doesn't work {e}")
-
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            ids = [tokenizer.encode(token) for token in tokens]
-            if len(ids[0]) == 1:
-                return {ids[0][0]: 1, ids[1][0]: 1}
-            if len(ids[0]) > 1:
-                return {ids[0][1]: 1, ids[1][1]: 1}
-        except (HTTPError, OSError) as e:
-            print(f"Auto tokenizer doesn't work {e}")
-        print("No tokenizer found")
-        return None

@@ -158,3 +158,18 @@ async def test_score_elements_errors(reranker: LLMReranker, mock_llm: AsyncMock)
         await reranker._score_elements(elements, query)
 
     assert "doesn't support logprobs" in str(exc_info.value)
+
+
+def test_get_yes_no_token_ids(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
+    mock_llm.get_token_id.side_effect = [[123], [1, 456, 789]]
+    result = reranker.get_yes_no_tokens_ids()
+    assert result is not None
+    assert len(result) == 2
+    assert result == {123: 1, 789: 1}
+    assert mock_llm.get_token_id.call_count == 2
+
+
+def test_get_yes_no_token_ids_failed(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
+    mock_llm.get_token_id.side_effect = NotImplementedError("Could not tokenize 'test'")
+    result = reranker.get_yes_no_tokens_ids()
+    assert result is None

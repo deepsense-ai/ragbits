@@ -90,7 +90,7 @@ class LLMReranker(Reranker):
         Returns:
             A sequence of assigned scores.
         """
-        logit_bias = self.llm.get_yes_no_token_ids()
+        logit_bias = self.get_yes_no_tokens_ids()
         if logit_bias is not None:
             self.llm_options.logit_bias = logit_bias
 
@@ -113,3 +113,20 @@ class LLMReranker(Reranker):
                 ) from e
 
         return scored_elements
+
+    def get_yes_no_tokens_ids(self) -> dict[int, int] | None:
+        """
+        Gets ids for "yes" and "no" tokens.
+
+        Returns:
+            A logit_bias dictionary for yes and no tokens.
+        """
+        tokens = [" Yes", " No"]
+        try:
+            ids = [self.llm.get_token_id(token) for token in tokens]
+
+            return {ids[0][-1]: 1, ids[1][-1]: 1}
+
+        except NotImplementedError as e:
+            print(f"Failed to get yes/no token IDs: {e}")
+            return None

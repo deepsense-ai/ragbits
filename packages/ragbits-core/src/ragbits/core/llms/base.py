@@ -3,7 +3,10 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
+import tiktoken
+from huggingface_hub.errors import HTTPError, RepositoryNotFoundError
 from pydantic import BaseModel
+from transformers import AutoTokenizer
 
 from ragbits.core import llms
 from ragbits.core.audit import trace
@@ -303,3 +306,31 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Response stream from LLM.
         """
+
+    def get_token_id(self, token: str) -> list[int]:
+        """
+        Get token ids for a single token using available tokenizers.
+
+        Args:
+            token: The token to encode.
+
+        Returns:
+            token_ids: The token ids for the given token.
+        """
+        try:
+            tokenizer = tiktoken.encoding_for_model(self.model_name)
+            return tokenizer.encode(token)
+
+        except (KeyError, ValueError) as e:
+            print(f"tiktoken tokenizer doesn't work {e}")
+            pass
+
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            return tokenizer.encode(token)
+
+        except (HTTPError, OSError, RepositoryNotFoundError) as e:
+            print(f"Auto tokenizer doesn't work {e}")
+            pass
+        print("No tokenizer found")
+        raise NotImplementedError(f"Could not tokenize '{token}'")

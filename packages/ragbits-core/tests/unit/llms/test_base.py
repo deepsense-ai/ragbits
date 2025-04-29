@@ -1,4 +1,7 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
+from huggingface_hub.errors import HTTPError
 from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLMResponseWithMetadata
@@ -146,3 +149,35 @@ def test_output_schema():
 def test_has_images():
     prompt = SimplePrompt("Hello")
     assert len(prompt.list_images()) == 0
+
+
+def test_get_token_id_with_tiktoken(llm: MockLLM) -> None:
+    with patch("ragbits.core.llms.base.tiktoken") as mock_tiktoken:
+        mock_encoder = MagicMock()
+        mock_encoder.encode.side_effect = [123]  # noqa: S105
+        mock_tiktoken.encoding_for_model.return_value = mock_encoder
+        token_ids = llm.get_token_id("example_token")
+        assert token_ids == 123
+        mock_tiktoken.encoding_for_model.assert_called_once_with("mock")
+
+
+def test_get_yes_no_token_ids_with_autotokenizer(llm: MockLLM) -> None:
+    with (
+        patch("ragbits.core.llms.base.AutoTokenizer") as mock_autotokenizer,
+        patch("ragbits.core.llms.base.tiktoken.encoding_for_model", side_effect=ValueError),
+    ):
+        mock_tokenizer = MagicMock()
+        mock_tokenizer.encode.side_effect = [456]  # noqa: S105
+        mock_autotokenizer.from_pretrained.return_value = mock_tokenizer
+        token_ids = llm.get_token_id(" Yes")
+        assert token_ids == 456
+        mock_autotokenizer.from_pretrained.assert_called_once_with("mock")
+
+
+def test_get_yes_no_token_ids_no_tokenizer(llm: MockLLM) -> None:
+    with (
+        patch("ragbits.core.llms.base.AutoTokenizer.from_pretrained", side_effect=HTTPError),
+        patch("ragbits.core.llms.base.tiktoken.encoding_for_model", side_effect=ValueError),
+        pytest.raises(NotImplementedError),
+    ):
+        llm.get_token_id(" Yes")
