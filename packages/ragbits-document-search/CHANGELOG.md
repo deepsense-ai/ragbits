@@ -2,11 +2,11 @@
 
 ## Unreleased
 
-## 0.15.0 (2025-04-28)
-
-### Added
+### Changed
 
 - Retain information about the score from the vector database or reranker in Element class (#541)
+
+## 0.15.0 (2025-04-28)
 
 ### Changed
 
