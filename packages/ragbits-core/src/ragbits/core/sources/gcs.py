@@ -1,7 +1,9 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -12,45 +14,37 @@ with suppress(ImportError):
 
 
 class GCSSource(Source):
-    """An object representing a GCS file source."""
+    """
+    Source for data stored in the Google Cloud Storage.
+    """
 
+    protocol: ClassVar[str] = "gcs"
     bucket: str
     object_name: str
-    protocol: ClassVar[str] = "gcs"
-    _storage: ClassVar["StorageClient | None"] = None  # Storage client for dependency injection
+
+    _storage: ClassVar["StorageClient | None"] = None
 
     @classmethod
     def set_storage(cls, storage: "StorageClient | None") -> None:
-        """Set the storage client for all instances.
-
-        Args:
-            storage: The `gcloud-aio-storage` `Storage` object to use as the storage client.
-                By default, the object will be created automatically.
+        """
+        Set the storage client for all instances.
         """
         cls._storage = storage
 
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
     async def _get_storage(cls) -> "StorageClient":
-        """Get the storage client.
-
-        Returns:
-            The storage client to use. If none was injected, creates a new one.
         """
-        if cls._storage is not None:
-            return cls._storage
-
-        return StorageClient()
+        Get the storage client.
+        """
+        return cls._storage if cls._storage is not None else StorageClient()
 
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
+        Get the source identifier.
         """
-        return f"gcs:gs://{self.bucket}/{self.object_name}"
+        return f"gcs:{self.bucket}/{self.object_name}"
 
     @traceable
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
@@ -64,10 +58,7 @@ class GCSSource(Source):
         variable is not set, a temporary directory is used.
 
         Returns:
-            Path: The local path to the downloaded file.
-
-        Raises:
-            ImportError: If the 'gcp' extra is not installed.
+            The local path to the downloaded file.
         """
         local_dir = get_local_storage_dir()
         bucket_local_dir = local_dir / self.bucket
@@ -86,18 +77,16 @@ class GCSSource(Source):
 
     @classmethod
     @requires_dependencies(["gcloud.aio.storage"], "gcs")
-    async def list_sources(cls, bucket: str, prefix: str = "") -> list["GCSSource"]:
-        """List all sources in the given GCS bucket, matching the prefix.
+    async def list_sources(cls, bucket: str, prefix: str = "") -> Iterable[Self]:
+        """
+        List all sources in the given GCS bucket, matching the prefix.
 
         Args:
             bucket: The GCS bucket.
             prefix: The prefix to match.
 
         Returns:
-            List of source objects.
-
-        Raises:
-            ImportError: If the required 'gcloud-aio-storage' package is not installed
+            The iterable of sources from the GCS bucket.
         """
         with trace() as outputs:
             async with await cls._get_storage() as storage:
@@ -110,21 +99,19 @@ class GCSSource(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["GCSSource"]:
-        """Create GCSSource instances from a URI path.
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create GCSSource instances from a URI path.
 
-        Supports simple prefix matching with '*' at the end of path.
-        For example:
-        - "bucket/folder/*" - matches all files in the folder
-        - "bucket/folder/prefix*" - matches all files starting with prefix
-
-        More complex patterns like '**' or '?' are not supported.
+        The supported URI formats:
+        - <bucket>/<folder>/*" - matches all files in the folder
+        - <bucket>/<folder>/<prefix>*" - matches all files starting with prefix
 
         Args:
-            path: The path part of the URI (after gcs://). Can end with '*' for pattern matching.
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence of GCSSource objects matching the pattern
+            The iterable of sources from the GCS bucket.
 
         Raises:
             ValueError: If an unsupported pattern is used

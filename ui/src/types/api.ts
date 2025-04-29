@@ -18,6 +18,7 @@ export interface Reference {
 export enum ChatResponseType {
   TEXT = "text",
   REFERENCE = "reference",
+  MESSAGE_ID = "message_id"
 }
 
 export interface ChatRequest {
@@ -31,6 +32,11 @@ export enum FormType {
   DISLIKE = "dislike_form",
 }
 
+interface MessageIdChatResponse {
+  type: ChatResponseType.MESSAGE_ID;
+  content: string;
+}
+
 interface TextChatResponse {
   type: ChatResponseType.TEXT;
   content: string;
@@ -41,7 +47,7 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
-export type ChatResponse = TextChatResponse | ReferenceChatResponse;
+export type ChatResponse = TextChatResponse | ReferenceChatResponse | MessageIdChatResponse;
 
 export enum FormFieldType {
   TEXT = "text",
