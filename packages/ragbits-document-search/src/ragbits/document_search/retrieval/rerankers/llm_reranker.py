@@ -1,10 +1,5 @@
 import math
 from collections.abc import Sequence
-from urllib.error import HTTPError
-
-import litellm
-import tiktoken
-from transformers import AutoTokenizer
 
 from ragbits.core.audit import traceable
 from ragbits.core.llms.exceptions import LLMStatusError
@@ -118,36 +113,3 @@ class LLMReranker(Reranker):
                 ) from e
 
         return scored_elements
-
-    def get_yes_no_token_ids_to_remove(self) -> dict[int, int] | None:
-        """
-        Getting token ids for yes/no.
-
-        Returns:
-            logit_bias dict
-        """
-        tokens = [" Yes", " No"]
-        try:
-            model_name = litellm.get_llm_provider(self.llm.model_name)[0]
-        except litellm.exceptions.BadRequestError:
-            model_name = self.llm.model_name
-            pass
-
-        try:
-            tokenizer = tiktoken.encoding_for_model(model_name)
-            ids = [tokenizer.encode(token) for token in tokens]
-            return {ids[0][0]: 1, ids[1][0]: 1}
-        except KeyError as e:
-            print(f"tiktoken tokenizer doesn't work {e}")
-
-        try:
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            ids = [tokenizer.encode(token) for token in tokens]
-            if len(ids[0]) == 1:
-                return {ids[0][0]: 1, ids[1][0]: 1}
-            if len(ids[0]) > 1:
-                return {ids[0][1]: 1, ids[1][1]: 1}
-        except HTTPError as e:
-            print(f"Auto tokenizer doesn't work {e}")
-        print("No tokenizer found")
-        return None
