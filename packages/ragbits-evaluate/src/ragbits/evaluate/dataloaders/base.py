@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from types import ModuleType
 from typing import ClassVar, Generic
 
@@ -52,7 +53,7 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
         return super().from_config(config)
 
     @abstractmethod
-    async def load(self) -> list[EvaluationDataT]:
+    async def load(self) -> Iterable[EvaluationDataT]:
         """
         Load the data.
 

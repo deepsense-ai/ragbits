@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+
 from datasets import load_dataset
 
 from ragbits.evaluate.dataloaders.base import DataLoader
@@ -13,7 +15,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
     and contain the following features: "question, "passages".
     """
 
-    async def load(self) -> list[DocumentSearchData]:
+    async def load(self) -> Iterable[DocumentSearchData]:
         """
         Load the data from source and format them.
 

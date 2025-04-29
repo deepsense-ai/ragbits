@@ -28,20 +28,20 @@ class DocumentSearchResult(EvaluationResult):
     predicted_passages: list[str]
 
 
-class DocumentSearchPipeline(EvaluationPipeline[DocumentSearchData, DocumentSearchResult]):
+class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchData, DocumentSearchResult]):
     """
     Document search evaluation pipeline.
     """
 
-    def __init__(self, document_search: DocumentSearch, source: dict | None = None) -> None:
+    def __init__(self, evaluation_target: DocumentSearch, source: dict | None = None) -> None:
         """
         Initializes the document search pipeline.
 
         Args:
-            document_search: Document Search instance.
+            evaluation_target: Document Search instance.
             source: Source data config for ingest.
         """
-        self.document_search = document_search
+        super().__init__(evaluation_target=evaluation_target)
         self.source = source or {}
 
     @classmethod
@@ -60,8 +60,8 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearchData, DocumentSear
         # TODO: optimize this for cases with duplicated document search configs between runs
         if config.get("source"):
             config["vector_store"]["config"]["index_name"] = str(uuid4())
-        document_search = DocumentSearch.from_config(config)
-        return cls(document_search=document_search, source=config.get("source"))
+        evaluation_target = DocumentSearch.from_config(config)
+        return cls(evaluation_target=evaluation_target, source=config.get("source"))
 
     async def prepare(self) -> None:
         """
@@ -74,7 +74,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearchData, DocumentSear
                 path=self.source["config"]["path"],
                 split=self.source["config"]["split"],
             )
-            await self.document_search.ingest(sources)
+            await self.evaluation_target.ingest(sources)
 
     async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
         """
@@ -86,7 +86,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearchData, DocumentSear
         Returns:
             The evaluation result.
         """
-        elements = await self.document_search.search(data.question)
+        elements = await self.evaluation_target.search(data.question)
         predicted_passages = [element.text_representation for element in elements if element.text_representation]
 
         return DocumentSearchResult(

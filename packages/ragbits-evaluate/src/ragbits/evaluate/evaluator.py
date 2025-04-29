@@ -9,12 +9,12 @@ from tqdm.asyncio import tqdm
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline, EvaluationResultT
+from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline, EvaluationResultT, EvaluationTargetT
 
 
 class EvaluationConfig(BaseModel):
     """
-    Schema for for the dict taken by `Evaluator.run_from_config` method.
+    Schema for the evaluation run config.
     """
 
     pipeline: ObjectConstructionConfig
@@ -24,7 +24,7 @@ class EvaluationConfig(BaseModel):
 
 class EvaluatorConfig(BaseModel):
     """
-    Schema for for the dict taken by `Evaluator.run_from_config` method.
+    Schema for the evaluator config.
     """
 
     evaluation: EvaluationConfig
@@ -71,7 +71,7 @@ class Evaluator(WithConstructionConfig):
 
     async def compute(
         self,
-        pipeline: EvaluationPipeline[EvaluationDataT, EvaluationResultT],
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
         dataloader: DataLoader[EvaluationDataT],
         metrics: MetricSet[EvaluationResultT],
     ) -> dict:
@@ -101,7 +101,7 @@ class Evaluator(WithConstructionConfig):
 
     async def _call_pipeline(
         self,
-        pipeline: EvaluationPipeline[EvaluationDataT, EvaluationResultT],
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
         dataset: Iterable[EvaluationDataT],
     ) -> tuple[list[EvaluationResultT], dict]:
         """

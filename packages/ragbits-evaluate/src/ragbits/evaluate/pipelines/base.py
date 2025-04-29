@@ -10,6 +10,7 @@ from ragbits.evaluate import pipelines
 
 EvaluationDataT = TypeVar("EvaluationDataT", bound="EvaluationData")
 EvaluationResultT = TypeVar("EvaluationResultT", bound="EvaluationResult")
+EvaluationTargetT = TypeVar("EvaluationTargetT", bound=WithConstructionConfig)
 
 
 class EvaluationData(BaseModel, ABC):
@@ -25,13 +26,23 @@ class EvaluationResult(ABC):
     """
 
 
-class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationDataT, EvaluationResultT], ABC):
+class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationTargetT, EvaluationDataT, EvaluationResultT], ABC):
     """
     Evaluation pipeline.
     """
 
     default_module: ClassVar[ModuleType | None] = pipelines
     configuration_key: ClassVar[str] = "pipeline"
+
+    def __init__(self, evaluation_target: EvaluationTargetT) -> None:
+        """
+        Initializes the document search pipeline.
+
+        Args:
+            evaluation_target: Document Search instance.
+        """
+        super().__init__()
+        self.evaluation_target = evaluation_target
 
     async def prepare(self) -> None:
         """
