@@ -3,6 +3,13 @@
 ## Unreleased
 - reranker based on relevance to given query (#443)
 
+## 0.16.0 (2025-04-29)
+
+### Changed
+
+- ragbits-core updated to version v0.16.0
+- Retain information about the score from the vector database or reranker in Element class (#541)
+
 ## 0.15.0 (2025-04-28)
 
 ### Changed
