@@ -1,6 +1,8 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source
@@ -25,7 +27,12 @@ class CustomCliSource(Source):
         return self.path
 
     @classmethod
+    async def list_sources(cls, path: str) -> Iterable[Self]:
+        """List all sources from the Custom LCI source."""
+        return [cls(path=Path(path))]
+
+    @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["CustomCliSource"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """Custom CLI source from URI path."""
         return [cls(path=Path(path))]
