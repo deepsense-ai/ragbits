@@ -2,7 +2,6 @@
 
 ## Unreleased
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)
-
 - Configured source and element classes are auto-imported (#343)
 
 ## 0.14.0 (2025-04-22)
