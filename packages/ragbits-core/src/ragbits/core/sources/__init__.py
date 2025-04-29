@@ -6,7 +6,6 @@ from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.sources.s3 import S3Source
 from ragbits.core.sources.web import WebSource
-from ragbits.core.config import import_modules_from_config
 
 __all__ = [
     "AzureBlobStorageSource",
@@ -18,5 +17,3 @@ __all__ = [
     "Source",
     "WebSource",
 ]
-
-import_modules_from_config()
