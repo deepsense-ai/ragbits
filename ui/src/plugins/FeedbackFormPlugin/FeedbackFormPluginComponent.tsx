@@ -18,6 +18,7 @@ import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
 import { FormSchemaResponse } from "../../types/api.ts";
 
 interface IFormPluginComponentProps {
+  id: string;
   title: string;
   schema: FormSchemaResponse;
   isOpen: boolean;
@@ -39,6 +40,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     setValue,
     watch,
     reset,
+    getValues,
   } = useForm({
     resolver: zodResolver(zodSchema),
   });
@@ -69,8 +71,8 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
           onChange={(e) => setValue(field.name, e.target.value)}
         >
           {field.options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
+            <SelectItem key={option} value={option}>
+              {option}
             </SelectItem>
           ))}
         </Select>

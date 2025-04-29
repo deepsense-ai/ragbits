@@ -18,7 +18,7 @@ export interface Reference {
 export enum ChatResponseType {
   TEXT = "text",
   REFERENCE = "reference",
-  MESSAGE_ID = "message_id"
+  MESSAGE_ID = "message_id",
 }
 
 export interface ChatRequest {
@@ -47,7 +47,10 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
-export type ChatResponse = TextChatResponse | ReferenceChatResponse | MessageIdChatResponse;
+export type ChatResponse =
+  | TextChatResponse
+  | ReferenceChatResponse
+  | MessageIdChatResponse;
 
 export enum FormFieldType {
   TEXT = "text",
@@ -59,7 +62,7 @@ interface FormFieldResponse {
   label: string;
   type: FormFieldType;
   required: boolean;
-  options?: { label: string; value: string }[];
+  options?: string[];
 }
 
 export interface FormSchemaResponse {

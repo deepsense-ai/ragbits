@@ -32,6 +32,9 @@ export default function Component() {
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [feedbackName, setFeedbackName] = useState<FormType>();
+  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
+    null,
+  );
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const cancelRef = useRef<(() => void) | null>(null);
@@ -133,11 +136,32 @@ export default function Component() {
   }, []);
 
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
-    console.log("Feedback form submitted:", data);
+    setIsLoading(true);
+
+    let feedback = "";
+
+    if (feedbackName === FormType.LIKE) {
+      feedback = "like";
+    } else if (feedbackName === FormType.DISLIKE) {
+      feedback = "dislike";
+    }
+
+    await axiosWrapper({
+      url: buildApiUrl("/api/feedback"),
+      method: "POST",
+      body: {
+        message_id: feedbackMessageId,
+        feedback,
+        payload: data,
+      },
+    });
+
+    setIsLoading(false);
   };
 
-  const onOpenFeedbackForm = async (name: typeof feedbackName) => {
+  const onOpenFeedbackForm = async (id: string, name: typeof feedbackName) => {
     setFeedbackName(name);
+    setFeedbackMessageId(id);
 
     if (config![name as keyof typeof config] === null) {
       await onFeedbackFormSubmit(null);
@@ -269,6 +293,7 @@ You can ask me anything! I can provide information, answer questions, and assist
         plugin={FeedbackFormPlugin}
         component="FeedbackFormComponent"
         componentProps={{
+          id: "",
           title: "Feedback Form",
           schema:
             config && feedbackName
