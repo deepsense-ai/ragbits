@@ -1,6 +1,8 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from pathlib import Path
 from typing import ClassVar
+
+from typing_extensions import Self
 
 from ragbits.core.audit import traceable
 from ragbits.core.sources.base import Source
@@ -9,21 +11,18 @@ from ragbits.core.sources.exceptions import SourceNotFoundError
 
 class LocalFileSource(Source):
     """
-    An object representing a local file source.
+    Source for data stored on the local disk.
     """
 
+    protocol: ClassVar[str] = "local"
     path: Path
-    protocol: ClassVar[str] = "file"
 
     @property
     def id(self) -> str:
         """
-        Get unique identifier of the object in the source.
-
-        Returns:
-            Unique identifier.
+        Get the source identifier.
         """
-        return f"local_file:{self.path.absolute()}"
+        return f"local:{self.path.absolute()}"
 
     @traceable
     async def fetch(self) -> Path:
@@ -31,7 +30,7 @@ class LocalFileSource(Source):
         Fetch the source.
 
         Returns:
-            The local path to the object fetched from the source.
+            The local path to the file.
 
         Raises:
             SourceNotFoundError: If the source document is not found.
@@ -42,7 +41,7 @@ class LocalFileSource(Source):
 
     @classmethod
     @traceable
-    def list_sources(cls, path: Path, file_pattern: str = "*") -> list["LocalFileSource"]:
+    async def list_sources(cls, path: Path, file_pattern: str = "*") -> Iterable[Self]:
         """
         List all sources in the given directory, matching the file pattern.
 
@@ -51,26 +50,27 @@ class LocalFileSource(Source):
             file_pattern: The file pattern to match.
 
         Returns:
-            List of source objects.
+            The iterable of sources from the local file system.
         """
         return [cls(path=file_path) for file_path in path.glob(file_pattern)]
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["LocalFileSource"]:
-        """Create LocalFileSource instances from a URI path.
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create LocalFileSource instances from a URI path.
 
-        Supports full glob patterns via Path.glob:
+        The supported URI formats:
         - "**/*.txt" - all .txt files in any subdirectory
         - "*.py" - all Python files in the current directory
         - "**/*" - all files in any subdirectory
         - '?' matches exactly one character
 
         Args:
-            path: The path part of the URI (after file://). Pattern support depends on source type.
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence of LocalFileSource objects
+            The iterable of sources from the local file system.
         """
         path_obj: Path = Path(path)
         base_path, pattern = cls._split_path_and_pattern(path=path_obj)

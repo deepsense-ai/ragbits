@@ -25,7 +25,7 @@ async def test_from_uri_one_file():
 
     for url in file_urls:
         result = await WebSource.from_uri(url)
-        assert result[0] == WebSource(url=url)
+        assert result == [WebSource(url=url)]
 
 
 async def test_invalid_url_raises_exception():

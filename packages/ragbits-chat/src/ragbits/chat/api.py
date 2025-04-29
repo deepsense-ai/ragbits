@@ -4,7 +4,7 @@ import logging
 import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
@@ -27,7 +27,7 @@ class ChatMessageRequest(BaseModel):
 
     message: str = Field(..., description="The current user message")
     history: list[Message] = Field(default_factory=list, description="Previous message history")
-    context: dict[str, str | None] = Field(default_factory=dict, description="User context information")
+    context: dict[str, Any] = Field(default_factory=dict, description="User context information")
 
 
 class FeedbackRequest(BaseModel):
@@ -115,6 +115,22 @@ class RagbitsAPI:
             # Generate a unique message ID for this conversation message
             message_id = str(uuid.uuid4())
 
+            # Verify state signature if provided
+            if "state" in request.context and "signature" in request.context:
+                state = request.context["state"]
+                signature = request.context["signature"]
+                if not ChatInterface.verify_state(state, signature):
+                    logger.warning(f"Invalid state signature received for message {message_id}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid state signature",
+                    )
+                # Remove the signature from context after verification
+                del request.context["signature"]
+            # Ensure context has a state field if not present
+            elif "state" not in request.context:
+                request.context["state"] = {}
+
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
                 message=request.message, history=[msg.model_dump() for msg in request.history], context=request.context
@@ -122,7 +138,8 @@ class RagbitsAPI:
 
             # Pass the generator to the SSE formatter
             return StreamingResponse(
-                RagbitsAPI._chat_response_to_sse(response_generator, message_id), media_type="text/event-stream"
+                RagbitsAPI._chat_response_to_sse(response_generator, message_id, self.chat_interface),
+                media_type="text/event-stream",
             )
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
@@ -153,7 +170,7 @@ class RagbitsAPI:
 
     @staticmethod
     async def _chat_response_to_sse(
-        responses: AsyncGenerator[ChatResponse], message_id: str
+        responses: AsyncGenerator[ChatResponse], message_id: str, chat_interface: ChatInterface | None = None
     ) -> AsyncGenerator[str, None]:
         """
         Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
@@ -162,19 +179,37 @@ class RagbitsAPI:
         Args:
             responses: The chat response generator
             message_id: The unique identifier for this message
+            chat_interface: The chat interface instance to use for verifying state (optional)
         """
         # Send the message_id as the first SSE event
         data = json.dumps({"type": "message_id", "content": message_id})
         yield f"data: {data}\n\n"
 
         async for response in responses:
-            data = json.dumps(
-                {
-                    "type": response.type.value,
-                    "content": response.content if isinstance(response.content, str) else response.content.model_dump(),
-                }
-            )
-            yield f"data: {data}\n\n"
+            if response.type.value == "state_update":
+                state_update = response.as_state_update()
+                if state_update:
+                    # Verification is already done by the chat interface that created the state update
+                    data = json.dumps(
+                        {
+                            "type": "state_update",
+                            "content": {
+                                "state": state_update.state,
+                                "signature": state_update.signature,
+                            },
+                        }
+                    )
+                    yield f"data: {data}\n\n"
+            else:
+                data = json.dumps(
+                    {
+                        "type": response.type.value,
+                        "content": response.content
+                        if isinstance(response.content, str)
+                        else response.content.model_dump(),
+                    }
+                )
+                yield f"data: {data}\n\n"
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

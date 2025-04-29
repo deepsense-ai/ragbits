@@ -1,8 +1,11 @@
 from functools import partial
 
+import asyncpg
 import pytest
+import tiktoken
 from qdrant_client import AsyncQdrantClient
 
+from ragbits.core.embeddings.base import SparseVector
 from ragbits.core.embeddings.sparse import BagOfTokens
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
@@ -11,25 +14,29 @@ from ragbits.core.vector_stores.base import (
     VectorStoreWithEmbedder,
 )
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
-from .test_vector_store import vector_store_entries_fixture  # noqa: F401
+from .test_vector_store import pgvector_test_db_fixture, vector_store_entries_fixture  # noqa: F401
 
 
 @pytest.fixture(
     name="vector_store_cls",
     params=[
-        lambda: partial(InMemoryVectorStore),
-        lambda: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda _: partial(InMemoryVectorStore),
+        lambda _: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda pg_pool: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=200_000),
     ],
-    ids=["InMemoryVectorStore", "QdrantVectorStore"],
+    ids=["InMemoryVectorStore", "QdrantVectorStore", "PgVectorStore"],
 )
-def vector_store_cls_fixture(request: pytest.FixtureRequest) -> type[VectorStoreWithEmbedder]:
+def vector_store_cls_fixture(
+    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool
+) -> type[VectorStoreWithEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithEmbedder left to be set.
     """
-    return request.param()
+    return request.param(pgvector_test_db)
 
 
 @pytest.fixture(name="vector_store")
@@ -94,11 +101,17 @@ async def test_vector_store_retrieve(
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
 
     prev_score = float("inf")
+
+    tokenizer = tiktoken.encoding_for_model(model_name="gpt-4o")
     for result, expected in zip(sorted_results, sorted_expected, strict=True):
         assert result.entry.id == expected.id
         # assert result.score != 0
         assert result.score <= prev_score  # Ensure that the results are sorted by score and bigger is better
         prev_score = result.score
+
+        assert isinstance(result.vector, SparseVector)
+        expected_tokens = set(tokenizer.encode(expected.text or ""))
+        assert set(result.vector.indices) == expected_tokens
 
         assert result.entry.text == expected.text
         assert result.entry.metadata == expected.metadata

@@ -1,36 +1,38 @@
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar, Optional
 from urllib.parse import urlparse
 
+from typing_extensions import Self
+
 from ragbits.core.audit import trace, traceable
+from ragbits.core.sources.base import Source, get_local_storage_dir
+from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
     import boto3
     from botocore.client import BaseClient
     from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
-from ragbits.core.sources.base import Source, get_local_storage_dir
-from ragbits.core.utils.decorators import requires_dependencies
-
 
 class S3Source(Source):
     """
-    An object representing an AWS S3 Storage dataset source.
+    Source for data stored in the AWS S3 bucket.
     """
 
     protocol: ClassVar[str] = "s3"
     bucket_name: str
     key: str
+
     _s3_client: ClassVar[Optional["BaseClient"]] = None
 
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is the full URL to the file in s3.
+        Get the source identifier.
         """
-        return f"s3://{self.bucket_name}/{self.key}"
+        return f"s3:{self.bucket_name}/{self.key}"
 
     @classmethod
     @requires_dependencies(["boto3"], "s3")
@@ -38,14 +40,12 @@ class S3Source(Source):
         """
         Set the boto3 S3 client if it hasn't been initialized yet.
 
-        Arguments:
+        Args:
             bucket_name: The name of the S3 bucket to use.
 
         Raises:
-             NoCredentialsError: If no credentials are available.
-             PartialCredentialsError: If credentials are incomplete.
-             ClientError: If credentials are incomplete.
-             Exception: If another error occurs.
+            ValueError: If credentials are incomplete.
+            RuntimeError: If another error occurs.
         """
         if cls._s3_client is None:
             try:
@@ -59,10 +59,10 @@ class S3Source(Source):
     @requires_dependencies(["boto3"], "s3")
     async def fetch(self) -> Path:
         """
-        Download a file in the given bucket_name with the given key.
+        Download a file in the given bucket name and key.
 
         Returns:
-            Path: The local path to the downloaded file.
+            The local path to the downloaded file.
 
         Raises:
             ClientError: If the file doesn't exist or credentials are incomplete.
@@ -96,16 +96,16 @@ class S3Source(Source):
 
     @classmethod
     @requires_dependencies(["boto3"], "s3")
-    async def list_sources(cls, bucket_name: str, prefix: str) -> Sequence["S3Source"]:
+    async def list_sources(cls, bucket_name: str, prefix: str) -> Iterable[Self]:
         """
         List all files under the given bucket name and with the given prefix.
 
-        Arguments:
+        Args:
             bucket_name: The name of the S3 bucket to use.
             prefix: The path to the files and prefix to look for.
 
         Returns:
-            Sequence: The Sequence of AWS S3 sources.
+            The iterable of sources from the S3 bucket.
 
         Raises:
             ClientError: If the source doesn't exist.
@@ -132,24 +132,23 @@ class S3Source(Source):
 
     @classmethod
     @traceable
-    async def from_uri(cls, path: str) -> Sequence["S3Source"]:
+    async def from_uri(cls, path: str) -> Iterable[Self]:
         """
         Create S3Source instances from a URI path.
-        The supported paths formats are:
-        s3://<bucket-name>/<key>
-        https://<bucket-name>s3.<region>.amazonaws.com/<key>
-        https://s3.<region>.amazonaws.com/<bucket-name>/<key>
-        Pattern matching is supported only with '*'.
+
+        The supported URI formats:
+        - s3://<bucket-name>/<key>
+        - https://<bucket-name>s3.<region>.amazonaws.com/<key>
+        - https://s3.<region>.amazonaws.com/<bucket-name>/<key>
 
         Args:
-            path: The URI path.
+            path: The URI path in the format described above.
 
         Returns:
-            A sequence containing a S3Source instances.
+            The iterable of sources from the S3 bucket.
 
         Raises:
             ValueError: If the path has invalid format
-
         """
         if "**" in path or "?" in path:
             raise ValueError(
