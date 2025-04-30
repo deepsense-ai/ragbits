@@ -123,7 +123,7 @@ def common_args(
 
 
 @eval_app.command()
-def run_evaluation() -> None:
+def run() -> None:
     """
     Evaluate the pipeline.
     """
