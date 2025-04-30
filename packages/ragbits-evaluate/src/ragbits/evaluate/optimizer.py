@@ -32,7 +32,7 @@ class Optimizer(WithConstructionConfig):
 
     def __init__(self, direction: str = "maximize", n_trials: int = 10, max_retries_for_trial: int = 1) -> None:
         """
-        Initializes the pipeline optimizer.
+        Initialize the pipeline optimizer.
 
         Args:
             direction: Direction of optimization.
@@ -49,7 +49,7 @@ class Optimizer(WithConstructionConfig):
     @classmethod
     def run_from_config(cls, config: dict) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        Runs the optimization process configured with a config object.
+        Run the optimization process configured with a config object.
 
         Args:
             config: Optimizer config.
@@ -85,7 +85,7 @@ class Optimizer(WithConstructionConfig):
         callbacks: list[Callable] | None = None,
     ) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        Runs the optimization process for given parameters.
+        Run the optimization process for given parameters.
 
         Args:
             pipeline_class: Pipeline to be optimized.
@@ -134,7 +134,7 @@ class Optimizer(WithConstructionConfig):
         metrics: MetricSet,
     ) -> float:
         """
-        Runs a single experiment.
+        Run a single experiment.
         """
         evaluator = Evaluator()
         event_loop = asyncio.get_event_loop()

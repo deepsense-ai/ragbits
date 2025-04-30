@@ -30,7 +30,7 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
 
     def __init__(self, source: Source) -> None:
         """
-        Initializes the data loader.
+        Initialize the data loader.
 
         Args:
             source: The source to load the evaluation data from.

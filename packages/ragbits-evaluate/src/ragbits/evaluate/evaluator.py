@@ -38,7 +38,7 @@ class Evaluator(WithConstructionConfig):
 
     def __init__(self, batch_size: int = 10) -> None:
         """
-        Initializes the evaluator.
+        Initialize the evaluator.
 
         Args:
             batch_size: batch size for the evaluation pipeline inference.
@@ -48,7 +48,7 @@ class Evaluator(WithConstructionConfig):
     @classmethod
     async def run_from_config(cls, config: dict) -> dict:
         """
-        Runs the evaluation based on configuration.
+        Run the evaluation based on configuration.
 
         Args:
             config: Evaluation config.

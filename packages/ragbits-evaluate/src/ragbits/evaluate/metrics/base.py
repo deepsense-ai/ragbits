@@ -50,7 +50,7 @@ class MetricSet(WithConstructionConfig, Generic[EvaluationResultT]):
 
     def __init__(self, *metrics: Metric[EvaluationResultT]) -> None:
         """
-        Initializes the metric set.
+        Initialize the metric set.
 
         Args:
             metrics: The metrics.

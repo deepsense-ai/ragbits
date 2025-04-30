@@ -35,7 +35,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
 
     def __init__(self, evaluation_target: DocumentSearch, source: dict | None = None) -> None:
         """
-        Initializes the document search pipeline.
+        Initialize the document search evaluation pipeline.
 
         Args:
             evaluation_target: Document Search instance.
@@ -65,7 +65,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
 
     async def prepare(self) -> None:
         """
-        Ingests corpus data for evaluation.
+        Ingest corpus data for evaluation.
         """
         if self.source:
             # For now we only support HF sources for pre-evaluation ingest
@@ -78,7 +78,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
 
     async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
         """
-        Runs the document search evaluation pipeline.
+        Run the document search evaluation pipeline.
 
         Args:
             data: The evaluation data.

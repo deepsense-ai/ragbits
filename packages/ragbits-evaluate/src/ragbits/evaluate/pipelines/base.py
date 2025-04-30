@@ -36,24 +36,24 @@ class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationTargetT, Eval
 
     def __init__(self, evaluation_target: EvaluationTargetT) -> None:
         """
-        Initializes the document search pipeline.
+        Initialize the evaluation pipeline.
 
         Args:
-            evaluation_target: Document Search instance.
+            evaluation_target: Evaluation target instance.
         """
         super().__init__()
         self.evaluation_target = evaluation_target
 
     async def prepare(self) -> None:
         """
-        Prepares pipeline for evaluation. Optional step.
+        Prepare pipeline for evaluation. Optional step.
         """
         pass
 
     @abstractmethod
     async def __call__(self, data: EvaluationDataT) -> EvaluationResultT:
         """
-        Runs the evaluation pipeline.
+        Run the evaluation pipeline.
 
         Args:
             data: The evaluation data.
