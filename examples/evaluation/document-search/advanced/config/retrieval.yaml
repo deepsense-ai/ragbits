@@ -1,7 +1,7 @@
 defaults:
-  - dataloader: hf
-  - pipeline: document_search
-  - metrics:
+  - dataloader@evaluation.dataloader: hf
+  - pipeline@evaluation.pipeline: document_search
+  - metrics@evaluation.metrics:
     - precision_recall_f1
     - ranked_retrieval
   - _self_
