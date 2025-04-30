@@ -1,10 +1,22 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from types import ModuleType
+from typing import ClassVar, Generic, TypeVar
+
+from pydantic import BaseModel
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
+from ragbits.evaluate import pipelines
 
+EvaluationDataT = TypeVar("EvaluationDataT", bound="EvaluationData")
+EvaluationResultT = TypeVar("EvaluationResultT", bound="EvaluationResult")
 EvaluationTargetT = TypeVar("EvaluationTargetT", bound=WithConstructionConfig)
+
+
+class EvaluationData(BaseModel, ABC):
+    """
+    Represents the data for a single evaluation.
+    """
 
 
 @dataclass
@@ -14,18 +26,34 @@ class EvaluationResult(ABC):
     """
 
 
-class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC):
+class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationTargetT, EvaluationDataT, EvaluationResultT], ABC):
     """
-    Collection evaluation pipeline.
+    Evaluation pipeline.
     """
 
-    def __init__(self, evaluation_target: EvaluationTargetT):
+    default_module: ClassVar[ModuleType | None] = pipelines
+    configuration_key: ClassVar[str] = "pipeline"
+
+    def __init__(self, evaluation_target: EvaluationTargetT) -> None:
+        """
+        Initialize the evaluation pipeline.
+
+        Args:
+            evaluation_target: Evaluation target instance.
+        """
+        super().__init__()
         self.evaluation_target = evaluation_target
 
-    @abstractmethod
-    async def __call__(self, data: dict) -> EvaluationResult:
+    async def prepare(self) -> None:
         """
-        Runs the evaluation pipeline.
+        Prepare pipeline for evaluation. Optional step.
+        """
+        pass
+
+    @abstractmethod
+    async def __call__(self, data: EvaluationDataT) -> EvaluationResultT:
+        """
+        Run the evaluation pipeline.
 
         Args:
             data: The evaluation data.
@@ -33,9 +61,3 @@ class EvaluationPipeline(Generic[EvaluationTargetT], WithConstructionConfig, ABC
         Returns:
             The evaluation result.
         """
-
-    async def prepare(self) -> None:
-        """
-        Prepares pipeline for evaluation.
-        """
-        pass
