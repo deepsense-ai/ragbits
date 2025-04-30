@@ -1,13 +1,13 @@
 from ragbits.core.utils.config_handling import WithConstructionConfig
 from ragbits.document_search import DocumentSearch
-from ragbits.evaluate.pipelines.base import EvaluationPipeline, EvaluationResult
+from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 
-_target_to_evaluation_pipeline: dict[type[WithConstructionConfig], type[EvaluationPipeline]] = {
-    DocumentSearch: DocumentSearchPipeline
-}
+__all__ = ["DocumentSearchPipeline", "EvaluationData", "EvaluationPipeline", "EvaluationResult"]
 
-__all__ = ["DocumentSearchPipeline", "EvaluationPipeline", "EvaluationResult"]
+_target_to_evaluation_pipeline: dict[type[WithConstructionConfig], type[EvaluationPipeline]] = {
+    DocumentSearch: DocumentSearchPipeline,
+}
 
 
 def get_evaluation_pipeline_for_target(evaluation_target: WithConstructionConfig) -> EvaluationPipeline:

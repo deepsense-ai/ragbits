@@ -19,7 +19,7 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
 
     def __init__(self, matching_strategy: MatchingStrategy, weight: float = 1.0) -> None:
         """
-        Initializes the document search metric.
+        Initialize the document search metric.
 
         Args:
             matching_strategy: Matching strategys that determine relevance.

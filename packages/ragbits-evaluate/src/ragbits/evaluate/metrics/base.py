@@ -1,18 +1,21 @@
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar
+from types import ModuleType
+from typing import ClassVar, Generic
 
 from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import WithConstructionConfig
-from ragbits.evaluate.pipelines.base import EvaluationResult
+from ragbits.evaluate import metrics
+from ragbits.evaluate.pipelines.base import EvaluationResultT
 
-ResultT = TypeVar("ResultT", bound=EvaluationResult)
 
-
-class Metric(WithConstructionConfig, Generic[ResultT], ABC):
+class Metric(WithConstructionConfig, Generic[EvaluationResultT], ABC):
     """
     Base class for metrics.
     """
+
+    default_module: ClassVar[ModuleType | None] = metrics
+    configuration_key: ClassVar[str] = "metric"
 
     def __init__(self, weight: float = 1.0) -> None:
         """
@@ -25,7 +28,7 @@ class Metric(WithConstructionConfig, Generic[ResultT], ABC):
         self.weight = weight
 
     @abstractmethod
-    def compute(self, results: list[ResultT]) -> dict:
+    def compute(self, results: list[EvaluationResultT]) -> dict:
         """
         Compute the metric.
 
@@ -37,16 +40,17 @@ class Metric(WithConstructionConfig, Generic[ResultT], ABC):
         """
 
 
-class MetricSet(WithConstructionConfig, Generic[ResultT]):
+class MetricSet(WithConstructionConfig, Generic[EvaluationResultT]):
     """
     Represents a set of metrics.
     """
 
-    configuration_key = "metrics"
+    configuration_key: ClassVar[str] = "metrics"
+    default_module: ClassVar[ModuleType | None] = metrics
 
-    def __init__(self, *metrics: Metric[ResultT]) -> None:
+    def __init__(self, *metrics: Metric[EvaluationResultT]) -> None:
         """
-        Initializes the metric set.
+        Initialize the metric set.
 
         Args:
             metrics: The metrics.
@@ -66,7 +70,7 @@ class MetricSet(WithConstructionConfig, Generic[ResultT]):
         """
         return cls(*[Metric.subclass_from_config(metric_config) for metric_config in config.values()])
 
-    def compute(self, results: list[ResultT]) -> dict:
+    def compute(self, results: list[EvaluationResultT]) -> dict:
         """
         Compute the metrics.
 
