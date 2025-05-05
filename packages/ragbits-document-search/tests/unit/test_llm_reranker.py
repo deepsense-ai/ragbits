@@ -10,7 +10,7 @@ from ragbits.core.llms.exceptions import LLMStatusError
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
-from ragbits.document_search.retrieval.rerankers.llm_reranker import LLMReranker, RerankerPrompt
+from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, RerankerPrompt
 
 
 @pytest.fixture
