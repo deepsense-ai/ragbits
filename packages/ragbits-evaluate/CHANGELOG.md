@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add tests for ragbits-evaluate package (#390)
 - Integrate sources with dataloaders (#529)
 
 ## 0.16.0 (2025-04-29)
