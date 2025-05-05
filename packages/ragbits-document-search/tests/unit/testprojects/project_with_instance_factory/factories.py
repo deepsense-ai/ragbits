@@ -1,6 +1,6 @@
 import asyncio
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore, VectorStoreOptions
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta

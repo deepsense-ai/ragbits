@@ -8,4 +8,6 @@
 
 ::: ragbits.document_search.ingestion.parsers.base.ImageDocumentParser
 
+::: ragbits.document_search.ingestion.parsers.docling.DoclingDocumentParser
+
 ::: ragbits.document_search.ingestion.parsers.unstructured.UnstructuredDocumentParser

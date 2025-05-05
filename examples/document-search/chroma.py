@@ -36,7 +36,7 @@ import asyncio
 from chromadb import EphemeralClient
 
 from ragbits.core import audit
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
+from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
@@ -73,7 +73,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
         default_options=LiteLLMEmbedderOptions(
             dimensions=1024,
             timeout=1000,

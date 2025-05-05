@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Allow custom source and element classes to be auto-imported (#343)
+- Make HuggingFaceSource row optional (#529)
+- Allow Source to be constructed from config (#529)
+
+## 0.16.0 (2025-04-29)
+
+## 0.15.0 (2025-04-28)
+- Allow using sparse embeddings with Qdrant and local vector stores (#493)
+- Add support for sparse embeddings in the Pgvector Vector Store (#493)
+- Added secret key environment variable / generation for signatures across ragbits packages (#537)
+- Fix source interface definition (#535)
+
+## 0.14.0 (2025-04-22)
+
+- Image embeddings in PgVectorStore (#495)
+- Add PgVectorStore to vector store integration tests (#495)
+- Add new fusion strategies for the hybrid vector store: RRF and DBSF (#413)
+- move sources from ragbits-document-search to ragbits-core (#496)
+- adding connection check to Azure get_blob_service (#502)
+- modify LocalEmbedder to use sentence-transformers instead of torch (#508)
+
 ## 0.13.0 (2025-04-02)
 - Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)

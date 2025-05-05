@@ -49,7 +49,7 @@ import asyncio
 
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -84,7 +84,7 @@ async def main() -> None:
     Run the example.
     """
     embedder = LiteLLMEmbedder(
-        model="text-embedding-3-small",
+        model_name="text-embedding-3-small",
     )
     vector_store = QdrantVectorStore(
         client=AsyncQdrantClient(

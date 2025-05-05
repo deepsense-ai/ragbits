@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -120,14 +120,7 @@ async def test_hybrid_retrieve(entries: list[VectorStoreEntry]):
     results = await vs_hybrid.retrieve("foo")
     assert len(results) == len(entries)
 
-    # ordered by similarity score according to embeddings above
-    entries_order = [
-        entries[2],
-        entries[5],
-        entries[3],
-        entries[1],
-        entries[4],
-        entries[0],
-    ]
-    assert [r.entry for r in results] == entries_order
-    assert results[0].score == pytest.approx(-4.52, rel=1e-2)
+    # indexes ordered by similarity score according to embeddings above
+    entries_order = [2, 5, 3, 1, 4, 0]
+    assert [r.entry for r in results] == [entries[i] for i in entries_order]
+    assert [r.score for r in results] == [max(s.score for s in r.subresults) for r in results]

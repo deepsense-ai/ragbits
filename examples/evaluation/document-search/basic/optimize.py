@@ -1,8 +1,8 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[chroma]",
-#     "ragbits-document-search[huggingface]",
+#     "ragbits-core[chroma,hf]",
+#     "ragbits-document-search",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
@@ -21,60 +21,67 @@ config = {
         "n_trials": 5,
         "max_retries_for_trial": 1,
     },
-    "experiment": {
-        "dataloader": {
-            "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
-            "config": {
-                "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
-                "split": "train",
-            },
-        },
-        "pipeline": {
-            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
-            "config": {
-                "vector_store": {
-                    "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
-                    "config": {
-                        "client": {
-                            "type": "EphemeralClient",
+    "evaluator": {
+        "evaluation": {
+            "dataloader": {
+                "type": "ragbits.evaluate.dataloaders.document_search:DocumentSearchDataLoader",
+                "config": {
+                    "source": {
+                        "type": "ragbits.core.sources:HuggingFaceSource",
+                        "config": {
+                            "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
+                            "split": "train",
                         },
-                        "index_name": "baseline",
-                        "embedder": {
-                            "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
-                            "config": {
-                                "model": "text-embedding-3-small",
-                                "default_options": {
-                                    "dimensions": {
-                                        "optimize": True,
-                                        "range": [32, 512],
+                    },
+                },
+            },
+            "pipeline": {
+                "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
+                "config": {
+                    "vector_store": {
+                        "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+                        "config": {
+                            "client": {
+                                "type": "EphemeralClient",
+                            },
+                            "index_name": "baseline",
+                            "embedder": {
+                                "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
+                                "config": {
+                                    "model_name": "text-embedding-3-small",
+                                    "default_options": {
+                                        "dimensions": {
+                                            "optimize": True,
+                                            "range": [32, 512],
+                                        },
                                     },
                                 },
                             },
                         },
                     },
-                },
-                "parser_router": {
-                    "txt": {
-                        "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
+                    "parser_router": {
+                        "txt": {
+                            "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
+                        },
                     },
-                },
-                "source": {
-                    "type": "ragbits.document_search.documents.sources:HuggingFaceSource",
-                    "config": {
-                        "path": "micpst/hf-docs",
-                        "split": "train[:5]",
+                    "source": {
+                        "type": "ragbits.core.sources:HuggingFaceSource",
+                        "config": {
+                            "path": "micpst/hf-docs",
+                            "split": "train[:5]",
+                        },
                     },
                 },
             },
-        },
-        "metrics": {
-            "precision_recall_f1": {
-                "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-                "config": {
-                    "matching_strategy": {
-                        "type": "RougeChunkMatch",
-                        "config": {
-                            "threshold": 0.5,
+            "metrics": {
+                "precision_recall_f1": {
+                    "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
+                    "config": {
+                        "matching_strategy": {
+                            "type": "RougeChunkMatch",
+                            "config": {
+                                "threshold": 0.5,
+                            },
                         },
                     },
                 },

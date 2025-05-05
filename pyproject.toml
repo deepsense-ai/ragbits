@@ -6,11 +6,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector]",
-    "ragbits-document-search[azure,gcs,huggingface,ray,s3]",
+    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector,azure,gcs,hf,s3]",
+    "ragbits-document-search[docling,ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
-    "ragbits-conversations",
+    "ragbits-chat",
 ]
 
 [tool.uv]
@@ -33,6 +33,7 @@ dev-dependencies = [
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
     "moto~=4.2.7",
+    "pytest-postgresql>=7.0.1"
 ]
 
 [tool.uv.sources]
@@ -41,7 +42,7 @@ ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
 ragbits-evaluate = {workspace = true}
 ragbits-guardrails = {workspace = true}
-ragbits-conversations = {workspace = true}
+ragbits-chat = {workspace = true}
 
 [tool.uv.workspace]
 members = [
@@ -50,7 +51,7 @@ members = [
     "packages/ragbits-document-search",
     "packages/ragbits-evaluate",
     "packages/ragbits-guardrails",
-    "packages/ragbits-conversations",
+    "packages/ragbits-chat",
 ]
 
 [tool.pytest]
@@ -81,8 +82,15 @@ addopts = [
 ]
 
 [tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+omit = [
+    "config.py",
+    "config-3.py",
+]
 
 [tool.mypy]
 warn_unused_configs = true
@@ -98,7 +106,7 @@ mypy_path = [
     "packages/ragbits-document-search/src",
     "packages/ragbits-evaluate/src",
     "packages/ragbits-guardrails/src",
-    "packages/ragbits-conversations/src",
+    "packages/ragbits-chat/src",
 ]
 exclude = ["scripts", "examples"]
 
@@ -192,3 +200,6 @@ known-third-party = [
     "requests", "scipy", "setuptools", "shapely", "skimage", "sklearn", "streamlit",
     "torch", "torchvision", "tqdm", "typer"
 ]
+
+[tool.setuptools.packages.find]
+exclude = ["ui"]
