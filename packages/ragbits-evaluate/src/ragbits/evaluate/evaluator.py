@@ -118,7 +118,7 @@ class Evaluator(WithConstructionConfig):
 
         async def _call_pipeline_with_semaphore(data: EvaluationDataT) -> EvaluationResultT:
             async with semaphore:
-                return await pipeline(data=data)
+                return await pipeline(data)
 
         start_time = time.perf_counter()
         pipe_outputs = await tqdm.gather(*[_call_pipeline_with_semaphore(data) for data in dataset], desc="Evaluation")

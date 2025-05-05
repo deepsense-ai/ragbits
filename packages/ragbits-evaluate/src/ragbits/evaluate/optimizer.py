@@ -136,12 +136,12 @@ class Optimizer(WithConstructionConfig):
         """
         Run a single experiment.
         """
+        evaluator = Evaluator()
         event_loop = asyncio.get_event_loop()
 
         score = 1e16 if self.direction == "maximize" else -1e16
         metrics_values = None
         config_for_trial = None
-        evaluator = Evaluator()
 
         for attempt in range(1, self.max_retries_for_trial + 1):
             try:
