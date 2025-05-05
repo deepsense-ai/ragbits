@@ -8,11 +8,11 @@ config:
     k: 3
     score_threshold: -1.2
   embedder:
-    type: ragbits.core.embeddings.litellm:LiteLLMEmbedder
+    type: ragbits.core.embeddings.dense:LiteLLMEmbedder
     config:
       optimize: true
       choices:
-        - model: "text-embedding-3-small"
+        - model_name: "text-embedding-3-small"
           default_options:
             dimensions:
               optimize: true
@@ -20,7 +20,7 @@ config:
                 - 32
                 - 512
             encoding_format: float
-        - model: "text-embedding-3-large"
+        - model_name: "text-embedding-3-large"
           default_options:
             dimensions:
               optimize: true

@@ -8,7 +8,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
+from ragbits.core.sources.gcs import GCSSource
+from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -18,13 +20,10 @@ from ragbits.document_search.documents.document import (
     DocumentType,
 )
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.documents.sources import GCSSource, LocalFileSource
 from ragbits.document_search.ingestion.parsers import DocumentParser
 from ragbits.document_search.ingestion.parsers.base import TextDocumentParser
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies.batched import (
-    BatchedIngestStrategy,
-)
+from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
 
 CONFIG = {
     "vector_store": {
@@ -137,15 +136,19 @@ async def test_document_search_with_search_config():
 
 async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
-    examples_files = Path(__file__).parent / "example_files"
+    examples_files = Path(__file__).parent.parent / "assets" / "md"
 
-    await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
+    await document_search.ingest(await LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
-    assert len(results) == 2
+    assert len(results) == 3
     assert all(isinstance(result, TextElement) for result in results)
-    assert {cast(TextElement, result).content for result in results} == {"foo", "bar"}
+    assert {cast(TextElement, result).content for result in results} == {
+        "foo",
+        "bar",
+        "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework.",
+    }
 
 
 async def test_document_search_with_batched():
@@ -190,7 +193,7 @@ async def test_document_search_ingest_from_uri_basic():
         document_search = DocumentSearch.from_config(CONFIG)
 
         # Test ingesting from URI
-        await document_search.ingest(f"file://{test_file}")
+        await document_search.ingest(f"local://{test_file}")
 
         # Verify
         results = await document_search.search("Test content")
@@ -246,7 +249,7 @@ async def test_document_search_ingest_from_uri_with_wildcard(
 
         # Use the parametrized glob pattern
         dir_pattern = f"{str(Path(temp_dir).parent)}/{dir_pattern}" if dir_pattern is not None else temp_dir
-        await document_search.ingest(f"file://{dir_pattern}/{pattern}")
+        await document_search.ingest(f"local://{dir_pattern}/{pattern}")
 
         # Perform the search
         results = await document_search.search(search_query)
@@ -452,17 +455,15 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.document_search.documents.sources.hf.load_dataset", return_value=dataset),
-            mock.patch(
-                "ragbits.document_search.documents.sources.base.get_local_storage_dir", return_value=storage_dir
-            ),
+            mock.patch("ragbits.core.sources.hf.load_dataset", return_value=dataset),
+            mock.patch("ragbits.core.sources.base.get_local_storage_dir", return_value=storage_dir),
         ):
             document_search = DocumentSearch(
                 vector_store=vector_store,
                 parser_router=DocumentParserRouter(parsers),
             )
 
-            await document_search.ingest("huggingface://dataset_name/train/0")
+            await document_search.ingest("hf://dataset_name/train/0")
 
             results = await document_search.search("HuggingFace test content")
 

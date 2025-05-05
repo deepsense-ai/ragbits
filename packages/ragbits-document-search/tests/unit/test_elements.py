@@ -29,7 +29,8 @@ def test_resolving_element_type() -> None:
                     "source": {"source_type": "local_file_source", "path": "/example/path"},
                 },
             },
-        )
+        ),
+        score=0.85,
     )
 
     assert isinstance(element, MyElement)
@@ -38,3 +39,4 @@ def test_resolving_element_type() -> None:
     assert element.text_representation == "barbar"
     assert element.document_meta.document_type == DocumentType.TXT
     assert element.document_meta.source.source_type == "local_file_source"
+    assert element.score == 0.85

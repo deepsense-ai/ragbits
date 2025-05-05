@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+- Add tests for ragbits-evaluate package (#390)
+- Integrate sources with dataloaders (#529)
+
+## 0.16.0 (2025-04-29)
+
+### Changed
+
+- ragbits-core updated to version v0.16.0
+
+## 0.15.0 (2025-04-28)
+
+### Changed
+
+- ragbits-core updated to version v0.15.0
+
+## 0.14.0 (2025-04-22)
+
+### Changed
+
+- ragbits-core updated to version v0.14.0
+
+- move sources from ragbits-document-search to ragbits-core (#496)
+
 ## 0.13.0 (2025-04-02)
 
 ### Changed
