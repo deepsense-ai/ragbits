@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -17,6 +18,19 @@ sys.path.append(str(projects_dir))
 
 # Path to the factory function that creates the test document search instance
 factory_path = "project_with_instance_factory.factories:create_document_search_instance_223"
+
+
+@pytest.fixture
+def add_custom_source_to_path():
+    original_path = sys.path.copy()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if current_dir not in sys.path:
+        sys.path.append(current_dir)
+
+    yield
+
+    sys.path = original_path
 
 
 @pytest.mark.parametrize(
@@ -67,7 +81,7 @@ def test_ingest_fails_with_custom_source_without_module_import() -> None:
     assert "Unsupported protocol: custom_cli_protocol." in str(result.exception)
 
 
-def test_ingest_succeeds_with_custom_source_with_module_import() -> None:
+def test_ingest_succeeds_with_custom_source_with_module_import(add_custom_source_to_path) -> None:  # noqa: ANN001
     core_config = get_config_instance(CoreConfig)
     core_config.modules_to_import = ["custom_cli_source"]
     import_modules_from_config(core_config)
