@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ragbits.core.embeddings.noop import NoopEmbedder
+from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.gcs import GCSSource
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -138,7 +138,7 @@ async def test_document_search_ingest_multiple_from_sources():
     document_search = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent.parent / "assets" / "md"
 
-    await document_search.ingest(LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
+    await document_search.ingest(await LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
 
     results = await document_search.search("foo")
 
@@ -193,7 +193,7 @@ async def test_document_search_ingest_from_uri_basic():
         document_search = DocumentSearch.from_config(CONFIG)
 
         # Test ingesting from URI
-        await document_search.ingest(f"file://{test_file}")
+        await document_search.ingest(f"local://{test_file}")
 
         # Verify
         results = await document_search.search("Test content")
@@ -249,7 +249,7 @@ async def test_document_search_ingest_from_uri_with_wildcard(
 
         # Use the parametrized glob pattern
         dir_pattern = f"{str(Path(temp_dir).parent)}/{dir_pattern}" if dir_pattern is not None else temp_dir
-        await document_search.ingest(f"file://{dir_pattern}/{pattern}")
+        await document_search.ingest(f"local://{dir_pattern}/{pattern}")
 
         # Perform the search
         results = await document_search.search(search_query)

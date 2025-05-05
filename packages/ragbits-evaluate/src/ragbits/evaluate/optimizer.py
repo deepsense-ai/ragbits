@@ -17,10 +17,10 @@ from ragbits.evaluate.utils import setup_optuna_neptune_callback
 
 class OptimizerConfig(BaseModel):
     """
-    Schema for the dict taken by `Optimizer.run_from_config` method.
+    Schema for the optimizer config.
     """
 
-    experiment: EvaluatorConfig
+    evaluator: EvaluatorConfig
     optimizer: dict | None = None
     neptune_callback: bool = False
 
@@ -32,7 +32,7 @@ class Optimizer(WithConstructionConfig):
 
     def __init__(self, direction: str = "maximize", n_trials: int = 10, max_retries_for_trial: int = 1) -> None:
         """
-        Initializes the pipeline optimizer.
+        Initialize the pipeline optimizer.
 
         Args:
             direction: Direction of optimization.
@@ -49,7 +49,7 @@ class Optimizer(WithConstructionConfig):
     @classmethod
     def run_from_config(cls, config: dict) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        Runs the optimization process configured with a config object.
+        Run the optimization process configured with a config object.
 
         Args:
             config: Optimizer config.
@@ -58,23 +58,22 @@ class Optimizer(WithConstructionConfig):
             List of tested configs with associated scores and metrics.
         """
         optimizer_config = OptimizerConfig.model_validate(config)
-        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.experiment)
+        evaluator_config = EvaluatorConfig.model_validate(optimizer_config.evaluator)
 
-        dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.dataloader)
-        metrics: MetricSet = MetricSet.from_config(evaluator_config.metrics)
+        dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.evaluation.dataloader)
+        metrics: MetricSet = MetricSet.from_config(evaluator_config.evaluation.metrics)
 
-        pipeline_class = import_by_path(evaluator_config.pipeline.type)
-        pipeline_config = dict(optimizer_config.experiment.pipeline.config)
+        pipeline_class = import_by_path(evaluator_config.evaluation.pipeline.type)
+        pipeline_config = dict(evaluator_config.evaluation.pipeline.config)
         callbacks = [setup_optuna_neptune_callback()] if optimizer_config.neptune_callback else []
 
-        optimizer = cls.from_config(config.get("optimizer", {}))
+        optimizer = cls.from_config(optimizer_config.optimizer or {})
         return optimizer.optimize(
             pipeline_class=pipeline_class,
             pipeline_config=pipeline_config,
             metrics=metrics,
             dataloader=dataloader,
             callbacks=callbacks,
-            schema_config=evaluator_config.schema_config,
         )
 
     def optimize(
@@ -84,10 +83,9 @@ class Optimizer(WithConstructionConfig):
         dataloader: DataLoader,
         metrics: MetricSet,
         callbacks: list[Callable] | None = None,
-        schema_config: dict | None = None,
     ) -> list[tuple[dict, float, dict[str, float]]]:
         """
-        Runs the optimization process for given parameters.
+        Run the optimization process for given parameters.
 
         Args:
             pipeline_class: Pipeline to be optimized.
@@ -95,7 +93,6 @@ class Optimizer(WithConstructionConfig):
             dataloader: Data loader.
             metrics: Metrics to be optimized.
             callbacks: Experiment callbacks.
-            schema_config: dictionary with schema configuration
 
         Returns:
             List of tested configs with associated scores and metrics.
@@ -108,7 +105,6 @@ class Optimizer(WithConstructionConfig):
                 pipeline_config=pipeline_config,
                 dataloader=dataloader,
                 metrics=metrics,
-                schema_config=schema_config,
             )
 
         study = optuna.create_study(direction=self.direction)
@@ -136,17 +132,16 @@ class Optimizer(WithConstructionConfig):
         pipeline_config: dict,
         dataloader: DataLoader,
         metrics: MetricSet,
-        schema_config: dict | None = None,
     ) -> float:
         """
-        Runs a single experiment.
+        Run a single experiment.
         """
         event_loop = asyncio.get_event_loop()
 
         score = 1e16 if self.direction == "maximize" else -1e16
         metrics_values = None
         config_for_trial = None
-        evaluator: Evaluator = Evaluator(schema_config=schema_config, pipeline_type=pipeline_class.configuration_key)
+        evaluator = Evaluator()
 
         for attempt in range(1, self.max_retries_for_trial + 1):
             try:

@@ -119,7 +119,7 @@ After that you can send requests the server in Ragbits:
 ```python
 import asyncio
 
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings import LiteLLMEmbedder
 
 
 async def main() -> None:

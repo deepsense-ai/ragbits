@@ -1,9 +1,11 @@
 import os
-from collections.abc import Sequence
+from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urlparse
+
+from typing_extensions import Self
 
 from ragbits.core.audit import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
@@ -18,7 +20,7 @@ with suppress(ImportError):
 
 class AzureBlobStorageSource(Source):
     """
-    An object representing an Azure Blob Storage dataset source.
+    Source for data stored in the Azure Blob Storage.
     """
 
     protocol: ClassVar[str] = "azure"
@@ -29,9 +31,9 @@ class AzureBlobStorageSource(Source):
     @property
     def id(self) -> str:
         """
-        Get the source ID, which is the full blob URL.
+        Get the source identifier.
         """
-        return f"azure://{self.account_name}/{self.container_name}/{self.blob_name}"
+        return f"azure:{self.account_name}/{self.container_name}/{self.blob_name}"
 
     @requires_dependencies(["azure.storage.blob", "azure.core.exceptions"], "azure")
     async def fetch(self) -> Path:
@@ -39,7 +41,7 @@ class AzureBlobStorageSource(Source):
         Downloads the blob to a temporary local file and returns the file path.
 
         Returns:
-            Path to the downloaded file.
+            The local path to the downloaded file.
 
         Raises:
             SourceNotFoundError: If the blob source is not available.
@@ -66,16 +68,53 @@ class AzureBlobStorageSource(Source):
         return path
 
     @classmethod
-    @traceable
-    async def from_uri(cls, path: str) -> Sequence["AzureBlobStorageSource"]:
+    @requires_dependencies(["azure.storage.blob"], "azure")
+    async def list_sources(
+        cls,
+        account_name: str,
+        container: str,
+        blob_name: str = "",
+    ) -> Iterable[Self]:
         """
-        Parses an Azure Blob Storage URI and returns an instance of AzureBlobStorageSource.
+        List all sources in the given Azure container, matching the prefix.
 
         Args:
-            path (str): The Azure Blob Storage URI.
+            account_name: The Azure storage account name.
+            container: The Azure container name.
+            blob_name: The prefix to match.
 
         Returns:
-            Sequence["AzureBlobStorageSource"]: The parsed Azure Blob Storage URI.
+            The iterable of sources from the Azure Blob Storage container.
+
+        Raises:
+            SourceConnectionError: If there's an error connecting to Azure
+        """
+        with trace(account_name=account_name, container=container, blob_name=blob_name) as outputs:
+            try:
+                blob_service = cls._get_blob_service(account_name)
+                container_client = blob_service.get_container_client(container)
+                blobs = container_client.list_blobs(name_starts_with=blob_name)
+                outputs.results = [
+                    cls(container_name=container, blob_name=blob.name, account_name=account_name) for blob in blobs
+                ]
+                return outputs.results
+            except Exception as e:
+                raise SourceConnectionError() from e
+
+    @classmethod
+    @traceable
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create AzureBlobStorageSource instances from a URI path.
+
+        The supported URI formats:
+        - https://<account-name>.blob.core.windows.net/<container-name>/<blob-name>
+
+        Args:
+            path: The URI path in the format described above.
+
+        Returns:
+            The iterable of sources from the Azure Blob Storage container.
 
         Raises:
             ValueError: If the Azure Blob Storage URI is invalid.
@@ -112,37 +151,6 @@ class AzureBlobStorageSource(Source):
 
         # Return a single-element list (consistent with other sources)
         return [cls(account_name=account_name, container_name=container_name, blob_name=blob_name)]
-
-    @classmethod
-    @requires_dependencies(["azure.storage.blob"], "azure")
-    async def list_sources(
-        cls, account_name: str, container: str, blob_name: str = ""
-    ) -> list["AzureBlobStorageSource"]:
-        """List all sources in the given Azure container, matching the prefix.
-
-        Args:
-            account_name (str): The Azure storage account name.
-            container: The Azure container name.
-            blob_name: The prefix to match.
-
-        Returns:
-            List of source objects.
-
-        Raises:
-            SourceConnectionError: If there's an error connecting to Azure
-        """
-        with trace(account_name=account_name, container=container, blob_name=blob_name) as outputs:
-            try:
-                blob_service = cls._get_blob_service(account_name)
-                container_client = blob_service.get_container_client(container)
-                blobs = container_client.list_blobs(name_starts_with=blob_name)
-                outputs.results = [
-                    AzureBlobStorageSource(container_name=container, blob_name=blob.name, account_name=account_name)
-                    for blob in blobs
-                ]
-                return outputs.results
-            except Exception as e:
-                raise SourceConnectionError() from e
 
     @staticmethod
     def _get_blob_service(account_name: str) -> "BlobServiceClient":

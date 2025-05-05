@@ -73,7 +73,7 @@ async def test_gcs_source_fetch() -> None:
 
     path = await source.fetch()
 
-    assert source.id == "gcs:gs://test-bucket/doc.md"
+    assert source.id == "gcs:test-bucket/doc.md"
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
     assert mock_storage.downloaded_files == [("test-bucket", "doc.md")]

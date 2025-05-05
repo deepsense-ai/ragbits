@@ -2,62 +2,53 @@ import asyncio
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
-from typing import Generic, cast
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
-from ragbits.evaluate.config import eval_config
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
-from ragbits.evaluate.pipelines.base import (
-    EvaluationDatapointSchema,
-    EvaluationDatapointSchemaT,
-    EvaluationPipeline,
-    EvaluationResult,
-    EvaluationTargetT,
-)
+from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline, EvaluationResultT, EvaluationTargetT
+
+
+class EvaluationConfig(BaseModel):
+    """
+    Schema for the evaluation run config.
+    """
+
+    pipeline: ObjectConstructionConfig
+    dataloader: ObjectConstructionConfig
+    metrics: dict[str, ObjectConstructionConfig]
 
 
 class EvaluatorConfig(BaseModel):
     """
-    Schema for for the dict taken by `Evaluator.run_from_config` method.
+    Schema for the evaluator config.
     """
 
-    dataloader: ObjectConstructionConfig
-    pipeline: ObjectConstructionConfig
-    metrics: dict[str, ObjectConstructionConfig]
-    schema_config: dict | None = None
+    evaluation: EvaluationConfig
+    evaluator: dict | None = None
 
 
-class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithConstructionConfig):
+class Evaluator(WithConstructionConfig):
     """
     Evaluator class.
     """
 
-    CONCURRENCY: int = 10
+    def __init__(self, batch_size: int = 10) -> None:
+        """
+        Initialize the evaluator.
 
-    def __init__(self, schema_config: dict | None = None, pipeline_type: str | None = None):
-        if schema_config:
-            self.schema: EvaluationDatapointSchemaT = cast(
-                EvaluationDatapointSchemaT,
-                EvaluationDatapointSchema.subclass_from_config(
-                    config=ObjectConstructionConfig.model_validate(schema_config)
-                ),
-            )
-        elif pipeline_type:
-            self.schema: EvaluationDatapointSchemaT = cast(  # type: ignore[no-redef]
-                EvaluationDatapointSchemaT,
-                EvaluationDatapointSchema.get_default_for_pipeline(config=eval_config, pipeline_type=pipeline_type),
-            )
-        else:
-            raise ValueError("Either schema_config or pipeline_type needs to be provided")
+        Args:
+            batch_size: batch size for the evaluation pipeline inference.
+        """
+        self.batch_size = batch_size
 
     @classmethod
     async def run_from_config(cls, config: dict) -> dict:
         """
-        Runs the evaluation based on configuration.
+        Run the evaluation based on configuration.
 
         Args:
             config: Evaluation config.
@@ -65,12 +56,14 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
         Returns:
             The evaluation results.
         """
-        model = EvaluatorConfig.model_validate(config)
-        dataloader: DataLoader = DataLoader.subclass_from_config(model.dataloader)
-        pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(model.pipeline)
-        metrics: MetricSet = MetricSet.from_config(model.metrics)
+        evaluator_config = EvaluatorConfig.model_validate(config)
+        evaluation_config = EvaluationConfig.model_validate(evaluator_config.evaluation)
+        pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(evaluation_config.pipeline)
+        dataloader: DataLoader = DataLoader.subclass_from_config(evaluation_config.dataloader)
+        metrics: MetricSet = MetricSet.from_config(evaluation_config.metrics)
 
-        return await cls(schema_config=model.schema_config, pipeline_type=pipeline.configuration_key).compute(
+        evaluator = cls.from_config(evaluator_config.evaluator or {})
+        return await evaluator.compute(
             pipeline=pipeline,
             dataloader=dataloader,
             metrics=metrics,
@@ -78,9 +71,9 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
 
     async def compute(
         self,
-        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDatapointSchemaT],
-        dataloader: DataLoader,
-        metrics: MetricSet,
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
+        dataloader: DataLoader[EvaluationDataT],
+        metrics: MetricSet[EvaluationResultT],
     ) -> dict:
         """
         Compute the evaluation results for the given pipeline and data.
@@ -108,9 +101,9 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
 
     async def _call_pipeline(
         self,
-        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDatapointSchemaT],
-        dataset: Iterable[dict],
-    ) -> tuple[list[EvaluationResult], dict]:
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
+        dataset: Iterable[EvaluationDataT],
+    ) -> tuple[list[EvaluationResultT], dict]:
         """
         Call the pipeline with the given data.
 
@@ -121,11 +114,11 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
         Returns:
             The evaluation results and performance metrics.
         """
-        semaphore = asyncio.Semaphore(self.CONCURRENCY)
+        semaphore = asyncio.Semaphore(self.batch_size)
 
-        async def _call_pipeline_with_semaphore(data: dict) -> EvaluationResult:
+        async def _call_pipeline_with_semaphore(data: EvaluationDataT) -> EvaluationResultT:
             async with semaphore:
-                return await pipeline(data=data, schema=self.schema)
+                return await pipeline(data=data)
 
         start_time = time.perf_counter()
         pipe_outputs = await tqdm.gather(*[_call_pipeline_with_semaphore(data) for data in dataset], desc="Evaluation")
@@ -134,7 +127,7 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
         return pipe_outputs, self._compute_time_perf(start_time, end_time, len(pipe_outputs))
 
     @staticmethod
-    def _results_processor(results: list[EvaluationResult]) -> dict:
+    def _results_processor(results: list[EvaluationResultT]) -> dict:
         """
         Process the results.
 
@@ -147,7 +140,7 @@ class Evaluator(Generic[EvaluationTargetT, EvaluationDatapointSchemaT], WithCons
         return {"results": [asdict(result) for result in results]}
 
     @staticmethod
-    def _compute_metrics(metrics: MetricSet, results: list[EvaluationResult]) -> dict:
+    def _compute_metrics(metrics: MetricSet[EvaluationResultT], results: list[EvaluationResultT]) -> dict:
         """
         Compute a metric using the given inputs.
 

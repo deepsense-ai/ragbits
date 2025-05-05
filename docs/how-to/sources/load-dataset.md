@@ -8,11 +8,11 @@ This is the list of currently supported sources by Ragbits.
 
 | Source | URI Schema | Class |
 |-|-|-|
-| Azure Blob Storage | `azure://https://account_name.blob.core.windows.net/<container-name>|<blob-name>` | [`AzureBlobStorageSource`][ragbits.core.sources.AzureBlobStorageSource] |
+| Azure Blob Storage | `azure://https://<account-name>.blob.core.windows.net/<container-name>/<blob-name>` | [`AzureBlobStorageSource`][ragbits.core.sources.AzureBlobStorageSource] |
 | Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.core.sources.GCSSource] |
 | Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.core.sources.GitSource] |
 | Hugging Face | `hf://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.core.sources.HuggingFaceSource] |
-| Local file | `file://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.core.sources.LocalFileSource] |
+| Local file | `local://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.core.sources.LocalFileSource] |
 | Amazon S3 | `s3://<bucket-name>/<prefix>` | [`S3Source`][ragbits.core.sources.S3Source] |
 | Web | `web://<https-url>` | [`WebSource`][ragbits.core.sources.WebSource] |
 
@@ -36,22 +36,9 @@ class CustomSource(Source):
     @property
     def id(self) -> str:
         """
-        Source unique identifier.
+        Get the source identifier.
         """
         return f"{self.protocol}:{self.source_url}"
-
-    @classmethod
-    async def from_uri(cls, uri: str) -> list[Self]:
-        """
-        Create source instances from a URI path.
-
-        Args:
-            uri: The URI path.
-
-        Returns:
-            The list of sources.
-        """
-        return [cls(...), ...]
 
     async def fetch(self) -> Path:
         """
@@ -62,4 +49,32 @@ class CustomSource(Source):
         """
         ...
         return Path(f"/tmp/{self.source_url}")
+
+    @classmethod
+    async def list_sources(cls, source_url: str) -> Iterable[Self]:
+        """
+        List all sources from the given storage.
+
+        Args:
+            source_url: The source url to list sources from.
+
+        Returns:
+            The iterable of Source objects.
+        """
+        ...
+        return [cls(...), ...]
+
+    @classmethod
+    async def from_uri(cls, uri: str) -> Iterable[Self]:
+        """
+        Create source instances from a URI path.
+
+        Args:
+            uri: The URI path.
+
+        Returns:
+            The iterable of Source objects matching the path pattern.
+        """
+        ...
+        return await self.list_sources(...)
 ```

@@ -2,6 +2,39 @@
 
 ## Unreleased
 
+## 0.16.0 (2025-04-29)
+
+### Changed
+
+- ragbits-chat updated to version v0.16.0
+- ragbits-cli updated to version v0.16.0
+- ragbits-document-search updated to version v0.16.0
+- ragbits-evaluate updated to version v0.16.0
+- ragbits-guardrails updated to version v0.16.0
+- ragbits-core updated to version v0.16.0
+
+## 0.15.0 (2025-04-28)
+
+### Changed
+
+- ragbits-chat updated to version v0.15.0
+- ragbits-cli updated to version v0.15.0
+- ragbits-document-search updated to version v0.15.0
+- ragbits-evaluate updated to version v0.15.0
+- ragbits-guardrails updated to version v0.15.0
+- ragbits-core updated to version v0.15.0
+
+## 0.14.0 (2025-04-22)
+
+### Changed
+
+- ragbits-chat updated to version v0.14.0
+- ragbits-cli updated to version v0.14.0
+- ragbits-document-search updated to version v0.14.0
+- ragbits-evaluate updated to version v0.14.0
+- ragbits-guardrails updated to version v0.14.0
+- ragbits-core updated to version v0.14.0
+
 ## 0.13.0 (2025-04-02)
 
 ### Changed

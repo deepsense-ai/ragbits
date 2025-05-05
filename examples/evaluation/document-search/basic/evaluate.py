@@ -9,75 +9,82 @@
 import asyncio
 import logging
 
-from ragbits.evaluate.pipelines import EvaluationPipeline
+from ragbits.evaluate.evaluator import Evaluator
 
 logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 config = {
-    "dataloader": {
-        "type": "ragbits.evaluate.dataloaders.hf:HFDataLoader",
-        "config": {
-            "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
-            "split": "train",
+    "evaluation": {
+        "dataloader": {
+            "type": "ragbits.evaluate.dataloaders.document_search:DocumentSearchDataLoader",
+            "config": {
+                "source": {
+                    "type": "ragbits.core.sources:HuggingFaceSource",
+                    "config": {
+                        "path": "deepsense-ai/synthetic-rag-dataset_v1.0",
+                        "split": "train",
+                    },
+                },
+            },
         },
-    },
-    "pipeline": {
-        "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
-        "config": {
-            "vector_store": {
-                "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+        "pipeline": {
+            "type": "ragbits.evaluate.pipelines.document_search:DocumentSearchPipeline",
+            "config": {
+                "vector_store": {
+                    "type": "ragbits.core.vector_stores.chroma:ChromaVectorStore",
+                    "config": {
+                        "client": {
+                            "type": "EphemeralClient",
+                        },
+                        "index_name": "baseline",
+                        "distance_method": "l2",
+                        "default_options": {
+                            "k": 3,
+                            "score_threshold": -1.2,
+                        },
+                        "embedder": {
+                            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
+                            "config": {
+                                "model_name": "text-embedding-3-small",
+                            },
+                        },
+                    },
+                },
+                "ingest_strategy": {
+                    "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
+                    "config": {
+                        "batch_size": 10,
+                    },
+                },
+                "parser_router": {
+                    "txt": {
+                        "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
+                    },
+                },
+                "source": {
+                    "type": "ragbits.core.sources:HuggingFaceSource",
+                    "config": {
+                        "path": "micpst/hf-docs",
+                        "split": "train[:5]",
+                    },
+                },
+            },
+        },
+        "metrics": {
+            "precision_recall_f1": {
+                "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
                 "config": {
-                    "client": {
-                        "type": "EphemeralClient",
-                    },
-                    "index_name": "baseline",
-                    "distance_method": "l2",
-                    "default_options": {
-                        "k": 3,
-                        "score_threshold": -1.2,
-                    },
-                    "embedder": {
-                        "type": "ragbits.core.embeddings.litellm:LiteLLMEmbedder",
+                    "matching_strategy": {
+                        "type": "RougeChunkMatch",
                         "config": {
-                            "model": "text-embedding-3-small",
+                            "threshold": 0.5,
                         },
                     },
                 },
             },
-            "ingest_strategy": {
-                "type": "ragbits.document_search.ingestion.strategies.batched:BatchedIngestStrategy",
-                "config": {
-                    "batch_size": 10,
-                },
-            },
-            "parser_router": {
-                "txt": {
-                    "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser",
-                },
-            },
-            "source": {
-                "type": "ragbits.core.sources:HuggingFaceSource",
-                "config": {
-                    "path": "micpst/hf-docs",
-                    "split": "train[:5]",
-                },
-            },
         },
-    },
-    "metrics": {
-        "precision_recall_f1": {
-            "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-            "config": {
-                "matching_strategy": {
-                    "type": "RougeChunkMatch",
-                    "config": {
-                        "threshold": 0.5,
-                    },
-                },
-            },
-        },
-    },
+    }
 }
 
 
@@ -87,7 +94,7 @@ async def evaluate() -> None:
     """
     print("Starting evaluation...")
 
-    results = await EvaluationPipeline.run_from_config(config)
+    results = await Evaluator.run_from_config(config)
 
     print("Computed metrics:")
     print("\n".join(f"{key}: {value}" for key, value in results["metrics"].items()))

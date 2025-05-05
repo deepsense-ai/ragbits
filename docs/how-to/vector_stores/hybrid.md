@@ -7,10 +7,6 @@ The main use cases for using a hybrid vector store are:
 * **Combining Different Modalities**: You can combine multiple vector stores that store different types of data, like text and images. This allows you to store multiple modality-specific vectors for the same entry (for example, an image embedding and a text embedding of a description of the image) and search them together.
 * **Combining Different Types of Embeddings**: You can combine multiple vector stores that store different types of embeddings, like dense and sparse embeddings. This allows you to store multiple embeddings for the same entry and search them simultaneously.
 
-!!! info
-    <!-- TODO: Remove this once sparse embedding support in Vector Stores is implemented -->
-    Sparse embeddings support in Vector Stores is an upcoming feature of Ragbits. The examples below will be updated to show how to use them with hybrid search once they are available.
-
 ## Using a Hybrid Vector Store with Different Modalities
 
 To create a hybrid vector store, you need to pass a list of vector stores to the constructor of the [`HybridSearchVectorStore`][ragbits.core.vector_stores.hybrid.HybridSearchVectorStore] class. For example, this creates two in-memory vector stores—one for text and one for images:
@@ -18,7 +14,7 @@ To create a hybrid vector store, you need to pass a list of vector stores to the
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
 
 embedder = VertexAIMultimodelEmbedder()
 
@@ -32,21 +28,31 @@ You can then use the `vector_store_hybrid` object to store, search, and delete e
 
 ## Using a Hybrid Vector Store with Different Types of Embeddings
 
-<!-- TODO: Change this example to dense and sparse embeddings once sparse embedding support in Vector Stores is implemented -->
-Similarly, you can create a hybrid vector store with different types of embeddings. For example, this creates two in-memory vector stores—one using an embedding model from OpenAI and one using an embedding model from Mistral:
+You can create a hybrid vector store with different types of embeddings, including combining dense and sparse embeddings for improved search performance. Here's an example that creates two in-memory vector stores—one using a dense embedder and one using a sparse embedder:
 
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
 
-vector_store_openai = InMemoryVectorStore(embedder=LiteLLMEmbedder(model="text-embedding-ada-002"))
-vector_store_mistral = InMemoryVectorStore(embedder=LiteLLMEmbedder(model="mistral/mistral-embed"))
+# Create a dense vector store using OpenAI embeddings
+vector_store_dense = InMemoryVectorStore(
+    embedder=LiteLLMEmbedder(model="text-embedding-3-small")
+)
 
-vector_store_hybrid = HybridSearchVectorStore(vector_store_openai, vector_store_mistral)
+# Create a sparse vector store using sparse embeddings
+vector_store_sparse = InMemoryVectorStore(
+    embedder=FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+)
+
+# Combine them into a hybrid search vector store
+vector_store_hybrid = HybridSearchVectorStore(vector_store_dense, vector_store_sparse)
 ```
 
-You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbits' Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the embedding using the OpenAI model and the other will store the embedding using the Mistral model.
+You can then use the `vector_store_hybrid` object to store, search, and delete entries, just as you would use a regular vector store, or pass it to [Ragbits' Document Search](../document_search/ingest-documents.md). When you store an entry in the hybrid vector store, it will be stored in all the vector stores it contains. In this case, one will store the dense embedding and the other will store the sparse embedding.
+
+For more details about using sparse vectors with vector stores, see [How to Use Sparse Vectors with Vector Stores](./sparse_vectors.md).
 
 Note that you can pass an arbitrary number of vector stores to the `HybridSearchVectorStore` constructor, and they can be of any type as long as they implement the `VectorStore` interface. For example, this combines three vector stores—one Chroma vector store, one Qdrant vector store, and one PgVector vector store:
 
@@ -59,7 +65,7 @@ from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 
 postgres_pool = await asyncpg.create_pool("postgresql://user:password@localhost/db")
 
@@ -102,7 +108,7 @@ To specify a retrieval strategy when searching a hybrid vector store, you can pa
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.hybrid_strategies import DistributionBasedScoreFusion
-from ragbits.core.embeddings.litellm import LiteLLMEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder
 
 embedder = LiteLLMEmbedder()
 

@@ -1,25 +1,52 @@
 import os
 import tempfile
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterable
 from pathlib import Path
+from types import ModuleType
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, GetCoreSchemaHandler, computed_field
 from pydantic.alias_generators import to_snake
 from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Self
+
+from ragbits.core import sources
+from ragbits.core.utils.config_handling import WithConstructionConfig
 
 LOCAL_STORAGE_DIR_ENV = "LOCAL_STORAGE_DIR"
 
 
-class Source(BaseModel, ABC):
+class Source(WithConstructionConfig, BaseModel, ABC):
     """
-    An object representing a source.
+    Base class for data sources.
     """
+
+    default_module: ClassVar[ModuleType | None] = sources
+    configuration_key: ClassVar[str] = "source"
 
     # Registry of all subclasses by their unique identifier
     _registry: ClassVar[dict[str, type["Source"]]] = {}
-    protocol: ClassVar[str | None] = None
+    protocol: ClassVar[str]
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
+        """
+        This method is automatically called when a subclass is defined. It performs the following tasks:
+        - Validates that the subclass has a 'protocol' attribute defined
+        - Registers the subclass in Source._registry using its class identifier
+        - Registers the subclass protocol with the SourceResolver
+
+        Raises:
+            TypeError: If the subclass does not define a 'protocol' attribute.
+        """
+        super().__init_subclass__(**kwargs)
+
+        if not hasattr(cls, "protocol"):
+            raise TypeError(f"Class {cls.__name__} is missing the 'protocol' attribute")
+
+        Source._registry[cls.class_identifier()] = cls
+        SourceResolver.register_protocol(cls.protocol, cls)
 
     @classmethod
     def class_identifier(cls) -> str:
@@ -39,10 +66,7 @@ class Source(BaseModel, ABC):
     @abstractmethod
     def id(self) -> str:
         """
-        Get the source ID.
-
-        Returns:
-            The source ID.
+        Get the source identifier.
         """
 
     @abstractmethod
@@ -56,32 +80,29 @@ class Source(BaseModel, ABC):
 
     @classmethod
     @abstractmethod
-    async def from_uri(cls, path: str) -> Sequence["Source"]:
-        """Create Source instances from a URI path.
+    async def list_sources(cls, *args: Any, **kwargs: Any) -> Iterable[Self]:  # noqa: ANN401
+        """
+        List all sources from the given storage.
+
+        Returns:
+            The iterable of Source objects.
+        """
+
+    @classmethod
+    @abstractmethod
+    async def from_uri(cls, path: str) -> Iterable[Self]:
+        """
+        Create Source instances from a URI path.
 
         The path can contain glob patterns (asterisks) to match multiple sources, but pattern support
-        varies by source type. Each source implementation defines which patterns it supports:
-
-        - LocalFileSource: Supports full glob patterns ('*', '**', etc.) via Path.glob
-        - GCSSource: Supports simple prefix matching with '*' at the end of path
-        - HuggingFaceSource: Does not support glob patterns
+        varies by source type. Each source implementation defines which patterns it supports.
 
         Args:
             path: The path part of the URI (after protocol://). Pattern support depends on source type.
 
         Returns:
-            A sequence of Source objects matching the path pattern
-
-        Raises:
-            ValueError: If the path contains unsupported pattern for this source type
+            The iterable of Source objects matching the path pattern.
         """
-
-    @classmethod
-    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
-        super().__init_subclass__(**kwargs)
-        Source._registry[cls.class_identifier()] = cls
-        if cls.protocol is not None:
-            SourceResolver.register_protocol(cls.protocol, cls)
 
 
 class SourceDiscriminator:
@@ -121,7 +142,8 @@ class SourceDiscriminator:
 
 
 class SourceResolver:
-    """Registry for source URI protocols and their handlers.
+    """
+    Registry for source URI protocols and their handlers.
 
     This class provides a mechanism to register and resolve different source protocols (like 'file://', 'gcs://', etc.)
     to their corresponding Source implementations.
@@ -131,11 +153,12 @@ class SourceResolver:
         >>> sources = await SourceResolver.resolve("gcs://my-bucket/path/to/files/*")
     """
 
-    _protocol_handlers: ClassVar[dict[str, type["Source"]]] = {}
+    _protocol_handlers: ClassVar[dict[str, type[Source]]] = {}
 
     @classmethod
-    def register_protocol(cls, protocol: str, source_class: type["Source"]) -> None:
-        """Register a source class for a specific protocol.
+    def register_protocol(cls, protocol: str, source_class: type[Source]) -> None:
+        """
+        Register a source class for a specific protocol.
 
         Args:
             protocol: The protocol identifier (e.g., 'file', 'gcs', 's3')
@@ -144,22 +167,18 @@ class SourceResolver:
         cls._protocol_handlers[protocol] = source_class
 
     @classmethod
-    async def resolve(cls, uri: str) -> Sequence["Source"]:
-        """Resolve a URI into a sequence of Source objects.
-
-        The URI format should be: protocol://path
-        For example:
-        - file:///path/to/files/*
-        - gcs://bucket/prefix/*
+    async def resolve(cls, uri: str) -> Iterable[Source]:
+        """
+        Resolve a URI into a iterable of Source objects.
 
         Args:
-            uri: The URI to resolve
+            uri: The URI to resolve. The URI should be in the format of `protocol://path`.
 
         Returns:
-            A sequence of Source objects
+            The iterable of Source objects.
 
         Raises:
-            ValueError: If the URI format is invalid or the protocol is not supported
+            ValueError: If the URI format is invalid or the protocol is not supported.
         """
         try:
             protocol, path = uri.split("://", 1)

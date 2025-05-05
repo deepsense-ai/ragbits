@@ -5,14 +5,16 @@ from typing_extensions import Self
 
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.document_search import DocumentSearch
-from ragbits.evaluate.pipelines.base import EvaluationDatapointSchema, EvaluationPipeline, EvaluationResult
+from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
-class DocumentSearchDatapointSchema(EvaluationDatapointSchema):
-    """A column description for document search"""
+class DocumentSearchData(EvaluationData):
+    """
+    Represents the evaluation data for document search.
+    """
 
-    question_col: str
-    reference_passage_col: str
+    question: str
+    reference_passages: list[str]
 
 
 @dataclass
@@ -26,16 +28,14 @@ class DocumentSearchResult(EvaluationResult):
     predicted_passages: list[str]
 
 
-class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDatapointSchema]):
+class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchData, DocumentSearchResult]):
     """
     Document search evaluation pipeline.
     """
 
-    configuration_key = "document_search_evaluation"
-
     def __init__(self, evaluation_target: DocumentSearch, source: dict | None = None) -> None:
         """
-        Initializes the document search pipeline.
+        Initialize the document search evaluation pipeline.
 
         Args:
             evaluation_target: Document Search instance.
@@ -60,12 +60,12 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         # TODO: optimize this for cases with duplicated document search configs between runs
         if config.get("source"):
             config["vector_store"]["config"]["index_name"] = str(uuid4())
-        document_search = DocumentSearch.from_config(config)
-        return cls(evaluation_target=document_search, source=config.get("source"))
+        evaluation_target = DocumentSearch.from_config(config)
+        return cls(evaluation_target=evaluation_target, source=config.get("source"))
 
     async def prepare(self) -> None:
         """
-        Ingests corpus data for evaluation.
+        Ingest corpus data for evaluation.
         """
         if self.source:
             # For now we only support HF sources for pre-evaluation ingest
@@ -76,21 +76,21 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
             )
             await self.evaluation_target.ingest(sources)
 
-    async def __call__(self, data: dict, schema: DocumentSearchDatapointSchema) -> DocumentSearchResult:
+    async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
         """
-        Runs the document search evaluation pipeline.
+        Run the document search evaluation pipeline.
 
         Args:
             data: The evaluation data.
-            schema: column names specification
 
         Returns:
             The evaluation result.
         """
-        elements = await self.evaluation_target.search(data[schema.question_col])
+        elements = await self.evaluation_target.search(data.question)
         predicted_passages = [element.text_representation for element in elements if element.text_representation]
+
         return DocumentSearchResult(
-            question=data[schema.question_col],
-            reference_passages=data[schema.reference_passage_col],
+            question=data.question,
+            reference_passages=data.reference_passages,
             predicted_passages=predicted_passages,
         )
