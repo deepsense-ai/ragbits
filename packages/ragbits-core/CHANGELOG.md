@@ -3,6 +3,7 @@
 ## Unreleased
 - Add support for tokenization of given token in LLM class for openai and hf models
 
+- Allow custom source and element classes to be auto-imported (#343)
 - Make HuggingFaceSource row optional (#529)
 - Allow Source to be constructed from config (#529)
 
