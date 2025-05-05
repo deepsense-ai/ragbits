@@ -15,5 +15,3 @@ async def test_huggingface_source_fetch() -> None:
     assert source.id == "hf:org/docs/train/1"
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
-
-    path.unlink()

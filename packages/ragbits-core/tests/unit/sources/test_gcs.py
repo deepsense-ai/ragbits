@@ -72,5 +72,3 @@ async def test_gcs_source_fetch() -> None:
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
     assert mock_storage.downloaded_files == [("test-bucket", "doc.md")]
-
-    path.unlink()

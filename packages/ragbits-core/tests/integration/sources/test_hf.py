@@ -23,8 +23,6 @@ async def test_huggingface_source_fetch() -> None:
         == " `tokenizers-linux-x64-musl`\n\nThis is the **x86_64-unknown-linux-musl** binary for `tokenizers`\n"
     )
 
-    path.unlink()
-
 
 @pytest.mark.skipif(
     env_vars_not_set([HF_TOKEN_ENV]),

@@ -29,7 +29,6 @@ async def test_s3_source_fetch(s3_mock: boto3.client):
 
     assert path.is_file()
     assert path.read_text() == TEST_CONTENT
-    path.unlink()
 
 
 async def test_s3_source_fetch_not_found(s3_mock: boto3.client):
