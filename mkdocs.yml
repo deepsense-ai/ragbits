@@ -26,7 +26,7 @@ nav:
         - "Load dataset with sources": how-to/sources/load-dataset.md
       - Project configuration:
         - "Set preferred components in project": how-to/project/component_preferences.md
-        - "Register custom sources and elements": how-to/project/custom_elements.md
+        - "Register custom components": how-to/project/custom_components.md
         - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md

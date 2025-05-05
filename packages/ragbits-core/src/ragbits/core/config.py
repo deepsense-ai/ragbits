@@ -53,9 +53,10 @@ core_config = get_config_instance(CoreConfig, subproject="core")
 
 def import_modules_from_config(config: CoreConfig = core_config) -> None:
     """
-    A function that imports all modules specified in config instance
+    Import all modules specified in config instance.
+
     Args:
-        config: CoreConfig instance of configuration
+        config: The configuration loaded from the project.toml file.
     """
     if config.modules_to_import:
         for path in config.modules_to_import:

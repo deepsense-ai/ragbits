@@ -79,4 +79,5 @@ class CustomSource(Source):
         return await self.list_sources(...)
 ```
 
-Remember to register your custom source class in the `pyproject.toml`. [Here](../project/custom_elements.md) you can find the information on how to do it.
+!!! hint
+    To use a custom source via the CLI, make sure that the custom source class is registered in `pyproject.toml`. You can find information on how to do this [here](../project/custom_components.md).
