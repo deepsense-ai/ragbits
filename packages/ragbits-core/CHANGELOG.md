@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Allow custom source and element classes to be auto-imported (#343)
 - Make HuggingFaceSource row optional (#529)
 - Allow Source to be constructed from config (#529)
 

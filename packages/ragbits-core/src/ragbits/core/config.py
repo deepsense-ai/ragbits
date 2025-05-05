@@ -1,3 +1,4 @@
+import importlib
 from functools import cached_property
 from pathlib import Path
 
@@ -31,6 +32,8 @@ class CoreConfig(BaseModel):
     # Path to a YAML file with preferred configuration of varius Ragbits objects
     component_preference_config_path: Path | None = None
 
+    modules_to_import: list[str] = []
+
     @cached_property
     def preferred_instances_config(self) -> dict:
         """
@@ -46,3 +49,15 @@ class CoreConfig(BaseModel):
 
 
 core_config = get_config_instance(CoreConfig, subproject="core")
+
+
+def import_modules_from_config(config: CoreConfig = core_config) -> None:
+    """
+    Import all modules specified in config instance.
+
+    Args:
+        config: The configuration loaded from the project.toml file.
+    """
+    if config.modules_to_import:
+        for path in config.modules_to_import:
+            importlib.import_module(path)
