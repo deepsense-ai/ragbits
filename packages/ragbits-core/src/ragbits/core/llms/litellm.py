@@ -2,6 +2,7 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 import litellm
+import tiktoken
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -103,6 +104,22 @@ class LiteLLM(LLM[LiteLLMOptions]):
             Number of tokens in the prompt.
         """
         return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
+
+    def get_token_id(self, token: str) -> int:
+        """
+        Gets token id.
+
+        Args:
+            token: The token to encode.
+
+        Returns:
+            The id for the given token.
+        """
+        try:
+            tokenizer = tiktoken.encoding_for_model(self.model_name)
+            return tokenizer.encode_single_token(token)
+        except KeyError:
+            return litellm.encode(model=self.model_name, text=token)[0]
 
     async def _call(
         self,

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add LLM reranker (#513)
+
 ## 0.16.0 (2025-04-29)
 
 ### Changed
