@@ -5,6 +5,7 @@
 - Add optional score override on reranking step (#544)
 - Add score threshold to reranker options (#544)
 - Add LLM reranker (#513)
+- fix: fix passing score in DocumentSearch.search (#545)
 
 ## 0.16.0 (2025-04-29)
 
