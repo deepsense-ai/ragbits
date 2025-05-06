@@ -5,7 +5,7 @@ from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
-from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
+from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
 from ragbits.document_search.retrieval.rerankers.llm import LLMReranker
 from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
@@ -35,7 +35,7 @@ TOP_N = 2
     reason="Cohere API KEY environment variables not set",
 )
 async def test_litellm_cohere_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=TOP_N, max_chunks_per_doc=None)
+    options = LiteLLMRerankerOptions(top_n=TOP_N, max_chunks_per_doc=None)
     reranker = LiteLLMReranker(
         model="cohere/rerank-english-v3.0",
         default_options=options,

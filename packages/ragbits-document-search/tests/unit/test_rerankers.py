@@ -6,7 +6,7 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
-from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
+from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 from ragbits.document_search.retrieval.rerankers.reciprocal_ranked_fusion import ReciprocalRankFusionReranker
 from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
@@ -42,7 +42,7 @@ def test_litellm_reranker_from_config() -> None:
     )
 
     assert reranker.model == "test-provder/test-model"  # type: ignore
-    assert reranker.default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    assert reranker.default_options == LiteLLMRerankerOptions(top_n=2, max_chunks_per_doc=None)
 
 
 def test_aswerdotai_reranker_from_config() -> None:
@@ -72,7 +72,7 @@ def test_reciprocal_rank_fusion_reranker_from_config() -> None:
 
 
 async def test_litellm_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    options = LiteLLMRerankerOptions(top_n=2, max_chunks_per_doc=None)
     reranker = LiteLLMReranker(
         model="test-provder/test-model",
         default_options=options,
@@ -151,7 +151,7 @@ async def test_answerdotai_reranker_rerank() -> None:
 
 
 async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    options = RerankerOptions(top_n=2)
     reranker = ReciprocalRankFusionReranker(
         default_options=options,
     )
@@ -192,7 +192,6 @@ def test_subclass_from_config() -> None:
             "config": {
                 "default_options": {
                     "top_n": 12,
-                    "max_chunks_per_doc": 42,
                 },
             },
         }
@@ -201,7 +200,6 @@ def test_subclass_from_config() -> None:
     assert isinstance(reranker, NoopReranker)
     assert isinstance(reranker.default_options, RerankerOptions)
     assert reranker.default_options.top_n == 12
-    assert reranker.default_options.max_chunks_per_doc == 42
 
 
 def test_subclass_from_config_default_path() -> None:
@@ -225,7 +223,7 @@ def test_subclass_from_config_litellm() -> None:
     )
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, LiteLLMReranker)
-    assert isinstance(reranker.default_options, RerankerOptions)
+    assert isinstance(reranker.default_options, LiteLLMRerankerOptions)
     assert reranker.model == "some_model"
     assert reranker.default_options.top_n == 12
     assert reranker.default_options.max_chunks_per_doc == 42

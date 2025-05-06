@@ -10,11 +10,15 @@ from ragbits.document_search.retrieval import rerankers
 
 class RerankerOptions(Options):
     """
-    Options for the reranker.
+    An object representing the options for the reranker.
+
+    Attributes:
+        top_n: The number of entries to return.
+        score_threshold: The minimum relevance score for an entry to be returned.
     """
 
     top_n: int | None = None
-    max_chunks_per_doc: int | None = None
+    score_threshold: float | None = None
 
 
 RerankerOptionsT = TypeVar("RerankerOptionsT", bound=RerankerOptions)
@@ -25,8 +29,8 @@ class Reranker(ConfigurableComponent[RerankerOptionsT], ABC):
     Reranks elements retrieved from vector store.
     """
 
-    default_module: ClassVar = rerankers
     options_cls: type[RerankerOptionsT]
+    default_module: ClassVar = rerankers
     configuration_key: ClassVar = "reranker"
 
     @abstractmethod
