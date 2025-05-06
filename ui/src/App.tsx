@@ -14,6 +14,7 @@ import {
   ChatRequest,
   ChatResponseType,
   ConfigResponse,
+  FormEnabler,
   FormType,
   MessageRole,
 } from "./types/api.ts";
@@ -75,7 +76,6 @@ export default function Component() {
       });
 
       setConfig(data);
-
       setIsLoading(false);
     };
 
@@ -87,10 +87,7 @@ export default function Component() {
       return;
     }
 
-    if (
-      Object.prototype.hasOwnProperty.call(config, FormType.LIKE) ||
-      Object.prototype.hasOwnProperty.call(config, FormType.DISLIKE)
-    ) {
+    if (config[FormEnabler.LIKE] || config[FormEnabler.DISLIKE]) {
       pluginManager.activate(FeedbackFormPluginName);
     }
   }, [config]);
@@ -138,20 +135,12 @@ export default function Component() {
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
     setIsLoading(true);
 
-    let feedback = "";
-
-    if (feedbackName === FormType.LIKE) {
-      feedback = "like";
-    } else if (feedbackName === FormType.DISLIKE) {
-      feedback = "dislike";
-    }
-
     await axiosWrapper({
       url: buildApiUrl("/api/feedback"),
       method: "POST",
       body: {
         message_id: feedbackMessageId,
-        feedback,
+        feedback: feedbackName,
         payload: data,
       },
     });
@@ -225,8 +214,8 @@ You can ask me anything! I can provide information, answer questions, and assist
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
-          likeForm={config?.["like_form"]}
-          dislikeForm={config?.["dislike_form"]}
+          likeForm={config?.[FormType.LIKE] || null}
+          dislikeForm={config?.[FormType.DISLIKE] || null}
         />
       ))}
     </ScrollShadow>
@@ -294,13 +283,8 @@ You can ask me anything! I can provide information, answer questions, and assist
         component="FeedbackFormComponent"
         componentProps={{
           id: "",
-          title: "Feedback Form",
-          schema:
-            config && feedbackName
-              ? !config[feedbackName]
-                ? { title: "", fields: [] }
-                : config[feedbackName]
-              : { title: "", fields: [] },
+          title: config?.[feedbackName as FormType]?.title ?? "Feedback form",
+          schema: config?.[feedbackName as FormType] ?? null,
           onClose: onOpenChange,
           onSubmit: onFeedbackFormSubmit,
           isOpen,

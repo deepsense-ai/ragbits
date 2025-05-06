@@ -1,8 +1,12 @@
 import { z } from "zod";
 import { FormSchemaResponse } from "../../types/api.ts";
 
-export const generateZodSchema = (formSchema: FormSchemaResponse) => {
+export const generateZodSchema = (formSchema: FormSchemaResponse | null) => {
   const schemaMap: Record<string, z.ZodTypeAny> = {};
+
+  if (!formSchema) {
+    return z.record(z.any());
+  }
 
   formSchema.fields.forEach((field) => {
     switch (field.type) {

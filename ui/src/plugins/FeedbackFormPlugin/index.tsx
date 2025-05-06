@@ -15,5 +15,5 @@ export const FeedbackFormPlugin = createPlugin({
   },
   onDeactivate: () => {
     console.log("FeedbackFormPlugin deactivated");
-  }
+  },
 });

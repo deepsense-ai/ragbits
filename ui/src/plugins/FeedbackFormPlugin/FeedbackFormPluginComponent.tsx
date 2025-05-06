@@ -15,12 +15,12 @@ import {
 } from "@heroui/react";
 import { generateZodSchema } from "./types";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
-import { FormSchemaResponse } from "../../types/api.ts";
+import { FormFieldResponse, FormSchemaResponse } from "../../types/api.ts";
 
 interface IFormPluginComponentProps {
   id: string;
   title: string;
-  schema: FormSchemaResponse;
+  schema: FormSchemaResponse | null;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: Record<string, string>) => void;
@@ -30,6 +30,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
   props,
 ) => {
   const { title, schema, isOpen, onClose, onSubmit } = props;
+
   const zodSchema = React.useMemo(() => generateZodSchema(schema), [schema]);
   const { theme } = useThemeContext();
 
@@ -40,7 +41,6 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     setValue,
     watch,
     reset,
-    getValues,
   } = useForm({
     resolver: zodResolver(zodSchema),
   });
@@ -55,8 +55,12 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
     onClose();
   };
 
+  if (!schema) {
+    return null;
+  }
+
   // TODO: switch to separate file or some kind of form builder with methods eg. renderSelect/Checkbox/TextField etc.
-  const renderField = (field: FormSchemaResponse["fields"][0]) => {
+  const renderField = (field: FormFieldResponse) => {
     const error = errors[field.name]?.message as string;
 
     if (field.type === "select" && field.options) {

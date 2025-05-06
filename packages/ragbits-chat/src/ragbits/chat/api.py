@@ -160,11 +160,11 @@ class RagbitsAPI:
         async def config() -> JSONResponse:
             config_dict = {}
 
-            if self.chat_interface.feedback_config.like_enabled and self.chat_interface.feedback_config.like_form:
-                config_dict["like_form"] = self.chat_interface.feedback_config.like_form.model_dump()
+            config_dict["like_enabled"] = self.chat_interface.feedback_config.like_enabled
+            config_dict["like_form"] = self.chat_interface.feedback_config.like_form.model_dump()
 
-            if self.chat_interface.feedback_config.dislike_enabled and self.chat_interface.feedback_config.dislike_form:
-                config_dict["dislike_form"] = self.chat_interface.feedback_config.dislike_form.model_dump()
+            config_dict["dislike_enabled"] = self.chat_interface.feedback_config.dislike_enabled
+            config_dict["dislike_form"] = self.chat_interface.feedback_config.dislike_form.model_dump()
 
             return JSONResponse(content=config_dict)
 

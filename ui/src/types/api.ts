@@ -27,6 +27,11 @@ export interface ChatRequest {
   context?: object;
 }
 
+export enum FormEnabler {
+  LIKE = "like_enabled",
+  DISLIKE = "dislike_enabled",
+}
+
 export enum FormType {
   LIKE = "like_form",
   DISLIKE = "dislike_form",
@@ -57,7 +62,7 @@ export enum FormFieldType {
   SELECT = "select",
 }
 
-interface FormFieldResponse {
+export interface FormFieldResponse {
   name: string;
   label: string;
   type: FormFieldType;
@@ -70,7 +75,11 @@ export interface FormSchemaResponse {
   fields: FormFieldResponse[];
 }
 
-export interface ConfigResponse {
-  [FormType.LIKE]?: FormSchemaResponse | null;
-  [FormType.DISLIKE]?: FormSchemaResponse | null;
-}
+export type ConfigResponse<
+  TFormType extends string | number | symbol = FormType,
+  TFormEnabler extends string | number | symbol = FormEnabler,
+> = {} & {
+  [key in TFormType]: FormSchemaResponse | null;
+} & {
+  [key in TFormEnabler]: boolean;
+};
