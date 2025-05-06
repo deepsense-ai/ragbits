@@ -139,7 +139,7 @@ async def test_document_search_scores():
     """Test that search results' scores are properly passed to elements."""
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-    
+
     # Create a mock vector store that returns results with scores
     class MockVectorStore(InMemoryVectorStore):
         async def retrieve(self, text: str, options: VectorStoreOptions) -> list[VectorStoreResult]:
@@ -168,7 +168,7 @@ async def test_document_search_scores():
     assert len(results) == 3
     # Verify that scores are properly set and in descending order
     assert all(result.score is not None for result in results)
-    assert all(results[i].score >= results[i+1].score for i in range(len(results)-1))
+    assert all(results[i].score >= results[i + 1].score for i in range(len(results) - 1))
     assert results[0].score == 0.9
     assert results[1].score == 0.8
     assert results[2].score == 0.7
