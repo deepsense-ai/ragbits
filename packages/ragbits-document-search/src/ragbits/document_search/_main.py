@@ -199,7 +199,7 @@ class DocumentSearch(WithConstructionConfig):
                     text=rephrased_query,
                     options=VectorStoreOptions(**config.vector_store_kwargs),
                 )
-                elements.append([Element.from_vector_db_entry(result.entry) for result in results])
+                elements.append([Element.from_vector_db_entry(result.entry, result.score) for result in results])
 
             outputs.search_results = await self.reranker.rerank(
                 elements=elements,
