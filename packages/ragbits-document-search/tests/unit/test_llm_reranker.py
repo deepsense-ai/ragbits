@@ -1,15 +1,15 @@
 import math
 from collections.abc import Sequence
-from typing import Any
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from ragbits.core.llms import LiteLLM, LiteLLMOptions
-from ragbits.core.llms.exceptions import LLMStatusError
+from ragbits.core.llms.base import LLMResponseWithMetadata
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, RerankerPrompt
 
 
@@ -17,50 +17,41 @@ from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, Reranke
 def mock_llm() -> AsyncMock:
     mock = AsyncMock(spec=LiteLLM)
     mock.model_name = "gpt-3.5-turbo"
-    mock.max_tokens = 20
+    mock.default_options = LiteLLMOptions()
+    mock.generate_with_metadata.side_effect = [
+        LLMResponseWithMetadata(content="Yes", metadata={"logprobs": [{"logprob": math.log(0.9)}]}),  # High relevance
+        LLMResponseWithMetadata(content="No", metadata={"logprobs": [{"logprob": math.log(0.6)}]}),  # Low relevance
+        LLMResponseWithMetadata(content="Yes", metadata={"logprobs": [{"logprob": math.log(0.6)}]}),  # Medium relevance
+    ]
     return mock
 
 
 @pytest.fixture
-def reranker(mock_llm: LiteLLM) -> LLMReranker:
-    return LLMReranker(llm=mock_llm)
-
-
-@pytest.fixture
 def sample_elements() -> Sequence[Sequence[TextElement]]:
-    documents = [
-        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
-    ]
-
-    element1 = TextElement(content="This is a relevant document about Python programming", document_meta=documents[0])
-    element2 = TextElement(content="This document is about cooking recipes", document_meta=documents[1])
-    element3 = TextElement(content="Information about Python frameworks and libraries", document_meta=documents[2])
-    return [[element1], [element2, element3]]
-
-
-@pytest.fixture
-def mock_responses(mock_llm: AsyncMock) -> Sequence[dict[str, Any]]:
-    """
-    Configure the mock_llm.generate_raw to return a sequence of responses.
-
-    Args:
-        mock_llm: The mock LLM object
-        responses: List of tuples (answer, logprob) where answer is "Yes" or "No"
-                  and logprob is the log probability value
-    """
     return [
-        {"response": "Yes", "logprobs": [{"logprob": math.log(0.9)}]},  # High relevance
-        {"response": "No", "logprobs": [{"logprob": math.log(0.6)}]},  # Low relevance
-        {"response": "Yes", "logprobs": [{"logprob": math.log(0.6)}]},  # Medium relevance
+        [
+            TextElement(
+                content="This is a relevant document about Python programming", document_meta=Mock(spec=DocumentMeta)
+            )
+        ],
+        [
+            TextElement(content="This document is about cooking recipes", document_meta=Mock(spec=DocumentMeta)),
+            TextElement(
+                content="Information about Python frameworks and libraries", document_meta=Mock(spec=DocumentMeta)
+            ),
+        ],
     ]
 
 
 async def test_llm_reranker_from_config() -> None:
     reranker = LLMReranker.from_config(
         {
-            "llm": LiteLLM(model_name="test-provider/test-model"),
+            "llm": {
+                "type": "ragbits.core.llms.litellm:LiteLLM",
+                "config": {
+                    "model_name": "gpt-4o",
+                },
+            },
             "default_options": {
                 "top_n": 2,
             },
@@ -68,50 +59,44 @@ async def test_llm_reranker_from_config() -> None:
     )
 
     assert reranker.default_options == RerankerOptions(top_n=2)
-    assert reranker.llm.model_name == "test-provider/test-model"
+    assert reranker._llm.model_name == "gpt-4o"
 
 
-def test_init_with_custom_options(mock_llm: AsyncMock) -> None:
-    custom_prompt = RerankerPrompt(custom_user_prompt="Custom prompt {query} {document}")
-    custom_reranker_options = RerankerOptions(top_n=2)
-    custom_llm_options = LiteLLMOptions(temperature=0.5, max_tokens=5)
-
-    reranker = LLMReranker(
-        llm=mock_llm,
-        prompt_template=custom_prompt,
-        default_options=custom_reranker_options,
-        llm_options=custom_llm_options,
+def test_llm_reranker_subclass_from_config() -> None:
+    config = ObjectConstructionConfig.model_validate(
+        {
+            "type": "ragbits.document_search.retrieval.rerankers.llm:LLMReranker",
+            "config": {
+                "llm": {
+                    "type": "ragbits.core.llms.litellm:LiteLLM",
+                    "config": {
+                        "model_name": "gpt-4o",
+                    },
+                },
+                "prompt": "ragbits.document_search.retrieval.rerankers.llm:RerankerPrompt",
+                "default_options": {
+                    "top_n": 12,
+                },
+            },
+        }
     )
+    reranker: Reranker = Reranker.subclass_from_config(config)
 
-    assert reranker.prompt_template == custom_prompt
-    assert reranker.default_options.top_n == 2
-    assert reranker.llm_options.temperature == 0.5
-    assert mock_llm.max_tokens == 20
-    assert reranker.llm_options.max_tokens == 5
-
-
-def test_init_with_default_options(mock_llm: AsyncMock) -> None:
-    reranker = LLMReranker(llm=mock_llm)
-    assert reranker.prompt_template.user_prompt.strip() == RerankerPrompt.user_prompt.strip()
-    assert reranker.default_options.top_n is None
-    assert mock_llm.max_tokens == 20
-    assert reranker.llm_options.max_tokens == 1
+    assert isinstance(reranker, LLMReranker)
+    assert isinstance(reranker._llm, LiteLLM)
+    assert isinstance(reranker.default_options, RerankerOptions)
+    assert reranker._prompt == RerankerPrompt
+    assert reranker._llm.model_name == "gpt-4o"
+    assert reranker.default_options.top_n == 12
 
 
-async def test_rerank_returns_top_n_elements(
-    reranker: LLMReranker,
-    mock_llm: AsyncMock,
-    sample_elements: Sequence[Sequence[TextElement]],
-    mock_responses: Sequence[dict[str, Any]],
-) -> None:
-    # Configure the mock to return different scores
-    mock_llm.generate_raw.side_effect = mock_responses
+async def test_llm_reranker_rerank(mock_llm: AsyncMock, sample_elements: Sequence[Sequence[TextElement]]) -> None:
     custom_top_n = 2
-    query = "Python programming"
     custom_options = RerankerOptions(top_n=custom_top_n)
+    reranker = LLMReranker(llm=mock_llm)
     result = await reranker.rerank(
-        sample_elements,
-        query,
+        elements=sample_elements,
+        query="Python programming",
         options=custom_options,
     )
 
@@ -122,54 +107,3 @@ async def test_rerank_returns_top_n_elements(
     flat_elements = [element for item in sample_elements for element in item]
     assert result[0] == flat_elements[0]  # First element had the highest score
     assert result[1] == flat_elements[2]  # Third element had the second-highest score
-
-
-async def test_score_elements(
-    reranker: LLMReranker,
-    mock_llm: AsyncMock,
-    sample_elements: Sequence[Sequence[TextElement]],
-    mock_responses: Sequence[dict[str, Any]],
-) -> None:
-    mock_llm.generate_raw.side_effect = mock_responses
-
-    elements = [element for sublist in sample_elements for element in sublist]
-    query = "Test query"
-    scores = await reranker._score_elements(elements, query)
-
-    assert len(scores) == 3
-    assert scores[0] == 0.9
-    assert scores[1] == 0.4
-    assert scores[2] == 0.6
-
-
-async def test_score_elements_errors(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    # Make the mock raise an exception
-    mock_llm.generate_raw.side_effect = LLMStatusError("Model doesn't support logprobs", status_code=500)
-
-    elements = [
-        TextElement(
-            content="Test document",
-            document_meta=DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
-        )
-    ]
-    query = "Test query"
-
-    with pytest.raises(NotImplementedError) as exc_info:
-        await reranker._score_elements(elements, query)
-
-    assert "doesn't support logprobs" in str(exc_info.value)
-
-
-def test_get_yes_no_token_ids(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    mock_llm.get_token_id.side_effect = [[123], [1, 456, 789]]
-    result = reranker.get_yes_no_tokens_ids()
-    assert result is not None
-    assert len(result) == 2
-    assert result == {123: 1, 789: 1}
-    assert mock_llm.get_token_id.call_count == 2
-
-
-def test_get_yes_no_token_ids_failed(reranker: LLMReranker, mock_llm: AsyncMock) -> None:
-    mock_llm.get_token_id.side_effect = NotImplementedError("Could not tokenize 'test'")
-    result = reranker.get_yes_no_tokens_ids()
-    assert result is None

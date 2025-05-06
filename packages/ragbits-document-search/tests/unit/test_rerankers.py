@@ -185,7 +185,7 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
     assert results == reranked_elements
 
 
-def test_subclass_from_config():
+def test_subclass_from_config() -> None:
     config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rerankers:NoopReranker",
@@ -204,13 +204,13 @@ def test_subclass_from_config():
     assert reranker.default_options.max_chunks_per_doc == 42
 
 
-def test_subclass_from_config_default_path():
+def test_subclass_from_config_default_path() -> None:
     config = ObjectConstructionConfig.model_validate({"type": "NoopReranker"})
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, NoopReranker)
 
 
-def test_subclass_from_config_llm():
+def test_subclass_from_config_litellm() -> None:
     config = ObjectConstructionConfig.model_validate(
         {
             "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",

@@ -1,6 +1,5 @@
 import pytest
 
-from ragbits.core import audit
 from ragbits.core.llms import LiteLLM
 from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
@@ -28,7 +27,6 @@ ELEMENTS = [
 ]
 
 QUERY = "Test query"
-
 TOP_N = 2
 
 
@@ -48,7 +46,6 @@ async def test_litellm_cohere_reranker_rerank() -> None:
 
 
 async def test_answerdotai_reranker_rerank() -> None:
-    audit.set_trace_handlers("cli")
     options = RerankerOptions(top_n=TOP_N)
     reranker = AnswerAIReranker(
         model="mixedbread-ai/mxbai-rerank-large-v1",
@@ -57,7 +54,6 @@ async def test_answerdotai_reranker_rerank() -> None:
     )
 
     results = await reranker.rerank(ELEMENTS, QUERY)
-
     assert len(results) == TOP_N
 
 
@@ -66,13 +62,9 @@ async def test_answerdotai_reranker_rerank() -> None:
     reason="OPENAI API KEY environment variables not set",
 )
 async def test_llm_reranker_rerank() -> None:
-    audit.set_trace_handlers("cli")
     options = RerankerOptions(top_n=TOP_N)
-
-    open_ai_model = "gpt-3.5-turbo"
-
-    litellm = LiteLLM(model_name=open_ai_model)
-    reranker = LLMReranker(litellm, default_options=options)
+    llm = LiteLLM(model_name="gpt-4o")
+    reranker = LLMReranker(llm, default_options=options)
 
     results = await reranker.rerank(elements=ELEMENTS, query=QUERY)
     assert len(results) == TOP_N
