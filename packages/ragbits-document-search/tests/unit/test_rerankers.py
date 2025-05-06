@@ -90,11 +90,17 @@ async def test_litellm_reranker_rerank() -> None:
         ]
     ]
     reranked_elements = [
-        TextElement(content="Element 2", document_meta=documents[1]),
-        TextElement(content="Element 3", document_meta=documents[2]),
-        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1], score=0.9),
+        TextElement(content="Element 3", document_meta=documents[2], score=0.6),
+        TextElement(content="Element 1", document_meta=documents[0], score=0.4),
     ]
-    reranker_output = Namespace(results=[{"index": 1}, {"index": 2}, {"index": 0}])
+    reranker_output = Namespace(
+        results=[
+            {"index": 1, "relevance_score": 0.9},
+            {"index": 2, "relevance_score": 0.6},
+            {"index": 0, "relevance_score": 0.4},
+        ]
+    )
     query = "Test query"
 
     with patch(
