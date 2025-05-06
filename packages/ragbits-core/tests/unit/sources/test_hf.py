@@ -1,11 +1,6 @@
-import os
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.hf import HuggingFaceSource
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 
 async def test_huggingface_source_fetch() -> None:
@@ -20,5 +15,3 @@ async def test_huggingface_source_fetch() -> None:
     assert source.id == "hf:org/docs/train/1"
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
-
-    path.unlink()

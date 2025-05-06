@@ -78,6 +78,18 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         """
         return sum(len(message["content"]) for message in prompt.chat)
 
+    def get_token_id(self, token: str) -> int:
+        """
+        Gets token id.
+
+        Args:
+            token: The token to encode.
+
+        Returns:
+            The id for the given token.
+        """
+        raise NotImplementedError("Token id lookup is not supported by this model")
+
     async def generate_raw(
         self,
         prompt: BasePrompt | str | ChatFormat,

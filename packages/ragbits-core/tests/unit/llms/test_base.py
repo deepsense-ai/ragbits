@@ -146,3 +146,8 @@ def test_output_schema():
 def test_has_images():
     prompt = SimplePrompt("Hello")
     assert len(prompt.list_images()) == 0
+
+
+def test_get_token_id(llm: MockLLM):
+    with pytest.raises(NotImplementedError):
+        llm.get_token_id("example_token")

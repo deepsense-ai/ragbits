@@ -1,15 +1,10 @@
-import os
-from pathlib import Path
 from types import TracebackType
 from typing import Any
 
 from aiohttp import ClientSession
 from gcloud.aio.storage import Storage as StorageClient
 
-from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.gcs import GCSSource
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 
 class MockStorage(StorageClient):
@@ -77,5 +72,3 @@ async def test_gcs_source_fetch() -> None:
     assert path.name == "doc.md"
     assert path.read_text() == "This is the content of the file."
     assert mock_storage.downloaded_files == [("test-bucket", "doc.md")]
-
-    path.unlink()
