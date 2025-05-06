@@ -60,7 +60,6 @@ class LLMReranker(Reranker[RerankerOptions]):
         Args:
             llm: The LLM instance to handle reranking.
             prompt: The prompt to use for reranking elements.
-            override_score: If True reranking will override element score.
             llm_options: The LLM options to override.
             default_options: The default options for reranking.
         """

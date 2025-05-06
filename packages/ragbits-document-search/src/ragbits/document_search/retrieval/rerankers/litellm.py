@@ -15,6 +15,7 @@ class LiteLLMRerankerOptions(RerankerOptions):
     Attributes:
         top_n: The number of entries to return.
         score_threshold: The minimum relevance score for an entry to be returned.
+        override_score: If True reranking will override element score.
         max_chunks_per_doc: The maximum amount of tokens a document can have before truncation.
     """
 
