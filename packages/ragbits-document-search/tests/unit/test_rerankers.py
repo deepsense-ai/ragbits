@@ -129,15 +129,15 @@ async def test_answerdotai_reranker_rerank() -> None:
         ]
     ]
     reranked_elements = [
-        TextElement(content="Element 1", document_meta=documents[0]),
-        TextElement(content="Element 3", document_meta=documents[2]),
+        TextElement(content="Element 1", document_meta=documents[0], score=0.9),
+        TextElement(content="Element 3", document_meta=documents[2], score=0.5),
     ]
     query = "Test query"
 
     mock_ranker_instance = Mock()
     mock_ranker_instance.rank.return_value = [
-        Namespace(document=Namespace(doc_id=0)),  # Corresponds to Element 2
-        Namespace(document=Namespace(doc_id=2)),  # Corresponds to Element 3
+        Namespace(document=Namespace(doc_id=0), score=0.9),  # Corresponds to Element 1
+        Namespace(document=Namespace(doc_id=2), score=0.5),  # Corresponds to Element 3
     ]
 
     reranker.ranker = mock_ranker_instance
