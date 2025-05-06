@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.17.0 (2025-05-06)
+
+### Changed
+
+- ragbits-core updated to version v0.17.0
+
 - Add tests for ragbits-evaluate package (#390)
 - Integrate sources with dataloaders (#529)
 
