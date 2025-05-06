@@ -49,7 +49,8 @@ class LLMReranker(Reranker[RerankerOptions]):
     def __init__(
         self,
         llm: LiteLLM,
-        prompt: type[RerankerPrompt] | None = None,
+        *,
+        prompt: type[Prompt[RerankerInput, str]] | None = None,
         llm_options: LiteLLMOptions | None = None,
         default_options: RerankerOptions | None = None,
     ) -> None:
@@ -65,7 +66,7 @@ class LLMReranker(Reranker[RerankerOptions]):
         super().__init__(default_options=default_options)
         self._llm = llm
         self._prompt = prompt or RerankerPrompt
-        self._llm_options = llm_options or LiteLLMOptions(
+        self._llm_options = LiteLLMOptions(
             temperature=0.0,
             logprobs=True,
             max_tokens=1,
@@ -74,6 +75,8 @@ class LLMReranker(Reranker[RerankerOptions]):
                 self._llm.get_token_id("No"): 1,
             },
         )
+        if llm_options:
+            self._llm_options |= llm_options
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
