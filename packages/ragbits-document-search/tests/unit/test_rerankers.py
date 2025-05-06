@@ -5,11 +5,11 @@ from unittest.mock import Mock, patch
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import Element, TextElement
+from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranker
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
-from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker
+from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
-from ragbits.document_search.retrieval.rerankers.reciprocal_ranked_fusion import ReciprocalRankFusionReranker
-from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
+from ragbits.document_search.retrieval.rerankers.rrf import ReciprocalRankFusionReranker
 
 
 class CustomReranker(Reranker):
@@ -42,7 +42,7 @@ def test_litellm_reranker_from_config() -> None:
     )
 
     assert reranker.model == "test-provder/test-model"  # type: ignore
-    assert reranker.default_options == RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    assert reranker.default_options == LiteLLMRerankerOptions(top_n=2, max_chunks_per_doc=None)
 
 
 def test_aswerdotai_reranker_from_config() -> None:
@@ -72,7 +72,7 @@ def test_reciprocal_rank_fusion_reranker_from_config() -> None:
 
 
 async def test_litellm_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    options = LiteLLMRerankerOptions(top_n=2, max_chunks_per_doc=None)
     reranker = LiteLLMReranker(
         model="test-provder/test-model",
         default_options=options,
@@ -90,11 +90,17 @@ async def test_litellm_reranker_rerank() -> None:
         ]
     ]
     reranked_elements = [
-        TextElement(content="Element 2", document_meta=documents[1]),
-        TextElement(content="Element 3", document_meta=documents[2]),
-        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1], score=0.9),
+        TextElement(content="Element 3", document_meta=documents[2], score=0.6),
+        TextElement(content="Element 1", document_meta=documents[0], score=0.4),
     ]
-    reranker_output = Namespace(results=[{"index": 1}, {"index": 2}, {"index": 0}])
+    reranker_output = Namespace(
+        results=[
+            {"index": 1, "relevance_score": 0.9},
+            {"index": 2, "relevance_score": 0.6},
+            {"index": 0, "relevance_score": 0.4},
+        ]
+    )
     query = "Test query"
 
     with patch(
@@ -129,15 +135,15 @@ async def test_answerdotai_reranker_rerank() -> None:
         ]
     ]
     reranked_elements = [
-        TextElement(content="Element 1", document_meta=documents[0]),
-        TextElement(content="Element 3", document_meta=documents[2]),
+        TextElement(content="Element 1", document_meta=documents[0], score=0.9),
+        TextElement(content="Element 3", document_meta=documents[2], score=0.5),
     ]
     query = "Test query"
 
     mock_ranker_instance = Mock()
     mock_ranker_instance.rank.return_value = [
-        Namespace(document=Namespace(doc_id=0)),  # Corresponds to Element 2
-        Namespace(document=Namespace(doc_id=2)),  # Corresponds to Element 3
+        Namespace(document=Namespace(doc_id=0), score=0.9),  # Corresponds to Element 1
+        Namespace(document=Namespace(doc_id=2), score=0.5),  # Corresponds to Element 3
     ]
 
     reranker.ranker = mock_ranker_instance
@@ -151,7 +157,7 @@ async def test_answerdotai_reranker_rerank() -> None:
 
 
 async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=2, max_chunks_per_doc=None)
+    options = RerankerOptions(top_n=2)
     reranker = ReciprocalRankFusionReranker(
         default_options=options,
     )
@@ -175,8 +181,8 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
         ],
     ]
     reranked_elements = [
-        TextElement(content="Element 2", document_meta=documents[1]),
-        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1], score=1.1666666666666665),
+        TextElement(content="Element 1", document_meta=documents[0], score=1.0),
     ]
     query = "Test query"
 
@@ -192,7 +198,6 @@ def test_subclass_from_config() -> None:
             "config": {
                 "default_options": {
                     "top_n": 12,
-                    "max_chunks_per_doc": 42,
                 },
             },
         }
@@ -201,7 +206,6 @@ def test_subclass_from_config() -> None:
     assert isinstance(reranker, NoopReranker)
     assert isinstance(reranker.default_options, RerankerOptions)
     assert reranker.default_options.top_n == 12
-    assert reranker.default_options.max_chunks_per_doc == 42
 
 
 def test_subclass_from_config_default_path() -> None:
@@ -225,7 +229,7 @@ def test_subclass_from_config_litellm() -> None:
     )
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, LiteLLMReranker)
-    assert isinstance(reranker.default_options, RerankerOptions)
+    assert isinstance(reranker.default_options, LiteLLMRerankerOptions)
     assert reranker.model == "some_model"
     assert reranker.default_options.top_n == 12
     assert reranker.default_options.max_chunks_per_doc == 42

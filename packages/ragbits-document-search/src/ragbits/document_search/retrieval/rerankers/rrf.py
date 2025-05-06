@@ -55,11 +55,19 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         elements_map: dict[str, Element] = {}
 
         for query_elements in elements:
-            for rank, document in enumerate(query_elements):
-                if not document.key:
+            for rank, element in enumerate(query_elements):
+                if not element.key:
                     continue
-                scores[document.key] += 1 / (rank + 1 + 1)
-                elements_map[document.key] = document
+                scores[element.key] += 1 / (rank + 1 + 1)
+                elements_map[element.key] = element
 
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        return [elements_map[item[0]] for item in sorted_scores][: merged_options.top_n]
+
+        results = []
+        for element_id, score in sorted_scores[: merged_options.top_n]:
+            if not merged_options.score_threshold or score >= merged_options.score_threshold:
+                if merged_options.override_score:
+                    elements_map[element_id].score = score
+                results.append(elements_map[element_id])
+
+        return results

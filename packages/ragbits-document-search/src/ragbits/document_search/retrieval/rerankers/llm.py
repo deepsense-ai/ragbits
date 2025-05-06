@@ -123,7 +123,13 @@ class LLMReranker(Reranker[RerankerOptions]):
         scored_elements = list(zip(flat_elements, scores, strict=True))
         scored_elements.sort(key=lambda x: x[1], reverse=True)
 
-        return [element for element, _ in scored_elements[: merged_options.top_n]]
+        results = []
+        for element, score in scored_elements[: merged_options.top_n]:
+            if not merged_options.score_threshold or score >= merged_options.score_threshold:
+                if merged_options.override_score:
+                    element.score = score
+                results.append(element)
+        return results
 
     async def _score_elements(self, elements: Sequence[Element], query: str) -> Sequence[float]:
         """
