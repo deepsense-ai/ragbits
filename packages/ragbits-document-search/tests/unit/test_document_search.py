@@ -166,12 +166,9 @@ async def test_document_search_scores():
     results = await document_search.search("Peppa George", config=SearchConfig(vector_store_kwargs={"k": 3}))
 
     assert len(results) == 3
-    # Verify that scores are properly set and in descending order
     assert all(result.score is not None for result in results)
     # Compare scores after ensuring they are not None and casting to float
     scores = [float(result.score) for result in results if result.score is not None]  # type: ignore
-    assert len(scores) == len(results)  # Make sure we have all scores
-    assert all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1))
     assert scores[0] == 0.9
     assert scores[1] == 0.8
     assert scores[2] == 0.7
