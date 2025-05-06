@@ -175,8 +175,8 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
         ],
     ]
     reranked_elements = [
-        TextElement(content="Element 2", document_meta=documents[1]),
-        TextElement(content="Element 1", document_meta=documents[0]),
+        TextElement(content="Element 2", document_meta=documents[1], score=1.1666666666666665),
+        TextElement(content="Element 1", document_meta=documents[0], score=1.0),
     ]
     query = "Test query"
 

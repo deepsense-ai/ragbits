@@ -15,10 +15,12 @@ class RerankerOptions(Options):
     Attributes:
         top_n: The number of entries to return.
         score_threshold: The minimum relevance score for an entry to be returned.
+        override_score: If True reranking will override element score.
     """
 
     top_n: int | None = None
     score_threshold: float | None = None
+    override_score: bool = True
 
 
 RerankerOptionsT = TypeVar("RerankerOptionsT", bound=RerankerOptions)

@@ -31,7 +31,6 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
     def __init__(
         self,
         model: str,
-        override_score: bool = True,
         default_options: LiteLLMRerankerOptions | None = None,
     ) -> None:
         """
@@ -39,12 +38,10 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
 
         Args:
             model: The reranker model to use.
-            override_score: If True reranking will override element score.
             default_options: The default options for reranking.
         """
         super().__init__(default_options=default_options)
         self.model = model
-        self.override_score = override_score
 
     @traceable
     async def rerank(
@@ -79,7 +76,7 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
         results = []
         for result in response.results:
             if not merged_options.score_threshold or result["relevance_score"] >= merged_options.score_threshold:
-                if self.override_score:
+                if merged_options.override_score:
                     flat_elements[result["index"]].score = result["relevance_score"]
                 results.append(flat_elements[result["index"]])
 
