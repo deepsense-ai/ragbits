@@ -11,6 +11,7 @@ import pytest
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.gcs import GCSSource
 from ragbits.core.sources.local import LocalFileSource
+from ragbits.core.vector_stores.base import VectorStoreOptions, VectorStoreResult
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search._main import SearchConfig
@@ -132,6 +133,45 @@ async def test_document_search_with_search_config():
     assert len(results) == 1
     assert isinstance(results[0], TextElement)
     assert cast(TextElement, results[0]).content == "Name of Peppa's brother is George"
+
+
+async def test_document_search_scores():
+    """Test that search results' scores are properly passed to elements."""
+    embeddings_mock = AsyncMock()
+    embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
+    
+    # Create a mock vector store that returns results with scores
+    class MockVectorStore(InMemoryVectorStore):
+        async def retrieve(self, text: str, options: VectorStoreOptions) -> list[VectorStoreResult]:
+            results = await super().retrieve(text, options)
+            # Add scores to the results
+            for i, result in enumerate(results):
+                result.score = 0.9 - (i * 0.1)  # Decreasing scores: 0.9, 0.8, 0.7, etc.
+            return results
+
+    document_search = DocumentSearch(
+        vector_store=MockVectorStore(embedder=embeddings_mock),
+        parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
+    )
+
+    # Ingest multiple documents
+    documents = [
+        DocumentMeta.create_text_document_from_literal("First document about Peppa"),
+        DocumentMeta.create_text_document_from_literal("Second document about George"),
+        DocumentMeta.create_text_document_from_literal("Third document about Peppa and George"),
+    ]
+    await document_search.ingest(documents)
+
+    # Search and verify scores
+    results = await document_search.search("Peppa George", config=SearchConfig(vector_store_kwargs={"k": 3}))
+
+    assert len(results) == 3
+    # Verify that scores are properly set and in descending order
+    assert all(result.score is not None for result in results)
+    assert all(results[i].score >= results[i+1].score for i in range(len(results)-1))
+    assert results[0].score == 0.9
+    assert results[1].score == 0.8
+    assert results[2].score == 0.7
 
 
 async def test_document_search_ingest_multiple_from_sources():
