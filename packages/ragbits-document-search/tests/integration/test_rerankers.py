@@ -4,10 +4,10 @@ from ragbits.core.llms import LiteLLM
 from ragbits.core.utils.helpers import env_vars_not_set
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranker
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
 from ragbits.document_search.retrieval.rerankers.llm import LLMReranker
-from ragbits.document_search.retrieval.rerankers.rerankers_answerdotai import AnswerAIReranker
 
 COHERE_API_KEY_ENV = "COHERE_API_KEY"  # noqa: S105
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105
