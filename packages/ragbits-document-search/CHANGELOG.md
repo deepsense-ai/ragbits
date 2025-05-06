@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
-- reranker based on relevance to given query (#443)
+
+- Add LLM reranker (#513)
 
 ## 0.16.0 (2025-04-29)
 

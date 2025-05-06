@@ -119,7 +119,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             tokenizer = tiktoken.encoding_for_model(self.model_name)
             return tokenizer.encode_single_token(token)
         except KeyError:
-            return litellm.encode(self.model_name, token)[0]
+            return litellm.encode(model=self.model_name, text=token)[0]
 
     async def _call(
         self,
