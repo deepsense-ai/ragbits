@@ -114,12 +114,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         Returns:
             The id for the given token.
-
-        Raises:
-            KeyError: If the token is not in the vocabulary.
         """
-        tokenizer = tiktoken.encoding_for_model(self.model_name)
-        return tokenizer.encode_single_token(token)
+        try:
+            tokenizer = tiktoken.encoding_for_model(self.model_name)
+            return tokenizer.encode_single_token(token)
+        except KeyError:
+            return litellm.encode(self.model_name, token)[0]
 
     async def _call(
         self,

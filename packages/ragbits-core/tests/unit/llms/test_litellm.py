@@ -262,3 +262,10 @@ async def test_pickling_registers_model_with_custom_cost_config():
         llm_pickled = pickle.loads(pickle.dumps(llm))  # noqa: S301
         assert llm_pickled.custom_model_cost_config == custom_config
         mock_register.assert_called_once_with(custom_config)
+
+
+def test_get_token_id():
+    """Test that token id lookup"""
+    llm = LiteLLM(model_name="gpt-4o")
+    token_id = llm.get_token_id("Yes")
+    assert token_id == 13022
