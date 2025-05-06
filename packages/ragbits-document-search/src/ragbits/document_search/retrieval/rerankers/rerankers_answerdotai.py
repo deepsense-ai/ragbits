@@ -57,8 +57,8 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
             IndexError: Raised if docs is an empty List.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        element_list = list(chain.from_iterable(elements))
-        documents = [element.text_representation for element in element_list]
+        flat_elements = list(chain.from_iterable(elements))
+        documents = [element.text_representation or "" for element in flat_elements]
 
         with trace(
             query=query, documents=documents, elements=elements, model=self.model, options=merged_options
@@ -73,10 +73,9 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
             results = []
             for result in response:
                 if not merged_options.score_threshold or result.score >= merged_options.score_threshold:
-                    element = element_list[result.document.doc_id]
                     if merged_options.override_score:
-                        element.score = result.score
-                    results.append(element)
+                        flat_elements[result.document.doc_id].score = result.score
+                    results.append(flat_elements[result.document.doc_id])
 
             outputs.results = results
 
