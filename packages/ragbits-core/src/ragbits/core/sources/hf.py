@@ -19,21 +19,25 @@ with suppress(ImportError):
 class HuggingFaceSource(Source):
     """
     Source for data stored in the Hugging Face repository.
+
+    Supports two formats:
+    1. Complete dataset: When no row is specified, downloads the entire dataset. Used for QA datasets.
+    2. Single row: When a specific row is specified, downloads only that row. Used for document datasets
+        (requires "content" and "source" columns).
     """
 
     protocol: ClassVar[str] = "hf"
     path: str
     split: str = "train"
-    row: int
+    row: int | None = None
 
     @property
     def id(self) -> str:
         """
         Get the source identifier.
         """
-        return f"hf:{self.path}/{self.split}/{self.row}"
+        return f"hf:{self.path}/{self.split}{f'/{self.row}' if self.row is not None else ''}"
 
-    @traceable
     @requires_dependencies(["datasets"], "hf")
     async def fetch(self) -> Path:
         """
@@ -47,28 +51,46 @@ class HuggingFaceSource(Source):
             SourceNotFoundError: If the source document is not found.
         """
         with trace(path=self.path, split=self.split, row=self.row) as outputs:
-            try:
-                dataset = load_dataset(self.path, split=self.split, streaming=True)  # type: ignore
-            except ConnectionError as exc:
-                raise SourceConnectionError() from exc
-            except DatasetNotFoundError as exc:  # type: ignore
-                raise SourceNotFoundError(source_id=self.id) from exc
+            if self.row is not None:
+                try:
+                    dataset = load_dataset(self.path, split=self.split, streaming=True)
+                except ConnectionError as exc:
+                    raise SourceConnectionError() from exc
+                except DatasetNotFoundError as exc:
+                    raise SourceNotFoundError(source_id=self.id) from exc
 
-            try:
-                data = next(iter(dataset.skip(self.row).take(1)))  # type: ignore
-            except StopIteration as exc:
-                raise SourceNotFoundError(source_id=self.id) from exc
+                try:
+                    data = next(iter(dataset.skip(self.row).take(1)))
+                except StopIteration as exc:
+                    raise SourceNotFoundError(source_id=self.id) from exc
 
-            storage_dir = get_local_storage_dir()
-            source_dir = storage_dir / Path(data["source"]).parent
-            source_dir.mkdir(parents=True, exist_ok=True)
-            path = storage_dir / data["source"]
+                storage_dir = get_local_storage_dir()
+                source_dir = storage_dir / Path(data["source"]).parent
+                source_dir.mkdir(parents=True, exist_ok=True)
+                path = storage_dir / data["source"]
 
-            if not path.is_file():
-                with open(path, mode="w", encoding="utf-8") as file:
-                    file.write(data["content"])
-            outputs.path = path
-            return path
+                if not path.is_file():
+                    with open(path, mode="w", encoding="utf-8") as file:
+                        file.write(data["content"])
+                outputs.path = path
+            else:
+                storage_dir = get_local_storage_dir()
+                source_dir = storage_dir / self.path
+                source_dir.mkdir(parents=True, exist_ok=True)
+                path = source_dir / f"{self.split}.json"
+
+                if not path.is_file():
+                    try:
+                        dataset = load_dataset(self.path, split=self.split)
+                    except ConnectionError as exc:
+                        raise SourceConnectionError() from exc
+                    except DatasetNotFoundError as exc:
+                        raise SourceNotFoundError(source_id=self.id) from exc
+
+                    dataset.to_json(path)
+                outputs.path = path
+
+        return outputs.path
 
     @classmethod
     @traceable

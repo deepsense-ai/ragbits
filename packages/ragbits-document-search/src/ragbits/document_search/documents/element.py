@@ -27,6 +27,7 @@ class Element(BaseModel, ABC):
     element_type: str
     document_meta: DocumentMeta
     location: ElementLocation | None = None
+    score: float | None = None
 
     _elements_registry: ClassVar[dict[str, type["Element"]]] = {}
 
@@ -97,12 +98,13 @@ class Element(BaseModel, ABC):
         Element._elements_registry[element_type_default] = cls
 
     @classmethod
-    def from_vector_db_entry(cls, db_entry: VectorStoreEntry) -> "Element":
+    def from_vector_db_entry(cls, db_entry: VectorStoreEntry, score: float | None = None) -> "Element":
         """
         Create an element from a vector database entry.
 
         Args:
             db_entry: The vector database entry.
+            score: The score of the element retrieved from the vector database or reranker.
 
         Returns:
             The element.
@@ -111,7 +113,10 @@ class Element(BaseModel, ABC):
         element_cls = Element._elements_registry[element_type]
         if "embedding_type" in db_entry.metadata:
             del db_entry.metadata["embedding_type"]
-        return element_cls(**db_entry.metadata)
+
+        element = element_cls(**db_entry.metadata)
+        element.score = score
+        return element
 
     def to_vector_db_entry(self) -> VectorStoreEntry:
         """

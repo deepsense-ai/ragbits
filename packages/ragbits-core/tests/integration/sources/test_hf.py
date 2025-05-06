@@ -1,14 +1,8 @@
-import os
-from pathlib import Path
-
 import pytest
 
-from ragbits.core.sources.base import LOCAL_STORAGE_DIR_ENV
 from ragbits.core.sources.exceptions import SourceNotFoundError
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.core.utils.helpers import env_vars_not_set
-
-os.environ[LOCAL_STORAGE_DIR_ENV] = Path(__file__).parent.as_posix()
 
 HF_TOKEN_ENV = "HF_TOKEN"  # noqa: S105
 HF_DATASET_PATH = "micpst/hf-docs"
@@ -28,8 +22,6 @@ async def test_huggingface_source_fetch() -> None:
         path.read_text()
         == " `tokenizers-linux-x64-musl`\n\nThis is the **x86_64-unknown-linux-musl** binary for `tokenizers`\n"
     )
-
-    path.unlink()
 
 
 @pytest.mark.skipif(
