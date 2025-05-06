@@ -142,7 +142,7 @@ async def test_document_search_scores():
 
     # Create a mock vector store that returns results with scores
     class MockVectorStore(InMemoryVectorStore):
-        async def retrieve(self, text: str, options: VectorStoreOptions) -> list[VectorStoreResult]:
+        async def retrieve(self, text: str, options: VectorStoreOptions | None = None) -> list[VectorStoreResult]:
             results = await super().retrieve(text, options)
             # Add scores to the results
             for i, result in enumerate(results):
@@ -168,10 +168,13 @@ async def test_document_search_scores():
     assert len(results) == 3
     # Verify that scores are properly set and in descending order
     assert all(result.score is not None for result in results)
-    assert all(results[i].score >= results[i + 1].score for i in range(len(results) - 1))
-    assert results[0].score == 0.9
-    assert results[1].score == 0.8
-    assert results[2].score == 0.7
+    # Compare scores after ensuring they are not None and casting to float
+    scores = [float(result.score) for result in results if result.score is not None]  # type: ignore
+    assert len(scores) == len(results)  # Make sure we have all scores
+    assert all(scores[i] >= scores[i + 1] for i in range(len(scores) - 1))
+    assert scores[0] == 0.9
+    assert scores[1] == 0.8
+    assert scores[2] == 0.7
 
 
 async def test_document_search_ingest_multiple_from_sources():
