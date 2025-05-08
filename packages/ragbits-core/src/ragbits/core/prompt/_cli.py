@@ -34,22 +34,6 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
 
 
 @prompts_app.command()
-def lab(
-    file_pattern: str = core_config.prompt_path_pattern,
-    llm_factory: str = core_config.llm_preference_factories[LLMType.TEXT],
-) -> None:
-    """
-    Launches the interactive application for listing, rendering, and testing prompts
-    defined within the current project.
-
-    For more information, see the [Prompts Lab documentation](../how-to/prompts/prompts_lab.md).
-    """
-    from ragbits.core.prompt.lab.app import lab_app
-
-    lab_app(file_pattern=file_pattern, llm_factory=llm_factory)
-
-
-@prompts_app.command()
 def generate_promptfoo_configs(
     file_pattern: str = core_config.prompt_path_pattern,
     root_path: Path = Path.cwd(),  # noqa: B008

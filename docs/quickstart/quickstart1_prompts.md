@@ -110,9 +110,6 @@ ragbits prompts exec song_prompt:SongPrompt --payload '{"subject": "unicorns", "
 
 Remember to change `song_prompt` to the name of the module where the prompt is defined and adjust the values of the placeholders to your liking.
 
-!!! tip
-    Ragbits also comes with a built-in GUI tool called Prompts Lab that allows you to manage and interact with prompts in a more user-friendly way. To learn more about using Prompts Lab, see the how-to article [How to Manage Prompts using GUI with Prompts Lab](../how-to/prompts/prompts_lab.md).
-
 ## Conclusion
 You now know how to define a prompt in Ragbits and how to use it with Large Language Models. You've also learned to make the prompt dynamic by using Pydantic models and the Jinja2 templating language. To learn more about defining prompts, such as configuring the desired output format, refer to the how-to article [How to define and use Prompts in Ragbits](../how-to/prompts/use_prompting.md).
 
