@@ -1,35 +1,69 @@
 from abc import ABC, abstractmethod
-from enum import Enum
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import TypeVar
 
 MeterT = TypeVar("MeterT")
 
 
-class MetricName(Enum):
+@dataclass
+class Metric:
     """
-    Enum representing metrics.
+    Represents the metric configuration data.
     """
 
-    PROMPT_THROUGHPUT = ("prompt_throughput", "Tracks the response time of LLM calls in seconds", "s")
-    TOKEN_THROUGHPUT = ("token_throughput", "Tracks tokens generated per second", "tokens/s")
-    INPUT_TOKENS = ("input_tokens", "Tracks the number of input tokens per request", "tokens")
-    TIME_TO_FIRST_TOKEN = ("time_to_first_token", "Tracks the time to first token in seconds", "s")
+    name: str
+    description: str
+    unit: str
+
+
+class HistogramMetric(Enum):
+    """
+    Histogram metric types that can be recorded.
+    """
+
+    PROMPT_THROUGHPUT = auto()
+    TOKEN_THROUGHPUT = auto()
+    INPUT_TOKENS = auto()
+    TIME_TO_FIRST_TOKEN = auto()
+
+
+HISTOGRAM_METRICS = {
+    HistogramMetric.PROMPT_THROUGHPUT: Metric(
+        name="prompt_throughput",
+        description="Tracks the response time of LLM calls in seconds",
+        unit="s",
+    ),
+    HistogramMetric.TOKEN_THROUGHPUT: Metric(
+        name="token_throughput",
+        description="Tracks tokens generated per second",
+        unit="tokens/s",
+    ),
+    HistogramMetric.INPUT_TOKENS: Metric(
+        name="input_tokens",
+        description="Tracks the number of input tokens per request",
+        unit="tokens",
+    ),
+    HistogramMetric.TIME_TO_FIRST_TOKEN: Metric(
+        name="time_to_first_token",
+        description="Tracks the time to first token in seconds",
+        unit="s",
+    ),
+}
 
 
 class MetricHandler(ABC):
     """
-    A class to manage and log various metrics for LLM interactions.
+    Base class for all metric handlers.
     """
 
     @abstractmethod
-    def record(self, metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
+    def record(self, metric: HistogramMetric, value: float, attributes: dict | None = None) -> None:
         """
-        Records the given amount for a specified metric.
+        Record the value for a specified histogram metric.
 
         Args:
-            metric_name: Enum representing name of the metric to record.
+            metric: The histogram metric to record.
             value: The value to record for the metric.
-            attributes: Optional dictionary of attributes providing additional context
-            for the metric. Keys are strings, and values can be
-            strings, booleans, integers, floats, or sequences of these types.
+            attributes: Additional metadata for the metric.
         """

@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragbits.core.audit.metrics import MetricName, record
+from ragbits.core.audit.metrics import HistogramMetric, record
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt
@@ -112,7 +112,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
-
         outputs = self.model.generate(
             input_ids,
             eos_token_id=self.tokenizer.eos_token_id,
@@ -122,11 +121,24 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         prompt_throughput = time.perf_counter() - start_time
 
-        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
-        record(MetricName.PROMPT_THROUGHPUT, prompt_throughput, attributes)
-        record(MetricName.INPUT_TOKENS, input_ids.shape[-1], attributes)
-        token_throughput = outputs.total_tokens / prompt_throughput
-        record(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
+        record(
+            metric=HistogramMetric.INPUT_TOKENS,
+            value=input_ids.shape[-1],
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+        record(
+            metric=HistogramMetric.PROMPT_THROUGHPUT,
+            value=prompt_throughput,
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+        record(
+            metric=HistogramMetric.TOKEN_THROUGHPUT,
+            value=outputs.total_tokens / prompt_throughput,
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
 
         return {"response": decoded_response}
 
@@ -156,10 +168,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         )
         output_tokens = 0
 
-        attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
-
-        record(MetricName.INPUT_TOKENS, input_tokens, attributes)
-
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
@@ -178,16 +186,37 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
                     if not first_token_received:
                         time_to_first_token = time.perf_counter() - start_time
-                        record(MetricName.TIME_TO_FIRST_TOKEN, time_to_first_token, attributes)
+                        record(
+                            metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                            value=time_to_first_token,
+                            model=self.model_name,
+                            prompt=prompt.__class__.__name__,
+                        )
                         first_token_received = True
 
                 yield text_piece
                 await asyncio.sleep(0.0)
-            generation_thread.join()
 
+            generation_thread.join()
             total_time = time.perf_counter() - start_time
-            token_throughput = output_tokens / total_time
-            record(MetricName.PROMPT_THROUGHPUT, total_time, attributes)
-            record(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
+
+            record(
+                metric=HistogramMetric.INPUT_TOKENS,
+                value=input_tokens,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
+            record(
+                metric=HistogramMetric.PROMPT_THROUGHPUT,
+                value=total_time,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
+            record(
+                metric=HistogramMetric.TOKEN_THROUGHPUT,
+                value=output_tokens / total_time,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)

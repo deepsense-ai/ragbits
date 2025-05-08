@@ -1,40 +1,38 @@
-from opentelemetry.metrics import Meter, get_meter
+from opentelemetry.metrics import MeterProvider, get_meter
 
-from ragbits.core.audit.metrics.base import MetricHandler, MetricName
+from ragbits.core.audit.metrics.base import HISTOGRAM_METRICS, HistogramMetric, MetricHandler
 
 
 class OtelMetricHandler(MetricHandler):
     """
-    A class to manage and log various metrics for LLM interactions.
+    OpenTelemetry metric handler.
     """
 
-    def __init__(self, meter: Meter | None = None, metric_prefix: str | None = "ragbits") -> None:
+    def __init__(self, provider: MeterProvider | None = None, metric_prefix: str = "ragbits") -> None:
         """
+        Initialize the OtelMetricHandler instance.
+
         Args:
-            meter: OpenTelemetry Meter instance.
-            metric_prefix: Optional prefix to prepend to all metric names.
+            provider: The meter provider to use.
+            metric_prefix: Prefix for all metric names.
         """
-        self._meter = meter or get_meter("ragbits")
-        self._metric_prefix = metric_prefix
-        self.histograms = {
-            metric: self._meter.create_histogram(
-                name=f"{self._metric_prefix}_{metric.value[0]}",
-                description=metric.value[1],
-                unit=metric.value[2],
+        self._meter = get_meter(name=__name__, meter_provider=provider)
+        self._histogram_metrics = {
+            key: self._meter.create_histogram(
+                name=f"{metric_prefix}_{metric.name}",
+                description=metric.description,
+                unit=metric.unit,
             )
-            for metric in MetricName
+            for key, metric in HISTOGRAM_METRICS.items()
         }
 
-    def record(self, metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
+    def record(self, metric: HistogramMetric, value: float, attributes: dict | None = None) -> None:
         """
-        Records the given amount for a specified metric.
+        Record the value for a specified histogram metric.
 
         Args:
-            metric_name: Enum representing name of the metric to record.
+            metric: The histogram metric to record.
             value: The value to record for the metric.
-            attributes: Optional dictionary of attributes providing additional context
-            for the metric. Keys are strings, and values can be
-            strings, booleans, integers, floats, or sequences of these types.
+            attributes: Additional metadata for the metric.
         """
-        print(metric_name, value)
-        self.histograms[metric_name].record(value, attributes=attributes)
+        self._histogram_metrics[metric].record(value, attributes=attributes)

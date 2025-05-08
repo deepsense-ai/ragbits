@@ -1,8 +1,10 @@
-from ragbits.core.audit.metrics.base import MetricHandler, MetricName
+from typing import Any
+
+from ragbits.core.audit.metrics.base import HistogramMetric, MetricHandler
 
 __all__ = [
+    "HistogramMetric",
     "MetricHandler",
-    "MetricName",
     "clear_metric_handlers",
     "record",
     "set_metric_handlers",
@@ -52,14 +54,14 @@ def clear_metric_handlers() -> None:
     _metric_handlers.clear()
 
 
-def record(metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
+def record(metric: HistogramMetric, value: float, **attributes: Any) -> None:
     """
     Record a metric using the global metric handlers.
 
     Args:
-        metric_name: The name of the metric.
+        metric: The histogram metric to record.
         value: The value to record.
-        attributes: Optional attributes providing context for the metric.
+        attributes: Additional metadata for the metric.
     """
     for handler in _metric_handlers:
-        handler.record(metric_name, value, attributes)
+        handler.record(metric, value, attributes)
