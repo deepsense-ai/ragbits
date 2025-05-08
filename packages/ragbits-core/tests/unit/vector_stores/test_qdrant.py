@@ -74,7 +74,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     assert call_points[0].id == "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"
     assert call_points[0].vector == {"dense": [0.1, 0.2, 0.3]}
     assert call_points[0].payload == {
-        "id": UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+        "id": "1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
         "text": "test_key",
         "metadata": {
             "content": "test content",
@@ -88,7 +88,7 @@ async def test_store(mock_qdrant_store: QdrantVectorStore) -> None:
     assert call_points[1].id == "827cad0b-058f-4b85-b8ed-ac741948d502"
     assert call_points[1].vector == {"dense": [0.1, 0.2, 0.3]}
     assert call_points[1].payload == {
-        "id": UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+        "id": "827cad0b-058f-4b85-b8ed-ac741948d502",
         "text": "some other key",
         "metadata": {
             "content": "test content",
@@ -242,6 +242,7 @@ async def test_remove(mock_qdrant_store: QdrantVectorStore) -> None:
 
 async def test_list(mock_qdrant_store: QdrantVectorStore) -> None:
     mock_qdrant_store._client.collection_exists.return_value = True  # type: ignore
+    mock_qdrant_store._client.count.return_value = models.CountResult(count=2)  # type: ignore
     mock_qdrant_store._client.query_points.return_value = models.QueryResponse(  # type: ignore
         points=[
             models.ScoredPoint(
