@@ -1,37 +1,65 @@
-from opentelemetry.metrics import Meter
-
-from ragbits.core.audit.metrics.otel import MetricName, OtelMetricHandler
+from ragbits.core.audit.metrics.base import MetricHandler, MetricName
 
 __all__ = [
+    "MetricHandler",
     "MetricName",
-    "OtelMetricHandler",
-    "record_metric",
-    "set_metric_handler",
+    "clear_metric_handlers",
+    "record",
+    "set_metric_handlers",
 ]
 
-_metric_handler: OtelMetricHandler | None = None
+Handler = str | MetricHandler
+
+_metric_handlers: list[MetricHandler] = []
 
 
-def set_metric_handler(meter: Meter) -> None:
+def set_metric_handlers(handlers: Handler | list[Handler]) -> None:
     """
-    Sets up the global metric handler.
+    Set the global metric handlers.
 
     Args:
-        meter: OpenTelemetry Meter instance to be used for metrics.
+        handlers: List of metric handlers to be used.
+
+    Raises:
+        ValueError: If handler is not found.
+        TypeError: If handler type is invalid.
     """
-    global _metric_handler  # noqa: PLW0603
-    _metric_handler = OtelMetricHandler(meter)
-    _metric_handler.setup_histograms()
+    global _metric_handlers  # noqa: PLW0602
+
+    if isinstance(handlers, Handler):
+        handlers = [handlers]
+
+    for handler in handlers:
+        if isinstance(handler, MetricHandler):
+            _metric_handlers.append(handler)
+        elif isinstance(handler, str):
+            if handler == "otel":
+                from ragbits.core.audit.metrics.otel import OtelMetricHandler
+
+                if not any(isinstance(item, OtelMetricHandler) for item in _metric_handlers):
+                    _metric_handlers.append(OtelMetricHandler())
+            else:
+                raise ValueError(f"Handler {handler} not found.")
+        else:
+            raise TypeError(f"Invalid handler type: {type(handler)}")
 
 
-def record_metric(metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
+def clear_metric_handlers() -> None:
     """
-    Records a metric using the global metric handler.
+    Clear all metric handlers.
+    """
+    global _metric_handlers  # noqa: PLW0602
+    _metric_handlers.clear()
+
+
+def record(metric_name: MetricName, value: float, attributes: dict | None = None) -> None:
+    """
+    Record a metric using the global metric handlers.
 
     Args:
         metric_name: The name of the metric.
         value: The value to record.
         attributes: Optional attributes providing context for the metric.
     """
-    if _metric_handler:
-        _metric_handler.record(metric_name, value, attributes)
+    for handler in _metric_handlers:
+        handler.record(metric_name, value, attributes)

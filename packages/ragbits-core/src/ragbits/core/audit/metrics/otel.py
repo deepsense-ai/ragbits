@@ -1,38 +1,21 @@
-from enum import Enum
+from opentelemetry.metrics import Meter, get_meter
 
-from opentelemetry.metrics import Histogram, Meter
-
-
-class MetricName(Enum):
-    """
-    Enum representing metrics.
-    """
-
-    PROMPT_THROUGHPUT = ("prompt_throughput", "Tracks the response time of LLM calls in seconds", "s")
-    TOKEN_THROUGHPUT = ("token_throughput", "Tracks tokens generated per second", "tokens/s")
-    INPUT_TOKENS = ("input_tokens", "Tracks the number of input tokens per request", "tokens")
-    TIME_TO_FIRST_TOKEN = ("time_to_first_token", "Tracks the time to first token in seconds", "s")
+from ragbits.core.audit.metrics.base import MetricHandler, MetricName
 
 
-class OtelMetricHandler:
+class OtelMetricHandler(MetricHandler):
     """
     A class to manage and log various metrics for LLM interactions.
     """
 
-    def __init__(self, meter: Meter, metric_prefix: str | None = "ragbits") -> None:
+    def __init__(self, meter: Meter | None = None, metric_prefix: str | None = "ragbits") -> None:
         """
         Args:
             meter: OpenTelemetry Meter instance.
             metric_prefix: Optional prefix to prepend to all metric names.
         """
-        self._meter = meter
+        self._meter = meter or get_meter("ragbits")
         self._metric_prefix = metric_prefix
-        self.histograms: dict[MetricName, Histogram] = {}
-
-    def setup_histograms(self) -> None:
-        """
-        Initializes histograms for prompt latency, token throughput, and input tokens.
-        """
         self.histograms = {
             metric: self._meter.create_histogram(
                 name=f"{self._metric_prefix}_{metric.value[0]}",
@@ -52,6 +35,6 @@ class OtelMetricHandler:
             attributes: Optional dictionary of attributes providing additional context
             for the metric. Keys are strings, and values can be
             strings, booleans, integers, floats, or sequences of these types.
-
         """
+        print(metric_name, value)
         self.histograms[metric_name].record(value, attributes=attributes)

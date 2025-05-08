@@ -8,7 +8,7 @@ from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit.metrics import MetricName, record_metric
+from ragbits.core.audit.metrics import MetricName, record
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
@@ -168,7 +168,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         attributes = {"model": self.model_name, "prompt": prompt.__class__.__name__}
 
-        record_metric(MetricName.PROMPT_THROUGHPUT, prompt_throughput, attributes)
+        record(MetricName.PROMPT_THROUGHPUT, prompt_throughput, attributes)
 
         if response.usage:  # type: ignore
             results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
@@ -179,9 +179,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
         if response.usage:  # type: ignore
-            record_metric(MetricName.INPUT_TOKENS, response.usage.prompt_tokens, attributes)  # type: ignore
+            record(MetricName.INPUT_TOKENS, response.usage.prompt_tokens, attributes)  # type: ignore
             token_throughput = response.usage.total_tokens / prompt_throughput  # type: ignore
-            record_metric(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
+            record(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
 
         return results  # type: ignore
 
@@ -220,7 +220,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         first_token_received = False
         input_tokens = self.count_tokens(prompt)
         output_tokens = 0
-        record_metric(MetricName.INPUT_TOKENS, input_tokens, attributes)
+        record(MetricName.INPUT_TOKENS, input_tokens, attributes)
 
         start_time = time.perf_counter()
 
@@ -250,15 +250,15 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
                         if not first_token_received:
                             time_to_first_token = time.perf_counter() - start_time
-                            record_metric(MetricName.TIME_TO_FIRST_TOKEN, time_to_first_token, attributes)
+                            record(MetricName.TIME_TO_FIRST_TOKEN, time_to_first_token, attributes)
                             first_token_received = True
 
                     yield content
 
                 total_time = time.perf_counter() - start_time
                 token_throughput = output_tokens / total_time
-                record_metric(MetricName.PROMPT_THROUGHPUT, total_time, attributes)
-                record_metric(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
+                record(MetricName.PROMPT_THROUGHPUT, total_time, attributes)
+                record(MetricName.TOKEN_THROUGHPUT, token_throughput, attributes)
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 

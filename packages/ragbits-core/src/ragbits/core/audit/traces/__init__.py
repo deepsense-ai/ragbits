@@ -10,6 +10,7 @@ from ragbits.core.audit.traces.base import TraceHandler
 
 __all__ = [
     "TraceHandler",
+    "clear_trace_handlers",
     "set_trace_handlers",
     "trace",
     "traceable",
@@ -25,7 +26,7 @@ R = TypeVar("R")
 
 def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
     """
-    Setup trace handlers.
+    Set the global trace handlers.
 
     Args:
         handlers: List of trace handlers to be used.
@@ -59,12 +60,11 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
             raise TypeError(f"Invalid handler type: {type(handler)}")
 
 
-def clear_event_handlers() -> None:
+def clear_trace_handlers() -> None:
     """
     Clear all trace handlers.
     """
     global _trace_handlers  # noqa: PLW0602
-
     _trace_handlers.clear()
 
 
