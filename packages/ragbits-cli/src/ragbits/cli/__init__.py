@@ -13,7 +13,7 @@ import typer
 from typer.main import get_command
 
 import ragbits
-from ragbits.core.audit import traces
+from ragbits.core.audit.traces import set_trace_handlers
 
 from .state import OutputType, cli_state, print_output
 
@@ -42,7 +42,7 @@ def ragbits_cli(
 
     if verbose == 1:
         typer.echo("Verbose mode is enabled.")
-        traces.set_trace_handlers("cli")
+        set_trace_handlers("cli")
 
 
 def autoregister() -> None:
