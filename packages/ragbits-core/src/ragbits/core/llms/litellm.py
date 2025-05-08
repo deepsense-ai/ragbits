@@ -8,7 +8,8 @@ from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit import MetricName, record_metric, trace
+from ragbits.core.audit.metrics import MetricName, record_metric
+from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,

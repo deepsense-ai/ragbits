@@ -1,6 +1,6 @@
 from typing import Any
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.utils.config_handling import ObjectConstructionConfig

@@ -5,7 +5,7 @@ from itertools import chain
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt.prompt import Prompt

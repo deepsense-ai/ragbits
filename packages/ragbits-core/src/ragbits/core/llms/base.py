@@ -6,7 +6,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,

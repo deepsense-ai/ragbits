@@ -14,7 +14,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragbits.core.audit import MetricName, record_metric
+from ragbits.core.audit.metrics import MetricName, record_metric
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt

@@ -3,7 +3,7 @@ from typing import Any
 import litellm
 from typing_extensions import Self
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,

@@ -58,7 +58,7 @@ from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-from ragbits.core import audit
+from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
@@ -68,7 +68,7 @@ provider = TracerProvider(resource=Resource({SERVICE_NAME: "ragbits"}))
 provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter("http://localhost:4317", insecure=True)))
 trace.set_tracer_provider(provider)
 
-audit.set_trace_handlers("otel")
+set_trace_handlers("otel")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
