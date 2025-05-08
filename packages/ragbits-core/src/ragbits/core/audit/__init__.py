@@ -9,7 +9,7 @@ from typing import Any, ParamSpec, TypeVar
 from opentelemetry.metrics import Meter
 
 from ragbits.core.audit.otel_metric_handler import MetricName, OtelMetricHandler
-from ragbits.core.audit.trace_handlers.base import TraceHandler
+from ragbits.core.audit.traces.base import TraceHandler
 
 __all__ = [
     "MetricName",
@@ -78,12 +78,12 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
             _trace_handlers.append(handler)
         elif isinstance(handler, str):
             if handler == "otel":
-                from ragbits.core.audit.trace_handlers.otel import OtelTraceHandler
+                from ragbits.core.audit.traces.otel import OtelTraceHandler
 
                 if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
                     _trace_handlers.append(OtelTraceHandler())
             elif handler == "cli":
-                from ragbits.core.audit.trace_handlers.cli import CLITraceHandler
+                from ragbits.core.audit.traces.cli import CLITraceHandler
 
                 if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
                     _trace_handlers.append(CLITraceHandler())

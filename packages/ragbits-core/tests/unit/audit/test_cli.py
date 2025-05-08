@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from rich.console import Group
 
-from ragbits.core.audit.trace_handlers.cli import CLISpan, CLITraceHandler, PrintColor, SpanStatus
+from ragbits.core.audit.traces.cli import CLISpan, CLITraceHandler, PrintColor, SpanStatus
 
 TEST_NAME_1 = "process_1"
 TEST_NAME_2 = "process_2"
