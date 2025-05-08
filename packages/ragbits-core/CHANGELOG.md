@@ -1,7 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
-- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry
+
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
+- Restructure audit module (#427)
 
 ## 0.17.0 (2025-05-06)
 
