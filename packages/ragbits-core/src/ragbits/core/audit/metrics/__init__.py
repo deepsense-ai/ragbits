@@ -54,7 +54,7 @@ def clear_metric_handlers() -> None:
     _metric_handlers.clear()
 
 
-def record(metric: HistogramMetric, value: float, **attributes: Any) -> None:
+def record(metric: HistogramMetric, value: int | float, **attributes: Any) -> None:  # noqa: ANN401
     """
     Record a metric using the global metric handlers.
 

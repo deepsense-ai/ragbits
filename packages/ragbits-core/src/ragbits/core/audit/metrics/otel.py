@@ -26,7 +26,7 @@ class OtelMetricHandler(MetricHandler):
             for key, metric in HISTOGRAM_METRICS.items()
         }
 
-    def record(self, metric: HistogramMetric, value: float, attributes: dict | None = None) -> None:
+    def record(self, metric: HistogramMetric, value: int | float, attributes: dict | None = None) -> None:
         """
         Record the value for a specified histogram metric.
 

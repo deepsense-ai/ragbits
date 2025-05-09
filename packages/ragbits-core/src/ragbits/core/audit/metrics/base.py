@@ -58,7 +58,7 @@ class MetricHandler(ABC):
     """
 
     @abstractmethod
-    def record(self, metric: HistogramMetric, value: float, attributes: dict | None = None) -> None:
+    def record(self, metric: HistogramMetric, value: int | float, attributes: dict | None = None) -> None:
         """
         Record the value for a specified histogram metric.
 
