@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: Qdrant vector store failing on gRCP connection errors (#548)
+
 ## 0.17.0 (2025-05-06)
 
 - Add token id lookup for LLMs (#513)
