@@ -22,11 +22,11 @@ nav:
         - "Perform hybrid search": how-to/vector_stores/hybrid.md
         - "Use sparse retrieval": how-to/vector_stores/sparse_vectors.md
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
-      - Dataset Loading:
-        - "Load dataset with sources": how-to/sources/load-dataset.md
+      - Data Sources:
+        - "Load data from sources": how-to/sources/load-dataset.md
       - Observability:
-        - "Setup tracing": how-to/audit/use_tracing.md
-        - "Setup metrics": how-to/audit/use_metrics.md
+        - "Trace code execution": how-to/audit/use_tracing.md
+        - "Track metrics": how-to/audit/use_metrics.md
       - Project configuration:
         - "Set preferred components in project": how-to/project/component_preferences.md
         - "Register custom components": how-to/project/custom_components.md

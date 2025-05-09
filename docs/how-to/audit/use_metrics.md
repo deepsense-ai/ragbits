@@ -1,28 +1,27 @@
 # How-To: Track metrics with Ragbits
 
-This guide will walk you through setting up metric tracking with Ragbits using the OpenTelemetry stack. By following these steps, you can collect, visualize, and analyze metrics in a centralized monitoring system.
+Similar to [traces](./use_tracing.md), Ragbits also collects metrics. These metrics offer insight into system performance, resource usage, and operational health, allowing users to monitor and optimize their workflows effectively.
 
-## Set up the OpenTelemetry backend
+## Default metrics
 
-To track metrics, you need a backend to receive, store, and visualize the data. We recommend using the [`grafana/otel-lgtm`](https://hub.docker.com/r/grafana/otel-lgtm) Docker image, which provides a complete OpenTelemetry stack in a single container, eliminating the need to configure and manage multiple services separately. This includes **OpenTelemetry collector**, **Prometheus** and **Grafana**. For more details on how to get started and leverage this tool, check out [the official Grafana blog post](https://grafana.com/blog/2024/03/13/an-opentelemetry-backend-in-a-docker-image-introducing-grafana/otel-lgtm/).
+By default, the SDK tracks the following:
 
-Run the following command to start the backend:
+- `input_tokens`: the number of input tokens sent to the LLM
+- `prompt_throughput`the time taken to process a prompt and receive a response
+- `token_throughput`: the number of tokens processed per second
+- `time_to_first_token`: the time taken (in seconds) to receive the first token in a streaming response
 
-```bash
-docker run -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
+## Collecting custom metrics
+
+...
+
+```python
+...
 ```
 
-It may take a minute for the container to start up. When startup is complete, the container will print the following line to the console:
+## Using OpenTelemetry meter
 
-```bash
-The OpenTelemetry collector and the Grafana LGTM stack are up and running.
-```
-
-## Configure OpenTelemetry in Ragbits
-
-Before recording metrics, you need to configure OpenTelemetry and set up the metric handler in Ragbits. This ensures that all tracked data is properly processed and exported.
-
-To send collected metrics to the OpenTelemetry collector, configure the provider and set up an exporter in your application:
+To export metrics to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelMetricHandler` using the `set_metric_handlers("otel")` method.
 
 ```python
 from opentelemetry import metrics
@@ -30,8 +29,7 @@ from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-
-from ragbits.core.audit import set_metric_handler
+from ragbits.core.audit import set_metric_handlers
 
 resource = Resource(attributes={SERVICE_NAME: "ragbits"})
 exporter = OTLPMetricExporter(endpoint="http://localhost:4317", insecure=True)
@@ -39,25 +37,10 @@ reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
 provider = MeterProvider(metric_readers=[reader], resource=resource)
 metrics.set_meter_provider(provider)
 
-set_metric_handler(metrics.get_meter("ragbits"))
+set_metric_handlers("otel")
 ```
 
-This configuration enables centralized metric collection and integration with monitoring systems.
+!!! info
+    This code snippet exports metrics to the local OpenTelemetry collector running at <http://localhost:4317>. To visualize metrics from Ragbits, open a browser and navigate to the Grafana dashboard at <http://localhost:3000>.
 
-## Start Tracking Metrics
-
-Once the OpenTelemetry backend and Ragbits are configured, you can start tracking metrics in your application. Ragbits will automatically send the collected metrics to the OpenTelemetry collector, which will then store them in Prometheus and make them available for visualization in Grafana.
-
-## Metrics Tracked by Ragbits
-
-Ragbits automatically tracks the following metrics during LLM interactions: the time taken to process a prompt and receive a response (`prompt_throughput`), the number of input tokens sent to the LLM (`input_tokens`), the number of tokens processed per second (`token_throughput`) and the time taken (in seconds) to receive the first token in a streaming response (`time_to_first_token`).
-
-Each metric is tagged with the following **labels** (attributes) for better filtering and analysis: the class name of the prompt being processed (`prompt`) and the name of the LLM being used (`model`).
-
-## Visualize Metrics in Grafana
-
-To visualize the metrics collected by Ragbits, follow these steps:
-
-1. Open your browser and navigate to http://localhost:3000.
-2. Use the default credentials to log in (username: `admin`, password: `admin`).
-3. Once logged in, you can either navigate to the Explore section to query and visualize metrics directly or create a new dashboard to build custom visualizations tailored to your needs.
+A full example along with a detailed installation guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/document-search/otel.py).
