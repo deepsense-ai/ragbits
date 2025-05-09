@@ -1,7 +1,6 @@
-from opentelemetry import trace
-from opentelemetry.trace import Span, StatusCode, TracerProvider
+from opentelemetry.trace import Span, StatusCode, TracerProvider, get_tracer, set_span_in_context
 
-from ragbits.core.audit.base import TraceHandler, format_attributes
+from ragbits.core.audit.traces.base import TraceHandler, format_attributes
 
 
 class OtelTraceHandler(TraceHandler[Span]):
@@ -11,13 +10,13 @@ class OtelTraceHandler(TraceHandler[Span]):
 
     def __init__(self, provider: TracerProvider | None = None) -> None:
         """
-        Constructs a new OtelTraceHandler instance.
+        Initialize the OtelTraceHandler instance.
 
         Args:
             provider: The tracer provider to use.
         """
         super().__init__()
-        self._tracer = trace.get_tracer(instrumenting_module_name=__name__, tracer_provider=provider)
+        self._tracer = get_tracer(instrumenting_module_name=__name__, tracer_provider=provider)
 
     def start(self, name: str, inputs: dict, current_span: Span | None = None) -> Span:
         """
@@ -31,12 +30,10 @@ class OtelTraceHandler(TraceHandler[Span]):
         Returns:
             The updated current trace span.
         """
-        context = trace.set_span_in_context(current_span) if current_span else None
-
+        context = set_span_in_context(current_span) if current_span else None
         with self._tracer.start_as_current_span(name, context=context, end_on_exit=False) as span:
             attributes = format_attributes(inputs, prefix="inputs")
             span.set_attributes(attributes)
-
         return span
 
     def stop(self, outputs: dict, current_span: Span) -> None:  # noqa: PLR6301

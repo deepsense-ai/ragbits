@@ -4,7 +4,7 @@ from typing import Any
 
 from rerankers import Reranker as AnswerReranker
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 

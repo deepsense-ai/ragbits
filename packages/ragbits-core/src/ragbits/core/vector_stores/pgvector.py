@@ -6,7 +6,7 @@ from uuid import UUID
 import asyncpg
 from pydantic.json import pydantic_encoder
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.base import Embedder, SparseVector
 from ragbits.core.embeddings.sparse.base import SparseEmbedder
 from ragbits.core.vector_stores.base import (

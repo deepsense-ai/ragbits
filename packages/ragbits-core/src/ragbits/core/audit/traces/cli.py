@@ -8,7 +8,7 @@ from rich.syntax import Syntax
 from rich.text import Text
 from rich.tree import Tree
 
-from ragbits.core.audit.base import AttributeFormatter, TraceHandler
+from ragbits.core.audit.traces.base import AttributeFormatter, TraceHandler
 
 
 class SpanStatus(Enum):
@@ -45,7 +45,7 @@ class CLISpan:
 
     def __init__(self, name: str, attributes: dict, parent: "CLISpan | None" = None) -> None:
         """
-        Constructs a new CLI Span.
+        Initialize the CLI Span.
 
         Args:
             name: The name of the span.
@@ -193,10 +193,13 @@ class CLISpan:
 
 class CLITraceHandler(TraceHandler[CLISpan]):
     """
-    CLITraceHandler class for all trace handlers.
+    CLI trace handler.
     """
 
     def __init__(self) -> None:
+        """
+        Initialize the CLITraceHandler instance.
+        """
         super().__init__()
         self.live = Live(auto_refresh=False, vertical_overflow="visible")
 

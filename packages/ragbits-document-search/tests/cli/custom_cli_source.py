@@ -4,7 +4,7 @@ from typing import ClassVar
 
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.core.sources.base import Source
 
 

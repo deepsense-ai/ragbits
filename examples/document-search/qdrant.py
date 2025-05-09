@@ -35,13 +35,13 @@ import asyncio
 
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core import audit
+from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch, SearchConfig
 from ragbits.document_search.documents.document import DocumentMeta
 
-audit.set_trace_handlers("cli")
+set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(

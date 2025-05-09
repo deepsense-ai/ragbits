@@ -1,3 +1,4 @@
+import time
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
@@ -7,7 +8,8 @@ from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.metrics import HistogramMetric, record
+from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -152,25 +154,49 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
+        start_time = time.perf_counter()
         response = await self._get_litellm_response(
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
         )
+        prompt_throughput = time.perf_counter() - start_time
+
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
+
+        record(
+            metric=HistogramMetric.PROMPT_THROUGHPUT,
+            value=prompt_throughput,
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+
         results = {}
         results["response"] = response.choices[0].message.content  # type: ignore
+
+        if options.logprobs:
+            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
         if response.usage:  # type: ignore
             results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
             results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
             results["total_tokens"] = response.usage.total_tokens  # type: ignore
 
-        if options.logprobs:
-            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
+            record(
+                metric=HistogramMetric.INPUT_TOKENS,
+                value=response.usage.prompt_tokens,  # type: ignore
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
+            record(
+                metric=HistogramMetric.TOKEN_THROUGHPUT,
+                value=response.usage.total_tokens / prompt_throughput,  # type: ignore
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
 
-        return results  # type: ignore
+        return results
 
     async def _call_streaming(
         self,
@@ -203,6 +229,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
+        first_token_received = False
+        input_tokens = self.count_tokens(prompt)
+        output_tokens = 0
+
+        start_time = time.perf_counter()
+
         with trace(
             messages=prompt.chat,
             model=self.model_name,
@@ -221,8 +253,44 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 raise LLMEmptyResponseError()
 
             async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
+                nonlocal first_token_received, start_time, output_tokens
                 async for item in response:
-                    yield item.choices[0].delta.content or ""
+                    content = item.choices[0].delta.content or ""
+                    if content:
+                        output_tokens += 1
+
+                        if not first_token_received:
+                            time_to_first_token = time.perf_counter() - start_time
+                            record(
+                                metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                                value=time_to_first_token,
+                                model=self.model_name,
+                                prompt=prompt.__class__.__name__,
+                            )
+                            first_token_received = True
+
+                    yield content
+
+                total_time = time.perf_counter() - start_time
+
+                record(
+                    metric=HistogramMetric.INPUT_TOKENS,
+                    value=input_tokens,
+                    model=self.model_name,
+                    prompt=prompt.__class__.__name__,
+                )
+                record(
+                    metric=HistogramMetric.PROMPT_THROUGHPUT,
+                    value=total_time,
+                    model=self.model_name,
+                    prompt=prompt.__class__.__name__,
+                )
+                record(
+                    metric=HistogramMetric.TOKEN_THROUGHPUT,
+                    value=output_tokens / total_time,
+                    model=self.model_name,
+                    prompt=prompt.__class__.__name__,
+                )
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 

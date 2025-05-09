@@ -4,8 +4,7 @@ import typer
 from typer.testing import CliRunner
 
 from ragbits.cli import app as root_app
-from ragbits.core import audit
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import clear_trace_handlers, set_trace_handlers, traceable
 
 PROCESS_1_STR = "inputs.a: 4\ninputs.b: 2\noutputs.returned: 7"
 PROCESS_2_STR = "inputs.a: 5\n    inputs.b: 2\n    outputs.returned: 7"
@@ -32,11 +31,11 @@ def test_add_numbers_cli_trace_handler_with_verbose():
     assert PROCESS_1_STR in result.stdout
     assert PROCESS_2_STR in result.stdout
     assert PROCESS_NAME_STR in result.stdout
-    audit.clear_event_handlers()
+    clear_trace_handlers()
 
 
 def test_add_numbers_cli_trace_handler_with_set_cli():
-    audit.set_trace_handlers("cli")
+    set_trace_handlers("cli")
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
     if os.getenv("RAGBITS_VERBOSE"):
@@ -45,11 +44,11 @@ def test_add_numbers_cli_trace_handler_with_set_cli():
     assert PROCESS_1_STR in result.stdout
     assert PROCESS_2_STR in result.stdout
     assert PROCESS_NAME_STR in result.stdout
-    audit.clear_event_handlers()
+    clear_trace_handlers()
 
 
 def test_no_cli_trace_handler():
-    audit.clear_event_handlers()
+    clear_trace_handlers()
     runner = CliRunner(mix_stderr=False)
     result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
     if os.getenv("RAGBITS_VERBOSE"):

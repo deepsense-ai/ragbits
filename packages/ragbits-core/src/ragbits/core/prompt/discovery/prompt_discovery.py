@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, get_origin
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.config import core_config
 from ragbits.core.prompt import Prompt
 

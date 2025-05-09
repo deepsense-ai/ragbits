@@ -6,7 +6,7 @@ from typing import ClassVar
 
 from typing_extensions import Self
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.sources.exceptions import SourceNotFoundError
 from ragbits.core.utils.decorators import requires_dependencies

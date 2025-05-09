@@ -1,4 +1,4 @@
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 
 

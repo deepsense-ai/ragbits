@@ -32,13 +32,13 @@ To run the script, execute the following command:
 
 import asyncio
 
-from ragbits.core import audit
+from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
-audit.set_trace_handlers("cli")
+set_trace_handlers("cli")
 
 documents = [
     DocumentMeta.create_text_document_from_literal(
