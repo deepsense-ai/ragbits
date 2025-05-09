@@ -18,13 +18,18 @@ export interface Reference {
 export enum ChatResponseType {
   TEXT = "text",
   REFERENCE = "reference",
-  MESSAGE_ID = "message_id"
+  MESSAGE_ID = "message_id",
 }
 
 export interface ChatRequest {
   message: string;
   history: Message[];
   context?: object;
+}
+
+export enum FormEnabler {
+  LIKE = "like_enabled",
+  DISLIKE = "dislike_enabled",
 }
 
 export enum FormType {
@@ -47,19 +52,22 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
-export type ChatResponse = TextChatResponse | ReferenceChatResponse | MessageIdChatResponse;
+export type ChatResponse =
+  | TextChatResponse
+  | ReferenceChatResponse
+  | MessageIdChatResponse;
 
 export enum FormFieldType {
   TEXT = "text",
   SELECT = "select",
 }
 
-interface FormFieldResponse {
+export interface FormFieldResponse {
   name: string;
   label: string;
   type: FormFieldType;
   required: boolean;
-  options?: { label: string; value: string }[];
+  options?: string[];
 }
 
 export interface FormSchemaResponse {
@@ -67,7 +75,11 @@ export interface FormSchemaResponse {
   fields: FormFieldResponse[];
 }
 
-export interface ConfigResponse {
-  [FormType.LIKE]?: FormSchemaResponse | null;
-  [FormType.DISLIKE]?: FormSchemaResponse | null;
-}
+export type ConfigResponse<
+  TFormType extends string | number | symbol = FormType,
+  TFormEnabler extends string | number | symbol = FormEnabler,
+> = {} & {
+  [key in TFormType]: FormSchemaResponse | null;
+} & {
+  [key in TFormEnabler]: boolean;
+};
