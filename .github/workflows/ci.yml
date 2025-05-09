@@ -121,6 +121,7 @@ jobs:
           retention-days: 3
 
   check-ui-changes:
+    name: Check for UI changes
     runs-on: ubuntu-latest
     outputs:
       ui-changed: ${{ steps.filter.outputs.ui-changed }}
