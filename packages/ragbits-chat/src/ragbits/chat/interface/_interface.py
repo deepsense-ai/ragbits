@@ -4,15 +4,18 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
-from typing import Any, Literal
+from typing import Any, Literal, TypeVar
 
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
+from ..persistence import HistoryPersistenceStrategy, with_history_persistence
 from .forms import FeedbackConfig
 from .types import ChatResponse, ChatResponseType, Reference, StateUpdate
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
 
 
 class ChatInterface(ABC):
@@ -28,6 +31,13 @@ class ChatInterface(ABC):
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
+    history_persistence: HistoryPersistenceStrategy | None = None
+
+    def __init_subclass__(cls, **kwargs):
+        """Automatically apply the with_history_persistence decorator to the chat method in subclasses."""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "chat"):
+            cls.chat = with_history_persistence(cls.chat)
 
     @staticmethod
     def create_text_response(text: str) -> ChatResponse:
