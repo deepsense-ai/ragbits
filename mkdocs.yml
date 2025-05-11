@@ -27,8 +27,8 @@ nav:
       - Observability:
         - "Trace code execution": how-to/audit/use_tracing.md
         - "Track metrics": how-to/audit/use_metrics.md
-      - Project configuration:
-        - "Set preferred components in project": how-to/project/component_preferences.md
+      - Project Configuration:
+        - "Set preferred components": how-to/project/component_preferences.md
         - "Register custom components": how-to/project/custom_components.md
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md

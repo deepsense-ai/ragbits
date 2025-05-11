@@ -49,7 +49,7 @@ To print traces locally in the CLI, configure `CLITraceHandler`. You can enable 
 
 ## Using OpenTelemetry tracer
 
-To export traces to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelTraceHandler` using the `set_trace_handlers("otel")` method.
+To export traces to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelTraceHandler` using the `set_trace_handlers` method.
 
 ```python
 from opentelemetry import trace

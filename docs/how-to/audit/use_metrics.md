@@ -4,24 +4,44 @@ Similar to [traces](./use_tracing.md), Ragbits also collects metrics. These metr
 
 ## Default metrics
 
-By default, the SDK tracks the following:
+By default, the SDK tracks only histogram metrics for LLMs:
 
-- `input_tokens`: the number of input tokens sent to the LLM
+- `input_tokens`: the number of input tokens sent to the model
 - `prompt_throughput`the time taken to process a prompt and receive a response
 - `token_throughput`: the number of tokens processed per second
 - `time_to_first_token`: the time taken (in seconds) to receive the first token in a streaming response
 
+!!! info
+    For now Ragbits support only histogram metrics, in the future we plan to extend the API for counter and gauge metrics.
+
 ## Collecting custom metrics
 
-...
+The Histogram metric is particularly useful when you want to measure the distribution of a set of values.
+
+You can use this metric for measuring things like:
+
+- The duration of a request.
+- The size of a file.
+- The number of items in a list.
+
+To create a histogram metric, use the `create_histogram` function.
 
 ```python
-...
+from ragbits.core.audit import create_histogram, record
+
+request_duration = create_histogram(
+    name="request_duration",
+    unit="ms",
+    description="Duration of requests",
+)
+
+for duration in [10, 20, 30, 40, 50]:
+    record(request_duration, duration)
 ```
 
 ## Using OpenTelemetry meter
 
-To export metrics to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelMetricHandler` using the `set_metric_handlers("otel")` method.
+To export metrics to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelMetricHandler` using the `set_metric_handlers` method.
 
 ```python
 from opentelemetry import metrics
