@@ -54,14 +54,31 @@ def clear_metric_handlers() -> None:
     _metric_handlers.clear()
 
 
-def record(metric: HistogramMetric, value: int | float, **attributes: Any) -> None:  # noqa: ANN401
+def create_histogram(name: str, unit: str = "", description: str = "") -> str:
     """
-    Record a metric using the global metric handlers.
+    Create a histogram metric.
 
     Args:
-        metric: The histogram metric to record.
+        name: The histogram metric name.
+        unit: The histogram metric unit.
+        description: The histogram metric description.
+
+    Returns:
+        The initialized histogram metric.
+    """
+    for handler in _metric_handlers:
+        handler.register_histogram(name=name, unit=unit, description=description)
+    return name
+
+
+def record(metric: HistogramMetric | str, value: int | float, **attributes: Any) -> None:  # noqa: ANN401
+    """
+    Record a histogram metric using the global metric handlers.
+
+    Args:
+        metric: The histogram metric name to record.
         value: The value to record.
         attributes: Additional metadata for the metric.
     """
     for handler in _metric_handlers:
-        handler.record(metric, value, attributes)
+        handler.record_histogram(metric=metric, value=value, attributes=attributes)

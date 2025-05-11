@@ -1,9 +1,9 @@
-from opentelemetry.metrics import MeterProvider, get_meter
+from opentelemetry.metrics import Histogram, MeterProvider, get_meter
 
-from ragbits.core.audit.metrics.base import HISTOGRAM_METRICS, HistogramMetric, MetricHandler
+from ragbits.core.audit.metrics.base import MetricHandler
 
 
-class OtelMetricHandler(MetricHandler):
+class OtelMetricHandler(MetricHandler[Histogram]):
     """
     OpenTelemetry metric handler.
     """
@@ -16,17 +16,24 @@ class OtelMetricHandler(MetricHandler):
             provider: The meter provider to use.
             metric_prefix: Prefix for all metric names.
         """
+        super().__init__(metric_prefix=metric_prefix)
         self._meter = get_meter(name=__name__, meter_provider=provider)
-        self._histogram_metrics = {
-            key: self._meter.create_histogram(
-                name=f"{metric_prefix}_{metric.name}",
-                description=metric.description,
-                unit=metric.unit,
-            )
-            for key, metric in HISTOGRAM_METRICS.items()
-        }
 
-    def record(self, metric: HistogramMetric, value: int | float, attributes: dict | None = None) -> None:
+    def create_histogram(self, name: str, unit: str = "", description: str = "") -> Histogram:
+        """
+        Create a histogram metric.
+
+        Args:
+            name: The histogram metric name.
+            unit: The histogram metric unit.
+            description: The histogram metric description.
+
+        Returns:
+            The initialized histogram metric.
+        """
+        return self._meter.create_histogram(name=name, unit=unit, description=description)
+
+    def record(self, metric: Histogram, value: int | float, attributes: dict | None = None) -> None:  # noqa: PLR6301
         """
         Record the value for a specified histogram metric.
 
@@ -35,4 +42,4 @@ class OtelMetricHandler(MetricHandler):
             value: The value to record for the metric.
             attributes: Additional metadata for the metric.
         """
-        self._histogram_metrics[metric].record(value, attributes=attributes)
+        metric.record(value, attributes=attributes)
