@@ -209,7 +209,7 @@ You can ask me anything! I can provide information, answer questions, and assist
   );
 
   const heroComponent = (
-    <div>
+    <div className="flex h-full w-full items-center justify-center">
       <div className="flex w-full max-w-[600px] flex-col gap-4">
         <Markdown
           className="text-center text-large text-default-900"
