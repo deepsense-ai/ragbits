@@ -6,8 +6,26 @@ on:
   pull_request:
 
 jobs:
+  check-changes:
+    name: Check for Ragbits Python package changes
+    runs-on: ubuntu-latest
+    outputs:
+      packages-changed: ${{ steps.filter.outputs.packages-changed }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for changes
+        id: filter
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^(packages/|examples/)'; then
+            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   lints:
     name: Run linters
+    if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -197,6 +215,7 @@ jobs:
 
   tests:
     name: Run tests
+    if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
