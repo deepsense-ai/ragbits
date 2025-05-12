@@ -13,14 +13,16 @@ jobs:
       package-changed: ${{ steps.filter.outputs.package-changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
       - name: Check for changes
         id: filter
         run: |
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(packages|examples)/'
-      - name: Check for changes
-        id: filter
-        run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(packages|examples)/'; then
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E '^(packages|examples)/'; then
             echo "package-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "package-changed=false" >> "$GITHUB_OUTPUT"
