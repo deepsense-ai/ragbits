@@ -9,15 +9,15 @@ The recommended way to run it is using the official Docker image:
 
     ```bash
     docker run \
-        --mount type=bind,src=./examples/core/audit/ragbits-dashboard.json,dst=/otel-lgtm/ragbits-dashboard.json \
-        --mount type=bind,src=./examples/core/audit/grafana-dashboards.yaml,dst=/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml \
+        --mount type=bind,src=./examples/core/audit/config/grafana/ragbits-dashboard.json,dst=/otel-lgtm/ragbits-dashboard.json \
+        --mount type=bind,src=./examples/core/audit/config/grafana/grafana-dashboards.yaml,dst=/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml \
         -p 3000:3000 -p 4317:4317 -p 4318:4318 --rm -ti grafana/otel-lgtm
     ```
 
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/core/audit/app.py
+    uv run examples/core/audit/otel.py
     ```
 
 To visualize the metrics collected by Ragbits, follow these steps:
@@ -58,15 +58,15 @@ resource = Resource({SERVICE_NAME: "ragbits-example"})
 
 # Otel tracer provider setup
 span_exporter = OTLPSpanExporter("http://localhost:4317", insecure=True)
-provider = TracerProvider(resource=resource)
-provider.add_span_processor(BatchSpanProcessor(span_exporter, max_export_batch_size=1))
-trace.set_tracer_provider(provider)
+tracer_provider = TracerProvider(resource=resource)
+tracer_provider.add_span_processor(BatchSpanProcessor(span_exporter, max_export_batch_size=1))
+trace.set_tracer_provider(tracer_provider)
 
 # Otel meter provider setup
 metric_exporter = OTLPMetricExporter(endpoint="http://localhost:4317", insecure=True)
 reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=1000)
-provider = MeterProvider(metric_readers=[reader], resource=resource)
-metrics.set_meter_provider(provider)
+meter_provider = MeterProvider(metric_readers=[reader], resource=resource)
+metrics.set_meter_provider(meter_provider)
 
 # Ragbits observability setup
 set_trace_handlers("otel")

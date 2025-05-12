@@ -24,7 +24,7 @@ You can use this metric for measuring things like:
 - The size of a file.
 - The number of items in a list.
 
-To create a histogram metric, use the `create_histogram` function.
+To create a histogram metric, use the [`create_histogram`][ragbits.core.audit.metrics.create_histogram] function.
 
 ```python
 from ragbits.core.audit import create_histogram, record
@@ -41,7 +41,7 @@ for duration in [10, 20, 30, 40, 50]:
 
 ## Using OpenTelemetry meter
 
-To export metrics to the OpenTelemetry collector, configure the provider and exporter, and set up the `OtelMetricHandler` using the `set_metric_handlers` method.
+To export metrics to the OpenTelemetry collector, configure the provider and exporter, and set up the [`OtelMetricHandler`][ragbits.core.audit.metrics.otel.OtelMetricHandler] using the [`set_metric_handlers`][ragbits.core.audit.metrics.set_metric_handlers] method.
 
 ```python
 from opentelemetry import metrics
@@ -51,11 +51,10 @@ from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from ragbits.core.audit import set_metric_handlers
 
-resource = Resource(attributes={SERVICE_NAME: "ragbits"})
-exporter = OTLPMetricExporter(endpoint="http://localhost:4317", insecure=True)
-reader = PeriodicExportingMetricReader(exporter, export_interval_millis=5000)
-provider = MeterProvider(metric_readers=[reader], resource=resource)
-metrics.set_meter_provider(provider)
+resource = Resource(attributes={SERVICE_NAME: "ragbits-example"})
+metric_exporter = OTLPMetricExporter(endpoint="http://localhost:4317", insecure=True)
+metric_reader = PeriodicExportingMetricReader(metric_exporter, export_interval_millis=1000)
+metrics.set_meter_provider(MeterProvider(metric_readers=[metric_reader], resource=resource))
 
 set_metric_handlers("otel")
 ```
@@ -63,4 +62,4 @@ set_metric_handlers("otel")
 !!! info
     This code snippet exports metrics to the local OpenTelemetry collector running at <http://localhost:4317>. To visualize metrics from Ragbits, open a browser and navigate to the Grafana dashboard at <http://localhost:3000>.
 
-A full example along with a detailed installation guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/app.py).
+A full example along with a detailed installation guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/otel.py).
