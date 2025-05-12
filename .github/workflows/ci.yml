@@ -13,11 +13,14 @@ jobs:
       package-changed: ${{ steps.filter.outputs.package-changed }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Check for changes
         id: filter
         run: |
-          if git diff --name-only | grep -E '^(packages|examples)/'; then
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(packages|examples)/'
+      - name: Check for changes
+        id: filter
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(packages|examples)/'; then
             echo "package-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "package-changed=false" >> "$GITHUB_OUTPUT"
@@ -149,7 +152,7 @@ jobs:
       - name: Check for changes in ui/
         id: filter
         run: |
-          if git diff --name-only | grep -E '^(ui)/'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(ui)/'; then
             echo "ui-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "ui-changed=false" >> "$GITHUB_OUTPUT"
