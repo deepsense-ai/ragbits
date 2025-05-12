@@ -16,9 +16,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
-
       - name: Check for changes
         id: filter
         run: |
@@ -27,6 +24,8 @@ jobs:
           else
             echo "package-changed=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Debug output
+        run: echo "package-changed=${{ steps.filter.outputs.package-changed }}"
 
   lints:
     name: Run linters
