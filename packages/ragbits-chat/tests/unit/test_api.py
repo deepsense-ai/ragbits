@@ -35,9 +35,8 @@ def mock_chat_interface() -> type[MockChatInterface]:
 @pytest.fixture
 def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
     """Fixture providing a RagbitsAPI instance with the mock interface."""
-    with patch("pathlib.Path.exists", return_value=True):
-        api = RagbitsAPI(mock_chat_interface)
-        return api
+    api = RagbitsAPI(mock_chat_interface)
+    return api
 
 
 @pytest.fixture

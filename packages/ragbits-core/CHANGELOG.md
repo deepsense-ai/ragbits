@@ -4,6 +4,9 @@
 
 - Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
 - Restructure audit module (#427)
+
+## 0.17.1 (2025-05-09)
+
 - Fix Qdrant vector store failing on gRCP connection errors (#548)
 
 ## 0.17.0 (2025-05-06)
