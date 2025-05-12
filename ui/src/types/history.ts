@@ -23,10 +23,13 @@ export interface HistoryContext {
    */
   sendMessage: (text?: string) => void;
   /**
-   * Primitive function to add a message to the history and get its ID.
+   * Primitive used for adding a message to the history and get its ID.
    */
-  addToHistory: (message: Omit<ChatMessage, "id">) => string;
-  updateHistory: (chatResponse: ChatResponse, messageId: string) => void;
+  addMessage: (message: Omit<ChatMessage, "id">) => string;
+  /**
+   * Primitive used for updating a message in the history based on the passed response.
+   */
+  handleResponse: (chatResponse: ChatResponse, messageId: string) => void;
   clearHistory: () => void;
   stopAnswering: () => void;
 }

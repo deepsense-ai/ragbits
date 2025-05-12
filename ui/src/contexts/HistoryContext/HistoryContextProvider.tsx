@@ -29,19 +29,16 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     setHistory((prev) => updater(prev));
   };
 
-  const addToHistory = useCallback(
-    (message: Omit<ChatMessage, "id">): string => {
-      const id = uuidv4();
-      const newMessage: ChatMessage = { ...message, id };
-      updateHistoryState((prev) => {
-        const next = new Map(prev);
-        next.set(id, newMessage);
-        return next;
-      });
-      return id;
-    },
-    [],
-  );
+  const addMessage = useCallback((message: Omit<ChatMessage, "id">): string => {
+    const id = uuidv4();
+    const newMessage: ChatMessage = { ...message, id };
+    updateHistoryState((prev) => {
+      const next = new Map(prev);
+      next.set(id, newMessage);
+      return next;
+    });
+    return id;
+  }, []);
 
   const deleteMessage = useCallback((messageId: string): void => {
     updateHistoryState((prev) => {
@@ -98,7 +95,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     [],
   );
 
-  const updateHistory = useCallback(
+  const handleResponse = useCallback(
     (response: ChatResponse, messageId: string): void => {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
@@ -118,7 +115,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     (text: string, assistantResponseId: string): void => {
       const unsubscribeFn = createEventSource(
         buildApiUrl("/api/chat"),
-        (response) => updateHistory(response, assistantResponseId),
+        (response) => handleResponse(response, assistantResponseId),
         async (error) => {
           setUnsubscribe(null);
 
@@ -130,7 +127,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
           };
           const chunkedResponse = chunkMessage(response);
           for await (const chunk of chunkedResponse) {
-            updateHistory(chunk, assistantResponseId);
+            handleResponse(chunk, assistantResponseId);
           }
         },
         () => setUnsubscribe(null),
@@ -145,23 +142,23 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       );
       setUnsubscribe(() => unsubscribeFn);
     },
-    [history, serverState, updateHistory],
+    [history, serverState, handleResponse],
   );
 
   const sendMessage = useCallback(
     (text?: string): void => {
       if (!text) return;
-      addToHistory({
+      addMessage({
         role: MessageRole.USER,
         content: text,
       });
-      const assistantResponseId = addToHistory({
+      const assistantResponseId = addMessage({
         role: MessageRole.ASSISTANT,
         content: "",
       });
       _sendMessage(text, assistantResponseId);
     },
-    [addToHistory, _sendMessage],
+    [addMessage, _sendMessage],
   );
 
   const stopAnswering = useCallback((): void => {
@@ -174,20 +171,20 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const value = useMemo(
     () => ({
       history: Array.from(history.values()),
-      addToHistory,
+      addMessage,
+      handleResponse,
       deleteMessage,
       clearHistory,
-      updateHistory,
       sendMessage,
       isLoading: !!unsubscribe,
       stopAnswering,
     }),
     [
       history,
-      addToHistory,
+      addMessage,
       deleteMessage,
       clearHistory,
-      updateHistory,
+      handleResponse,
       sendMessage,
       unsubscribe,
       stopAnswering,
