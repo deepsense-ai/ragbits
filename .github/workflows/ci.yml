@@ -166,6 +166,13 @@ jobs:
         run: npm run build
         working-directory: ui
 
+      - name: Check Ragbits Chat UI build sync
+        run: |
+          git diff --quiet || {
+            echo "Ragbits chat build not synced"
+            exit 1
+          }
+
   changelog-update-checker:
     name: Check Changelog Update
     runs-on: ubuntu-latest
