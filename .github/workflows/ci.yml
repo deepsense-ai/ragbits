@@ -10,22 +10,22 @@ jobs:
     name: Check for Ragbits Python package changes
     runs-on: ubuntu-latest
     outputs:
-      packages-changed: ${{ steps.filter.outputs.packages-changed }}
+      package-changed: ${{ steps.filter.outputs.package-changed }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Check for changes
         id: filter
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^(packages/|examples/)'; then
-            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
+          if git diff --name-only | grep -E '^(packages|examples)/'; then
+            echo "package-changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
+            echo "package-changed=false" >> "$GITHUB_OUTPUT"
           fi
 
   lints:
     name: Run linters
-    if: needs.check-changes.outputs.packages-changed == 'true'
+    if: needs.check-changes.outputs.package-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -149,7 +149,7 @@ jobs:
       - name: Check for changes in ui/
         id: filter
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^ui/'; then
+          if git diff --name-only | grep -E '^(ui)/'; then
             echo "ui-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "ui-changed=false" >> "$GITHUB_OUTPUT"
