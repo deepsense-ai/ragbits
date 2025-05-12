@@ -41,7 +41,7 @@ def set_metric_handlers(handlers: Handler | list[Handler]) -> None:
                 if not any(isinstance(item, OtelMetricHandler) for item in _metric_handlers):
                     _metric_handlers.append(OtelMetricHandler())
             else:
-                raise ValueError(f"Handler {handler} not found.")
+                raise ValueError(f"Not found handler: {handler}")
         else:
             raise TypeError(f"Invalid handler type: {type(handler)}")
 
