@@ -202,7 +202,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 models.PointStruct(
                     id=str(entry.id),
                     vector={self._vector_name: self._to_qdrant_vector(embeddings[entry.id])},  # type: ignore
-                    payload=entry.model_dump(exclude_none=True),
+                    payload=entry.model_dump(exclude_none=True, mode="json"),
                 )
                 for entry in entries
                 if entry.id in embeddings
@@ -336,6 +336,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 return []
 
             limit = limit or (await self._client.count(collection_name=self._index_name)).count
+            limit = max(1, limit)
 
             qdrant_filter = self._create_qdrant_filter(where) if where else None
 
