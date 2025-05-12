@@ -41,7 +41,6 @@ class DocumentSearchOptions(Options):
 
     reranker_kwargs: dict[str, Any] = Field(default_factory=dict)
     vector_store_kwargs: dict[str, Any] = Field(default_factory=dict)
-    embedder_kwargs: dict[str, Any] = Field(default_factory=dict)
 
 
 class DocumentSearchConfig(BaseModel):
