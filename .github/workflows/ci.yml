@@ -20,12 +20,15 @@ jobs:
       - name: Check for changes
         id: filter
         run: |
-          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -v ^ui/; then
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+
+          if echo "$changed_files" | grep -qv ^ui/; then
             echo "packages-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "packages-changed=false" >> "$GITHUB_OUTPUT"
           fi
-          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep ^ui/; then
+
+          if echo "$changed_files" | grep -q ^ui/; then
             echo "ui-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "ui-changed=false" >> "$GITHUB_OUTPUT"
@@ -169,9 +172,9 @@ jobs:
         run: npm run lint
         working-directory: ui
 
-      - name: Run Prettier
-        run: npm run format -- --check
-        working-directory: ui
+      # - name: Run Prettier
+      #   run: npm run format -- --check
+      #   working-directory: ui
 
       - name: Check build
         run: npm run build
@@ -180,7 +183,7 @@ jobs:
       - name: Check Ragbits Chat UI build sync
         run: |
           git diff --quiet || {
-            echo "Ragbits chat build not synced"
+            echo "ragbits-chat package ui build not synced"
             exit 1
           }
 

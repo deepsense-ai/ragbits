@@ -13,5 +13,6 @@ __all__ = [
     "record",
     "set_metric_handlers",
     "set_trace_handlers",
-    "trace", "traceable",
+    "trace",
+    "traceable",
 ]
