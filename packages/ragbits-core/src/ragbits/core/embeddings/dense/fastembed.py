@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 from fastembed import TextEmbedding
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.dense.base import DenseEmbedder, EmbedderOptionsT
 from ragbits.core.options import Options
 

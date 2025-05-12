@@ -12,7 +12,7 @@ try:
 except ImportError:
     HAS_LITELLM = False
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingResponseError,

@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ragbits.core.audit import _get_function_inputs, set_trace_handlers, trace, traceable
-from ragbits.core.audit.base import AttributeFormatter, TraceHandler
+from ragbits.core.audit.traces import _get_function_inputs, set_trace_handlers, trace, traceable
+from ragbits.core.audit.traces.base import AttributeFormatter, TraceHandler
 from ragbits.core.vector_stores import VectorStoreEntry
 
 

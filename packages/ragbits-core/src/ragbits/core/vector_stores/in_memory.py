@@ -4,7 +4,7 @@ from uuid import UUID
 
 import numpy as np
 
-from ragbits.core.audit import trace, traceable
+from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.embeddings import Embedder, SparseVector
 from ragbits.core.vector_stores.base import (
     EmbeddingType,

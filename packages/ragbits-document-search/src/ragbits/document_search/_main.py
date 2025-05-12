@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import Self
 
 from ragbits import document_search
-from ragbits.core.audit import trace, traceable
+from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.config import CoreConfig
 from ragbits.core.sources.base import Source, SourceResolver
 from ragbits.core.utils._pyproject import get_config_from_yaml
