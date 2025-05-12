@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from ragbits.cli._utils import get_instance_or_exit
 from ragbits.cli.state import print_output
-from ragbits.document_search._main import DocumentSearch, SearchConfig
+from ragbits.document_search._main import DocumentSearch, DocumentSearchOptions
 
 ds_app = typer.Typer(no_args_is_help=True)
 
@@ -84,8 +84,8 @@ def search(
         if state.document_search is None:
             raise ValueError("Document search not initialized")
 
-        search_config = SearchConfig(vector_store_kwargs={"k": k})
-        entries = await state.document_search.search(query, config=search_config)
+        options = DocumentSearchOptions(vector_store_kwargs={"k": k})
+        entries = await state.document_search.search(query, options)
         print_output(entries, columns=columns)
 
     asyncio.run(run())

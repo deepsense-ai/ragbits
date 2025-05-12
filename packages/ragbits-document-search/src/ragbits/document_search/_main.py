@@ -9,12 +9,13 @@ from typing_extensions import Self
 from ragbits import document_search
 from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.config import CoreConfig
+from ragbits.core.options import Options
 from ragbits.core.sources.base import Source, SourceResolver
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import (
+    ConfigurableComponent,
     NoPreferredConfigError,
     ObjectConstructionConfig,
-    WithConstructionConfig,
 )
 from ragbits.core.vector_stores import VectorStore
 from ragbits.core.vector_stores.base import VectorStoreOptions
@@ -33,7 +34,7 @@ from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerO
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
-class SearchConfig(BaseModel):
+class DocumentSearchOptions(Options):
     """
     Configuration for the search process.
     """
@@ -56,7 +57,7 @@ class DocumentSearchConfig(BaseModel):
     enricher_router: dict[str, ObjectConstructionConfig] = {}
 
 
-class DocumentSearch(WithConstructionConfig):
+class DocumentSearch(ConfigurableComponent[DocumentSearchOptions]):
     """
     A main entrypoint to the DocumentSearch functionality.
 
@@ -69,6 +70,7 @@ class DocumentSearch(WithConstructionConfig):
         3. Uses Reranker to rerank the chunks.
     """
 
+    options_cls: type[DocumentSearchOptions] = DocumentSearchOptions
     default_module: ClassVar[ModuleType | None] = document_search
     configuration_key: ClassVar[str] = "document_search"
 
@@ -83,12 +85,15 @@ class DocumentSearch(WithConstructionConfig):
     def __init__(
         self,
         vector_store: VectorStore,
+        *,
         query_rephraser: QueryRephraser | None = None,
         reranker: Reranker | None = None,
         ingest_strategy: IngestStrategy | None = None,
         parser_router: DocumentParserRouter | None = None,
         enricher_router: ElementEnricherRouter | None = None,
+        default_options: DocumentSearchOptions | None = None,
     ) -> None:
+        super().__init__(default_options=default_options)
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
         self.reranker = reranker or NoopReranker()
@@ -178,33 +183,36 @@ class DocumentSearch(WithConstructionConfig):
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
-    async def search(self, query: str, config: SearchConfig | None = None) -> Sequence[Element]:
+    async def search(self, query: str, options: DocumentSearchOptions | None = None) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
 
         Args:
             query: The query to search for.
-            config: The search configuration.
+            options: The document search retrieval options.
 
         Returns:
             A list of chunks.
         """
-        config = config or SearchConfig()
+        merged_options = (self.default_options | options) if options else self.default_options
+
         queries = await self.query_rephraser.rephrase(query)
-        with trace(queries=queries, config=config, vectore_store=self.vector_store, reranker=self.reranker) as outputs:
+        with trace(
+            queries=queries, options=merged_options, vectore_store=self.vector_store, reranker=self.reranker
+        ) as outputs:
             elements = []
 
             for rephrased_query in queries:
                 results = await self.vector_store.retrieve(
                     text=rephrased_query,
-                    options=VectorStoreOptions(**config.vector_store_kwargs),
+                    options=VectorStoreOptions(**merged_options.vector_store_kwargs),
                 )
                 elements.append([Element.from_vector_db_entry(result.entry, result.score) for result in results])
 
             outputs.search_results = await self.reranker.rerank(
                 elements=elements,
                 query=query,
-                options=RerankerOptions(**config.reranker_kwargs),
+                options=RerankerOptions(**merged_options.reranker_kwargs),
             )
             return outputs.search_results
 

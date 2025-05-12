@@ -13,8 +13,7 @@ from ragbits.core.sources.gcs import GCSSource
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.vector_stores.base import VectorStoreOptions, VectorStoreResult
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.document_search import DocumentSearch
-from ragbits.document_search._main import SearchConfig
+from ragbits.document_search._main import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import (
     Document,
     DocumentMeta,
@@ -128,7 +127,9 @@ async def test_document_search_with_search_config():
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
-    results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 1}))
+    results = await document_search.search(
+        "Peppa's brother", options=DocumentSearchOptions(vector_store_kwargs={"k": 1})
+    )
 
     assert len(results) == 1
     assert isinstance(results[0], TextElement)
@@ -163,7 +164,7 @@ async def test_document_search_scores():
     await document_search.ingest(documents)
 
     # Search and verify scores
-    results = await document_search.search("Peppa George", config=SearchConfig(vector_store_kwargs={"k": 3}))
+    results = await document_search.search("Peppa George", options=DocumentSearchOptions(vector_store_kwargs={"k": 3}))
 
     assert len(results) == 3
     assert all(result.score is not None for result in results)
@@ -217,7 +218,9 @@ async def test_document_search_with_batched():
 
     await document_search.ingest(documents)
 
-    results = await document_search.search("Peppa's brother", config=SearchConfig(vector_store_kwargs={"k": 100}))
+    results = await document_search.search(
+        "Peppa's brother", options=DocumentSearchOptions(vector_store_kwargs={"k": 100})
+    )
 
     assert len(await vectore_store.list()) == 12
     assert len(results) == 12
