@@ -228,11 +228,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMNotSupportingImagesError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
-
-        first_token_received = False
         input_tokens = self.count_tokens(prompt)
-        output_tokens = 0
-
         start_time = time.perf_counter()
 
         with trace(
@@ -253,21 +249,18 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 raise LLMEmptyResponseError()
 
             async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
-                nonlocal first_token_received, start_time, output_tokens
+                output_tokens = 0
                 async for item in response:
                     content = item.choices[0].delta.content or ""
                     if content:
                         output_tokens += 1
-
-                        if not first_token_received:
-                            time_to_first_token = time.perf_counter() - start_time
+                        if output_tokens == 1:
                             record(
                                 metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
-                                value=time_to_first_token,
+                                value=time.perf_counter() - start_time,
                                 model=self.model_name,
                                 prompt=prompt.__class__.__name__,
                             )
-                            first_token_received = True
 
                     yield content
 
@@ -294,7 +287,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             outputs.response = response_to_async_generator(response)  # type: ignore
 
-        return outputs.response  # type: ignore
+        return outputs.response
 
     async def _get_litellm_response(
         self,

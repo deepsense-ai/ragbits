@@ -162,12 +162,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
             Async generator of tokens
         """
         start_time = time.perf_counter()
-        first_token_received = False
         input_tokens = len(
             self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt")[0]
         )
-        output_tokens = 0
-
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
@@ -178,23 +175,20 @@ class LocalLLM(LLM[LocalLLMOptions]):
         async def streamer_to_async_generator(
             streamer: TextIteratorStreamer, generation_thread: threading.Thread
         ) -> AsyncGenerator[str, None]:
-            nonlocal first_token_received, start_time, output_tokens
+            output_tokens = 0
             generation_thread.start()
-            for text_piece in streamer:
-                if text_piece:
+            for text in streamer:
+                if text:
                     output_tokens += 1
-
-                    if not first_token_received:
-                        time_to_first_token = time.perf_counter() - start_time
+                    if output_tokens == 1:
                         record(
                             metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
-                            value=time_to_first_token,
+                            value=time.perf_counter() - start_time,
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
-                        first_token_received = True
 
-                yield text_piece
+                yield text
                 await asyncio.sleep(0.0)
 
             generation_thread.join()
