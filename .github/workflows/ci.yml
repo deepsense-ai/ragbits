@@ -7,10 +7,11 @@ on:
 
 jobs:
   check-changes:
-    name: Check for Ragbits Python package changes
+    name: Check source changes
     runs-on: ubuntu-latest
     outputs:
-      package-changed: ${{ steps.filter.outputs.package-changed }}
+      packages-changed: ${{ steps.filter.outputs.packages-changed }}
+      ui-changed: ${{ steps.filter.outputs.ui-changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,17 +20,21 @@ jobs:
       - name: Check for changes
         id: filter
         run: |
-          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -E '^(packages|examples)/'; then
-            echo "package-changed=true" >> "$GITHUB_OUTPUT"
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep -v ^ui/; then
+            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "package-changed=false" >> "$GITHUB_OUTPUT"
+            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Debug output
-        run: echo "package-changed=${{ steps.filter.outputs.package-changed }}"
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep ^ui/; then
+            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
   lints:
     name: Run linters
-    if: needs.check-changes.outputs.package-changed == 'true'
+    needs: check-changes
+    if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -142,28 +147,12 @@ jobs:
           path: dist/**
           retention-days: 3
 
-  check-ui-changes:
-    name: Check for UI changes
-    runs-on: ubuntu-latest
-    outputs:
-      ui-changed: ${{ steps.filter.outputs.ui-changed }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for changes in ui/
-        id: filter
-        run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^(ui)/'; then
-            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
   ui-lints:
     name: Run UI linters
+    needs: check-changes
+    if: needs.check-changes.outputs.ui-changed == 'true'
     continue-on-error: false
     runs-on: ubuntu-latest
-    if: needs.check-ui-changes.outputs.ui-changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -219,6 +208,7 @@ jobs:
 
   tests:
     name: Run tests
+    needs: check-changes
     if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
