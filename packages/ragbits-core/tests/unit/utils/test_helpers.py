@@ -1,9 +1,10 @@
 import pytest
+
 from ragbits.core.utils.helpers import batched
 
 
 @pytest.mark.parametrize(
-    "input_data, batch_size, expected",
+    ("input_data", "batch_size", "expected"),
     [
         ([], 3, []),
         ([1, 2, 3], 5, [[1, 2, 3]]),
@@ -17,7 +18,7 @@ from ragbits.core.utils.helpers import batched
         "batch_size_equal_to_data",
         "batch_size_divides_data_evenly",
         "batch_size_with_remainder",
-    ]
+    ],
 )
 def test_batched(input_data: list[int], batch_size: int, expected: list[list[int]]) -> None:
     result = list(batched(input_data, batch_size))
