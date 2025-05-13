@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- updated ui build (#553)
+
 ## 0.17.1 (2025-05-09)
 
 ### Changed
