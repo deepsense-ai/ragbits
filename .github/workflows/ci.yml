@@ -6,6 +6,28 @@ on:
   pull_request:
 
 jobs:
+  pr-title-checker:
+    name: Check PR title
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  changelog-update-checker:
+    name: Check changelog update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify changelog updates
+        run: |
+          ./.github/scripts/check_changelog_update.sh
+
   check-changes:
     name: Check source changes
     runs-on: ubuntu-latest
@@ -186,28 +208,6 @@ jobs:
             echo "ragbits-chat package ui build not synced"
             exit 1
           }
-
-  changelog-update-checker:
-    name: Check Changelog Update
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Verify changelog updates
-        run: |
-          ./.github/scripts/check_changelog_update.sh
-
-  pr-title-checker:
-    name: Validate PR title
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   tests:
     name: Run tests
