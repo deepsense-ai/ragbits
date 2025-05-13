@@ -33,7 +33,11 @@ from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 class DocumentSearchOptions(Options, Generic[VectorStoreOptionsT, RerankerOptionsT]):
     """
-    Configuration for the search process.
+    Object representing the options for the document search.
+
+    Attributes:
+        vector_store_options: The options for the vector store.
+        reranker_options: The options for the reranker.
     """
 
     vector_store_options: VectorStoreOptionsT | None | NotGiven = NOT_GIVEN
@@ -42,7 +46,7 @@ class DocumentSearchOptions(Options, Generic[VectorStoreOptionsT, RerankerOption
 
 class DocumentSearchConfig(BaseModel):
     """
-    Schema for the dict taken by DocumentSearch.from_config method.
+    Schema for the document search config.
     """
 
     vector_store: ObjectConstructionConfig
@@ -55,28 +59,22 @@ class DocumentSearchConfig(BaseModel):
 
 class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT]]):
     """
-    A main entrypoint to the DocumentSearch functionality.
-
-    It provides methods for both ingestion and retrieval.
+    Main entrypoint to the document search functionality. It provides methods for document retrieval and ingestion.
 
     Retrieval:
-
         1. Uses QueryRephraser to rephrase the query.
-        2. Uses VectorStore to retrieve the most relevant chunks.
-        3. Uses Reranker to rerank the chunks.
+        2. Uses VectorStore to retrieve the most relevant elements.
+        3. Uses Reranker to rerank the elements.
+
+    Ingestion:
+        1. Uses IngestStrategy to orchestrate ingestion process.
+        2. Uses DocumentParserRouter to route the document to the appropriate DocumentParser to parse the content.
+        3. Uses ElementEnricherRouter to redirect the element to the appropriate ElementEnricher to enrich the element.
     """
 
     options_cls: type[DocumentSearchOptions] = DocumentSearchOptions
     default_module: ClassVar[ModuleType | None] = document_search
     configuration_key: ClassVar[str] = "document_search"
-
-    # vector_store: VectorStore
-    # query_rephraser: QueryRephraser
-    # reranker: Reranker
-
-    # ingest_strategy: IngestStrategy
-    # parser_router: DocumentParserRouter
-    # enricher_router: ElementEnricherRouter
 
     def __init__(
         self,
@@ -89,6 +87,18 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
         parser_router: DocumentParserRouter | None = None,
         enricher_router: ElementEnricherRouter | None = None,
     ) -> None:
+        """
+        Initialize the DocumentSearch instance.
+
+        Args:
+            vector_store: The vector store to use for retrieval.
+            query_rephraser: The query rephraser to use for retrieval.
+            reranker: The reranker to use for retrieval.
+            default_options: The default options for the search.
+            ingest_strategy: The ingestion strategy to use for ingestion.
+            parser_router: The document parser router to use for ingestion.
+            enricher_router: The element enricher router to use for ingestion.
+        """
         super().__init__(default_options=default_options)
         self.vector_store = vector_store
         self.query_rephraser = query_rephraser or NoopQueryRephraser()
@@ -207,17 +217,19 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
                 ]
                 for query in queries
             ]
-            outputs.search_results = await self.reranker.rerank(
+            outputs.results = await self.reranker.rerank(
                 elements=elements,
                 query=query,
                 options=reranker_options,
             )
 
-        return outputs.search_results
+        return outputs.results
 
     @traceable
     async def ingest(
-        self, documents: str | Iterable[DocumentMeta | Document | Source], fail_on_error: bool = True
+        self,
+        documents: str | Iterable[DocumentMeta | Document | Source],
+        fail_on_error: bool = True,
     ) -> IngestExecutionResult:
         """
         Ingest documents into the search index.
