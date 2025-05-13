@@ -1,4 +1,4 @@
-# How-To: Load dataset with sources
+# How-To: Load dataset from sources
 
 Ragbits provides an abstraction for handling datasets. The [`Source`][ragbits.core.sources.Source] component is designed to define interactions with any data source, such as downloading and querying.
 

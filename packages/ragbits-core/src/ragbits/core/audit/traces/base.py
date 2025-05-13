@@ -17,7 +17,7 @@ class TraceHandler(Generic[SpanT], ABC):
 
     def __init__(self) -> None:
         """
-        Constructs a new TraceHandler instance.
+        Initialize the TraceHandler instance.
         """
         super().__init__()
         self._spans = ContextVar[list[SpanT]]("_spans")

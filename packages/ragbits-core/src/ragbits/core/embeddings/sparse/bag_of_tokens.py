@@ -2,7 +2,7 @@ from collections import Counter
 
 import tiktoken
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.base import SparseVector
 from ragbits.core.embeddings.sparse.base import SparseEmbedder
 from ragbits.core.options import Options

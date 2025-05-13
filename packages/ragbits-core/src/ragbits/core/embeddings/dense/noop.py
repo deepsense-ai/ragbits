@@ -1,4 +1,4 @@
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.options import Options, OptionsT
 

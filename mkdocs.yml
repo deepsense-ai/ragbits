@@ -22,12 +22,14 @@ nav:
         - "Perform hybrid search": how-to/vector_stores/hybrid.md
         - "Use sparse retrieval": how-to/vector_stores/sparse_vectors.md
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
-      - Dataset Loading:
-        - "Load dataset with sources": how-to/sources/load-dataset.md
-      - Project configuration:
-        - "Set preferred components in project": how-to/project/component_preferences.md
+      - Data Sources:
+        - "Load data from sources": how-to/sources/load-dataset.md
+      - Observability:
+        - "Trace code execution": how-to/audit/use_tracing.md
+        - "Track metrics": how-to/audit/use_metrics.md
+      - Project Configuration:
+        - "Set preferred components": how-to/project/component_preferences.md
         - "Register custom components": how-to/project/custom_components.md
-        - "Setup tracing": how-to/project/use_tracing.md
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md
         - "Search documents": how-to/document_search/search-documents.md
@@ -52,6 +54,9 @@ nav:
           - api_reference/core/vector-stores.md
           - api_reference/core/hybrid.md
           - api_reference/core/sources.md
+          - Audit:
+            - api_reference/core/audit/traces.md
+            - api_reference/core/audit/metrics.md
       - Document Search:
           - api_reference/document_search/index.md
           - Documents:
