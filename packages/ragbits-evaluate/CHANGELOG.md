@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Adjust typing for DocumentSearch (#554)
+
 ## 0.17.1 (2025-05-09)
 
 ### Changed

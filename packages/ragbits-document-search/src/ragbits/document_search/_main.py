@@ -1,9 +1,9 @@
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 from types import ModuleType
-from typing import Any, ClassVar
+from typing import ClassVar, Generic
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits import document_search
@@ -11,36 +11,33 @@ from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.config import CoreConfig
 from ragbits.core.options import Options
 from ragbits.core.sources.base import Source, SourceResolver
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils._pyproject import get_config_from_yaml
 from ragbits.core.utils.config_handling import (
     ConfigurableComponent,
     NoPreferredConfigError,
     ObjectConstructionConfig,
 )
-from ragbits.core.vector_stores import VectorStore
-from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptionsT
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies import (
-    IngestStrategy,
-    SequentialIngestStrategy,
-)
+from ragbits.document_search.ingestion.strategies import IngestStrategy, SequentialIngestStrategy
 from ragbits.document_search.ingestion.strategies.base import IngestExecutionError, IngestExecutionResult
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
-from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptionsT
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
-class DocumentSearchOptions(Options):
+class DocumentSearchOptions(Options, Generic[VectorStoreOptionsT, RerankerOptionsT]):
     """
     Configuration for the search process.
     """
 
-    reranker_kwargs: dict[str, Any] = Field(default_factory=dict)
-    vector_store_kwargs: dict[str, Any] = Field(default_factory=dict)
+    vector_store_options: VectorStoreOptionsT | None | NotGiven = NOT_GIVEN
+    reranker_options: RerankerOptionsT | None | NotGiven = NOT_GIVEN
 
 
 class DocumentSearchConfig(BaseModel):
@@ -56,7 +53,7 @@ class DocumentSearchConfig(BaseModel):
     enricher_router: dict[str, ObjectConstructionConfig] = {}
 
 
-class DocumentSearch(ConfigurableComponent[DocumentSearchOptions]):
+class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT]]):
     """
     A main entrypoint to the DocumentSearch functionality.
 
@@ -73,24 +70,24 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions]):
     default_module: ClassVar[ModuleType | None] = document_search
     configuration_key: ClassVar[str] = "document_search"
 
-    vector_store: VectorStore
-    query_rephraser: QueryRephraser
-    reranker: Reranker
+    # vector_store: VectorStore
+    # query_rephraser: QueryRephraser
+    # reranker: Reranker
 
-    ingest_strategy: IngestStrategy
-    parser_router: DocumentParserRouter
-    enricher_router: ElementEnricherRouter
+    # ingest_strategy: IngestStrategy
+    # parser_router: DocumentParserRouter
+    # enricher_router: ElementEnricherRouter
 
     def __init__(
         self,
-        vector_store: VectorStore,
+        vector_store: VectorStore[VectorStoreOptionsT],
         *,
         query_rephraser: QueryRephraser | None = None,
-        reranker: Reranker | None = None,
+        reranker: Reranker[RerankerOptionsT] | None = None,
+        default_options: DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT] | None = None,
         ingest_strategy: IngestStrategy | None = None,
         parser_router: DocumentParserRouter | None = None,
         enricher_router: ElementEnricherRouter | None = None,
-        default_options: DocumentSearchOptions | None = None,
     ) -> None:
         super().__init__(default_options=default_options)
         self.vector_store = vector_store
@@ -182,7 +179,11 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions]):
 
         raise NoPreferredConfigError(f"Could not find preferred factory or configuration for {cls.configuration_key}")
 
-    async def search(self, query: str, options: DocumentSearchOptions | None = None) -> Sequence[Element]:
+    async def search(
+        self,
+        query: str,
+        options: DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT] | None = None,
+    ) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
 
@@ -194,26 +195,25 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions]):
             A list of chunks.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        vector_store_options = merged_options.vector_store_options or None
+        reranker_options = merged_options.reranker_options or None
 
-        queries = await self.query_rephraser.rephrase(query)
-        with trace(
-            queries=queries, options=merged_options, vectore_store=self.vector_store, reranker=self.reranker
-        ) as outputs:
-            elements = []
-
-            for rephrased_query in queries:
-                results = await self.vector_store.retrieve(
-                    text=rephrased_query,
-                    options=VectorStoreOptions(**merged_options.vector_store_kwargs),
-                )
-                elements.append([Element.from_vector_db_entry(result.entry, result.score) for result in results])
-
+        with trace(query=query, options=merged_options) as outputs:
+            queries = await self.query_rephraser.rephrase(query)
+            elements = [
+                [
+                    Element.from_vector_db_entry(result.entry, result.score)
+                    for result in await self.vector_store.retrieve(query, vector_store_options)
+                ]
+                for query in queries
+            ]
             outputs.search_results = await self.reranker.rerank(
                 elements=elements,
                 query=query,
-                options=RerankerOptions(**merged_options.reranker_kwargs),
+                options=reranker_options,
             )
-            return outputs.search_results
+
+        return outputs.search_results
 
     @traceable
     async def ingest(

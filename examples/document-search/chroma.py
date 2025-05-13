@@ -101,11 +101,11 @@ async def main() -> None:
     print([doc.metadata["content"] for doc in all_documents])
 
     query = "I'm boiling my water and I need a joke"
-    vector_store_kwargs = {
-        "k": 2,
-        "score_threshold": 0.4,
-    }
-    options = DocumentSearchOptions(vector_store_kwargs=vector_store_kwargs)
+    vector_store_options = VectorStoreOptions(
+        k=2,
+        score_threshold=0.4,
+    )
+    options = DocumentSearchOptions(vector_store_options=vector_store_options)
     results = await document_search.search(query, options)
 
     print()

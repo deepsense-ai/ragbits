@@ -45,7 +45,7 @@ def basic_document_search_factory() -> DocumentSearch:
     """
     Factory for basic example document search instance.
     """
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=LiteLLMEmbedder()))
+    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=LiteLLMEmbedder()))
     asyncio.run(_add_example_documents(document_search))
     return document_search
 

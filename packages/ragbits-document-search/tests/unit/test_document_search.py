@@ -54,7 +54,7 @@ CONFIG = {
     ],
 )
 async def test_document_search_from_config(document: DocumentMeta, expected: str):
-    document_search = DocumentSearch.from_config(CONFIG)
+    document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
     await document_search.ingest([document])
 
@@ -68,7 +68,7 @@ async def test_document_search_ingest_from_source():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
 
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
         parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
@@ -98,7 +98,7 @@ async def test_document_search_ingest_from_source():
 async def test_document_search_ingest(document: DocumentMeta | Document):
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
         parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
@@ -111,7 +111,7 @@ async def test_document_search_ingest(document: DocumentMeta | Document):
 
 
 async def test_document_search_with_no_results():
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=AsyncMock()))
+    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=AsyncMock()))
 
     results = await document_search.search("Peppa's sister")
 
@@ -121,14 +121,14 @@ async def test_document_search_with_no_results():
 async def test_document_search_with_search_config():
     embeddings_mock = AsyncMock()
     embeddings_mock.embed_text.return_value = [[0.1, 0.1]]
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
         parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
     await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
 
     results = await document_search.search(
-        "Peppa's brother", options=DocumentSearchOptions(vector_store_kwargs={"k": 1})
+        "Peppa's brother", options=DocumentSearchOptions(vector_store_options=VectorStoreOptions(k=1))
     )
 
     assert len(results) == 1
@@ -150,7 +150,7 @@ async def test_document_search_scores():
                 result.score = 0.9 - (i * 0.1)  # Decreasing scores: 0.9, 0.8, 0.7, etc.
             return results
 
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=MockVectorStore(embedder=embeddings_mock),
         parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
@@ -164,7 +164,9 @@ async def test_document_search_scores():
     await document_search.ingest(documents)
 
     # Search and verify scores
-    results = await document_search.search("Peppa George", options=DocumentSearchOptions(vector_store_kwargs={"k": 3}))
+    results = await document_search.search(
+        "Peppa George", options=DocumentSearchOptions(vector_store_options=VectorStoreOptions(k=3))
+    )
 
     assert len(results) == 3
     assert all(result.score is not None for result in results)
@@ -176,7 +178,7 @@ async def test_document_search_scores():
 
 
 async def test_document_search_ingest_multiple_from_sources():
-    document_search = DocumentSearch.from_config(CONFIG)
+    document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
     examples_files = Path(__file__).parent.parent / "assets" / "md"
 
     await document_search.ingest(await LocalFileSource.list_sources(examples_files, file_pattern="*.md"))
@@ -211,7 +213,7 @@ async def test_document_search_with_batched():
     ingest_strategy = BatchedIngestStrategy(batch_size=5)
     vectore_store = InMemoryVectorStore(embedder=NoopEmbedder())
 
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=vectore_store,
         ingest_strategy=ingest_strategy,
     )
@@ -219,7 +221,7 @@ async def test_document_search_with_batched():
     await document_search.ingest(documents)
 
     results = await document_search.search(
-        "Peppa's brother", options=DocumentSearchOptions(vector_store_kwargs={"k": 100})
+        "Peppa's brother", options=DocumentSearchOptions(vector_store_options=VectorStoreOptions(k=100))
     )
 
     assert len(await vectore_store.list()) == 12
@@ -233,7 +235,7 @@ async def test_document_search_ingest_from_uri_basic():
         test_file = Path(temp_dir) / "test.txt"
         test_file.write_text("Test content")
 
-        document_search = DocumentSearch.from_config(CONFIG)
+        document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Test ingesting from URI
         await document_search.ingest(f"local://{test_file}")
@@ -288,7 +290,7 @@ async def test_document_search_ingest_from_uri_with_wildcard(
         for file_path, content in test_files:
             file_path.write_text(content)
 
-        document_search = DocumentSearch.from_config(CONFIG)
+        document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Use the parametrized glob pattern
         dir_pattern = f"{str(Path(temp_dir).parent)}/{dir_pattern}" if dir_pattern is not None else temp_dir
@@ -337,7 +339,7 @@ async def test_document_search_ingest_from_gcs_uri_basic():
         # Inject the mock storage
         GCSSource.set_storage(mock_storage())
 
-        document_search = DocumentSearch.from_config(CONFIG)
+        document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Test single file
         await document_search.ingest("gcs://test-bucket/folder/test1.txt")
@@ -372,7 +374,7 @@ async def test_document_search_ingest_from_gcs_uri_with_wildcard():
         # Inject the mock storage
         GCSSource.set_storage(mock_storage())
 
-        document_search = DocumentSearch.from_config(CONFIG)
+        document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Test wildcard ingestion
         await document_search.ingest("gcs://test-bucket/folder/*")
@@ -417,7 +419,7 @@ async def test_document_search_ingest_from_gcs_uri_invalid_pattern():
         # Inject the mock storage
         GCSSource.set_storage(mock_storage())
 
-        document_search = DocumentSearch.from_config(CONFIG)
+        document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Test invalid patterns
         with pytest.raises(ValueError, match="GCSSource only supports '\\*' at the end of path"):
@@ -501,7 +503,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             mock.patch("ragbits.core.sources.hf.load_dataset", return_value=dataset),
             mock.patch("ragbits.core.sources.base.get_local_storage_dir", return_value=storage_dir),
         ):
-            document_search = DocumentSearch(
+            document_search: DocumentSearch = DocumentSearch(
                 vector_store=vector_store,
                 parser_router=DocumentParserRouter(parsers),
             )
