@@ -34,11 +34,14 @@ class MockEvaluationTarget(WithConstructionConfig):
 
 
 class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationData, MockEvaluationResult]):
-    async def __call__(self, data: MockEvaluationData) -> MockEvaluationResult:
-        return MockEvaluationResult(
-            input_data=data.input_data,
-            is_correct=data.input_data >= self.evaluation_target.threshold,
-        )
+    async def __call__(self, data: Iterable[MockEvaluationData]) -> Iterable[MockEvaluationResult]:
+        return [
+            MockEvaluationResult(
+                input_data=row.input_data,
+                is_correct=row.input_data >= self.evaluation_target.threshold,
+            )
+            for row in data
+        ]
 
     @classmethod
     def from_config(cls, config: dict) -> "MockEvaluationPipeline":

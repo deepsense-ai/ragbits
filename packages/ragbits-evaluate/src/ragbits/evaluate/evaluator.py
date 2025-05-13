@@ -1,12 +1,13 @@
-import asyncio
 import time
 from collections.abc import Iterable
 from dataclasses import asdict
+from itertools import chain
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
+from ragbits.core.utils.helpers import batched
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline, EvaluationResultT, EvaluationTargetT
@@ -114,17 +115,13 @@ class Evaluator(WithConstructionConfig):
         Returns:
             The evaluation results and performance metrics.
         """
-        semaphore = asyncio.Semaphore(self.batch_size)
-
-        async def _call_pipeline_with_semaphore(data: EvaluationDataT) -> EvaluationResultT:
-            async with semaphore:
-                return await pipeline(data)
-
         start_time = time.perf_counter()
-        pipe_outputs = await tqdm.gather(*[_call_pipeline_with_semaphore(data) for data in dataset], desc="Evaluation")
+        pipe_outputs = await tqdm.gather(
+            *[pipeline(data) for data in batched(dataset, self.batch_size)],
+            desc="Evaluation",
+        )
         end_time = time.perf_counter()
-
-        return pipe_outputs, self._compute_time_perf(start_time, end_time, len(pipe_outputs))
+        return list(chain.from_iterable(pipe_outputs)), self._compute_time_perf(start_time, end_time, len(pipe_outputs))
 
     @staticmethod
     def _results_processor(results: list[EvaluationResultT]) -> dict:

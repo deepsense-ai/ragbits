@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -76,21 +77,28 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
             )
             await self.evaluation_target.ingest(sources)
 
-    async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
+    async def __call__(self, data: Iterable[DocumentSearchData]) -> Iterable[DocumentSearchResult]:
         """
         Run the document search evaluation pipeline.
 
         Args:
-            data: The evaluation data.
+            data: The evaluation data batch.
 
         Returns:
-            The evaluation result.
+            The evaluation result batch.
         """
-        elements = await self.evaluation_target.search(data.question)
-        predicted_passages = [element.text_representation for element in elements if element.text_representation]
+        results = []
 
-        return DocumentSearchResult(
-            question=data.question,
-            reference_passages=data.reference_passages,
-            predicted_passages=predicted_passages,
-        )
+        for row in data:
+            elements = await self.evaluation_target.search(row.question)
+            predicted_passages = [element.text_representation for element in elements if element.text_representation]
+
+            results.append(
+                DocumentSearchResult(
+                    question=row.question,
+                    reference_passages=row.reference_passages,
+                    predicted_passages=predicted_passages,
+                )
+            )
+
+        return results
