@@ -117,8 +117,7 @@ class Evaluator(WithConstructionConfig):
         """
         start_time = time.perf_counter()
         pipe_outputs = await tqdm.gather(
-            *[pipeline(data) for data in batched(dataset, self.batch_size)],
-            desc="Evaluation",
+            *[pipeline(data) for data in batched(dataset, self.batch_size)], desc="Evaluation"
         )
         end_time = time.perf_counter()
         return list(chain.from_iterable(pipe_outputs)), self._compute_time_perf(start_time, end_time, len(pipe_outputs))
