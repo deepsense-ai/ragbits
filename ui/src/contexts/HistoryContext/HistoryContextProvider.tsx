@@ -1,90 +1,197 @@
-import { ReactNode, useState } from "react";
-import { ChatMessage } from "../../types/chat.ts";
+import { PropsWithChildren, useCallback, useMemo, useState } from "react";
+import { HistoryContext } from "./HistoryContext.ts";
+import { v4 as uuidv4 } from "uuid";
+import {
+  chunkMessage,
+  createEventSource,
+} from "../../core/utils/eventSource.ts";
 import {
   ChatResponse,
   ChatResponseType,
   MessageRole,
+  ServerState,
 } from "../../types/api.ts";
-import { ChatHistoryContext } from "./HistoryContext.ts";
-import { v4 as uuidv4 } from "uuid";
+import {
+  ChatMessage,
+  HistoryState,
+  UnsubscribeFn,
+} from "../../types/history.ts";
+import { buildApiUrl, mapHistoryToMessages } from "../../core/utils/api.ts";
 
-export const ChatHistoryProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
-  const [messages, setMessages] = useState(new Map<string, ChatMessage>([]));
+export function HistoryProvider({ children }: PropsWithChildren) {
+  const [history, setHistory] = useState<HistoryState>(new Map());
+  const [serverState, setServerState] = useState<ServerState | null>(null);
+  const [unsubscribe, setUnsubscribe] = useState<UnsubscribeFn>(null);
 
-  const createMessage = (
-    message: Partial<Omit<ChatMessage, "id" | "serverId">>,
-  ): string => {
-    const messageId = uuidv4();
+  const updateHistoryState = (
+    updater: (prev: HistoryState) => HistoryState,
+  ) => {
+    setHistory((prev) => updater(prev));
+  };
 
-    setMessages((state) => {
-      const updatedMessages = new Map(state);
-
-      const messageToAdd: ChatMessage = {
-        id: messageId,
-        role: message.role || MessageRole.USER,
-        content: message.content || "",
-        references: message.references || [],
-        ...message,
-      };
-
-      updatedMessages.set(messageId, messageToAdd);
-      return updatedMessages;
+  const addMessage = useCallback((message: Omit<ChatMessage, "id">): string => {
+    const id = uuidv4();
+    const newMessage: ChatMessage = { ...message, id };
+    updateHistoryState((prev) => {
+      const next = new Map(prev);
+      next.set(id, newMessage);
+      return next;
     });
+    return id;
+  }, []);
 
-    return messageId;
-  };
-
-  const updateMessage = (id: string, response: ChatResponse): void => {
-    setMessages((state) => {
-      const updatedMessages = new Map(state);
-      const messageToUpdate = updatedMessages.get(id);
-
-      if (!messageToUpdate) {
-        throw new Error(`Message with id ${id} not found in chat history`);
-      }
-
-      if (response.type === ChatResponseType.TEXT) {
-        const { content } = response;
-
-        updatedMessages.set(id, {
-          ...messageToUpdate,
-          content: `${messageToUpdate.content}${content}`,
-        });
-      } else if (response.type === ChatResponseType.REFERENCE) {
-        const { content } = response;
-
-        updatedMessages.set(id, {
-          ...messageToUpdate,
-          references: [...(messageToUpdate.references || []), content],
-        });
-      } else if (response.type === ChatResponseType.MESSAGE_ID) {
-        const { content } = response;
-
-        updatedMessages.set(id, {
-          ...messageToUpdate,
-          serverId: content,
-        });
-      }
-      return updatedMessages;
+  const deleteMessage = useCallback((messageId: string): void => {
+    updateHistoryState((prev) => {
+      const next = new Map(prev);
+      next.delete(messageId);
+      return next;
     });
-  };
+  }, []);
 
-  const clearMessages = (): void => {
-    setMessages(new Map([]));
-  };
+  const clearHistory = useCallback((): void => {
+    setHistory(new Map());
+    setServerState(null);
+  }, []);
+
+  const _handleNonHistoryResponse = useCallback(
+    (response: ChatResponse): void => {
+      switch (response.type) {
+        case ChatResponseType.STATE_UPDATE:
+          setServerState(response.content);
+          break;
+      }
+    },
+    [],
+  );
+
+  const _handleHistoryResponse = useCallback(
+    (response: ChatResponse, messageId: string): void => {
+      updateHistoryState((prev) => {
+        const next = new Map(prev);
+        const existingMessage = next.get(messageId);
+        if (!existingMessage) {
+          throw new Error(`Message ID ${messageId} not found in history`);
+        }
+
+        const updatedMessage = { ...existingMessage };
+        switch (response.type) {
+          case ChatResponseType.TEXT:
+            updatedMessage.content += response.content;
+            break;
+          case ChatResponseType.REFERENCE:
+            updatedMessage.references = [
+              ...(existingMessage.references ?? []),
+              response.content,
+            ];
+            break;
+          case ChatResponseType.MESSAGE_ID:
+            updatedMessage.serverId = response.content;
+            break;
+        }
+        next.set(messageId, updatedMessage);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const handleResponse = useCallback(
+    (response: ChatResponse, messageId: string): void => {
+      const NON_HISTORY_TYPES = [
+        ChatResponseType.STATE_UPDATE,
+        ChatResponseType.MESSAGE_ID,
+      ];
+
+      if (NON_HISTORY_TYPES.includes(response.type)) {
+        _handleNonHistoryResponse(response);
+      } else {
+        _handleHistoryResponse(response, messageId);
+      }
+    },
+    [_handleNonHistoryResponse, _handleHistoryResponse],
+  );
+
+  const _sendMessage = useCallback(
+    (text: string, assistantResponseId: string): void => {
+      const unsubscribeFn = createEventSource(
+        buildApiUrl("/api/chat"),
+        (response) => handleResponse(response, assistantResponseId),
+        async (error) => {
+          setUnsubscribe(null);
+
+          if (!error) return;
+
+          const response: ChatResponse = {
+            type: ChatResponseType.TEXT,
+            content: error,
+          };
+          const chunkedResponse = chunkMessage(response);
+          for await (const chunk of chunkedResponse) {
+            handleResponse(chunk, assistantResponseId);
+          }
+        },
+        () => setUnsubscribe(null),
+        {
+          method: "POST",
+          body: {
+            message: text,
+            history: mapHistoryToMessages(Array.from(history.values())),
+            context: serverState ?? {},
+          },
+        },
+      );
+      setUnsubscribe(() => unsubscribeFn);
+    },
+    [history, serverState, handleResponse],
+  );
+
+  const sendMessage = useCallback(
+    (text?: string): void => {
+      if (!text) return;
+      addMessage({
+        role: MessageRole.USER,
+        content: text,
+      });
+      const assistantResponseId = addMessage({
+        role: MessageRole.ASSISTANT,
+        content: "",
+      });
+      _sendMessage(text, assistantResponseId);
+    },
+    [addMessage, _sendMessage],
+  );
+
+  const stopAnswering = useCallback((): void => {
+    if (!unsubscribe) return;
+
+    unsubscribe();
+    setUnsubscribe(null);
+  }, [unsubscribe]);
+
+  const value = useMemo(
+    () => ({
+      history: Array.from(history.values()),
+      addMessage,
+      handleResponse,
+      deleteMessage,
+      clearHistory,
+      sendMessage,
+      isLoading: !!unsubscribe,
+      stopAnswering,
+    }),
+    [
+      history,
+      addMessage,
+      deleteMessage,
+      clearHistory,
+      handleResponse,
+      sendMessage,
+      unsubscribe,
+      stopAnswering,
+    ],
+  );
 
   return (
-    <ChatHistoryContext.Provider
-      value={{
-        messages: Array.from(messages.values()),
-        createMessage,
-        updateMessage,
-        clearMessages,
-      }}
-    >
-      {children}
-    </ChatHistoryContext.Provider>
+    <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>
   );
-};
+}
