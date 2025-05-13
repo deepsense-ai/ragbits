@@ -172,9 +172,9 @@ jobs:
         run: npm run lint
         working-directory: ui
 
-      # - name: Run Prettier
-      #   run: npm run format -- --check
-      #   working-directory: ui
+      - name: Run Prettier
+        run: npm run format:check
+        working-directory: ui
 
       - name: Check build
         run: npm run build
