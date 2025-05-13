@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add batched() helper method to utils (#555)
 - Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
 - Restructure audit module (#427)
 

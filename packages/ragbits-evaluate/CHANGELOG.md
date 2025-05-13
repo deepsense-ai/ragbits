@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- BREAKING CHANGE: Adjust eval pipline interface to batch processing (#555)
+
 ## 0.17.1 (2025-05-09)
 
 ### Changed
