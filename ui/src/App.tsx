@@ -4,46 +4,39 @@ import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
-import { createEventSource } from "./core/utils/eventSourceUtils";
 import {
   FeedbackFormPlugin,
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import {
-  ChatRequest,
-  ChatResponseType,
-  ConfigResponse,
-  FormType,
-  MessageRole,
-} from "./types/api.ts";
+import { ConfigResponse, FormType } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import axiosWrapper from "./core/utils/axiosWrapper.ts";
 import { buildApiUrl } from "./core/utils/api.ts";
+import { useRequest } from "./core/utils/request.ts";
 
 export default function Component() {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [feedbackName, setFeedbackName] = useState<FormType>();
-
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const cancelRef = useRef<(() => void) | null>(null);
-
-  const { messages, createMessage, updateMessage } = useHistoryContext();
+  const {
+    history,
+    sendMessage,
+    isLoading: historyIsLoading,
+  } = useHistoryContext();
   const { theme } = useThemeContext();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
   const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
     FeedbackFormPluginName,
   );
-  const showHistory = useMemo(() => messages.length > 0, [messages.length]);
+  const showHistory = useMemo(() => history.length > 0, [history.length]);
+  const configRequest = useRequest<ConfigResponse>(buildApiUrl("/api/config"));
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -63,21 +56,11 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
-    const handleFetchConfig = async () => {
-      setIsLoading(true);
-
-      const [data] = await axiosWrapper<ConfigResponse>({
-        url: buildApiUrl("/api/config"),
-        method: "GET",
-      });
-
-      setConfig(data);
-
-      setIsLoading(false);
-    };
-
-    handleFetchConfig();
-  }, []);
+    if (configRequest.data) {
+      const config = configRequest.data.data;
+      setConfig(config);
+    }
+  }, [configRequest.data]);
 
   useEffect(() => {
     if (!config) {
@@ -94,16 +77,10 @@ export default function Component() {
 
   useEffect(() => {
     setShouldAutoScroll(true);
-    if (messages.length === 0) {
-      // Stop the generation when user resets the chat
-      if (cancelRef.current) {
-        cancelRef.current();
-        cancelRef.current = null;
-      }
-
+    if (history.length === 0) {
       setShowScrollDownButton(false);
     }
-  }, [messages.length]);
+  }, [history.length]);
 
   useEffect(() => {
     if (!scrollContainerRef.current) return;
@@ -112,7 +89,7 @@ export default function Component() {
       const container = scrollContainerRef.current;
       container.scrollTop = container.scrollHeight;
     }
-  }, [handleScroll, messages, shouldAutoScroll]);
+  }, [handleScroll, history, shouldAutoScroll]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -147,43 +124,8 @@ export default function Component() {
     onOpen();
   };
 
-  const handleSubmit = async () => {
-    setIsLoading(true);
-    createMessage({ content: message, role: MessageRole.USER });
-
-    const assistantResponseId = createMessage({
-      content: "",
-      role: MessageRole.ASSISTANT,
-    });
-
-    const onError = () => {
-      setIsLoading(false);
-      updateMessage(assistantResponseId, {
-        type: ChatResponseType.TEXT,
-        content: "An error occurred. Please try again.",
-      });
-    };
-
-    cancelRef.current = createEventSource<ChatRequest>(
-      buildApiUrl("/api/chat"),
-      (streamData) => {
-        updateMessage(assistantResponseId, streamData);
-      },
-      onError,
-      () => {
-        setIsLoading(false);
-      },
-      {
-        method: "POST",
-        body: {
-          message,
-          history: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        },
-      },
-    );
+  const handleSubmit = () => {
+    sendMessage(message);
   };
 
   const heroMessage = `Hello! I'm your AI assistant.\n\n How can I help you today?
@@ -194,9 +136,9 @@ You can ask me anything! I can provide information, answer questions, and assist
       className="relative flex h-full flex-col gap-6 pb-8"
       ref={scrollContainerRef}
     >
-      {messages.map((m, idx) => (
+      {history.map((m) => (
         <ChatMessage
-          key={idx}
+          key={m.id}
           chatMessage={m}
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
@@ -225,6 +167,7 @@ You can ask me anything! I can provide information, answer questions, and assist
   );
 
   const content = showHistory ? historyComponent : heroComponent;
+  const isLoading = configRequest.isLoading || historyIsLoading;
 
   return (
     <div
