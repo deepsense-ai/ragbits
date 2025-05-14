@@ -14,14 +14,14 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
-    "@heroui/react": "^2.6.14",
+    "@heroui/react": "^2.8.0-beta.4",
     "@hookform/resolvers": "^5.0.1",
     "axios": "^1.8.3",
-    "framer-motion": "^12.2.0",
+    "framer-motion": "^12.11.0",
     "github-markdown-css": "^5.8.1",
     "lodash": "^4.17.21",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "react-hook-form": "^7.55.0",
     "react-markdown": "^9.0.3",
     "remark-gfm": "^4.0.0",
@@ -31,7 +31,9 @@
   "devDependencies": {
     "@eslint/js": "^9.17.0",
     "@iconify/react": "^5.2.0",
+    "@tailwindcss/postcss": "^4.1.6",
     "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.1.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
@@ -43,9 +45,10 @@
     "postcss": "^8.5.1",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1.6",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.5"
+    "vite": "^6.0.5",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

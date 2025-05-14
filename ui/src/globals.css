@@ -1,6 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+ @import "tailwindcss";
+ @plugin './hero.ts';
+
+ @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+ @custom-variant dark (&:is(.dark *));
 
 .markdown-container pre {
   overflow: auto;
