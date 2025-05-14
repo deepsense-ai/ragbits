@@ -87,7 +87,7 @@ class ChatInterface(ABC):
     feedback_config: FeedbackConfig = FeedbackConfig()
     history_persistence: HistoryPersistenceStrategy | None = None
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
         super().__init_subclass__(**kwargs)
         if hasattr(cls, "chat"):
