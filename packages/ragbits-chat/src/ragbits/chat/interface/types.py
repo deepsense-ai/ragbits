@@ -80,8 +80,10 @@ class ChatResponse(BaseModel):
         """
         return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
 
+
 class ChatContext(BaseModel):
     """Represents the context of a chat conversation."""
+
     conversation_id: str | None = None
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)

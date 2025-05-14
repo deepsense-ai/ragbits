@@ -131,12 +131,12 @@ class RagbitsAPI:
             response_generator = self.chat_interface.chat(
                 message=request.message,
                 history=[msg.model_dump() for msg in request.history],
-                context=chat_context.model_dump()
+                context=chat_context.model_dump(),
             )
 
             # Pass the generator to the SSE formatter
             return StreamingResponse(
-                RagbitsAPI._chat_response_to_sse(response_generator, chat_context.message_id, self.chat_interface),
+                RagbitsAPI._chat_response_to_sse(response_generator),
                 media_type="text/event-stream",
             )
 
@@ -181,9 +181,7 @@ class RagbitsAPI:
             data = json.dumps(
                 {
                     "type": response.type.value,
-                    "content": response.content
-                    if isinstance(response.content, str)
-                    else response.content.model_dump(),
+                    "content": response.content if isinstance(response.content, str) else response.content.model_dump(),
                 }
             )
             yield f"data: {data}\n\n"

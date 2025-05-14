@@ -55,29 +55,21 @@ async def test_chat_response_to_sse() -> None:
             type=ChatResponseType.REFERENCE, content=Reference(title="Ref", content="Content", url="http://example.com")
         )
 
-    # Use the static method from RagbitsAPI class
-    message_id = "test-message-id"
-    sse_generator = RagbitsAPI._chat_response_to_sse(mock_generator(), message_id)
+    sse_generator = RagbitsAPI._chat_response_to_sse(mock_generator())
 
     responses = []
     async for response in sse_generator:
         responses.append(response)
 
-    # Should now have 3 responses: message_id event + 2 chat responses
-    assert len(responses) == 3
+    # Should now have 2 chat responses
+    assert len(responses) == 2
 
-    # First response should be the message_id event
-    first_response = responses[0].replace("data: ", "").strip()
-    data = json.loads(first_response)
-    assert data["type"] == "message_id"
-    assert data["content"] == message_id
+    # Second should be the text response
+    assert responses[0] == 'data: {"type": "text", "content": "Hello"}\n\n'
 
-    # Second should be the text
-    assert responses[1] == 'data: {"type": "text", "content": "Hello"}\n\n'
-
-    # Parse the third response JSON to check it
-    third_response = responses[2].replace("data: ", "").strip()
-    data = json.loads(third_response)
+    # Parse the second response JSON to check it
+    second_response = responses[1].replace("data: ", "").strip()
+    data = json.loads(second_response)
     assert data["type"] == "reference"
     assert data["content"]["title"] == "Ref"
     assert data["content"]["content"] == "Content"

@@ -54,12 +54,6 @@ def with_chat_metadata(
         # Convert back to dict for the chat method
         context_dict = chat_context.model_dump()
 
-        # Handle history persistence if configured
-        if not self.history_persistence:
-            async for response in func(self, message, history, context_dict):
-                yield response
-            return
-
         responses = []
         main_response = ""
         extra_responses = []
@@ -74,13 +68,14 @@ def with_chat_metadata(
                     extra_responses.append(response)
                 yield response
         finally:
-            await self.history_persistence.save_interaction(
-                message=message,
-                response=main_response,
-                extra_responses=extra_responses,
-                context=context_dict,
-                timestamp=timestamp,
-            )
+            if self.history_persistence:
+                await self.history_persistence.save_interaction(
+                    message=message,
+                    response=main_response,
+                    extra_responses=extra_responses,
+                    context=context_dict,
+                    timestamp=timestamp,
+                )
 
     return wrapper
 
