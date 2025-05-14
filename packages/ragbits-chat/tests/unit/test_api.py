@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
-from ragbits.chat.interface.types import ChatResponse, ChatResponseType, Reference
+from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference
 
 
 class MockChatInterface(ChatInterface):
@@ -19,7 +19,7 @@ class MockChatInterface(ChatInterface):
         self.feedback_config = FeedbackConfig()
 
     async def chat(
-        self, message: str, history: list[Any] | None = None, context: dict[str, Any] | None = None
+        self, message: str, history: list[Any] | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponse, None]:
         """Mock implementation that yields test responses."""
         yield self.create_text_response("Test response")
