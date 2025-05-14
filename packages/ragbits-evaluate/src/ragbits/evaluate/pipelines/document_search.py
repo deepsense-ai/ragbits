@@ -61,7 +61,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         # TODO: optimize this for cases with duplicated document search configs between runs
         if config.get("source"):
             config["vector_store"]["config"]["index_name"] = str(uuid4())
-        evaluation_target = DocumentSearch.from_config(config)
+        evaluation_target: DocumentSearch = DocumentSearch.from_config(config)
         return cls(evaluation_target=evaluation_target, source=config.get("source"))
 
     async def prepare(self) -> None:
