@@ -69,9 +69,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
           onChange={(e) => setValue(field.name, e.target.value)}
         >
           {field.options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
+            <SelectItem key={option.value}>{option.label}</SelectItem>
           ))}
         </Select>
       );
@@ -94,7 +92,7 @@ const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
       <ModalContent>
         {(onClose) => (
           <form onSubmit={handleSubmit(handleFormSubmit)}>
-            <ModalHeader className="flex flex-col gap-1 text-default-900">
+            <ModalHeader className="text-default-900 flex flex-col gap-1">
               {title}
             </ModalHeader>
             <ModalBody>
