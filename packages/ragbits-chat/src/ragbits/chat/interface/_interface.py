@@ -65,7 +65,7 @@ def with_chat_metadata(
                     message=message,
                     response=main_response,
                     extra_responses=extra_responses,
-                    context=context.model_dump(),
+                    context=context,
                     timestamp=timestamp,
                 )
 
