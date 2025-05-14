@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Adjust typing for DocumentSearch (#554)
 - Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
 - Restructure audit module (#427)
 
