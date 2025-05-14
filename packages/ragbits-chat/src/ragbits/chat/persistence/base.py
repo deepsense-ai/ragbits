@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ragbits.chat.interface.types import ChatResponse
+from ragbits.chat.interface.types import ChatContext, ChatResponse
 
 
 class HistoryPersistenceStrategy(ABC):
@@ -12,7 +12,7 @@ class HistoryPersistenceStrategy(ABC):
         message: str,
         response: str,
         extra_responses: list[ChatResponse],
-        context: dict | None,
+        context: ChatContext,
         timestamp: float,
     ) -> None:
         """

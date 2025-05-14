@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from ..interface.types import ChatResponse
+from ..interface.types import ChatContext, ChatResponse
 from .base import HistoryPersistenceStrategy
 
 
@@ -22,7 +22,7 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         message: str,
         response: str,
         extra_responses: list[ChatResponse],
-        context: dict | None,
+        context: ChatContext,
         timestamp: float,
     ) -> None:
         """
