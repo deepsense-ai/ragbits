@@ -45,7 +45,7 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         }
 
         # Get current file path and ensure parent directory exists
-        file_path = self._get_file_path(context.conversation_id)
+        file_path = self._get_file_path(context.conversation_id or "no_conversation_id")
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Append to file
