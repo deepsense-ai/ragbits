@@ -1,7 +1,6 @@
 import importlib
 import json
 import logging
-import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any, Literal
@@ -15,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatResponse, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 
 logger = logging.getLogger(__name__)
 
@@ -112,33 +111,32 @@ class RagbitsAPI:
             if not self.chat_interface:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
-            # Generate a unique message ID for this conversation message
-            message_id = str(uuid.uuid4())
+            # Convert request context to ChatContext
+            chat_context = ChatContext(**request.context)
 
             # Verify state signature if provided
-            if "state" in request.context and "signature" in request.context:
-                state = request.context["state"]
-                signature = request.context["signature"]
+            if "state" in chat_context.state and "signature" in chat_context.state:
+                state = chat_context.state["state"]
+                signature = chat_context.state["signature"]
                 if not ChatInterface.verify_state(state, signature):
-                    logger.warning(f"Invalid state signature received for message {message_id}")
+                    logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invalid state signature",
                     )
-                # Remove the signature from context after verification
-                del request.context["signature"]
-            # Ensure context has a state field if not present
-            elif "state" not in request.context:
-                request.context["state"] = {}
+                # Remove the signature from state after verification
+                del chat_context.state["signature"]
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
-                message=request.message, history=[msg.model_dump() for msg in request.history], context=request.context
+                message=request.message,
+                history=[msg.model_dump() for msg in request.history],
+                context=chat_context.model_dump()
             )
 
             # Pass the generator to the SSE formatter
             return StreamingResponse(
-                RagbitsAPI._chat_response_to_sse(response_generator, message_id, self.chat_interface),
+                RagbitsAPI._chat_response_to_sse(response_generator, chat_context.message_id, self.chat_interface),
                 media_type="text/event-stream",
             )
 
@@ -170,7 +168,7 @@ class RagbitsAPI:
 
     @staticmethod
     async def _chat_response_to_sse(
-        responses: AsyncGenerator[ChatResponse], message_id: str, chat_interface: ChatInterface | None = None
+        responses: AsyncGenerator[ChatResponse],
     ) -> AsyncGenerator[str, None]:
         """
         Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
@@ -178,38 +176,17 @@ class RagbitsAPI:
 
         Args:
             responses: The chat response generator
-            message_id: The unique identifier for this message
-            chat_interface: The chat interface instance to use for verifying state (optional)
         """
-        # Send the message_id as the first SSE event
-        data = json.dumps({"type": "message_id", "content": message_id})
-        yield f"data: {data}\n\n"
-
         async for response in responses:
-            if response.type.value == "state_update":
-                state_update = response.as_state_update()
-                if state_update:
-                    # Verification is already done by the chat interface that created the state update
-                    data = json.dumps(
-                        {
-                            "type": "state_update",
-                            "content": {
-                                "state": state_update.state,
-                                "signature": state_update.signature,
-                            },
-                        }
-                    )
-                    yield f"data: {data}\n\n"
-            else:
-                data = json.dumps(
-                    {
-                        "type": response.type.value,
-                        "content": response.content
-                        if isinstance(response.content, str)
-                        else response.content.model_dump(),
-                    }
-                )
-                yield f"data: {data}\n\n"
+            data = json.dumps(
+                {
+                    "type": response.type.value,
+                    "content": response.content
+                    if isinstance(response.content, str)
+                    else response.content.model_dump(),
+                }
+            )
+            yield f"data: {data}\n\n"
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

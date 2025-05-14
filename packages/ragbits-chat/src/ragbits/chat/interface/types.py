@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MessageRole(str, Enum):
@@ -40,6 +40,8 @@ class ChatResponseType(str, Enum):
     TEXT = "text"
     REFERENCE = "reference"
     STATE_UPDATE = "state_update"
+    MESSAGE_ID = "message_id"
+    CONVERSATION_ID = "conversation_id"
 
 
 class ChatResponse(BaseModel):
@@ -77,3 +79,10 @@ class ChatResponse(BaseModel):
                 state = verify_state(state_update)
         """
         return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
+
+class ChatContext(BaseModel):
+    """Represents the context of a chat conversation."""
+    conversation_id: str | None = None
+    message_id: str | None = None
+    state: dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(extra="allow")

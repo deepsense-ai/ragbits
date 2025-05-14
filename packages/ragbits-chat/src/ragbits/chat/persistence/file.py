@@ -20,6 +20,16 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         context: dict | None,
         timestamp: float,
     ) -> None:
+        """
+        Save a chat interaction to a file in JSON format.
+
+        Args:
+            message: The user's input message
+            response: The main response text
+            extra_responses: List of additional responses (references, state updates, etc.)
+            context: Optional context dictionary containing metadata
+            timestamp: Unix timestamp of when the interaction occurred
+        """
         # Create interaction record
         interaction = {
             "message": message,

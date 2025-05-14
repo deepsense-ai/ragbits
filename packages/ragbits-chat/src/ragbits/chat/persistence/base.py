@@ -20,9 +20,9 @@ class HistoryPersistenceStrategy(ABC):
 
         Args:
             message: The user's input message
-            response: The main response (already aggregated by decorator)
-            extra_responses: List of additional responses
-            context: Optional context dictionary
+            response: The main response text
+            extra_responses: List of additional responses (references, state updates, etc.)
+            context: Optional context dictionary containing metadata
             timestamp: Unix timestamp of when the interaction occurred
         """
         pass
