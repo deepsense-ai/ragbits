@@ -1,4 +1,5 @@
 import json
+import uuid
 from pathlib import Path
 
 from ..interface.types import ChatResponse
@@ -6,11 +7,17 @@ from .base import HistoryPersistenceStrategy
 
 
 class FileHistoryPersistence(HistoryPersistenceStrategy):
-    """Strategy that saves chat history to a file."""
+    """Strategy that saves chat history to dated files in a directory."""
 
-    def __init__(self, file_path: str | Path):
-        self.file_path = Path(file_path)
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
+    def __init__(self, base_path: str | Path):
+        self.base_path = Path(base_path)
+        self.base_path.mkdir(parents=True, exist_ok=True)
+        self.current_file = None
+        self.conversation_id = str(uuid.uuid4())
+
+    def _get_file_path(self) -> Path:
+        """Get the current conversation file path based on date and conversation ID."""
+        return self.base_path / f"{self.conversation_id}.jsonl"
 
     async def save_interaction(
         self,
@@ -21,7 +28,7 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         timestamp: float,
     ) -> None:
         """
-        Save a chat interaction to a file in JSON format.
+        Save a chat interaction to a dated file in JSON format.
 
         Args:
             message: The user's input message
@@ -39,6 +46,10 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
             "timestamp": timestamp,
         }
 
+        # Get current file path and ensure parent directory exists
+        file_path = self._get_file_path()
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
         # Append to file
-        with open(self.file_path, "a") as f:
+        with open(file_path, "a") as f:
             f.write(json.dumps(interaction) + "\n")

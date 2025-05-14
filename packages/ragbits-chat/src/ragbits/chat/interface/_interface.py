@@ -6,8 +6,8 @@ import logging
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Awaitable, Callable
-from typing import Any, Literal, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, Literal
 
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
@@ -18,12 +18,9 @@ from .types import ChatContext, ChatResponse, ChatResponseType, Reference, State
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar("T")
-
-
 def with_chat_metadata(
-    func: Callable[..., Awaitable[AsyncGenerator[ChatResponse, None]]],
-) -> Callable[..., Awaitable[AsyncGenerator[ChatResponse, None]]]:
+    func: Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]],
+) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
     """
     Decorator that adds message and conversation metadata to the chat method and handles history persistence.
     Generates message_id and conversation_id (if first message) and stores them in context.
@@ -32,27 +29,21 @@ def with_chat_metadata(
 
     @functools.wraps(func)
     async def wrapper(
-        self: "ChatInterface", message: str, history: ChatFormat | None = None, context: dict[str, Any] | None = None
+        self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponse, None]:
         # Initialize context if None
         if context is None:
-            context = {}
-
-        # Convert context to ChatContext
-        chat_context = ChatContext(**context)
+            context = ChatContext()
 
         # Generate message_id if not present
-        if not chat_context.message_id:
-            chat_context.message_id = str(uuid.uuid4())
-            yield ChatResponse(type=ChatResponseType.MESSAGE_ID, content=chat_context.message_id)
+        if not context.message_id:
+            context.message_id = str(uuid.uuid4())
+            yield ChatResponse(type=ChatResponseType.MESSAGE_ID, content=context.message_id)
 
         # Generate conversation_id if this is the first message
-        if not chat_context.conversation_id and (not history or len(history) == 0):
-            chat_context.conversation_id = str(uuid.uuid4())
-            yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=chat_context.conversation_id)
-
-        # Convert back to dict for the chat method
-        context_dict = chat_context.model_dump()
+        if not context.conversation_id and (not history or len(history) == 0):
+            context.conversation_id = str(uuid.uuid4())
+            yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
 
         responses = []
         main_response = ""
@@ -60,9 +51,9 @@ def with_chat_metadata(
         timestamp = time.time()
 
         try:
-            async for response in func(self, message, history, context_dict):
+            async for response in func(self, message, history, context):
                 responses.append(response)
-                if response.type == ChatResponseType.TEXT:
+                if response.type == ChatResponseType.TEXT and isinstance(response.content, str):
                     main_response = main_response + response.content
                 else:
                     extra_responses.append(response)
@@ -73,7 +64,7 @@ def with_chat_metadata(
                     message=message,
                     response=main_response,
                     extra_responses=extra_responses,
-                    context=context_dict,
+                    context=context.model_dump(),
                     timestamp=timestamp,
                 )
 
@@ -95,11 +86,11 @@ class ChatInterface(ABC):
     feedback_config: FeedbackConfig = FeedbackConfig()
     history_persistence: HistoryPersistenceStrategy | None = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
         super().__init_subclass__(**kwargs)
         if hasattr(cls, "chat"):
-            cls.chat = with_chat_metadata(cls.chat)
+            cls.chat = functools.wraps(cls.chat)(with_chat_metadata(cls.chat))
 
     @staticmethod
     def create_text_response(text: str) -> ChatResponse:
@@ -163,7 +154,7 @@ class ChatInterface(ABC):
         self,
         message: str,
         history: ChatFormat | None = None,
-        context: dict[str, Any] | None = None,
+        context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Process a chat message and yield responses asynchronously.
