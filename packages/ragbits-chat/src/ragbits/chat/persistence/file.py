@@ -13,11 +13,10 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
         self.current_file = None
-        self.conversation_id = str(uuid.uuid4())
 
-    def _get_file_path(self) -> Path:
+    def _get_file_path(self, conversation_id: str) -> Path:
         """Get the current conversation file path based on date and conversation ID."""
-        return self.base_path / f"{self.conversation_id}.jsonl"
+        return self.base_path / f"{conversation_id}.jsonl"
 
     async def save_interaction(
         self,
@@ -47,7 +46,7 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         }
 
         # Get current file path and ensure parent directory exists
-        file_path = self._get_file_path()
+        file_path = self._get_file_path(context.conversation_id)
         file_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Append to file

@@ -20,7 +20,7 @@ from ragbits.chat.persistence.file import FileHistoryPersistence
 class MyChat(ChatInterface):
     """An offline example implementation of the ChatInterface that demonstrates different response types."""
 
-    history_persistence = FileHistoryPersistence(file_path="offline_chat_history.json")
+    history_persistence = FileHistoryPersistence(base_path="chat_history")
 
     feedback_config = FeedbackConfig(
         like_enabled=True,
