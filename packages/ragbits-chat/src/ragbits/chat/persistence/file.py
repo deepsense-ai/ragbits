@@ -1,5 +1,4 @@
 import json
-import uuid
 from pathlib import Path
 
 from ..interface.types import ChatResponse
