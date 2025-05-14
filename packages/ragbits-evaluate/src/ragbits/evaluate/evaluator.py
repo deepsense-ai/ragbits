@@ -1,7 +1,9 @@
+import asyncio
+import random
 import time
-from collections.abc import Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import asdict
-from itertools import chain
+from typing import ParamSpec, TypeVar
 
 from pydantic import BaseModel
 from tqdm.asyncio import tqdm
@@ -11,6 +13,9 @@ from ragbits.core.utils.helpers import batched
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline, EvaluationResultT, EvaluationTargetT
+
+_CallP = ParamSpec("_CallP")
+_CallReturnT = TypeVar("_CallReturnT")
 
 
 class EvaluationConfig(BaseModel):
@@ -37,14 +42,26 @@ class Evaluator(WithConstructionConfig):
     Evaluator class.
     """
 
-    def __init__(self, batch_size: int = 10) -> None:
+    def __init__(
+        self,
+        batch_size: int = 10,
+        num_retries: int = 3,
+        backoff_multiplier: int = 1,
+        backoff_max: int = 60,
+    ) -> None:
         """
-        Initialize the evaluator.
+        Initialize the Evaluator instance.
 
         Args:
             batch_size: batch size for the evaluation pipeline inference.
+            num_retries: The number of retries per evaluation pipeline inference error.
+            backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
+            backoff_max: The maximum allowed delay (in seconds) between retries.
         """
         self.batch_size = batch_size
+        self.num_retries = num_retries
+        self.backoff_multiplier = backoff_multiplier
+        self.backoff_max = backoff_max
 
     @classmethod
     async def run_from_config(cls, config: dict) -> dict:
@@ -90,21 +107,23 @@ class Evaluator(WithConstructionConfig):
         dataset = await dataloader.load()
         await pipeline.prepare()
 
-        results, perf_results = await self._call_pipeline(pipeline, dataset)
+        results, errors, perf_results = await self._call_pipeline(pipeline, dataset)
         computed_metrics = self._compute_metrics(metrics, results)
         processed_results = self._results_processor(results)
+        processed_errors = self._errors_processor(errors)
 
         return {
             **perf_results,
             **computed_metrics,
             **processed_results,
+            **processed_errors,
         }
 
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
         dataset: Iterable[EvaluationDataT],
-    ) -> tuple[list[EvaluationResultT], dict]:
+    ) -> tuple[list[EvaluationResultT], list[Exception], dict]:
         """
         Call the pipeline with the given data.
 
@@ -116,11 +135,49 @@ class Evaluator(WithConstructionConfig):
             The evaluation results and performance metrics.
         """
         start_time = time.perf_counter()
-        pipe_outputs = await tqdm.gather(
-            *[pipeline(data) for data in batched(dataset, self.batch_size)], desc="Evaluation"
+        outputs = await tqdm.gather(
+            *[self._call_with_error_handling(pipeline, data) for data in batched(dataset, self.batch_size)],
+            desc="Evaluation",
         )
         end_time = time.perf_counter()
-        return list(chain.from_iterable(pipe_outputs)), self._compute_time_perf(start_time, end_time, len(pipe_outputs))
+
+        errors = [output for output in outputs if isinstance(output, Exception)]
+        results = [item for output in outputs if not isinstance(output, Exception) for item in output]
+
+        return results, errors, self._compute_time_perf(start_time, end_time, len(outputs))
+
+    async def _call_with_error_handling(
+        self,
+        executable: Callable[_CallP, Awaitable[_CallReturnT]],
+        *executable_args: _CallP.args,
+        **executable_kwargs: _CallP.kwargs,
+    ) -> _CallReturnT | Exception:
+        """
+        Call executable with a standarized error handling.
+        If an error occurs, the executable is retried `num_retries` times using randomized exponential backoff.
+
+        Args:
+            executable: The callable function to execute.
+            executable_args: Positional arguments to pass to the executable.
+            executable_kwargs: Keyword arguments to pass to the executable.
+
+        Returns:
+            The result of the executable if successful.
+
+        Raises:
+            Exception: The last encountered exception after all retries are exhausted.
+        """
+        for i in range(max(0, self.num_retries) + 1):
+            try:
+                return await executable(*executable_args, **executable_kwargs)
+            except Exception as exc:
+                if i == self.num_retries:
+                    return exc
+
+                delay = random.uniform(0, min(2**i * self.backoff_multiplier, self.backoff_max))  # noqa: S311
+                await asyncio.sleep(delay)
+
+        raise RuntimeError("Unreachable code reached")  # mypy quirk
 
     @staticmethod
     def _results_processor(results: list[EvaluationResultT]) -> dict:
@@ -134,6 +191,19 @@ class Evaluator(WithConstructionConfig):
             The processed results.
         """
         return {"results": [asdict(result) for result in results]}
+
+    @staticmethod
+    def _errors_processor(errors: list[Exception]) -> dict:
+        """
+        Process the errors.
+
+        Args:
+            errors: The errors.
+
+        Returns:
+            The processed errors.
+        """
+        return {"errors": [str(error) for error in errors]}
 
     @staticmethod
     def _compute_metrics(metrics: MetricSet[EvaluationResultT], results: list[EvaluationResultT]) -> dict:

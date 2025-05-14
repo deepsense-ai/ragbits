@@ -29,7 +29,7 @@ def log_evaluation_to_file(results: dict, output_dir: Path | None = None) -> Pat
     results_file = output_dir / "results.json"
 
     _save_json(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
-    _save_json(results_file, results=results["results"])
+    _save_json(results_file, results=results["results"], errors=results["errors"])
 
     return output_dir
 
