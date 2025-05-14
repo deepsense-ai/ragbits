@@ -173,7 +173,7 @@ def test_load_chat_interface_from_string(mock_import: MagicMock) -> None:
 
     class TestChatInterface(ChatInterface):
         async def chat(
-            self, message: str, history: list[Any] | None = None, context: dict[str, Any] | None = None
+            self, message: str, history: list[Any] | None = None, context: ChatContext | None = None
         ) -> AsyncGenerator[ChatResponse, None]:
             yield self.create_text_response("Test")
 
