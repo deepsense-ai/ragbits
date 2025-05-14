@@ -18,6 +18,7 @@ from .types import ChatContext, ChatResponse, ChatResponseType, Reference, State
 
 logger = logging.getLogger(__name__)
 
+
 def with_chat_metadata(
     func: Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
@@ -90,7 +91,7 @@ class ChatInterface(ABC):
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
         super().__init_subclass__(**kwargs)
         if hasattr(cls, "chat"):
-            cls.chat = functools.wraps(cls.chat)(with_chat_metadata(cls.chat))
+            cls.chat = functools.wraps(cls.chat)(with_chat_metadata(cls.chat))  # type: ignore
 
     @staticmethod
     def create_text_response(text: str) -> ChatResponse:
