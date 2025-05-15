@@ -34,11 +34,14 @@ class MockEvaluationTarget(WithConstructionConfig):
 
 
 class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationData, MockEvaluationResult]):
-    async def __call__(self, data: MockEvaluationData) -> MockEvaluationResult:
-        return MockEvaluationResult(
-            input_data=data.input_data,
-            is_correct=data.input_data >= self.evaluation_target.threshold,
-        )
+    async def __call__(self, data: Iterable[MockEvaluationData]) -> Iterable[MockEvaluationResult]:
+        return [
+            MockEvaluationResult(
+                input_data=row.input_data,
+                is_correct=row.input_data >= self.evaluation_target.threshold,
+            )
+            for row in data
+        ]
 
     @classmethod
     def from_config(cls, config: dict) -> "MockEvaluationPipeline":
@@ -73,7 +76,7 @@ def test_optimization(direction: str) -> None:
         pipeline_class=MockEvaluationPipeline,
         pipeline_config=pipeline_config,
         dataloader=MockDataLoader(dataset_size=30),
-        metrics=MetricSet(*[MockMetric()]),
+        metricset=MetricSet(*[MockMetric()]),
     )
 
     assert MockEvaluationTargetConfig.model_validate(ordered_results[0][0]["evaluation_target"])

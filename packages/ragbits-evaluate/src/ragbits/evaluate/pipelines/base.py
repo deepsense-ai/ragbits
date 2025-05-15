@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from dataclasses import dataclass
 from types import ModuleType
 from typing import ClassVar, Generic, TypeVar
@@ -51,7 +52,7 @@ class EvaluationPipeline(WithConstructionConfig, Generic[EvaluationTargetT, Eval
         pass
 
     @abstractmethod
-    async def __call__(self, data: EvaluationDataT) -> EvaluationResultT:
+    async def __call__(self, data: Iterable[EvaluationDataT]) -> Iterable[EvaluationResultT]:
         """
         Run the evaluation pipeline.
 
