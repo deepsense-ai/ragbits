@@ -1,0 +1,42 @@
+name: Frontend Jobs
+
+on:
+  workflow_call:
+    paths-ignore:
+      - 'ui/**'
+
+jobs:
+  lints:
+    name: Run UI linters
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Install UI dependencies
+        run: npm i
+        working-directory: ui
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: ui
+
+      - name: Run Prettier
+        run: npm run format:check
+        working-directory: ui
+
+      - name: Check build
+        run: npm run build
+        working-directory: ui
+
+      - name: Check Ragbits Chat UI build sync
+        run: |
+          git diff --quiet || {
+            echo "ragbits-chat package ui build not synced"
+            exit 1
+          }

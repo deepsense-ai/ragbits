@@ -1,0 +1,14 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+
+jobs:
+  shared:
+    uses: ./.github/workflows/jobs/shared.yml
+  pull-request:
+    uses: ./.github/workflows/jobs/pull-request.yml
+  backend:
+    uses: ./.github/workflows/jobs/be.yml
+  frontend:
+    uses: ./.github/workflows/jobs/fe.yml

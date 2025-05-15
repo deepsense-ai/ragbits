@@ -1,0 +1,13 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  shared:
+    uses: ./.github/workflows/jobs/shared.yml
+  backend:
+    uses: ./.github/workflows/jobs/be.yml
+  frontend:
+    uses: ./.github/workflows/jobs/fe.yml
