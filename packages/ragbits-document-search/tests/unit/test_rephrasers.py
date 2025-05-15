@@ -11,13 +11,13 @@ def test_subclass_from_config():
     config = ObjectConstructionConfig.model_validate(
         {"type": "ragbits.document_search.retrieval.rephrasers:NoopQueryRephraser"}
     )
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, NoopQueryRephraser)
 
 
 def test_subclass_from_config_default_path():
     config = ObjectConstructionConfig.model_validate({"type": "NoopQueryRephraser"})
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, NoopQueryRephraser)
 
 
@@ -33,7 +33,7 @@ def test_subclass_from_config_llm():
             },
         }
     )
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, LLMQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)
     assert rephraser._llm.model_name == "some_model"
@@ -52,7 +52,7 @@ def test_subclass_from_config_llm_prompt():
             },
         }
     )
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, LLMQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)
     assert issubclass(rephraser._prompt, QueryRephraserPrompt)
@@ -70,7 +70,7 @@ def test_subclass_from_config_multi():
             },
         }
     )
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, MultiQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)
     assert rephraser._llm.model_name == "some_model"
@@ -85,13 +85,13 @@ def test_subclass_from_config_multiquery_llm_prompt():
                     "type": "ragbits.core.llms.litellm:LiteLLM",
                     "config": {"model_name": "some_model"},
                 },
-                "n": 4,
                 "prompt": {"type": "MultiQueryRephraserPrompt"},
+                "default_options": {"n": 4},
             },
         }
     )
-    rephraser = QueryRephraser.subclass_from_config(config)
+    rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, MultiQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)
-    assert rephraser._n == 4
+    assert rephraser.default_options.n == 4
     assert issubclass(rephraser._prompt, MultiQueryRephraserPrompt)

@@ -1,10 +1,14 @@
-from typing import Any
+from collections.abc import Iterable
+from typing import Generic
+
+from typing_extensions import Self
 
 from ragbits.core.audit.traces import traceable
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt import Prompt
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
-from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 from ragbits.document_search.retrieval.rephrasers.prompts import (
     QueryRephraserInput,
     QueryRephraserPrompt,
@@ -12,29 +16,54 @@ from ragbits.document_search.retrieval.rephrasers.prompts import (
 )
 
 
-class LLMQueryRephraser(QueryRephraser):
+class LLMQueryRephraserOptions(QueryRephraserOptions, Generic[LLMClientOptionsT]):
+    """
+    Object representing the options for the LLM query rephraser.
+
+    Attributes:
+        llm_options: The options for the LLM.
+    """
+
+    llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
+
+
+class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptionsT]]):
     """
     A rephraser class that uses a LLM to rephrase queries.
     """
 
-    def __init__(self, llm: LLM, prompt: type[Prompt[QueryRephraserInput, Any]] | None = None):
+    options_cls: type[LLMQueryRephraserOptions] = LLMQueryRephraserOptions
+
+    def __init__(
+        self,
+        llm: LLM[LLMClientOptionsT],
+        prompt: type[Prompt[QueryRephraserInput, str]] | None = None,
+        default_options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
+    ) -> None:
         """
         Initialize the LLMQueryRephraser with a LLM.
 
         Args:
             llm: A LLM instance to handle query rephrasing.
             prompt: The prompt to use for rephrasing queries.
+            default_options: The default options for the rephraser.
         """
+        super().__init__(default_options=default_options)
         self._llm = llm
         self._prompt = prompt or QueryRephraserPrompt
 
     @traceable
-    async def rephrase(self, query: str) -> list[str]:
+    async def rephrase(
+        self,
+        query: str,
+        options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
+    ) -> Iterable[str]:
         """
         Rephrase a given query using the LLM.
 
         Args:
             query: The query to be rephrased. If not provided, a custom prompt must be given.
+            options: The options for the rephraser.
 
         Returns:
             A list containing the rephrased query.
@@ -44,13 +73,14 @@ class LLMQueryRephraser(QueryRephraser):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        input_data = self._prompt.input_type(query=query)  # type: ignore
-        prompt = self._prompt(input_data)
-        response = await self._llm.generate(prompt)
-        return response if isinstance(response, list) else [response]
+        merged_options = (self.default_options | options) if options else self.default_options
+        llm_options = merged_options.llm_options or None
+        prompt = self._prompt(QueryRephraserInput(query=query))
+        response = await self._llm.generate(prompt, options=llm_options)
+        return [response]
 
     @classmethod
-    def from_config(cls, config: dict) -> "LLMQueryRephraser":
+    def from_config(cls, config: dict) -> Self:
         """
         Create an instance of `LLMQueryRephraser` from a configuration dictionary.
 
@@ -64,11 +94,11 @@ class LLMQueryRephraser(QueryRephraser):
            ValidationError: If the LLM or prompt configuration doesn't follow the expected format.
            InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
            ValueError: If the prompt class is not a subclass of `Prompt`.
-
         """
-        llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
-        prompt_cls = None
-        if "prompt" in config:
-            prompt_config = ObjectConstructionConfig.model_validate(config["prompt"])
-            prompt_cls = get_rephraser_prompt(prompt_config.type)
-        return cls(llm=llm, prompt=prompt_cls)
+        config["llm"] = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
+        config["prompt"] = (
+            get_rephraser_prompt(ObjectConstructionConfig.model_validate(config["prompt"]).type)
+            if "prompt" in config
+            else None
+        )
+        return super().from_config(config)

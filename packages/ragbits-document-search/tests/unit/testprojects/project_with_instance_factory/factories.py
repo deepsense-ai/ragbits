@@ -10,7 +10,7 @@ from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 def create_document_search_instance_223():
     vector_store_options = VectorStoreOptions(k=223)
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         reranker=NoopReranker(default_options=RerankerOptions(top_n=223)),
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder(), default_options=vector_store_options),
     )
@@ -19,7 +19,7 @@ def create_document_search_instance_223():
 
 def create_document_search_instance_825():
     vector_store_options = VectorStoreOptions(k=825)
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         reranker=NoopReranker(default_options=RerankerOptions(top_n=825)),
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder(), default_options=vector_store_options),
     )
