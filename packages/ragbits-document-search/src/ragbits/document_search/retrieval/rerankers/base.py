@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from typing import ClassVar, TypeVar
 
 from ragbits.core.options import Options
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval import rerankers
@@ -18,8 +19,8 @@ class RerankerOptions(Options):
         override_score: If True reranking will override element score.
     """
 
-    top_n: int | None = None
-    score_threshold: float | None = None
+    top_n: int | None | NotGiven = NOT_GIVEN
+    score_threshold: float | None | NotGiven = NOT_GIVEN
     override_score: bool = True
 
 

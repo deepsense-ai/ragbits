@@ -9,8 +9,8 @@ from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
-from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, RerankerPrompt
+from ragbits.document_search.retrieval.rerankers.base import Reranker
+from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, LLMRerankerOptions, RerankerPrompt
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ async def test_llm_reranker_from_config() -> None:
         }
     )
 
-    assert reranker.default_options == RerankerOptions(top_n=2)
+    assert reranker.default_options == LLMRerankerOptions(top_n=2)
     assert reranker._llm.model_name == "gpt-4o"
 
 
@@ -84,7 +84,7 @@ def test_llm_reranker_subclass_from_config() -> None:
 
     assert isinstance(reranker, LLMReranker)
     assert isinstance(reranker._llm, LiteLLM)
-    assert isinstance(reranker.default_options, RerankerOptions)
+    assert isinstance(reranker.default_options, LLMRerankerOptions)
     assert reranker._prompt == RerankerPrompt
     assert reranker._llm.model_name == "gpt-4o"
     assert reranker.default_options.top_n == 12
@@ -92,7 +92,7 @@ def test_llm_reranker_subclass_from_config() -> None:
 
 async def test_llm_reranker_rerank(mock_llm: AsyncMock, sample_elements: Sequence[Sequence[TextElement]]) -> None:
     custom_top_n = 2
-    custom_options = RerankerOptions(top_n=custom_top_n)
+    custom_options = LLMRerankerOptions(top_n=custom_top_n)
     reranker = LLMReranker(llm=mock_llm)
     result = await reranker.rerank(
         elements=sample_elements,
