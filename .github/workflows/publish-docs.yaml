@@ -1,8 +1,9 @@
-name: Deploy documentation
+name: Publish documentation
 
 on:
   release:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
