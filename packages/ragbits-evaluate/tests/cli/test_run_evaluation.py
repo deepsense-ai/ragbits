@@ -24,7 +24,7 @@ def setup_document_search() -> DocumentSearch:
         DocumentMeta.create_text_document_from_literal("Bar document"),
         DocumentMeta.create_text_document_from_literal("Baz document"),
     ]
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=NoopEmbedder()))
+    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=NoopEmbedder()))
     asyncio.run(document_search.ingest(documents))
     return document_search
 

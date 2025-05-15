@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Update audit imports (#427)
+- BREAKING CHANGE: Adjust document search configurable interface (#554)
+- BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)
+- BREAKING CHANGE: Improve typing for SearchConfig (#554)
 
 ## 0.17.1 (2025-05-09)
 
