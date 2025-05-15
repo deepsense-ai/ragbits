@@ -15,28 +15,3 @@ jobs:
       - name: Verify changelog updates
         run: |
           ./.github/scripts/check_changelog_update.sh
-  check-changes:
-    name: Check source changes
-    runs-on: ubuntu-latest
-    outputs:
-      packages-changed: ${{ steps.filter.outputs.packages-changed }}
-      ui-changed: ${{ steps.filter.outputs.ui-changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check for changes
-        id: filter
-        run: |
-          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
-          if echo "$changed_files" | grep -qv ^ui/; then
-            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
-          fi
-          if echo "$changed_files" | grep -q ^ui/; then
-            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
-          fi
