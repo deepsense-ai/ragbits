@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add query rephraser options (#560)
 - Update audit imports (#427)
 - BREAKING CHANGE: Adjust document search configurable interface (#554)
 - BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)
