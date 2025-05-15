@@ -2,18 +2,18 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
 
 jobs:
   shared:
     uses: ./.github/workflows/shared.yml
-  main:
-    uses: ./.github/workflows/main.yml
+  push-main:
+    uses: ./.github/workflows/push-main.yml
   packages:
-    needs: main
+    needs: push-main
     if: ${{ needs.main.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/packages.yml
   ui:
-    needs: main
+    needs: push-main
     if: ${{ needs.main.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/ui.yml
