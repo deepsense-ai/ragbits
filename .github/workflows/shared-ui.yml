@@ -1,11 +1,11 @@
-name: UI Jobs
+name: Shared ui checks
 
 on:
   workflow_call:
 
 jobs:
   lints:
-    name: Run UI linters
+    name: Run ui linters
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:

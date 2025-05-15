@@ -4,15 +4,59 @@ on:
   pull_request:
 
 jobs:
-  shared:
-    uses: ./.github/workflows/shared.yml
-  pull-request:
-    uses: ./.github/workflows/pull-request.yml
+  check-changelog-update:
+    name: Check changelog update
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify changelog updates
+        run: |
+          ./.github/scripts/check_changelog_update.sh
+
+  check-pr-title:
+    name: Check pull request title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  check-source-changes:
+    name: Check source changes
+    runs-on: ubuntu-latest
+    outputs:
+      packages-changed: ${{ steps.filter.outputs.packages-changed }}
+      ui-changed: ${{ steps.filter.outputs.ui-changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        id: filter
+        run: |
+          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
+          if echo "$changed_files" | grep -qv '^ui/'; then
+            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          if echo "$changed_files" | grep -q '^ui/'; then
+            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   packages:
-    needs: pull-request
-    if: ${{ needs.pull-request.outputs.packages-changed == 'true' }}
-    uses: ./.github/workflows/packages.yml
+    needs: check-source-changes
+    if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
+    uses: ./.github/workflows/shared-packages.yml
+
   ui:
-    needs: pull-request
-    if: ${{ needs.pull-request.outputs.ui-changed == 'true' }}
-    uses: ./.github/workflows/ui.yml
+    needs: check-source-changes
+    if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' }}
+    uses: ./.github/workflows/shared-ui.yml

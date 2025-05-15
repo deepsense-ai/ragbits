@@ -1,4 +1,4 @@
-name: Packages Jobs
+name: Shared packages checks
 
 on:
   workflow_call:
