@@ -1,65 +1,11 @@
-name: Continuous Integration
+name: Shared packages checks
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
+  workflow_call:
 
 jobs:
-  pr-title-checker:
-    name: Check PR title
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  changelog-update-checker:
-    name: Check changelog update
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Verify changelog updates
-        run: |
-          ./.github/scripts/check_changelog_update.sh
-
-  check-changes:
-    name: Check source changes
-    runs-on: ubuntu-latest
-    outputs:
-      packages-changed: ${{ steps.filter.outputs.packages-changed }}
-      ui-changed: ${{ steps.filter.outputs.ui-changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check for changes
-        id: filter
-        run: |
-          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
-
-          if echo "$changed_files" | grep -qv ^ui/; then
-            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-          if echo "$changed_files" | grep -q ^ui/; then
-            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
   lints:
     name: Run linters
-    needs: check-changes
-    if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -171,48 +117,8 @@ jobs:
           name: packages
           path: dist/**
           retention-days: 3
-
-  ui-lints:
-    name: Run UI linters
-    needs: check-changes
-    if: needs.check-changes.outputs.ui-changed == 'true'
-    continue-on-error: false
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
-      - name: Install UI dependencies
-        run: npm i
-        working-directory: ui
-
-      - name: Run ESLint
-        run: npm run lint
-        working-directory: ui
-
-      - name: Run Prettier
-        run: npm run format:check
-        working-directory: ui
-
-      - name: Check build
-        run: npm run build
-        working-directory: ui
-
-      - name: Check Ragbits Chat UI build sync
-        run: |
-          git diff --quiet || {
-            echo "ragbits-chat package ui build not synced"
-            exit 1
-          }
-
   tests:
     name: Run tests
-    needs: check-changes
-    if: needs.check-changes.outputs.packages-changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -222,7 +128,7 @@ jobs:
     strategy:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: [ "3.10", "3.11", "3.12" ]
 
     services:
       postgres:
@@ -289,16 +195,6 @@ jobs:
           path: report.xml
           retention-days: 10
 
-      # simpler version for code coverage reporting
-      # - name: Produce Coverage report
-      #   uses: 5monkeys/cobertura-action@v13
-      #   continue-on-error: true
-      #   with:
-      #     path: coverage.xml
-      #     minimum_coverage: 70
-      #     fail_below_threshold: false
-
-      # more complex version for better coverage reporting
       - name: Produce the coverage report
         uses: insightsengineering/coverage-action@v2
         continue-on-error: true
