@@ -5,10 +5,10 @@ on:
 
 jobs:
   shared:
-    uses: ./.github/workflows/jobs/shared.yml
+    uses: ./.github/workflows/shared.yml
   pull-request:
-    uses: ./.github/workflows/jobs/pull-request.yml
+    uses: ./.github/workflows/pull-request.yml
   backend:
-    uses: ./.github/workflows/jobs/be.yml
+    uses: ./.github/workflows/be.yml
   frontend:
-    uses: ./.github/workflows/jobs/fe.yml
+    uses: ./.github/workflows/fe.yml
