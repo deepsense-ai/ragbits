@@ -75,12 +75,12 @@ async def test_run_evaluation() -> None:
     results = await evaluator.compute(
         pipeline=pipeline,
         dataloader=dataloader,
-        metrics=metrics,
+        metricset=metrics,
     )
 
-    assert len(results["results"]) == 4
-    assert 0 <= results["metrics"]["accuracy"] <= 1
-    assert all("test_model_" in r["processed_output"] for r in results["results"])
+    assert len(results.results) == 4
+    assert 0 <= results.metrics["accuracy"] <= 1
+    assert all("test_model_" in r.processed_output for r in results.results)
 
 
 async def test_run_from_config() -> None:
@@ -104,5 +104,5 @@ async def test_run_from_config() -> None:
     }
     results = await Evaluator.run_from_config(config)
 
-    assert len(results["results"]) == 3
-    assert all("config_model_" in r["processed_output"] for r in results["results"])
+    assert len(results.results) == 3
+    assert all("config_model_" in r.processed_output for r in results.results)

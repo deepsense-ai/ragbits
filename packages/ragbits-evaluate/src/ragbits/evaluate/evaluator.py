@@ -2,11 +2,11 @@ import asyncio
 import random
 import time
 from collections.abc import Awaitable, Callable, Iterable
-from dataclasses import asdict
-from typing import ParamSpec, TypeVar
+from dataclasses import dataclass
+from typing import Generic, ParamSpec, TypeVar
 
 from pydantic import BaseModel
-from tqdm.asyncio import tqdm
+from tqdm import tqdm
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.core.utils.helpers import batched
@@ -16,6 +16,29 @@ from ragbits.evaluate.pipelines.base import EvaluationDataT, EvaluationPipeline,
 
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
+
+
+@dataclass
+class EvaluationTimePerf:
+    """
+    Container for evaluation time performance metrics.
+    """
+
+    total_time_in_seconds: float
+    samples_per_second: float
+    latency_in_seconds: float
+
+
+@dataclass
+class EvaluatorResult(Generic[EvaluationResultT]):
+    """
+    Container for evaluation results.
+    """
+
+    metrics: dict[str, int | float]
+    results: list[EvaluationResultT]
+    errors: list[Exception]
+    time_perf: EvaluationTimePerf
 
 
 class EvaluationConfig(BaseModel):
@@ -64,7 +87,7 @@ class Evaluator(WithConstructionConfig):
         self.backoff_max = backoff_max
 
     @classmethod
-    async def run_from_config(cls, config: dict) -> dict:
+    async def run_from_config(cls, config: dict) -> EvaluatorResult:
         """
         Run the evaluation based on configuration.
 
@@ -78,52 +101,50 @@ class Evaluator(WithConstructionConfig):
         evaluation_config = EvaluationConfig.model_validate(evaluator_config.evaluation)
         pipeline: EvaluationPipeline = EvaluationPipeline.subclass_from_config(evaluation_config.pipeline)
         dataloader: DataLoader = DataLoader.subclass_from_config(evaluation_config.dataloader)
-        metrics: MetricSet = MetricSet.from_config(evaluation_config.metrics)
+        metricset: MetricSet = MetricSet.from_config(evaluation_config.metrics)
 
         evaluator = cls.from_config(evaluator_config.evaluator or {})
         return await evaluator.compute(
             pipeline=pipeline,
             dataloader=dataloader,
-            metrics=metrics,
+            metricset=metricset,
         )
 
     async def compute(
         self,
         pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
         dataloader: DataLoader[EvaluationDataT],
-        metrics: MetricSet[EvaluationResultT],
-    ) -> dict:
+        metricset: MetricSet[EvaluationResultT],
+    ) -> EvaluatorResult[EvaluationResultT]:
         """
         Compute the evaluation results for the given pipeline and data.
 
         Args:
             pipeline: The pipeline to be evaluated.
             dataloader: The dataloader to load the data.
-            metrics: The metrics to be computed.
+            metricset: The metrics to be computed.
 
         Returns:
             The evaluation results.
         """
-        dataset = await dataloader.load()
         await pipeline.prepare()
 
-        results, errors, perf_results = await self._call_pipeline(pipeline, dataset)
-        computed_metrics = self._compute_metrics(metrics, results)
-        processed_results = self._results_processor(results)
-        processed_errors = self._errors_processor(errors)
+        dataset = await dataloader.load()
+        results, errors, time_perf = await self._call_pipeline(pipeline, dataset)
+        metrics = metricset.compute(results)
 
-        return {
-            **perf_results,
-            **computed_metrics,
-            **processed_results,
-            **processed_errors,
-        }
+        return EvaluatorResult(
+            metrics=metrics,
+            results=results,
+            errors=errors,
+            time_perf=time_perf,
+        )
 
     async def _call_pipeline(
         self,
         pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
         dataset: Iterable[EvaluationDataT],
-    ) -> tuple[list[EvaluationResultT], list[Exception], dict]:
+    ) -> tuple[list[EvaluationResultT], list[Exception], EvaluationTimePerf]:
         """
         Call the pipeline with the given data.
 
@@ -135,10 +156,10 @@ class Evaluator(WithConstructionConfig):
             The evaluation results and performance metrics.
         """
         start_time = time.perf_counter()
-        outputs = await tqdm.gather(
-            *[self._call_with_error_handling(pipeline, data) for data in batched(dataset, self.batch_size)],
-            desc="Evaluation",
-        )
+        outputs = [
+            await self._call_with_error_handling(pipeline, data)
+            for data in tqdm(batched(dataset, self.batch_size), desc="Evaluation")
+        ]
         end_time = time.perf_counter()
 
         errors = [output for output in outputs if isinstance(output, Exception)]
@@ -180,47 +201,7 @@ class Evaluator(WithConstructionConfig):
         raise RuntimeError("Unreachable code reached")  # mypy quirk
 
     @staticmethod
-    def _results_processor(results: list[EvaluationResultT]) -> dict:
-        """
-        Process the results.
-
-        Args:
-            results: The evaluation results.
-
-        Returns:
-            The processed results.
-        """
-        return {"results": [asdict(result) for result in results]}
-
-    @staticmethod
-    def _errors_processor(errors: list[Exception]) -> dict:
-        """
-        Process the errors.
-
-        Args:
-            errors: The errors.
-
-        Returns:
-            The processed errors.
-        """
-        return {"errors": [str(error) for error in errors]}
-
-    @staticmethod
-    def _compute_metrics(metrics: MetricSet[EvaluationResultT], results: list[EvaluationResultT]) -> dict:
-        """
-        Compute a metric using the given inputs.
-
-        Args:
-            metrics: The metrics to be computed.
-            results: The evaluation results.
-
-        Returns:
-            The computed metric.
-        """
-        return {"metrics": metrics.compute(results)}
-
-    @staticmethod
-    def _compute_time_perf(start_time: float, end_time: float, num_samples: int) -> dict:
+    def _compute_time_perf(start_time: float, end_time: float, num_samples: int) -> EvaluationTimePerf:
         """
         Compute the performance metrics.
 
@@ -236,10 +217,8 @@ class Evaluator(WithConstructionConfig):
         throughput = num_samples / latency
         latency_sample = 1.0 / throughput if throughput > 0 else 0.0
 
-        return {
-            "time_perf": {
-                "total_time_in_seconds": latency,
-                "samples_per_second": throughput,
-                "latency_in_seconds": latency_sample,
-            },
-        }
+        return EvaluationTimePerf(
+            total_time_in_seconds=latency,
+            samples_per_second=throughput,
+            latency_in_seconds=latency_sample,
+        )

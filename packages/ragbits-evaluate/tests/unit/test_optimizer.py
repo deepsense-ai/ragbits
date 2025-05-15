@@ -76,7 +76,7 @@ def test_optimization(direction: str) -> None:
         pipeline_class=MockEvaluationPipeline,
         pipeline_config=pipeline_config,
         dataloader=MockDataLoader(dataset_size=30),
-        metrics=MetricSet(*[MockMetric()]),
+        metricset=MetricSet(*[MockMetric()]),
     )
 
     assert MockEvaluationTargetConfig.model_validate(ordered_results[0][0]["evaluation_target"])

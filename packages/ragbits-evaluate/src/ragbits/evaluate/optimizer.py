@@ -61,7 +61,7 @@ class Optimizer(WithConstructionConfig):
         evaluator_config = EvaluatorConfig.model_validate(optimizer_config.evaluator)
 
         dataloader: DataLoader = DataLoader.subclass_from_config(evaluator_config.evaluation.dataloader)
-        metrics: MetricSet = MetricSet.from_config(evaluator_config.evaluation.metrics)
+        metricset: MetricSet = MetricSet.from_config(evaluator_config.evaluation.metrics)
 
         pipeline_class = import_by_path(evaluator_config.evaluation.pipeline.type)
         pipeline_config = dict(evaluator_config.evaluation.pipeline.config)
@@ -71,7 +71,7 @@ class Optimizer(WithConstructionConfig):
         return optimizer.optimize(
             pipeline_class=pipeline_class,
             pipeline_config=pipeline_config,
-            metrics=metrics,
+            metricset=metricset,
             dataloader=dataloader,
             callbacks=callbacks,
         )
@@ -81,7 +81,7 @@ class Optimizer(WithConstructionConfig):
         pipeline_class: type[EvaluationPipeline],
         pipeline_config: dict,
         dataloader: DataLoader,
-        metrics: MetricSet,
+        metricset: MetricSet,
         callbacks: list[Callable] | None = None,
     ) -> list[tuple[dict, float, dict[str, float]]]:
         """
@@ -91,7 +91,7 @@ class Optimizer(WithConstructionConfig):
             pipeline_class: Pipeline to be optimized.
             pipeline_config: Configuration defining the optimization process.
             dataloader: Data loader.
-            metrics: Metrics to be optimized.
+            metricset: Metrics to be optimized.
             callbacks: Experiment callbacks.
 
         Returns:
@@ -104,7 +104,7 @@ class Optimizer(WithConstructionConfig):
                 pipeline_class=pipeline_class,
                 pipeline_config=pipeline_config,
                 dataloader=dataloader,
-                metrics=metrics,
+                metricset=metricset,
             )
 
         study = optuna.create_study(direction=self.direction)
@@ -131,7 +131,7 @@ class Optimizer(WithConstructionConfig):
         pipeline_class: type[EvaluationPipeline],
         pipeline_config: dict,
         dataloader: DataLoader,
-        metrics: MetricSet,
+        metricset: MetricSet,
     ) -> float:
         """
         Run a single experiment.
@@ -153,11 +153,11 @@ class Optimizer(WithConstructionConfig):
                     evaluator.compute(
                         pipeline=pipeline,
                         dataloader=dataloader,
-                        metrics=metrics,
+                        metricset=metricset,
                     )
                 )
-                score = sum(results["metrics"].values())
-                metrics_values = results["metrics"]
+                score = sum(results.metrics.values())
+                metrics_values = results.metrics
                 break
             except Exception as exc:
                 message = (

@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Iterable
 from dataclasses import dataclass
 from uuid import uuid4
@@ -87,18 +88,12 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         Returns:
             The evaluation result batch.
         """
-        results = []
-
-        for row in data:
-            elements = await self.evaluation_target.search(row.question)
-            predicted_passages = [element.text_representation for element in elements if element.text_representation]
-
-            results.append(
-                DocumentSearchResult(
-                    question=row.question,
-                    reference_passages=row.reference_passages,
-                    predicted_passages=predicted_passages,
-                )
+        results = await asyncio.gather(*[self.evaluation_target.search(row.question) for row in data])
+        return [
+            DocumentSearchResult(
+                question=row.question,
+                reference_passages=row.reference_passages,
+                predicted_passages=[element.text_representation for element in elements if element.text_representation],
             )
-
-        return results
+            for row, elements in zip(data, results, strict=False)
+        ]
