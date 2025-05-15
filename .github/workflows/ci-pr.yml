@@ -8,7 +8,9 @@ jobs:
     uses: ./.github/workflows/shared.yml
   pull-request:
     uses: ./.github/workflows/pull-request.yml
-  backend:
-    uses: ./.github/workflows/be.yml
-  frontend:
-    uses: ./.github/workflows/fe.yml
+  packages:
+    if: ${{ needs.pull-request.outputs.packages-changed == 'true' }}
+    uses: ./.github/workflows/packages.yml
+  ui:
+    if: ${{ needs.pull-request.outputs.ui-changed == 'true' }}
+    uses: ./.github/workflows/ui.yml

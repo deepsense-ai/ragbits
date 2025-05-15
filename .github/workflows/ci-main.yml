@@ -7,7 +7,11 @@ on:
 jobs:
   shared:
     uses: ./.github/workflows/shared.yml
-  backend:
-    uses: ./.github/workflows/be.yml
-  frontend:
-    uses: ./.github/workflows/fe.yml
+  main:
+    uses: ./.github/workflows/main.yml
+  packages:
+    if: ${{ needs.main.outputs.packages-changed == 'true' }}
+    uses: ./.github/workflows/packages.yml
+  ui:
+    if: ${{ needs.main.outputs.ui-changed == 'true' }}
+    uses: ./.github/workflows/ui.yml

@@ -2,8 +2,6 @@ name: Frontend Jobs
 
 on:
   workflow_call:
-    paths-ignore:
-      - 'ui/**'
 
 jobs:
   lints:

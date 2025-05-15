@@ -1,20 +1,9 @@
-name: Shared Jobs
+name: Main Jobs
 
 on:
   workflow_call:
 
 jobs:
-  changelog-update-checker:
-    name: Check changelog update
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Verify changelog updates
-        run: |
-          ./.github/scripts/check_changelog_update.sh
   check-changes:
     name: Check source changes
     runs-on: ubuntu-latest
@@ -29,13 +18,15 @@ jobs:
       - name: Check for changes
         id: filter
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }})
-          if echo "$changed_files" | grep -qv ^ui/; then
+          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+
+          if echo "$changed_files" | grep -qv '^ui/'; then
             echo "packages-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "packages-changed=false" >> "$GITHUB_OUTPUT"
           fi
-          if echo "$changed_files" | grep -q ^ui/; then
+
+          if echo "$changed_files" | grep -q '^ui/'; then
             echo "ui-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "ui-changed=false" >> "$GITHUB_OUTPUT"
