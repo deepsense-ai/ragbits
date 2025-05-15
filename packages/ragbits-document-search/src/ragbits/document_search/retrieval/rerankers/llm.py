@@ -9,6 +9,7 @@ from ragbits.core.audit.traces import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt.prompt import Prompt
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
@@ -39,20 +40,27 @@ class RerankerPrompt(Prompt[RerankerInput, str]):
     """
 
 
-class LLMReranker(Reranker[RerankerOptions]):
+class LLMRerankerOptions(RerankerOptions):
+    """
+    Options for the LLMReranker.
+    """
+
+    llm_options: LiteLLMOptions | None | NotGiven = NOT_GIVEN
+
+
+class LLMReranker(Reranker[LLMRerankerOptions]):
     """
     Reranker based on LLM.
     """
 
-    options_cls = RerankerOptions
+    options_cls = LLMRerankerOptions
 
     def __init__(
         self,
         llm: LiteLLM,
         *,
         prompt: type[Prompt[RerankerInput, str]] | None = None,
-        llm_options: LiteLLMOptions | None = None,
-        default_options: RerankerOptions | None = None,
+        default_options: LLMRerankerOptions | None = None,
     ) -> None:
         """
         Initialize the LLMReranker instance.
@@ -60,7 +68,6 @@ class LLMReranker(Reranker[RerankerOptions]):
         Args:
             llm: The LLM instance to handle reranking.
             prompt: The prompt to use for reranking elements.
-            llm_options: The LLM options to override.
             default_options: The default options for reranking.
         """
         super().__init__(default_options=default_options)
@@ -75,8 +82,6 @@ class LLMReranker(Reranker[RerankerOptions]):
                 self._llm.get_token_id("No"): 1,
             },
         )
-        if llm_options:
-            self._llm_options |= llm_options
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -116,9 +121,12 @@ class LLMReranker(Reranker[RerankerOptions]):
             The reranked elements.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        llm_options = (
+            self._llm_options | merged_options.llm_options if merged_options.llm_options else self._llm_options
+        )
 
         flat_elements = list(chain.from_iterable(elements))
-        scores = await self._score_elements(flat_elements, query)
+        scores = await self._score_elements(flat_elements, query, llm_options)
 
         scored_elements = list(zip(flat_elements, scores, strict=True))
         scored_elements.sort(key=lambda x: x[1], reverse=True)
@@ -131,24 +139,28 @@ class LLMReranker(Reranker[RerankerOptions]):
                 results.append(element)
         return results
 
-    async def _score_elements(self, elements: Sequence[Element], query: str) -> Sequence[float]:
+    async def _score_elements(
+        self,
+        elements: Sequence[Element],
+        query: str,
+        llm_options: LiteLLMOptions,
+    ) -> Sequence[float]:
         """
         Score the elements according to their relevance to the query using LLM.
 
         Args:
             elements: The elements to rerank.
             query: The query to rerank the elements against.
+            llm_options: The LLM options to use for scoring.
 
         Returns:
             The elements scores.
         """
-        merged_llm_options = self._llm.default_options | self._llm_options
-
         scores = []
         for element in elements:
             if element.text_representation:
                 prompt = self._prompt(RerankerInput(query=query, document=element.text_representation))
-                response = await self._llm.generate_with_metadata(prompt=prompt, options=merged_llm_options)
+                response = await self._llm.generate_with_metadata(prompt=prompt, options=llm_options)
                 prob = math.exp(response.metadata["logprobs"][0]["logprob"])
                 score = prob if response.content == "Yes" else 1 - prob
             else:
