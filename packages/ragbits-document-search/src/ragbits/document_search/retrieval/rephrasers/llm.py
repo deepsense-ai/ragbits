@@ -54,7 +54,9 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
 
     @traceable
     async def rephrase(
-        self, query: str, options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None
+        self,
+        query: str,
+        options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
     ) -> Iterable[str]:
         """
         Rephrase a given query using the LLM.
