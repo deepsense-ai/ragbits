@@ -78,8 +78,8 @@ class LLMReranker(Reranker[LLMRerankerOptions]):
             logprobs=True,
             max_tokens=1,
             logit_bias={
-                self._llm.get_token_id("Yes"): 1,
-                self._llm.get_token_id("No"): 1,
+                self._llm.get_token_id(" Yes"): 1,
+                self._llm.get_token_id(" No"): 1,
             },
         )
 
@@ -132,7 +132,7 @@ class LLMReranker(Reranker[LLMRerankerOptions]):
         scored_elements.sort(key=lambda x: x[1], reverse=True)
 
         results = []
-        for element, score in scored_elements[: merged_options.top_n]:
+        for element, score in scored_elements[: merged_options.top_n or None]:
             if not merged_options.score_threshold or score >= merged_options.score_threshold:
                 if merged_options.override_score:
                     element.score = score

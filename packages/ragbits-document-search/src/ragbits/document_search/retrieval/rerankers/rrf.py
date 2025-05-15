@@ -64,7 +64,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
         results = []
-        for element_id, score in sorted_scores[: merged_options.top_n]:
+        for element_id, score in sorted_scores[: merged_options.top_n or None]:
             if not merged_options.score_threshold or score >= merged_options.score_threshold:
                 if merged_options.override_score:
                     elements_map[element_id].score = score

@@ -4,6 +4,7 @@ from itertools import chain
 import litellm
 
 from ragbits.core.audit.traces import traceable
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
@@ -19,7 +20,7 @@ class LiteLLMRerankerOptions(RerankerOptions):
         max_chunks_per_doc: The maximum amount of tokens a document can have before truncation.
     """
 
-    max_chunks_per_doc: int | None = None
+    max_chunks_per_doc: int | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
@@ -70,8 +71,8 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
             model=self.model,
             query=query,
             documents=documents,
-            top_n=merged_options.top_n,
-            max_chunks_per_doc=merged_options.max_chunks_per_doc,
+            top_n=merged_options.top_n or None,
+            max_chunks_per_doc=merged_options.max_chunks_per_doc or None,
         )
 
         results = []
