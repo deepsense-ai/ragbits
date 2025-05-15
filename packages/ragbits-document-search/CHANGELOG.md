@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix reranker options typing (#562)
 - Update audit imports (#427)
 - BREAKING CHANGE: Adjust document search configurable interface (#554)
 - BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)
