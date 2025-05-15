@@ -26,13 +26,11 @@ jobs:
         id: filter
         run: |
           changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-
           if echo "$changed_files" | grep -qv '^ui/'; then
             echo "packages-changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "packages-changed=false" >> "$GITHUB_OUTPUT"
           fi
-
           if echo "$changed_files" | grep -q '^ui/'; then
             echo "ui-changed=true" >> "$GITHUB_OUTPUT"
           else
