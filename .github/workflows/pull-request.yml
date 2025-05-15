@@ -2,6 +2,13 @@ name: Pull Request Jobs
 
 on:
   workflow_call:
+    outputs:
+      packages-changed:
+        description: "If the packages were changed"
+        value: ${{ jobs.check-changes.outputs.packages-changed }}
+      ui-changed:
+        description: "If the UI was changed"
+        value: ${{ jobs.check-changes.outputs.ui-changed }}
 
 jobs:
   pr-title-checker:
