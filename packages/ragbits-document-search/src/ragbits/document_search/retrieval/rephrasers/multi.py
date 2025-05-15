@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import Any
 
 from typing_extensions import Self
 
@@ -36,9 +35,9 @@ class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions]):
     def __init__(
         self,
         llm: LLM,
-        prompt: type[Prompt[MultiQueryRephraserInput, Any]] | None = None,
+        prompt: type[Prompt[MultiQueryRephraserInput, list[str]]] | None = None,
         default_options: MultiQueryRephraserOptions | None = None,
-    ):
+    ) -> None:
         """
         Initialize the MultiQueryRephraser with a LLM.
 
@@ -69,8 +68,7 @@ class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions]):
             LLMResponseError: If the LLM API response is invalid.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        input_data = self._prompt.input_type(query=query, n=merged_options.n)  # type: ignore
-        prompt = self._prompt(input_data)
+        prompt = self._prompt(MultiQueryRephraserInput(query=query, n=merged_options.n))
         response = await self._llm.generate(prompt)
         return [query] + response
 

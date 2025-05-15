@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from typing import Any
 
 from typing_extensions import Self
 
@@ -22,7 +21,7 @@ class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
 
     options_cls = QueryRephraserOptions
 
-    def __init__(self, llm: LLM, prompt: type[Prompt[QueryRephraserInput, Any]] | None = None):
+    def __init__(self, llm: LLM, prompt: type[Prompt[QueryRephraserInput, str]] | None = None) -> None:
         """
         Initialize the LLMQueryRephraser with a LLM.
 
@@ -50,10 +49,9 @@ class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
-        input_data = self._prompt.input_type(query=query)  # type: ignore
-        prompt = self._prompt(input_data)
+        prompt = self._prompt(QueryRephraserInput(query=query))
         response = await self._llm.generate(prompt)
-        return response if isinstance(response, list) else [response]
+        return [response]
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -71,9 +69,10 @@ class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
            InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
            ValueError: If the prompt class is not a subclass of `Prompt`.
         """
-        llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
-        prompt_cls = None
-        if "prompt" in config:
-            prompt_config = ObjectConstructionConfig.model_validate(config["prompt"])
-            prompt_cls = get_rephraser_prompt(prompt_config.type)
-        return cls(llm=llm, prompt=prompt_cls)
+        config["llm"] = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
+        config["prompt"] = (
+            get_rephraser_prompt(ObjectConstructionConfig.model_validate(config["prompt"]).type)
+            if "prompt" in config
+            else None
+        )
+        return super().from_config(config)

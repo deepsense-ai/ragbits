@@ -41,7 +41,7 @@ class MultiQueryRephraserInput(BaseModel):
     n: int
 
 
-class MultiQueryRephraserPrompt(Prompt[MultiQueryRephraserInput, list]):
+class MultiQueryRephraserPrompt(Prompt[MultiQueryRephraserInput, list[str]]):
     """
     A prompt template for generating multiple query rephrasings.
     """
