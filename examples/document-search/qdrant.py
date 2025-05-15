@@ -37,8 +37,9 @@ from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.document_search import DocumentSearch, SearchConfig
+from ragbits.document_search import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import DocumentMeta
 
 set_trace_handlers("cli")
@@ -92,14 +93,12 @@ async def main() -> None:
     print([doc.metadata["content"] for doc in all_documents])
 
     query = "I'm boiling my water and I need a joke"
-    vector_store_kwargs = {
-        "k": 2,
-        "score_threshold": 0.6,
-    }
-    results = await document_search.search(
-        query,
-        config=SearchConfig(vector_store_kwargs=vector_store_kwargs),
+    vector_store_options = VectorStoreOptions(
+        k=2,
+        score_threshold=0.6,
     )
+    options = DocumentSearchOptions(vector_store_options=vector_store_options)
+    results = await document_search.search(query, options=options)
 
     print()
     print(f"Documents similar to: {query}")
