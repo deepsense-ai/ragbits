@@ -33,26 +33,14 @@ jobs:
       - name: Check for changes
         id: filter
         run: |
-          changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-          if echo "$changed_files" | grep -qv '^ui/'; then
-            echo "packages-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "packages-changed=false" >> "$GITHUB_OUTPUT"
-          fi
-          if echo "$changed_files" | grep -q '^ui/'; then
-            echo "ui-changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ui-changed=false" >> "$GITHUB_OUTPUT"
-          fi
+          ./.github/scripts/check_source_changes.sh ${{ github.event.before }} ${{ github.sha }}
 
   packages:
-    name: Packages checks
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/shared-packages.yml
 
   ui:
-    name: UI checks
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/shared-ui.yml
