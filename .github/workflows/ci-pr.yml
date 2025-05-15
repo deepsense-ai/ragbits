@@ -16,12 +16,3 @@ jobs:
     needs: pull-request
     if: ${{ needs.pull-request.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/ui.yml
-  debug:
-    name: Debug outputs
-    runs-on: ubuntu-latest
-    needs: pull-request
-    steps:
-      - name: Show outputs
-        run: |
-          echo "Packages changed: ${{ needs.pull-request.outputs.packages-changed }}"
-          echo "UI changed: ${{ needs.pull-request.outputs.ui-changed }}"
