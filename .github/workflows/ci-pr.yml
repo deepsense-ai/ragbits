@@ -9,8 +9,10 @@ jobs:
   pull-request:
     uses: ./.github/workflows/pull-request.yml
   packages:
+    needs: pull-request
     if: ${{ needs.pull-request.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/packages.yml
   ui:
+    needs: pull-request
     if: ${{ needs.pull-request.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/ui.yml

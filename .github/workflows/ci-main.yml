@@ -10,8 +10,10 @@ jobs:
   main:
     uses: ./.github/workflows/main.yml
   packages:
+    needs: main
     if: ${{ needs.main.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/packages.yml
   ui:
+    needs: main
     if: ${{ needs.main.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/ui.yml
