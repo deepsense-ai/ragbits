@@ -76,7 +76,7 @@ class DocumentMeta(BaseModel):
         return Document.from_document_meta(self, local_path)
 
     @classmethod
-    def create_text_document_from_literal(cls, content: str) -> "DocumentMeta":
+    def from_literal(cls, content: str) -> "DocumentMeta":
         """
         Create a text document from a literal content.
 
