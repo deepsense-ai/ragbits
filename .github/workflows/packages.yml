@@ -1,4 +1,4 @@
-name: Backend Jobs
+name: Packages Jobs
 
 on:
   workflow_call:

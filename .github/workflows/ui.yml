@@ -1,4 +1,4 @@
-name: Frontend Jobs
+name: UI Jobs
 
 on:
   workflow_call:
