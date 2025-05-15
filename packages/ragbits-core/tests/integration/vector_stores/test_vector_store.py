@@ -230,8 +230,8 @@ async def test_handling_document_ingestion_with_different_content_and_verifying_
     document_2_content = "This is another test sentence and it should be removed from the vector store"
     document_2_new_content = "This is one more test sentence and it should be added to the vector store"
 
-    document_1 = DocumentMeta.create_text_document_from_literal(document_1_content)
-    document_2 = DocumentMeta.create_text_document_from_literal(document_2_content)
+    document_1 = DocumentMeta.from_literal(document_1_content)
+    document_2 = DocumentMeta.from_literal(document_2_content)
 
     document_search: DocumentSearch = DocumentSearch(
         vector_store=text_vector_store,

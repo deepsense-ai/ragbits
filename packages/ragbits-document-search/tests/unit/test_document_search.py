@@ -42,12 +42,12 @@ CONFIG = {
     ("document", "expected"),
     [
         (
-            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+            DocumentMeta.from_literal("Name of Peppa's brother is George"),
             "Name of Peppa's brother is George",
         ),
         (
             Document.from_document_meta(
-                DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"), Path("test.txt")
+                DocumentMeta.from_literal("Name of Peppa's brother is George"), Path("test.txt")
             ),
             "Name of Peppa's brother is George",
         ),
@@ -88,9 +88,9 @@ async def test_document_search_ingest_from_source():
 @pytest.mark.parametrize(
     "document",
     [
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.from_literal("Name of Peppa's brother is George"),
         Document.from_document_meta(
-            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
+            DocumentMeta.from_literal("Name of Peppa's brother is George"),
             Path("test.txt"),
         ),
     ],
@@ -125,7 +125,7 @@ async def test_document_search_with_search_config():
         vector_store=InMemoryVectorStore(embedder=embeddings_mock),
         parser_router=DocumentParserRouter({DocumentType.TXT: TextDocumentParser()}),
     )
-    await document_search.ingest([DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George")])
+    await document_search.ingest([DocumentMeta.from_literal("Name of Peppa's brother is George")])
 
     results = await document_search.search(
         "Peppa's brother", options=DocumentSearchOptions(vector_store_options=VectorStoreOptions(k=1))
@@ -157,9 +157,9 @@ async def test_document_search_scores():
 
     # Ingest multiple documents
     documents = [
-        DocumentMeta.create_text_document_from_literal("First document about Peppa"),
-        DocumentMeta.create_text_document_from_literal("Second document about George"),
-        DocumentMeta.create_text_document_from_literal("Third document about Peppa and George"),
+        DocumentMeta.from_literal("First document about Peppa"),
+        DocumentMeta.from_literal("Second document about George"),
+        DocumentMeta.from_literal("Third document about Peppa and George"),
     ]
     await document_search.ingest(documents)
 
@@ -196,18 +196,18 @@ async def test_document_search_ingest_multiple_from_sources():
 
 async def test_document_search_with_batched():
     documents = [
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Suzy Sheep"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Danny Dog"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Pedro Pony"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Emily Elephant"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's friend is Candy Cat"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's teacher is Madame Gazelle"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's doctor is Dr. Brown Bear"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Chloe Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's cousin is Alexander Pig"),
+        DocumentMeta.from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.from_literal("Name of Peppa's father is Daddy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's mother is Mummy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's friend is Suzy Sheep"),
+        DocumentMeta.from_literal("Name of Peppa's friend is Danny Dog"),
+        DocumentMeta.from_literal("Name of Peppa's friend is Pedro Pony"),
+        DocumentMeta.from_literal("Name of Peppa's friend is Emily Elephant"),
+        DocumentMeta.from_literal("Name of Peppa's friend is Candy Cat"),
+        DocumentMeta.from_literal("Name of Peppa's teacher is Madame Gazelle"),
+        DocumentMeta.from_literal("Name of Peppa's doctor is Dr. Brown Bear"),
+        DocumentMeta.from_literal("Name of Peppa's cousin is Chloe Pig"),
+        DocumentMeta.from_literal("Name of Peppa's cousin is Alexander Pig"),
     ]
 
     ingest_strategy = BatchedIngestStrategy(batch_size=5)

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
 - Update audit imports (#427)
 - BREAKING CHANGE: Adjust document search configurable interface (#554)
 - BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)

@@ -10,7 +10,7 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
     ("document_metadata", "expected_num_elements"),
     [
         pytest.param(
-            DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George."),
+            DocumentMeta.from_literal("Name of Peppa's brother is George."),
             1,
             id="TextDocument",
         ),

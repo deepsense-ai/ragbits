@@ -30,11 +30,11 @@ def ingest_strategy_fixture(request: pytest.FixtureRequest) -> IngestStrategy:
 
 async def test_ingest_strategy_call(ingest_strategy: IngestStrategy) -> None:
     documents = [
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's grandfather is Grandpa Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's grandmother is Granny Pig"),
+        DocumentMeta.from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.from_literal("Name of Peppa's mother is Mummy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's father is Daddy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's grandfather is Grandpa Pig"),
+        DocumentMeta.from_literal("Name of Peppa's grandmother is Granny Pig"),
     ]
     vector_store = InMemoryVectorStore(embedder=NoopEmbedder())
     parser_router = DocumentParserRouter({DocumentType.TXT: TextDocumentParser()})
@@ -53,9 +53,9 @@ async def test_ingest_strategy_call(ingest_strategy: IngestStrategy) -> None:
 
 async def test_ingest_strategy_call_fail(ingest_strategy: IngestStrategy) -> None:
     documents = [
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's brother is George"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's mother is Mummy Pig"),
-        DocumentMeta.create_text_document_from_literal("Name of Peppa's father is Daddy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's brother is George"),
+        DocumentMeta.from_literal("Name of Peppa's mother is Mummy Pig"),
+        DocumentMeta.from_literal("Name of Peppa's father is Daddy Pig"),
         DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "img" / "transformers_paper_page.png"),
         DocumentMeta.from_local_path(Path(__file__).parent.parent / "assets" / "pdf" / "transformers_paper_page.pdf"),
     ]

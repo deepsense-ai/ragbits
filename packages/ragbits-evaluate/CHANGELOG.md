@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
 - Adjust typing for DocumentSearch (#554)
 
 ## 0.17.1 (2025-05-09)
