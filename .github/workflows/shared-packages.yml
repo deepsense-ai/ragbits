@@ -195,16 +195,6 @@ jobs:
           path: report.xml
           retention-days: 10
 
-      # simpler version for code coverage reporting
-      # - name: Produce Coverage report
-      #   uses: 5monkeys/cobertura-action@v13
-      #   continue-on-error: true
-      #   with:
-      #     path: coverage.xml
-      #     minimum_coverage: 70
-      #     fail_below_threshold: false
-
-      # more complex version for better coverage reporting
       - name: Produce the coverage report
         uses: insightsengineering/coverage-action@v2
         continue-on-error: true
