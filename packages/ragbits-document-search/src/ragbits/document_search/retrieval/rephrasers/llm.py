@@ -1,10 +1,13 @@
+from collections.abc import Iterable
 from typing import Any
+
+from typing_extensions import Self
 
 from ragbits.core.audit.traces import traceable
 from ragbits.core.llms.base import LLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
-from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 from ragbits.document_search.retrieval.rephrasers.prompts import (
     QueryRephraserInput,
     QueryRephraserPrompt,
@@ -12,10 +15,12 @@ from ragbits.document_search.retrieval.rephrasers.prompts import (
 )
 
 
-class LLMQueryRephraser(QueryRephraser):
+class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
     """
     A rephraser class that uses a LLM to rephrase queries.
     """
+
+    options_cls = QueryRephraserOptions
 
     def __init__(self, llm: LLM, prompt: type[Prompt[QueryRephraserInput, Any]] | None = None):
         """
@@ -29,12 +34,13 @@ class LLMQueryRephraser(QueryRephraser):
         self._prompt = prompt or QueryRephraserPrompt
 
     @traceable
-    async def rephrase(self, query: str) -> list[str]:
+    async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:
         """
         Rephrase a given query using the LLM.
 
         Args:
             query: The query to be rephrased. If not provided, a custom prompt must be given.
+            options: The options for the rephraser.
 
         Returns:
             A list containing the rephrased query.
@@ -50,7 +56,7 @@ class LLMQueryRephraser(QueryRephraser):
         return response if isinstance(response, list) else [response]
 
     @classmethod
-    def from_config(cls, config: dict) -> "LLMQueryRephraser":
+    def from_config(cls, config: dict) -> Self:
         """
         Create an instance of `LLMQueryRephraser` from a configuration dictionary.
 
@@ -64,7 +70,6 @@ class LLMQueryRephraser(QueryRephraser):
            ValidationError: If the LLM or prompt configuration doesn't follow the expected format.
            InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
            ValueError: If the prompt class is not a subclass of `Prompt`.
-
         """
         llm: LLM = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
         prompt_cls = None
