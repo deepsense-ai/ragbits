@@ -9,7 +9,7 @@ class NoopQueryRephraser(QueryRephraser[QueryRephraserOptions]):
     A no-op query paraphraser that does not change the query.
     """
 
-    options_cls = QueryRephraserOptions
+    options_cls: type[QueryRephraserOptions] = QueryRephraserOptions
 
     @traceable
     async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:  # noqa: PLR6301
