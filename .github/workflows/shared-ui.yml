@@ -5,7 +5,7 @@ on:
 
 jobs:
   lints:
-    name: Run ui linters
+    name: Run linters
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:

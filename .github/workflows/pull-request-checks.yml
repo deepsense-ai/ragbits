@@ -52,11 +52,13 @@ jobs:
           fi
 
   packages:
+    name: Packages checks
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/shared-packages.yml
 
   ui:
+    name: UI checks
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' }}
     uses: ./.github/workflows/shared-ui.yml
