@@ -1,10 +1,12 @@
 from collections.abc import Iterable
+from typing import Generic
 
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import traceable
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt import Prompt
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 from ragbits.document_search.retrieval.rephrasers.prompts import (
@@ -14,26 +16,46 @@ from ragbits.document_search.retrieval.rephrasers.prompts import (
 )
 
 
-class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
+class LLMQueryRephraserOptions(QueryRephraserOptions, Generic[LLMClientOptionsT]):
+    """
+    Object representing the options for the LLM query rephraser.
+
+    Attributes:
+        llm_options: The options for the LLM.
+    """
+
+    llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
+
+
+class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptionsT]]):
     """
     A rephraser class that uses a LLM to rephrase queries.
     """
 
-    options_cls = QueryRephraserOptions
+    options_cls: type[LLMQueryRephraserOptions] = LLMQueryRephraserOptions
 
-    def __init__(self, llm: LLM, prompt: type[Prompt[QueryRephraserInput, str]] | None = None) -> None:
+    def __init__(
+        self,
+        llm: LLM[LLMClientOptionsT],
+        prompt: type[Prompt[QueryRephraserInput, str]] | None = None,
+        default_options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
+    ) -> None:
         """
         Initialize the LLMQueryRephraser with a LLM.
 
         Args:
             llm: A LLM instance to handle query rephrasing.
             prompt: The prompt to use for rephrasing queries.
+            default_options: The default options for the rephraser.
         """
+        super().__init__(default_options=default_options)
         self._llm = llm
         self._prompt = prompt or QueryRephraserPrompt
 
     @traceable
-    async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:
+    async def rephrase(
+        self, query: str, options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None
+    ) -> Iterable[str]:
         """
         Rephrase a given query using the LLM.
 
@@ -49,8 +71,10 @@ class LLMQueryRephraser(QueryRephraser[QueryRephraserOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
         """
+        merged_options = (self.default_options | options) if options else self.default_options
+        llm_options = merged_options.llm_options or None
         prompt = self._prompt(QueryRephraserInput(query=query))
-        response = await self._llm.generate(prompt)
+        response = await self._llm.generate(prompt, options=llm_options)
         return [response]
 
     @classmethod

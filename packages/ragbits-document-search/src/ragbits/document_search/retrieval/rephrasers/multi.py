@@ -3,10 +3,11 @@ from collections.abc import Iterable
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import traceable
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt import Prompt
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
-from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
+from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraserOptions
 from ragbits.document_search.retrieval.rephrasers.prompts import (
     MultiQueryRephraserInput,
     MultiQueryRephraserPrompt,
@@ -14,29 +15,30 @@ from ragbits.document_search.retrieval.rephrasers.prompts import (
 )
 
 
-class MultiQueryRephraserOptions(QueryRephraserOptions):
+class MultiQueryRephraserOptions(LLMQueryRephraserOptions[LLMClientOptionsT]):
     """
     Object representing the options for the multi query rephraser.
 
     Attributes:
+        llm_options: The options for the LLM.
         n: The number of rephrasings to generate.
     """
 
     n: int = 5
 
 
-class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions]):
+class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions[LLMClientOptionsT]]):
     """
     A rephraser class that uses a LLM to generate reworded versions of input query.
     """
 
-    options_cls = MultiQueryRephraserOptions
+    options_cls: type[MultiQueryRephraserOptions] = MultiQueryRephraserOptions
 
     def __init__(
         self,
-        llm: LLM,
+        llm: LLM[LLMClientOptionsT],
         prompt: type[Prompt[MultiQueryRephraserInput, list[str]]] | None = None,
-        default_options: MultiQueryRephraserOptions | None = None,
+        default_options: MultiQueryRephraserOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
         Initialize the MultiQueryRephraser with a LLM.
@@ -51,7 +53,9 @@ class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions]):
         self._prompt = prompt or MultiQueryRephraserPrompt
 
     @traceable
-    async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:
+    async def rephrase(
+        self, query: str, options: MultiQueryRephraserOptions[LLMClientOptionsT] | None = None
+    ) -> Iterable[str]:
         """
         Rephrase a given query using the LLM.
 
@@ -68,8 +72,9 @@ class MultiQueryRephraser(QueryRephraser[MultiQueryRephraserOptions]):
             LLMResponseError: If the LLM API response is invalid.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        llm_options = merged_options.llm_options or None
         prompt = self._prompt(MultiQueryRephraserInput(query=query, n=merged_options.n))
-        response = await self._llm.generate(prompt)
+        response = await self._llm.generate(prompt, options=llm_options)
         return [query] + response
 
     @classmethod
