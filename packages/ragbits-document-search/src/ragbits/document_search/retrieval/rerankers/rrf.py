@@ -41,7 +41,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         Args:
             elements: A list of ranked lists of elements to be fused.
             query: The query string for reranking.
-            options: Options for reranking.
+            options: The options for reranking.
 
         Returns:
             The reranked elements.

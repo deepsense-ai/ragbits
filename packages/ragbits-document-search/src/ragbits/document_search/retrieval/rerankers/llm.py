@@ -107,7 +107,7 @@ class LLMReranker(Reranker[LLMRerankerOptions]):
         self,
         elements: Sequence[Sequence[Element]],
         query: str,
-        options: RerankerOptions | None = None,
+        options: LLMRerankerOptions | None = None,
     ) -> Sequence[Element]:
         """
         Rerank elements with LLM.
@@ -115,7 +115,7 @@ class LLMReranker(Reranker[LLMRerankerOptions]):
         Args:
             elements: The elements to rerank.
             query: The query to rerank the elements against.
-            options: The RerankerOptions to use for reranking.
+            options: The options for reranking.
 
         Returns:
             The reranked elements.
