@@ -64,10 +64,9 @@ const PromptInput = ({
             "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 pr-3 pl-[20px] pt-3 pb-4",
         }}
         maxRows={16}
-        minRows={2}
+        minRows={1}
         name="content"
         radius="lg"
-        spellCheck={"false"}
         value={message}
         variant="flat"
         onKeyDown={handleKeyDown}
@@ -98,4 +97,3 @@ const PromptInput = ({
 };
 
 export default PromptInput;
-PromptInput.displayName = "PromptInput";
