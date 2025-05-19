@@ -30,29 +30,29 @@ To run the script, execute the following command:
 
 import asyncio
 
-from ragbits.core.audit import set_trace_handlers
+from ragbits.core.audit.traces import set_trace_handlers
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
 set_trace_handlers("cli")
 
 documents = [
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         RIP boiled water. You will be mist.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         Why doesn't James Bond fart in bed? Because it would blow his cover.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         Why programmers don't like to swim? Because they're scared of the floating points.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         This one is completely unrelated.
         """
@@ -86,13 +86,12 @@ config = {
             "model": "cohere/rerank-english-v3.0",
             "default_options": {
                 "top_n": 3,
-                "max_chunks_per_doc": None,
             },
         },
     },
     "parser_router": {"txt": {"type": "TextDocumentParser"}},
     "rephraser": {
-        "type": "LLMQueryRephraser",
+        "type": "ragbits.document_search.retrieval.rephrasers:LLMQueryRephraser",
         "config": {
             "llm": {
                 "type": "ragbits.core.llms.litellm:LiteLLM",
@@ -101,7 +100,13 @@ config = {
                 },
             },
             "prompt": {
-                "type": "QueryRephraserPrompt",
+                "type": "ragbits.document_search.retrieval.rephrasers:LLMQueryRephraserPrompt",
+            },
+            "default_options": {
+                "n": 2,
+                "llm_options": {
+                    "temperature": 0.0,
+                },
             },
         },
     },

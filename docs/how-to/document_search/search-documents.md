@@ -94,10 +94,10 @@ By default, the input query is provided directly to the embedding model. However
 === "Multi query"
 
     ```python
-    from ragbits.document_search.retrieval.rephrasers import MultiQueryRephraser
+    from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser, LLMQueryRephraserOptions
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = MultiQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), n=3)
+    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")
@@ -108,25 +108,28 @@ By default, the input query is provided directly to the embedding model. However
 To define a new rephraser, extend the the [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.base.QueryRephraser] class.
 
 ```python
-from ragbits.document_search.retrieval.rephrasers import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers import QueryRephraser, QueryRephraserOptions
 
 
-class CustomRephraser(QueryRephraser):
+class CustomRephraser(QueryRephraser[QueryRephraserOptions]):
     """
     Rephraser that uses a LLM to rephrase queries.
     """
 
-    async def rephrase(self, query: str) -> list[str]:
+    options_cls: type[QueryRephraserOptions] = QueryRephraserOptions
+
+    async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:
         """
         Rephrase a query using the LLM.
 
         Args:
             query: The query to be rephrased.
+            options: The options for rephrasing.
 
         Returns:
             List containing the rephrased query.
         """
-        responses = await llm.generate(QueryRephraserPrompt(...))
+        responses = await llm.generate(CustomRephraserPrompt(...))
         ...
         return [...]
 ```
@@ -174,6 +177,8 @@ class CustomReranker(Reranker[RerankerOptions]):
     """
     Reranker that uses a LLM to rerank elements.
     """
+
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     async def rerank(
         self,
