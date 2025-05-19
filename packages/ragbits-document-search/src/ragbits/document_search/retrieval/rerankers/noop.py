@@ -11,7 +11,7 @@ class NoopReranker(Reranker[RerankerOptions]):
     A no-op reranker that does not change the order of the elements.
     """
 
-    options_cls = RerankerOptions
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     @traceable
     async def rerank(  # noqa: PLR6301

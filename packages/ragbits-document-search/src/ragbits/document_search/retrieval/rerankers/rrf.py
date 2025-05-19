@@ -26,7 +26,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         - rank(q, d) is the position of d in the ranking list for q (starting from 1)
     """
 
-    options_cls = RerankerOptions
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     @traceable
     async def rerank(
@@ -41,7 +41,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         Args:
             elements: A list of ranked lists of elements to be fused.
             query: The query string for reranking.
-            options: Options for reranking.
+            options: The options for reranking.
 
         Returns:
             The reranked elements.
@@ -64,7 +64,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         sorted_scores = sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
         results = []
-        for element_id, score in sorted_scores[: merged_options.top_n]:
+        for element_id, score in sorted_scores[: merged_options.top_n or None]:
             if not merged_options.score_threshold or score >= merged_options.score_threshold:
                 if merged_options.override_score:
                     elements_map[element_id].score = score

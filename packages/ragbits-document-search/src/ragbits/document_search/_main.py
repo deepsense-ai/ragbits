@@ -13,18 +13,18 @@ from ragbits.core.options import Options
 from ragbits.core.sources.base import Source, SourceResolver
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import (
-    ConfigurableComponent,
-    NoPreferredConfigError,
-    ObjectConstructionConfig,
-)
+from ragbits.core.utils.config_handling import ConfigurableComponent, NoPreferredConfigError, ObjectConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptionsT
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies import IngestStrategy, SequentialIngestStrategy
-from ragbits.document_search.ingestion.strategies.base import IngestExecutionError, IngestExecutionResult
+from ragbits.document_search.ingestion.strategies.base import (
+    IngestExecutionError,
+    IngestExecutionResult,
+    IngestStrategy,
+)
+from ragbits.document_search.ingestion.strategies.sequential import SequentialIngestStrategy
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptionsT
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptionsT
