@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import ClassVar, Generic
@@ -19,7 +20,7 @@ class Metric(WithConstructionConfig, Generic[EvaluationResultT], ABC):
 
     def __init__(self, weight: float = 1.0) -> None:
         """
-        Initializes the metric.
+        Initialize the metric.
 
         Args:
             weight: Metric value weight in the final score, used during optimization.
@@ -28,7 +29,7 @@ class Metric(WithConstructionConfig, Generic[EvaluationResultT], ABC):
         self.weight = weight
 
     @abstractmethod
-    def compute(self, results: list[EvaluationResultT]) -> dict:
+    async def compute(self, results: list[EvaluationResultT]) -> dict:
         """
         Compute the metric.
 
@@ -70,7 +71,7 @@ class MetricSet(WithConstructionConfig, Generic[EvaluationResultT]):
         """
         return cls(*[Metric.subclass_from_config(metric_config) for metric_config in config.values()])
 
-    def compute(self, results: list[EvaluationResultT]) -> dict:
+    async def compute(self, results: list[EvaluationResultT]) -> dict:
         """
         Compute the metrics.
 
@@ -80,6 +81,9 @@ class MetricSet(WithConstructionConfig, Generic[EvaluationResultT]):
         Returns:
             The computed metrics.
         """
+        metric_results = await asyncio.gather(*[metric.compute(results) for metric in self.metrics])
         return {
-            name: metric.weight * value for metric in self.metrics for name, value in metric.compute(results).items()
+            name: metric.weight * value
+            for metric, result in zip(self.metrics, metric_results, strict=False)
+            for name, value in result.items()
         }

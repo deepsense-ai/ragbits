@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
@@ -13,6 +14,7 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
+from ragbits.core.audit.metrics import HistogramMetric, record
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt
@@ -106,10 +108,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Response string from LLM.
         """
+        start_time = time.perf_counter()
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
-
         outputs = self.model.generate(
             input_ids,
             eos_token_id=self.tokenizer.eos_token_id,
@@ -117,6 +119,27 @@ class LocalLLM(LLM[LocalLLMOptions]):
         )
         response = outputs[0][input_ids.shape[-1] :]
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
+        prompt_throughput = time.perf_counter() - start_time
+
+        record(
+            metric=HistogramMetric.INPUT_TOKENS,
+            value=input_ids.shape[-1],
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+        record(
+            metric=HistogramMetric.PROMPT_THROUGHPUT,
+            value=prompt_throughput,
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+        record(
+            metric=HistogramMetric.TOKEN_THROUGHPUT,
+            value=outputs.total_tokens / prompt_throughput,
+            model=self.model_name,
+            prompt=prompt.__class__.__name__,
+        )
+
         return {"response": decoded_response}
 
     async def _call_streaming(
@@ -138,6 +161,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Returns:
             Async generator of tokens
         """
+        start_time = time.perf_counter()
+        input_tokens = len(
+            self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt")[0]
+        )
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
@@ -148,10 +175,42 @@ class LocalLLM(LLM[LocalLLMOptions]):
         async def streamer_to_async_generator(
             streamer: TextIteratorStreamer, generation_thread: threading.Thread
         ) -> AsyncGenerator[str, None]:
+            output_tokens = 0
             generation_thread.start()
-            for text_piece in streamer:
-                yield text_piece
+            for text in streamer:
+                if text:
+                    output_tokens += 1
+                    if output_tokens == 1:
+                        record(
+                            metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                            value=time.perf_counter() - start_time,
+                            model=self.model_name,
+                            prompt=prompt.__class__.__name__,
+                        )
+
+                yield text
                 await asyncio.sleep(0.0)
+
             generation_thread.join()
+            total_time = time.perf_counter() - start_time
+
+            record(
+                metric=HistogramMetric.INPUT_TOKENS,
+                value=input_tokens,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
+            record(
+                metric=HistogramMetric.PROMPT_THROUGHPUT,
+                value=total_time,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
+            record(
+                metric=HistogramMetric.TOKEN_THROUGHPUT,
+                value=output_tokens / total_time,
+                model=self.model_name,
+                prompt=prompt.__class__.__name__,
+            )
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)

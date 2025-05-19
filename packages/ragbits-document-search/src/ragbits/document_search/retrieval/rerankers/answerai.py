@@ -4,7 +4,7 @@ from typing import Any
 
 from rerankers import Reranker as AnswerReranker
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
@@ -14,7 +14,7 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
     A [rerankers](https://github.com/AnswerDotAI/rerankers) re-ranker covering most popular re-ranking methods.
     """
 
-    options_cls = RerankerOptions
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     def __init__(
         self,
@@ -23,7 +23,7 @@ class AnswerAIReranker(Reranker[RerankerOptions]):
         **rerankers_kwargs: Any,  # noqa: ANN401
     ) -> None:
         """
-        Constructs a new AnswerDotAIRerankersReranker instance.
+        Initialize the AnswerAIReranker instance.
 
         Args:
             model: The reranker model to use.

@@ -19,11 +19,16 @@ export default function Layout({
   subTitle?: string;
   classNames?: Record<string, string>;
 }) {
-  const { clearMessages } = useHistoryContext();
+  const { clearHistory, stopAnswering } = useHistoryContext();
   const { setTheme, theme } = useThemeContext();
 
   const toggleTheme = () => {
     setTheme(theme === Theme.DARK ? Theme.LIGHT : Theme.DARK);
+  };
+
+  const resetChat = () => {
+    stopAnswering();
+    clearHistory();
   };
 
   return (
@@ -62,7 +67,7 @@ export default function Layout({
                 isIconOnly
                 aria-label="Clear chat"
                 variant="ghost"
-                onPress={clearMessages}
+                onPress={resetChat}
               >
                 <Icon icon="heroicons:arrow-path" />
               </Button>

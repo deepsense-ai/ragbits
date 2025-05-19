@@ -1,3 +1,3 @@
-from ._main import DocumentSearch, SearchConfig
+from ragbits.document_search._main import DocumentSearch, DocumentSearchOptions
 
-__all__ = ["DocumentSearch", "SearchConfig"]
+__all__ = ["DocumentSearch", "DocumentSearchOptions"]

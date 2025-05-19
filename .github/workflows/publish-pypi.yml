@@ -1,11 +1,12 @@
-name: Push Release
+name: Publish release
 
 on:
   pull_request_target:
     types:
       - closed
+
 jobs:
-  publish_release:
+  publish-release:
     if: startsWith(github.head_ref, 'release/') && github.event.pull_request.merged == true && github.event.pull_request.user.login == 'ds-ragbits-robot'
     runs-on: ubuntu-latest
     steps:

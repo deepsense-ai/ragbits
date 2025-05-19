@@ -1,7 +1,7 @@
 import asyncio
 from uuid import UUID
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.core.vector_stores.base import (
     VectorStore,
     VectorStoreEntry,

@@ -1,9 +1,7 @@
-name: Continuous Integration
+name: Shared packages checks
 
 on:
-  push:
-    branches: [main, master]
-  pull_request:
+  workflow_call:
 
 jobs:
   lints:
@@ -119,29 +117,6 @@ jobs:
           name: packages
           path: dist/**
           retention-days: 3
-
-  changelog-update-checker:
-    name: Check Changelog Update
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Verify changelog updates
-        run: |
-          ./.github/scripts/check_changelog_update.sh
-
-  pr-title-checker:
-    name: Validate PR title
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: amannn/action-semantic-pull-request@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   tests:
     name: Run tests
     runs-on: ubuntu-latest
@@ -153,7 +128,7 @@ jobs:
     strategy:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: [ "3.10", "3.11", "3.12" ]
 
     services:
       postgres:
@@ -220,16 +195,6 @@ jobs:
           path: report.xml
           retention-days: 10
 
-      # simpler version for code coverage reporting
-      # - name: Produce Coverage report
-      #   uses: 5monkeys/cobertura-action@v13
-      #   continue-on-error: true
-      #   with:
-      #     path: coverage.xml
-      #     minimum_coverage: 70
-      #     fail_below_threshold: false
-
-      # more complex version for better coverage reporting
       - name: Produce the coverage report
         uses: insightsengineering/coverage-action@v2
         continue-on-error: true

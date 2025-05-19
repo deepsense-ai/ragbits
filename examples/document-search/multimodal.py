@@ -33,7 +33,7 @@ To run the script, execute the following command:
 import asyncio
 from pathlib import Path
 
-from ragbits.core.embeddings.dense import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
 from ragbits.core.sources import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
@@ -49,8 +49,8 @@ documents = [
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "bear.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "game.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "tree.jpg")),
-    DocumentMeta.create_text_document_from_literal("A beautiful teady bear."),
-    DocumentMeta.create_text_document_from_literal("The constitution of the United States."),
+    DocumentMeta.from_literal("A beautiful teady bear."),
+    DocumentMeta.from_literal("The constitution of the United States."),
 ]
 
 

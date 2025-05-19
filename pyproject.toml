@@ -113,7 +113,6 @@ exclude = ["scripts", "examples"]
 
 [[tool.mypy.overrides]]
 module = "ragbits.*"
-ignore_missing_imports = false
 disallow_untyped_defs = true
 
 [tool.ruff]

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from ragbits.core.sources.base import Source, SourceDiscriminator
 from ragbits.core.sources.local import LocalFileSource
@@ -76,7 +77,21 @@ class DocumentMeta(BaseModel):
         return Document.from_document_meta(self, local_path)
 
     @classmethod
+    @deprecated("Use from_literal() instead")
     def create_text_document_from_literal(cls, content: str) -> "DocumentMeta":
+        """
+        Create a text document from a literal content. This method is deprecated, use from_literal() instead.
+
+        Args:
+            content: The content of the document.
+
+        Returns:
+            The document metadata.
+        """
+        return cls.from_literal(content)
+
+    @classmethod
+    def from_literal(cls, content: str) -> "DocumentMeta":
         """
         Create a text document from a literal content.
 

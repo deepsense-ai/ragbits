@@ -2,7 +2,15 @@
 
 ## Unreleased
 
-- Fix: Qdrant vector store failing on gRCP connection errors (#548)
+- Add batched() helper method to utils (#555)
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
+- Adjust typing for DocumentSearch (#554)
+- Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
+- Restructure audit module (#427)
+
+## 0.17.1 (2025-05-09)
+
+- Fix Qdrant vector store failing on gRCP connection errors (#548)
 
 ## 0.17.0 (2025-05-06)
 

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- BREAKING CHANGE: Adjust eval pipline interface to batch processing (#555)
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
+- Adjust typing for DocumentSearch (#554)
+
+## 0.17.1 (2025-05-09)
+
+### Changed
+
+- ragbits-core updated to version v0.17.1
+
 ## 0.17.0 (2025-05-06)
 
 ### Changed
