@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import json
 from importlib import import_module
 from pathlib import Path
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from ragbits.cli import print_output
 from ragbits.core.config import core_config
 from ragbits.core.llms.base import LLM, LLMType
+from ragbits.core.prompt.discovery import PromptDiscovery
 from ragbits.core.prompt.prompt import ChatFormat, Prompt
 
 prompts_app = typer.Typer(no_args_is_help=True)
@@ -19,6 +21,16 @@ class LLMResponseCliOutput(BaseModel):
 
     question: ChatFormat
     answer: str | BaseModel | None = None
+
+
+class PromptInfo(BaseModel):
+    """Information about a Prompt class for CLI display"""
+
+    name: str
+    import_path: str
+    description: str
+    input_type: str
+    output_type: str
 
 
 def _render(prompt_path: str, payload: str | None) -> Prompt:
@@ -34,7 +46,7 @@ def _render(prompt_path: str, payload: str | None) -> Prompt:
 
 
 @prompts_app.command()
-def generate_promptfoo_configs(
+def promptfoo(
     file_pattern: str = core_config.prompt_path_pattern,
     root_path: Path = Path.cwd(),  # noqa: B008
     target_path: Path = Path("promptfooconfigs"),
@@ -47,6 +59,25 @@ def generate_promptfoo_configs(
     from ragbits.core.prompt.promptfoo import generate_configs
 
     generate_configs(file_pattern=file_pattern, root_path=root_path, target_path=target_path)
+
+
+@prompts_app.command()
+def search(file_pattern: str = core_config.prompt_path_pattern, root_path: Path = Path.cwd()) -> None:  # noqa: B008
+    """
+    Lists all available prompts that can be used with the 'render' and 'exec' commands.
+    """
+    prompt_classes = PromptDiscovery(file_pattern=file_pattern, root_path=root_path).discover()
+    prompt_infos = [
+        PromptInfo(
+            name=prompt_cls.__name__,
+            import_path=f"{prompt_cls.__module__}:{prompt_cls.__name__}",
+            description=inspect.getdoc(prompt_cls) or "",
+            input_type=getattr(prompt_cls.input_type, "__name__", str(prompt_cls.input_type)),
+            output_type=getattr(prompt_cls.output_type, "__name__", str(prompt_cls.output_type)),
+        )
+        for prompt_cls in prompt_classes
+    ]
+    print_output(prompt_infos)
 
 
 @prompts_app.command()
