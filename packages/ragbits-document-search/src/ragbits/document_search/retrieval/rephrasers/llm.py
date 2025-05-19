@@ -48,7 +48,7 @@ class LLMQueryRephraserPrompt(Prompt[LLMQueryRephraserPromptInput, list]):
 
     @staticmethod
     def _response_parser(value: str) -> list[str]:
-        return [line.strip() for line in value.strip().split("\n") if line.strip()]
+        return [stripped_line for line in value.strip().split("\n") if (stripped_line := line.strip())]
 
     response_parser = _response_parser
 
