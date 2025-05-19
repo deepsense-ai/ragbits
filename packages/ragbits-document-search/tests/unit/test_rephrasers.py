@@ -1,10 +1,9 @@
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
-from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser
-from ragbits.document_search.retrieval.rephrasers.multi import MultiQueryRephraser
+from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser, QueryRephraserPrompt
+from ragbits.document_search.retrieval.rephrasers.multi import MultiQueryRephraser, MultiQueryRephraserPrompt
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
-from ragbits.document_search.retrieval.rephrasers.prompts import MultiQueryRephraserPrompt, QueryRephraserPrompt
 
 
 def test_subclass_from_config():
@@ -48,7 +47,7 @@ def test_subclass_from_config_llm_prompt():
                     "type": "ragbits.core.llms.litellm:LiteLLM",
                     "config": {"model_name": "some_model"},
                 },
-                "prompt": {"type": "QueryRephraserPrompt"},
+                "prompt": {"type": "ragbits.document_search.retrieval.rephrasers.llm:QueryRephraserPrompt"},
             },
         }
     )
@@ -85,7 +84,7 @@ def test_subclass_from_config_multiquery_llm_prompt():
                     "type": "ragbits.core.llms.litellm:LiteLLM",
                     "config": {"model_name": "some_model"},
                 },
-                "prompt": {"type": "MultiQueryRephraserPrompt"},
+                "prompt": {"type": "ragbits.document_search.retrieval.rephrasers.multi:MultiQueryRephraserPrompt"},
                 "default_options": {"n": 4},
             },
         }

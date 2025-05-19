@@ -30,7 +30,7 @@ To run the script, execute the following command:
 
 import asyncio
 
-from ragbits.core.audit import set_trace_handlers
+from ragbits.core.audit.traces import set_trace_handlers
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -86,13 +86,12 @@ config = {
             "model": "cohere/rerank-english-v3.0",
             "default_options": {
                 "top_n": 3,
-                "max_chunks_per_doc": None,
             },
         },
     },
     "parser_router": {"txt": {"type": "TextDocumentParser"}},
     "rephraser": {
-        "type": "LLMQueryRephraser",
+        "type": "ragbits.document_search.retrieval.rephrasers:LLMQueryRephraser",
         "config": {
             "llm": {
                 "type": "ragbits.core.llms.litellm:LiteLLM",
@@ -101,7 +100,12 @@ config = {
                 },
             },
             "prompt": {
-                "type": "QueryRephraserPrompt",
+                "type": "ragbits.document_search.retrieval.rephrasers:QueryRephraserPrompt",
+            },
+            "default_options": {
+                "llm_options": {
+                    "temperature": 0.0,
+                },
             },
         },
     },

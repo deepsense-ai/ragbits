@@ -1,19 +1,38 @@
 from collections.abc import Iterable
 from typing import Generic
 
+from pydantic import BaseModel
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import traceable
 from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt import Prompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
-from ragbits.core.utils.config_handling import ObjectConstructionConfig
+from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
-from ragbits.document_search.retrieval.rephrasers.prompts import (
-    QueryRephraserInput,
-    QueryRephraserPrompt,
-    get_rephraser_prompt,
-)
+
+
+class QueryRephraserInput(BaseModel):
+    """
+    Input data for the query rephraser prompt.
+    """
+
+    query: str
+
+
+class QueryRephraserPrompt(Prompt[QueryRephraserInput, str]):
+    """
+    Prompt for generating a rephrased user query.
+    """
+
+    system_prompt = """
+        You are an expert in query rephrasing and clarity improvement.
+        Your task is to return a single paraphrased version of a user's query,
+        correcting any typos, handling abbreviations and improving clarity.
+        Focus on making the query more precise and readable while keeping its original intent.
+        Just return the rephrased query. No additional explanations are needed.
+    """
+    user_prompt = "Query:{{ query }}"
 
 
 class LLMQueryRephraserOptions(QueryRephraserOptions, Generic[LLMClientOptionsT]):
@@ -93,11 +112,10 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
         Raises:
            ValidationError: If the LLM or prompt configuration doesn't follow the expected format.
            InvalidConfigError: If an LLM or prompt class can't be found or is not the correct type.
-           ValueError: If the prompt class is not a subclass of `Prompt`.
         """
         config["llm"] = LLM.subclass_from_config(ObjectConstructionConfig.model_validate(config["llm"]))
         config["prompt"] = (
-            get_rephraser_prompt(ObjectConstructionConfig.model_validate(config["prompt"]).type)
+            import_by_path(ObjectConstructionConfig.model_validate(config["prompt"]).type)
             if "prompt" in config
             else None
         )

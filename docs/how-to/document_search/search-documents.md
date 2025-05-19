@@ -129,7 +129,7 @@ class CustomRephraser(QueryRephraser[QueryRephraserOptions]):
         Returns:
             List containing the rephrased query.
         """
-        responses = await llm.generate(QueryRephraserPrompt(...))
+        responses = await llm.generate(CustomRephraserPrompt(...))
         ...
         return [...]
 ```
