@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import cast
 from unittest.mock import Mock
 
+import pytest
 from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
@@ -46,6 +47,11 @@ class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvalua
         return cls(evaluation_target=cast(MockEvaluationTarget, evaluation_target))
 
 
+class MockFailingEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationData, MockEvaluationResult]):
+    async def __call__(self, data: Iterable[MockEvaluationData]) -> Iterable[MockEvaluationResult]:
+        raise Exception("This is a test exception")
+
+
 class MockDataLoader(DataLoader[MockEvaluationData]):
     def __init__(self, dataset_size: int = 4) -> None:
         super().__init__(source=Mock())
@@ -61,13 +67,22 @@ class MockDataLoader(DataLoader[MockEvaluationData]):
 
 class MockMetric(Metric[MockEvaluationResult]):
     async def compute(self, results: list[MockEvaluationResult]) -> dict:  # noqa: PLR6301
-        accuracy = sum(1 for r in results if r.is_correct) / len(results)
+        accuracy = sum(1 for r in results if r.is_correct) / len(results) if results else 0
         return {"accuracy": accuracy}
 
 
-async def test_run_evaluation() -> None:
+@pytest.mark.parametrize(
+    ("pipeline_type", "expected_results", "expected_errors", "expected_accuracy"),
+    [(MockEvaluationPipeline, 4, 0, 0.5), (MockFailingEvaluationPipeline, 0, 1, 0)],
+)
+async def test_run_evaluation(
+    pipeline_type: type[EvaluationPipeline[MockEvaluationTarget, MockEvaluationData, MockEvaluationResult]],
+    expected_results: int,
+    expected_errors: int,
+    expected_accuracy: float,
+) -> None:
     target = MockEvaluationTarget(model_name="test_model")
-    pipeline = MockEvaluationPipeline(target)
+    pipeline = pipeline_type(target)
     dataloader = MockDataLoader()
     metrics = MetricSet(*[MockMetric()])
     evaluator = Evaluator()
@@ -78,8 +93,9 @@ async def test_run_evaluation() -> None:
         metricset=metrics,
     )
 
-    assert len(results.results) == 4
-    assert 0 <= results.metrics["accuracy"] <= 1
+    assert len(results.results) == expected_results
+    assert len(results.errors) == expected_errors
+    assert results.metrics["accuracy"] == expected_accuracy
     assert all("test_model_" in r.processed_output for r in results.results)
 
 
@@ -87,7 +103,7 @@ async def test_run_from_config() -> None:
     config = {
         "evaluation": {
             "dataloader": ObjectConstructionConfig.model_validate(
-                {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 3}}
+                {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 6}}
             ),
             "pipeline": {
                 "type": f"{__name__}:MockEvaluationPipeline",
@@ -104,5 +120,6 @@ async def test_run_from_config() -> None:
     }
     results = await Evaluator.run_from_config(config)
 
-    assert len(results.results) == 3
+    assert len(results.results) == 6
+    assert results.metrics["accuracy"] == 0.5
     assert all("config_model_" in r.processed_output for r in results.results)
