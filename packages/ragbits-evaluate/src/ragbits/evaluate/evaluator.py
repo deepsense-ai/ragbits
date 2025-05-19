@@ -131,7 +131,7 @@ class Evaluator(WithConstructionConfig):
 
         dataset = await dataloader.load()
         results, errors, time_perf = await self._call_pipeline(pipeline, dataset)
-        metrics = metricset.compute(results)
+        metrics = await metricset.compute(results)
 
         return EvaluatorResult(
             metrics=metrics,

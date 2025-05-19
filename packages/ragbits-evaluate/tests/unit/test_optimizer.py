@@ -63,7 +63,7 @@ class MockDataLoader(DataLoader):
 
 
 class MockMetric(Metric):
-    def compute(self, results: list[MockEvaluationResult]) -> dict:  # noqa: PLR6301
+    async def compute(self, results: list[MockEvaluationResult]) -> dict:  # noqa: PLR6301
         accuracy = sum(1 for r in results if r.is_correct) / len(results)
         return {"accuracy": accuracy}
 
