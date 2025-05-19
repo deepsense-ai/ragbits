@@ -13,33 +13,35 @@ from ragbits.core.options import Options
 from ragbits.core.sources.base import Source, SourceResolver
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils._pyproject import get_config_from_yaml
-from ragbits.core.utils.config_handling import (
-    ConfigurableComponent,
-    NoPreferredConfigError,
-    ObjectConstructionConfig,
-)
+from ragbits.core.utils.config_handling import ConfigurableComponent, NoPreferredConfigError, ObjectConstructionConfig
 from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptionsT
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies import IngestStrategy, SequentialIngestStrategy
-from ragbits.document_search.ingestion.strategies.base import IngestExecutionError, IngestExecutionResult
-from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
+from ragbits.document_search.ingestion.strategies.base import (
+    IngestExecutionError,
+    IngestExecutionResult,
+    IngestStrategy,
+)
+from ragbits.document_search.ingestion.strategies.sequential import SequentialIngestStrategy
+from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptionsT
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptionsT
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 
-class DocumentSearchOptions(Options, Generic[VectorStoreOptionsT, RerankerOptionsT]):
+class DocumentSearchOptions(Options, Generic[QueryRephraserOptionsT, VectorStoreOptionsT, RerankerOptionsT]):
     """
     Object representing the options for the document search.
 
     Attributes:
+        query_rephraser_options: The options for the query rephraser.
         vector_store_options: The options for the vector store.
         reranker_options: The options for the reranker.
     """
 
+    query_rephraser_options: QueryRephraserOptionsT | None | NotGiven = NOT_GIVEN
     vector_store_options: VectorStoreOptionsT | None | NotGiven = NOT_GIVEN
     reranker_options: RerankerOptionsT | None | NotGiven = NOT_GIVEN
 
@@ -57,7 +59,9 @@ class DocumentSearchConfig(BaseModel):
     enricher_router: dict[str, ObjectConstructionConfig] = {}
 
 
-class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT]]):
+class DocumentSearch(
+    ConfigurableComponent[DocumentSearchOptions[QueryRephraserOptionsT, VectorStoreOptionsT, RerankerOptionsT]]
+):
     """
     Main entrypoint to the document search functionality. It provides methods for document retrieval and ingestion.
 
@@ -80,9 +84,14 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
         self,
         vector_store: VectorStore[VectorStoreOptionsT],
         *,
-        query_rephraser: QueryRephraser | None = None,
+        query_rephraser: QueryRephraser[QueryRephraserOptionsT] | None = None,
         reranker: Reranker[RerankerOptionsT] | None = None,
-        default_options: DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT] | None = None,
+        default_options: DocumentSearchOptions[
+            QueryRephraserOptionsT,
+            VectorStoreOptionsT,
+            RerankerOptionsT,
+        ]
+        | None = None,
         ingest_strategy: IngestStrategy | None = None,
         parser_router: DocumentParserRouter | None = None,
         enricher_router: ElementEnricherRouter | None = None,
@@ -124,9 +133,9 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
         """
         model = DocumentSearchConfig.model_validate(config)
 
-        query_rephraser = QueryRephraser.subclass_from_config(model.rephraser)
-        reranker: Reranker = Reranker.subclass_from_config(model.reranker)
+        query_rephraser: QueryRephraser = QueryRephraser.subclass_from_config(model.rephraser)
         vector_store: VectorStore = VectorStore.subclass_from_config(model.vector_store)
+        reranker: Reranker = Reranker.subclass_from_config(model.reranker)
 
         ingest_strategy = IngestStrategy.subclass_from_config(model.ingest_strategy)
         parser_router = DocumentParserRouter.from_config(model.parser_router)
@@ -192,7 +201,7 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
     async def search(
         self,
         query: str,
-        options: DocumentSearchOptions[VectorStoreOptionsT, RerankerOptionsT] | None = None,
+        options: DocumentSearchOptions[QueryRephraserOptionsT, VectorStoreOptionsT, RerankerOptionsT] | None = None,
     ) -> Sequence[Element]:
         """
         Search for the most relevant chunks for a query.
@@ -205,11 +214,12 @@ class DocumentSearch(ConfigurableComponent[DocumentSearchOptions[VectorStoreOpti
             A list of chunks.
         """
         merged_options = (self.default_options | options) if options else self.default_options
+        query_rephraser_options = merged_options.query_rephraser_options or None
         vector_store_options = merged_options.vector_store_options or None
         reranker_options = merged_options.reranker_options or None
 
         with trace(query=query, options=merged_options) as outputs:
-            queries = await self.query_rephraser.rephrase(query)
+            queries = await self.query_rephraser.rephrase(query, query_rephraser_options)
             elements = [
                 [
                     Element.from_vector_db_entry(result.entry, result.score)

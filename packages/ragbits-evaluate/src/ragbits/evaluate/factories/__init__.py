@@ -37,7 +37,7 @@ def precision_recall_f1() -> MetricSet:
 
 async def _add_example_documents(document_search: DocumentSearch) -> None:
     dataset = load_dataset(path="deepsense-ai/synthetic-rag-dataset_v1.0", split="train")
-    documents = [DocumentMeta.create_text_document_from_literal(doc) for chunks in dataset["chunks"] for doc in chunks]
+    documents = [DocumentMeta.from_literal(doc) for chunks in dataset["chunks"] for doc in chunks]
     await document_search.ingest(documents)
 
 
