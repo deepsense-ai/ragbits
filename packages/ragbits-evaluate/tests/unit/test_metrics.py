@@ -69,20 +69,22 @@ def no_match_results() -> list[DocumentSearchResult]:
     ]
 
 
-def test_perfect_matches(exact_match_results: list[DocumentSearchResult], matching_strategy: MatchingStrategy) -> None:
+async def test_perfect_matches(
+    exact_match_results: list[DocumentSearchResult], matching_strategy: MatchingStrategy
+) -> None:
     metric = DocumentSearchPrecisionRecallF1(matching_strategy)
-    results = metric.compute(exact_match_results)
+    results = await metric.compute(exact_match_results)
 
     assert np.isclose(results["context_precision"], 1.0)
     assert np.isclose(results["context_recall"], 1.0)
     assert np.isclose(results["context_f1"], 1.0)
 
 
-def test_partial_matches(
+async def test_partial_matches(
     partial_match_results: list[DocumentSearchResult], matching_strategy: MatchingStrategy
 ) -> None:
     metric = DocumentSearchPrecisionRecallF1(matching_strategy)
-    results: dict = metric.compute(partial_match_results)
+    results: dict = await metric.compute(partial_match_results)
 
     # Validate metric ranges
     assert 0.0 < results["context_precision"] < 1.0
@@ -90,9 +92,9 @@ def test_partial_matches(
     assert 0.0 < results["context_f1"] < 1.0
 
 
-def test_no_matches(no_match_results: list[DocumentSearchResult], matching_strategy: MatchingStrategy) -> None:
+async def test_no_matches(no_match_results: list[DocumentSearchResult], matching_strategy: MatchingStrategy) -> None:
     metric = DocumentSearchPrecisionRecallF1(matching_strategy)
-    results = metric.compute(no_match_results)
+    results = await metric.compute(no_match_results)
 
     if isinstance(matching_strategy, RougeChunkMatch | RougeSentenceMatch):
         # ROUGE-based strategies might have non-zero matches depending on threshold
@@ -104,7 +106,7 @@ def test_no_matches(no_match_results: list[DocumentSearchResult], matching_strat
         assert np.isclose(results["context_f1"], 0.0)
 
 
-def test_rouge_threshold_behavior() -> None:
+async def test_rouge_threshold_behavior() -> None:
     # Test with known ROUGE scores
     strategy = RougeChunkMatch(threshold=0.7)
     metric = DocumentSearchPrecisionRecallF1(strategy)
@@ -115,7 +117,7 @@ def test_rouge_threshold_behavior() -> None:
         )
     ]
 
-    metrics = metric.compute(results)
+    metrics = await metric.compute(results)
     rouge_score = 0.857  # Pre-calculated ROUGE-L score for these texts
     expected_precision = 1.0 if rouge_score >= 0.7 else 0.0
 
@@ -123,14 +125,14 @@ def test_rouge_threshold_behavior() -> None:
     assert np.isclose(metrics["context_recall"], expected_precision)
 
 
-def test_mixed_results_with_multiple_queries(matching_strategy: MatchingStrategy) -> None:
+async def test_mixed_results_with_multiple_queries(matching_strategy: MatchingStrategy) -> None:
     results = [
         DocumentSearchResult(question="Q1", predicted_passages=["Exact match"], reference_passages=["Exact match"]),
         DocumentSearchResult(question="Q2", predicted_passages=["Partial match"], reference_passages=["No at all"]),
     ]
 
     metric = DocumentSearchPrecisionRecallF1(matching_strategy)
-    metrics = metric.compute(results)
+    metrics = await metric.compute(results)
 
     assert 0 < metrics["context_precision"] <= 1.0
     assert 0.0 < metrics["context_recall"] < 1.0
@@ -161,23 +163,23 @@ def test_metric_set_with_different_strategies() -> None:
     assert isinstance(metric_set.metrics[1], DocumentSearchPrecisionRecallF1)
 
 
-def test_empty_retrieved_passages() -> None:
+async def test_empty_retrieved_passages() -> None:
     results: list[DocumentSearchResult] = [
         DocumentSearchResult(question="Q1", predicted_passages=[], reference_passages=["Important content"])
     ]
 
     for strategy in [ExactChunkMatch(), RougeSentenceMatch()]:
         metric = DocumentSearchPrecisionRecallF1(strategy)
-        metrics = metric.compute(results)
+        metrics = await metric.compute(results)
         assert np.isclose(metrics["context_precision"], 0.0)
         assert np.isclose(metrics["context_recall"], 0.0)
 
 
-def test_empty_reference_passages() -> None:
+async def test_empty_reference_passages() -> None:
     results = [DocumentSearchResult(question="Q1", predicted_passages=["Some content"], reference_passages=[])]
 
     for strategy in [ExactSentenceMatch(), RougeChunkMatch()]:
         metric = DocumentSearchPrecisionRecallF1(strategy)
-        metrics = metric.compute(results)
+        metrics = await metric.compute(results)
         assert np.isclose(metrics["context_precision"], 0.0)
         assert np.isclose(metrics["context_recall"], 0.0)

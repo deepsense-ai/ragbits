@@ -6,6 +6,10 @@ defaults:
     - ranked_retrieval
   - _self_
 
+evaluator:
+  batch_size: 5
+  num_retries: 1
+
 logger:
   local: True
   neptune: False

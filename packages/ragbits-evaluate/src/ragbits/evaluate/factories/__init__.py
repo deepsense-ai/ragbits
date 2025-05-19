@@ -1,38 +1,16 @@
 import asyncio
 
+from continuous_eval.metrics.retrieval.matching_strategy import RougeChunkMatch
 from datasets import load_dataset
 
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.sources.hf import HuggingFaceSource
-from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.evaluate.dataloaders.document_search import DocumentSearchDataLoader
 from ragbits.evaluate.metrics import MetricSet
-
-DS_PRECISION_RECALL_F1 = {
-    "precision_recall_f1": ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.evaluate.metrics.document_search:DocumentSearchPrecisionRecallF1",
-            "config": {
-                "matching_strategy": {
-                    "type": "RougeChunkMatch",
-                    "config": {
-                        "threshold": 0.5,
-                    },
-                },
-            },
-        }
-    ),
-}
-
-
-def precision_recall_f1() -> MetricSet:
-    """
-    Factory of precision recall f1 metric set for retrival evaluation.
-    """
-    return MetricSet.from_config(config=DS_PRECISION_RECALL_F1)
+from ragbits.evaluate.metrics.document_search import DocumentSearchPrecisionRecallF1
 
 
 async def _add_example_documents(document_search: DocumentSearch) -> None:
@@ -55,3 +33,10 @@ def synthetic_rag_dataset() -> DocumentSearchDataLoader:
     Factory for synthetic RAG dataset.
     """
     return DocumentSearchDataLoader(source=HuggingFaceSource(path="deepsense-ai/synthetic-rag-dataset_v1.0"))
+
+
+def precision_recall_f1() -> MetricSet:
+    """
+    Factory of precision recall f1 metric set for retrival evaluation.
+    """
+    return MetricSet(DocumentSearchPrecisionRecallF1(matching_strategy=RougeChunkMatch()))
