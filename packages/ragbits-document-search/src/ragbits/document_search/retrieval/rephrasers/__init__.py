@@ -1,28 +1,18 @@
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 from ragbits.document_search.retrieval.rephrasers.llm import (
     LLMQueryRephraser,
+    LLMQueryRephraserInput,
     LLMQueryRephraserOptions,
-    QueryRephraserInput,
-    QueryRephraserPrompt,
-)
-from ragbits.document_search.retrieval.rephrasers.multi import (
-    MultiQueryRephraser,
-    MultiQueryRephraserInput,
-    MultiQueryRephraserOptions,
-    MultiQueryRephraserPrompt,
+    LLMQueryRephraserPrompt,
 )
 from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 
 __all__ = [
     "LLMQueryRephraser",
+    "LLMQueryRephraserInput",
     "LLMQueryRephraserOptions",
-    "MultiQueryRephraser",
-    "MultiQueryRephraserInput",
-    "MultiQueryRephraserOptions",
-    "MultiQueryRephraserPrompt",
+    "LLMQueryRephraserPrompt",
     "NoopQueryRephraser",
     "QueryRephraser",
-    "QueryRephraserInput",
     "QueryRephraserOptions",
-    "QueryRephraserPrompt",
 ]

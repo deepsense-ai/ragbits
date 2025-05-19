@@ -12,27 +12,45 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 
 
-class QueryRephraserInput(BaseModel):
+class LLMQueryRephraserInput(BaseModel):
     """
     Input data for the query rephraser prompt.
     """
 
     query: str
+    n: int | None = None
 
 
-class QueryRephraserPrompt(Prompt[QueryRephraserInput, str]):
+class LLMQueryRephraserPrompt(Prompt[LLMQueryRephraserInput, list]):
     """
     Prompt for generating a rephrased user query.
     """
 
     system_prompt = """
         You are an expert in query rephrasing and clarity improvement.
+        {%- if n and n > 1 %}
+        Your task is to generate {{ n }} different versions of the given user query to retrieve relevant documents
+        from a vector database. They can be phrased as statements, as they will be used as a search query.
+        By generating multiple perspectives on the user query, your goal is to help the user overcome some of the
+        limitations of the distance-based similarity search.
+        Alternative queries should only contain information present in the original query. Do not include anything
+        in the alternative query, you have not seen in the original version.
+        It is VERY important you DO NOT ADD any comments or notes. Return ONLY alternative queries.
+        Provide these alternative queries separated by newlines. DO NOT ADD any enumeration.
+        {%- else %}
         Your task is to return a single paraphrased version of a user's query,
         correcting any typos, handling abbreviations and improving clarity.
         Focus on making the query more precise and readable while keeping its original intent.
         Just return the rephrased query. No additional explanations are needed.
+        {%- endif %}
     """
-    user_prompt = "Query:{{ query }}"
+    user_prompt = "Query: {{ query }}"
+
+    @staticmethod
+    def _response_parser(value: str) -> list[str]:
+        return [line.strip() for line in value.strip().split("\n") if line.strip()]
+
+    response_parser = _response_parser
 
 
 class LLMQueryRephraserOptions(QueryRephraserOptions, Generic[LLMClientOptionsT]):
@@ -40,9 +58,11 @@ class LLMQueryRephraserOptions(QueryRephraserOptions, Generic[LLMClientOptionsT]
     Object representing the options for the LLM query rephraser.
 
     Attributes:
+        n: The number of rephrasings to generate. Any number below 2 will generate only one rephrasing.
         llm_options: The options for the LLM.
     """
 
+    n: int | None | NotGiven = NOT_GIVEN
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
 
 
@@ -56,7 +76,7 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: type[Prompt[QueryRephraserInput, str]] | None = None,
+        prompt: type[Prompt[LLMQueryRephraserInput, list[str]]] | None = None,
         default_options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -69,7 +89,7 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
         """
         super().__init__(default_options=default_options)
         self._llm = llm
-        self._prompt = prompt or QueryRephraserPrompt
+        self._prompt = prompt or LLMQueryRephraserPrompt
 
     @traceable
     async def rephrase(
@@ -94,9 +114,8 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
         """
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
-        prompt = self._prompt(QueryRephraserInput(query=query))
-        response = await self._llm.generate(prompt, options=llm_options)
-        return [response]
+        prompt = self._prompt(LLMQueryRephraserInput(query=query, n=merged_options.n or None))
+        return await self._llm.generate(prompt, options=llm_options)
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

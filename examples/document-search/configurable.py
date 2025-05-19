@@ -100,9 +100,10 @@ config = {
                 },
             },
             "prompt": {
-                "type": "ragbits.document_search.retrieval.rephrasers:QueryRephraserPrompt",
+                "type": "ragbits.document_search.retrieval.rephrasers:LLMQueryRephraserPrompt",
             },
             "default_options": {
+                "n": 2,
                 "llm_options": {
                     "temperature": 0.0,
                 },
