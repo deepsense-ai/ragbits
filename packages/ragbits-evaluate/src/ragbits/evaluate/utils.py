@@ -1,5 +1,7 @@
 import json
 import sys
+import traceback
+from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -12,13 +14,15 @@ from neptune.utils import stringify_unsupported
 from neptune_optuna import NeptuneCallback
 from omegaconf import DictConfig
 
+from ragbits.evaluate.evaluator import EvaluatorResult
 
-def log_evaluation_to_file(results: dict, output_dir: Path | None = None) -> Path:
+
+def log_evaluation_to_file(result: EvaluatorResult, output_dir: Path | None = None) -> Path:
     """
-    Log the evaluation results locally.
+    Log the evaluation result locally.
 
     Args:
-        results: The evaluation results.
+        result: The evaluation result.
         output_dir: The output directory.
 
     Returns:
@@ -27,27 +31,57 @@ def log_evaluation_to_file(results: dict, output_dir: Path | None = None) -> Pat
     output_dir = output_dir or Path(HydraConfig.get().runtime.output_dir)
     metrics_file = output_dir / "metrics.json"
     results_file = output_dir / "results.json"
+    errors_file = output_dir / "errors.json"
 
-    _save_json(metrics_file, metrics=results["metrics"], time_perf=results["time_perf"])
-    _save_json(results_file, results=results["results"])
+    _save_json(metrics_file, metrics=result.metrics, time_perf=asdict(result.time_perf))
+    _save_json(results_file, results=[asdict(entry) for entry in result.results])
+    _save_json(
+        errors_file,
+        errors=[
+            {
+                "type": exc.__class__.__name__,
+                "message": str(exc),
+                "stacktrace": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+            }
+            for exc in result.errors
+        ],
+    )
 
     return output_dir
 
 
-def log_evaluation_to_neptune(results: dict, config: DictConfig, tags: str | list[str] | None = None) -> None:
+def log_evaluation_to_neptune(result: EvaluatorResult, config: DictConfig, tags: str | list[str] | None = None) -> None:
     """
-    Log the evaluation results to Neptune.
+    Log the evaluation result to Neptune.
 
     Args:
-        results: Evaluation results.
-        config: Evaluation configuration.
-        tags: Experiment tags.
+        result: The evaluation result.
+        config: The evaluation configuration.
+        tags: The experiment tags.
     """
     run = Run(tags=tags)
     run["config"] = stringify_unsupported(config)
-    run["evaluation/metrics"] = stringify_unsupported(results["metrics"])
-    run["evaluation/time_perf"] = stringify_unsupported(results["time_perf"])
-    run["evaluation/results"].upload(File.from_content(json.dumps(results["results"], indent=4), extension="json"))
+    run["evaluation/metrics"] = stringify_unsupported(result.metrics)
+    run["evaluation/time_perf"] = stringify_unsupported(asdict(result.time_perf))
+    run["evaluation/results"].upload(
+        File.from_content(json.dumps([asdict(entry) for entry in result.results], indent=4), extension="json")
+    )
+    run["evaluation/errors"].upload(
+        File.from_content(
+            json.dumps(
+                [
+                    {
+                        "type": exc.__class__.__name__,
+                        "message": str(exc),
+                        "stacktrace": "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+                    }
+                    for exc in result.errors
+                ],
+                indent=4,
+            ),
+            extension="json",
+        )
+    )
 
 
 def log_dataset_to_file(dataset: Dataset, output_dir: Path | None = None) -> Path:

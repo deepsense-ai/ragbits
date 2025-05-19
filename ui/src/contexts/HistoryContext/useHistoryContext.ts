@@ -1,8 +1,8 @@
 import { useContext } from "react";
-import { ChatHistoryContext, IChatHistoryContext } from "./HistoryContext";
+import { HistoryContext } from "./HistoryContext";
 
-export const useHistoryContext = (): IChatHistoryContext => {
-  const context = useContext(ChatHistoryContext);
+export const useHistoryContext = () => {
+  const context = useContext(HistoryContext);
   if (!context) {
     throw new Error("useChat must be used within a ChatProvider");
   }

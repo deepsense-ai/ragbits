@@ -35,31 +35,32 @@ import asyncio
 
 from qdrant_client import AsyncQdrantClient
 
-from ragbits.core import audit
+from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.document_search import DocumentSearch, SearchConfig
+from ragbits.document_search import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import DocumentMeta
 
-audit.set_trace_handlers("cli")
+set_trace_handlers("cli")
 
 documents = [
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         RIP boiled water. You will be mist.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         Why doesn't James Bond fart in bed? Because it would blow his cover.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         Why programmers don't like to swim? Because they're scared of the floating points.
         """
     ),
-    DocumentMeta.create_text_document_from_literal(
+    DocumentMeta.from_literal(
         """
         This one is completely unrelated.
         """
@@ -92,14 +93,12 @@ async def main() -> None:
     print([doc.metadata["content"] for doc in all_documents])
 
     query = "I'm boiling my water and I need a joke"
-    vector_store_kwargs = {
-        "k": 2,
-        "score_threshold": 0.6,
-    }
-    results = await document_search.search(
-        query,
-        config=SearchConfig(vector_store_kwargs=vector_store_kwargs),
+    vector_store_options = VectorStoreOptions(
+        k=2,
+        score_threshold=0.6,
     )
+    options = DocumentSearchOptions(vector_store_options=vector_store_options)
+    results = await document_search.search(query, options=options)
 
     print()
     print(f"Documents similar to: {query}")

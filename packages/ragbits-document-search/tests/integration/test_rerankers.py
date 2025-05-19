@@ -7,22 +7,16 @@ from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranker
 from ragbits.document_search.retrieval.rerankers.base import RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
-from ragbits.document_search.retrieval.rerankers.llm import LLMReranker
+from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, LLMRerankerOptions
 
 COHERE_API_KEY_ENV = "COHERE_API_KEY"  # noqa: S105
 OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105
 
 ELEMENTS = [
     [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        TextElement(content="Element 1", document_meta=DocumentMeta.from_literal("Mock document 1")),
+        TextElement(content="Element 2", document_meta=DocumentMeta.from_literal("Mock document 1")),
+        TextElement(content="Element 3", document_meta=DocumentMeta.from_literal("Mock document 1")),
     ]
 ]
 
@@ -62,7 +56,7 @@ async def test_answerdotai_reranker_rerank() -> None:
     reason="OPENAI API KEY environment variables not set",
 )
 async def test_llm_reranker_rerank() -> None:
-    options = RerankerOptions(top_n=TOP_N)
+    options = LLMRerankerOptions(top_n=TOP_N)
     llm = LiteLLM(model_name="gpt-4o")
     reranker = LLMReranker(llm, default_options=options)
 

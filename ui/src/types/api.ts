@@ -1,3 +1,9 @@
+export type Method = "GET" | "POST";
+export interface RequestConfig<T = undefined> {
+  method: Method;
+  body?: T;
+}
+
 export enum MessageRole {
   USER = "user",
   ASSISTANT = "assistant",
@@ -18,23 +24,14 @@ export interface Reference {
 export enum ChatResponseType {
   TEXT = "text",
   REFERENCE = "reference",
-  MESSAGE_ID = "message_id"
+  MESSAGE_ID = "message_id",
+  STATE_UPDATE = "state_update",
 }
 
 export interface ChatRequest {
   message: string;
   history: Message[];
   context?: object;
-}
-
-export enum FormType {
-  LIKE = "like_form",
-  DISLIKE = "dislike_form",
-}
-
-interface MessageIdChatResponse {
-  type: ChatResponseType.MESSAGE_ID;
-  content: string;
 }
 
 interface TextChatResponse {
@@ -47,7 +44,31 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
-export type ChatResponse = TextChatResponse | ReferenceChatResponse | MessageIdChatResponse;
+interface MessageIdChatResponse {
+  type: ChatResponseType.MESSAGE_ID;
+  content: string;
+}
+
+export interface ServerState {
+  state: Record<string, unknown>;
+  signature: string;
+}
+
+interface StateUpdateChatResponse {
+  type: ChatResponseType.STATE_UPDATE;
+  content: ServerState;
+}
+
+export type ChatResponse =
+  | TextChatResponse
+  | ReferenceChatResponse
+  | MessageIdChatResponse
+  | StateUpdateChatResponse;
+
+export enum FormType {
+  LIKE = "like_form",
+  DISLIKE = "dislike_form",
+}
 
 export enum FormFieldType {
   TEXT = "text",

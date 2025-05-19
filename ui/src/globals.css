@@ -3,6 +3,6 @@
 @tailwind utilities;
 
 .markdown-container pre {
-    overflow: auto;
-    max-width: 100%;
+  overflow: auto;
+  max-width: 100%;
 }

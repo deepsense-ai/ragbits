@@ -8,7 +8,7 @@ import PromptInputText from "./PromptInputText";
 
 interface PromptInputProps {
   isLoading: boolean;
-  submit: () => Promise<void>;
+  submit: () => void;
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
