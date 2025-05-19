@@ -14,15 +14,9 @@ OPENAI_API_KEY_ENV = "OPENAI_API_KEY"  # noqa: S105
 
 ELEMENTS = [
     [
-        TextElement(
-            content="Element 1", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 2", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
-        TextElement(
-            content="Element 3", document_meta=DocumentMeta.create_text_document_from_literal("Mock document 1")
-        ),
+        TextElement(content="Element 1", document_meta=DocumentMeta.from_literal("Mock document 1")),
+        TextElement(content="Element 2", document_meta=DocumentMeta.from_literal("Mock document 1")),
+        TextElement(content="Element 3", document_meta=DocumentMeta.from_literal("Mock document 1")),
     ]
 ]
 

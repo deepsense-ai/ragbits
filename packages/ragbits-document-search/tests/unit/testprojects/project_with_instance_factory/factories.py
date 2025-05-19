@@ -28,9 +28,9 @@ def create_document_search_instance_825():
 
 async def _add_example_documents(document_search: DocumentSearch) -> None:
     documents = [
-        DocumentMeta.create_text_document_from_literal("Foo document"),
-        DocumentMeta.create_text_document_from_literal("Bar document"),
-        DocumentMeta.create_text_document_from_literal("Baz document"),
+        DocumentMeta.from_literal("Foo document"),
+        DocumentMeta.from_literal("Bar document"),
+        DocumentMeta.from_literal("Baz document"),
     ]
     await document_search.ingest(documents)
 
