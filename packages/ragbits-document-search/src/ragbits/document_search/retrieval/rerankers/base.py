@@ -11,7 +11,7 @@ from ragbits.document_search.retrieval import rerankers
 
 class RerankerOptions(Options):
     """
-    An object representing the options for the reranker.
+    Object representing the options for the reranker.
 
     Attributes:
         top_n: The number of entries to return.

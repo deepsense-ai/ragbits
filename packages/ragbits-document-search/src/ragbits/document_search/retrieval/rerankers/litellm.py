@@ -11,7 +11,7 @@ from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerO
 
 class LiteLLMRerankerOptions(RerankerOptions):
     """
-    An object representing the options for the litellm reranker.
+    Object representing the options for the litellm reranker.
 
     Attributes:
         top_n: The number of entries to return.
@@ -28,7 +28,7 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
     A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    options_cls = LiteLLMRerankerOptions
+    options_cls: type[LiteLLMRerankerOptions] = LiteLLMRerankerOptions
 
     def __init__(
         self,
@@ -36,7 +36,7 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
         default_options: LiteLLMRerankerOptions | None = None,
     ) -> None:
         """
-        Constructs a new LiteLLMReranker instance.
+        Initialize the LiteLLMReranker instance.
 
         Args:
             model: The reranker model to use.

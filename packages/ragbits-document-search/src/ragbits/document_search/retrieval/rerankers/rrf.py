@@ -26,7 +26,7 @@ class ReciprocalRankFusionReranker(Reranker[RerankerOptions]):
         - rank(q, d) is the position of d in the ranking list for q (starting from 1)
     """
 
-    options_cls = RerankerOptions
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     @traceable
     async def rerank(

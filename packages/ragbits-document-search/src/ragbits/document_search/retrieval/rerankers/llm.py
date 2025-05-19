@@ -42,7 +42,13 @@ class RerankerPrompt(Prompt[RerankerInput, str]):
 
 class LLMRerankerOptions(RerankerOptions):
     """
-    Options for the LLMReranker.
+    Object representing the options for the llm reranker.
+
+    Attributes:
+        top_n: The number of entries to return.
+        score_threshold: The minimum relevance score for an entry to be returned.
+        override_score: If True reranking will override element score.
+        llm_options: The options for the LLM.
     """
 
     llm_options: LiteLLMOptions | None | NotGiven = NOT_GIVEN
@@ -53,7 +59,7 @@ class LLMReranker(Reranker[LLMRerankerOptions]):
     Reranker based on LLM.
     """
 
-    options_cls = LLMRerankerOptions
+    options_cls: type[LLMRerankerOptions] = LLMRerankerOptions
 
     def __init__(
         self,
