@@ -12,7 +12,7 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_
 from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser, QueryRephraserOptions
 
 
-class LLMQueryRephraserInput(BaseModel):
+class LLMQueryRephraserPromptInput(BaseModel):
     """
     Input data for the query rephraser prompt.
     """
@@ -21,7 +21,7 @@ class LLMQueryRephraserInput(BaseModel):
     n: int | None = None
 
 
-class LLMQueryRephraserPrompt(Prompt[LLMQueryRephraserInput, list]):
+class LLMQueryRephraserPrompt(Prompt[LLMQueryRephraserPromptInput, list]):
     """
     Prompt for generating a rephrased user query.
     """
@@ -76,7 +76,7 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: type[Prompt[LLMQueryRephraserInput, list[str]]] | None = None,
+        prompt: type[Prompt[LLMQueryRephraserPromptInput, list[str]]] | None = None,
         default_options: LLMQueryRephraserOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -114,7 +114,7 @@ class LLMQueryRephraser(QueryRephraser[LLMQueryRephraserOptions[LLMClientOptions
         """
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
-        prompt = self._prompt(LLMQueryRephraserInput(query=query, n=merged_options.n or None))
+        prompt = self._prompt(LLMQueryRephraserPromptInput(query=query, n=merged_options.n or None))
         return await self._llm.generate(prompt, options=llm_options)
 
     @classmethod
