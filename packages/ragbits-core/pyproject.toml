@@ -60,9 +60,6 @@ local = [
 fastembed = [
     "fastembed>=0.4.2,<1.0.0"
 ]
-lab = [
-    "gradio~=4.44.0,<5.0.0",
-]
 promptfoo = [
     "PyYAML>=6.0.2,<7.0.0",
 ]
