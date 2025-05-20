@@ -38,9 +38,9 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         # Create interaction record
         interaction = {
             "message": message,
-            "context": context,
+            "context": context.model_dump(mode="json"),
             "response": response,
-            "extra_responses": [r.model_dump() for r in extra_responses],
+            "extra_responses": [r.model_dump(mode="json") for r in extra_responses],
             "timestamp": timestamp,
         }
 
