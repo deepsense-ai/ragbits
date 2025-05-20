@@ -146,10 +146,13 @@ def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> N
     assert response.status_code == 200
     data = response.json()
 
-    assert "like_form" in data
-    assert "dislike_form" in data
-    assert data["like_form"]["fields"][0]["name"] == "like_reason"
-    assert data["dislike_form"]["fields"][0]["name"] == "dislike_reason"
+    assert "feedback" in data
+    assert "like" in data["feedback"]
+    assert "dislike" in data["feedback"]
+    assert data["feedback"]["like"]["enabled"] is True
+    assert data["feedback"]["dislike"]["enabled"] is True
+    assert data["feedback"]["like"]["form"]["fields"][0]["name"] == "like_reason"
+    assert data["feedback"]["dislike"]["form"]["fields"][0]["name"] == "dislike_reason"
 
 
 def test_config_endpoint_without_feedback(client: TestClient) -> None:
@@ -157,7 +160,12 @@ def test_config_endpoint_without_feedback(client: TestClient) -> None:
     # Default MockChatInterface has feedback disabled
     response = client.get("/api/config")
     assert response.status_code == 200
-    assert response.json() == {}
+    data = response.json()
+    assert "feedback" in data
+    assert data["feedback"]["like"]["enabled"] is False
+    assert data["feedback"]["dislike"]["enabled"] is False
+    assert data["feedback"]["like"]["form"] is None
+    assert data["feedback"]["dislike"]["form"] is None
 
 
 def test_validation_exception_handler(client: TestClient) -> None:
