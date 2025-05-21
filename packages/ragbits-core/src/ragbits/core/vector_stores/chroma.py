@@ -3,7 +3,7 @@ from typing import Literal, cast
 from uuid import UUID
 
 import chromadb
-from chromadb.api import ClientAPI, types
+from chromadb.api import ClientAPI
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -193,16 +193,24 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             query_vector = (await self._embedder.embed_text([text]))[0]
             query_vector = cast(list[float], query_vector)
 
-            where_dict = self._flatten_metadata(merged_options.where) if merged_options.where else None
+            where_dict = None
+            if merged_options.where:
+                # If there are multiple filters, combine them with $and
+                if len(merged_options.where) > 1:
+                    where_dict = {
+                        "$and": [{k: v} for k, v in flatten_dict(merged_options.where).items()]
+                    }
+                else:
+                    where_dict = merged_options.where
 
             results = self._collection.query(
                 query_embeddings=query_vector,
                 n_results=merged_options.k,
                 include=[
-                    types.IncludeEnum.metadatas,
-                    types.IncludeEnum.embeddings,
-                    types.IncludeEnum.distances,
-                    types.IncludeEnum.documents,
+                    "metadatas",
+                    "embeddings",
+                    "distances",
+                    "documents",
                 ],
                 where=where_dict,
             )
@@ -276,7 +284,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                 where=where_chroma,
                 limit=limit,
                 offset=offset,
-                include=[types.IncludeEnum.metadatas, types.IncludeEnum.documents],
+                include=["metadatas", "documents"],
             )
 
             ids = results.get("ids") or []
