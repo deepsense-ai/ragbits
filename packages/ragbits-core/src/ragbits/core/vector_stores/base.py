@@ -13,7 +13,7 @@ from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
 
-WhereQuery = dict[str, str | int | float | bool]
+WhereQuery = dict[str, str | int | float | bool | dict]
 
 
 class VectorStoreEntry(BaseModel):

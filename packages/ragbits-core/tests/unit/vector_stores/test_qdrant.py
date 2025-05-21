@@ -8,7 +8,7 @@ from qdrant_client.models import Distance
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
-from ragbits.core.vector_stores.base import VectorStoreEntry
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
 
@@ -344,3 +344,56 @@ def test_create_qdrant_filter_raises_error() -> None:
     wrong_where_query = {"a": "A", "b": 1.345}
     with pytest.raises(ValidationError):
         QdrantVectorStore._create_qdrant_filter(where=wrong_where_query)  # type: ignore
+
+
+async def test_retrieve_with_where_clause(mock_qdrant_store: QdrantVectorStore) -> None:
+    mock_qdrant_store._client.query_points.return_value = models.QueryResponse(  # type: ignore
+        points=[
+            models.ScoredPoint(
+                version=1,
+                id="1f908deb-bc9f-4b5a-8b73-2e72d8b44dc5",
+                vector=[0.12, 0.25, 0.29],
+                score=0.9,
+                payload={
+                    "id": "1f908deb-bc9f-4b5a-8b73-2e72d8b44dc5",
+                    "text": "test_key 1",
+                    "metadata": {
+                        "content": "test content 1",
+                        "document_meta": {
+                            "title": "test title 1",
+                            "source": {"path": "/test/path-1"},
+                            "document_type": "txt",
+                        },
+                    },
+                },
+            ),
+        ]
+    )
+
+    options = VectorStoreOptions(
+        where={
+            "document_meta": {
+                "document_type": "txt",
+                "source": {"path": "/test/path-1"},
+            }
+        }
+    )
+
+    await mock_qdrant_store.retrieve("query", options)
+
+    mock_qdrant_store._client.query_points.assert_called_once()  # type: ignore
+    call_kwargs = mock_qdrant_store._client.query_points.call_args.kwargs  # type: ignore
+
+    # Verify that the filter was created correctly
+    assert call_kwargs["query_filter"] == models.Filter(
+        must=[
+            models.FieldCondition(
+                key="metadata.document_meta.document_type",
+                match=models.MatchValue(value="txt"),
+            ),
+            models.FieldCondition(
+                key="metadata.document_meta.source.path",
+                match=models.MatchValue(value="/test/path-1"),
+            ),
+        ]
+    )
