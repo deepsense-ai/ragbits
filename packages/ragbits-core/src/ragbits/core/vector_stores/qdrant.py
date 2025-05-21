@@ -214,7 +214,11 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 wait=True,
             )
 
-    async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
+    async def retrieve(
+        self,
+        text: str,
+        options: VectorStoreOptionsT | None = None,
+    ) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Qdrant collection based on vector similarity.
 
@@ -236,7 +240,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         )
         with trace(
             text=text,
-            options=merged_options,
+            options=merged_options.dict(),
             index_name=self._index_name,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
@@ -252,6 +256,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 score_threshold=score_threshold,
                 with_payload=True,
                 with_vectors=True,
+                query_filter=self._create_qdrant_filter(merged_options.where),
             )
 
             outputs.results = []
@@ -290,16 +295,19 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             )
 
     @staticmethod
-    def _create_qdrant_filter(where: WhereQuery) -> Filter:
+    def _create_qdrant_filter(where: WhereQuery | None) -> Filter:
         """
         Creates the QdrantFilter from the given WhereQuery.
 
         Args:
-            where: The WhereQuery to filter.
+            where: The WhereQuery to filter. If None, returns an empty filter.
 
         Returns:
             The created filter.
         """
+        if where is None:
+            return Filter(must=[])
+
         where = flatten_dict(where)  # type: ignore
 
         return Filter(

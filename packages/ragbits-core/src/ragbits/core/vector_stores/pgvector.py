@@ -351,25 +351,28 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
-        query_options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
+
         with trace(
             text=text,
+            options=merged_options.dict(),
             table_name=self._table_name,
-            query_options=query_options,
             vector_size=self._vector_size,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            vector = (await self._embedder.embed_text([text]))[0]
-            vector = cast(list[float], vector)
+            query_vector = (await self._embedder.embed_text([text]))[0]
+            query, values = self._create_retrieve_query(query_vector, merged_options)
 
-            query_options = (self.default_options | options) if options else self.default_options
-            retrieve_query, values = self._create_retrieve_query(vector, query_options)
+            if merged_options.where:
+                where_clause, where_values = self._create_list_query(merged_options.where)
+                query = query.replace(";", f" AND {where_clause};")
+                values.extend(where_values)
 
             try:
                 async with self._client.acquire() as conn:
-                    results = await conn.fetch(retrieve_query, *values)
+                    results = await conn.fetch(query, *values)
 
                 outputs.results = [
                     VectorStoreResult(

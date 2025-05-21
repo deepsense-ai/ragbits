@@ -69,10 +69,13 @@ class VectorStoreOptions(Options):
             Note that this is based on score, which may be different from the raw
             similarity metric used by the vector store (see `VectorStoreResult`
             for more details).
+        where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+            Not specifying the key means no filtering.
     """
 
     k: int = 5
     score_threshold: float | None = None
+    where: WhereQuery | None = None
 
 
 VectorStoreOptionsT = TypeVar("VectorStoreOptionsT", bound=VectorStoreOptions)

@@ -193,6 +193,8 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             query_vector = (await self._embedder.embed_text([text]))[0]
             query_vector = cast(list[float], query_vector)
 
+            where_dict = self._flatten_metadata(merged_options.where) if merged_options.where else None
+
             results = self._collection.query(
                 query_embeddings=query_vector,
                 n_results=merged_options.k,
@@ -202,6 +204,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                     types.IncludeEnum.distances,
                     types.IncludeEnum.documents,
                 ],
+                where=where_dict,
             )
 
             ids = [id for batch in results.get("ids", []) for id in batch]

@@ -11,7 +11,7 @@ import pytest
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.gcs import GCSSource
 from ragbits.core.sources.local import LocalFileSource
-from ragbits.core.vector_stores.base import VectorStoreOptions, VectorStoreResult
+from ragbits.core.vector_stores.base import VectorStoreOptions, VectorStoreResult, WhereQuery
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search._main import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import (
@@ -143,7 +143,11 @@ async def test_document_search_scores():
 
     # Create a mock vector store that returns results with scores
     class MockVectorStore(InMemoryVectorStore):
-        async def retrieve(self, text: str, options: VectorStoreOptions | None = None) -> list[VectorStoreResult]:
+        async def retrieve(
+            self,
+            text: str,
+            options: VectorStoreOptions | None = None,
+        ) -> list[VectorStoreResult]:
             results = await super().retrieve(text, options)
             # Add scores to the results
             for i, result in enumerate(results):
