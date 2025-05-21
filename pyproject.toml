@@ -11,6 +11,8 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
+    "weaviate-client>=4.9.6",
+    "psycopg[binary,pool]>=3.2.6",
 ]
 
 [tool.uv]
