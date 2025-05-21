@@ -5,6 +5,7 @@ from uuid import UUID
 import httpx
 from weaviate import WeaviateAsyncClient
 import weaviate.classes as wvc
+from weaviate.classes.query import Filter
 from weaviate.classes.config import Configure, VectorDistances
 from typing_extensions import Self
 
@@ -23,6 +24,7 @@ from ragbits.core.vector_stores.base import (
 )
 
 
+# This file was named weaviate_vector.py instead of weaviate.py to avoid name conflicts with weaviate package
 class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     """
     Vector store implementation using [Weaviate](https://weaviate.io/).
@@ -68,10 +70,8 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Args:
             entries: List of VectorStoreEntry objects to store
-
-        Raises:
-            WeaviateException: If upload to collection fails.
         """
+        # TODO Implement sparse vs dense vector handling
         with trace(
             entries=entries,
             index_name=self._index_name,
@@ -87,7 +87,10 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             if not await self._client.collections.exists(self._index_name):
                 await self._client.collections.create(
                     name=self._index_name,
-                    vectorizer_config=wvc.config.Configure.Vectorizer.none()
+                    vectorizer_config=Configure.Vectorizer.none(),
+                    vector_index_config=Configure.VectorIndex.hnsw(
+                        distance_metric=self._distance_method
+                    ),
                 )
 
             index = self._client.collections.get(self._index_name)
@@ -115,6 +118,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
+        # TODO Implement retrieve method
         pass
 
     async def remove(self, ids: list[UUID]) -> None:
@@ -123,11 +127,14 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Args:
             ids: The list of entries' IDs to remove.
-
-        Raises:
-            ValueError: If collection named `self._index_name` is not present in the vector store.
         """
-        pass
+        with trace(ids=ids, index_name=self._index_name):
+            collection_exists = await self._client.collections.exists(self._index_name)
+            if collection_exists:
+                index = self._client.collections.get(self._index_name)
+                await index.data.delete_many(
+                    where=Filter.by_id().contains_any(ids)
+                )
 
     async def list(
         self,
@@ -146,8 +153,30 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             The entries.
-
-        Raises:
-            MetadataNotFoundError: If the metadata is not found.
         """
-        pass
+        # TODO Implement filtering
+        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+            collection_exists = await self._client.collections.exists(self._index_name)
+
+            if not collection_exists:
+                return []
+
+            index = self._client.collections.get(self._index_name)
+
+            limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
+            limit = max(1, limit)
+
+            results = await index.query.fetch_objects(limit=limit, offset=offset, include_vector=True)
+
+            objects = [
+                {
+                    "id": object.uuid,
+                    "text": object.properties.get("text", None),
+                    "image_bytes": object.properties.get("image_bytes", None),
+                    "metadata": object.properties.get("metadata", {}),
+                }
+                for object in results.objects
+            ]
+            outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
+
+            return outputs.results

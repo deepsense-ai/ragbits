@@ -3,7 +3,7 @@ name = "ragbits-workspace"
 version = "0.1.0"
 description = "Ragbits development workspace"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = "==3.10"
 dependencies = [
     "ragbits-cli",
     "ragbits-core[chroma,fastembed,local,otel,qdrant,pgvector,azure,gcs,hf,s3]",

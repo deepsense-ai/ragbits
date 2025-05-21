@@ -3,6 +3,7 @@ from uuid import UUID
 
 import pytest
 import weaviate.classes as wvc
+from weaviate.classes.query import Filter
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
@@ -11,7 +12,7 @@ from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
 
 @pytest.fixture
 def mock_weaviate_client():
-    """Create a mock Weaviate client with all necessary components."""
+    """Create a mock of Weaviate client with all necessary components."""
     client = AsyncMock()
     collections = AsyncMock()
     client.collections = collections
@@ -50,17 +51,68 @@ def sample_entry():
         },
     )
 
+@pytest.fixture
+def sample_entries():
+    """Create two sample vector store entries for testing."""
+    return [
+        VectorStoreEntry(
+            id=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+            text="test_key",
+            metadata={
+                "content": "test content",
+                "document_meta": {
+                    "title": "test title",
+                    "source": {"path": "/test/path"},
+                    "document_type": "test_type",
+                },
+            },
+        ),
+        VectorStoreEntry(
+            id=UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+            text="some other key",
+            image_bytes=b"image",
+            metadata={
+                "content": "test content",
+                "document_meta": {
+                    "title": "test title",
+                    "source": {"path": "/test/path"},
+                    "document_type": "test_type",
+                },
+            },
+        ),
+    ]
+
+@pytest.mark.asyncio
+async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
+    mock_weaviate_store._client.collections.exists.return_value = False
+
+    await mock_weaviate_store.store(sample_entries)
+
+    mock_weaviate_store._client.collections.exists.assert_called_once()
+    mock_weaviate_store._client.collections.create.assert_called_once()
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(
+        [
+            wvc.data.DataObject(
+                uuid=str(sample_entries[0].id),
+                properties=sample_entries[0].model_dump(exclude={"id"}, exclude_none=True, mode="json"),
+                vector=[0.1, 0.2, 0.3]
+            ),
+            wvc.data.DataObject(
+                uuid=str(sample_entries[1].id),
+                properties=sample_entries[1].model_dump(exclude={"id"}, exclude_none=True, mode="json"),
+                vector=[0.1, 0.2, 0.3]
+            ),
+        ]
+    )
 
 @pytest.mark.asyncio
 async def test_store_creates_collection_when_not_exists(mock_weaviate_store, sample_entry):
-    """Test that store() creates a new collection when it doesn't exist."""
-    # Arrange
     mock_weaviate_store._client.collections.exists.return_value = False
 
-    # Act
     await mock_weaviate_store.store([sample_entry])
 
-    # Assert
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_called_once()
     mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
@@ -75,14 +127,10 @@ async def test_store_creates_collection_when_not_exists(mock_weaviate_store, sam
 
 @pytest.mark.asyncio
 async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry):
-    """Test that store() uses existing collection when it exists."""
-    # Arrange
     mock_weaviate_store._client.collections.exists.return_value = True
 
-    # Act
     await mock_weaviate_store.store([sample_entry])
 
-    # Assert
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_not_called()
     mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
@@ -97,12 +145,22 @@ async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry)
 
 @pytest.mark.asyncio
 async def test_store_handles_empty_entries(mock_weaviate_store):
-    """Test that store() handles empty entries list correctly."""
-    # Act
     await mock_weaviate_store.store([])
 
-    # Assert
     mock_weaviate_store._client.collections.exists.assert_not_called()
     mock_weaviate_store._client.collections.create.assert_not_called()
     mock_weaviate_store._client.collections.get.assert_not_called()
     mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called()
+
+@pytest.mark.asyncio
+async def test_remove(mock_weaviate_store):
+    mock_weaviate_store._client.collections.exists.return_value = True
+    ids_to_remove = [UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")]
+
+    await mock_weaviate_store.remove(ids_to_remove)
+
+    mock_weaviate_store._client.collections.exists.assert_called_once()
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with(
+        where=Filter.by_id().contains_any(ids_to_remove)
+    )
