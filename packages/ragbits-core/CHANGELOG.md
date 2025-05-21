@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Allow to limit VectorStore results by metadata (#564)
 - Remove prompt lab (#549)
 - Add batched() helper method to utils (#555)
 - Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
