@@ -25,7 +25,7 @@ def test_preferred_subclass_instance_yaml():
         subproject="core",
         current_dir=projects_dir / "project_with_instances_yaml",
     )
-    instance = DocumentSearch.preferred_subclass(config)
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
     assert isinstance(instance.reranker, NoopReranker)
     assert instance.reranker.default_options.top_n == 17
@@ -43,7 +43,7 @@ def test_preferred_subclass_instance_nested_yaml():
         subproject="core",
         current_dir=projects_dir / "project_with_nested_yaml",
     )
-    instance = DocumentSearch.preferred_subclass(config)
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
     assert isinstance(instance.reranker, NoopReranker)
     assert instance.reranker.default_options.top_n == 17
@@ -60,7 +60,7 @@ def test_preferred_subclass_yaml_override():
         subproject="core",
         current_dir=projects_dir / "empty_project",
     )
-    instance = DocumentSearch.preferred_subclass(
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(
         config, yaml_path_override=projects_dir / "project_with_instances_yaml" / "instances.yaml"
     )
     assert isinstance(instance, DocumentSearch)
@@ -80,7 +80,7 @@ def test_preferred_subclass_instance_nested_yaml_ovverride():
         subproject="core",
         current_dir=projects_dir / "empty_project",
     )
-    instance = DocumentSearch.preferred_subclass(
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(
         config, yaml_path_override=projects_dir / "project_with_nested_yaml" / "instances.yaml"
     )
     assert isinstance(instance, DocumentSearch)
@@ -99,7 +99,7 @@ def test_preferred_subclass_factory():
         subproject="core",
         current_dir=projects_dir / "project_with_instance_factory",
     )
-    instance = DocumentSearch.preferred_subclass(config)
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(config)
     assert isinstance(instance, DocumentSearch)
     assert isinstance(instance.reranker, NoopReranker)
     assert instance.reranker.default_options.top_n == 223
@@ -116,7 +116,7 @@ def test_preferred_subclass_factory_override():
         subproject="core",
         current_dir=projects_dir / "project_with_instance_factory",
     )
-    instance = DocumentSearch.preferred_subclass(
+    instance: DocumentSearch = DocumentSearch.preferred_subclass(
         config, factory_path_override="project_with_instance_factory.factories:create_document_search_instance_825"
     )
     assert isinstance(instance, DocumentSearch)

@@ -3,21 +3,40 @@ from itertools import chain
 
 import litellm
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
-class LiteLLMReranker(Reranker[RerankerOptions]):
+class LiteLLMRerankerOptions(RerankerOptions):
+    """
+    Object representing the options for the litellm reranker.
+
+    Attributes:
+        top_n: The number of entries to return.
+        score_threshold: The minimum relevance score for an entry to be returned.
+        override_score: If True reranking will override element score.
+        max_chunks_per_doc: The maximum amount of tokens a document can have before truncation.
+    """
+
+    max_chunks_per_doc: int | None | NotGiven = NOT_GIVEN
+
+
+class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
     """
     A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    options_cls = RerankerOptions
+    options_cls: type[LiteLLMRerankerOptions] = LiteLLMRerankerOptions
 
-    def __init__(self, model: str, default_options: RerankerOptions | None = None) -> None:
+    def __init__(
+        self,
+        model: str,
+        default_options: LiteLLMRerankerOptions | None = None,
+    ) -> None:
         """
-        Constructs a new LiteLLMReranker instance.
+        Initialize the LiteLLMReranker instance.
 
         Args:
             model: The reranker model to use.
@@ -31,7 +50,7 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
         self,
         elements: Sequence[Sequence[Element]],
         query: str,
-        options: RerankerOptions | None = None,
+        options: LiteLLMRerankerOptions | None = None,
     ) -> Sequence[Element]:
         """
         Rerank elements with LiteLLM API.
@@ -45,15 +64,22 @@ class LiteLLMReranker(Reranker[RerankerOptions]):
             The reranked elements.
         """
         merged_options = (self.default_options | options) if options else self.default_options
-        element_list = list(chain.from_iterable(elements))
-        documents = [element.text_representation for element in element_list]
+        flat_elements = list(chain.from_iterable(elements))
+        documents = [element.text_representation or "" for element in flat_elements]
 
         response = await litellm.arerank(
             model=self.model,
             query=query,
-            documents=documents,  # type: ignore
-            top_n=merged_options.top_n,
-            max_chunks_per_doc=merged_options.max_chunks_per_doc,
+            documents=documents,
+            top_n=merged_options.top_n or None,
+            max_chunks_per_doc=merged_options.max_chunks_per_doc or None,
         )
 
-        return [element_list[result["index"]] for result in response.results]  # type: ignore
+        results = []
+        for result in response.results:
+            if not merged_options.score_threshold or result["relevance_score"] >= merged_options.score_threshold:
+                if merged_options.override_score:
+                    flat_elements[result["index"]].score = result["relevance_score"]
+                results.append(flat_elements[result["index"]])
+
+        return results

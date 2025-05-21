@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Update audit imports (#427)
+
+## 0.17.1 (2025-05-09)
+
+### Changed
+
+- ragbits-core updated to version v0.17.1
+
+## 0.17.0 (2025-05-06)
+
+### Changed
+
+- ragbits-core updated to version v0.17.0
+
 ## 0.16.0 (2025-04-29)
 
 ### Changed

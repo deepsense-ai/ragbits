@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { HeroUIProvider } from "@heroui/react";
 import App from "./App";
 import "./globals.css";
-import { ChatHistoryProvider } from "./contexts/HistoryContext/HistoryContextProvider";
+import { HistoryProvider } from "./contexts/HistoryContext/HistoryContextProvider";
 import { ThemeContextProvider } from "./contexts/ThemeContext/ThemeContextProvider";
 import { loadIcons } from "@iconify/react";
 import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
@@ -25,11 +25,11 @@ loadIcons([
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <HeroUIProvider>
-      <ChatHistoryProvider>
+      <HistoryProvider>
         <ThemeContextProvider>
           <App />
         </ThemeContextProvider>
-      </ChatHistoryProvider>
+      </HistoryProvider>
     </HeroUIProvider>
   </React.StrictMode>,
 );

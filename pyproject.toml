@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,lab,fastembed,local,otel,qdrant,pgvector,azure,gcs,hf,s3]",
+    "ragbits-core[chroma,fastembed,local,otel,qdrant,pgvector,azure,gcs,hf,s3]",
     "ragbits-document-search[docling,ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
@@ -33,7 +33,8 @@ dev-dependencies = [
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
     "moto~=4.2.7",
-    "pytest-postgresql>=7.0.1"
+    "pytest-postgresql>=7.0.1",
+    "ruff>=0.6.8",
 ]
 
 [tool.uv.sources]
@@ -112,7 +113,6 @@ exclude = ["scripts", "examples"]
 
 [[tool.mypy.overrides]]
 module = "ragbits.*"
-ignore_missing_imports = false
 disallow_untyped_defs = true
 
 [tool.ruff]

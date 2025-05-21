@@ -23,7 +23,7 @@ from unstructured_client import UnstructuredClient
 from unstructured_client.models.operations import PartitionRequestTypedDict
 from unstructured_client.models.shared import FilesTypedDict, PartitionParametersTypedDict, Strategy
 
-from ragbits.core.audit import traceable
+from ragbits.core.audit.traces import traceable
 from ragbits.document_search.documents.document import Document, DocumentType
 from ragbits.document_search.documents.element import Element, ElementLocation, ImageElement, TextElement
 from ragbits.document_search.ingestion.parsers.base import DocumentParser

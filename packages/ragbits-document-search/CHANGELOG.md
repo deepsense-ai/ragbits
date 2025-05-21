@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- Fix reranker options typing (#562)
+- Add query rephraser options (#560)
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
+- Update audit imports (#427)
+- BREAKING CHANGE: Adjust document search configurable interface (#554)
+- BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)
+- BREAKING CHANGE: Improve typing for SearchConfig (#554)
+
+## 0.17.1 (2025-05-09)
+
+### Changed
+
+- ragbits-core updated to version v0.17.1
+
+## 0.17.0 (2025-05-06)
+
+### Changed
+
+- ragbits-core updated to version v0.17.0
+
+- Add optional score override on reranking step (#544)
+- Add score threshold to reranker options (#544)
+- Add LLM reranker (#513)
+- fix: fix passing score in DocumentSearch.search (#545)
+
 ## 0.16.0 (2025-04-29)
 
 ### Changed

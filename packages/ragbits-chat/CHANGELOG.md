@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- updated ui build (#553)
+- api integration improvements + history context changes (#552)
+
+## 0.17.1 (2025-05-09)
+
+### Changed
+
+- ragbits-core updated to version v0.17.1
+
+## 0.17.0 (2025-05-06)
+
+### Changed
+
+- ragbits-core updated to version v0.17.0
+
 ## 0.16.0 (2025-04-29)
 
 ### Changed

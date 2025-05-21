@@ -6,7 +6,7 @@ from typing import ClassVar, Generic, TypeVar, cast, overload
 from pydantic import BaseModel
 
 from ragbits.core import llms
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
     BasePrompt,
@@ -77,6 +77,18 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Number of tokens in the prompt.
         """
         return sum(len(message["content"]) for message in prompt.chat)
+
+    def get_token_id(self, token: str) -> int:
+        """
+        Gets token id.
+
+        Args:
+            token: The token to encode.
+
+        Returns:
+            The id for the given token.
+        """
+        raise NotImplementedError("Token id lookup is not supported by this model")
 
     async def generate_raw(
         self,
@@ -248,19 +260,22 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Response stream from LLM.
         """
-        merged_options = (self.default_options | options) if options else self.default_options
+        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            merged_options = (self.default_options | options) if options else self.default_options
 
-        if isinstance(prompt, str | list):
-            prompt = SimplePrompt(prompt)
+            if isinstance(prompt, str | list):
+                prompt = SimplePrompt(prompt)
 
-        response = await self._call_streaming(
-            prompt=prompt,
-            options=merged_options,
-            json_mode=prompt.json_mode,
-            output_schema=prompt.output_schema(),
-        )
-        async for text_piece in response:
-            yield text_piece
+            response = await self._call_streaming(
+                prompt=prompt,
+                options=merged_options,
+                json_mode=prompt.json_mode,
+                output_schema=prompt.output_schema(),
+            )
+            outputs.response = ""
+            async for text in response:
+                outputs.response += text
+                yield text
 
     @abstractmethod
     async def _call(

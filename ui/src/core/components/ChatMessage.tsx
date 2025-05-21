@@ -2,7 +2,7 @@ import { forwardRef, useRef, useState } from "react";
 import { Button, cn } from "@heroui/react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ChatMessage } from "../../types/chat";
+import type { ChatMessage } from "../../types/history.ts";
 import { ConfigResponse, FormType, MessageRole } from "../../types/api";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "./DelayedTooltip";

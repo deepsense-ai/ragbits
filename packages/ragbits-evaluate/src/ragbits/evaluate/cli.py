@@ -140,10 +140,10 @@ def run() -> None:
         metric_results = await evaluator.compute(
             pipeline=state.pipeline,
             dataloader=state.dataloader,
-            metrics=state.metrics,
+            metricset=state.metrics,
         )
         evaluation_results = EvaluationResult(
-            metrics={"metrics": metric_results["metrics"], "time_perf": metric_results["time_perf"]}
+            metrics={"metrics": metric_results.metrics, "time_perf": metric_results.time_perf}
         )
         print_output(evaluation_results)
 

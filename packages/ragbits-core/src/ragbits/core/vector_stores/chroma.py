@@ -6,7 +6,7 @@ import chromadb
 from chromadb.api import ClientAPI, types
 from typing_extensions import Self
 
-from ragbits.core.audit import trace
+from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings import DenseEmbedder
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict

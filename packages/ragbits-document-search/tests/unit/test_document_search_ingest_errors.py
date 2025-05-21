@@ -22,13 +22,13 @@ class FailingParser(DocumentParser):
 
 async def test_ingest_fails_on_error():
     # Create a document search instance with a failing parser
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder()),
         parser_router=DocumentParserRouter({DocumentType.TXT: FailingParser()}),
     )
 
     # Create a test document
-    document = DocumentMeta.create_text_document_from_literal("Test content")
+    document = DocumentMeta.from_literal("Test content")
 
     # Test that ingest raises IngestExecutionError when fail_on_error=True (default)
     with pytest.raises(IngestExecutionError) as exc_info:
@@ -46,13 +46,13 @@ async def test_ingest_fails_on_error():
 
 async def test_ingest_returns_errors_when_fail_on_error_false():
     # Create a document search instance with a failing parser
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder()),
         parser_router=DocumentParserRouter({DocumentType.TXT: FailingParser()}),
     )
 
     # Create a test document
-    document = DocumentMeta.create_text_document_from_literal("Test content")
+    document = DocumentMeta.from_literal("Test content")
 
     # Test that ingest returns errors when fail_on_error=False
     result = await document_search.ingest([document], fail_on_error=False)

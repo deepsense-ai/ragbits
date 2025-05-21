@@ -97,10 +97,12 @@ async def evaluate() -> None:
     results = await Evaluator.run_from_config(config)
 
     print("Computed metrics:")
-    print("\n".join(f"{key}: {value}" for key, value in results["metrics"].items()))
+    print("\n".join(f"{key}: {value}" for key, value in results.metrics.items()))
 
     print("Time perfs:")
-    print("\n".join(f"{key}: {value}" for key, value in results["time_perf"].items()))
+    print(f"Total time: {results.time_perf.total_time_in_seconds} seconds")
+    print(f"Samples per second: {results.time_perf.samples_per_second}")
+    print(f"Latency: {results.time_perf.latency_in_seconds} seconds")
 
 
 def main() -> None:
