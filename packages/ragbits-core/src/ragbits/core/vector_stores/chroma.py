@@ -197,9 +197,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             if merged_options.where:
                 # If there are multiple filters, combine them with $and
                 if len(merged_options.where) > 1:
-                    where_dict = {
-                        "$and": [{k: v} for k, v in flatten_dict(merged_options.where).items()]
-                    }
+                    where_dict = {"$and": [{k: v} for k, v in flatten_dict(merged_options.where).items()]}
                 else:
                     where_dict = merged_options.where
 
