@@ -1,11 +1,11 @@
 import asyncio
 import base64
-import imghdr
 import textwrap
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
 from typing import Any, Generic, cast, get_args, get_origin, overload
 
+import filetype
 from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
@@ -288,10 +288,10 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     @staticmethod
     def _create_message_with_image(image: str | bytes) -> dict:
         if isinstance(image, bytes):
-            image_type = imghdr.what(None, image)
-            if not image_type:
+            detected_type = filetype.guess(image)
+            if not detected_type or not detected_type.mime.startswith("image/"):
                 raise PromptWithImagesOfInvalidFormat()
-            image_url = f"data:image/{image_type};base64,{base64.b64encode(image).decode('utf-8')}"
+            image_url = f"data:{detected_type.mime};base64,{base64.b64encode(image).decode('utf-8')}"
         else:
             image_url = image
         return {
