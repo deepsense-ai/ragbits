@@ -7,8 +7,8 @@ copyright: Copyright &copy; 2025 deepsense.ai
 nav:
   - ragbits: index.md
   - Quickstart:
-      - quickstart/quickstart1_prompts.md
-      - quickstart/quickstart2_rag.md
+    - "Large Language Models": quickstart/llms.md
+    - "Retrieval-Augmented Generation": quickstart/rag.md
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md
