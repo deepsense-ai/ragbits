@@ -14,6 +14,7 @@ from qdrant_client.models import (
     MatchValue,
     VectorParams,
 )
+from qdrant_client.http.exceptions import UnexpectedResponse
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -28,6 +29,11 @@ from ragbits.core.vector_stores.base import (
     VectorStoreResult,
     VectorStoreWithEmbedder,
     WhereQuery,
+)
+from ragbits.core.vector_stores.exceptions import (
+    VectorStoreConnectionError,
+    VectorStoreOperationError,
+    VectorStoreValidationError,
 )
 
 
@@ -114,14 +120,20 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            VectorStoreValidationError: If the config is invalid.
         """
-        client_options = ObjectConstructionConfig.model_validate(config["client"])
-        client_cls = import_by_path(client_options.type, qdrant_client)
-        if "limits" in client_options.config:
-            limits = httpx.Limits(**client_options.config["limits"])
-            client_options.config["limits"] = limits
-        config["client"] = client_cls(**client_options.config)
-        return super().from_config(config)
+        try:
+            client_options = ObjectConstructionConfig.model_validate(config["client"])
+            client_cls = import_by_path(client_options.type, qdrant_client)
+            if "limits" in client_options.config:
+                limits = httpx.Limits(**client_options.config["limits"])
+                client_options.config["limits"] = limits
+            config["client"] = client_cls(**client_options.config)
+            return super().from_config(config)
+        except Exception as e:
+            raise VectorStoreValidationError(f"Invalid config: {str(e)}")
 
     @staticmethod
     def _to_qdrant_vector(vector: list[float] | SparseVector) -> models.SparseVector | list[float]:
@@ -151,6 +163,9 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             The converted vector.
+
+        Raises:
+            VectorStoreValidationError: If the vector type is not supported.
         """
         if isinstance(vector, models.SparseVector):
             return SparseVector(
@@ -158,7 +173,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 values=list(vector.values),
             )
         if not isinstance(vector, list):
-            raise TypeError(f"Expected a vector of type list or SparseVector, Qdrant returned {type(vector)}")
+            raise VectorStoreValidationError(f"Expected a vector of type list or SparseVector, Qdrant returned {type(vector)}")
         return cast(list[float], vector)
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -169,7 +184,8 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             entries: List of VectorStoreEntry objects to store
 
         Raises:
-            QdrantException: If upload to collection fails.
+            VectorStoreOperationError: If storing entries fails.
+            VectorStoreConnectionError: If connection to Qdrant fails.
         """
         with trace(
             entries=entries,
@@ -183,36 +199,50 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             embeddings: dict = await self._create_embeddings(entries)
 
-            if not await self._client.collection_exists(self._index_name):
-                vectors_config = {}
-                sparse_vectors_config = None
-                if self.is_sparse:
-                    sparse_vectors_config = {self._vector_name: models.SparseVectorParams()}
-                else:
-                    vector_size = len(next(iter(embeddings.values())))
-                    vectors_config = {self._vector_name: VectorParams(size=vector_size, distance=self._distance_method)}
+            try:
+                if not await self._client.collection_exists(self._index_name):
+                    vectors_config = {}
+                    sparse_vectors_config = None
+                    if self.is_sparse:
+                        sparse_vectors_config = {self._vector_name: models.SparseVectorParams()}
+                    else:
+                        vector_size = len(next(iter(embeddings.values())))
+                        vectors_config = {self._vector_name: VectorParams(size=vector_size, distance=self._distance_method)}
 
-                await self._client.create_collection(
-                    collection_name=self._index_name,
-                    vectors_config=vectors_config,
-                    sparse_vectors_config=sparse_vectors_config,
+                    try:
+                        await self._client.create_collection(
+                            collection_name=self._index_name,
+                            vectors_config=vectors_config,
+                            sparse_vectors_config=sparse_vectors_config,
+                        )
+                    except Exception as e:
+                        raise VectorStoreOperationError(f"Failed to create collection: {str(e)}")
+
+                points = (
+                    models.PointStruct(
+                        id=str(entry.id),
+                        vector={self._vector_name: self._to_qdrant_vector(embeddings[entry.id])},  # type: ignore
+                        payload=entry.model_dump(exclude_none=True, mode="json"),
+                    )
+                    for entry in entries
+                    if entry.id in embeddings
                 )
 
-            points = (
-                models.PointStruct(
-                    id=str(entry.id),
-                    vector={self._vector_name: self._to_qdrant_vector(embeddings[entry.id])},  # type: ignore
-                    payload=entry.model_dump(exclude_none=True, mode="json"),
-                )
-                for entry in entries
-                if entry.id in embeddings
-            )
+                try:
+                    await self._client.upload_points(
+                        collection_name=self._index_name,
+                        points=points,
+                        wait=True,
+                    )
+                except Exception as e:
+                    raise VectorStoreOperationError(f"Failed to upload points: {str(e)}")
 
-            self._client.upload_points(
-                collection_name=self._index_name,
-                points=points,
-                wait=True,
-            )
+            except VectorStoreOperationError:
+                raise
+            except UnexpectedResponse as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to store entries: {str(e)}")
 
     async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
@@ -224,6 +254,10 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             The retrieved entries.
+
+        Raises:
+            VectorStoreConnectionError: If connection to Qdrant fails.
+            VectorStoreOperationError: If retrieving or parsing entries fails.
         """
         merged_options = (self.default_options | options) if options else self.default_options
 
@@ -244,31 +278,39 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
 
-            query_results = await self._client.query_points(
-                collection_name=self._index_name,
-                query=self._to_qdrant_vector(query_vector),
-                using=self._vector_name,
-                limit=merged_options.k,
-                score_threshold=score_threshold,
-                with_payload=True,
-                with_vectors=True,
-            )
-
-            outputs.results = []
-            for point in query_results.points:
-                entry = VectorStoreEntry.model_validate(point.payload)
-
-                outputs.results.append(
-                    VectorStoreResult(
-                        entry=entry,
-                        score=point.score * score_multiplier,
-                        vector=self._from_qdrant_vector(point.vector[self._vector_name])
-                        if isinstance(point.vector, dict)
-                        else self._from_qdrant_vector(point.vector),
-                    )
+            try:
+                query_results = await self._client.query_points(
+                    collection_name=self._index_name,
+                    query=self._to_qdrant_vector(query_vector),
+                    using=self._vector_name,
+                    limit=merged_options.k,
+                    score_threshold=score_threshold,
+                    with_payload=True,
+                    with_vectors=True,
                 )
+            except UnexpectedResponse as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to retrieve entries: {str(e)}")
+            try:
+                outputs.results = []
+                for point in query_results.points:
+                    entry = VectorStoreEntry.model_validate(point.payload)
 
-            return outputs.results
+                    outputs.results.append(
+                        VectorStoreResult(
+                            entry=entry,
+                            score=point.score * score_multiplier,
+                            vector=self._from_qdrant_vector(point.vector[self._vector_name])
+                            if isinstance(point.vector, dict)
+                            else self._from_qdrant_vector(point.vector),
+                        )
+                    )
+
+                return outputs.results
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
+
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -278,16 +320,22 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             ids: The list of entries' IDs to remove.
 
         Raises:
-            ValueError: If collection named `self._index_name` is not present in the vector store.
+            VectorStoreConnectionError: If connection to Qdrant fails.
+            VectorStoreOperationError: If removing entries fails.
         """
         with (
             trace(ids=ids, index_name=self._index_name),
             contextlib.suppress(KeyError),  # it's ok if a point already doesn't exist
         ):
-            await self._client.delete(
-                collection_name=self._index_name,
-                points_selector=models.PointIdsList(points=[str(id) for id in ids]),
-            )
+            try:
+                await self._client.delete(
+                    collection_name=self._index_name,
+                    points_selector=models.PointIdsList(points=[str(id) for id in ids]),
+                )
+            except UnexpectedResponse as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to remove entries: {str(e)}")
 
     @staticmethod
     def _create_qdrant_filter(where: WhereQuery) -> Filter:
@@ -328,27 +376,47 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             The entries.
 
         Raises:
-            MetadataNotFoundError: If the metadata is not found.
+            VectorStoreConnectionError: If connection to Qdrant fails.
+            VectorStoreOperationError: If listing or parsing entries fails.
         """
         with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
-            collection_exists = await self._client.collection_exists(collection_name=self._index_name)
-            if not collection_exists:
-                return []
+            try:
+                try:
+                    collection_exists = await self._client.collection_exists(collection_name=self._index_name)
+                    if not collection_exists:
+                        return []
+                except Exception as e:
+                    raise VectorStoreOperationError(f"Failed to check if collection exists: {str(e)}")
 
-            limit = limit or (await self._client.count(collection_name=self._index_name)).count
-            limit = max(1, limit)
+                try:
+                    limit = limit or (await self._client.count(collection_name=self._index_name)).count
+                    limit = max(1, limit)
+                except Exception as e:
+                    raise VectorStoreOperationError(f"Failed to count entries: {str(e)}")
 
-            qdrant_filter = self._create_qdrant_filter(where) if where else None
+                qdrant_filter = self._create_qdrant_filter(where) if where else None
 
-            results = await self._client.query_points(
-                collection_name=self._index_name,
-                query_filter=qdrant_filter,
-                limit=limit,
-                offset=offset,
-                with_payload=True,
-                with_vectors=True,
-            )
+                try:
+                    results = await self._client.query_points(
+                        collection_name=self._index_name,
+                        query_filter=qdrant_filter,
+                        limit=limit,
+                        offset=offset,
+                        with_payload=True,
+                        with_vectors=True,
+                    )
+                except Exception as e:
+                    raise VectorStoreOperationError(f"Failed to list entries: {str(e)}")
 
-            outputs.results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+                try:
+                    outputs.results = [VectorStoreEntry.model_validate(point.payload) for point in results.points]
+                except Exception as e:
+                    raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
 
-            return outputs.results
+                return outputs.results
+            except UnexpectedResponse as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except VectorStoreOperationError:
+                raise
+            except Exception as e:
+                raise VectorStoreOperationError(f"Unexpected error: {str(e)}")

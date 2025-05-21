@@ -18,6 +18,11 @@ from ragbits.core.vector_stores.base import (
     VectorStoreWithEmbedder,
     WhereQuery,
 )
+from ragbits.core.vector_stores.exceptions import (
+    VectorStoreConnectionError,
+    VectorStoreOperationError,
+    VectorStoreValidationError,
+)
 
 
 class DistanceOp(NamedTuple):
@@ -73,30 +78,31 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 and "sparsevec_l2" for sparse vectors.
             hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
+
+        Raises:
+            VectorStoreValidationError: If table name, vector size, or HNSW parameters are invalid.
         """
-        (
-            super().__init__(
-                default_options=default_options,
-                embedder=embedder,
-                embedding_type=embedding_type,
-            ),
+        super().__init__(
+            default_options=default_options,
+            embedder=embedder,
+            embedding_type=embedding_type,
         )
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
-            raise ValueError(f"Invalid table name: {table_name}")
+            raise VectorStoreValidationError(f"Invalid table name: {table_name}")
         if not isinstance(vector_size, int) or vector_size <= 0:
-            raise ValueError("Vector size must be a positive integer.")
+            raise VectorStoreValidationError("Vector size must be a positive integer.")
 
         if hnsw_params is None:
             hnsw_params = {"m": 4, "ef_construction": 10}
         elif not isinstance(hnsw_params, dict):
-            raise ValueError("hnsw_params must be a dictionary.")
+            raise VectorStoreValidationError("hnsw_params must be a dictionary.")
         elif "m" not in hnsw_params or "ef_construction" not in hnsw_params:
-            raise ValueError("hnsw_params must contain 'm' and 'ef_construction' keys.")
+            raise VectorStoreValidationError("hnsw_params must contain 'm' and 'ef_construction' keys.")
         elif not isinstance(hnsw_params["m"], int) or hnsw_params["m"] <= 0:
-            raise ValueError("m must be a positive integer.")
+            raise VectorStoreValidationError("m must be a positive integer.")
         elif not isinstance(hnsw_params["ef_construction"], int) or hnsw_params["ef_construction"] <= 0:
-            raise ValueError("ef_construction must be a positive integer.")
+            raise VectorStoreValidationError("ef_construction must be a positive integer.")
 
         if distance_method is None:
             distance_method = "sparsevec_l2" if isinstance(embedder, SparseEmbedder) else "cosine"
@@ -216,17 +222,36 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         return query, values
 
     async def _check_table_exists(self) -> bool:
+        """
+        Check if the table exists in the database.
+
+        Returns:
+            bool: True if the table exists, False otherwise.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreQueryError: If the query execution fails.
+        """
         check_table_existence = """
                 SELECT EXISTS (
                 SELECT FROM information_schema.tables
                 WHERE table_name = $1
             ); """
-        async with self._client.acquire() as conn:
-            return await conn.fetchval(check_table_existence, self._table_name)
+        try:
+            async with self._client.acquire() as conn:
+                return await conn.fetchval(check_table_existence, self._table_name)
+        except asyncpg.exceptions.PostgresConnectionError as e:
+            raise VectorStoreConnectionError(original_error=e)
+        except Exception as e:
+            raise VectorStoreOperationError(f"Failed to check if table exists: {str(e)}")
 
     async def create_table(self) -> None:
         """
         Create a pgVector table with an HNSW index for given similarity.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreOperationError: If table or index creation fails.
         """
         with trace(
             table_name=self._table_name,
@@ -234,6 +259,10 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             vector_size=self._vector_size,
             hnsw_index_parameters=self._hnsw_params,
         ):
+            if await self._check_table_exists():
+                print(f"Table {self._table_name} already exist!")
+                return
+
             distance = DISTANCE_OPS[self._distance_method].function_name
             create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
             # _table_name and has been validated in the class constructor, and it is a valid table name.
@@ -252,21 +281,16 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     USING hnsw (vector {distance})
                     WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
                     """
-            if await self._check_table_exists():
-                print(f"Table {self._table_name} already exist!")
-                return
-            async with self._client.acquire() as conn:
-                await conn.execute(create_vector_extension)
-
-                try:
+            try:
+                async with self._client.acquire() as conn:
+                    await conn.execute(create_vector_extension)
                     async with conn.transaction():
                         await conn.execute(create_table_query)
                         await conn.execute(create_index_query)
-
-                    print("Table and index created!")
-                except Exception as e:
-                    print(f"Failed to create table and index: {e}")
-                    raise
+            except asyncpg.exceptions.PostgresConnectionError as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to create table: {str(e)}")
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -274,6 +298,10 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Args:
             entries: The entries to store.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreOperationError: If storing entries fails.
         """
         if not entries:
             return
@@ -293,25 +321,28 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             exists = await self._check_table_exists()
             if not exists:
                 print(f"Table {self._table_name} does not exist. Creating the table.")
-                try:
-                    await self.create_table()
-                except Exception as e:
-                    print(f"Failed to handle missing table: {e}")
-                    return
+                await self.create_table()
 
-            async with self._client.acquire() as conn:
-                for entry in entries:
-                    if entry.id not in embeddings:
-                        continue
+            try:
+                async with self._client.acquire() as conn:
+                    for entry in entries:
+                        if entry.id not in embeddings:
+                            continue
 
-                    await conn.execute(
-                        insert_query,
-                        str(entry.id),
-                        entry.text,
-                        entry.image_bytes,
-                        self._vector_to_string(embeddings[entry.id]),
-                        json.dumps(entry.metadata, default=pydantic_encoder),
-                    )
+                        await conn.execute(
+                            insert_query,
+                            str(entry.id),
+                            entry.text,
+                            entry.image_bytes,
+                            self._vector_to_string(embeddings[entry.id]),
+                            json.dumps(entry.metadata, default=pydantic_encoder),
+                        )
+            except asyncpg.exceptions.PostgresConnectionError as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except asyncpg.exceptions.UndefinedTableError:
+                raise VectorStoreOperationError(f"Table {self._table_name} does not exist and could not be created.")
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to store entries: {str(e)}")
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -319,10 +350,15 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Args:
             ids: The list of entries' IDs to remove.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreOperationError: If removing entries fails.
         """
         if not ids:
             print("No IDs provided, nothing to remove")
             return
+
         # _table_name has been validated in the class constructor, and it is a valid table name.
         remove_query = f"""
         DELETE FROM {self._table_name}
@@ -332,9 +368,12 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             try:
                 async with self._client.acquire() as conn:
                     await conn.execute(remove_query, ids)
+            except asyncpg.exceptions.PostgresConnectionError as e:
+                raise VectorStoreConnectionError(original_error=e)
             except asyncpg.exceptions.UndefinedTableError:
-                print(f"Table {self._table_name} does not exist.")
-                return
+                raise VectorStoreOperationError(f"Table {self._table_name} does not exist.")
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to remove entries: {str(e)}")
 
     async def retrieve(
         self,
@@ -350,6 +389,10 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             The retrieved entries.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreOperationError: If retrieving or parsing entries fails.
         """
         query_options = (self.default_options | options) if options else self.default_options
         with trace(
@@ -370,7 +413,14 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             try:
                 async with self._client.acquire() as conn:
                     results = await conn.fetch(retrieve_query, *values)
+            except asyncpg.exceptions.PostgresConnectionError as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except asyncpg.exceptions.UndefinedTableError:
+                raise VectorStoreOperationError(f"Table {self._table_name} does not exist.")
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to retrieve entries: {str(e)}")
 
+            try:
                 outputs.results = [
                     VectorStoreResult(
                         entry=VectorStoreEntry(
@@ -384,11 +434,10 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     )
                     for record in results
                 ]
+                return outputs.results
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
 
-            except asyncpg.exceptions.UndefinedTableError:
-                print(f"Table {self._table_name} does not exist.")
-                outputs.results = []
-            return outputs.results
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
@@ -404,12 +453,25 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Returns:
             The entries.
+
+        Raises:
+            VectorStoreConnectionError: If connection to the database fails.
+            VectorStoreOperationError: If operation fails.
         """
         with trace(table=self._table_name, query=where, limit=limit, offset=offset) as outputs:
-            list_query, values = self._create_list_query(where, limit, offset)
             try:
+                list_query, values = self._create_list_query(where, limit, offset)
                 async with self._client.acquire() as conn:
                     results = await conn.fetch(list_query, *values)
+
+            except asyncpg.exceptions.PostgresConnectionError as e:
+                raise VectorStoreConnectionError(original_error=e)
+            except asyncpg.exceptions.UndefinedTableError:
+                raise VectorStoreOperationError(f"Table {self._table_name} does not exist.")
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to list entries: {str(e)}")
+
+            try:
                 outputs.listed_entries = [
                     VectorStoreEntry(
                         id=record["id"],
@@ -419,8 +481,6 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     )
                     for record in results
                 ]
-
-            except asyncpg.exceptions.UndefinedTableError:
-                print(f"Table {self._table_name} does not exist.")
-                outputs.listed_entries = []
-            return outputs.listed_entries
+                return outputs.listed_entries
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")

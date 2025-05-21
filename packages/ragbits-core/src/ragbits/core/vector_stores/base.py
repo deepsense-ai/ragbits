@@ -12,6 +12,7 @@ from ragbits.core.embeddings import DenseEmbedder, Embedder, SparseVector
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
+from ragbits.core.vector_stores.exceptions import VectorStoreValidationError, VectorStoreOperationError
 
 WhereQuery = dict[str, str | int | float | bool]
 
@@ -33,10 +34,10 @@ class VectorStoreEntry(BaseModel):
         Validates that either text or image_bytes are provided.
 
         Raises:
-            ValueError: If neither text nor image_bytes are provided.
+            VectorStoreValidationError: If neither text nor image_bytes are provided.
         """
         if not self.text and not self.image_bytes:
-            raise ValueError("Either text or image_bytes must be provided.")
+            raise VectorStoreValidationError("Either text or image_bytes must be provided.")
         return self
 
 
@@ -167,13 +168,16 @@ class VectorStoreWithDenseEmbedder(VectorStore[VectorStoreOptionsT]):
             embedder: The embedder to use for converting entries to vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             default_options: The default options for querying the vector store.
+
+        Raises:
+            VectorStoreValidationError: If image embeddings are requested but the embedder doesn't support them.
         """
         super().__init__(default_options=default_options)
         self._embedder = embedder
         self._embedding_type = embedding_type
 
         if self._embedding_type == EmbeddingType.IMAGE and not self._embedder.image_support():
-            raise ValueError("Embedder does not support image embeddings")
+            raise VectorStoreValidationError("Embedder does not support image embeddings")
 
     async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float]]:
         """
@@ -184,6 +188,9 @@ class VectorStoreWithDenseEmbedder(VectorStore[VectorStoreOptionsT]):
 
         Returns:
             The embeddings mapped by entry ID
+
+        Raises:
+            VectorStoreValidationError: If an unsupported embedding type is specified.
         """
         if self._embedding_type == EmbeddingType.TEXT:
             entries = [e for e in entries if e.text is not None]
@@ -194,7 +201,7 @@ class VectorStoreWithDenseEmbedder(VectorStore[VectorStoreOptionsT]):
             embeddings = await self._embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
             return {e.id: v for e, v in zip(entries, embeddings, strict=True)}
         else:
-            raise ValueError(f"Unsupported embedding type: {self._embedding_type}")
+            raise VectorStoreValidationError(f"Unsupported embedding type: {self._embedding_type}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -238,13 +245,16 @@ class VectorStoreWithEmbedder(VectorStore[VectorStoreOptionsT]):
                      or a SparseEmbedder for sparse vectors.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             default_options: The default options for querying the vector store.
+
+        Raises:
+            VectorStoreValidationError: If image embeddings are requested but the embedder doesn't support them.
         """
         super().__init__(default_options=default_options)
         self._embedder = embedder
         self._embedding_type = embedding_type
 
         if self._embedding_type == EmbeddingType.IMAGE and not self._embedder.image_support():
-            raise ValueError("Embedder does not support image embeddings")
+            raise VectorStoreValidationError("Embedder does not support image embeddings")
 
     async def _create_embeddings(self, entries: list[VectorStoreEntry]) -> dict[UUID, list[float] | SparseVector]:
         """
@@ -256,17 +266,27 @@ class VectorStoreWithEmbedder(VectorStore[VectorStoreOptionsT]):
         Returns:
             The embeddings mapped by entry ID. Returns either dense vectors as list[float] or
             sparse vectors as SparseVector depending on the type of embedder used.
+
+        Raises:
+            VectorStoreValidationError: If the embedding type is not supported.
+            VectorStoreOperationError: If the embeddings cannot be created.
         """
         if self._embedding_type == EmbeddingType.TEXT:
-            entries = [e for e in entries if e.text is not None]
-            embeddings = await self._embedder.embed_text([e.text for e in entries if e.text is not None])
-            return {e.id: cast(SparseVector | list[float], v) for e, v in zip(entries, embeddings, strict=True)}
+            try:
+                entries = [e for e in entries if e.text is not None]
+                embeddings = await self._embedder.embed_text([e.text for e in entries if e.text is not None])
+                return {e.id: cast(SparseVector | list[float], v) for e, v in zip(entries, embeddings, strict=True)}
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to create embeddings: {str(e)}")
         elif self._embedding_type == EmbeddingType.IMAGE:
-            entries = [e for e in entries if e.image_bytes is not None]
-            embeddings = await self._embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
-            return {e.id: cast(SparseVector | list[float], v) for e, v in zip(entries, embeddings, strict=True)}
+            try:
+                entries = [e for e in entries if e.image_bytes is not None]
+                embeddings = await self._embedder.embed_image([e.image_bytes for e in entries if e.image_bytes is not None])
+                return {e.id: cast(SparseVector | list[float], v) for e, v in zip(entries, embeddings, strict=True)}
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to create embeddings: {str(e)}")
         else:
-            raise ValueError(f"Unsupported embedding type: {self._embedding_type}")
+            raise VectorStoreValidationError(f"Unsupported embedding type: {self._embedding_type}")
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

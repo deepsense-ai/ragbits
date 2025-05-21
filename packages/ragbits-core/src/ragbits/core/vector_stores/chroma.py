@@ -18,6 +18,10 @@ from ragbits.core.vector_stores.base import (
     VectorStoreWithDenseEmbedder,
     WhereQuery,
 )
+from ragbits.core.vector_stores.exceptions import (
+    VectorStoreOperationError,
+    VectorStoreValidationError,
+)
 
 # The metrics for which smaller values are considered better.
 # This is used to determine whether to reverse the score.
@@ -51,19 +55,33 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance method to use.
             default_options: The default options for querying the vector store.
+
+        Raises:
+            VectorStoreValidationError: If index name or distance method is invalid.
+            VectorStoreOperationError: If collection creation or operation fails.
         """
         super().__init__(
             default_options=default_options,
             embedder=embedder,
             embedding_type=embedding_type,
         )
+
+        if not isinstance(index_name, str) or not index_name:
+            raise VectorStoreValidationError("Index name must be a non-empty string")
+
+        if distance_method not in ["l2", "ip", "cosine"]:
+            raise VectorStoreValidationError(f"Invalid distance method: {distance_method}")
+
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        self._collection = self._client.get_or_create_collection(
-            name=self._index_name,
-            metadata={"hnsw:space": self._distance_method},
-        )
+        try:
+            self._collection = self._client.get_or_create_collection(
+                name=self._index_name,
+                metadata={"hnsw:space": self._distance_method},
+            )
+        except Exception as e:
+            raise VectorStoreOperationError(f"Failed to create or get collection: {str(e)}")
 
     def __reduce__(self) -> tuple:
         """
@@ -82,11 +100,17 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
 
         Returns:
             An instance of the class initialized with the provided configuration.
+
+        Raises:
+            VectorStoreValidationError: If the config is invalid.
         """
-        client_options = ObjectConstructionConfig.model_validate(config["client"])
-        client_cls = import_by_path(client_options.type, chromadb)
-        config["client"] = client_cls(**client_options.config)
-        return super().from_config(config)
+        try:
+            client_options = ObjectConstructionConfig.model_validate(config["client"])
+            client_cls = import_by_path(client_options.type, chromadb)
+            config["client"] = client_cls(**client_options.config)
+            return super().from_config(config)
+        except Exception as e:
+            raise VectorStoreValidationError(f"Invalid config: {str(e)}")
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
@@ -98,6 +122,9 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
 
         Args:
             entries: The entries to store.
+
+        Raises:
+            VectorStoreOperationError: If storing entries fails.
         """
         with trace(
             entries=entries,
@@ -136,12 +163,15 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                     )
                 )
 
-            self._collection.add(
-                ids=ids,
-                embeddings=embeddings,
-                metadatas=metadatas,
-                documents=documents,
-            )
+            try:
+                self._collection.add(
+                    ids=ids,
+                    embeddings=embeddings,
+                    metadatas=metadatas,
+                    documents=documents,
+                )
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to store entries: {str(e)}")
 
     def _calculate_score(self, distance: float) -> float:
         """
@@ -177,7 +207,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             The retrieved entries.
 
         Raises:
-            MetadataNotFoundError: If the metadata is not found.
+            VectorStoreOperationError: If retrieving or parsing entries fails.
         """
         merged_options = (self.default_options | options) if options else self.default_options
 
@@ -193,47 +223,53 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             query_vector = (await self._embedder.embed_text([text]))[0]
             query_vector = cast(list[float], query_vector)
 
-            results = self._collection.query(
-                query_embeddings=query_vector,
-                n_results=merged_options.k,
-                include=[
-                    types.IncludeEnum.metadatas,
-                    types.IncludeEnum.embeddings,
-                    types.IncludeEnum.distances,
-                    types.IncludeEnum.documents,
-                ],
-            )
-
-            ids = [id for batch in results.get("ids", []) for id in batch]
-            scores = [self._calculate_score(distance) for batch in results.get("distances") or [] for distance in batch]
-            documents = [document for batch in results.get("documents") or [] for document in batch]
-            embeddings = [embedding for batch in results.get("embeddings") or [] for embedding in batch]
-
-            metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
-
-            # Convert metadata back to nested structure
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
-
-            images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
-
-            outputs.results = [
-                VectorStoreResult(
-                    score=score,
-                    vector=vector,
-                    entry=VectorStoreEntry(
-                        id=id,
-                        text=document,
-                        image_bytes=image,
-                        metadata=metadata,
-                    ),
+            try:
+                results = self._collection.query(
+                    query_embeddings=query_vector,
+                    n_results=merged_options.k,
+                    include=[
+                        types.IncludeEnum.metadatas,
+                        types.IncludeEnum.embeddings,
+                        types.IncludeEnum.distances,
+                        types.IncludeEnum.documents,
+                    ],
                 )
-                for id, metadata, score, document, image, vector in zip(
-                    ids, unflattened_metadatas, scores, documents, images, embeddings, strict=True
-                )
-                if merged_options.score_threshold is None or score >= merged_options.score_threshold
-            ]
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to retrieve entries: {str(e)}")
 
-            return outputs.results
+            try:
+                ids = [id for batch in results.get("ids", []) for id in batch]
+                scores = [self._calculate_score(distance) for batch in results.get("distances") or [] for distance in batch]
+                documents = [document for batch in results.get("documents") or [] for document in batch]
+                embeddings = [embedding for batch in results.get("embeddings") or [] for embedding in batch]
+
+                metadatas: Sequence = [dict(metadata) for batch in results.get("metadatas") or [] for metadata in batch]
+
+                # Convert metadata back to nested structure
+                unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
+
+                images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+
+                outputs.results = [
+                    VectorStoreResult(
+                        score=score,
+                        vector=vector,
+                        entry=VectorStoreEntry(
+                            id=id,
+                            text=document,
+                            image_bytes=image,
+                            metadata=metadata,
+                        ),
+                    )
+                    for id, metadata, score, document, image, vector in zip(
+                        ids, unflattened_metadatas, scores, documents, images, embeddings, strict=True
+                    )
+                    if merged_options.score_threshold is None or score >= merged_options.score_threshold
+                ]
+
+                return outputs.results
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -241,9 +277,16 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
 
         Args:
             ids: The list of entries' IDs to remove.
+
+        Raises:
+            VectorStoreOperationError: If removing entries fails.
         """
+
         with trace(ids=ids, collection=self._collection, index_name=self._index_name):
-            self._collection.delete(ids=[str(id) for id in ids])
+            try:
+                self._collection.delete(ids=[str(id) for id in ids])
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to remove entries: {str(e)}")
 
     async def list(
         self, where: WhereQuery | None = None, limit: int | None = None, offset: int = 0
@@ -261,7 +304,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             The entries.
 
         Raises:
-            MetadataNotFoundError: If the metadata is not found.
+            VectorStoreOperationError: If listing or parsing entries fails.
         """
         with trace(
             where=where, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
@@ -269,33 +312,39 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             # Cast `where` to chromadb's Where type
             where_chroma: chromadb.Where | None = dict(where) if where else None
 
-            results = self._collection.get(
-                where=where_chroma,
-                limit=limit,
-                offset=offset,
-                include=[types.IncludeEnum.metadatas, types.IncludeEnum.documents],
-            )
-
-            ids = results.get("ids") or []
-            documents = results.get("documents") or []
-            metadatas: Sequence = results.get("metadatas") or []
-
-            # Convert metadata back to nested structure
-            unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
-
-            images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
-
-            outputs.results = [
-                VectorStoreEntry(
-                    id=UUID(id),
-                    text=document,
-                    metadata=metadata,
-                    image_bytes=image,
+            try:
+                results = self._collection.get(
+                    where=where_chroma,
+                    limit=limit,
+                    offset=offset,
+                    include=[types.IncludeEnum.metadatas, types.IncludeEnum.documents],
                 )
-                for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
-            ]
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to list entries: {str(e)}")
 
-            return outputs.results
+            try:
+                ids = results.get("ids") or []
+                documents = results.get("documents") or []
+                metadatas: Sequence = results.get("metadatas") or []
+
+                # Convert metadata back to nested structure
+                unflattened_metadatas: list[dict] = [unflatten_dict(metadata) if metadata else {} for metadata in metadatas]
+
+                images: list[bytes | None] = [metadata.pop("__image", None) for metadata in unflattened_metadatas]
+
+                outputs.results = [
+                    VectorStoreEntry(
+                        id=UUID(id),
+                        text=document,
+                        metadata=metadata,
+                        image_bytes=image,
+                    )
+                    for id, metadata, document, image in zip(ids, unflattened_metadatas, documents, images, strict=True)
+                ]
+
+                return outputs.results
+            except Exception as e:
+                raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
 
     @staticmethod
     def _flatten_metadata(metadata: dict) -> dict:
