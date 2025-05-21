@@ -17,8 +17,7 @@ import { generateZodSchema } from "./types";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
 import { FormFieldResponse, FormSchemaResponse } from "../../types/api.ts";
 
-interface IFormPluginComponentProps {
-  id: string;
+interface FormPluginComponentProps {
   title: string;
   schema: FormSchemaResponse | null;
   isOpen: boolean;
@@ -26,11 +25,13 @@ interface IFormPluginComponentProps {
   onSubmit: (data: Record<string, string>) => void;
 }
 
-const FeedbackFormPluginComponent: React.FC<IFormPluginComponentProps> = (
-  props,
-) => {
-  const { title, schema, isOpen, onClose, onSubmit } = props;
-
+const FeedbackFormPluginComponent = ({
+  title,
+  schema,
+  isOpen,
+  onClose,
+  onSubmit,
+}: FormPluginComponentProps) => {
   const zodSchema = React.useMemo(() => generateZodSchema(schema), [schema]);
   const { theme } = useThemeContext();
 

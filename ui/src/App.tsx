@@ -111,16 +111,21 @@ export default function Component() {
   }, []);
 
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
-    const formRequest = createRequest(buildApiUrl("/api/feedback"), {
-      method: "POST",
-      body: {
-        message_id: feedbackMessageId,
-        feedback: feedbackName,
-        payload: data,
-      },
-    });
-
-    await formRequest();
+    try {
+      const formRequest = createRequest(buildApiUrl("/api/feedback"), {
+        method: "POST",
+        body: {
+          message_id: feedbackMessageId,
+          feedback: feedbackName,
+          payload: data,
+        },
+      });
+      await formRequest();
+    } catch (e) {
+      console.error(e);
+      // TODO: Add some information to the UI about error
+      // TODO: Separate the feedback logic into separate component from the plugin
+    }
   };
 
   const onOpenFeedbackForm = async (id: string, name: typeof feedbackName) => {
@@ -223,7 +228,6 @@ You can ask me anything! I can provide information, answer questions, and assist
         plugin={FeedbackFormPlugin}
         component="FeedbackFormComponent"
         componentProps={{
-          id: "",
           title: config?.[feedbackName as FormType]?.title ?? "Feedback form",
           schema: config?.[feedbackName as FormType] ?? null,
           onClose: onOpenChange,
