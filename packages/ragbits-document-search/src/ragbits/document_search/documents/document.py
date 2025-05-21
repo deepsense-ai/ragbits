@@ -147,7 +147,7 @@ class DocumentMeta(BaseModel):
     @staticmethod
     def _infer_document_type(path: Path) -> DocumentType:
         """
-        Infer the document type by checking the magic numbers signature.
+        Infer the document type by checking the file signature. Use the file extension as a fallback.
 
         Args:
             path: The path to the file.
