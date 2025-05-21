@@ -155,8 +155,9 @@ class DocumentMeta(BaseModel):
         Returns:
             The inferred document type.
         """
-        kind = filetype.guess(path)
-        return DocumentType(kind.extension if kind else None)
+        if kind := filetype.guess(path):
+            return DocumentType(kind.extension)
+        return DocumentType(path.suffix[1:])
 
 
 class Document(BaseModel):
