@@ -1,4 +1,3 @@
-import contextlib
 from collections.abc import Callable
 from typing import Any, cast
 from uuid import UUID
@@ -86,12 +85,12 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collections.exists(self._index_name):
-                index = await self._client.collections.create(
+                await self._client.collections.create(
                     name=self._index_name,
                     vectorizer_config=wvc.config.Configure.Vectorizer.none()
                 )
 
-            index = self._client.collections.get(self._index_name)
+            index = await self._client.collections.get(self._index_name)
 
             objects = []
             for entry in entries:
@@ -101,8 +100,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                         properties=entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
                         vector=embeddings[entry.id]
                     ))
-            response = await index.data.insert_many(objects)
-            print(response)
+            
+            if objects:
+                await index.data.insert_many(objects)
 
     async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
