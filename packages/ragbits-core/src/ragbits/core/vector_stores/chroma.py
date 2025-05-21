@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Literal, cast
+from typing import Any, Literal, cast
 from uuid import UUID
 
 import chromadb
@@ -193,7 +193,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             query_vector = (await self._embedder.embed_text([text]))[0]
             query_vector = cast(list[float], query_vector)
 
-            where_dict = None
+            where_dict: Any = None
             if merged_options.where:
                 # If there are multiple filters, combine them with $and
                 if len(merged_options.where) > 1:
@@ -210,7 +210,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                     "distances",
                     "documents",
                 ],
-                where=where_dict,
+                where=cast(chromadb.Where, where_dict),
             )
 
             ids = [id for batch in results.get("ids", []) for id in batch]
