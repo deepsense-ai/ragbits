@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
 import pytest
@@ -15,12 +15,12 @@ def mock_weaviate_client():
     client = AsyncMock()
     collections = AsyncMock()
     client.collections = collections
-    
+
     # Set up the collection mock
     collection = AsyncMock()
-    collections.get.return_value = collection
+    collections.get = Mock(return_value=collection)
     collection.data = AsyncMock()
-    
+
     return client
 
 
@@ -56,15 +56,15 @@ async def test_store_creates_collection_when_not_exists(mock_weaviate_store, sam
     """Test that store() creates a new collection when it doesn't exist."""
     # Arrange
     mock_weaviate_store._client.collections.exists.return_value = False
-    
+
     # Act
     await mock_weaviate_store.store([sample_entry])
-    
+
     # Assert
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_called_once()
     mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
-    
+
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
@@ -78,15 +78,15 @@ async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry)
     """Test that store() uses existing collection when it exists."""
     # Arrange
     mock_weaviate_store._client.collections.exists.return_value = True
-    
+
     # Act
     await mock_weaviate_store.store([sample_entry])
-    
+
     # Assert
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_not_called()
     mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
-    
+
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
@@ -100,7 +100,7 @@ async def test_store_handles_empty_entries(mock_weaviate_store):
     """Test that store() handles empty entries list correctly."""
     # Act
     await mock_weaviate_store.store([])
-    
+
     # Assert
     mock_weaviate_store._client.collections.exists.assert_not_called()
     mock_weaviate_store._client.collections.create.assert_not_called()

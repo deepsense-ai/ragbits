@@ -81,7 +81,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         ):
             if not entries:
                 return
-            
+
             embeddings: dict = await self._create_embeddings(entries)
 
             if not await self._client.collections.exists(self._index_name):
@@ -90,7 +90,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     vectorizer_config=wvc.config.Configure.Vectorizer.none()
                 )
 
-            index = await self._client.collections.get(self._index_name)
+            index = self._client.collections.get(self._index_name)
 
             objects = []
             for entry in entries:
@@ -100,7 +100,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                         properties=entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
                         vector=embeddings[entry.id]
                     ))
-            
+
             if objects:
                 await index.data.insert_many(objects)
 
