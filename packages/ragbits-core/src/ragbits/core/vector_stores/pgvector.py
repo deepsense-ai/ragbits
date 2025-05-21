@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, NamedTuple, cast
+from typing import Any, NamedTuple
 from uuid import UUID
 
 import asyncpg
