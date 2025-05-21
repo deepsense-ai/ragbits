@@ -93,7 +93,9 @@ class InMemoryVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 entry = self._entries[entry_id]
 
                 # Apply metadata filtering
-                if merged_options.where and not all(entry.metadata.get(key) == value for key, value in merged_options.where.items()):
+                if merged_options.where and not all(
+                    entry.metadata.get(key) == value for key, value in merged_options.where.items()
+                ):
                     continue
 
                 # Calculate score based on vector type
