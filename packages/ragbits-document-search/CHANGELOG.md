@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add jsonl file type (#567)
 - Improve document file type check (#563)
 - Fix reranker options typing (#562)
 - Add query rephraser options (#560)
