@@ -26,7 +26,7 @@ const PromptInput = ({
 
     submit();
     textAreaRef?.current?.focus();
-  }, [setMessage, isLoading, submit]);
+  }, [isLoading, submit, message]);
 
   const onSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
