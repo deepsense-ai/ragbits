@@ -143,7 +143,11 @@ async def test_document_search_scores():
 
     # Create a mock vector store that returns results with scores
     class MockVectorStore(InMemoryVectorStore):
-        async def retrieve(self, text: str, options: VectorStoreOptions | None = None) -> list[VectorStoreResult]:
+        async def retrieve(
+            self,
+            text: str,
+            options: VectorStoreOptions | None = None,
+        ) -> list[VectorStoreResult]:
             results = await super().retrieve(text, options)
             # Add scores to the results
             for i, result in enumerate(results):
