@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.18.0 (2025-05-22)
+
 - Allow to limit VectorStore results by metadata (#564)
 - Switch from imghdr to filetype for image file type check (#563)
 - Remove prompt lab (#549)
