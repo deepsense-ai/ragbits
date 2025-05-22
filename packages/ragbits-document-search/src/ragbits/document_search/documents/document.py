@@ -34,6 +34,7 @@ class DocumentType(str, Enum):
     RTF = "rtf"
     TSV = "tsv"
     JSON = "json"
+    JSONL = "jsonl"
     XML = "xml"
     JPG = "jpg"
     PNG = "png"
