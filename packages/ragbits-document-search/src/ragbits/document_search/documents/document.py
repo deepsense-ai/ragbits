@@ -3,6 +3,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any
 
+import filetype
 from pydantic import BaseModel
 from typing_extensions import deprecated
 
@@ -121,7 +122,7 @@ class DocumentMeta(BaseModel):
             The document metadata.
         """
         return cls(
-            document_type=DocumentType(local_path.suffix[1:]),
+            document_type=cls._infer_document_type(local_path),
             source=LocalFileSource(path=local_path),
         )
 
@@ -139,9 +140,24 @@ class DocumentMeta(BaseModel):
         path = await source.fetch()
 
         return cls(
-            document_type=DocumentType(path.suffix[1:]),
+            document_type=cls._infer_document_type(path),
             source=source,
         )
+
+    @staticmethod
+    def _infer_document_type(path: Path) -> DocumentType:
+        """
+        Infer the document type by checking the file signature. Use the file extension as a fallback.
+
+        Args:
+            path: The path to the file.
+
+        Returns:
+            The inferred document type.
+        """
+        if kind := filetype.guess(path):
+            return DocumentType(kind.extension)
+        return DocumentType(path.suffix[1:])
 
 
 class Document(BaseModel):

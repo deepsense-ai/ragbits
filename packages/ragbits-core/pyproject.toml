@@ -38,7 +38,7 @@ dependencies = [
     "tomli>=2.0.2,<3.0.0",
     "litellm>=1.55.0,<2.0.0",
     "aiohttp>=3.10.8,<4.0.0",
-    "standard-imghdr>=3.10.14,<3.14"
+    "filetype>=1.2.0,<2.0.0",
 ]
 
 [project.urls]

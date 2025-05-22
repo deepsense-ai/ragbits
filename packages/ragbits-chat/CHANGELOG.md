@@ -4,6 +4,7 @@
 
 - updated ui build (#553)
 - api integration improvements + history context changes (#552)
+- feedback form integration (#540)
 
 ## 0.17.1 (2025-05-09)
 

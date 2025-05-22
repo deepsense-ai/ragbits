@@ -4521,10 +4521,10 @@ version = "0.17.1"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "filetype" },
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
-    { name = "standard-imghdr" },
     { name = "tomli" },
     { name = "typer" },
 ]
@@ -4596,6 +4596,7 @@ requires-dist = [
     { name = "datasets", marker = "extra == 'hf'", specifier = ">=3.0.1,<4.0.0" },
     { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
@@ -4605,7 +4606,6 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=4.0.2,<5.0.0" },
-    { name = "standard-imghdr", specifier = ">=3.10.14,<3.14" },
     { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
     { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
@@ -4627,6 +4627,7 @@ name = "ragbits-document-search"
 version = "0.17.1"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
+    { name = "filetype" },
     { name = "ragbits-core" },
     { name = "rerankers" },
     { name = "unstructured" },
@@ -4654,6 +4655,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "docling", marker = "extra == 'docling'", specifier = ">=2.15.1,<3.0.0" },
+    { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1" },
@@ -5737,15 +5739,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a1/95/81babb6089938680dfe2cd3f88cd3fd39cccd1543b7cb603b21ad881bff1/SQLAlchemy-2.0.36-cp313-cp313-win32.whl", hash = "sha256:0572f4bd6f94752167adfd7c1bed84f4b240ee6203a95e05d1e208d488d0d436", size = 2060439 },
     { url = "https://files.pythonhosted.org/packages/c1/ce/5f7428df55660d6879d0522adc73a3364970b5ef33ec17fa125c5dbcac1d/SQLAlchemy-2.0.36-cp313-cp313-win_amd64.whl", hash = "sha256:8c78ac40bde930c60e0f78b3cd184c580f89456dd87fc08f9e3ee3ce8765ce88", size = 2084574 },
     { url = "https://files.pythonhosted.org/packages/b8/49/21633706dd6feb14cd3f7935fc00b60870ea057686035e1a99ae6d9d9d53/SQLAlchemy-2.0.36-py3-none-any.whl", hash = "sha256:fddbe92b4760c6f5d48162aef14824add991aeda8ddadb3c31d56eb15ca69f8e", size = 1883787 },
-]
-
-[[package]]
-name = "standard-imghdr"
-version = "3.13.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1a/8d/ab2620fbe2e348483c9cb776c3b7b3cc407899291a041d7fa026469b7cd1/standard_imghdr-3.13.0.tar.gz", hash = "sha256:8d9c68058d882f6fc3542a8d39ef9ff94d2187dc90bd0c851e0902776b7b7a42", size = 5511 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/cb/e1da7e340586a078404c7e4328bfefc930867ace8a9a55916fd220cf9547/standard_imghdr-3.13.0-py3-none-any.whl", hash = "sha256:30a1bff5465605bb496f842a6ac3cc1f2131bf3025b0da28d4877d6d4b7cc8e9", size = 4639 },
 ]
 
 [[package]]
