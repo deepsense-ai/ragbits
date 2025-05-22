@@ -4469,7 +4469,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-chat"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "fastapi" },
@@ -4502,7 +4502,7 @@ dev = [
 
 [[package]]
 name = "ragbits-cli"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4517,7 +4517,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -4624,7 +4624,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "filetype" },
@@ -4676,7 +4676,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -4724,7 +4724,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "0.17.1"
+version = "0.18.0"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
