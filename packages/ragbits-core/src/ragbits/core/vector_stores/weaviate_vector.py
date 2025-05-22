@@ -3,6 +3,7 @@ from typing import Any, cast
 from uuid import UUID
 
 import httpx
+import weaviate
 from weaviate import WeaviateAsyncClient
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
@@ -63,6 +64,22 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._distance_method = distance_method
         self.is_sparse = isinstance(embedder, SparseEmbedder)
         self._vector_name = "sparse" if self.is_sparse else "dense"
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        client_options = ObjectConstructionConfig.model_validate(config["client"])
+        client_cls = import_by_path(client_options.type, weaviate)
+        config["client"] = client_cls(**client_options.config)
+        return super().from_config(config)
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
         """
