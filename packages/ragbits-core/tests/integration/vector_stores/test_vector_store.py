@@ -25,6 +25,7 @@ from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.core.vector_stores.exceptions import VectorStoreValidationError
 
 text_embbedings = [
     [[0.1, 0.2, 0.3], [0.9, 0.9, 0.9]],  # for storage
@@ -218,8 +219,8 @@ async def test_vector_store_retrieve_order(
 
 
 def test_image_store_with_non_image_embedder(vector_store_cls: type[VectorStoreWithDenseEmbedder]) -> None:
-    # When an image vector store is created with a text-only embedder, it should raise a ValueError
-    with pytest.raises(ValueError):
+    # When an image vector store is created with a text-only embedder, it should raise a VectorStoreValidationError
+    with pytest.raises(VectorStoreValidationError):
         vector_store_cls(embedder=NoopEmbedder(return_values=text_embbedings), embedding_type=EmbeddingType.IMAGE)
 
 
