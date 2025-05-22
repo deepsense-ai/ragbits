@@ -5,6 +5,8 @@ import pytest
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
 
+from weaviate.collections.classes.internal import Object, MetadataReturn
+
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
@@ -31,7 +33,9 @@ def mock_weaviate_store(mock_weaviate_client):
     return WeaviateVectorStore(
         client=mock_weaviate_client,
         index_name="test_collection",
-        embedder=NoopEmbedder(return_values=[[[0.1, 0.2, 0.3]]], image_return_values=[[[0.7, 0.8, 0.9]]]),
+        embedder=NoopEmbedder(
+            return_values=[[[0.1, 0.2, 0.3]]], image_return_values=[[[0.7, 0.8, 0.9]]]
+        ),
     )
 
 
@@ -50,6 +54,7 @@ def sample_entry():
             },
         },
     )
+
 
 @pytest.fixture
 def sample_entries():
@@ -82,6 +87,7 @@ def sample_entries():
         ),
     ]
 
+
 @pytest.mark.asyncio
 async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
     mock_weaviate_store._client.collections.exists.return_value = False
@@ -90,39 +96,54 @@ async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
 
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.get.assert_called_once_with(
+        "test_collection"
+    )
 
     mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(
         [
             wvc.data.DataObject(
                 uuid=str(sample_entries[0].id),
-                properties=sample_entries[0].model_dump(exclude={"id"}, exclude_none=True, mode="json"),
-                vector=[0.1, 0.2, 0.3]
+                properties=sample_entries[0].model_dump(
+                    exclude={"id"}, exclude_none=True, mode="json"
+                ),
+                vector=[0.1, 0.2, 0.3],
             ),
             wvc.data.DataObject(
                 uuid=str(sample_entries[1].id),
-                properties=sample_entries[1].model_dump(exclude={"id"}, exclude_none=True, mode="json"),
-                vector=[0.1, 0.2, 0.3]
+                properties=sample_entries[1].model_dump(
+                    exclude={"id"}, exclude_none=True, mode="json"
+                ),
+                vector=[0.1, 0.2, 0.3],
             ),
         ]
     )
 
+
 @pytest.mark.asyncio
-async def test_store_creates_collection_when_not_exists(mock_weaviate_store, sample_entry):
+async def test_store_creates_collection_when_not_exists(
+    mock_weaviate_store, sample_entry
+):
     mock_weaviate_store._client.collections.exists.return_value = False
 
     await mock_weaviate_store.store([sample_entry])
 
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.get.assert_called_once_with(
+        "test_collection"
+    )
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
-        properties=sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
-        vector=[0.1, 0.2, 0.3]
+        properties=sample_entry.model_dump(
+            exclude={"id"}, exclude_none=True, mode="json"
+        ),
+        vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(
+        [expected_object]
+    )
 
 
 @pytest.mark.asyncio
@@ -133,14 +154,20 @@ async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry)
 
     mock_weaviate_store._client.collections.exists.assert_called_once()
     mock_weaviate_store._client.collections.create.assert_not_called()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.get.assert_called_once_with(
+        "test_collection"
+    )
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
-        properties=sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
-        vector=[0.1, 0.2, 0.3]
+        properties=sample_entry.model_dump(
+            exclude={"id"}, exclude_none=True, mode="json"
+        ),
+        vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(
+        [expected_object]
+    )
 
 
 @pytest.mark.asyncio
@@ -152,6 +179,7 @@ async def test_store_handles_empty_entries(mock_weaviate_store):
     mock_weaviate_store._client.collections.get.assert_not_called()
     mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_remove(mock_weaviate_store):
     mock_weaviate_store._client.collections.exists.return_value = True
@@ -160,7 +188,105 @@ async def test_remove(mock_weaviate_store):
     await mock_weaviate_store.remove(ids_to_remove)
 
     mock_weaviate_store._client.collections.exists.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.get.assert_called_once_with(
+        "test_collection"
+    )
     mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with(
         where=Filter.by_id().contains_any(ids_to_remove)
     )
+
+
+@pytest.mark.asyncio
+async def test_list_no_filtering(mock_weaviate_store):
+    mock_weaviate_store._client.collections.exists.return_value = True
+    mock_weaviate_store._client.collections.get.return_value.aggregate.over_all.return_value.total_count = (
+        2
+    )
+    mock_weaviate_store._client.collections.get.return_value.query.fetch_objects.return_value.objects = [
+        Object(
+            uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+            metadata=MetadataReturn(
+                creation_time=None,
+                last_update_time=None,
+                distance=None,
+                certainty=None,
+                score=None,
+                explain_score=None,
+                is_consistent=None,
+                rerank_score=None,
+            ),
+            properties={
+                "text": "test_key_1",
+                "metadata": {
+                    "content": "test content 1",
+                    "document_meta": {
+                        "document_type": "test_type",
+                        "title": "test title 1",
+                        "source": {"path": "/test/path"},
+                    },
+                },
+                "image_bytes": None,
+            },
+            references=None,
+            vector={
+                "default": [
+                    0.1,
+                    0.2,
+                    0.3,
+                ]
+            },
+            collection="Test_collection",
+        ),
+        Object(
+            uuid=UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+            metadata=MetadataReturn(
+                creation_time=None,
+                last_update_time=None,
+                distance=None,
+                certainty=None,
+                score=None,
+                explain_score=None,
+                is_consistent=None,
+                rerank_score=None,
+            ),
+            properties={
+                "text": "test_key_2",
+                "metadata": {
+                    "content": "test content 2",
+                    "document_meta": {
+                        "title": "test title 2",
+                        "document_type": "test_type",
+                        "source": {"path": "/test/path"},
+                    },
+                },
+                "image_bytes": b"image",
+            },
+            references=None,
+            vector={
+                "default": [
+                    0.1,
+                    0.2,
+                    0.3,
+                ]
+            },
+            collection="Test_collection",
+        ),
+    ]
+
+    results: list[dict] = [
+        {"content": "test content 1", "title": "test title 1", "image": None},
+        {
+            "content": "test content 2",
+            "title": "test title 2",
+            "image": b"image",
+        },
+    ]
+
+    entries = await mock_weaviate_store.list()
+
+    assert len(entries) == len(results)
+    for i, (entry, result) in enumerate(zip(entries, results, strict=True)):
+        assert entry.metadata["content"] == result["content"]
+        assert entry.metadata["document_meta"]["title"] == result["title"]
+        assert entry.image_bytes == result["image"]
+        assert entry.text == f"test_key_{i + 1}"
