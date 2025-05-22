@@ -24,7 +24,6 @@ from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
-    VectorStoreOptionsT,
     VectorStoreResult,
     VectorStoreWithEmbedder,
     WhereQuery,
@@ -217,7 +216,7 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     async def retrieve(
         self,
         text: str,
-        options: VectorStoreOptionsT | None = None,
+        options: VectorStoreOptions | None = None,
     ) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Qdrant collection based on vector similarity.
