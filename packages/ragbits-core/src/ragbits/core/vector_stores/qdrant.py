@@ -15,6 +15,7 @@ from qdrant_client.models import (
     VectorParams,
 )
 from qdrant_client.http.exceptions import UnexpectedResponse
+from pydantic import ValidationError
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -173,7 +174,9 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 values=list(vector.values),
             )
         if not isinstance(vector, list):
-            raise VectorStoreValidationError(f"Expected a vector of type list or SparseVector, Qdrant returned {type(vector)}")
+            raise VectorStoreValidationError(
+                f"Expected a vector of type list or SparseVector, Qdrant returned {type(vector)}"
+            )
         return cast(list[float], vector)
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -207,7 +210,9 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                         sparse_vectors_config = {self._vector_name: models.SparseVectorParams()}
                     else:
                         vector_size = len(next(iter(embeddings.values())))
-                        vectors_config = {self._vector_name: VectorParams(size=vector_size, distance=self._distance_method)}
+                        vectors_config = {
+                            self._vector_name: VectorParams(size=vector_size, distance=self._distance_method)
+                        }
 
                     try:
                         await self._client.create_collection(
@@ -311,7 +316,6 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             except Exception as e:
                 raise VectorStoreOperationError(f"Failed to parse entries: {str(e)}")
 
-
     async def remove(self, ids: list[UUID]) -> None:
         """
         Remove entries from the vector store.
@@ -348,14 +352,19 @@ class QdrantVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The created filter.
         """
-        where = flatten_dict(where)  # type: ignore
+        try:
+            where = flatten_dict(where)  # type: ignore
 
-        return Filter(
-            must=[
-                FieldCondition(key=f"metadata.{key}", match=MatchValue(value=cast(str | int | bool, value)))
-                for key, value in where.items()
-            ]
-        )
+            return Filter(
+                must=[
+                    FieldCondition(key=f"metadata.{key}", match=MatchValue(value=cast(str | int | bool, value)))
+                    for key, value in where.items()
+                ]
+            )
+        except ValidationError as e:
+            raise VectorStoreValidationError(f"Invalid where query: {str(e)}")
+        except Exception as e:
+            raise VectorStoreOperationError(f"Failed to create Qdrant filter: {str(e)}")
 
     async def list(
         self,

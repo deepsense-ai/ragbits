@@ -1,14 +1,14 @@
+import pytest
 from unittest.mock import AsyncMock
 from uuid import UUID
 
-import pytest
-from pydantic import ValidationError
 from qdrant_client.http import models
 from qdrant_client.models import Distance
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.utils.pydantic import _pydantic_bytes_to_hex
 from ragbits.core.vector_stores.base import VectorStoreEntry
+from ragbits.core.vector_stores.exceptions import VectorStoreValidationError
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
 
@@ -342,5 +342,5 @@ def test_create_qdrant_filter_with_list() -> None:
 
 def test_create_qdrant_filter_raises_error() -> None:
     wrong_where_query = {"a": "A", "b": 1.345}
-    with pytest.raises(ValidationError):
+    with pytest.raises(VectorStoreValidationError):
         QdrantVectorStore._create_qdrant_filter(where=wrong_where_query)  # type: ignore

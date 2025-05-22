@@ -8,6 +8,7 @@ import pytest
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores import WhereQuery
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, VectorStoreResult
+from ragbits.core.vector_stores.exceptions import VectorStoreValidationError, VectorStoreOperationError
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 
 VECTOR_EXAMPLE = [0.1, 0.2, 0.3]
@@ -53,7 +54,7 @@ async def test_invalid_table_name_raises_error(mock_db_pool: tuple[MagicMock, As
     mock_pool, _ = mock_db_pool
     invalid_table_names = ["123table", "table-name!", "", "table name", "@table"]
     for table_name in invalid_table_names:
-        with pytest.raises(ValueError, match=f"Invalid table name: {table_name}"):
+        with pytest.raises(VectorStoreValidationError, match=f"Invalid table name: {table_name}"):
             PgVectorStore(client=mock_pool, table_name=table_name, vector_size=3, embedder=NoopEmbedder())
 
 
@@ -62,7 +63,7 @@ async def test_invalid_vector_size_raises_error(mock_db_pool: tuple[MagicMock, A
     mock_pool, _ = mock_db_pool
     vector_size_values = ["546", -23.0, 0, 46.5, [2, 3, 4], {"vector_size": 6}]
     for vector_size in vector_size_values:
-        with pytest.raises(ValueError, match="Vector size must be a positive integer."):
+        with pytest.raises(VectorStoreValidationError, match="Vector size must be a positive integer."):
             PgVectorStore(
                 client=mock_pool,
                 table_name=TEST_TABLE_NAME,
@@ -76,7 +77,7 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
     mock_pool, _ = mock_db_pool
     hnsw_values = ["546", 0, [5, 10], {"m": 2}, {"m": "-23", "ef_construction": 12}, {"m": 23, "ef_construction": -12}]
     for hnsw in hnsw_values:
-        with pytest.raises(ValueError):
+        with pytest.raises(VectorStoreValidationError):
             PgVectorStore(
                 client=mock_pool,
                 table_name=TEST_TABLE_NAME,
@@ -203,10 +204,9 @@ async def test_remove_no_ids(mock_pgvector_store: PgVectorStore, mock_db_pool: t
 async def test_remove_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     _, mock_conn = mock_db_pool
     mock_conn.execute.side_effect = asyncpg.exceptions.UndefinedTableError
-    with patch("builtins.print") as mock_print:
+    with pytest.raises(VectorStoreOperationError, match=f"Table {TEST_TABLE_NAME} does not exist."):
         await mock_pgvector_store.remove(ids=[UUID("6edae3b9-087b-4e09-a452-ab2235e023c8")])
-        mock_conn.execute.assert_called_once()
-        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
+    mock_conn.execute.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -214,14 +214,12 @@ async def test_retrieve_no_table(mock_pgvector_store: PgVectorStore, mock_db_poo
     _, mock_conn = mock_db_pool
     mock_conn.fetch.side_effect = asyncpg.exceptions.UndefinedTableError
     with (
-        patch("builtins.print") as mock_print,
         patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query,
     ):
         mock_create_retrieve_query.return_value = ("query_string", [["[0.1, 0.2, 0.3]", 0.1, 10]])
-        results = await mock_pgvector_store.retrieve(text="some_text")
-        assert results == []
+        with pytest.raises(VectorStoreOperationError, match=f"Table {TEST_TABLE_NAME} does not exist."):
+            await mock_pgvector_store.retrieve(text="some_text")
         mock_conn.fetch.assert_called_once()
-        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
 @pytest.mark.asyncio
@@ -247,15 +245,12 @@ async def test_list_no_table(mock_pgvector_store: PgVectorStore, mock_db_pool: t
     _, mock_conn = mock_db_pool
     mock_conn.fetch.side_effect = asyncpg.exceptions.UndefinedTableError
     with (
-        patch("builtins.print") as mock_print,
         patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query,
     ):
         mock_create_list_query.return_value = ("query_string", [1, 0])
-
-        results = await mock_pgvector_store.list(where=None, limit=1, offset=0)
-        assert results == []
+        with pytest.raises(VectorStoreOperationError, match=f"Table {TEST_TABLE_NAME} does not exist."):
+            await mock_pgvector_store.list(where=None, limit=1, offset=0)
         mock_conn.fetch.assert_called_once()
-        mock_print.assert_called_once_with(f"Table {TEST_TABLE_NAME} does not exist.")
 
 
 @pytest.mark.asyncio
