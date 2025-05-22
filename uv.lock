@@ -26,6 +26,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "ragbits-agents",
     "ragbits-chat",
     "ragbits-cli",
     "ragbits-core",
@@ -4489,6 +4490,11 @@ wheels = [
 ]
 
 [[package]]
+name = "ragbits-agents"
+version = "0.17.1"
+source = { editable = "packages/ragbits-agents" }
+
+[[package]]
 name = "ragbits-chat"
 version = "0.17.1"
 source = { editable = "packages/ragbits-chat" }
@@ -4786,6 +4792,7 @@ name = "ragbits-workspace"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "ragbits-agents" },
     { name = "ragbits-chat" },
     { name = "ragbits-cli" },
     { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "hf", "local", "otel", "pgvector", "qdrant", "s3"] },
@@ -4820,6 +4827,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "ragbits-agents", editable = "packages/ragbits-agents" },
     { name = "ragbits-chat", editable = "packages/ragbits-chat" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "hf", "s3"], editable = "packages/ragbits-core" },
