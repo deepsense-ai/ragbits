@@ -45,13 +45,16 @@ export default function Component() {
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
     const SCROLL_DOWN_THRESHOLD = 100;
+
     if (!scrollContainerRef.current) return;
+
     const container = scrollContainerRef.current;
     const offsetFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
     setShowScrollDownButton(offsetFromBottom > SCROLL_DOWN_THRESHOLD);
     setShouldAutoScroll(false);
+
     if (offsetFromBottom > AUTO_SCROLL_THRESHOLD) {
       setShouldAutoScroll(false);
     } else {
@@ -62,6 +65,7 @@ export default function Component() {
   useEffect(() => {
     if (configRequest.data) {
       const config = configRequest.data.data;
+
       setConfig(config);
     }
   }, [configRequest.data]);
@@ -78,6 +82,7 @@ export default function Component() {
 
   useEffect(() => {
     setShouldAutoScroll(true);
+
     if (history.length === 0) {
       setShowScrollDownButton(false);
     }
@@ -103,10 +108,12 @@ export default function Component() {
 
   const scrollToBottom = useCallback(() => {
     if (!scrollContainerRef.current) return;
+
     scrollContainerRef.current.scrollTo({
       top: scrollContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
+
     setShouldAutoScroll(true);
   }, []);
 
@@ -142,6 +149,7 @@ export default function Component() {
 
   const handleSubmit = () => {
     sendMessage(message);
+    setMessage("");
   };
 
   const heroMessage = `Hello! I'm your AI assistant.\n\n How can I help you today?
