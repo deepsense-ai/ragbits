@@ -1,24 +1,16 @@
 import type { TextAreaProps } from "@heroui/react";
-
-import React from "react";
+import { forwardRef } from "react";
 import { Textarea } from "@heroui/react";
-import { cn } from "@heroui/react";
 
-const PromptInputText = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
+interface PromptInputTextProps extends TextAreaProps {}
+
+const PromptInputText = forwardRef<HTMLTextAreaElement, PromptInputTextProps>(
   ({ classNames = {}, ...props }, ref) => {
     return (
       <Textarea
         ref={ref}
-        aria-label="Prompt"
-        className="min-h-[40px]"
-        classNames={{
-          ...classNames,
-          label: cn("hidden", classNames?.label),
-          input: cn("py-0", classNames?.input),
-        }}
-        placeholder="Enter a prompt here"
-        radius="lg"
-        variant="bordered"
+        className="min-h-[50px]"
+        classNames={classNames}
         {...props}
       />
     );
