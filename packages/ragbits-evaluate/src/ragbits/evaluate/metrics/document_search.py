@@ -58,7 +58,14 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
         """
         return self.metric.aggregate(
             [
-                self.metric(result.predicted_passages, result.reference_passages)
+                self.metric(
+                    [
+                        element.text_representation
+                        for element in result.predicted_elements
+                        if element.text_representation
+                    ],
+                    result.reference_passages,
+                )
                 for result in results
                 if result.reference_passages is not None
             ]
