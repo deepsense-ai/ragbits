@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove outdated quickstart ref from docstring (#565)
 - Switch from imghdr to filetype for image file type check (#563)
 - Remove prompt lab (#549)
 - Add batched() helper method to utils (#555)
