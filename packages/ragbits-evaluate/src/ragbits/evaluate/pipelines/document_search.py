@@ -16,7 +16,7 @@ class DocumentSearchData(EvaluationData):
     """
 
     question: str
-    reference_passages: list[str]
+    reference_passages: list[str] | None
 
 
 @dataclass
@@ -26,7 +26,7 @@ class DocumentSearchResult(EvaluationResult):
     """
 
     question: str
-    reference_passages: list[str]
+    reference_passages: list[str] | None
     predicted_passages: list[str]
 
 
