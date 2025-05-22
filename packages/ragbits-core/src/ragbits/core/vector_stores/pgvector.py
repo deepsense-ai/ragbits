@@ -173,13 +173,19 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT *, vector {distance_operator} $1 as distance, {score_formula} as score FROM {self._table_name}"  # noqa S608
 
-        values: list[Any] = [
-            self._vector_to_string(vector),
-        ]
+        values: list[Any] = [self._vector_to_string(vector)]
+        where_clauses = []
 
         if query_options.score_threshold is not None:
-            query += " WHERE score >= $2"
-            values.extend([query_options.score_threshold])
+            where_clauses.append("score >= $" + str(len(values) + 1))
+            values.append(query_options.score_threshold)
+
+        if query_options.where:
+            where_clauses.append(f"metadata @> ${len(values) + 1}")
+            values.append(json.dumps(query_options.where))
+
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
 
         query += " ORDER BY distance"
 
@@ -364,15 +370,6 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         ) as outputs:
             query_vector = (await self._embedder.embed_text([text]))[0]
             query, values = self._create_retrieve_query(query_vector, merged_options)
-
-            if merged_options.where:
-                where_clause, where_values = self._create_list_query(merged_options.where)
-                where_clause = where_clause.replace(" LIMIT $2 OFFSET $3;", "")
-                where_clause = where_clause.replace("*", "id")
-                where_clause = where_clause.replace("$1", "$" + str(len(values) + 1))
-                where_clause = where_clause.replace(";", "")
-                query = query.replace(" ORDER BY", f" WHERE id IN ({where_clause}) ORDER BY")
-                values.append(where_values[0])
 
             try:
                 async with self._client.acquire() as conn:
