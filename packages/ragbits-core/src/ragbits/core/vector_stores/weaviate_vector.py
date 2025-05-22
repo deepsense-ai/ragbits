@@ -1,8 +1,8 @@
-from collections.abc import Callable
-from typing import Any, cast
+from typing import cast
 from uuid import UUID
+from operator import and_
+from functools import reduce
 
-import httpx
 import weaviate
 from weaviate import WeaviateAsyncClient
 import weaviate.classes as wvc
@@ -13,7 +13,7 @@ from typing_extensions import Self
 from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings import Embedder, SparseEmbedder, SparseVector
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
-from ragbits.core.utils.dict_transformations import flatten_dict
+from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
@@ -64,6 +64,8 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._distance_method = distance_method
         self.is_sparse = isinstance(embedder, SparseEmbedder)
         self._vector_name = "sparse" if self.is_sparse else "dense"
+        # Weaviate doesn't support filtering by nested keys and doesn't allow keys with dots, so we use ___ as nested keys separator
+        self._separator = "___"
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -117,7 +119,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 if entry.id in embeddings:
                     objects.append(wvc.data.DataObject(
                         uuid=str(entry.id),
-                        properties=entry.model_dump(exclude={"id"}, exclude_none=True, mode="json"),
+                        properties=self._flatten_metadata(entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
                         vector=embeddings[entry.id]
                     ))
 
@@ -153,6 +155,29 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     where=Filter.by_id().contains_any(ids)
                 )
 
+    @staticmethod
+    def _create_weaviate_filter(where: WhereQuery, separator: str) -> Filter:
+        """
+        Creates the Filter from the given WhereQuery.
+
+        Args:
+        where: The WhereQuery to filter.
+        separator: The separator to use for nested keys.
+
+        Returns:
+        The created filter.
+        """
+
+        where = flatten_dict(where)
+
+        filters = (
+            Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
+            for key, value in where.items()
+        )
+
+        filters = reduce(and_, filters)
+        return filters
+
     async def list(
         self,
         where: WhereQuery | None = None,
@@ -164,14 +189,14 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         Args:
             where: Conditions for filtering results.
-                Reference: TODO
+                Reference: https://weaviate.io/developers/weaviate/search/filters
             limit: The maximum number of entries to return.
             offset: The number of entries to skip.
 
         Returns:
             The entries.
         """
-        # TODO Implement filtering
+        # TODO Add support for fitering with list: where = {"a": "A", "b": ["c", "d"]}
         with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
             collection_exists = await self._client.collections.exists(self._index_name)
 
@@ -183,17 +208,31 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
             limit = max(1, limit)
 
-            results = await index.query.fetch_objects(limit=limit, offset=offset, include_vector=True)
+            filters = self._create_weaviate_filter(where, self._separator) if where else None
+
+            results = await index.query.fetch_objects(limit=limit, offset=offset, filters=filters, include_vector=True)
+
+            results_objects = [{"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)} for object_ in results.objects]
 
             objects = [
                 {
-                    "id": object.uuid,
-                    "text": object.properties.get("text", None),
-                    "image_bytes": object.properties.get("image_bytes", None),
-                    "metadata": object.properties.get("metadata", {}),
+                    "id": object["uuid"],
+                    "text": object["properties"].get("text", None),
+                    "image_bytes": object["properties"].get("image_bytes", None),
+                    "metadata": object["properties"].get("metadata", {}),
                 }
-                for object in results.objects
+                for object in results_objects
             ]
             outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
 
             return outputs.results
+
+    def _flatten_metadata(self, metadata: dict) -> dict:
+        """Flattens the metadata dictionary."""
+        return {k: v for k, v in flatten_dict(metadata, sep=self._separator).items()}
+
+    def _unflatten_metadata(self, metadata: dict) -> dict:
+        """Unflattens the metadata dictionary."""
+        metadata_items_separator_replaced = {key.replace(self._separator, "."): value for key, value in metadata.items()}
+        return unflatten_dict(metadata_items_separator_replaced) if metadata_items_separator_replaced else {}
+

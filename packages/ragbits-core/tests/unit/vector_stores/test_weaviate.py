@@ -4,12 +4,14 @@ from uuid import UUID
 import pytest
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
+from weaviate.collections.classes.filters import _FilterAnd
 
 from weaviate.collections.classes.internal import Object, MetadataReturn
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
+from ragbits.core.utils.dict_transformations import flatten_dict
 
 
 @pytest.fixture
@@ -88,6 +90,11 @@ def sample_entries():
     ]
 
 
+def flatten_metadata(metadata: dict, separator: str = "___") -> dict:
+    """Flattens the metadata dictionary."""
+    return {k: v for k, v in flatten_dict(metadata, sep=separator).items()}
+
+
 @pytest.mark.asyncio
 async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
     mock_weaviate_store._client.collections.exists.return_value = False
@@ -104,15 +111,19 @@ async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
         [
             wvc.data.DataObject(
                 uuid=str(sample_entries[0].id),
-                properties=sample_entries[0].model_dump(
-                    exclude={"id"}, exclude_none=True, mode="json"
+                properties=flatten_metadata(
+                    sample_entries[0].model_dump(
+                        exclude={"id"}, exclude_none=True, mode="json"
+                    )
                 ),
                 vector=[0.1, 0.2, 0.3],
             ),
             wvc.data.DataObject(
                 uuid=str(sample_entries[1].id),
-                properties=sample_entries[1].model_dump(
-                    exclude={"id"}, exclude_none=True, mode="json"
+                properties=flatten_metadata(
+                    sample_entries[1].model_dump(
+                        exclude={"id"}, exclude_none=True, mode="json"
+                    )
                 ),
                 vector=[0.1, 0.2, 0.3],
             ),
@@ -136,8 +147,8 @@ async def test_store_creates_collection_when_not_exists(
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
-        properties=sample_entry.model_dump(
-            exclude={"id"}, exclude_none=True, mode="json"
+        properties=flatten_metadata(
+            sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
         ),
         vector=[0.1, 0.2, 0.3],
     )
@@ -160,8 +171,8 @@ async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry)
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
-        properties=sample_entry.model_dump(
-            exclude={"id"}, exclude_none=True, mode="json"
+        properties=flatten_metadata(
+            sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
         ),
         vector=[0.1, 0.2, 0.3],
     )
@@ -290,3 +301,28 @@ async def test_list_no_filtering(mock_weaviate_store):
         assert entry.metadata["document_meta"]["title"] == result["title"]
         assert entry.image_bytes == result["image"]
         assert entry.text == f"test_key_{i + 1}"
+
+
+@pytest.mark.asyncio
+async def test_create_weaviate_filter():
+    where = {"a": "A", "b": 3, "c": True}
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
+    assert isinstance(weaviate_filter, _FilterAnd)
+    assert isinstance(weaviate_filter.filters[0], _FilterAnd)
+    assert weaviate_filter.filters[0].filters[0].target == "metadata___a"
+    assert weaviate_filter.filters[0].filters[0].value == "A"
+    assert weaviate_filter.filters[0].filters[1].target == "metadata___b"
+    assert weaviate_filter.filters[0].filters[1].value == 3
+    assert weaviate_filter.filters[1].target == "metadata___c"
+    assert weaviate_filter.filters[1].value == True
+
+
+@pytest.mark.asyncio
+async def test_create_weaviate_filter_nested_dict():
+    where = {"a": "A", "b": {"c": "d"}}
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
+    assert isinstance(weaviate_filter, _FilterAnd)
+    assert weaviate_filter.filters[0].target == "metadata___a"
+    assert weaviate_filter.filters[0].value == "A"
+    assert weaviate_filter.filters[1].target == "metadata___b___c"
+    assert weaviate_filter.filters[1].value == "d"
