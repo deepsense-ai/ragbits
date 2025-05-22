@@ -367,8 +367,12 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             if merged_options.where:
                 where_clause, where_values = self._create_list_query(merged_options.where)
-                query = query.replace(";", f" AND {where_clause};")
-                values.extend(where_values)
+                where_clause = where_clause.replace(" LIMIT $2 OFFSET $3;", "")
+                where_clause = where_clause.replace("*", "id")
+                where_clause = where_clause.replace("$1", "$" + str(len(values) + 1))
+                where_clause = where_clause.replace(";", "")
+                query = query.replace(" ORDER BY", f" WHERE id IN ({where_clause}) ORDER BY")
+                values.append(where_values[0])
 
             try:
                 async with self._client.acquire() as conn:
