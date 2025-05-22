@@ -1,5 +1,5 @@
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal, cast
+from typing import Literal, cast
 from uuid import UUID
 
 import chromadb
@@ -304,7 +304,8 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         """Flattens the metadata dictionary. Removes any None values as they are not supported by ChromaDB."""
         return {k: v for k, v in flatten_dict(metadata).items() if v is not None}
 
-    def _create_chroma_filter(self, where: WhereQuery | None) -> chromadb.Where | None:
+    @staticmethod
+    def _create_chroma_filter(where: WhereQuery | None) -> chromadb.Where | None:
         """
         Creates a ChromaDB filter from a WhereQuery.
 
