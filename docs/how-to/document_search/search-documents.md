@@ -98,7 +98,6 @@ results = await document_search.search("Your search query", options=options)
 The `where` clause supports various filtering conditions. For example, you can filter by:
 - Document type
 - Source
-- Creation date
 - Custom metadata fields
 
 This filtering happens at the vector store level, making the search more efficient by reducing the number of documents that need to be processed.

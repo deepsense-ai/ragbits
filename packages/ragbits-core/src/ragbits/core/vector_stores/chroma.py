@@ -4,6 +4,7 @@ from uuid import UUID
 
 import chromadb
 from chromadb.api import ClientAPI
+from chromadb.api.types import IncludeMetadataDocuments, IncludeMetadataDocumentsEmbeddingsDistances
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -198,12 +199,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             results = self._collection.query(
                 query_embeddings=query_vector,
                 n_results=merged_options.k,
-                include=[
-                    "metadatas",
-                    "embeddings",
-                    "distances",
-                    "documents",
-                ],
+                include=IncludeMetadataDocumentsEmbeddingsDistances,
                 where=where_dict,
             )
 
@@ -275,7 +271,7 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                 where=where_chroma,
                 limit=limit,
                 offset=offset,
-                include=["metadatas", "documents"],
+                include=IncludeMetadataDocuments,
             )
 
             ids = results.get("ids") or []
