@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.18.0 (2025-05-22)
+
+### Changed
+
+- ragbits-core updated to version v0.18.0
+
+- Add jsonl file type (#567)
 - Improve document file type check (#563)
 - Fix reranker options typing (#562)
 - Add query rephraser options (#560)
