@@ -16,7 +16,9 @@ class DocumentSearchData(EvaluationData):
     """
 
     question: str
-    reference_passages: list[str] | None
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 @dataclass
@@ -26,8 +28,10 @@ class DocumentSearchResult(EvaluationResult):
     """
 
     question: str
-    reference_passages: list[str] | None
     predicted_passages: list[str]
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchData, DocumentSearchResult]):
@@ -92,8 +96,10 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         return [
             DocumentSearchResult(
                 question=row.question,
-                reference_passages=row.reference_passages,
                 predicted_passages=[element.text_representation for element in elements if element.text_representation],
+                reference_document_ids=row.reference_document_ids,
+                reference_passages=row.reference_passages,
+                reference_page_numbers=row.reference_page_numbers,
             )
             for row, elements in zip(data, results, strict=False)
         ]
