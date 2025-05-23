@@ -10,7 +10,6 @@ The script performs the following steps:
     1. Create a list of documents.
     2. Initialize the `LiteLLMEmbedder` class with the OpenAI `text-embedding-3-small` embedding model.
     3. Initialize the `WeaviateVectorStore` class with a `WeaviateAsyncClient` local instance and an index name.
-    Requires local Weaviate instance to be running, instructions how to set it up can be found here: https://weaviate.io/developers/weaviate/quickstart/local
     4. Initialize the `DocumentSearch` class with the embedder and the vector store.
     5. Ingest the documents into the `DocumentSearch` instance.
     6. List all documents in the vector store.
@@ -22,15 +21,15 @@ To run the script, execute the following command:
     ```bash
     uv run examples/document-search/weaviate_vector.py
     ```
+
+Requires local Weaviate instance to be running, instructions how to set it up can be found here: https://weaviate.io/developers/weaviate/quickstart/local
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[weaviate_vector]",
-#     "weaviate-client>=4.9.6",
-#     "psycopg[binary,pool]>=3.2.6",
+#     "ragbits-core[weaviate]",
 # ]
 # ///
 
@@ -75,37 +74,39 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
-        model_name="text-embedding-3-small",
-    )
-    vector_store = WeaviateVectorStore(
-        client=weaviate.use_async_with_local(),
-        index_name="jokes",
-        embedder=embedder,
-    )
-    document_search = DocumentSearch(
-        vector_store=vector_store,
-    )
+    client = weaviate.use_async_with_local()
+    async with client:
+        embedder = LiteLLMEmbedder(
+            model_name="text-embedding-3-small"
+        )
+        vector_store = WeaviateVectorStore(
+            client=client,
+            index_name="jokes",
+            embedder=embedder,
+        )
+        document_search = DocumentSearch(
+            vector_store=vector_store,
+        )
 
-    await document_search.ingest(documents)
+        await document_search.ingest(documents)
 
-    all_documents = await vector_store.list()
+        all_documents = await vector_store.list()
 
-    print()
-    print("All documents:")
-    print([doc.metadata["content"] for doc in all_documents])
+        print()
+        print("All documents:")
+        print([doc.metadata["content"] for doc in all_documents])
 
-    query = "I'm boiling my water and I need a joke"
-    vector_store_options = VectorStoreOptions(
-        k=2,
-        score_threshold=0.6,
-    )
-    options = DocumentSearchOptions(vector_store_options=vector_store_options)
-    results = await document_search.search(query, options=options)
+        query = "I'm boiling my water and I need a joke"
+        vector_store_options = VectorStoreOptions(
+            k=2,
+            score_threshold=0.6,
+        )
+        options = DocumentSearchOptions(vector_store_options=vector_store_options)
+        results = await document_search.search(query, options=options)
 
-    print()
-    print(f"Documents similar to: {query}")
-    print([element.text_representation for element in results])
+        print()
+        print(f"Documents similar to: {query}")
+        print([element.text_representation for element in results])
 
 
 if __name__ == "__main__":

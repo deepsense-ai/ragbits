@@ -161,11 +161,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         # method is "smaller is better".
         # Weaviate documentation says that all distance methods are "smaller is better": https://weaviate.io/developers/weaviate/config-refs/distances#available-distance-metrics
         score_multiplier = -1
-        score_threshold = (
-            None
-            if merged_options.score_threshold is None
-            else merged_options.score_threshold * score_multiplier
-        )
+        score_threshold = merged_options.score_threshold
         with trace(
             text=text,
             options=merged_options,
