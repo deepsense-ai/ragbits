@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingPDFsError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -148,17 +149,15 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
-        print("prompt.chat")
+        self._check_attachment_support(prompt)
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         start_time = time.perf_counter()
-        print("Requesting LLM")
         response = await self._get_litellm_response(
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
         )
-        print("LLM response received")
         prompt_throughput = time.perf_counter() - start_time
 
         if not response.choices:  # type: ignore
@@ -223,6 +222,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
+        self._check_attachment_support(prompt)
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
         start_time = time.perf_counter()
@@ -293,10 +293,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 stream=stream,
                 **options.dict(),
             )
-            print(str(conversation)[:300])
         except litellm.openai.APIConnectionError as exc:
-            print("exc", exc.message[:300])
-            # raise LLMConnectionError(str(exc)) from exc
+            raise LLMConnectionError(str(exc)) from exc
         except litellm.openai.APIStatusError as exc:
             raise LLMStatusError(exc.message, exc.status_code) from exc
         except litellm.openai.APIResponseValidationError as exc:
@@ -314,6 +312,27 @@ class LiteLLM(LLM[LiteLLMOptions]):
             elif json_mode:
                 response_format = {"type": "json_object"}
         return response_format
+
+    def _check_attachment_support(self, prompt: BasePrompt) -> None:
+        """
+        Checks if the model supports the types of attachments in the prompt.
+
+        Args:
+            prompt: The prompt containing attachments to check.
+
+        Raises:
+            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingPDFsError: If the model does not support PDFs.
+        """
+        attachments = prompt.list_attachments()
+        if attachments:
+            has_images = any('image_url' in att for att in attachments)
+            has_pdfs = any('file' in att for att in attachments)
+
+            if has_images and not litellm.supports_vision(self.model_name):
+                raise LLMNotSupportingImagesError()
+            if has_pdfs and not litellm.supports_pdf(self.model_name):
+                raise LLMNotSupportingPDFsError()
 
     @property
     def base_url(self) -> str | None:
