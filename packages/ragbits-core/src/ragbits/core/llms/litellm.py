@@ -146,19 +146,19 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
-            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError()
-
+        print("prompt.chat")
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         start_time = time.perf_counter()
+        print("Requesting LLM")
         response = await self._get_litellm_response(
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
         )
+        print("LLM response received")
         prompt_throughput = time.perf_counter() - start_time
 
         if not response.choices:  # type: ignore
@@ -221,11 +221,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
-            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError()
-
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
         start_time = time.perf_counter()
@@ -296,19 +293,20 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 stream=stream,
                 **options.dict(),
             )
+            print(str(conversation)[:300])
         except litellm.openai.APIConnectionError as exc:
-            raise LLMConnectionError() from exc
+            print("exc", exc.message[:300])
+            # raise LLMConnectionError(str(exc)) from exc
         except litellm.openai.APIStatusError as exc:
             raise LLMStatusError(exc.message, exc.status_code) from exc
         except litellm.openai.APIResponseValidationError as exc:
-            raise LLMResponseError() from exc
+            raise LLMResponseError(str(exc)) from exc
         return response
 
     def _get_response_format(
         self, output_schema: type[BaseModel] | dict | None, json_mode: bool
     ) -> type[BaseModel] | dict | None:
         supported_params = litellm.get_supported_openai_params(model=self.model_name)
-
         response_format = None
         if supported_params is not None and "response_format" in supported_params:
             if output_schema is not None and self.use_structured_output:

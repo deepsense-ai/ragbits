@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
-from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.exceptions import PromptWithAttachmentsOfInvalidFormat
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 InputT = TypeVar("InputT", bound=BaseModel | None)
@@ -42,7 +42,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
     output_type: type[OutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
-    image_input_fields: list[str] | None = None
+    attachment_input_fields: list[str] | None = None
 
     @classmethod
     def _get_io_types(cls) -> tuple:
@@ -81,18 +81,18 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None | str) -> list[bytes | str]:
-        images: list[bytes | str] = []
+    def _get_attachments_from_input_data(cls, input_data: InputT | None | str) -> list[bytes | str]:
+        attachments: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
-            image_input_fields = cls.image_input_fields or []
-            for field in image_input_fields:
-                images_for_field = getattr(input_data, field)
-                if images_for_field:
-                    if isinstance(images_for_field, list | tuple):
-                        images.extend(images_for_field)
+            attachment_input_fields = cls.attachment_input_fields or []
+            for field in attachment_input_fields:
+                attachments_for_field = getattr(input_data, field)
+                if attachments_for_field:
+                    if isinstance(attachments_for_field, list | tuple):
+                        attachments.extend(attachments_for_field)
                     else:
-                        images.append(images_for_field)
-        return images
+                        attachments.append(attachments_for_field)
+        return attachments
 
     @classmethod
     def _format_message(cls, message: str) -> str:
@@ -137,7 +137,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )
         self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
-        self.images = self._get_images_from_input_data(input_data)
+        self.attachments = self._get_attachments_from_input_data(input_data)
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
@@ -155,12 +155,14 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        user_content = (
-            [{"type": "text", "text": self.rendered_user_prompt}]
-            + [self._create_message_with_image(image) for image in self.images]
-            if self.images
-            else self.rendered_user_prompt
-        )
+        user_content = []
+        if self.rendered_user_prompt:
+            user_content.append({"type": "text", "text": self.rendered_user_prompt})
+
+        if self.attachments:
+            for attachment in self.attachments:
+                user_content.append(self._create_message_with_attachment(attachment))
+
         chat = [
             *(
                 [{"role": "system", "content": self.rendered_system_prompt}]
@@ -201,10 +203,10 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         for user_message, assistant_message in self.few_shots + self._instance_few_shots:
             if not isinstance(user_message, str):
                 rendered_text_message = self._render_template(self.user_prompt_template, user_message)
-                images_in_input_data = self._get_images_from_input_data(user_message)
-                if images_in_input_data:
+                attachments_in_input_data = self._get_attachments_from_input_data(user_message)
+                if attachments_in_input_data:
                     user_content = [{"type": "text", "text": rendered_text_message}] + [
-                        self._create_message_with_image(image) for image in images_in_input_data
+                        self._create_message_with_attachment(attachment) for attachment in attachments_in_input_data
                     ]
                 else:
                     user_content = rendered_text_message
@@ -241,11 +243,11 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
             # Render the message using the template if it's an input model
             rendered_text = self._render_template(self.user_prompt_template, input_model)
-            images_in_input = self._get_images_from_input_data(input_model)
+            attachments_in_input = self._get_attachments_from_input_data(input_model)
 
-            if images_in_input:
+            if attachments_in_input:
                 content = [{"type": "text", "text": rendered_text}] + [
-                    self._create_message_with_image(image) for image in images_in_input
+                    self._create_message_with_attachment(attachment) for attachment in attachments_in_input
                 ]
             else:
                 content = rendered_text
@@ -271,35 +273,88 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self._conversation_history.append({"role": "assistant", "content": str(message)})
         return self
 
-    def list_images(self) -> list[str]:
+    def list_attachments(self) -> list[str]:
         """
-        Returns the images in form of URLs or base64 encoded strings.
+        Returns the attachments in form of URLs or base64 encoded strings.
 
         Returns:
-            list of images
+            list[str]: List of attachment URLs/base64 strings for both images and PDFs
         """
-        return [
-            content["image_url"]["url"]
-            for message in self.chat
-            for content in message["content"]
-            if isinstance(message["content"], list) and content["type"] == "image_url"
-        ]
+        attachments = []
+        for message in self.chat:
+            content = message["content"]
+            if not isinstance(content, list):
+                continue
+
+            for item in content:
+                if item["type"] == "image_url":
+                    attachments.append(item["image_url"]["url"])
+                elif item["type"] == "file":
+                    attachments.append(item["file"]["file_data"])
+
+        return attachments
 
     @staticmethod
-    def _create_message_with_image(image: str | bytes) -> dict:
-        if isinstance(image, bytes):
-            detected_type = filetype.guess(image)
-            if not detected_type or not detected_type.mime.startswith("image/"):
-                raise PromptWithImagesOfInvalidFormat()
-            image_url = f"data:{detected_type.mime};base64,{base64.b64encode(image).decode('utf-8')}"
+    def _get_file_data_and_type(data: str | bytes) -> tuple[str, str]:
+        """
+        Get base64 encoded file data and MIME type from either a file path or bytes.
+        """
+        if isinstance(data, bytes):
+            file_bytes = data
         else:
-            image_url = image
+            try:
+                with open(data, "rb") as f:
+                    file_bytes = f.read()
+            except Exception as e:
+                raise PromptWithAttachmentsOfInvalidFormat(f"Failed to read file: {str(e)}")
+
+        detected_type = filetype.guess(file_bytes)
+        if not detected_type:
+            raise PromptWithAttachmentsOfInvalidFormat("Could not detect file type")
+
+        encoded_file = base64.b64encode(file_bytes).decode("utf-8")
+        return encoded_file, detected_type.mime
+
+    @staticmethod
+    def _create_image_message(encoded_file: str, mime_type: str) -> dict:
+        """Create a message for an image file."""
+        image_url = f"data:{mime_type};base64,{encoded_file}"
         return {
             "type": "image_url",
             "image_url": {
                 "url": image_url,
             },
         }
+
+    @staticmethod
+    def _create_pdf_message(encoded_file: str) -> dict:
+        """Create a message for a PDF file."""
+        base64_url = f"data:application/pdf;base64,{encoded_file}"
+        return {
+            "type": "file",
+            "file": {
+                "filename": "document.pdf",
+                "file_data": base64_url,
+            },
+        }
+
+    @staticmethod
+    def _create_message_with_attachment(attachment: str | bytes) -> dict:
+        """Create a message with an image or PDF file."""
+        try:
+            encoded_file, mime_type = Prompt._get_file_data_and_type(attachment)
+            print("mime_type", mime_type, attachment)
+
+            if mime_type.startswith("image/"):
+                return Prompt._create_image_message(encoded_file, mime_type)
+            elif mime_type == "application/pdf":
+                return Prompt._create_pdf_message(encoded_file)
+            else:
+                raise PromptWithAttachmentsOfInvalidFormat(f"Unsupported file type: {mime_type}")
+        except PromptWithAttachmentsOfInvalidFormat:
+            raise
+        except Exception as e:
+            raise PromptWithAttachmentsOfInvalidFormat(f"Error processing file: {str(e)}")
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """

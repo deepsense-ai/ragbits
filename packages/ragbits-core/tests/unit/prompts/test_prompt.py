@@ -4,7 +4,7 @@ import pydantic
 import pytest
 
 from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.exceptions import PromptWithAttachmentsOfInvalidFormat
 
 
 class _PromptInput(pydantic.BaseModel):
@@ -183,7 +183,7 @@ def test_image_wrong_format():
         image_input_fields = ["image"]
 
     prompt = ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
-    with pytest.raises(PromptWithImagesOfInvalidFormat):
+    with pytest.raises(PromptWithAttachmentsOfInvalidFormat):
         prompt.chat  # noqa: B018
 
 
