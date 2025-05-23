@@ -3,16 +3,14 @@ name = "ragbits-workspace"
 version = "0.1.0"
 description = "Ragbits development workspace"
 readme = "README.md"
-requires-python = "==3.10"
+requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,fastembed,local,otel,qdrant,pgvector,weaviate_vector,azure,gcs,hf,s3]",
+    "ragbits-core[chroma,fastembed,local,otel,qdrant,pgvector,weaviate,azure,gcs,hf,s3]",
     "ragbits-document-search[docling,ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
-    "weaviate-client>=4.9.6",
-    "psycopg[binary,pool]>=3.2.6",
 ]
 
 [tool.uv]

@@ -89,6 +89,10 @@ hf = [
 s3 = [
     "boto3>=1.35.42,<2.0.0",
 ]
+weaviate = [
+    "weaviate-client>=4.9.6",
+    "psycopg[binary,pool]>=3.2.6", 
+]
 
 [tool.uv]
 dev-dependencies = [
