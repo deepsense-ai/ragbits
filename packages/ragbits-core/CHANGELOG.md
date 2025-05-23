@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- rename typevars InputT and OutputT to PromptInputT and PromptOutputT (#569)
+
 ## 0.18.0 (2025-05-22)
 
 - Allow to limit VectorStore results by metadata (#564)
