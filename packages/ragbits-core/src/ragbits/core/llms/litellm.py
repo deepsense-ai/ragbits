@@ -331,7 +331,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             if has_images and not litellm.supports_vision(self.model_name):
                 raise LLMNotSupportingImagesError()
-            if has_pdfs and not litellm.supports_pdf(self.model_name):
+            if has_pdfs and not litellm.utils.supports_pdf_input(self.model_name):
                 raise LLMNotSupportingPDFsError()
 
     @property
