@@ -5,7 +5,6 @@ import pytest
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
 from weaviate.collections.classes.filters import _FilterAnd
-
 from weaviate.collections.classes.internal import Object, MetadataReturn
 
 from ragbits.core.embeddings.dense import NoopEmbedder
@@ -190,6 +189,97 @@ async def test_store_handles_empty_entries(mock_weaviate_store):
     mock_weaviate_store._client.collections.get.assert_not_called()
     mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called()
 
+@pytest.mark.asyncio
+async def test_retrieve(mock_weaviate_store):
+    mock_weaviate_store._client.collections.get.return_value.query.near_vector.return_value.objects = [
+        Object(
+            uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
+            metadata=MetadataReturn(
+                creation_time=None,
+                last_update_time=None,
+                distance=0.7,
+                certainty=None,
+                score=None,
+                explain_score=None,
+                is_consistent=None,
+                rerank_score=None,
+            ),
+            properties={
+                "text": "test_key_1",
+                "metadata": {
+                    "content": "test content 1",
+                    "document_meta": {
+                        "document_type": "test_type",
+                        "title": "test title 1",
+                        "source": {"path": "/test/path"},
+                    },
+                },
+                "image_bytes": None,
+            },
+            references=None,
+            vector={
+                "default": [
+                    0.12,
+                    0.25,
+                    0.29,
+                ]
+            },
+            collection="Test_collection",
+        ),
+        Object(
+            uuid=UUID("827cad0b-058f-4b85-b8ed-ac741948d502"),
+            metadata=MetadataReturn(
+                creation_time=None,
+                last_update_time=None,
+                distance=0.9,
+                certainty=None,
+                score=None,
+                explain_score=None,
+                is_consistent=None,
+                rerank_score=None,
+            ),
+            properties={
+                "text": "test_key_2",
+                "metadata": {
+                    "content": "test content 2",
+                    "document_meta": {
+                        "title": "test title 2",
+                        "document_type": "test_type",
+                        "source": {"path": "/test/path"},
+                    },
+                },
+                "image_bytes": b"image",
+            },
+            references=None,
+            vector={
+                "default": [
+                    0.1,
+                    0.2,
+                    0.3,
+                ]
+            },
+            collection="Test_collection",
+        ),
+    ]
+
+    results = [
+        {"content": "test content 1", "title": "test title 1", "vector": [0.12, 0.25, 0.29], "score": -0.7},
+        {
+            "content": "test content 2",
+            "title": "test title 2",
+            "vector": [0.1, 0.2, 0.3],
+            "score": -0.9,
+        },
+    ]
+
+    query_results = await mock_weaviate_store.retrieve("query")
+
+    assert len(query_results) == len(results)
+    for query_result, result in zip(query_results, results, strict=True):
+        assert query_result.entry.metadata["content"] == result["content"]
+        assert query_result.entry.metadata["document_meta"]["title"] == result["title"]
+        assert query_result.vector == result["vector"]
+        assert query_result.score == result["score"]
 
 @pytest.mark.asyncio
 async def test_remove(mock_weaviate_store):
@@ -306,7 +396,7 @@ async def test_list_no_filtering(mock_weaviate_store):
 @pytest.mark.asyncio
 async def test_create_weaviate_filter():
     where = {"a": "A", "b": 3, "c": True}
-    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")
     assert isinstance(weaviate_filter, _FilterAnd)
     assert isinstance(weaviate_filter.filters[0], _FilterAnd)
     assert weaviate_filter.filters[0].filters[0].target == "metadata___a"
@@ -320,7 +410,7 @@ async def test_create_weaviate_filter():
 @pytest.mark.asyncio
 async def test_create_weaviate_filter_nested_dict():
     where = {"a": "A", "b": {"c": "d"}}
-    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")
     assert isinstance(weaviate_filter, _FilterAnd)
     assert weaviate_filter.filters[0].target == "metadata___a"
     assert weaviate_filter.filters[0].value == "A"

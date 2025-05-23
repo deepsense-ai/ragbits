@@ -138,6 +138,9 @@ def test_subclass_from_config_weaviate_client():
     assert isinstance(store, WeaviateVectorStore)
     assert store._index_name == "some_index"
     assert isinstance(store._client, WeaviateAsyncClient)
-    assert store._client._connection.url == "http://localhost:8080"
+    assert store._client._connection._connection_params.http.host == "localhost"
+    assert store._client._connection._connection_params.http.port == 8080
+    assert store._client._connection._connection_params.grpc.host == "localhost"
+    assert store._client._connection._connection_params.grpc.port == 50051
     assert store.default_options.k == 10
     assert store.default_options.score_threshold == 0.22

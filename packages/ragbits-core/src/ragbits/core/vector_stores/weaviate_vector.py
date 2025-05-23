@@ -6,7 +6,7 @@ from functools import reduce
 import weaviate
 from weaviate import WeaviateAsyncClient
 import weaviate.classes as wvc
-from weaviate.classes.query import Filter
+from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.classes.config import Configure, VectorDistances
 from typing_extensions import Self
 
@@ -63,9 +63,18 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._index_name = index_name
         self._distance_method = distance_method
         self.is_sparse = isinstance(embedder, SparseEmbedder)
+        # TODO Implement sparse vs dense vector handling
         self._vector_name = "sparse" if self.is_sparse else "dense"
         # Weaviate doesn't support filtering by nested keys and doesn't allow keys with dots, so we use ___ as nested keys separator
+        # It also doesn't allow keys with [] so currently properties containing lists are not supported by ragbits
         self._separator = "___"
+
+    def __reduce__(self) -> tuple:
+        """
+        Enables the WeaviateVectorStore to be pickled and unpickled.
+        """
+        # TODO: To be implemented. Required for Ray processing.
+        raise NotImplementedError
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
@@ -90,7 +99,6 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Args:
             entries: List of VectorStoreEntry objects to store
         """
-        # TODO Implement sparse vs dense vector handling
         with trace(
             entries=entries,
             index_name=self._index_name,
@@ -117,16 +125,24 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             objects = []
             for entry in entries:
                 if entry.id in embeddings:
-                    objects.append(wvc.data.DataObject(
-                        uuid=str(entry.id),
-                        properties=self._flatten_metadata(entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
-                        vector=embeddings[entry.id]
-                    ))
+                    objects.append(
+                        wvc.data.DataObject(
+                            uuid=str(entry.id),
+                            properties=self._flatten_metadata(
+                                entry.model_dump(
+                                    exclude={"id"}, exclude_none=True, mode="json"
+                                )
+                            ),
+                            vector=embeddings[entry.id],
+                        )
+                    )
 
             if objects:
                 await index.data.insert_many(objects)
 
-    async def retrieve(self, text: str, options: VectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
+    async def retrieve(
+        self, text: str, options: VectorStoreOptionsT | None = None
+    ) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Weaviate collection based on vector similarity.
 
@@ -137,8 +153,69 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
-        # TODO Implement retrieve method
-        pass
+        merged_options = (
+            (self.default_options | options) if options else self.default_options
+        )
+
+        # Ragbits has a "larger is better" convention for all scores, so we need to reverse the score if the distance
+        # method is "smaller is better".
+        # Weaviate documentation says that all distance methods are "smaller is better": https://weaviate.io/developers/weaviate/config-refs/distances#available-distance-metrics
+        score_multiplier = -1
+        score_threshold = (
+            None
+            if merged_options.score_threshold is None
+            else merged_options.score_threshold * score_multiplier
+        )
+        with trace(
+            text=text,
+            options=merged_options,
+            index_name=self._index_name,
+            distance_method=self._distance_method,
+            embedder=repr(self._embedder),
+            embedding_type=self._embedding_type,
+        ) as outputs:
+            query_vector = (await self._embedder.embed_text([text]))[0]
+
+            collection_exists = await self._client.collections.exists(self._index_name)
+
+            if not collection_exists:
+                return []
+
+            index = self._client.collections.get(self._index_name)
+
+            results = await index.query.near_vector(
+                near_vector=query_vector,
+                limit=merged_options.k,
+                distance=score_threshold,  # max accepted distance
+                return_metadata=MetadataQuery(distance=True),
+                include_vector=True,
+            )
+
+            outputs_results = []
+            for object_ in results.objects:
+                entry_raw = {
+                    "uuid": object_.uuid,
+                    "properties": self._unflatten_metadata(object_.properties)
+                }
+                entry = {
+                    "id": entry_raw["uuid"],
+                    "text": entry_raw["properties"].get("text", None),
+                    "image_bytes": entry_raw["properties"].get("image_bytes", None),
+                    "metadata": entry_raw["properties"].get("metadata", {}),
+                }
+                entry = VectorStoreEntry.model_validate(entry)
+
+                outputs_results.append(
+                    VectorStoreResult(
+                        entry=entry,
+                        score=object_.metadata.distance * score_multiplier,
+                        vector=object_.vector["default"],
+                    )
+                )
+
+            outputs.results = outputs_results
+
+            return outputs.results
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -151,9 +228,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             collection_exists = await self._client.collections.exists(self._index_name)
             if collection_exists:
                 index = self._client.collections.get(self._index_name)
-                await index.data.delete_many(
-                    where=Filter.by_id().contains_any(ids)
-                )
+                await index.data.delete_many(where=Filter.by_id().contains_any(ids))
 
     @staticmethod
     def _create_weaviate_filter(where: WhereQuery, separator: str) -> Filter:
@@ -171,7 +246,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         where = flatten_dict(where)
 
         filters = (
-            Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
+            Filter.by_property(
+                f"metadata{separator}{key.replace('.', separator)}"
+            ).equal(cast(str | int | bool, value))
             for key, value in where.items()
         )
 
@@ -196,8 +273,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        # TODO Add support for fitering with list: where = {"a": "A", "b": ["c", "d"]}
-        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+        with trace(
+            where=where, index_name=self._index_name, limit=limit, offset=offset
+        ) as outputs:
             collection_exists = await self._client.collections.exists(self._index_name)
 
             if not collection_exists:
@@ -205,14 +283,26 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             index = self._client.collections.get(self._index_name)
 
-            limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
+            limit = (
+                limit or (await index.aggregate.over_all(total_count=True)).total_count
+            )
             limit = max(1, limit)
 
-            filters = self._create_weaviate_filter(where, self._separator) if where else None
+            filters = (
+                self._create_weaviate_filter(where, self._separator) if where else None
+            )
 
-            results = await index.query.fetch_objects(limit=limit, offset=offset, filters=filters, include_vector=True)
+            results = await index.query.fetch_objects(
+                limit=limit, offset=offset, filters=filters, include_vector=True
+            )
 
-            results_objects = [{"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)} for object_ in results.objects]
+            results_objects = [
+                {
+                    "uuid": object_.uuid,
+                    "properties": self._unflatten_metadata(object_.properties),
+                }
+                for object_ in results.objects
+            ]
 
             objects = [
                 {
@@ -223,7 +313,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 }
                 for object in results_objects
             ]
-            outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
+            outputs.results = [
+                VectorStoreEntry.model_validate(object) for object in objects
+            ]
 
             return outputs.results
 
@@ -233,6 +325,11 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
     def _unflatten_metadata(self, metadata: dict) -> dict:
         """Unflattens the metadata dictionary."""
-        metadata_items_separator_replaced = {key.replace(self._separator, "."): value for key, value in metadata.items()}
-        return unflatten_dict(metadata_items_separator_replaced) if metadata_items_separator_replaced else {}
-
+        metadata_items_separator_replaced = {
+            key.replace(self._separator, "."): value for key, value in metadata.items()
+        }
+        return (
+            unflatten_dict(metadata_items_separator_replaced)
+            if metadata_items_separator_replaced
+            else {}
+        )
