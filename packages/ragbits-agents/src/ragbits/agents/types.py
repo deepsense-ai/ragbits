@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from ragbits.agents._main import Agent
 
 QuestionAnswerPromptInputT = TypeVar("QuestionAnswerPromptInputT", bound="QuestionAnswerPromptInput")
-QuestionAnswerPromptOutputT = TypeVar("QuestionAnswerPromptOutputT", bound="QuestionAnswerPromptOutput")
+QuestionAnswerPromptOutputT = TypeVar("QuestionAnswerPromptOutputT", bound="QuestionAnswerPromptOutput | str")
 
 QuestionAnswerAgent = Agent[QuestionAnswerPromptInputT, QuestionAnswerPromptOutputT]
 
