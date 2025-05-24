@@ -156,13 +156,22 @@ class RagbitsAPI:
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
-            config_dict = {}
-
-            if self.chat_interface.feedback_config.like_enabled and self.chat_interface.feedback_config.like_form:
-                config_dict["like_form"] = self.chat_interface.feedback_config.like_form.model_dump()
-
-            if self.chat_interface.feedback_config.dislike_enabled and self.chat_interface.feedback_config.dislike_form:
-                config_dict["dislike_form"] = self.chat_interface.feedback_config.dislike_form.model_dump()
+            config_dict = {
+                "feedback": {
+                    "like": {
+                        "enabled": self.chat_interface.feedback_config.like_enabled,
+                        "form": self.chat_interface.feedback_config.like_form.model_dump()
+                        if self.chat_interface.feedback_config.like_form
+                        else None,
+                    },
+                    "dislike": {
+                        "enabled": self.chat_interface.feedback_config.dislike_enabled,
+                        "form": self.chat_interface.feedback_config.dislike_form.model_dump()
+                        if self.chat_interface.feedback_config.dislike_form
+                        else None,
+                    },
+                }
+            }
 
             return JSONResponse(content=config_dict)
 
