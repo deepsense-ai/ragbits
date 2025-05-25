@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -59,6 +59,9 @@ class MockDataLoader(DataLoader[MockEvaluationData]):
 
     async def load(self) -> Iterable[MockEvaluationData]:
         return [MockEvaluationData(input_data=i) for i in range(1, self.dataset_size + 1)]
+
+    async def map(self, *args: Any, **kwargs: Any) -> Iterable[MockEvaluationData]:
+        return await self.load()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
