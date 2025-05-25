@@ -1,9 +1,8 @@
-import json
 import uuid
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 import sqlalchemy
-from sqlalchemy import TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
@@ -47,8 +46,8 @@ class ChatInteraction(_Base):
         message_id: The unique message ID for this interaction.
         message: The user's input message.
         response: The main response text.
-        extra_responses: JSON-serialized list of additional responses.
-        context: JSON-serialized context dictionary.
+        extra_responses: JSON/JSONB array of additional responses.
+        context: JSON/JSONB object containing context dictionary.
         timestamp: The Unix timestamp when the interaction occurred.
         created_at: The timestamp when the record was created.
 
@@ -62,8 +61,8 @@ class ChatInteraction(_Base):
     message_id = Column(String, nullable=True)
     message = Column(Text, nullable=False)
     response = Column(Text, nullable=False)
-    extra_responses = Column(Text, nullable=False)  # JSON string
-    context = Column(Text, nullable=False)  # JSON string
+    extra_responses = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
+    context = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
     timestamp = Column(Float, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
@@ -140,9 +139,9 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             if context.conversation_id:
                 await self._ensure_conversation_exists(session, context.conversation_id)
 
-            # Serialize complex data to JSON
-            extra_responses_json = json.dumps([r.model_dump(mode="json") for r in extra_responses])
-            context_json = json.dumps(context.model_dump(mode="json"))
+            # Convert to JSON-serializable format (SQLAlchemy will handle the JSON serialization)
+            extra_responses_data = [r.model_dump(mode="json") for r in extra_responses]
+            context_data = context.model_dump(mode="json")
 
             # Create interaction record
             interaction = ChatInteraction(
@@ -150,8 +149,8 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                 message_id=context.message_id,
                 message=message,
                 response=response,
-                extra_responses=extra_responses_json,
-                context=context_json,
+                extra_responses=extra_responses_data,
+                context=context_data,
                 timestamp=timestamp,
             )
 
@@ -200,39 +199,8 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                     "message_id": interaction.message_id,
                     "message": interaction.message,
                     "response": interaction.response,
-                    "extra_responses": json.loads(cast(str, interaction.extra_responses)),
-                    "context": json.loads(cast(str, interaction.context)),
-                    "timestamp": interaction.timestamp,
-                    "created_at": interaction.created_at,
-                }
-                for interaction in interactions
-            ]
-
-    async def get_recent_interactions(self, limit: int = 50) -> list[dict[str, Any]]:
-        """
-        Retrieve the most recent interactions across all conversations.
-
-        Args:
-            limit: Maximum number of interactions to return.
-
-        Returns:
-            A list of interaction dictionaries with deserialized data.
-        """
-        async with AsyncSession(self.sqlalchemy_engine) as session:
-            result = await session.execute(
-                sqlalchemy.select(ChatInteraction).order_by(ChatInteraction.timestamp.desc()).limit(limit)
-            )
-            interactions = result.scalars().all()
-
-            return [
-                {
-                    "id": interaction.id,
-                    "conversation_id": interaction.conversation_id,
-                    "message_id": interaction.message_id,
-                    "message": interaction.message,
-                    "response": interaction.response,
-                    "extra_responses": json.loads(cast(str, interaction.extra_responses)),
-                    "context": json.loads(cast(str, interaction.context)),
+                    "extra_responses": interaction.extra_responses,
+                    "context": interaction.context,
                     "timestamp": interaction.timestamp,
                     "created_at": interaction.created_at,
                 }

@@ -115,17 +115,16 @@ class RagbitsAPI:
             chat_context = ChatContext(**request.context)
 
             # Verify state signature if provided
-            if "state" in chat_context.state and "signature" in chat_context.state:
-                state = chat_context.state["state"]
-                signature = chat_context.state["signature"]
+            if "state" in request.context and "signature" in request.context:
+                state = request.context["state"]
+                signature = request.context["signature"]
                 if not ChatInterface.verify_state(state, signature):
                     logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Invalid state signature",
                     )
-                # Remove the signature from state after verification
-                del chat_context.state["signature"]
+                # Remove the signature from context after verification (it's already parsed into ChatContext)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
