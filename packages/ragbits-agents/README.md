@@ -2,6 +2,8 @@
 
 Ragbits Agents contains primitives for building agentic systems.
 
+The package is in the experimental phase, the API may change in the future.
+
 ## Installation
 
 To install the Ragbits Agents package, run:
