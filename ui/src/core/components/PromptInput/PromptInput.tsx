@@ -1,16 +1,27 @@
 import { Icon } from "@iconify/react";
-import { Button } from "@heroui/button";
-import { Form } from "@heroui/form";
+import { Button, ButtonProps } from "@heroui/button";
+import { Form, FormProps } from "@heroui/form";
 import { cn } from "@heroui/theme";
-import { KeyboardEvent, FormEvent, useCallback, useRef } from "react";
+import {
+  KeyboardEvent,
+  FormEvent,
+  useCallback,
+  useRef,
+  ReactNode,
+} from "react";
 
 import PromptInputText from "./PromptInputText";
+import { TextAreaProps } from "@heroui/react";
 
 interface PromptInputProps {
   isLoading: boolean;
   submit: () => void;
   message: string;
   setMessage: (message: string) => void;
+  formProps?: FormProps;
+  inputProps?: TextAreaProps;
+  sendButtonProps?: ButtonProps;
+  customSendIcon?: ReactNode;
 }
 
 const PromptInput = ({
@@ -18,6 +29,10 @@ const PromptInput = ({
   setMessage,
   submit,
   isLoading,
+  formProps,
+  inputProps,
+  sendButtonProps,
+  customSendIcon,
 }: PromptInputProps) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -53,10 +68,11 @@ const PromptInput = ({
       className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
       validationBehavior="native"
       onSubmit={onSubmit}
+      {...formProps}
     >
       <PromptInputText
         ref={textAreaRef}
-        aria-label="Message"
+        aria-label="Message to the chat"
         classNames={{
           input: "text-medium",
           inputWrapper:
@@ -70,23 +86,27 @@ const PromptInput = ({
         value={message}
         onKeyDown={handleKeyDown}
         onValueChange={setMessage}
+        {...inputProps}
       />
       <Button
         isIconOnly
+        aria-label="Send message to the chat"
         color={!message ? "default" : "primary"}
         isDisabled={!message || isLoading}
         radius="full"
         size="sm"
         type="submit"
+        {...sendButtonProps}
       >
-        <Icon
-          className={cn(
-            "[&>path]:stroke-[2px]",
-            !message ? "text-default-600" : "text-primary-foreground",
-          )}
-          icon="iconamoon:arrow-up-1-thin"
-          width={20}
-        />
+        {customSendIcon ?? (
+          <Icon
+            className={cn(
+              !message ? "text-default-600" : "text-primary-foreground",
+            )}
+            icon="heroicons:arrow-up"
+            width={20}
+          />
+        )}
       </Button>
     </Form>
   );

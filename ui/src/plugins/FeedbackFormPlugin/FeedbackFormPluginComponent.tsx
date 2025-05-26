@@ -110,10 +110,19 @@ const FeedbackFormPluginComponent = ({
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button color="danger" variant="light" onPress={onClose}>
+              <Button
+                color="danger"
+                variant="light"
+                onPress={onClose}
+                aria-label="Close feedback form"
+              >
                 Cancel
               </Button>
-              <Button color="primary" type="submit">
+              <Button
+                color="primary"
+                type="submit"
+                aria-label="Submit feedback"
+              >
                 Submit
               </Button>
             </ModalFooter>
