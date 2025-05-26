@@ -58,10 +58,10 @@ class MockDataLoader(DataLoader[MockEvaluationData]):
         self.dataset_size = dataset_size
 
     async def load(self) -> Iterable[MockEvaluationData]:
-        return [MockEvaluationData(input_data=i) for i in range(1, self.dataset_size + 1)]
+        return await self.map()
 
-    async def map(self, *args: Any, **kwargs: Any) -> Iterable[MockEvaluationData]:
-        return await self.load()
+    async def map(self, *args: Any, **kwargs: Any) -> Iterable[MockEvaluationData]:  # noqa: ANN401
+        return [MockEvaluationData(input_data=i) for i in range(1, self.dataset_size + 1)]
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

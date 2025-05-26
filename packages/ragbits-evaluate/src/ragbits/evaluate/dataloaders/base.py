@@ -36,6 +36,9 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
 
         Args:
             source: The source to load the evaluation data from.
+            split: The split to load the data from. Split is fixed for data loaders to "data",
+                but you can slice it using the [Hugging Face API](https://huggingface.co/docs/datasets/v1.11.0/splits.html#slicing-api).
+            required_keys: The required columns for the evaluation data.
         """
         self.source = source
         self.split = split

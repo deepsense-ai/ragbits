@@ -11,8 +11,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
     """
     Document search evaluation data loader.
 
-    The source used for this data loader should point to a file that can be loaded by [Hugging Face](https://huggingface.co/docs/datasets/loading#local-and-remote-files)
-    and contain the following features: "question, "passages".
+    The source used for this data loader should point to a file that can be loaded by [Hugging Face](https://huggingface.co/docs/datasets/loading#local-and-remote-files).
     """
 
     def __init__(
@@ -30,6 +29,8 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
 
         Args:
             source: The source to load the data from.
+            split: The split to load the data from. Split is fixed for data loaders to "data",
+                but you can slice it using the [Hugging Face API](https://huggingface.co/docs/datasets/v1.11.0/splits.html#slicing-api).
             question_key: The dataset column name that contains the question.
             document_ids_key: The dataset column name that contains the document ids. Document ids are optional.
             passages_key: The dataset column name that contains the passages. Passages are optional.
@@ -43,7 +44,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
 
     async def map(self, dataset: Dataset) -> Iterable[DocumentSearchData]:
         """
-        Map the dataset to the document search data.
+        Map the dataset to the document search data schema.
 
         Args:
             dataset: The dataset to map.
