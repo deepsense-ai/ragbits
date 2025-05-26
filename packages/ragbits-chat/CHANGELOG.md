@@ -3,6 +3,7 @@
 ## Unreleased
 
 - remove HeroUI Pro components (#557)
+- refactor UI components to allow modifications (#579)
 
 ## 0.18.0 (2025-05-22)
 
