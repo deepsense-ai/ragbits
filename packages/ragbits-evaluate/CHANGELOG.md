@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Add evals for question answering (#577)
+- Add support for slicing dataset (#576)
+- Separate load and map ops in data loaders (#576)
 
 ## 0.18.0 (2025-05-22)
 

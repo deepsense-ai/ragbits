@@ -1,5 +1,5 @@
 [project]
-name = "ragbits-chat"
+name = "ragbits-agents"
 version = "0.18.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
@@ -15,7 +15,7 @@ keywords = [
     "LLMs",
     "Generative AI",
     "GenAI",
-    "Prompt Management"
+    "Agents",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,27 +31,13 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = [
-    "fastapi>=0.115.0,<1.0.0",
-    "uvicorn>=0.31.0,<1.0.0",
-    "ragbits-core==0.18.0",
-]
+dependencies = ["ragbits-core==0.18.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
 "Bug Reports" = "https://github.com/deepsense-ai/ragbits/issues"
 "Documentation" = "https://ragbits.deepsense.ai/"
 "Source" = "https://github.com/deepsense-ai/ragbits"
-
-[project.optional-dependencies]
-[tool.uv]
-dev-dependencies = [
-    "pre-commit~=3.8.0",
-    "pytest~=8.3.3",
-    "pytest-cov~=5.0.0",
-    "pytest-asyncio~=0.24.0",
-    "pip-licenses>=4.0.0,<5.0.0"
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -62,6 +48,3 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ragbits"]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
