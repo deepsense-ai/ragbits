@@ -11,6 +11,7 @@ from ragbits.agents.types import (
     QuestionAnswerPromptInput,
     QuestionAnswerPromptOutputT,
 )
+from ragbits.core.llms.base import LLMClientOptionsT
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
@@ -38,7 +39,7 @@ class QuestionAnswerResult(EvaluationResult, Generic[QuestionAnswerPromptOutputT
 
 class QuestionAnswerPipeline(
     EvaluationPipeline[
-        QuestionAnswerAgent[QuestionAnswerPromptInput, QuestionAnswerPromptOutputT],
+        QuestionAnswerAgent[LLMClientOptionsT, QuestionAnswerPromptInput, QuestionAnswerPromptOutputT],
         QuestionAnswerData,
         QuestionAnswerResult,
     ]

@@ -1,7 +1,5 @@
 from collections.abc import Iterable
 
-from datasets import Dataset
-
 from ragbits.core.sources.base import Source
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerData
