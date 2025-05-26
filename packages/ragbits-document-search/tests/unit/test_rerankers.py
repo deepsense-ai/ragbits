@@ -78,9 +78,9 @@ async def test_litellm_reranker_rerank() -> None:
         default_options=options,
     )
     documents = [
-        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
+        DocumentMeta.from_literal("Mock document Element 1"),
+        DocumentMeta.from_literal("Mock document Element 2"),
+        DocumentMeta.from_literal("Mock document Element 3"),
     ]
     elements = [
         [
@@ -123,9 +123,9 @@ async def test_answerdotai_reranker_rerank() -> None:
         model="cross-encoder",
     )
     documents = [
-        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
+        DocumentMeta.from_literal("Mock document Element 1"),
+        DocumentMeta.from_literal("Mock document Element 2"),
+        DocumentMeta.from_literal("Mock document Element 3"),
     ]
     elements = [
         [
@@ -162,9 +162,9 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
         default_options=options,
     )
     documents = [
-        DocumentMeta.create_text_document_from_literal("Mock document Element 1"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 2"),
-        DocumentMeta.create_text_document_from_literal("Mock document Element 3"),
+        DocumentMeta.from_literal("Mock document Element 1"),
+        DocumentMeta.from_literal("Mock document Element 2"),
+        DocumentMeta.from_literal("Mock document Element 3"),
     ]
     elements = [
         [

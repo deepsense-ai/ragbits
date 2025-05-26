@@ -1,3 +1,5 @@
+import asyncio
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -5,6 +7,7 @@ from typing_extensions import Self
 
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.element import Element
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
@@ -14,7 +17,9 @@ class DocumentSearchData(EvaluationData):
     """
 
     question: str
-    reference_passages: list[str]
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 @dataclass
@@ -24,8 +29,10 @@ class DocumentSearchResult(EvaluationResult):
     """
 
     question: str
-    reference_passages: list[str]
-    predicted_passages: list[str]
+    predicted_elements: Sequence[Element]
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchData, DocumentSearchResult]):
@@ -60,7 +67,7 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         # TODO: optimize this for cases with duplicated document search configs between runs
         if config.get("source"):
             config["vector_store"]["config"]["index_name"] = str(uuid4())
-        evaluation_target = DocumentSearch.from_config(config)
+        evaluation_target: DocumentSearch = DocumentSearch.from_config(config)
         return cls(evaluation_target=evaluation_target, source=config.get("source"))
 
     async def prepare(self) -> None:
@@ -76,21 +83,24 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
             )
             await self.evaluation_target.ingest(sources)
 
-    async def __call__(self, data: DocumentSearchData) -> DocumentSearchResult:
+    async def __call__(self, data: Iterable[DocumentSearchData]) -> Iterable[DocumentSearchResult]:
         """
         Run the document search evaluation pipeline.
 
         Args:
-            data: The evaluation data.
+            data: The evaluation data batch.
 
         Returns:
-            The evaluation result.
+            The evaluation result batch.
         """
-        elements = await self.evaluation_target.search(data.question)
-        predicted_passages = [element.text_representation for element in elements if element.text_representation]
-
-        return DocumentSearchResult(
-            question=data.question,
-            reference_passages=data.reference_passages,
-            predicted_passages=predicted_passages,
-        )
+        results = await asyncio.gather(*[self.evaluation_target.search(row.question) for row in data])
+        return [
+            DocumentSearchResult(
+                question=row.question,
+                predicted_elements=elements,
+                reference_document_ids=row.reference_document_ids,
+                reference_passages=row.reference_passages,
+                reference_page_numbers=row.reference_page_numbers,
+            )
+            for row, elements in zip(data, results, strict=False)
+        ]

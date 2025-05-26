@@ -4,13 +4,14 @@ from itertools import chain
 import litellm
 
 from ragbits.core.audit.traces import traceable
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 
 
 class LiteLLMRerankerOptions(RerankerOptions):
     """
-    An object representing the options for the litellm reranker.
+    Object representing the options for the litellm reranker.
 
     Attributes:
         top_n: The number of entries to return.
@@ -19,7 +20,7 @@ class LiteLLMRerankerOptions(RerankerOptions):
         max_chunks_per_doc: The maximum amount of tokens a document can have before truncation.
     """
 
-    max_chunks_per_doc: int | None = None
+    max_chunks_per_doc: int | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
@@ -27,7 +28,7 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
     A [LiteLLM](https://docs.litellm.ai/docs/rerank) reranker for providers such as Cohere, Together AI, Azure AI.
     """
 
-    options_cls = LiteLLMRerankerOptions
+    options_cls: type[LiteLLMRerankerOptions] = LiteLLMRerankerOptions
 
     def __init__(
         self,
@@ -35,7 +36,7 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
         default_options: LiteLLMRerankerOptions | None = None,
     ) -> None:
         """
-        Constructs a new LiteLLMReranker instance.
+        Initialize the LiteLLMReranker instance.
 
         Args:
             model: The reranker model to use.
@@ -70,8 +71,8 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
             model=self.model,
             query=query,
             documents=documents,
-            top_n=merged_options.top_n,
-            max_chunks_per_doc=merged_options.max_chunks_per_doc,
+            top_n=merged_options.top_n or None,
+            max_chunks_per_doc=merged_options.max_chunks_per_doc or None,
         )
 
         results = []

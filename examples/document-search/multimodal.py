@@ -49,8 +49,8 @@ documents = [
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "bear.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "game.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "tree.jpg")),
-    DocumentMeta.create_text_document_from_literal("A beautiful teady bear."),
-    DocumentMeta.create_text_document_from_literal("The constitution of the United States."),
+    DocumentMeta.from_literal("A beautiful teady bear."),
+    DocumentMeta.from_literal("The constitution of the United States."),
 ]
 
 

@@ -10,7 +10,7 @@ from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
 
 def create_document_search_instance_223():
     vector_store_options = VectorStoreOptions(k=223)
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         reranker=NoopReranker(default_options=RerankerOptions(top_n=223)),
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder(), default_options=vector_store_options),
     )
@@ -19,7 +19,7 @@ def create_document_search_instance_223():
 
 def create_document_search_instance_825():
     vector_store_options = VectorStoreOptions(k=825)
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         reranker=NoopReranker(default_options=RerankerOptions(top_n=825)),
         vector_store=InMemoryVectorStore(embedder=NoopEmbedder(), default_options=vector_store_options),
     )
@@ -28,14 +28,14 @@ def create_document_search_instance_825():
 
 async def _add_example_documents(document_search: DocumentSearch) -> None:
     documents = [
-        DocumentMeta.create_text_document_from_literal("Foo document"),
-        DocumentMeta.create_text_document_from_literal("Bar document"),
-        DocumentMeta.create_text_document_from_literal("Baz document"),
+        DocumentMeta.from_literal("Foo document"),
+        DocumentMeta.from_literal("Bar document"),
+        DocumentMeta.from_literal("Baz document"),
     ]
     await document_search.ingest(documents)
 
 
 def create_document_search_instance_with_documents():
-    document_search = DocumentSearch(vector_store=InMemoryVectorStore(embedder=NoopEmbedder()))
+    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=NoopEmbedder()))
     asyncio.run(_add_example_documents(document_search))
     return document_search

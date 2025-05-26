@@ -3,7 +3,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated, Any
 
+import filetype
 from pydantic import BaseModel
+from typing_extensions import deprecated
 
 from ragbits.core.sources.base import Source, SourceDiscriminator
 from ragbits.core.sources.local import LocalFileSource
@@ -32,6 +34,7 @@ class DocumentType(str, Enum):
     RTF = "rtf"
     TSV = "tsv"
     JSON = "json"
+    JSONL = "jsonl"
     XML = "xml"
     JPG = "jpg"
     PNG = "png"
@@ -76,7 +79,21 @@ class DocumentMeta(BaseModel):
         return Document.from_document_meta(self, local_path)
 
     @classmethod
+    @deprecated("Use from_literal() instead")
     def create_text_document_from_literal(cls, content: str) -> "DocumentMeta":
+        """
+        Create a text document from a literal content. This method is deprecated, use from_literal() instead.
+
+        Args:
+            content: The content of the document.
+
+        Returns:
+            The document metadata.
+        """
+        return cls.from_literal(content)
+
+    @classmethod
+    def from_literal(cls, content: str) -> "DocumentMeta":
         """
         Create a text document from a literal content.
 
@@ -106,7 +123,7 @@ class DocumentMeta(BaseModel):
             The document metadata.
         """
         return cls(
-            document_type=DocumentType(local_path.suffix[1:]),
+            document_type=cls._infer_document_type(local_path),
             source=LocalFileSource(path=local_path),
         )
 
@@ -124,9 +141,24 @@ class DocumentMeta(BaseModel):
         path = await source.fetch()
 
         return cls(
-            document_type=DocumentType(path.suffix[1:]),
+            document_type=cls._infer_document_type(path),
             source=source,
         )
+
+    @staticmethod
+    def _infer_document_type(path: Path) -> DocumentType:
+        """
+        Infer the document type by checking the file signature. Use the file extension as a fallback.
+
+        Args:
+            path: The path to the file.
+
+        Returns:
+            The inferred document type.
+        """
+        if kind := filetype.guess(path):
+            return DocumentType(kind.extension)
+        return DocumentType(path.suffix[1:])
 
 
 class Document(BaseModel):

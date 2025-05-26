@@ -2,7 +2,21 @@
 
 ## Unreleased
 
+## 0.18.0 (2025-05-22)
+
+### Changed
+
+- ragbits-core updated to version v0.18.0
+
+- Add jsonl file type (#567)
+- Improve document file type check (#563)
+- Fix reranker options typing (#562)
+- Add query rephraser options (#560)
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
 - Update audit imports (#427)
+- BREAKING CHANGE: Adjust document search configurable interface (#554)
+- BREAKING CHANGE: Rename SearchConfig to DocumentSearchOptions (#554)
+- BREAKING CHANGE: Improve typing for SearchConfig (#554)
 
 ## 0.17.1 (2025-05-09)
 

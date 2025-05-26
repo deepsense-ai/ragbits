@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.18.0 (2025-05-22)
+
+### Changed
+
+- ragbits-core updated to version v0.18.0
+
+- Add support for custom column names in evaluation dataset (#566)
+- Add support for reference document ids and page numbers in evaluation dataset (#566)
+- BREAKING CHANGE: Adjust eval pipline interface to batch processing (#555)
+- Rename DocumentMeta create_text_document_from_literal to from_literal (#561)
+- Adjust typing for DocumentSearch (#554)
+
 ## 0.17.1 (2025-05-09)
 
 ### Changed
