@@ -4472,6 +4472,12 @@ wheels = [
 name = "ragbits-agents"
 version = "0.17.1"
 source = { editable = "packages/ragbits-agents" }
+dependencies = [
+    { name = "ragbits-core" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "ragbits-core", editable = "packages/ragbits-core" }]
 
 [[package]]
 name = "ragbits-chat"
