@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add evals for question answering (#577)
+
 ## 0.18.0 (2025-05-22)
 
 ### Changed
