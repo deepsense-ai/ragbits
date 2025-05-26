@@ -83,7 +83,7 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
         return await self.map(dataset.to_list())
 
     @abstractmethod
-    async def map(self, dataset: list[dict]) -> Iterable[EvaluationDataT]:
+    async def map(self, dataset: Iterable[dict]) -> Iterable[EvaluationDataT]:
         """
         Map the dataset to the evaluation data.
 

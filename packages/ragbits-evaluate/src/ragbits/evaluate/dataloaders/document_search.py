@@ -40,7 +40,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
         self.passages_key = passages_key
         self.page_numbers_key = page_numbers_key
 
-    async def map(self, dataset: list[dict]) -> Iterable[DocumentSearchData]:
+    async def map(self, dataset: Iterable[dict]) -> Iterable[DocumentSearchData]:
         """
         Map the dataset to the document search data schema.
 
