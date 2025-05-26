@@ -3,11 +3,12 @@ from typing import Any, TypeVar
 from pydantic import BaseModel
 
 from ragbits.agents._main import Agent
+from ragbits.core.llms.base import LLMClientOptionsT
 
 QuestionAnswerPromptInputT = TypeVar("QuestionAnswerPromptInputT", bound="QuestionAnswerPromptInput")
 QuestionAnswerPromptOutputT = TypeVar("QuestionAnswerPromptOutputT", bound="QuestionAnswerPromptOutput | str")
 
-QuestionAnswerAgent = Agent[QuestionAnswerPromptInputT, QuestionAnswerPromptOutputT]
+QuestionAnswerAgent = Agent[LLMClientOptionsT, QuestionAnswerPromptInputT, QuestionAnswerPromptOutputT]
 
 
 class QuestionAnswerPromptInput(BaseModel):

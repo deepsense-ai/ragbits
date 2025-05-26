@@ -31,7 +31,9 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     """The options for the LLM."""
 
 
-class Agent(ConfigurableComponent[AgentOptions], Generic[PromptInputT, PromptOutputT]):
+class Agent(
+    ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]
+):
     """
     Agent class that orchestrates the LLM and the prompt.
 
@@ -47,7 +49,7 @@ class Agent(ConfigurableComponent[AgentOptions], Generic[PromptInputT, PromptOut
         llm: LLM[LLMClientOptionsT],
         prompt: type[Prompt[PromptInputT, PromptOutputT]],
         *,
-        default_options: AgentOptions | None = None,
+        default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
         Initialize the agent instance.
@@ -63,15 +65,15 @@ class Agent(ConfigurableComponent[AgentOptions], Generic[PromptInputT, PromptOut
 
     @overload
     async def run(
-        self: "Agent[PromptInputT, PromptOutputT]",
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
-        options: AgentOptions | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
     async def run(
-        self: "Agent[None, PromptOutputT]",
-        options: AgentOptions | None = None,
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:  # noqa: D417
