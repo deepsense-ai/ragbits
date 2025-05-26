@@ -1,5 +1,5 @@
 version = 1
-revision = 1
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -4474,6 +4474,7 @@ source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "fastapi" },
     { name = "ragbits-core" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
@@ -4489,6 +4490,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115.0,<1.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "uvicorn", specifier = ">=0.31.0,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
