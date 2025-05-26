@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add uvicorn to dependecies (#578)
+- Add uvicorn to dependencies (#578)
 - Remove HeroUI Pro components (#557)
 
 ## 0.18.0 (2025-05-22)
