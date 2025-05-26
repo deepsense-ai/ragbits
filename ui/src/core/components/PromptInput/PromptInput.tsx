@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 import { Button } from "@heroui/button";
 import { Form } from "@heroui/form";
 import { cn } from "@heroui/theme";
-import React, { useCallback } from "react";
+import { KeyboardEvent, FormEvent, useCallback, useRef } from "react";
 
 import PromptInputText from "./PromptInputText";
 
@@ -10,7 +10,7 @@ interface PromptInputProps {
   isLoading: boolean;
   submit: () => void;
   message: string;
-  setMessage: React.Dispatch<React.SetStateAction<string>>;
+  setMessage: (message: string) => void;
 }
 
 const PromptInput = ({
@@ -19,7 +19,7 @@ const PromptInput = ({
   submit,
   isLoading,
 }: PromptInputProps) => {
-  const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = useCallback(() => {
     if (!message && !isLoading) return;
@@ -29,7 +29,7 @@ const PromptInput = ({
   }, [isLoading, submit, message]);
 
   const onSubmit = useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
+    (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
       handleSubmit();
@@ -38,7 +38,7 @@ const PromptInput = ({
   );
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
 

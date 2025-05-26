@@ -1,10 +1,10 @@
-import React from "react";
 import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useHistoryContext } from "../../contexts/HistoryContext/useHistoryContext";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
+import { ReactNode } from "react";
 
 export default function Layout({
   children,
@@ -13,8 +13,8 @@ export default function Layout({
   subTitle,
   classNames = {},
 }: {
-  children?: React.ReactNode;
-  header?: React.ReactNode;
+  children?: ReactNode;
+  header?: ReactNode;
   title?: string;
   subTitle?: string;
   classNames?: Record<string, string>;
