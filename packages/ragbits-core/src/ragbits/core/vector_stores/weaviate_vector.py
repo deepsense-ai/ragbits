@@ -1,4 +1,4 @@
-from typing import cast
+from typing import cast, TypeVar
 from uuid import UUID
 from operator import and_
 from functools import reduce
@@ -24,6 +24,25 @@ from ragbits.core.vector_stores.base import (
     WhereQuery,
 )
 
+class WeaviateVectorStoreOptions(VectorStoreOptions):
+    """
+    An object representing the options for the Weaviate vector store.
+
+    Attributes:
+        k: The number of entries to return.
+        score_threshold: The minimum similarity score for an entry to be returned.
+            Note that this is based on score, which may be different from the raw
+            similarity metric used by the vector store (see `VectorStoreResult`
+            for more details).
+        use_keyword_search: If set to True in options passed to retrieve method then
+            keyword search for text string is used instead of vector similarity search for text vector - https://weaviate.io/developers/weaviate/search/bm25
+            (Weaviate doesn't support sparse vector search, only vector similarity search and keyword search).
+    """
+
+    use_keyword_search: bool = False
+
+WeaviateVectorStoreOptionsT = TypeVar("WeaviateVectorStoreOptionsT", bound=WeaviateVectorStoreOptions)
+
 
 # This file was named weaviate_vector.py instead of weaviate.py to avoid name conflicts with weaviate package
 class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
@@ -31,7 +50,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     Vector store implementation using [Weaviate](https://weaviate.io/).
     """
 
-    options_cls = VectorStoreOptions
+    options_cls = WeaviateVectorStoreOptions
 
     def __init__(
         self,
@@ -40,7 +59,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         embedder: Embedder,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: VectorDistances = VectorDistances.COSINE,
-        default_options: VectorStoreOptions | None = None,
+        default_options: WeaviateVectorStoreOptions | None = None,
     ) -> None:
         """
         Constructs a new WeaviateVectorStore instance.
@@ -141,7 +160,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 await index.data.insert_many(objects)
 
     async def retrieve(
-        self, text: str, options: VectorStoreOptionsT | None = None
+        self, text: str, options: WeaviateVectorStoreOptionsT | None = None
     ) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Weaviate collection based on vector similarity.
@@ -170,8 +189,6 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            query_vector = (await self._embedder.embed_text([text]))[0]
-
             collection_exists = await self._client.collections.exists(self._index_name)
 
             if not collection_exists:
@@ -179,13 +196,22 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             index = self._client.collections.get(self._index_name)
 
-            results = await index.query.near_vector(
-                near_vector=query_vector,
-                limit=merged_options.k,
-                distance=score_threshold,  # max accepted distance
-                return_metadata=MetadataQuery(distance=True),
-                include_vector=True,
-            )
+            if merged_options.use_keyword_search:
+                results = index.query.bm25(
+                    query=text,
+                    limit=merged_options.k,
+                    return_metadata=MetadataQuery(score=True),
+                    include_vector=True,
+                )
+            else:
+                query_vector = (await self._embedder.embed_text([text]))[0]
+                results = await index.query.near_vector(
+                    near_vector=query_vector,
+                    limit=merged_options.k,
+                    distance=score_threshold,  # max accepted distance
+                    return_metadata=MetadataQuery(distance=True),
+                    include_vector=True,
+                )
 
             outputs_results = []
             for object_ in results.objects:
@@ -201,10 +227,16 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 }
                 entry = VectorStoreEntry.model_validate(entry)
 
+                if merged_options.use_keyword_search:
+                    # For keyword search score follows "larger is better" rule so we don't need to multiply it by score_multiplier
+                    score = object_.metadata.score
+                else:
+                    score = object_.metadata.distance * score_multiplier
+
                 outputs_results.append(
                     VectorStoreResult(
                         entry=entry,
-                        score=object_.metadata.distance * score_multiplier,
+                        score=score,
                         vector=object_.vector["default"],
                     )
                 )
@@ -322,7 +354,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     def _unflatten_metadata(self, metadata: dict) -> dict:
         """Unflattens the metadata dictionary."""
         metadata_items_separator_replaced = {
-            key.replace(self._separator, "."): value for key, value in metadata.items()
+            key.replace(self._separator, "."): value for key, value in metadata.items() if value is not None
         }
         return (
             unflatten_dict(metadata_items_separator_replaced)
