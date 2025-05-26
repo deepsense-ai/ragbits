@@ -39,9 +39,9 @@ class QuestionAnswerDataLoader(DataLoader[QuestionAnswerData]):
         self.answer_key = answer_key
         self.context_key = context_key
 
-    async def map(self, dataset: Dataset) -> Iterable[QuestionAnswerData]:
+    async def map(self, dataset: Iterable[dict]) -> Iterable[QuestionAnswerData]:
         """
-        Map the dataset to the question answer data.
+        Map the dataset to the question answer data schema.
 
         Args:
             dataset: The dataset to map.
@@ -51,8 +51,8 @@ class QuestionAnswerDataLoader(DataLoader[QuestionAnswerData]):
         """
         return [
             QuestionAnswerData(
-                question=data.get(self.question_key),
-                reference_answer=data.get(self.answer_key),
+                question=data.get(self.question_key, ""),
+                reference_answer=data.get(self.answer_key, ""),
                 reference_context=data.get(self.context_key),
             )
             for data in dataset
