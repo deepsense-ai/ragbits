@@ -61,10 +61,12 @@ async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGener
 
         yield pool
 
+
 async def weaviate_client_async():
     client = weaviate.use_async_with_local()
     await client.connect()
     return partial(WeaviateVectorStore, client=client, index_name="test_index_name")
+
 
 @pytest.fixture(
     name="vector_store_cls",
@@ -235,7 +237,9 @@ async def test_vector_store_retrieve_order(
 
     assert len(results) == 1
     expected_entry = (
-        test_vector_store_entries[0] if vector_store._embedding_type == EmbeddingType.TEXT else test_vector_store_entries[1]
+        test_vector_store_entries[0]
+        if vector_store._embedding_type == EmbeddingType.TEXT
+        else test_vector_store_entries[1]
     )
 
     assert results[0].entry.id == expected_entry.id

@@ -76,9 +76,7 @@ async def main() -> None:
     """
     client = weaviate.use_async_with_local()
     async with client:
-        embedder = LiteLLMEmbedder(
-            model_name="text-embedding-3-small"
-        )
+        embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
         vector_store = WeaviateVectorStore(
             client=client,
             index_name="jokes",

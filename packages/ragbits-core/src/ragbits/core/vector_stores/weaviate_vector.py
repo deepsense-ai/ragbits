@@ -24,6 +24,7 @@ from ragbits.core.vector_stores.base import (
     WhereQuery,
 )
 
+
 class WeaviateVectorStoreOptions(VectorStoreOptions):
     """
     An object representing the options for the Weaviate vector store.
@@ -41,6 +42,7 @@ class WeaviateVectorStoreOptions(VectorStoreOptions):
     """
 
     use_keyword_search: bool = False
+
 
 WeaviateVectorStoreOptionsT = TypeVar("WeaviateVectorStoreOptionsT", bound=WeaviateVectorStoreOptions)
 
@@ -132,9 +134,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 await self._client.collections.create(
                     name=self._index_name,
                     vectorizer_config=Configure.Vectorizer.none(),
-                    vector_index_config=Configure.VectorIndex.hnsw(
-                        distance_metric=self._distance_method
-                    ),
+                    vector_index_config=Configure.VectorIndex.hnsw(distance_metric=self._distance_method),
                 )
 
             index = self._client.collections.get(self._index_name)
@@ -146,9 +146,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                         wvc.data.DataObject(
                             uuid=str(entry.id),
                             properties=self._flatten_metadata(
-                                entry.model_dump(
-                                    exclude={"id"}, exclude_none=True, mode="json"
-                                )
+                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
                             ),
                             vector=embeddings[entry.id],
                         )
@@ -157,9 +155,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             if objects:
                 await index.data.insert_many(objects)
 
-    async def retrieve(
-        self, text: str, options: WeaviateVectorStoreOptionsT | None = None
-    ) -> list[VectorStoreResult]:
+    async def retrieve(self, text: str, options: WeaviateVectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
         Retrieves entries from the Weaviate collection based on vector similarity.
 
@@ -170,9 +166,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
-        merged_options = (
-            (self.default_options | options) if options else self.default_options
-        )
+        merged_options = (self.default_options | options) if options else self.default_options
 
         # Ragbits has a "larger is better" convention for all scores, so we need to reverse the score if the distance
         # method is "smaller is better".
@@ -213,10 +207,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             outputs_results = []
             for object_ in results.objects:
-                entry_raw = {
-                    "uuid": object_.uuid,
-                    "properties": self._unflatten_metadata(object_.properties)
-                }
+                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}
                 entry = {
                     "id": entry_raw["uuid"],
                     "text": entry_raw["properties"].get("text", None),
@@ -272,9 +263,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         where = flatten_dict(where)
 
         filters = (
-            Filter.by_property(
-                f"metadata{separator}{key.replace('.', separator)}"
-            ).equal(cast(str | int | bool, value))
+            Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
             for key, value in where.items()
         )
 
@@ -299,9 +288,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The entries.
         """
-        with trace(
-            where=where, index_name=self._index_name, limit=limit, offset=offset
-        ) as outputs:
+        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
             collection_exists = await self._client.collections.exists(self._index_name)
 
             if not collection_exists:
@@ -309,18 +296,12 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             index = self._client.collections.get(self._index_name)
 
-            limit = (
-                limit or (await index.aggregate.over_all(total_count=True)).total_count
-            )
+            limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
             limit = max(1, limit)
 
-            filters = (
-                self._create_weaviate_filter(where, self._separator) if where else None
-            )
+            filters = self._create_weaviate_filter(where, self._separator) if where else None
 
-            results = await index.query.fetch_objects(
-                limit=limit, offset=offset, filters=filters, include_vector=True
-            )
+            results = await index.query.fetch_objects(limit=limit, offset=offset, filters=filters, include_vector=True)
 
             results_objects = [
                 {
@@ -339,9 +320,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 }
                 for object in results_objects
             ]
-            outputs.results = [
-                VectorStoreEntry.model_validate(object) for object in objects
-            ]
+            outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
 
             return outputs.results
 
@@ -354,8 +333,4 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         metadata_items_separator_replaced = {
             key.replace(self._separator, "."): value for key, value in metadata.items() if value is not None
         }
-        return (
-            unflatten_dict(metadata_items_separator_replaced)
-            if metadata_items_separator_replaced
-            else {}
-        )
+        return unflatten_dict(metadata_items_separator_replaced) if metadata_items_separator_replaced else {}
