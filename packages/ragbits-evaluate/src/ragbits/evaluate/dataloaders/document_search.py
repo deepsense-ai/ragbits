@@ -1,7 +1,5 @@
 from collections.abc import Iterable
 
-from datasets import Dataset
-
 from ragbits.core.sources.base import Source
 from ragbits.evaluate.dataloaders.base import DataLoader
 from ragbits.evaluate.pipelines.document_search import DocumentSearchData
@@ -42,7 +40,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
         self.passages_key = passages_key
         self.page_numbers_key = page_numbers_key
 
-    async def map(self, dataset: Dataset) -> Iterable[DocumentSearchData]:
+    async def map(self, dataset: list[dict]) -> Iterable[DocumentSearchData]:
         """
         Map the dataset to the document search data schema.
 
@@ -54,7 +52,7 @@ class DocumentSearchDataLoader(DataLoader[DocumentSearchData]):
         """
         return [
             DocumentSearchData(
-                question=data.get(self.question_key),
+                question=data.get(self.question_key, ""),
                 reference_document_ids=data.get(self.document_ids_key),
                 reference_passages=data.get(self.passages_key),
                 reference_page_numbers=data.get(self.page_numbers_key),

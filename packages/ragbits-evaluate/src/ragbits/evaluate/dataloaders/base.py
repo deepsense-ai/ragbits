@@ -3,7 +3,7 @@ from collections.abc import Iterable
 from types import ModuleType
 from typing import ClassVar, Generic
 
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -80,10 +80,10 @@ class DataLoader(WithConstructionConfig, Generic[EvaluationDataT], ABC):
                 required_features=list(self.required_keys),
                 data_path=data_path,
             )
-        return await self.map(dataset)
+        return await self.map(dataset.to_list())
 
     @abstractmethod
-    async def map(self, dataset: Dataset) -> Iterable[EvaluationDataT]:
+    async def map(self, dataset: list[dict]) -> Iterable[EvaluationDataT]:
         """
         Map the dataset to the evaluation data.
 
