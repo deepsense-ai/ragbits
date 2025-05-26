@@ -197,7 +197,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             index = self._client.collections.get(self._index_name)
 
             if merged_options.use_keyword_search:
-                results = index.query.bm25(
+                results = await index.query.bm25(
                     query=text,
                     limit=merged_options.k,
                     return_metadata=MetadataQuery(score=True),
