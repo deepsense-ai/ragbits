@@ -73,6 +73,35 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 
     To learn more about using Hybrid Search, refer to [How to Perform Hybrid Search with Multiple Vector Stores](../vector_stores/hybrid.md).
 
+## Limit results with metadata-based filtering
+
+You can filter search results based on document metadata using the `where` clause in `VectorStoreOptions`. This allows you to narrow down results to specific document types, sources, or any other metadata fields you've defined.
+
+```python
+from ragbits.core.vector_stores.base import VectorStoreOptions
+from ragbits.document_search import DocumentSearch, DocumentSearchOptions
+
+# Create vector store options with metadata filtering
+vector_store_options = VectorStoreOptions(
+    k=2,  # Number of results to return
+    score_threshold=0.6,  # Minimum similarity score
+    where={"document_meta": {"document_type": "txt"}}  # Filter by document type
+)
+
+# Create document search options with the vector store options
+options = DocumentSearchOptions(vector_store_options=vector_store_options)
+
+# Search with the filtering options
+results = await document_search.search("Your search query", options=options)
+```
+
+The `where` clause supports various filtering conditions. For example, you can filter by:
+- Document type
+- Source
+- Custom metadata fields
+
+This filtering happens at the vector store level, making the search more efficient by reducing the number of documents that need to be processed.
+
 ## Rephrase query
 
 By default, the input query is provided directly to the embedding model. However, there is an option to add an additional step before vector search. Ragbits offers several common rephrasing techniques that can be utilized to refine the query and generate better embeddings for retrieval.
@@ -94,10 +123,10 @@ By default, the input query is provided directly to the embedding model. However
 === "Multi query"
 
     ```python
-    from ragbits.document_search.retrieval.rephrasers import MultiQueryRephraser
+    from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser, LLMQueryRephraserOptions
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = MultiQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), n=3)
+    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")
@@ -108,25 +137,28 @@ By default, the input query is provided directly to the embedding model. However
 To define a new rephraser, extend the the [`QueryRephraser`][ragbits.document_search.retrieval.rephrasers.base.QueryRephraser] class.
 
 ```python
-from ragbits.document_search.retrieval.rephrasers import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers import QueryRephraser, QueryRephraserOptions
 
 
-class CustomRephraser(QueryRephraser):
+class CustomRephraser(QueryRephraser[QueryRephraserOptions]):
     """
     Rephraser that uses a LLM to rephrase queries.
     """
 
-    async def rephrase(self, query: str) -> list[str]:
+    options_cls: type[QueryRephraserOptions] = QueryRephraserOptions
+
+    async def rephrase(self, query: str, options: QueryRephraserOptions | None = None) -> Iterable[str]:
         """
         Rephrase a query using the LLM.
 
         Args:
             query: The query to be rephrased.
+            options: The options for rephrasing.
 
         Returns:
             List containing the rephrased query.
         """
-        responses = await llm.generate(QueryRephraserPrompt(...))
+        responses = await llm.generate(CustomRephraserPrompt(...))
         ...
         return [...]
 ```
@@ -174,6 +206,8 @@ class CustomReranker(Reranker[RerankerOptions]):
     """
     Reranker that uses a LLM to rerank elements.
     """
+
+    options_cls: type[RerankerOptions] = RerankerOptions
 
     async def rerank(
         self,

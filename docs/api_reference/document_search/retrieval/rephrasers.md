@@ -1,6 +1,11 @@
 # Query Rephrasers
 
-::: ragbits.document_search.retrieval.rephrasers.QueryRephraser
-::: ragbits.document_search.retrieval.rephrasers.LLMQueryRephraser
-::: ragbits.document_search.retrieval.rephrasers.MultiQueryRephraser
-::: ragbits.document_search.retrieval.rephrasers.NoopQueryRephraser
+::: ragbits.document_search.retrieval.rephrasers.base.QueryRephraserOptions
+
+::: ragbits.document_search.retrieval.rephrasers.llm.LLMQueryRephraserOptions
+
+::: ragbits.document_search.retrieval.rephrasers.base.QueryRephraser
+
+::: ragbits.document_search.retrieval.rephrasers.llm.LLMQueryRephraser
+
+::: ragbits.document_search.retrieval.rephrasers.noop.NoopQueryRephraser

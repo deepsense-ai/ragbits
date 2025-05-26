@@ -46,7 +46,7 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
         matching_strategy = matching_strategy_cls(**config["matching_strategy"]["config"])
         return cls(matching_strategy=matching_strategy, weight=config.get("weight", 1.0))
 
-    def compute(self, results: list[DocumentSearchResult]) -> dict:
+    async def compute(self, results: list[DocumentSearchResult]) -> dict:
         """
         Compute the metric.
 
@@ -57,7 +57,18 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
             The computed metric.
         """
         return self.metric.aggregate(
-            [self.metric(result.predicted_passages, result.reference_passages) for result in results]
+            [
+                self.metric(
+                    [
+                        element.text_representation
+                        for element in result.predicted_elements
+                        if element.text_representation
+                    ],
+                    result.reference_passages,
+                )
+                for result in results
+                if result.reference_passages is not None
+            ]
         )
 
 

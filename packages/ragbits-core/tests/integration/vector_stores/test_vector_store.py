@@ -230,10 +230,10 @@ async def test_handling_document_ingestion_with_different_content_and_verifying_
     document_2_content = "This is another test sentence and it should be removed from the vector store"
     document_2_new_content = "This is one more test sentence and it should be added to the vector store"
 
-    document_1 = DocumentMeta.create_text_document_from_literal(document_1_content)
-    document_2 = DocumentMeta.create_text_document_from_literal(document_2_content)
+    document_1 = DocumentMeta.from_literal(document_1_content)
+    document_2 = DocumentMeta.from_literal(document_2_content)
 
-    document_search = DocumentSearch(
+    document_search: DocumentSearch = DocumentSearch(
         vector_store=text_vector_store,
     )
     await document_search.ingest([document_1, document_2])
@@ -250,3 +250,38 @@ async def test_handling_document_ingestion_with_different_content_and_verifying_
     assert document_1_content in document_contents
     assert document_2_new_content in document_contents
     assert document_2_content not in document_contents
+
+
+async def test_vector_store_retrieve_with_where_clause(
+    text_vector_store: VectorStoreWithDenseEmbedder,
+    vector_store_entries: list[VectorStoreEntry],
+) -> None:
+    await text_vector_store.store(vector_store_entries)
+
+    # Test with a simple where clause
+    results = await text_vector_store.retrieve(
+        text="foo",
+        options=VectorStoreOptions(
+            where={
+                "foo": "bar",
+                "nested_foo": {"nested_bar": "nested_baz"},
+            }
+        ),
+    )
+
+    # Should only return the first entry which matches both conditions
+    assert len(results) == 1
+    assert results[0].entry.id == vector_store_entries[0].id
+    assert results[0].entry.metadata["foo"] == "bar"
+    assert results[0].entry.metadata["nested_foo"]["nested_bar"] == "nested_baz"
+
+    # Test with a where clause that matches no entries
+    results = await text_vector_store.retrieve(
+        text="foo",
+        options=VectorStoreOptions(
+            where={
+                "foo": "nonexistent",
+            }
+        ),
+    )
+    assert len(results) == 0

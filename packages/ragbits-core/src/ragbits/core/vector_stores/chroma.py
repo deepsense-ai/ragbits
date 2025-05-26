@@ -3,7 +3,8 @@ from typing import Literal, cast
 from uuid import UUID
 
 import chromadb
-from chromadb.api import ClientAPI, types
+from chromadb.api import ClientAPI
+from chromadb.api.types import IncludeMetadataDocuments, IncludeMetadataDocumentsEmbeddingsDistances
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -193,15 +194,13 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
             query_vector = (await self._embedder.embed_text([text]))[0]
             query_vector = cast(list[float], query_vector)
 
+            where_dict = self._create_chroma_filter(merged_options.where)
+
             results = self._collection.query(
                 query_embeddings=query_vector,
                 n_results=merged_options.k,
-                include=[
-                    types.IncludeEnum.metadatas,
-                    types.IncludeEnum.embeddings,
-                    types.IncludeEnum.distances,
-                    types.IncludeEnum.documents,
-                ],
+                include=IncludeMetadataDocumentsEmbeddingsDistances,
+                where=where_dict,
             )
 
             ids = [id for batch in results.get("ids", []) for id in batch]
@@ -266,14 +265,13 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
         with trace(
             where=where, collection=self._collection, index_name=self._index_name, limit=limit, offset=offset
         ) as outputs:
-            # Cast `where` to chromadb's Where type
-            where_chroma: chromadb.Where | None = dict(where) if where else None
+            where_chroma = self._create_chroma_filter(where)
 
             results = self._collection.get(
                 where=where_chroma,
                 limit=limit,
                 offset=offset,
-                include=[types.IncludeEnum.metadatas, types.IncludeEnum.documents],
+                include=IncludeMetadataDocuments,
             )
 
             ids = results.get("ids") or []
@@ -301,3 +299,22 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
     def _flatten_metadata(metadata: dict) -> dict:
         """Flattens the metadata dictionary. Removes any None values as they are not supported by ChromaDB."""
         return {k: v for k, v in flatten_dict(metadata).items() if v is not None}
+
+    @staticmethod
+    def _create_chroma_filter(where: WhereQuery | None) -> chromadb.Where | None:
+        """
+        Creates a ChromaDB filter from a WhereQuery.
+
+        Args:
+            where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+
+        Returns:
+            The ChromaDB filter.
+        """
+        if not where:
+            return None
+
+        # If there are multiple filters, combine them with $and
+        if len(where) > 1:
+            return cast(chromadb.Where, {"$and": [{k: v} for k, v in flatten_dict(where).items()]})
+        return cast(chromadb.Where, where)
