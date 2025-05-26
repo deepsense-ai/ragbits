@@ -11,7 +11,7 @@ from weaviate.classes.config import Configure, VectorDistances
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
-from ragbits.core.embeddings import Embedder, SparseEmbedder, SparseVector
+from ragbits.core.embeddings import Embedder
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.core.utils.dict_transformations import flatten_dict, unflatten_dict
 from ragbits.core.vector_stores.base import (
@@ -35,8 +35,9 @@ class WeaviateVectorStoreOptions(VectorStoreOptions):
             similarity metric used by the vector store (see `VectorStoreResult`
             for more details).
         use_keyword_search: If set to True in options passed to retrieve method then
-            keyword search for text string is used instead of vector similarity search for text vector - https://weaviate.io/developers/weaviate/search/bm25
-            (Weaviate doesn't support sparse vector search, only vector similarity search and keyword search).
+            keyword search for text string is used instead of vector similarity search for text vector
+            (Weaviate doesn't support sparse vector search, only vector similarity search and keyword search),
+            keyword search in Weaviate is described here - https://weaviate.io/developers/weaviate/search/bm25.
     """
 
     use_keyword_search: bool = False
@@ -81,9 +82,6 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        self.is_sparse = isinstance(embedder, SparseEmbedder)
-        # TODO Implement sparse vs dense vector handling
-        self._vector_name = "sparse" if self.is_sparse else "dense"
         # Weaviate doesn't support filtering by nested keys and doesn't allow keys with dots, so we use ___ as nested keys separator
         # It also doesn't allow keys with [] so currently properties containing lists are not supported by ragbits
         self._separator = "___"
