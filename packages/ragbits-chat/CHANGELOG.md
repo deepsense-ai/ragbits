@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- remove HeroUI Pro components (#557)
+
 ## 0.18.0 (2025-05-22)
 
 ### Changed
@@ -11,7 +13,6 @@
 - updated ui build (#553)
 - api integration improvements + history context changes (#552)
 - feedback form integration (#540)
-- remove HeroUI Pro component (#557)
 
 ## 0.17.1 (2025-05-09)
 
