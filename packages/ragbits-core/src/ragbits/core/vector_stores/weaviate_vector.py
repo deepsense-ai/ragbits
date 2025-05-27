@@ -231,7 +231,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                     VectorStoreResult(
                         entry=entry,
                         score=score,  # type: ignore
-                        vector=object_.vector["default"],
+                        vector=object_.vector["default"],  # type: ignore
                     )
                 )
 
