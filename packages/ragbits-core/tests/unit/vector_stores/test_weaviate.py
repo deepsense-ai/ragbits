@@ -5,12 +5,12 @@ import pytest
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
 from weaviate.collections.classes.filters import _FilterAnd
-from weaviate.collections.classes.internal import Object, MetadataReturn
+from weaviate.collections.classes.internal import MetadataReturn, Object
 
 from ragbits.core.embeddings.dense import NoopEmbedder
+from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore, WeaviateVectorStoreOptions
-from ragbits.core.utils.dict_transformations import flatten_dict
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def mock_weaviate_client():
 
 
 @pytest.fixture
-def mock_weaviate_store(mock_weaviate_client):
+def mock_weaviate_store(mock_weaviate_client: AsyncMock):
     """Create a WeaviateVectorStore instance with a mocked client."""
     return WeaviateVectorStore(
         client=mock_weaviate_client,
@@ -89,20 +89,22 @@ def sample_entries():
 
 def flatten_metadata(metadata: dict, separator: str = "___") -> dict:
     """Flattens the metadata dictionary."""
-    return {k: v for k, v in flatten_dict(metadata, sep=separator).items()}
+    return flatten_dict(metadata, sep=separator)
 
 
 @pytest.mark.asyncio
-async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
-    mock_weaviate_store._client.collections.exists.return_value = False
+async def test_store_adds_multiple_entries(
+    mock_weaviate_store: WeaviateVectorStore, sample_entries: list[VectorStoreEntry]
+):
+    mock_weaviate_store._client.collections.exists.return_value = False # type: ignore
 
     await mock_weaviate_store.store(sample_entries)
 
-    mock_weaviate_store._client.collections.exists.assert_called_once()
-    mock_weaviate_store._client.collections.create.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.create.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
 
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with( # type: ignore
         [
             wvc.data.DataObject(
                 uuid=str(sample_entries[0].id),
@@ -123,54 +125,56 @@ async def test_store_adds_multiple_entries(mock_weaviate_store, sample_entries):
 
 
 @pytest.mark.asyncio
-async def test_store_creates_collection_when_not_exists(mock_weaviate_store, sample_entry):
-    mock_weaviate_store._client.collections.exists.return_value = False
+async def test_store_creates_collection_when_not_exists(
+    mock_weaviate_store: WeaviateVectorStore, sample_entry: VectorStoreEntry
+):
+    mock_weaviate_store._client.collections.exists.return_value = False # type: ignore
 
     await mock_weaviate_store.store([sample_entry])
 
-    mock_weaviate_store._client.collections.exists.assert_called_once()
-    mock_weaviate_store._client.collections.create.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.create.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=flatten_metadata(sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
         vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object]) # type: ignore
 
 
 @pytest.mark.asyncio
-async def test_store_uses_existing_collection(mock_weaviate_store, sample_entry):
-    mock_weaviate_store._client.collections.exists.return_value = True
+async def test_store_uses_existing_collection(mock_weaviate_store: WeaviateVectorStore, sample_entry: VectorStoreEntry):
+    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
 
     await mock_weaviate_store.store([sample_entry])
 
-    mock_weaviate_store._client.collections.exists.assert_called_once()
-    mock_weaviate_store._client.collections.create.assert_not_called()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
+    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.create.assert_not_called() # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=flatten_metadata(sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
         vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object]) # type: ignore
 
 
 @pytest.mark.asyncio
-async def test_store_handles_empty_entries(mock_weaviate_store):
+async def test_store_handles_empty_entries(mock_weaviate_store: WeaviateVectorStore):
     await mock_weaviate_store.store([])
 
-    mock_weaviate_store._client.collections.exists.assert_not_called()
-    mock_weaviate_store._client.collections.create.assert_not_called()
-    mock_weaviate_store._client.collections.get.assert_not_called()
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called()
+    mock_weaviate_store._client.collections.exists.assert_not_called() # type: ignore
+    mock_weaviate_store._client.collections.create.assert_not_called() # type: ignore
+    mock_weaviate_store._client.collections.get.assert_not_called() # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called() # type: ignore
 
 
 @pytest.mark.asyncio
-async def test_retrieve(mock_weaviate_store):
-    mock_weaviate_store._client.collections.get.return_value.query.near_vector.return_value.objects = [
+async def test_retrieve(mock_weaviate_store: WeaviateVectorStore):
+    mock_weaviate_store._client.collections.get.return_value.query.near_vector.return_value.objects = [ # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
@@ -262,8 +266,8 @@ async def test_retrieve(mock_weaviate_store):
 
 
 @pytest.mark.asyncio
-async def test_retrieve_keyword(mock_weaviate_store):
-    mock_weaviate_store._client.collections.get.return_value.query.bm25.return_value.objects = [
+async def test_retrieve_keyword(mock_weaviate_store: WeaviateVectorStore):
+    mock_weaviate_store._client.collections.get.return_value.query.bm25.return_value.objects = [ # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
@@ -356,24 +360,24 @@ async def test_retrieve_keyword(mock_weaviate_store):
 
 
 @pytest.mark.asyncio
-async def test_remove(mock_weaviate_store):
-    mock_weaviate_store._client.collections.exists.return_value = True
+async def test_remove(mock_weaviate_store: WeaviateVectorStore):
+    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
     ids_to_remove = [UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")]
 
     await mock_weaviate_store.remove(ids_to_remove)
 
-    mock_weaviate_store._client.collections.exists.assert_called_once()
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")
-    mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with(
+    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with( # type: ignore
         where=Filter.by_id().contains_any(ids_to_remove)
     )
 
 
 @pytest.mark.asyncio
-async def test_list_no_filtering(mock_weaviate_store):
-    mock_weaviate_store._client.collections.exists.return_value = True
-    mock_weaviate_store._client.collections.get.return_value.aggregate.over_all.return_value.total_count = 2
-    mock_weaviate_store._client.collections.get.return_value.query.fetch_objects.return_value.objects = [
+async def test_list_no_filtering(mock_weaviate_store: WeaviateVectorStore):
+    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.aggregate.over_all.return_value.total_count = 2 # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.query.fetch_objects.return_value.objects = [ # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
@@ -466,23 +470,23 @@ async def test_list_no_filtering(mock_weaviate_store):
 @pytest.mark.asyncio
 async def test_create_weaviate_filter():
     where = {"a": "A", "b": 3, "c": True}
-    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
     assert isinstance(weaviate_filter, _FilterAnd)
     assert isinstance(weaviate_filter.filters[0], _FilterAnd)
-    assert weaviate_filter.filters[0].filters[0].target == "metadata___a"
-    assert weaviate_filter.filters[0].filters[0].value == "A"
-    assert weaviate_filter.filters[0].filters[1].target == "metadata___b"
-    assert weaviate_filter.filters[0].filters[1].value == 3
-    assert weaviate_filter.filters[1].target == "metadata___c"
-    assert weaviate_filter.filters[1].value == True
+    assert weaviate_filter.filters[0].filters[0].target == "metadata___a"  # type: ignore
+    assert weaviate_filter.filters[0].filters[0].value == "A"  # type: ignore
+    assert weaviate_filter.filters[0].filters[1].target == "metadata___b"  # type: ignore
+    assert weaviate_filter.filters[0].filters[1].value == 3  # type: ignore
+    assert weaviate_filter.filters[1].target == "metadata___c"  # type: ignore
+    assert weaviate_filter.filters[1].value  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_create_weaviate_filter_nested_dict():
     where = {"a": "A", "b": {"c": "d"}}
-    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")
+    weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
     assert isinstance(weaviate_filter, _FilterAnd)
-    assert weaviate_filter.filters[0].target == "metadata___a"
-    assert weaviate_filter.filters[0].value == "A"
-    assert weaviate_filter.filters[1].target == "metadata___b___c"
-    assert weaviate_filter.filters[1].value == "d"
+    assert weaviate_filter.filters[0].target == "metadata___a"  # type: ignore
+    assert weaviate_filter.filters[0].value == "A"  # type: ignore
+    assert weaviate_filter.filters[1].target == "metadata___b___c"  # type: ignore
+    assert weaviate_filter.filters[1].value == "d"  # type: ignore

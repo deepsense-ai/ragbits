@@ -1,5 +1,5 @@
-from functools import partial
 import asyncio
+from functools import partial
 from pathlib import Path
 from uuid import UUID
 
@@ -14,8 +14,8 @@ from ragbits.core.vector_stores.base import (
 )
 from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore, WeaviateVectorStoreOptions
 
-
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
+
 
 async def weaviate_client_async():
     client = weaviate.use_async_with_local()
@@ -48,11 +48,12 @@ def vector_store_fixture(
     vector_store_cls: type[VectorStoreWithEmbedder],
 ) -> VectorStoreWithEmbedder:
     """
-    For Weaviate vector store in `vector_store_cls`, returns an instance with noop embedder (as embedder is not used for keyword search)
-    and keyword search enabled.
+    For Weaviate vector store in `vector_store_cls`, returns an instance with noop embedder
+    (as embedder is not used for keyword search) and keyword search enabled.
     """
     options = WeaviateVectorStoreOptions(use_keyword_search=True)
     return vector_store_cls(embedder=NoopEmbedder(), default_options=options)
+
 
 @pytest.fixture(name="vector_store_keyword_search_entries")
 def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
@@ -77,6 +78,7 @@ def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
             metadata={"baz": "qux"},
         ),
     ]
+
 
 async def test_vector_store_list(
     vector_store: VectorStoreWithEmbedder,
@@ -120,7 +122,9 @@ async def test_vector_store_retrieve(
 ) -> None:
     query = "cats"
     await vector_store.store(vector_store_keyword_search_entries)
-    result_entries = await vector_store.retrieve(text=query, options=WeaviateVectorStoreOptions(use_keyword_search=True))
+    result_entries = await vector_store.retrieve(
+        text=query, options=WeaviateVectorStoreOptions(use_keyword_search=True)
+    )
     expected_entries = [e for e in vector_store_keyword_search_entries if e.text is not None and query in e.text]
 
     sorted_results = sorted(result_entries, key=lambda r: r.entry.id)

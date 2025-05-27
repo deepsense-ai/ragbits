@@ -1,14 +1,15 @@
-from typing import cast, TypeVar
-from uuid import UUID
-from operator import and_
 from functools import reduce
+from operator import and_
+from typing import TypeVar, cast
+from uuid import UUID
 
 import weaviate
-from weaviate import WeaviateAsyncClient
 import weaviate.classes as wvc
-from weaviate.classes.query import Filter, MetadataQuery
-from weaviate.classes.config import Configure, VectorDistances
 from typing_extensions import Self
+from weaviate import WeaviateAsyncClient
+from weaviate.classes.config import Configure, VectorDistances
+from weaviate.classes.query import Filter, MetadataQuery
+from weaviate.collections.classes.filters import _Filters
 
 from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings import Embedder
@@ -18,7 +19,6 @@ from ragbits.core.vector_stores.base import (
     EmbeddingType,
     VectorStoreEntry,
     VectorStoreOptions,
-    VectorStoreOptionsT,
     VectorStoreResult,
     VectorStoreWithEmbedder,
     WhereQuery,
@@ -48,7 +48,7 @@ WeaviateVectorStoreOptionsT = TypeVar("WeaviateVectorStoreOptionsT", bound=Weavi
 
 
 # This file was named weaviate_vector.py instead of weaviate.py to avoid name conflicts with weaviate package
-class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
+class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
     """
     Vector store implementation using [Weaviate](https://weaviate.io/).
     """
@@ -84,8 +84,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._client = client
         self._index_name = index_name
         self._distance_method = distance_method
-        # Weaviate doesn't support filtering by nested keys and doesn't allow keys with dots, so we use ___ as nested keys separator
-        # It also doesn't allow keys with [] so currently properties containing lists are not supported by ragbits
+        # Weaviate doesn't support filtering by nested keys and doesn't allow keys with dots,
+        # so we use ___ as nested keys separator. It also doesn't allow keys with [],
+        # so currently properties containing lists are not supported by ragbits.
         self._separator = "___"
 
     def __reduce__(self) -> tuple:
@@ -146,7 +147,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                         wvc.data.DataObject(
                             uuid=str(entry.id),
                             properties=self._flatten_metadata(
-                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
+                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")  # type: ignore
                             ),
                             vector=embeddings[entry.id],
                         )
@@ -170,7 +171,8 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         # Ragbits has a "larger is better" convention for all scores, so we need to reverse the score if the distance
         # method is "smaller is better".
-        # Weaviate documentation says that all distance methods are "smaller is better": https://weaviate.io/developers/weaviate/config-refs/distances#available-distance-metrics
+        # Weaviate documentation says that all distance methods are "smaller is better":
+        # https://weaviate.io/developers/weaviate/config-refs/distances#available-distance-metrics
         score_multiplier = -1
         score_threshold = merged_options.score_threshold
         with trace(
@@ -198,7 +200,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             else:
                 query_vector = (await self._embedder.embed_text([text]))[0]
                 results = await index.query.near_vector(
-                    near_vector=query_vector,
+                    near_vector=query_vector,  # type: ignore
                     limit=merged_options.k,
                     distance=score_threshold,  # max accepted distance
                     return_metadata=MetadataQuery(distance=True),
@@ -207,25 +209,28 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
             outputs_results = []
             for object_ in results.objects:
-                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}
-                entry = {
+                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}  # type: ignore
+                entry_dict = {
                     "id": entry_raw["uuid"],
-                    "text": entry_raw["properties"].get("text", None),
-                    "image_bytes": entry_raw["properties"].get("image_bytes", None),
-                    "metadata": entry_raw["properties"].get("metadata", {}),
+                    "text": entry_raw["properties"].get("text", None),  # type: ignore
+                    "image_bytes": entry_raw["properties"].get("image_bytes", None),  # type: ignore
+                    "metadata": entry_raw["properties"].get("metadata", {}),  # type: ignore
                 }
-                entry = VectorStoreEntry.model_validate(entry)
+                entry = VectorStoreEntry.model_validate(entry_dict)
 
                 if merged_options.use_keyword_search:
-                    # For keyword search score follows "larger is better" rule so we don't need to multiply it by score_multiplier
+                    # For keyword search score follows "larger is better" rule,
+                    # so we don't need to multiply it by score_multiplier
                     score = object_.metadata.score
                 else:
-                    score = object_.metadata.distance * score_multiplier
+                    score = (
+                        object_.metadata.distance * score_multiplier if object_.metadata.distance is not None else None
+                    )
 
                 outputs_results.append(
                     VectorStoreResult(
                         entry=entry,
-                        score=score,
+                        score=score,  # type: ignore
                         vector=object_.vector["default"],
                     )
                 )
@@ -248,7 +253,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                 await index.data.delete_many(where=Filter.by_id().contains_any(ids))
 
     @staticmethod
-    def _create_weaviate_filter(where: WhereQuery, separator: str) -> Filter:
+    def _create_weaviate_filter(where: WhereQuery, separator: str) -> _Filters:
         """
         Creates the Filter from the given WhereQuery.
 
@@ -259,16 +264,15 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
         The created filter.
         """
-
-        where = flatten_dict(where)
+        where = flatten_dict(where)  # type: ignore
 
         filters = (
             Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
             for key, value in where.items()
         )
 
-        filters = reduce(and_, filters)
-        return filters
+        filters = reduce(and_, filters)  # type: ignore
+        return filters  # type: ignore
 
     async def list(
         self,
@@ -297,7 +301,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             index = self._client.collections.get(self._index_name)
 
             limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
-            limit = max(1, limit)
+            limit = max(1, limit) if limit is not None else None
 
             filters = self._create_weaviate_filter(where, self._separator) if where else None
 
@@ -306,7 +310,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             results_objects = [
                 {
                     "uuid": object_.uuid,
-                    "properties": self._unflatten_metadata(object_.properties),
+                    "properties": self._unflatten_metadata(object_.properties),  # type: ignore
                 }
                 for object_ in results.objects
             ]
@@ -314,9 +318,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             objects = [
                 {
                     "id": object["uuid"],
-                    "text": object["properties"].get("text", None),
-                    "image_bytes": object["properties"].get("image_bytes", None),
-                    "metadata": object["properties"].get("metadata", {}),
+                    "text": object["properties"].get("text", None),  # type: ignore
+                    "image_bytes": object["properties"].get("image_bytes", None),  # type: ignore
+                    "metadata": object["properties"].get("metadata", {}),  # type: ignore
                 }
                 for object in results_objects
             ]
@@ -326,7 +330,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
     def _flatten_metadata(self, metadata: dict) -> dict:
         """Flattens the metadata dictionary."""
-        return {k: v for k, v in flatten_dict(metadata, sep=self._separator).items()}
+        return flatten_dict(metadata, sep=self._separator)
 
     def _unflatten_metadata(self, metadata: dict) -> dict:
         """Unflattens the metadata dictionary."""

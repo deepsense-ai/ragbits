@@ -1,17 +1,17 @@
+import asyncio
+import copy
 import os
 from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
 from typing import cast
 from uuid import UUID
-import asyncio
-import copy
 
 import asyncpg
 import pytest
+import weaviate
 from chromadb import EphemeralClient
 from qdrant_client import AsyncQdrantClient
-import weaviate
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.local import LocalFileSource
