@@ -1,6 +1,7 @@
 import importlib
 import json
 import logging
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,6 +17,8 @@ from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
+from ragbits.core.audit.metrics import record
+from ragbits.core.audit.metrics.base import HistogramMetric
 
 logger = logging.getLogger(__name__)
 
@@ -115,50 +118,11 @@ class RagbitsAPI:
 
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
-            if not self.chat_interface:
-                raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
-
-            # Convert request context to ChatContext
-            chat_context = ChatContext(**request.context)
-
-            # Verify state signature if provided
-            if "state" in request.context and "signature" in request.context:
-                state = request.context["state"]
-                signature = request.context["signature"]
-                if not ChatInterface.verify_state(state, signature):
-                    logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid state signature",
-                    )
-                # Remove the signature from context after verification (it's already parsed into ChatContext)
-
-            # Get the response generator from the chat interface
-            response_generator = self.chat_interface.chat(
-                message=request.message,
-                history=[msg.model_dump() for msg in request.history],
-                context=chat_context,
-            )
-
-            # Pass the generator to the SSE formatter
-            return StreamingResponse(
-                RagbitsAPI._chat_response_to_sse(response_generator),
-                media_type="text/event-stream",
-            )
+            return await self._handle_chat_message(request)
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
         async def feedback(request: FeedbackRequest) -> JSONResponse:
-            """Handle user feedback for chat messages."""
-            if not self.chat_interface:
-                raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
-
-            await self.chat_interface.save_feedback(
-                message_id=request.message_id,
-                feedback=request.feedback,
-                payload=request.payload,
-            )
-
-            return JSONResponse(content={"status": "success"})
+            return await self._handle_feedback(request)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -183,6 +147,153 @@ class RagbitsAPI:
 
             return JSONResponse(content=config_dict)
 
+    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:
+        """Handle chat message requests with metrics tracking."""
+        start_time = time.time()
+
+        # Track API request
+        record(HistogramMetric.API_REQUEST_COUNT, 1, endpoint="/api/chat", method="POST")
+
+        try:
+            if not self.chat_interface:
+                record(
+                    HistogramMetric.API_ERROR_COUNT,
+                    1,
+                    endpoint="/api/chat",
+                    status_code="500",
+                    error_type="chat_interface_not_initialized",
+                )
+                raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
+
+            # Convert request context to ChatContext
+            chat_context = ChatContext(**request.context)
+
+            # Verify state signature if provided
+            if "state" in request.context and "signature" in request.context:
+                state = request.context["state"]
+                signature = request.context["signature"]
+                if not ChatInterface.verify_state(state, signature):
+                    logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
+                    record(
+                        HistogramMetric.API_ERROR_COUNT,
+                        1,
+                        endpoint="/api/chat",
+                        status_code="400",
+                        error_type="invalid_state_signature",
+                    )
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid state signature",
+                    )
+                # Remove the signature from context after verification (it's already parsed into ChatContext)
+
+            # Get the response generator from the chat interface
+            response_generator = self.chat_interface.chat(
+                message=request.message,
+                history=[msg.model_dump() for msg in request.history],
+                context=chat_context,
+            )
+
+            # Pass the generator to the SSE formatter
+            streaming_response = StreamingResponse(
+                RagbitsAPI._chat_response_to_sse(response_generator, start_time),
+                media_type="text/event-stream",
+            )
+
+            # Track successful request duration
+            duration = time.time() - start_time
+            record(
+                HistogramMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="success"
+            )
+
+            return streaming_response
+
+        except HTTPException as e:
+            # Track HTTP errors
+            duration = time.time() - start_time
+            record(HistogramMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="error")
+            record(
+                HistogramMetric.API_ERROR_COUNT,
+                1,
+                endpoint="/api/chat",
+                status_code=str(e.status_code),
+                error_type="http_exception",
+            )
+            raise
+        except Exception as e:
+            # Track unexpected errors
+            duration = time.time() - start_time
+            record(HistogramMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="error")
+            record(
+                HistogramMetric.API_ERROR_COUNT, 1, endpoint="/api/chat", status_code="500", error_type=type(e).__name__
+            )
+            raise HTTPException(status_code=500, detail="Internal server error") from None
+
+    async def _handle_feedback(self, request: FeedbackRequest) -> JSONResponse:
+        """Handle feedback requests with metrics tracking."""
+        start_time = time.time()
+
+        # Track API request
+        record(HistogramMetric.API_REQUEST_COUNT, 1, endpoint="/api/feedback", method="POST")
+
+        try:
+            if not self.chat_interface:
+                record(
+                    HistogramMetric.API_ERROR_COUNT,
+                    1,
+                    endpoint="/api/feedback",
+                    status_code="500",
+                    error_type="chat_interface_not_initialized",
+                )
+                raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
+
+            await self.chat_interface.save_feedback(
+                message_id=request.message_id,
+                feedback=request.feedback,
+                payload=request.payload,
+            )
+
+            # Track successful request duration
+            duration = time.time() - start_time
+            record(
+                HistogramMetric.API_REQUEST_DURATION,
+                duration,
+                endpoint="/api/feedback",
+                method="POST",
+                status="success",
+            )
+
+            return JSONResponse(content={"status": "success"})
+
+        except HTTPException as e:
+            # Track HTTP errors
+            duration = time.time() - start_time
+            record(
+                HistogramMetric.API_REQUEST_DURATION, duration, endpoint="/api/feedback", method="POST", status="error"
+            )
+            record(
+                HistogramMetric.API_ERROR_COUNT,
+                1,
+                endpoint="/api/feedback",
+                status_code=str(e.status_code),
+                error_type="http_exception",
+            )
+            raise
+        except Exception as e:
+            # Track unexpected errors
+            duration = time.time() - start_time
+            record(
+                HistogramMetric.API_REQUEST_DURATION, duration, endpoint="/api/feedback", method="POST", status="error"
+            )
+            record(
+                HistogramMetric.API_ERROR_COUNT,
+                1,
+                endpoint="/api/feedback",
+                status_code="500",
+                error_type=type(e).__name__,
+            )
+            raise HTTPException(status_code=500, detail="Internal server error") from None
+
     @staticmethod
     async def _chat_response_to_sse(
         responses: AsyncGenerator[ChatResponse],
@@ -194,16 +305,26 @@ class RagbitsAPI:
         Args:
             responses: The chat response generator
         """
-        async for response in responses:
-            data = json.dumps(
-                {
-                    "type": response.type.value,
-                    "content": response.content
-                    if isinstance(response.content, str | list)
-                    else response.content.model_dump(),
-                }
-            )
-            yield f"data: {data}\n\n"
+        chunk_count = 0
+        stream_start_time = time.time()
+
+        try:
+            async for response in responses:
+                chunk_count += 1
+                data = json.dumps(
+                    {
+                        "type": response.type.value,
+                        "content": response.content
+                        if isinstance(response.content, str | list)
+                        else response.content.model_dump(),
+                    }
+                )
+                yield f"data: {data}\n\n"
+        finally:
+            # Track streaming metrics
+            stream_duration = time.time() - stream_start_time
+            record(HistogramMetric.API_STREAM_DURATION, stream_duration, endpoint="/api/chat")
+            record(HistogramMetric.API_STREAM_CHUNK_COUNT, chunk_count, endpoint="/api/chat")
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:
