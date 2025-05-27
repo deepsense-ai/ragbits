@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.19.0 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.0
+
 ## 0.18.0 (2025-05-22)
 
 ### Changed

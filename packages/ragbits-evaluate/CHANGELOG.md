@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.19.0 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.0
+
 - Add evals for question answering (#577)
 - Add support for slicing dataset (#576)
 - Separate load and map ops in data loaders (#576)
