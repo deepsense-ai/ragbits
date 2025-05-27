@@ -1,5 +1,5 @@
 import uuid
-from typing import Any, TypeVar
+from typing import Any, Protocol, TypeVar
 
 import sqlalchemy
 from sqlalchemy import JSON, TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, func
@@ -14,57 +14,111 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 class _Base(DeclarativeBase):
-    @classmethod
-    def set_table_name(cls, name: str) -> None:
-        cls.__tablename__ = name
+    pass
 
 
-class Conversation(_Base):
+class ConversationProtocol(Protocol):
+    """Protocol for Conversation model."""
+
+    id: str
+    created_at: Any
+
+
+class ChatInteractionProtocol(Protocol):
+    """Protocol for ChatInteraction model."""
+
+    id: int
+    conversation_id: str | None
+    message_id: str | None
+    message: str
+    response: str
+    extra_responses: Any
+    context: Any
+    timestamp: float
+    created_at: Any
+
+
+def create_conversation_model(table_name: str, base_class: type[DeclarativeBase]) -> type[DeclarativeBase]:
     """
-    Represents a conversation in the database.
+    Creates a Conversation model with the specified table name.
 
-    Attributes:
-        id: The unique identifier for the conversation.
-        created_at: The timestamp when the conversation was created.
+    Args:
+        table_name: The name of the table for conversations.
+        base_class: The DeclarativeBase class to inherit from.
 
-    Table:
-        conversations: Stores conversation records.
-    """
-
-    __tablename__ = "ragbits_conversations"
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    created_at = Column(TIMESTAMP, server_default=func.now())
-
-
-class ChatInteraction(_Base):
-    """
-    Represents a chat interaction in the database.
-
-    Attributes:
-        id: The unique identifier for the interaction.
-        conversation_id: The ID of the conversation to which the interaction belongs.
-        message_id: The unique message ID for this interaction.
-        message: The user's input message.
-        response: The main response text.
-        extra_responses: JSON/JSONB array of additional responses.
-        context: JSON/JSONB object containing context dictionary.
-        timestamp: The Unix timestamp when the interaction occurred.
-        created_at: The timestamp when the record was created.
-
-    Table:
-        interactions: Stores chat interaction records.
+    Returns:
+        A Conversation model class with the specified table name.
     """
 
-    __tablename__ = "ragbits_chat_interactions"
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    conversation_id = Column(String, ForeignKey("ragbits_conversations.id", ondelete="CASCADE"), nullable=True)
-    message_id = Column(String, nullable=True)
-    message = Column(Text, nullable=False)
-    response = Column(Text, nullable=False)
-    extra_responses = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
-    context = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
-    timestamp = Column(Float, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    class Conversation(base_class):  # type: ignore[misc, valid-type]
+        """
+        Represents a conversation in the database.
+
+        Attributes:
+            id: The unique identifier for the conversation.
+            created_at: The timestamp when the conversation was created.
+
+        Table:
+            conversations: Stores conversation records.
+        """
+
+        __tablename__ = table_name
+        id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+        created_at = Column(TIMESTAMP, server_default=func.now())
+
+    return Conversation
+
+
+def create_chat_interaction_model(
+    table_name: str, conversations_table_name: str, base_class: type[DeclarativeBase]
+) -> type[DeclarativeBase]:
+    """
+    Creates a ChatInteraction model with the specified table name and foreign key reference.
+
+    Args:
+        table_name: The name of the table for chat interactions.
+        conversations_table_name: The name of the conversations table to reference.
+        base_class: The DeclarativeBase class to inherit from.
+
+    Returns:
+        A ChatInteraction model class with the specified table name and foreign key.
+    """
+
+    class ChatInteraction(base_class):  # type: ignore[misc, valid-type]
+        """
+        Represents a chat interaction in the database.
+
+        Attributes:
+            id: The unique identifier for the interaction.
+            conversation_id: The ID of the conversation to which the interaction belongs.
+            message_id: The unique message ID for this interaction.
+            message: The user's input message.
+            response: The main response text.
+            extra_responses: JSON/JSONB array of additional responses.
+            context: JSON/JSONB object containing context dictionary.
+            timestamp: The Unix timestamp when the interaction occurred.
+            created_at: The timestamp when the record was created.
+
+        Table:
+            interactions: Stores chat interaction records.
+        """
+
+        __tablename__ = table_name
+        id = Column(Integer, primary_key=True, autoincrement=True)
+        conversation_id = Column(
+            String,
+            ForeignKey(f"{conversations_table_name}.id", ondelete="CASCADE"),
+            nullable=True,
+        )
+        message_id = Column(String, nullable=True)
+        message = Column(Text, nullable=False)
+        response = Column(Text, nullable=False)
+        extra_responses = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
+        context = Column(JSON, nullable=False)  # JSON/JSONB type for better performance
+        timestamp = Column(Float, nullable=False)
+        created_at = Column(TIMESTAMP, server_default=func.now())
+
+    return ChatInteraction
 
 
 class SQLHistoryPersistenceOptions(Options):
@@ -102,19 +156,32 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         """
         self.sqlalchemy_engine = sqlalchemy_engine
         self.options = options or SQLHistoryPersistenceOptions()
+        self._db_initialized = False
 
-        # Set custom table names if provided
-        Conversation.set_table_name(self.options.conversations_table)
-        ChatInteraction.set_table_name(self.options.interactions_table)
+        # Create a unique DeclarativeBase for this instance to avoid table conflicts
+        class _Base(DeclarativeBase):
+            pass
 
-    async def init_db(self) -> None:
+        self._base = _Base
+
+        # Create model classes with custom table names and foreign key references
+        self.Conversation: Any = create_conversation_model(self.options.conversations_table, self._base)
+        self.ChatInteraction: Any = create_chat_interaction_model(
+            self.options.interactions_table, self.options.conversations_table, self._base
+        )
+
+    async def _init_db(self) -> None:
         """
         Initializes the database tables by creating them in the database.
         Conditional by default, will not attempt to recreate tables already
         present in the target database.
+
+        This method is called automatically on first usage.
         """
-        async with self.sqlalchemy_engine.begin() as conn:
-            await conn.run_sync(_Base.metadata.create_all)
+        if not self._db_initialized:
+            async with self.sqlalchemy_engine.begin() as conn:
+                await conn.run_sync(self._base.metadata.create_all)
+            self._db_initialized = True
 
     async def save_interaction(
         self,
@@ -134,6 +201,8 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             context: Context dictionary containing metadata
             timestamp: Unix timestamp of when the interaction occurred
         """
+        await self._init_db()
+
         async with AsyncSession(self.sqlalchemy_engine) as session, session.begin():
             # Ensure conversation exists if conversation_id is provided
             if context.conversation_id:
@@ -144,7 +213,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             context_data = context.model_dump(mode="json")
 
             # Create interaction record
-            interaction = ChatInteraction(
+            interaction = self.ChatInteraction(
                 conversation_id=context.conversation_id,
                 message_id=context.message_id,
                 message=message,
@@ -157,8 +226,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             session.add(interaction)
             await session.commit()
 
-    @staticmethod
-    async def _ensure_conversation_exists(session: AsyncSession, conversation_id: str) -> None:
+    async def _ensure_conversation_exists(self, session: AsyncSession, conversation_id: str) -> None:
         """
         Ensures that a conversation with the given ID exists in the database.
 
@@ -167,12 +235,12 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             conversation_id: The ID of the conversation to check/create.
         """
         # Check if conversation exists
-        result = await session.execute(sqlalchemy.select(Conversation).filter_by(id=conversation_id).limit(1))
+        result = await session.execute(sqlalchemy.select(self.Conversation).filter_by(id=conversation_id).limit(1))
         existing_conversation = result.scalar_one_or_none()
 
         # Create conversation if it doesn't exist
         if not existing_conversation:
-            conversation = Conversation(id=conversation_id)
+            conversation = self.Conversation(id=conversation_id)
             session.add(conversation)
 
     async def get_conversation_interactions(self, conversation_id: str) -> list[dict[str, Any]]:
@@ -185,17 +253,20 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         Returns:
             A list of interaction dictionaries with deserialized data.
         """
+        await self._init_db()
+
         async with AsyncSession(self.sqlalchemy_engine) as session:
             result = await session.execute(
-                sqlalchemy.select(ChatInteraction)
+                sqlalchemy.select(self.ChatInteraction)
                 .filter_by(conversation_id=conversation_id)
-                .order_by(ChatInteraction.timestamp)
+                .order_by(self.ChatInteraction.timestamp)
             )
             interactions = result.scalars().all()
 
             return [
                 {
                     "id": interaction.id,
+                    "conversation_id": interaction.conversation_id,
                     "message_id": interaction.message_id,
                     "message": interaction.message,
                     "response": interaction.response,

@@ -10,8 +10,6 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
 
     def __init__(self, base_path: str | Path):
         self.base_path = Path(base_path)
-        self.base_path.mkdir(parents=True, exist_ok=True)
-        self.current_file = None
 
     def _get_file_path(self, conversation_id: str) -> Path:
         """Get the current conversation file path based on date and conversation ID."""
