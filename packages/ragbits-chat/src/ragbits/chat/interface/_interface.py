@@ -10,11 +10,11 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
 from ragbits.core.audit.metrics import record
-from ragbits.core.audit.metrics.base import HistogramMetric
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
+from ..metrics import ChatMetric
 from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig
 from .types import (
@@ -52,7 +52,7 @@ def with_chat_metadata(
 
         # Track history length
         history_length = len(history) if history else 0
-        record(HistogramMetric.CHAT_HISTORY_LENGTH, history_length, interface_class=self.__class__.__name__)
+        record(ChatMetric.CHAT_HISTORY_LENGTH, history_length, interface_class=self.__class__.__name__)
 
         # Generate message_id if not present
         if not context.message_id:
@@ -67,7 +67,7 @@ def with_chat_metadata(
             yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
 
             # Track new conversation
-            record(HistogramMetric.CHAT_CONVERSATION_COUNT, 1, interface_class=self.__class__.__name__)
+            record(ChatMetric.CHAT_CONVERSATION_COUNT, 1, interface_class=self.__class__.__name__)
 
         responses = []
         main_response = ""
@@ -88,7 +88,7 @@ def with_chat_metadata(
 
             # Track successful message processing
             record(
-                HistogramMetric.CHAT_MESSAGE_COUNT,
+                ChatMetric.CHAT_MESSAGE_COUNT,
                 1,
                 interface_class=self.__class__.__name__,
                 is_new_conversation=str(is_new_conversation),
@@ -97,7 +97,7 @@ def with_chat_metadata(
             # Track response tokens
             if response_token_count > 0:
                 record(
-                    HistogramMetric.CHAT_RESPONSE_TOKENS,
+                    ChatMetric.CHAT_RESPONSE_TOKENS,
                     response_token_count,
                     interface_class=self.__class__.__name__,
                 )
@@ -105,7 +105,7 @@ def with_chat_metadata(
         except Exception as e:
             # Track errors
             record(
-                HistogramMetric.CHAT_ERROR_COUNT,
+                ChatMetric.CHAT_ERROR_COUNT,
                 1,
                 interface_class=self.__class__.__name__,
                 error_type=type(e).__name__,
@@ -115,7 +115,7 @@ def with_chat_metadata(
             # Track request duration
             duration = time.time() - start_time
             record(
-                HistogramMetric.CHAT_REQUEST_DURATION,
+                ChatMetric.CHAT_REQUEST_DURATION,
                 duration,
                 interface_class=self.__class__.__name__,
                 is_new_conversation=str(is_new_conversation),
@@ -231,18 +231,16 @@ class ChatInterface(ABC):
         is_valid = hmac.compare_digest(expected_signature, signature)
 
         # Track state verification
-        record(
-            HistogramMetric.CHAT_STATE_VERIFICATION_COUNT, 1, verification_result="success" if is_valid else "failure"
-        )
+        record(ChatMetric.CHAT_STATE_VERIFICATION_COUNT, 1, verification_result="success" if is_valid else "failure")
 
         return is_valid
 
     async def setup(self) -> None:  # noqa: B027
         """
-        Setup the chat interface.
+        Set up the chat interface.
 
         This method is called after the chat interface is initialized and before the chat method is called.
-        It is used to setup the chat interface, such as loading the model or initializing the vector store.
+        It is used to set up the chat interface, such as loading the model or initializing the vector store.
 
         This method is optional and can be overridden by subclasses.
         """
@@ -302,6 +300,6 @@ class ChatInterface(ABC):
             payload: The payload of the feedback
         """
         # Track feedback submission
-        record(HistogramMetric.CHAT_FEEDBACK_COUNT, 1, interface_class=self.__class__.__name__, feedback_type=feedback)
+        record(ChatMetric.CHAT_FEEDBACK_COUNT, 1, interface_class=self.__class__.__name__, feedback_type=feedback)
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")

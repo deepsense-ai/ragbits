@@ -27,25 +27,9 @@ class HistogramMetric(Enum):
     INPUT_TOKENS = auto()
     TIME_TO_FIRST_TOKEN = auto()
 
-    # Chat Interface Metrics
-    CHAT_REQUEST_DURATION = auto()
-    CHAT_RESPONSE_TOKENS = auto()
-    CHAT_HISTORY_LENGTH = auto()
-    CHAT_MESSAGE_COUNT = auto()
-    CHAT_CONVERSATION_COUNT = auto()
-    CHAT_FEEDBACK_COUNT = auto()
-    CHAT_ERROR_COUNT = auto()
-    CHAT_STATE_VERIFICATION_COUNT = auto()
 
-    # API Metrics
-    API_REQUEST_DURATION = auto()
-    API_REQUEST_COUNT = auto()
-    API_ERROR_COUNT = auto()
-    API_STREAM_DURATION = auto()
-    API_STREAM_CHUNK_COUNT = auto()
-
-
-HISTOGRAM_METRICS = {
+# Global registry for histogram metrics - can be extended by other packages
+HISTOGRAM_METRICS: dict[HistogramMetric | str, Metric] = {
     HistogramMetric.PROMPT_THROUGHPUT: Metric(
         name="prompt_throughput",
         description="Tracks the response time of LLM calls in seconds",
@@ -66,74 +50,20 @@ HISTOGRAM_METRICS = {
         description="Tracks the time to first token in seconds",
         unit="s",
     ),
-    # Chat Interface Metrics
-    HistogramMetric.CHAT_REQUEST_DURATION: Metric(
-        name="chat_request_duration",
-        description="Tracks the total duration of chat request processing in seconds",
-        unit="s",
-    ),
-    HistogramMetric.CHAT_RESPONSE_TOKENS: Metric(
-        name="chat_response_tokens",
-        description="Tracks the number of tokens in chat responses",
-        unit="tokens",
-    ),
-    HistogramMetric.CHAT_HISTORY_LENGTH: Metric(
-        name="chat_history_length",
-        description="Tracks the length of conversation history",
-        unit="messages",
-    ),
-    HistogramMetric.CHAT_MESSAGE_COUNT: Metric(
-        name="chat_message_count",
-        description="Tracks the count of chat messages processed",
-        unit="messages",
-    ),
-    HistogramMetric.CHAT_CONVERSATION_COUNT: Metric(
-        name="chat_conversation_count",
-        description="Tracks the count of new conversations started",
-        unit="conversations",
-    ),
-    HistogramMetric.CHAT_FEEDBACK_COUNT: Metric(
-        name="chat_feedback_count",
-        description="Tracks the count of feedback submissions",
-        unit="feedback",
-    ),
-    HistogramMetric.CHAT_ERROR_COUNT: Metric(
-        name="chat_error_count",
-        description="Tracks the count of errors during chat processing",
-        unit="errors",
-    ),
-    HistogramMetric.CHAT_STATE_VERIFICATION_COUNT: Metric(
-        name="chat_state_verification_count",
-        description="Tracks the count of state verifications",
-        unit="verifications",
-    ),
-    # API Metrics
-    HistogramMetric.API_REQUEST_DURATION: Metric(
-        name="api_request_duration",
-        description="Tracks the duration of API request processing in seconds",
-        unit="s",
-    ),
-    HistogramMetric.API_REQUEST_COUNT: Metric(
-        name="api_request_count",
-        description="Tracks the count of API requests by endpoint",
-        unit="requests",
-    ),
-    HistogramMetric.API_ERROR_COUNT: Metric(
-        name="api_error_count",
-        description="Tracks the count of API errors by status code",
-        unit="errors",
-    ),
-    HistogramMetric.API_STREAM_DURATION: Metric(
-        name="api_stream_duration",
-        description="Tracks the duration of streaming responses in seconds",
-        unit="s",
-    ),
-    HistogramMetric.API_STREAM_CHUNK_COUNT: Metric(
-        name="api_stream_chunk_count",
-        description="Tracks the number of chunks streamed per response",
-        unit="chunks",
-    ),
 }
+
+
+def register_histogram_metric(key: HistogramMetric | str, metric: Metric) -> None:
+    """
+    Register a new histogram metric in the global registry.
+
+    This allows other packages to extend the metrics system.
+
+    Args:
+        key: The metric key (enum value or string)
+        metric: The metric configuration
+    """
+    HISTOGRAM_METRICS[key] = metric
 
 
 class MetricHandler(Generic[HistogramT], ABC):
