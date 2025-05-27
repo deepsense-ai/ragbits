@@ -51,7 +51,7 @@ class _MetricLMM(LLMInterface):
                 options=self._llm.options_cls(
                     temperature=temperature,
                     max_tokens=max_tokens,
-                )
+                ),
             )
         )
         return response
