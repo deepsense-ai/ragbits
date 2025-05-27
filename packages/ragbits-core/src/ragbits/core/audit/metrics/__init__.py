@@ -1,12 +1,13 @@
 from typing import Any
 
-from ragbits.core.audit.metrics.base import HistogramMetric, MetricHandler
+from ragbits.core.audit.metrics.base import HistogramMetric, MetricHandler, register_histogram_metric
 
 __all__ = [
     "HistogramMetric",
     "MetricHandler",
     "clear_metric_handlers",
     "record",
+    "register_histogram_metric",
     "set_metric_handlers",
 ]
 
