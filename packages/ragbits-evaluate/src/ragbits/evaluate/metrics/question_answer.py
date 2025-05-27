@@ -27,34 +27,19 @@ class _MetricLMM(LLMInterface):
     Implementation of required interface of Relari generative metrics based on LiteLMM.
     """
 
-    def __init__(
-        self,
-        llm: LLM,
-    ) -> None:
+    def __init__(self, llm: LLM) -> None:
         self._llm = llm
 
     def run(self, prompt: dict[str, str], temperature: float = 0, max_tokens: int = 1024) -> str:
-        """
-        Run the prompt.
-
-        Args:
-            prompt: Dict with system_prompt and user_prompt entries.
-            temperature: Temperature to use.
-            max_tokens: Max tokens to use.
-        """
-        response = asyncio.run(
-            self._llm.generate(
-                [
-                    {"role": "system", "content": prompt["system_prompt"]},
-                    {"role": "user", "content": prompt["user_prompt"]},
-                ],
-                options=self._llm.options_cls(
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                ),
-            )
+        formatted_prompt = [
+            {"role": "system", "content": prompt["system_prompt"]},
+            {"role": "user", "content": prompt["user_prompt"]},
+        ]
+        options = self._llm.options_cls(
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
-        return response
+        return asyncio.run(self._llm.generate(formatted_prompt, options=options))
 
 
 class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
