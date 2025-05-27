@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.19.1 (2025-05-27)
+
+### Changed
+
+- ragbits-chat updated to version v0.19.1
+- ragbits-cli updated to version v0.19.1
+- ragbits-document-search updated to version v0.19.1
+- ragbits-evaluate updated to version v0.19.1
+- ragbits-guardrails updated to version v0.19.1
+- ragbits-core updated to version v0.19.1
+
 ## 0.19.0 (2025-05-27)
 
 ### Changed
