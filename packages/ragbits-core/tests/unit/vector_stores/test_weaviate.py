@@ -96,15 +96,15 @@ def flatten_metadata(metadata: dict, separator: str = "___") -> dict:
 async def test_store_adds_multiple_entries(
     mock_weaviate_store: WeaviateVectorStore, sample_entries: list[VectorStoreEntry]
 ):
-    mock_weaviate_store._client.collections.exists.return_value = False # type: ignore
+    mock_weaviate_store._client.collections.exists.return_value = False  # type: ignore
 
     await mock_weaviate_store.store(sample_entries)
 
-    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.create.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
+    mock_weaviate_store._client.collections.exists.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.create.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")  # type: ignore
 
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with( # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with(  # type: ignore
         [
             wvc.data.DataObject(
                 uuid=str(sample_entries[0].id),
@@ -128,53 +128,53 @@ async def test_store_adds_multiple_entries(
 async def test_store_creates_collection_when_not_exists(
     mock_weaviate_store: WeaviateVectorStore, sample_entry: VectorStoreEntry
 ):
-    mock_weaviate_store._client.collections.exists.return_value = False # type: ignore
+    mock_weaviate_store._client.collections.exists.return_value = False  # type: ignore
 
     await mock_weaviate_store.store([sample_entry])
 
-    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.create.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
+    mock_weaviate_store._client.collections.exists.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.create.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")  # type: ignore
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=flatten_metadata(sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
         vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object]) # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_store_uses_existing_collection(mock_weaviate_store: WeaviateVectorStore, sample_entry: VectorStoreEntry):
-    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
+    mock_weaviate_store._client.collections.exists.return_value = True  # type: ignore
 
     await mock_weaviate_store.store([sample_entry])
 
-    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.create.assert_not_called() # type: ignore
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
+    mock_weaviate_store._client.collections.exists.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.create.assert_not_called()  # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")  # type: ignore
 
     expected_object = wvc.data.DataObject(
         uuid=str(sample_entry.id),
         properties=flatten_metadata(sample_entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")),
         vector=[0.1, 0.2, 0.3],
     )
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object]) # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_store_handles_empty_entries(mock_weaviate_store: WeaviateVectorStore):
     await mock_weaviate_store.store([])
 
-    mock_weaviate_store._client.collections.exists.assert_not_called() # type: ignore
-    mock_weaviate_store._client.collections.create.assert_not_called() # type: ignore
-    mock_weaviate_store._client.collections.get.assert_not_called() # type: ignore
-    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called() # type: ignore
+    mock_weaviate_store._client.collections.exists.assert_not_called()  # type: ignore
+    mock_weaviate_store._client.collections.create.assert_not_called()  # type: ignore
+    mock_weaviate_store._client.collections.get.assert_not_called()  # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_not_called()  # type: ignore
 
 
 @pytest.mark.asyncio
 async def test_retrieve(mock_weaviate_store: WeaviateVectorStore):
-    mock_weaviate_store._client.collections.get.return_value.query.near_vector.return_value.objects = [ # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.query.near_vector.return_value.objects = [  # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
@@ -267,7 +267,7 @@ async def test_retrieve(mock_weaviate_store: WeaviateVectorStore):
 
 @pytest.mark.asyncio
 async def test_retrieve_keyword(mock_weaviate_store: WeaviateVectorStore):
-    mock_weaviate_store._client.collections.get.return_value.query.bm25.return_value.objects = [ # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.query.bm25.return_value.objects = [  # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
@@ -361,23 +361,23 @@ async def test_retrieve_keyword(mock_weaviate_store: WeaviateVectorStore):
 
 @pytest.mark.asyncio
 async def test_remove(mock_weaviate_store: WeaviateVectorStore):
-    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
+    mock_weaviate_store._client.collections.exists.return_value = True  # type: ignore
     ids_to_remove = [UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")]
 
     await mock_weaviate_store.remove(ids_to_remove)
 
-    mock_weaviate_store._client.collections.exists.assert_called_once() # type: ignore
-    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection") # type: ignore
-    mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with( # type: ignore
+    mock_weaviate_store._client.collections.exists.assert_called_once()  # type: ignore
+    mock_weaviate_store._client.collections.get.assert_called_once_with("test_collection")  # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.data.delete_many.assert_called_once_with(  # type: ignore
         where=Filter.by_id().contains_any(ids_to_remove)
     )
 
 
 @pytest.mark.asyncio
 async def test_list_no_filtering(mock_weaviate_store: WeaviateVectorStore):
-    mock_weaviate_store._client.collections.exists.return_value = True # type: ignore
-    mock_weaviate_store._client.collections.get.return_value.aggregate.over_all.return_value.total_count = 2 # type: ignore
-    mock_weaviate_store._client.collections.get.return_value.query.fetch_objects.return_value.objects = [ # type: ignore
+    mock_weaviate_store._client.collections.exists.return_value = True  # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.aggregate.over_all.return_value.total_count = 2  # type: ignore
+    mock_weaviate_store._client.collections.get.return_value.query.fetch_objects.return_value.objects = [  # type: ignore
         Object(
             uuid=UUID("1c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
             metadata=MetadataReturn(
