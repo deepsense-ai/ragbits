@@ -8,6 +8,7 @@
 - Adjust typing for DocumentSearch (#554)
 - Add Prometheus & Grafana Monitoring for LLMs Using OpenTelemetry (#427)
 - Restructure audit module (#427)
+- Integrate Weaviate vector store (#347)
 
 ## 0.17.1 (2025-05-09)
 
