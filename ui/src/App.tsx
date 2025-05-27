@@ -9,14 +9,14 @@ import {
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { ConfigResponse, FormType } from "./types/api.ts";
+import { ConfigResponse, FormEnabler, FormType } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { buildApiUrl } from "./core/utils/api.ts";
-import { useRequest } from "./core/utils/request.ts";
+import { createRequest, useRequest } from "./core/utils/request.ts";
 
 export default function Component() {
   const [config, setConfig] = useState<ConfigResponse | null>(null);
@@ -24,6 +24,10 @@ export default function Component() {
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [feedbackName, setFeedbackName] = useState<FormType>();
+  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
+    null,
+  );
+
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const {
     history,
@@ -41,13 +45,16 @@ export default function Component() {
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
     const SCROLL_DOWN_THRESHOLD = 100;
+
     if (!scrollContainerRef.current) return;
+
     const container = scrollContainerRef.current;
     const offsetFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
     setShowScrollDownButton(offsetFromBottom > SCROLL_DOWN_THRESHOLD);
     setShouldAutoScroll(false);
+
     if (offsetFromBottom > AUTO_SCROLL_THRESHOLD) {
       setShouldAutoScroll(false);
     } else {
@@ -58,6 +65,7 @@ export default function Component() {
   useEffect(() => {
     if (configRequest.data) {
       const config = configRequest.data.data;
+
       setConfig(config);
     }
   }, [configRequest.data]);
@@ -67,16 +75,14 @@ export default function Component() {
       return;
     }
 
-    if (
-      Object.prototype.hasOwnProperty.call(config, FormType.LIKE) ||
-      Object.prototype.hasOwnProperty.call(config, FormType.DISLIKE)
-    ) {
+    if (config[FormEnabler.LIKE] || config[FormEnabler.DISLIKE]) {
       pluginManager.activate(FeedbackFormPluginName);
     }
   }, [config]);
 
   useEffect(() => {
     setShouldAutoScroll(true);
+
     if (history.length === 0) {
       setShowScrollDownButton(false);
     }
@@ -102,19 +108,36 @@ export default function Component() {
 
   const scrollToBottom = useCallback(() => {
     if (!scrollContainerRef.current) return;
+
     scrollContainerRef.current.scrollTo({
       top: scrollContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
+
     setShouldAutoScroll(true);
   }, []);
 
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
-    console.log("Feedback form submitted:", data);
+    try {
+      const formRequest = createRequest(buildApiUrl("/api/feedback"), {
+        method: "POST",
+        body: {
+          message_id: feedbackMessageId,
+          feedback: feedbackName,
+          payload: data,
+        },
+      });
+      await formRequest();
+    } catch (e) {
+      console.error(e);
+      // TODO: Add some information to the UI about error
+      // TODO: Separate the feedback logic into separate component from the plugin
+    }
   };
 
-  const onOpenFeedbackForm = async (name: typeof feedbackName) => {
+  const onOpenFeedbackForm = async (id: string, name: typeof feedbackName) => {
     setFeedbackName(name);
+    setFeedbackMessageId(id);
 
     if (config![name as keyof typeof config] === null) {
       await onFeedbackFormSubmit(null);
@@ -126,6 +149,7 @@ export default function Component() {
 
   const handleSubmit = () => {
     sendMessage(message);
+    setMessage("");
   };
 
   const heroMessage = `Hello! I'm your AI assistant.\n\n How can I help you today?
@@ -143,8 +167,8 @@ You can ask me anything! I can provide information, answer questions, and assist
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
-          likeForm={config?.["like_form"]}
-          dislikeForm={config?.["dislike_form"]}
+          likeForm={config?.[FormType.LIKE] || null}
+          dislikeForm={config?.[FormType.DISLIKE] || null}
         />
       ))}
     </ScrollShadow>
@@ -212,13 +236,8 @@ You can ask me anything! I can provide information, answer questions, and assist
         plugin={FeedbackFormPlugin}
         component="FeedbackFormComponent"
         componentProps={{
-          title: "Feedback Form",
-          schema:
-            config && feedbackName
-              ? !config[feedbackName]
-                ? { title: "", fields: [] }
-                : config[feedbackName]
-              : { title: "", fields: [] },
+          title: config?.[feedbackName as FormType]?.title ?? "Feedback form",
+          schema: config?.[feedbackName as FormType] ?? null,
           onClose: onOpenChange,
           onSubmit: onFeedbackFormSubmit,
           isOpen,

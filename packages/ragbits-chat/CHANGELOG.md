@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+- Add uvicorn to dependencies (#578)
+- Remove HeroUI Pro components (#557)
+
+## 0.18.0 (2025-05-22)
+
+### Changed
+
+- ragbits-core updated to version v0.18.0
+
 - updated ui build (#553)
 - api integration improvements + history context changes (#552)
+- feedback form integration (#540)
 
 ## 0.17.1 (2025-05-09)
 

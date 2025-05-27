@@ -1,4 +1,5 @@
-from typing import cast
+import json
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
@@ -279,3 +280,99 @@ async def test_list(mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[Magi
         assert results[1].id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
         assert results[1].text == "test_text_2"
         assert results[1].metadata == {"key2": "value2"}
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_where_clause(
+    mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
+) -> None:
+    data = DATA_JSON_EXAMPLE
+    query = "SQL RETRIEVE QUERY"
+    _, mock_conn = mock_db_pool
+    where_clause: dict[str, str | int | float | bool | dict[Any, Any]] = {"key1": "value1"}
+
+    with patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query:
+        mock_conn.fetch = AsyncMock(return_value=data)
+        mock_create_retrieve_query.return_value = (query, [["[0.1, 0.2, 0.3]", 0.1, 1]])
+        results = await mock_pgvector_store.retrieve(text="some_text", options=VectorStoreOptions(where=where_clause))
+        mock_create_retrieve_query.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        assert len(results) == 2
+        assert isinstance(results[0], VectorStoreResult)
+        assert isinstance(results[1], VectorStoreResult)
+        assert results[0].entry.id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[1].entry.id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+
+
+@pytest.mark.asyncio
+async def test_list_with_where_clause(
+    mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
+) -> None:
+    data = DATA_JSON_EXAMPLE
+    query = f"SELECT * FROM {TEST_TABLE_NAME};"  # noqa S608
+    _, mock_conn = mock_db_pool
+    where_clause: dict[str, str | int | float | bool | dict[Any, Any]] = {"key1": "value1"}
+
+    with patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query:
+        mock_create_list_query.return_value = (query, [json.dumps(where_clause), None, 0])
+        mock_conn.fetch = AsyncMock(return_value=data)
+
+        results = await mock_pgvector_store.list(where=where_clause)
+        mock_create_list_query.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        calls = mock_conn.fetch.mock_calls
+        assert any("SELECT * FROM" in str(call) for call in calls)
+        assert len(results) == 2
+        assert results[0].id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[0].text == "test_text_1"
+        assert results[0].metadata == {"key1": "value1"}
+        assert results[1].id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[1].text == "test_text_2"
+        assert results[1].metadata == {"key2": "value2"}
+
+
+@pytest.mark.asyncio
+async def test_list_with_nested_where_clause(
+    mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
+) -> None:
+    data = DATA_JSON_EXAMPLE
+    query = f"SELECT * FROM {TEST_TABLE_NAME};"  # noqa S608
+    _, mock_conn = mock_db_pool
+    where_clause: dict[str, str | int | float | bool | dict[Any, Any]] = {
+        "document": {"title": "test title", "author": "test author"}
+    }
+
+    with patch.object(mock_pgvector_store, "_create_list_query") as mock_create_list_query:
+        mock_create_list_query.return_value = (query, [json.dumps(where_clause), None, 0])
+        mock_conn.fetch = AsyncMock(return_value=data)
+
+        results = await mock_pgvector_store.list(where=where_clause)
+        mock_create_list_query.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        calls = mock_conn.fetch.mock_calls
+        assert any("SELECT * FROM" in str(call) for call in calls)
+        assert len(results) == 2
+
+
+@pytest.mark.asyncio
+async def test_retrieve_with_where_clause_and_score_threshold(
+    mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
+) -> None:
+    data = DATA_JSON_EXAMPLE
+    query = "SQL RETRIEVE QUERY"
+    _, mock_conn = mock_db_pool
+    where_clause: dict[str, str | int | float | bool | dict[Any, Any]] = {"key1": "value1"}
+
+    with patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query:
+        mock_conn.fetch = AsyncMock(return_value=data)
+        mock_create_retrieve_query.return_value = (query, [["[0.1, 0.2, 0.3]", 0.1, 1]])
+        results = await mock_pgvector_store.retrieve(
+            text="some_text", options=VectorStoreOptions(where=where_clause, score_threshold=0.5)
+        )
+        mock_create_retrieve_query.assert_called_once()
+        mock_conn.fetch.assert_called_once()
+        assert len(results) == 2
+        assert isinstance(results[0], VectorStoreResult)
+        assert isinstance(results[1], VectorStoreResult)
+        assert results[0].entry.id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+        assert results[1].entry.id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")

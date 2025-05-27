@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, NamedTuple, cast
+from typing import Any, NamedTuple
 from uuid import UUID
 
 import asyncpg
@@ -173,13 +173,19 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         # _table_name has been validated in the class constructor, and it is a valid table name.
         query = f"SELECT *, vector {distance_operator} $1 as distance, {score_formula} as score FROM {self._table_name}"  # noqa S608
 
-        values: list[Any] = [
-            self._vector_to_string(vector),
-        ]
+        values: list[Any] = [self._vector_to_string(vector)]
+        where_clauses = []
 
         if query_options.score_threshold is not None:
-            query += " WHERE score >= $2"
-            values.extend([query_options.score_threshold])
+            where_clauses.append("score >= $" + str(len(values) + 1))
+            values.append(query_options.score_threshold)
+
+        if query_options.where:
+            where_clauses.append(f"metadata @> ${len(values) + 1}")
+            values.append(json.dumps(query_options.where))
+
+        if where_clauses:
+            query += " WHERE " + " AND ".join(where_clauses)
 
         query += " ORDER BY distance"
 
@@ -351,25 +357,23 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Returns:
             The retrieved entries.
         """
-        query_options = (self.default_options | options) if options else self.default_options
+        merged_options = (self.default_options | options) if options else self.default_options
+
         with trace(
             text=text,
+            options=merged_options.dict(),
             table_name=self._table_name,
-            query_options=query_options,
             vector_size=self._vector_size,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ) as outputs:
-            vector = (await self._embedder.embed_text([text]))[0]
-            vector = cast(list[float], vector)
-
-            query_options = (self.default_options | options) if options else self.default_options
-            retrieve_query, values = self._create_retrieve_query(vector, query_options)
+            query_vector = (await self._embedder.embed_text([text]))[0]
+            query, values = self._create_retrieve_query(query_vector, merged_options)
 
             try:
                 async with self._client.acquire() as conn:
-                    results = await conn.fetch(retrieve_query, *values)
+                    results = await conn.fetch(query, *values)
 
                 outputs.results = [
                     VectorStoreResult(
