@@ -25,6 +25,7 @@ export enum ChatResponseType {
   TEXT = "text",
   REFERENCE = "reference",
   MESSAGE_ID = "message_id",
+  CONVERSATION_ID = "conversation_id",
   STATE_UPDATE = "state_update",
 }
 
@@ -54,8 +55,8 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
-interface MessageIdChatResponse {
-  type: ChatResponseType.MESSAGE_ID;
+interface ConversationIdChatResponse {
+  type: ChatResponseType.CONVERSATION_ID;
   content: string;
 }
 
@@ -73,6 +74,7 @@ export type ChatResponse =
   | TextChatResponse
   | ReferenceChatResponse
   | MessageIdChatResponse
+  | ConversationIdChatResponse
   | StateUpdateChatResponse;
 
 export enum FormType {

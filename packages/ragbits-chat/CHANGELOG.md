@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add persistance component to save chat interactions from ragbits-chat (#556)
+- Add conversation_id parameter to chat interface context (#556)
 - Add uvicorn to dependencies (#578)
 - Remove HeroUI Pro components (#557)
 
