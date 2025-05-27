@@ -9,17 +9,15 @@ import {
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { ConfigResponse, FormEnabler, FormType } from "./types/api.ts";
+import { FormEnabler, FormType, FormSchemaResponse } from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { buildApiUrl } from "./core/utils/api.ts";
-import { createRequest, useRequest } from "./core/utils/request.ts";
+import { useRagbitsCall, type FeedbackRequest } from "ragbits-api-client-react";
 
-export default function Component() {
-  const [config, setConfig] = useState<ConfigResponse | null>(null);
+export default function App() {
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -40,7 +38,17 @@ export default function Component() {
     FeedbackFormPluginName,
   );
   const showHistory = useMemo(() => history.length > 0, [history.length]);
-  const configRequest = useRequest<ConfigResponse>(buildApiUrl("/api/config"));
+
+  // Use the new generic hooks
+  const config = useRagbitsCall<Record<string, unknown>>("/api/config");
+  const feedback = useRagbitsCall<{ success: boolean }>("/api/feedback", {
+    method: "POST",
+  });
+
+  // Load config on mount
+  useEffect(() => {
+    config.call().catch(console.error);
+  }, []);
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -63,22 +71,14 @@ export default function Component() {
   }, []);
 
   useEffect(() => {
-    if (configRequest.data) {
-      const config = configRequest.data.data;
-
-      setConfig(config);
-    }
-  }, [configRequest.data]);
-
-  useEffect(() => {
-    if (!config) {
+    if (!config.data) {
       return;
     }
 
-    if (config[FormEnabler.LIKE] || config[FormEnabler.DISLIKE]) {
+    if (config.data[FormEnabler.LIKE] || config.data[FormEnabler.DISLIKE]) {
       pluginManager.activate(FeedbackFormPluginName);
     }
-  }, [config]);
+  }, [config.data]);
 
   useEffect(() => {
     setShouldAutoScroll(true);
@@ -119,19 +119,16 @@ export default function Component() {
 
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
     try {
-      const formRequest = createRequest(buildApiUrl("/api/feedback"), {
-        method: "POST",
+      await feedback.call({
         body: {
-          message_id: feedbackMessageId,
-          feedback: feedbackName,
+          message_id: feedbackMessageId!,
+          feedback: feedbackName!,
           payload: data,
-        },
+        } as FeedbackRequest,
       });
-      await formRequest();
     } catch (e) {
       console.error(e);
       // TODO: Add some information to the UI about error
-      // TODO: Separate the feedback logic into separate component from the plugin
     }
   };
 
@@ -139,7 +136,7 @@ export default function Component() {
     setFeedbackName(name);
     setFeedbackMessageId(id);
 
-    if (config![name as keyof typeof config] === null) {
+    if (config.data![name as keyof typeof config.data] === null) {
       await onFeedbackFormSubmit(null);
       return;
     }
@@ -167,8 +164,12 @@ You can ask me anything! I can provide information, answer questions, and assist
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
-          likeForm={config?.[FormType.LIKE] || null}
-          dislikeForm={config?.[FormType.DISLIKE] || null}
+          likeForm={
+            (config.data?.[FormType.LIKE] as FormSchemaResponse) || null
+          }
+          dislikeForm={
+            (config.data?.[FormType.DISLIKE] as FormSchemaResponse) || null
+          }
         />
       ))}
     </ScrollShadow>
@@ -191,7 +192,7 @@ You can ask me anything! I can provide information, answer questions, and assist
   );
 
   const content = showHistory ? historyComponent : heroComponent;
-  const isLoading = configRequest.isLoading || historyIsLoading;
+  const isLoading = config.isLoading || historyIsLoading;
 
   return (
     <div
@@ -200,49 +201,47 @@ You can ask me anything! I can provide information, answer questions, and assist
         theme,
       )}
     >
-      <div className="h-full w-full max-w-full">
-        <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-          <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
-            {content}
-
-            {/* Floating Scroll-to-bottom button */}
+      <Layout>
+        <div className="relative flex h-full flex-col">
+          <div className="flex-1 overflow-hidden">{content}</div>
+          {showScrollDownButton && (
             <Button
-              variant="solid"
-              onPress={scrollToBottom}
-              className={cn(
-                "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
-                showScrollDownButton && showHistory
-                  ? "opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
-              tabIndex={-1}
-              startContent={<Icon icon="heroicons:arrow-down" />}
+              isIconOnly
+              variant="flat"
+              aria-label="Scroll to bottom"
+              className="absolute bottom-24 right-6 z-20"
+              onClick={scrollToBottom}
             >
-              Scroll to bottom
+              <Icon icon="heroicons:arrow-down-20-solid" />
             </Button>
-
-            <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
-              <PromptInput
-                isLoading={isLoading}
-                submit={handleSubmit}
-                message={message}
-                setMessage={setMessage}
-              />
-            </div>
+          )}
+          <div className="mt-auto">
+            <PromptInput
+              message={message}
+              setMessage={setMessage}
+              submit={handleSubmit}
+              isLoading={isLoading}
+            />
           </div>
-        </Layout>
-      </div>
-      <PluginWrapper
-        plugin={FeedbackFormPlugin}
-        component="FeedbackFormComponent"
-        componentProps={{
-          title: config?.[feedbackName as FormType]?.title ?? "Feedback form",
-          schema: config?.[feedbackName as FormType] ?? null,
-          onClose: onOpenChange,
-          onSubmit: onFeedbackFormSubmit,
-          isOpen,
-        }}
-      />
+        </div>
+      </Layout>
+      {isFeedbackFormPluginActivated && (
+        <PluginWrapper
+          plugin={FeedbackFormPlugin}
+          component="FeedbackFormComponent"
+          componentProps={{
+            title: feedbackName || "Feedback",
+            isOpen,
+            onClose: () => onOpenChange(),
+            onSubmit: onFeedbackFormSubmit,
+            schema: feedbackName
+              ? (config.data?.[
+                  feedbackName as keyof typeof config.data
+                ] as FormSchemaResponse)
+              : null,
+          }}
+        />
+      )}
     </div>
   );
 }

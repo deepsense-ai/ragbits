@@ -2,26 +2,23 @@ import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
 import {
-  chunkMessage,
-  createEventSource,
-} from "../../core/utils/eventSource.ts";
-import {
   ChatResponse,
   ChatResponseType,
   MessageRole,
   ServerState,
 } from "../../types/api.ts";
+import { ChatMessage, HistoryState } from "../../types/history.ts";
+import { mapHistoryToMessages } from "../../core/utils/messageMapper";
 import {
-  ChatMessage,
-  HistoryState,
-  UnsubscribeFn,
-} from "../../types/history.ts";
-import { buildApiUrl, mapHistoryToMessages } from "../../core/utils/api.ts";
+  useRagbitsStream,
+  type ChatResponse as ApiChatResponse,
+  type ChatRequest,
+} from "ragbits-api-client-react";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   const [serverState, setServerState] = useState<ServerState | null>(null);
-  const [unsubscribe, setUnsubscribe] = useState<UnsubscribeFn>(null);
+  const stream = useRagbitsStream<ApiChatResponse>();
 
   const updateHistoryState = (
     updater: (prev: HistoryState) => HistoryState,
@@ -111,62 +108,49 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     [_handleNonHistoryResponse, _handleHistoryResponse],
   );
 
-  const _sendMessage = useCallback(
-    (text: string, assistantResponseId: string): void => {
-      const unsubscribeFn = createEventSource(
-        buildApiUrl("/api/chat"),
-        (response) => handleResponse(response, assistantResponseId),
-        async (error) => {
-          setUnsubscribe(null);
-
-          if (!error) return;
-
-          const response: ChatResponse = {
-            type: ChatResponseType.TEXT,
-            content: error,
-          };
-          const chunkedResponse = chunkMessage(response);
-          for await (const chunk of chunkedResponse) {
-            handleResponse(chunk, assistantResponseId);
-          }
-        },
-        () => setUnsubscribe(null),
-        {
-          method: "POST",
-          body: {
-            message: text,
-            history: mapHistoryToMessages(Array.from(history.values())),
-            context: serverState ?? {},
-          },
-        },
-      );
-      setUnsubscribe(() => unsubscribeFn);
-    },
-    [history, serverState, handleResponse],
-  );
-
   const sendMessage = useCallback(
     (text?: string): void => {
       if (!text) return;
+
+      // Add user message to history
       addMessage({
         role: MessageRole.USER,
         content: text,
       });
+
+      // Add empty assistant message that will be filled with the response
       const assistantResponseId = addMessage({
         role: MessageRole.ASSISTANT,
         content: "",
       });
-      _sendMessage(text, assistantResponseId);
+
+      // Prepare chat request
+      const chatRequest: ChatRequest = {
+        message: text,
+        history: mapHistoryToMessages(Array.from(history.values())),
+        context: serverState?.state ?? {},
+      };
+
+      // Send message using the new streaming hook
+      stream.stream("/api/chat", chatRequest, {
+        onMessage: (response: ApiChatResponse) =>
+          handleResponse(response as ChatResponse, assistantResponseId),
+        onError: (error: string) => {
+          handleResponse(
+            {
+              type: ChatResponseType.TEXT,
+              content: error,
+            },
+            assistantResponseId,
+          );
+        },
+        onClose: () => {
+          // Stream closed
+        },
+      });
     },
-    [addMessage, _sendMessage],
+    [history, serverState, addMessage, stream, handleResponse],
   );
-
-  const stopAnswering = useCallback((): void => {
-    if (!unsubscribe) return;
-
-    unsubscribe();
-    setUnsubscribe(null);
-  }, [unsubscribe]);
 
   const value = useMemo(
     () => ({
@@ -176,8 +160,8 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       deleteMessage,
       clearHistory,
       sendMessage,
-      isLoading: !!unsubscribe,
-      stopAnswering,
+      isLoading: stream.isStreaming,
+      stopAnswering: stream.cancel,
     }),
     [
       history,
@@ -186,8 +170,8 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       clearHistory,
       handleResponse,
       sendMessage,
-      unsubscribe,
-      stopAnswering,
+      stream.isStreaming,
+      stream.cancel,
     ],
   );
 
