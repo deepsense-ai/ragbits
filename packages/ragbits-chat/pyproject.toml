@@ -40,6 +40,10 @@ dependencies = ["fastapi>=0.115.0,<1.0.0", "uvicorn>=0.31.0,<1.0.0", "ragbits-co
 "Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
+sql = [
+    "sqlalchemy>=2.0.39,<3.0.0",
+]
+
 [tool.uv]
 dev-dependencies = [
     "pre-commit~=3.8.0",
