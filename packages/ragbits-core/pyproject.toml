@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "0.17.1"
+version = "0.18.0"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -38,7 +38,7 @@ dependencies = [
     "tomli>=2.0.2,<3.0.0",
     "litellm>=1.55.0,<2.0.0",
     "aiohttp>=3.10.8,<4.0.0",
-    "standard-imghdr>=3.10.14,<3.14"
+    "filetype>=1.2.0,<2.0.0",
 ]
 
 [project.urls]
@@ -49,7 +49,7 @@ dependencies = [
 
 [project.optional-dependencies]
 chroma = [
-    "chromadb>=0.6.3,<1.0.0",
+    "chromadb>=1.0.0,<2.0.0",
 ]
 local = [
     "sentence-transformers>=4.0.2,<5.0.0",

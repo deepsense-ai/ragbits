@@ -1,5 +1,5 @@
 import asyncio
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from uuid import uuid4
 
@@ -7,6 +7,7 @@ from typing_extensions import Self
 
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.element import Element
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
@@ -16,7 +17,9 @@ class DocumentSearchData(EvaluationData):
     """
 
     question: str
-    reference_passages: list[str]
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 @dataclass
@@ -26,8 +29,10 @@ class DocumentSearchResult(EvaluationResult):
     """
 
     question: str
-    reference_passages: list[str]
-    predicted_passages: list[str]
+    predicted_elements: Sequence[Element]
+    reference_document_ids: list[str | int] | None = None
+    reference_passages: list[str] | None = None
+    reference_page_numbers: list[int] | None = None
 
 
 class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchData, DocumentSearchResult]):
@@ -92,8 +97,10 @@ class DocumentSearchPipeline(EvaluationPipeline[DocumentSearch, DocumentSearchDa
         return [
             DocumentSearchResult(
                 question=row.question,
+                predicted_elements=elements,
+                reference_document_ids=row.reference_document_ids,
                 reference_passages=row.reference_passages,
-                predicted_passages=[element.text_representation for element in elements if element.text_representation],
+                reference_page_numbers=row.reference_page_numbers,
             )
             for row, elements in zip(data, results, strict=False)
         ]

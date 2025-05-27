@@ -13,7 +13,7 @@ from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent, ObjectConstructionConfig
 from ragbits.core.utils.pydantic import SerializableBytes
 
-WhereQuery = dict[str, str | int | float | bool]
+WhereQuery = dict[str, str | int | float | bool | dict]
 
 
 class VectorStoreEntry(BaseModel):
@@ -69,10 +69,13 @@ class VectorStoreOptions(Options):
             Note that this is based on score, which may be different from the raw
             similarity metric used by the vector store (see `VectorStoreResult`
             for more details).
+        where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+            Not specifying the key means no filtering.
     """
 
     k: int = 5
     score_threshold: float | None = None
+    where: WhereQuery | None = None
 
 
 VectorStoreOptionsT = TypeVar("VectorStoreOptionsT", bound=VectorStoreOptions)

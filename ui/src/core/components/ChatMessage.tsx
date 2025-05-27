@@ -12,7 +12,7 @@ import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 export type ChatMessageProps = {
   classNames?: string[];
   chatMessage: ChatMessage;
-  onOpenFeedbackForm?: (name: FormType) => void;
+  onOpenFeedbackForm?: (id: string, name: FormType) => void;
   likeForm: ConfigResponse[FormType.LIKE];
   dislikeForm: ConfigResponse[FormType.DISLIKE];
 };
@@ -20,7 +20,7 @@ export type ChatMessageProps = {
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
     {
-      chatMessage: { content, role, references },
+      chatMessage: { serverId, content, role, references },
       onOpenFeedbackForm,
       classNames,
       likeForm,
@@ -29,9 +29,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     ref,
   ) => {
     const rightAlign = role === MessageRole.USER;
+
     const [didAnimate, setDidAnimate] = useState(false);
-    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
+
+    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { theme } = useThemeContext();
 
     const onCopyClick = () => {
@@ -128,7 +130,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             variant="ghost"
                             className="p-0"
                             aria-label="Like message"
-                            onPress={() => onOpenFeedbackForm(FormType.LIKE)}
+                            onPress={() =>
+                              onOpenFeedbackForm(serverId || "", FormType.LIKE)
+                            }
                           >
                             <Icon icon="heroicons:hand-thumb-up" />
                           </Button>
@@ -141,7 +145,12 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             variant="ghost"
                             className="p-0"
                             aria-label="Dislike message"
-                            onPress={() => onOpenFeedbackForm(FormType.DISLIKE)}
+                            onPress={() =>
+                              onOpenFeedbackForm(
+                                serverId || "",
+                                FormType.DISLIKE,
+                              )
+                            }
                           >
                             <Icon icon="heroicons:hand-thumb-down" />
                           </Button>
