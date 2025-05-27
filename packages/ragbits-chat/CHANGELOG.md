@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.19.0 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.0
+
 - Add persistance component to save chat interactions from ragbits-chat (#556)
 - Add conversation_id parameter to chat interface context (#556)
 - Add uvicorn to dependencies (#578)
