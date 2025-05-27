@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from itertools import chain
 from typing import Generic, TypeVar
 
-import litellm
 from continuous_eval.llm_factory import LLMInterface
 from continuous_eval.metrics.base import LLMBasedMetric
 from continuous_eval.metrics.generation.text import (
@@ -16,7 +15,6 @@ from typing_extensions import Self
 
 from ragbits.agents.types import QuestionAnswerPromptOutputT
 from ragbits.core.llms.base import LLM
-from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.utils.helpers import batched
 from ragbits.evaluate.metrics.base import Metric
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerResult
@@ -30,12 +28,10 @@ class _MetricLMM(LLMInterface):
     """
 
     def __init__(
-        self, model_name: str, api_base: str | None = None, api_version: str | None = None, api_key: str | None = None
+        self,
+        llm: LLM,
     ) -> None:
-        self._model_name = model_name
-        self._api_base = api_base
-        self._api_version = api_version
-        self._api_key = api_key
+        self._llm = llm
 
     def run(self, prompt: dict[str, str], temperature: float = 0, max_tokens: int = 1024) -> str:
         """
@@ -46,17 +42,19 @@ class _MetricLMM(LLMInterface):
             temperature: Temperature to use.
             max_tokens: Max tokens to use.
         """
-        response = litellm.completion(
-            model=self._model_name,
-            messages=[
-                {"role": "system", "content": prompt["system_prompt"]},
-                {"role": "user", "content": prompt["user_prompt"]},
-            ],
-            base_url=self._api_base,
-            api_version=self._api_version,
-            api_key=self._api_key,
+        response = asyncio.run(
+            self._llm.generate(
+                [
+                    {"role": "system", "content": prompt["system_prompt"]},
+                    {"role": "user", "content": prompt["user_prompt"]},
+                ],
+                options=self._llm.options_cls(
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+            )
         )
-        return response.choices[0].message.content
+        return response
 
 
 class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
@@ -67,7 +65,7 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
 
     metric_cls: type[MetricT]
 
-    def __init__(self, llm: LiteLLM, batch_size: int = 15, weight: float = 1.0) -> None:
+    def __init__(self, llm: LLM, batch_size: int = 15, weight: float = 1.0) -> None:
         """
         Initialize the agent metric.
 
@@ -77,14 +75,7 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
             weight: Metric value weight in the final score, used during optimization.
         """
         super().__init__(weight=weight)
-        self.metric = self.metric_cls(
-            _MetricLMM(
-                model_name=llm.model_name,
-                api_base=llm.api_base,
-                api_version=llm.api_version,
-                api_key=llm.api_key,
-            )
-        )
+        self.metric = self.metric_cls(_MetricLMM(llm))
         self.batch_size = batch_size
 
     @classmethod
