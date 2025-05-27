@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.19.1 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.1
+
 - fix: dont import all persistence strategies in base file (#584)
 
 ## 0.19.0 (2025-05-27)
