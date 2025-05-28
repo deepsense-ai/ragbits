@@ -1,3 +1,4 @@
+from collections.abc import Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
 
@@ -147,7 +148,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                         wvc.data.DataObject(
                             uuid=str(entry.id),
                             properties=self._flatten_metadata(
-                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")  # type: ignore
+                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
                             ),
                             vector=embeddings[entry.id],
                         )
@@ -205,7 +206,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
             else:
                 query_vector = (await self._embedder.embed_text([text]))[0]
                 results = await index.query.near_vector(
-                    near_vector=query_vector,  # type: ignore
+                    near_vector=cast(Sequence[float], query_vector),
                     filters=filters,
                     limit=merged_options.k,
                     distance=score_threshold,  # max accepted distance
@@ -215,12 +216,12 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
 
             outputs_results = []
             for object_ in results.objects:
-                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}  # type: ignore
+                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}
                 entry_dict = {
                     "id": entry_raw["uuid"],
-                    "text": entry_raw["properties"].get("text", None),  # type: ignore
-                    "image_bytes": entry_raw["properties"].get("image_bytes", None),  # type: ignore
-                    "metadata": entry_raw["properties"].get("metadata", {}),  # type: ignore
+                    "text": cast(dict, entry_raw["properties"]).get("text", None),
+                    "image_bytes": cast(dict, entry_raw["properties"]).get("image_bytes", None),
+                    "metadata": cast(dict, entry_raw["properties"]).get("metadata", {}),
                 }
                 entry = VectorStoreEntry.model_validate(entry_dict)
 
@@ -233,13 +234,14 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                         object_.metadata.distance * score_multiplier if object_.metadata.distance is not None else None
                     )
 
-                outputs_results.append(
-                    VectorStoreResult(
-                        entry=entry,
-                        score=score,  # type: ignore
-                        vector=object_.vector["default"],  # type: ignore
+                if score is not None:
+                    outputs_results.append(
+                        VectorStoreResult(
+                            entry=entry,
+                            score=score,
+                            vector=cast(list[float], object_.vector["default"]),
+                        )
                     )
-                )
 
             outputs.results = outputs_results
 
@@ -319,7 +321,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
             results_objects = [
                 {
                     "uuid": object_.uuid,
-                    "properties": self._unflatten_metadata(object_.properties),  # type: ignore
+                    "properties": self._unflatten_metadata(object_.properties),
                 }
                 for object_ in results.objects
             ]
@@ -327,9 +329,9 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
             objects = [
                 {
                     "id": object["uuid"],
-                    "text": object["properties"].get("text", None),  # type: ignore
-                    "image_bytes": object["properties"].get("image_bytes", None),  # type: ignore
-                    "metadata": object["properties"].get("metadata", {}),  # type: ignore
+                    "text": cast(dict, object["properties"]).get("text", None),
+                    "image_bytes": cast(dict, object["properties"]).get("image_bytes", None),
+                    "metadata": cast(dict, object["properties"]).get("metadata", {}),
                 }
                 for object in results_objects
             ]
@@ -341,7 +343,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         """Flattens the metadata dictionary."""
         return flatten_dict(metadata, sep=self._separator)
 
-    def _unflatten_metadata(self, metadata: dict) -> dict:
+    def _unflatten_metadata(self, metadata: Mapping) -> dict:
         """Unflattens the metadata dictionary."""
         metadata_items_separator_replaced = {
             key.replace(self._separator, "."): value for key, value in metadata.items() if value is not None
