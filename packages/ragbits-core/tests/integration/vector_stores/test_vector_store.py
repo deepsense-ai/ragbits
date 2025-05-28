@@ -284,7 +284,10 @@ async def test_vector_store_retrieve_with_where_clause(
     text_vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await text_vector_store.store(vector_store_entries)
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(text_vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await text_vector_store.store(test_vector_store_entries)
 
     # Test with a simple where clause
     results = await text_vector_store.retrieve(
@@ -299,7 +302,7 @@ async def test_vector_store_retrieve_with_where_clause(
 
     # Should only return the first entry which matches both conditions
     assert len(results) == 1
-    assert results[0].entry.id == vector_store_entries[0].id
+    assert results[0].entry.id == test_vector_store_entries[0].id
     assert results[0].entry.metadata["foo"] == "bar"
     assert results[0].entry.metadata["nested_foo"]["nested_bar"] == "nested_baz"
 

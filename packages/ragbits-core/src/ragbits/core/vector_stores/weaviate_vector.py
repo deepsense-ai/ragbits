@@ -35,6 +35,8 @@ class WeaviateVectorStoreOptions(VectorStoreOptions):
             Note that this is based on score, which may be different from the raw
             similarity metric used by the vector store (see `VectorStoreResult`
             for more details).
+        where: The filter dictionary - the keys are the field names and the values are the values to filter by.
+            Not specifying the key means no filtering.
         use_keyword_search: If set to True in options passed to retrieve method then
             keyword search for text string is used instead of vector similarity search for text vector
             (Weaviate doesn't support sparse vector search, only vector similarity search and keyword search),
@@ -190,9 +192,14 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
 
             index = self._client.collections.get(self._index_name)
 
+            filters = (
+                self._create_weaviate_filter(merged_options.where, self._separator) if merged_options.where else None
+            )
+
             if merged_options.use_keyword_search:
                 results = await index.query.bm25(
                     query=text,
+                    filters=filters,
                     limit=merged_options.k,
                     return_metadata=MetadataQuery(score=True),
                     include_vector=True,
@@ -201,6 +208,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                 query_vector = (await self._embedder.embed_text([text]))[0]
                 results = await index.query.near_vector(
                     near_vector=query_vector,  # type: ignore
+                    filters=filters,
                     limit=merged_options.k,
                     distance=score_threshold,  # max accepted distance
                     return_metadata=MetadataQuery(distance=True),
