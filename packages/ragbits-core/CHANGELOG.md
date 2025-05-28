@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.19.1 (2025-05-27)
+
+## 0.19.0 (2025-05-27)
+
 - rename typevars InputT and OutputT to PromptInputT and PromptOutputT (#569)
 - Integrate Weaviate vector store (#347)
 
