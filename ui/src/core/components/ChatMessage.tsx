@@ -29,9 +29,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     ref,
   ) => {
     const rightAlign = role === MessageRole.USER;
+
     const [didAnimate, setDidAnimate] = useState(false);
-    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
+
+    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { theme } = useThemeContext();
 
     const onCopyClick = () => {

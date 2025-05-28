@@ -21,6 +21,7 @@ import { buildApiUrl, mapHistoryToMessages } from "../../core/utils/api.ts";
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   const [serverState, setServerState] = useState<ServerState | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [unsubscribe, setUnsubscribe] = useState<UnsubscribeFn>(null);
 
   const updateHistoryState = (
@@ -51,6 +52,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const clearHistory = useCallback((): void => {
     setHistory(new Map());
     setServerState(null);
+    setConversationId(null);
   }, []);
 
   const _handleNonHistoryResponse = useCallback(
@@ -58,6 +60,9 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       switch (response.type) {
         case ChatResponseType.STATE_UPDATE:
           setServerState(response.content);
+          break;
+        case ChatResponseType.CONVERSATION_ID:
+          setConversationId(response.content);
           break;
       }
     },
@@ -100,6 +105,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
         ChatResponseType.MESSAGE_ID,
+        ChatResponseType.CONVERSATION_ID,
       ];
 
       if (NON_HISTORY_TYPES.includes(response.type)) {
@@ -113,6 +119,11 @@ export function HistoryProvider({ children }: PropsWithChildren) {
 
   const _sendMessage = useCallback(
     (text: string, assistantResponseId: string): void => {
+      const context = {
+        ...(serverState ?? {}),
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+      };
+
       const unsubscribeFn = createEventSource(
         buildApiUrl("/api/chat"),
         (response) => handleResponse(response, assistantResponseId),
@@ -136,13 +147,13 @@ export function HistoryProvider({ children }: PropsWithChildren) {
           body: {
             message: text,
             history: mapHistoryToMessages(Array.from(history.values())),
-            context: serverState ?? {},
+            context: context,
           },
         },
       );
       setUnsubscribe(() => unsubscribeFn);
     },
-    [history, serverState, handleResponse],
+    [history, serverState, conversationId, handleResponse],
   );
 
   const sendMessage = useCallback(
