@@ -4,7 +4,7 @@ from uuid import UUID
 import pytest
 import weaviate.classes as wvc
 from weaviate.classes.query import Filter
-from weaviate.collections.classes.filters import _FilterAnd
+from weaviate.collections.classes.filters import _FilterAnd, _FilterValue
 from weaviate.collections.classes.internal import MetadataReturn, Object
 
 from ragbits.core.embeddings.dense import NoopEmbedder
@@ -472,13 +472,13 @@ async def test_create_weaviate_filter():
     where = {"a": "A", "b": 3, "c": True}
     weaviate_filter = WeaviateVectorStore._create_weaviate_filter(where, separator="___")  # type: ignore
     assert isinstance(weaviate_filter, _FilterAnd)
-    assert isinstance(weaviate_filter.filters[0], _FilterAnd)
-    assert weaviate_filter.filters[0].filters[0].target == "metadata___a"  # type: ignore
-    assert weaviate_filter.filters[0].filters[0].value == "A"  # type: ignore
-    assert weaviate_filter.filters[0].filters[1].target == "metadata___b"  # type: ignore
-    assert weaviate_filter.filters[0].filters[1].value == 3  # type: ignore
-    assert weaviate_filter.filters[1].target == "metadata___c"  # type: ignore
-    assert weaviate_filter.filters[1].value  # type: ignore
+    assert isinstance(weaviate_filter.filters[0], _FilterValue)
+    assert weaviate_filter.filters[0].target == "metadata___a"  # type: ignore
+    assert weaviate_filter.filters[0].value == "A"  # type: ignore
+    assert weaviate_filter.filters[1].target == "metadata___b"  # type: ignore
+    assert weaviate_filter.filters[1].value == 3  # type: ignore
+    assert weaviate_filter.filters[2].target == "metadata___c"  # type: ignore
+    assert weaviate_filter.filters[2].value  # type: ignore
 
 
 @pytest.mark.asyncio

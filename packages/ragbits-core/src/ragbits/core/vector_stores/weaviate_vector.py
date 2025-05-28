@@ -1,5 +1,3 @@
-from functools import reduce
-from operator import and_
 from typing import TypeVar, cast
 from uuid import UUID
 
@@ -9,7 +7,7 @@ from typing_extensions import Self
 from weaviate import WeaviateAsyncClient
 from weaviate.classes.config import Configure, VectorDistances
 from weaviate.classes.query import Filter, MetadataQuery
-from weaviate.collections.classes.filters import _Filters
+from weaviate.collections.classes.filters import FilterReturn
 
 from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings import Embedder
@@ -261,7 +259,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                 await index.data.delete_many(where=Filter.by_id().contains_any(ids))
 
     @staticmethod
-    def _create_weaviate_filter(where: WhereQuery, separator: str) -> _Filters:
+    def _create_weaviate_filter(where: WhereQuery, separator: str) -> FilterReturn:
         """
         Creates the Filter from the given WhereQuery.
 
@@ -274,13 +272,16 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         """
         where = flatten_dict(where)  # type: ignore
 
-        filters = (
-            Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
-            for key, value in where.items()
+        filters = Filter.all_of(
+            [
+                Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(
+                    cast(str | int | bool, value)
+                )
+                for key, value in where.items()
+            ]
         )
 
-        filters = reduce(and_, filters)  # type: ignore
-        return filters  # type: ignore
+        return filters
 
     async def list(
         self,
