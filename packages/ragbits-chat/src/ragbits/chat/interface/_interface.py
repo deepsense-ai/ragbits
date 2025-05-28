@@ -207,6 +207,17 @@ class ChatInterface(ABC):
 
         return is_valid
 
+    async def setup(self) -> None:  # noqa: B027
+        """
+        Setup the chat interface.
+
+        This method is called after the chat interface is initialized and before the chat method is called.
+        It is used to setup the chat interface, such as loading the model or initializing the vector store.
+
+        This method is optional and can be overridden by subclasses.
+        """
+        pass
+
     @abstractmethod
     async def chat(
         self,

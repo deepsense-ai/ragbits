@@ -3,6 +3,7 @@ import json
 import logging
 import time
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Literal
 
@@ -63,10 +64,16 @@ class RagbitsAPI:
             cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
             ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
         """
-        self.app = FastAPI()
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
+
+        @asynccontextmanager
+        async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+            await self.chat_interface.setup()
+            yield
+
+        self.app = FastAPI(lifespan=lifespan)
 
         self.configure_app()
         self.setup_routes()
