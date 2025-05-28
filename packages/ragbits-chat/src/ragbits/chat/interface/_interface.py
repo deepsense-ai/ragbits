@@ -150,7 +150,7 @@ class ChatInterface(ABC):
         expected_signature = ChatInterface._sign_state(state)
         return hmac.compare_digest(expected_signature, signature)
 
-    async def setup(self) -> None:
+    async def setup(self) -> None:  # noqa: B027
         """
         Setup the chat interface.
 
@@ -159,6 +159,7 @@ class ChatInterface(ABC):
 
         This method is optional and can be overridden by subclasses.
         """
+        pass
 
     @abstractmethod
     async def chat(
