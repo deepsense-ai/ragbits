@@ -2,8 +2,6 @@
 
 ## Unreleased
 
-- Add setup method to AgentInterface (#586)
-
 ## 0.19.1 (2025-05-27)
 
 ### Changed
