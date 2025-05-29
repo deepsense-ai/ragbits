@@ -3,7 +3,7 @@ from collections import Counter
 import tiktoken
 
 from ragbits.core.audit.traces import trace
-from ragbits.core.embeddings.base import SparseVector
+from ragbits.core.embeddings.base import SparseVector, VectorSize
 from ragbits.core.embeddings.sparse.base import SparseEmbedder
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -21,6 +21,33 @@ class BagOfTokens(SparseEmbedder[BagOfTokensOptions]):
     """BagOfTokens implementations of sparse Embedder interface"""
 
     options_cls = BagOfTokensOptions
+
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get the vector size for this BagOfTokens model.
+
+        For BagOfTokens, this returns the tokenizer vocabulary size.
+
+        Returns:
+            VectorSize object with is_sparse=True and the vocabulary size.
+        """
+        merged_options = self.default_options
+
+        if merged_options.encoding_name and merged_options.model_name:
+            raise ValueError("Please specify only one of encoding_name or model_name")
+        if not (merged_options.encoding_name or merged_options.model_name):
+            raise ValueError("Either encoding_name or model_name needs to be specified")
+
+        if merged_options.encoding_name:
+            encoder = tiktoken.get_encoding(encoding_name=merged_options.encoding_name)
+        elif merged_options.model_name:
+            encoder = tiktoken.encoding_for_model(model_name=merged_options.model_name)
+        else:
+            raise ValueError("Either encoding_name or model_name needs to be specified")
+
+        # Get the vocabulary size from the encoder
+        vocab_size = encoder.n_vocab
+        return VectorSize(size=vocab_size, is_sparse=True)
 
     async def embed_text(self, texts: list[str], options: BagOfTokensOptions | None = None) -> list[SparseVector]:
         """

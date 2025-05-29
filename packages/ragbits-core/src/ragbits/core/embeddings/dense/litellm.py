@@ -1,9 +1,10 @@
-from typing import Any
+from typing import Any, cast
 
 import litellm
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.embeddings.exceptions import (
     EmbeddingConnectionError,
@@ -67,6 +68,29 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
         self.api_key = api_key
         self.api_version = api_version
         self.router = router
+
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get the vector size for this LiteLLM model.
+
+        If dimensions are specified in default options, use that value.
+        Otherwise, embed a sample text to determine the dimension.
+
+        Returns:
+            VectorSize object with the model's embedding dimension.
+        """
+        # Check if dimensions are explicitly set in default options
+        if (
+            self.default_options
+            and self.default_options.dimensions is not NOT_GIVEN
+            and self.default_options.dimensions is not None
+        ):
+            # We've checked that dimensions is not None and not NOT_GIVEN, so it must be int
+            return VectorSize(size=cast(int, self.default_options.dimensions), is_sparse=False)
+
+        # If no dimensions specified, embed a sample text to determine size
+        sample_embedding = await self.embed_text(["sample"])
+        return VectorSize(size=len(sample_embedding[0]), is_sparse=False)
 
     async def embed_text(self, data: list[str], options: LiteLLMEmbedderOptions | None = None) -> list[list[float]]:
         """
