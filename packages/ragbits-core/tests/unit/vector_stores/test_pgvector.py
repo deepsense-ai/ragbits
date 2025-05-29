@@ -371,7 +371,7 @@ async def test_retrieve_with_where_clause_and_score_threshold(
 @pytest.mark.asyncio
 async def test_auto_vector_size_determination(mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
     """Test that PgVectorStore can determine vector size automatically from embedder."""
-    mock_pool, mock_conn = mock_db_pool
+    mock_pool, _mock_conn = mock_db_pool
     mock_embedder = AsyncMock()
 
     # Mock the get_vector_size method to return a VectorSize with size 5
