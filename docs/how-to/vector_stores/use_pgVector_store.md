@@ -75,7 +75,7 @@ async def main() -> None:
 
 
 !!! note
-    PgVectorStddore will automatically determine the vector dimensions from the embedder.
+    PgVectorStore will automatically determine the vector dimensions from the embedder.
     If you prefer explicit control or need to override the automatic detection, you can provide the `vector_size` parameter to PgVectorStore initializer.
 
 ## pgVectorStore in Ragbits
