@@ -62,7 +62,6 @@ async with asyncpg.create_pool(dsn=DB) as pool:
 
 The connection pool created with asyncpg.create_pool will be used to initialize an instance of PgVectorStore.
 
-
 ```python
 import asyncpg
 from ragbits.core.vector_stores.pgvector import PgVectorStore
@@ -71,12 +70,13 @@ async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:
     embedder = LiteLLMEmbedder(model="text-embedding-3-small")
-    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table", vector_size=1536)
+    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table")
 ```
 
+
 !!! note
-    Ensure that the vector size is correctly configured when initializing PgVectorStore,
-    as it must match the expected dimensions of the stored embeddings.
+    PgVectorStore will automatically determine the vector dimensions from the embedder.
+    If you prefer explicit control or need to override the automatic detection, you can provide the `vector_size` parameter to PgVectorStore initializer.
 
 ## pgVectorStore in Ragbits
 Example:
@@ -91,10 +91,10 @@ async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:
     embedder = LiteLLMEmbedder(model="text-embedding-3-small")
-    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table", vector_size=3)
-    data = [VectorStoreEntry(id="test_id_1", key="test_key_1", vector=[0.1, 0.2, 0.3],
+    vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table")
+    data = [VectorStoreEntry(id="test_id_1", text="test text 1",
             metadata={"key1": "value1", "content": "test 1"}),
-            VectorStoreEntry(id="test_id_2", key="test_key_2", vector=[0.4, 0.5, 0.6],
+            VectorStoreEntry(id="test_id_2", text="test text 2",
                               metadata={"key2": "value2", "content": "test 2"})]
 
     await vector_store.store(data)
@@ -102,8 +102,8 @@ async def main() -> None:
     print("All entries ", all_entries)
     list_result = await vector_store.list({"content": "test 1"})
     print("Entries with  {content: test 1}", list_result)
-    retrieve_result = await vector_store.retrieve(vector=[0.39, 0.55, 0.6])
-    print("Entries similar to [0.17, 0.23, 0.314] ", retrieve_result)
+    retrieve_result = await vector_store.retrieve("similar test query")
+    print("Entries similar to query", retrieve_result)
     await vector_store.remove(["test_id_1", "test_id_2"])
     after_remove = await vector_store.list()
     print("Entries after remove ", after_remove)

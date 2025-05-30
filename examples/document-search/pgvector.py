@@ -84,7 +84,7 @@ async def main() -> None:
         embedder = LiteLLMEmbedder(
             model_name="text-embedding-3-small",
         )
-        vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="example", vector_size=1536)
+        vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="example")
         document_search = DocumentSearch(
             vector_store=vector_store,
         )
