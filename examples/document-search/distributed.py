@@ -47,10 +47,10 @@ to run it is using the official Docker image:
 
 import asyncio
 
-from qdrant_client import AsyncQdrantClient
+import weaviate
 
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
-from ragbits.core.vector_stores.qdrant import QdrantVectorStore
+from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
@@ -86,14 +86,22 @@ async def main() -> None:
     embedder = LiteLLMEmbedder(
         model_name="text-embedding-3-small",
     )
-    vector_store = QdrantVectorStore(
-        client=AsyncQdrantClient(
-            host="localhost",
-            port=6333,
-        ),
+
+    vector_store = WeaviateVectorStore(
+        client= weaviate.use_async_with_local(),
         index_name="jokes",
         embedder=embedder,
     )
+
+    # vector_store = QdrantVectorStore(
+    #     client=AsyncQdrantClient(
+    #         host="localhost",
+    #         port=6333,
+    #     ),
+    #     index_name="jokes",
+    #     embedder=embedder,
+    # )
+
     ingest_strategy = RayDistributedIngestStrategy(
         cpu_batch_size=1,
         io_batch_size=4,

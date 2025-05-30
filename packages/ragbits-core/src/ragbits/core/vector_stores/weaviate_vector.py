@@ -1,4 +1,5 @@
-from collections.abc import Mapping, Sequence
+import asyncio
+from collections.abc import Callable, Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
 
@@ -6,6 +7,7 @@ import weaviate
 import weaviate.classes as wvc
 from typing_extensions import Self
 from weaviate import WeaviateAsyncClient
+from weaviate.connect import ConnectionParams, ProtocolParams
 from weaviate.classes.config import Configure, VectorDistances
 from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.collections.classes.filters import FilterReturn
@@ -90,12 +92,47 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         # so currently properties containing lists are not supported by ragbits.
         self._separator = "___"
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> tuple[Callable, tuple]:
         """
         Enables the WeaviateVectorStore to be pickled and unpickled.
+        Docs with info about params to WeaviateAsyncClient is available here:
+        https://weaviate.io/developers/weaviate/client-libraries/python/async#explicit-instantiation
+
+        Returns:
+        The tuple of function and its arguments that allows reconstruction of the WeaviateVectorStore.
         """
-        # TODO: To be implemented. Required for Ray processing.
-        raise NotImplementedError
+
+        def _reconstruct(
+            client_params: dict,
+            index_name: str,
+            embedder: Embedder,
+            distance_method: VectorDistances,
+            default_options: WeaviateVectorStoreOptions,
+        ) -> WeaviateVectorStore:
+            client = WeaviateAsyncClient(
+                connection_params=ConnectionParams(
+                    http=ProtocolParams(**client_params["http"]), grpc=ProtocolParams(**client_params["grpc"])
+                )
+            )
+            return WeaviateVectorStore(
+                client=client,
+                index_name=index_name,
+                embedder=embedder,
+                distance_method=distance_method,
+                default_options=default_options,
+            )
+
+        connection_params = self._client._connection._connection_params.model_dump(exclude_none=True, mode="json")
+        return (
+            _reconstruct,
+            (
+                connection_params,
+                self._index_name,
+                self._embedder,
+                self._distance_method,
+                self.default_options,
+            ),
+        )
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
