@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel
@@ -95,6 +95,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> dict:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -105,6 +106,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - str: Simple text prompt that will be sent as a user message
                 - ChatFormat: List of message dictionaries in OpenAI chat format
             options: Options to use for the LLM client.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Raw response from LLM.
@@ -119,6 +121,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
+            tools=tools,
         )
 
     @overload
@@ -127,6 +130,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePromptWithParser[PromptOutputT],
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> PromptOutputT: ...
 
     @overload
@@ -135,6 +139,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> PromptOutputT: ...
 
     @overload
@@ -143,6 +148,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> str: ...
 
     @overload
@@ -151,6 +157,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> str: ...
 
     async def generate(
@@ -158,6 +165,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: list[Callable] | None = None,
     ) -> PromptOutputT:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
@@ -168,12 +176,13 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - str: Simple text prompt that will be sent as a user message
                 - ChatFormat: List of message dictionaries in OpenAI chat format
             options: Options to use for the LLM client.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Parsed response from LLM.
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            raw_response = await self.generate_raw(prompt, options=options)
+            raw_response = await self.generate_raw(prompt, options=options, tools=tools)
             if isinstance(prompt, BasePromptWithParser):
                 response = await prompt.parse_response(raw_response["response"])
             else:
@@ -284,6 +293,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[Callable] | None = None,
     ) -> dict:
         """
         Calls LLM inference API.
@@ -293,6 +303,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Response dict from LLM.

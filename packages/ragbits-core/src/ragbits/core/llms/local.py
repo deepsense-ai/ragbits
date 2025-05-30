@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import time
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 
 from pydantic import BaseModel
 
@@ -95,6 +95,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[Callable] | None = None,
     ) -> dict:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -104,6 +105,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Response string from LLM.
