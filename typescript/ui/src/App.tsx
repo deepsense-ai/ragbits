@@ -9,13 +9,18 @@ import {
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { FormEnabler, FormType, FormSchemaResponse } from "./types/api.ts";
+import {
+  FormEnabler,
+  FormType,
+  FormSchemaResponse,
+  ConfigResponse,
+} from "./types/api.ts";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useRagbitsCall, type FeedbackRequest } from "ragbits-api-client-react";
+import { useRagbitsCall } from "ragbits-api-client-react";
 
 export default function App() {
   const [message, setMessage] = useState<string>("");
@@ -40,7 +45,7 @@ export default function App() {
   const showHistory = useMemo(() => history.length > 0, [history.length]);
 
   // Use the new generic hooks
-  const config = useRagbitsCall<Record<string, unknown>>("/api/config");
+  const config = useRagbitsCall<ConfigResponse>("/api/config");
   const feedback = useRagbitsCall<{ success: boolean }>("/api/feedback", {
     method: "POST",
   });
@@ -124,7 +129,7 @@ export default function App() {
           message_id: feedbackMessageId!,
           feedback: feedbackName!,
           payload: data,
-        } as FeedbackRequest,
+        },
       });
     } catch (e) {
       console.error(e);
@@ -201,52 +206,49 @@ You can ask me anything! I can provide information, answer questions, and assist
         theme,
       )}
     >
-      <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
-        <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
-          {content}
-          {/* Floating Scroll-to-bottom button */}
-          <Button
-            variant="solid"
-            onPress={scrollToBottom}
-            className={cn(
-              "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
-              showScrollDownButton && showHistory
-                ? "opacity-100"
-                : "pointer-events-none opacity-0",
-            )}
-            tabIndex={-1}
-            startContent={<Icon icon="heroicons:arrow-down" />}
-          >
-            Scroll to bottom
-          </Button>
+      <div className="h-full w-full max-w-full">
+        <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
+          <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+            {content}
+            {/* Floating Scroll-to-bottom button */}
+            <Button
+              variant="solid"
+              onPress={scrollToBottom}
+              className={cn(
+                "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
+                showScrollDownButton && showHistory
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0",
+              )}
+              tabIndex={-1}
+              startContent={<Icon icon="heroicons:arrow-down" />}
+            >
+              Scroll to bottom
+            </Button>
 
-          <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
-            <PromptInput
-              isLoading={isLoading}
-              submit={handleSubmit}
-              message={message}
-              setMessage={setMessage}
-            />
+            <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
+              <PromptInput
+                isLoading={isLoading}
+                submit={handleSubmit}
+                message={message}
+                setMessage={setMessage}
+              />
+            </div>
           </div>
-        </div>
-      </Layout>
-      {isFeedbackFormPluginActivated && (
-        <PluginWrapper
-          plugin={FeedbackFormPlugin}
-          component="FeedbackFormComponent"
-          componentProps={{
-            title: feedbackName || "Feedback",
-            isOpen,
-            onClose: () => onOpenChange(),
-            onSubmit: onFeedbackFormSubmit,
-            schema: feedbackName
-              ? (config.data?.[
-                  feedbackName as keyof typeof config.data
-                ] as FormSchemaResponse)
-              : null,
-          }}
-        />
-      )}
+        </Layout>
+      </div>
+      <PluginWrapper
+        plugin={FeedbackFormPlugin}
+        component="FeedbackFormComponent"
+        componentProps={{
+          title:
+            config.data?.[feedbackName as FormType]?.title ?? "Feedback form",
+          schema: config.data?.[feedbackName as FormType] ?? null,
+          onClose: onOpenChange,
+          onSubmit: onFeedbackFormSubmit,
+          isOpen,
+        }}
+      />
     </div>
   );
 }
