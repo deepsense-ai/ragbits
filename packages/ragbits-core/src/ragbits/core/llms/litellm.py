@@ -342,7 +342,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     @staticmethod
     def _call_tools(available_tools: dict[str, Callable], tool_calls: list, response_message: Message) -> list:
-        messages = [response_message]
+        messages = [response_message.to_dict()]
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_to_call = available_tools[function_name]
