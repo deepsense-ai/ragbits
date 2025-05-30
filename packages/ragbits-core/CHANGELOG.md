@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: add get_vector_size method to all Embedders (#587)
 - Integrate Weaviate vector store (#347)
 
 ## 0.19.1 (2025-05-27)
