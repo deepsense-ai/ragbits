@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
@@ -111,6 +112,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         client_options = ObjectConstructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, weaviate)
         config["client"] = client_cls(**client_options.config)
+        asyncio.run(config["client"].connect())
         return super().from_config(config)
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
