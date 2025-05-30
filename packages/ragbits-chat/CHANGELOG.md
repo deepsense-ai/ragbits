@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- remove HeroUI Pro components (#557)
+- refactor UI components to allow modifications (#579)
 - Add setup method to ChatInterface (#586)
 
 ## 0.19.1 (2025-05-27)
