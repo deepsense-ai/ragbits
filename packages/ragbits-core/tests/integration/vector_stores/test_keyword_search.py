@@ -1,4 +1,3 @@
-import asyncio
 from functools import partial
 from pathlib import Path
 from uuid import UUID
@@ -17,16 +16,12 @@ from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore, Weav
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
-async def weaviate_client_async():
-    client = weaviate.use_async_with_local()
-    await client.connect()
-    return partial(WeaviateVectorStore, client=client, index_name="test_keyword_index_name")
-
-
 @pytest.fixture(
     name="vector_store_cls",
     params=[
-        lambda _: weaviate_client_async,
+        lambda _: partial(
+            WeaviateVectorStore, client=weaviate.use_async_with_local(), index_name="test_keyword_index_name"
+        ),
     ],
     ids=["WeaviateVectorStore"],
 )
@@ -37,10 +32,7 @@ async def vector_store_cls_fixture(
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithEmbedder left to be set.
     """
-    returned_partial = request.param(None)
-    if asyncio.iscoroutinefunction(returned_partial):
-        return await returned_partial()
-    return returned_partial
+    return request.param(None)
 
 
 @pytest.fixture(name="vector_store")

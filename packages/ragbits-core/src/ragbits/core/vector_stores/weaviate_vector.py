@@ -1,4 +1,3 @@
-import asyncio
 from collections.abc import Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
@@ -112,7 +111,6 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         client_options = ObjectConstructionConfig.model_validate(config["client"])
         client_cls = import_by_path(client_options.type, weaviate)
         config["client"] = client_cls(**client_options.config)
-        asyncio.run(config["client"].connect())
         return super().from_config(config)
 
     async def store(self, entries: list[VectorStoreEntry]) -> None:
@@ -122,42 +120,43 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         Args:
             entries: List of VectorStoreEntry objects to store
         """
-        with trace(
-            entries=entries,
-            index_name=self._index_name,
-            distance_method=self._distance_method,
-            embedder=repr(self._embedder),
-            embedding_type=self._embedding_type,
-        ):
-            if not entries:
-                return
+        async with self._client:
+            with trace(
+                entries=entries,
+                index_name=self._index_name,
+                distance_method=self._distance_method,
+                embedder=repr(self._embedder),
+                embedding_type=self._embedding_type,
+            ):
+                if not entries:
+                    return
 
-            embeddings: dict = await self._create_embeddings(entries)
+                embeddings: dict = await self._create_embeddings(entries)
 
-            if not await self._client.collections.exists(self._index_name):
-                await self._client.collections.create(
-                    name=self._index_name,
-                    vectorizer_config=Configure.Vectorizer.none(),
-                    vector_index_config=Configure.VectorIndex.hnsw(distance_metric=self._distance_method),
-                )
-
-            index = self._client.collections.get(self._index_name)
-
-            objects = []
-            for entry in entries:
-                if entry.id in embeddings:
-                    objects.append(
-                        wvc.data.DataObject(
-                            uuid=str(entry.id),
-                            properties=self._flatten_metadata(
-                                entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
-                            ),
-                            vector=embeddings[entry.id],
-                        )
+                if not await self._client.collections.exists(self._index_name):
+                    await self._client.collections.create(
+                        name=self._index_name,
+                        vectorizer_config=Configure.Vectorizer.none(),
+                        vector_index_config=Configure.VectorIndex.hnsw(distance_metric=self._distance_method),
                     )
 
-            if objects:
-                await index.data.insert_many(objects)
+                index = self._client.collections.get(self._index_name)
+
+                objects = []
+                for entry in entries:
+                    if entry.id in embeddings:
+                        objects.append(
+                            wvc.data.DataObject(
+                                uuid=str(entry.id),
+                                properties=self._flatten_metadata(
+                                    entry.model_dump(exclude={"id"}, exclude_none=True, mode="json")
+                                ),
+                                vector=embeddings[entry.id],
+                            )
+                        )
+
+                if objects:
+                    await index.data.insert_many(objects)
 
     async def retrieve(self, text: str, options: WeaviateVectorStoreOptionsT | None = None) -> list[VectorStoreResult]:
         """
@@ -178,76 +177,81 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         # https://weaviate.io/developers/weaviate/config-refs/distances#available-distance-metrics
         score_multiplier = -1
         score_threshold = merged_options.score_threshold
-        with trace(
-            text=text,
-            options=merged_options,
-            index_name=self._index_name,
-            distance_method=self._distance_method,
-            embedder=repr(self._embedder),
-            embedding_type=self._embedding_type,
-        ) as outputs:
-            collection_exists = await self._client.collections.exists(self._index_name)
+        async with self._client:
+            with trace(
+                text=text,
+                options=merged_options,
+                index_name=self._index_name,
+                distance_method=self._distance_method,
+                embedder=repr(self._embedder),
+                embedding_type=self._embedding_type,
+            ) as outputs:
+                collection_exists = await self._client.collections.exists(self._index_name)
 
-            if not collection_exists:
-                return []
+                if not collection_exists:
+                    return []
 
-            index = self._client.collections.get(self._index_name)
+                index = self._client.collections.get(self._index_name)
 
-            filters = (
-                self._create_weaviate_filter(merged_options.where, self._separator) if merged_options.where else None
-            )
-
-            if merged_options.use_keyword_search:
-                results = await index.query.bm25(
-                    query=text,
-                    filters=filters,
-                    limit=merged_options.k,
-                    return_metadata=MetadataQuery(score=True),
-                    include_vector=True,
+                filters = (
+                    self._create_weaviate_filter(merged_options.where, self._separator)
+                    if merged_options.where
+                    else None
                 )
-            else:
-                query_vector = (await self._embedder.embed_text([text]))[0]
-                results = await index.query.near_vector(
-                    near_vector=cast(Sequence[float], query_vector),
-                    filters=filters,
-                    limit=merged_options.k,
-                    distance=score_threshold,  # max accepted distance
-                    return_metadata=MetadataQuery(distance=True),
-                    include_vector=True,
-                )
-
-            outputs_results = []
-            for object_ in results.objects:
-                entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}
-                entry_dict = {
-                    "id": entry_raw["uuid"],
-                    "text": cast(dict, entry_raw["properties"]).get("text", None),
-                    "image_bytes": cast(dict, entry_raw["properties"]).get("image_bytes", None),
-                    "metadata": cast(dict, entry_raw["properties"]).get("metadata", {}),
-                }
-                entry = VectorStoreEntry.model_validate(entry_dict)
 
                 if merged_options.use_keyword_search:
-                    # For keyword search score follows "larger is better" rule,
-                    # so we don't need to multiply it by score_multiplier
-                    score = object_.metadata.score
+                    results = await index.query.bm25(
+                        query=text,
+                        filters=filters,
+                        limit=merged_options.k,
+                        return_metadata=MetadataQuery(score=True),
+                        include_vector=True,
+                    )
                 else:
-                    score = (
-                        object_.metadata.distance * score_multiplier if object_.metadata.distance is not None else None
+                    query_vector = (await self._embedder.embed_text([text]))[0]
+                    results = await index.query.near_vector(
+                        near_vector=cast(Sequence[float], query_vector),
+                        filters=filters,
+                        limit=merged_options.k,
+                        distance=score_threshold,  # max accepted distance
+                        return_metadata=MetadataQuery(distance=True),
+                        include_vector=True,
                     )
 
-                if score is not None:
-                    outputs_results.append(
-                        VectorStoreResult(
-                            entry=entry,
-                            score=score,
-                            vector=cast(list[float], object_.vector["default"]),
+                outputs_results = []
+                for object_ in results.objects:
+                    entry_raw = {"uuid": object_.uuid, "properties": self._unflatten_metadata(object_.properties)}
+                    entry_dict = {
+                        "id": entry_raw["uuid"],
+                        "text": cast(dict, entry_raw["properties"]).get("text", None),
+                        "image_bytes": cast(dict, entry_raw["properties"]).get("image_bytes", None),
+                        "metadata": cast(dict, entry_raw["properties"]).get("metadata", {}),
+                    }
+                    entry = VectorStoreEntry.model_validate(entry_dict)
+
+                    if merged_options.use_keyword_search:
+                        # For keyword search score follows "larger is better" rule,
+                        # so we don't need to multiply it by score_multiplier
+                        score = object_.metadata.score
+                    else:
+                        score = (
+                            object_.metadata.distance * score_multiplier
+                            if object_.metadata.distance is not None
+                            else None
                         )
-                    )
 
-            outputs.results = outputs_results
+                    if score is not None:
+                        outputs_results.append(
+                            VectorStoreResult(
+                                entry=entry,
+                                score=score,
+                                vector=cast(list[float], object_.vector["default"]),
+                            )
+                        )
 
-            return outputs.results
+                outputs.results = outputs_results
+
+                return outputs.results
 
     async def remove(self, ids: list[UUID]) -> None:
         """
@@ -256,11 +260,12 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         Args:
             ids: The list of entries' IDs to remove.
         """
-        with trace(ids=ids, index_name=self._index_name):
-            collection_exists = await self._client.collections.exists(self._index_name)
-            if collection_exists:
-                index = self._client.collections.get(self._index_name)
-                await index.data.delete_many(where=Filter.by_id().contains_any(ids))
+        async with self._client:
+            with trace(ids=ids, index_name=self._index_name):
+                collection_exists = await self._client.collections.exists(self._index_name)
+                if collection_exists:
+                    index = self._client.collections.get(self._index_name)
+                    await index.data.delete_many(where=Filter.by_id().contains_any(ids))
 
     @staticmethod
     def _create_weaviate_filter(where: WhereQuery, separator: str) -> FilterReturn:
@@ -305,41 +310,44 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         Returns:
             The entries.
         """
-        with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
-            collection_exists = await self._client.collections.exists(self._index_name)
+        async with self._client:
+            with trace(where=where, index_name=self._index_name, limit=limit, offset=offset) as outputs:
+                collection_exists = await self._client.collections.exists(self._index_name)
 
-            if not collection_exists:
-                return []
+                if not collection_exists:
+                    return []
 
-            index = self._client.collections.get(self._index_name)
+                index = self._client.collections.get(self._index_name)
 
-            limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
-            limit = max(1, limit) if limit is not None else None
+                limit = limit or (await index.aggregate.over_all(total_count=True)).total_count
+                limit = max(1, limit) if limit is not None else None
 
-            filters = self._create_weaviate_filter(where, self._separator) if where else None
+                filters = self._create_weaviate_filter(where, self._separator) if where else None
 
-            results = await index.query.fetch_objects(limit=limit, offset=offset, filters=filters, include_vector=True)
+                results = await index.query.fetch_objects(
+                    limit=limit, offset=offset, filters=filters, include_vector=True
+                )
 
-            results_objects = [
-                {
-                    "uuid": object_.uuid,
-                    "properties": self._unflatten_metadata(object_.properties),
-                }
-                for object_ in results.objects
-            ]
+                results_objects = [
+                    {
+                        "uuid": object_.uuid,
+                        "properties": self._unflatten_metadata(object_.properties),
+                    }
+                    for object_ in results.objects
+                ]
 
-            objects = [
-                {
-                    "id": object["uuid"],
-                    "text": cast(dict, object["properties"]).get("text", None),
-                    "image_bytes": cast(dict, object["properties"]).get("image_bytes", None),
-                    "metadata": cast(dict, object["properties"]).get("metadata", {}),
-                }
-                for object in results_objects
-            ]
-            outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
+                objects = [
+                    {
+                        "id": object["uuid"],
+                        "text": cast(dict, object["properties"]).get("text", None),
+                        "image_bytes": cast(dict, object["properties"]).get("image_bytes", None),
+                        "metadata": cast(dict, object["properties"]).get("metadata", {}),
+                    }
+                    for object in results_objects
+                ]
+                outputs.results = [VectorStoreEntry.model_validate(object) for object in objects]
 
-            return outputs.results
+                return outputs.results
 
     def _flatten_metadata(self, metadata: dict) -> dict:
         """Flattens the metadata dictionary."""

@@ -75,36 +75,35 @@ async def main() -> None:
     Run the example.
     """
     client = weaviate.use_async_with_local()
-    async with client:
-        embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
-        vector_store = WeaviateVectorStore(
-            client=client,
-            index_name="jokes",
-            embedder=embedder,
-        )
-        document_search = DocumentSearch(
-            vector_store=vector_store,
-        )
+    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    vector_store = WeaviateVectorStore(
+        client=client,
+        index_name="jokes",
+        embedder=embedder,
+    )
+    document_search = DocumentSearch(
+        vector_store=vector_store,
+    )
 
-        await document_search.ingest(documents)
+    await document_search.ingest(documents)
 
-        all_documents = await vector_store.list()
+    all_documents = await vector_store.list()
 
-        print()
-        print("All documents:")
-        print([doc.metadata["content"] for doc in all_documents])
+    print()
+    print("All documents:")
+    print([doc.metadata["content"] for doc in all_documents])
 
-        query = "I'm boiling my water and I need a joke"
-        vector_store_options = VectorStoreOptions(
-            k=2,
-            score_threshold=0.6,
-        )
-        options = DocumentSearchOptions(vector_store_options=vector_store_options)
-        results = await document_search.search(query, options=options)
+    query = "I'm boiling my water and I need a joke"
+    vector_store_options = VectorStoreOptions(
+        k=2,
+        score_threshold=0.6,
+    )
+    options = DocumentSearchOptions(vector_store_options=vector_store_options)
+    results = await document_search.search(query, options=options)
 
-        print()
-        print(f"Documents similar to: {query}")
-        print([element.text_representation for element in results])
+    print()
+    print(f"Documents similar to: {query}")
+    print([element.text_representation for element in results])
 
 
 if __name__ == "__main__":

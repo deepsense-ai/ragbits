@@ -1,4 +1,3 @@
-import asyncio
 import copy
 import os
 from collections.abc import AsyncGenerator
@@ -62,19 +61,13 @@ async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGener
         yield pool
 
 
-async def weaviate_client_async():
-    client = weaviate.use_async_with_local()
-    await client.connect()
-    return partial(WeaviateVectorStore, client=client, index_name="test_index_name")
-
-
 @pytest.fixture(
     name="vector_store_cls",
     params=[
         lambda _: partial(InMemoryVectorStore),
         lambda _: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
         lambda _: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
-        lambda _: weaviate_client_async,
+        lambda _: partial(WeaviateVectorStore, client=weaviate.use_async_with_local(), index_name="test_index_name"),
         lambda pg_pool: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=3),
     ],
     ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "WeaviateVectorStore", "PgVectorStore"],
@@ -86,10 +79,7 @@ async def vector_store_cls_fixture(
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithDenseEmbedder left to be set.
     """
-    returned_partial = request.param(pgvector_test_db)
-    if asyncio.iscoroutinefunction(returned_partial):
-        return await returned_partial()
-    return returned_partial
+    return request.param(pgvector_test_db)
 
 
 @pytest.fixture(name="vector_store", params=[EmbeddingType.TEXT, EmbeddingType.IMAGE], ids=["Text", "Image"])
