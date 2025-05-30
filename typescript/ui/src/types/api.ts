@@ -80,6 +80,11 @@ interface ReferenceChatResponse {
   content: Reference;
 }
 
+interface ConversationIdChatResponse {
+  type: ChatResponseType.CONVERSATION_ID;
+  content: string;
+}
+
 interface StateUpdateChatResponse {
   type: ChatResponseType.STATE_UPDATE;
   content: ServerState;
@@ -89,4 +94,5 @@ export type ChatResponse =
   | TextChatResponse
   | ReferenceChatResponse
   | MessageIdChatResponse
+  | ConversationIdChatResponse
   | StateUpdateChatResponse;

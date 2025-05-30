@@ -18,6 +18,7 @@ import {
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   const [serverState, setServerState] = useState<ServerState | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const stream = useRagbitsStream<ApiChatResponse>();
 
   const updateHistoryState = (
@@ -48,6 +49,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const clearHistory = useCallback((): void => {
     setHistory(new Map());
     setServerState(null);
+    setConversationId(null);
   }, []);
 
   const _handleNonHistoryResponse = useCallback(
@@ -55,6 +57,9 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       switch (response.type) {
         case ChatResponseType.STATE_UPDATE:
           setServerState(response.content);
+          break;
+        case ChatResponseType.CONVERSATION_ID:
+          setConversationId(response.content);
           break;
       }
     },
@@ -97,6 +102,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
         ChatResponseType.MESSAGE_ID,
+        ChatResponseType.CONVERSATION_ID,
       ];
 
       if (NON_HISTORY_TYPES.includes(response.type)) {
@@ -124,11 +130,16 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         content: "",
       });
 
-      // Prepare chat request
+      // Prepare chat request with conversation context
+      const context = {
+        ...(serverState?.state ?? {}),
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+      };
+
       const chatRequest: ChatRequest = {
         message: text,
         history: mapHistoryToMessages(Array.from(history.values())),
-        context: serverState?.state ?? {},
+        context,
       };
 
       // Send message using the new streaming hook
@@ -149,7 +160,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         },
       });
     },
-    [history, serverState, addMessage, stream, handleResponse],
+    [history, serverState, conversationId, addMessage, stream, handleResponse],
   );
 
   const value = useMemo(

@@ -201,26 +201,31 @@ You can ask me anything! I can provide information, answer questions, and assist
         theme,
       )}
     >
-      <Layout>
-        <div className="relative flex h-full flex-col">
-          <div className="flex-1 overflow-hidden">{content}</div>
-          {showScrollDownButton && (
-            <Button
-              isIconOnly
-              variant="flat"
-              aria-label="Scroll to bottom"
-              className="absolute bottom-24 right-6 z-20"
-              onClick={scrollToBottom}
-            >
-              <Icon icon="heroicons:arrow-down-20-solid" />
-            </Button>
-          )}
-          <div className="mt-auto">
+      <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
+        <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+          {content}
+          {/* Floating Scroll-to-bottom button */}
+          <Button
+            variant="solid"
+            onPress={scrollToBottom}
+            className={cn(
+              "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
+              showScrollDownButton && showHistory
+                ? "opacity-100"
+                : "pointer-events-none opacity-0",
+            )}
+            tabIndex={-1}
+            startContent={<Icon icon="heroicons:arrow-down" />}
+          >
+            Scroll to bottom
+          </Button>
+
+          <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
             <PromptInput
+              isLoading={isLoading}
+              submit={handleSubmit}
               message={message}
               setMessage={setMessage}
-              submit={handleSubmit}
-              isLoading={isLoading}
             />
           </div>
         </div>

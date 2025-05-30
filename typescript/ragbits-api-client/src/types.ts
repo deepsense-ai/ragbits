@@ -34,6 +34,7 @@ export enum ChatResponseType {
   STATE_UPDATE = "state_update",
   TEXT = "text",
   MESSAGE_ID = "message_id",
+  CONVERSATION_ID = "conversation_id",
 }
 
 /**

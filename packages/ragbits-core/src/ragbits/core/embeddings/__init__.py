@@ -1,4 +1,4 @@
-from .base import Embedder, EmbedderOptionsT, SparseVector
+from .base import Embedder, EmbedderOptionsT, SparseVector, VectorSize
 from .dense import DenseEmbedder, LiteLLMEmbedder, NoopEmbedder
 from .sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder, SparseEmbedderOptionsT
 
@@ -13,4 +13,5 @@ __all__ = [
     "SparseEmbedder",
     "SparseEmbedderOptionsT",
     "SparseVector",
+    "VectorSize",
 ]

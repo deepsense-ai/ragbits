@@ -12,7 +12,6 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.6.14",
     "@hookform/resolvers": "^5.0.1",
@@ -48,6 +47,6 @@
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.0.5"
+    "vite": "^6.3.5"
   }
 }

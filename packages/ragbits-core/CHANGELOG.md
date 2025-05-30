@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- feat: add get_vector_size method to all Embedders (#587)
+
+## 0.19.1 (2025-05-27)
+
+## 0.19.0 (2025-05-27)
+
 - rename typevars InputT and OutputT to PromptInputT and PromptOutputT (#569)
 
 ## 0.18.0 (2025-05-22)
