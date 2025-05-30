@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useSyncExternalStore } from "react";
+import {
+  FC,
+  ReactNode,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { ThemeContext, Theme } from "./ThemeContext";
 
 function getPreferredTheme() {
@@ -20,7 +26,7 @@ function subscribe(callback: () => void) {
   return () => window.removeEventListener("storage", callback);
 }
 
-export const ThemeContextProvider: React.FC<{ children: React.ReactNode }> = ({
+export const ThemeContextProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const themeValue = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
