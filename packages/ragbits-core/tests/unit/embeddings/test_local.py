@@ -2,6 +2,7 @@ import pickle
 
 import numpy as np
 
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense.local import LocalEmbedder, LocalEmbedderOptions
 
 
@@ -13,6 +14,42 @@ async def test_local_embedder_embed_text():
     # Check that embeddings have the expected shape
     assert len(result) == 1
     assert len(result[0]) == 384  # This dimension depends on the model
+
+
+async def test_local_embedder_get_vector_size():
+    """Test LocalEmbedder get_vector_size method."""
+    embedder = LocalEmbedder("sentence-transformers/all-MiniLM-L6-v2")
+
+    vector_size = await embedder.get_vector_size()
+
+    assert isinstance(vector_size, VectorSize)
+    assert vector_size.is_sparse is False
+    assert vector_size.size == 384  # Expected dimension for all-MiniLM-L6-v2
+
+
+async def test_local_embedder_get_vector_size_consistency():
+    """Test that get_vector_size is consistent with actual embeddings."""
+    embedder = LocalEmbedder("sentence-transformers/all-MiniLM-L6-v2")
+
+    # Get vector size
+    vector_size = await embedder.get_vector_size()
+
+    # Get actual embeddings
+    embeddings = await embedder.embed_text(["test text"])
+
+    # Check consistency
+    assert len(embeddings[0]) == vector_size.size
+
+
+async def test_local_embedder_get_vector_size_different_model():
+    """Test get_vector_size with a different model."""
+    embedder = LocalEmbedder("BAAI/bge-small-en-v1.5")
+
+    vector_size = await embedder.get_vector_size()
+
+    assert isinstance(vector_size, VectorSize)
+    assert vector_size.is_sparse is False
+    assert vector_size.size == 384  # Expected dimension for bge-small-en-v1.5
 
 
 async def test_local_embedder_with_custom_encode_kwargs():

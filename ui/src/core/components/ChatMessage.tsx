@@ -10,7 +10,11 @@ import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts"
 import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 
 export type ChatMessageProps = {
-  classNames?: string[];
+  classNames?: {
+    wrapper?: string;
+    innerWrapper?: string;
+    content?: string;
+  };
   chatMessage: ChatMessage;
   onOpenFeedbackForm?: (id: string, name: FormType) => void;
   likeForm: ConfigResponse[FormType.LIKE];
@@ -29,9 +33,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     ref,
   ) => {
     const rightAlign = role === MessageRole.USER;
+
     const [didAnimate, setDidAnimate] = useState(false);
-    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
+
+    const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { theme } = useThemeContext();
 
     const onCopyClick = () => {
@@ -51,7 +57,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         className={cn(
           "flex gap-3",
           { "flex-row-reverse": rightAlign },
-          ...(classNames ? classNames : []),
+          classNames?.wrapper,
         )}
       >
         <div
@@ -67,6 +73,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             className={cn(
               "relative rounded-medium px-4 py-3 text-default",
               rightAlign && "bg-default-100",
+              classNames?.innerWrapper,
             )}
           >
             {rightAlign ? (
@@ -74,6 +81,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 className={cn(
                   "prose whitespace-pre-line",
                   theme === Theme.DARK && "dark:prose-invert",
+                  classNames?.content,
                 )}
               >
                 {content}
@@ -84,6 +92,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   className={cn(
                     "markdown-container prose max-w-full",
                     theme === Theme.DARK && "dark:prose-invert",
+                    classNames?.content,
                   )}
                   remarkPlugins={[remarkGfm]}
                 >
@@ -127,7 +136,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             isIconOnly
                             variant="ghost"
                             className="p-0"
-                            aria-label="Like message"
+                            aria-label="Rate message as helpful"
                             onPress={() =>
                               onOpenFeedbackForm(serverId || "", FormType.LIKE)
                             }
@@ -142,7 +151,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             isIconOnly
                             variant="ghost"
                             className="p-0"
-                            aria-label="Dislike message"
+                            aria-label="Rate message as unhelpful"
                             onPress={() =>
                               onOpenFeedbackForm(
                                 serverId || "",

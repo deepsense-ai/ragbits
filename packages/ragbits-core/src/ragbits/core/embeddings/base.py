@@ -24,6 +24,16 @@ class SparseVector(BaseModel):
         return f"SparseVector(indices={self.indices}, values={self.values})"
 
 
+class VectorSize(BaseModel):
+    """Information about vector dimensions returned by an embedder"""
+
+    size: int
+    """The size/dimension of the vector"""
+
+    is_sparse: bool = False
+    """Whether this represents a sparse vector (where size is vocabulary size) or dense vector"""
+
+
 class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
     """
     Abstract class that defines a common interface for both sparse and dense embedding models.
@@ -46,6 +56,15 @@ class Embedder(ConfigurableComponent[EmbedderOptionsT], ABC):
 
         Returns:
             List of embeddings for the given strings.
+        """
+
+    @abstractmethod
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get information about the vector size/dimensions returned by this embedder.
+
+        Returns:
+            VectorSize object containing dimension information and whether vectors are sparse.
         """
 
     def image_support(self) -> bool:  # noqa: PLR6301

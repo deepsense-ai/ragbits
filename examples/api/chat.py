@@ -12,7 +12,7 @@ from collections.abc import AsyncGenerator
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
-from ragbits.chat.interface.types import ChatResponse, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
 
@@ -50,7 +50,7 @@ class MyChat(ChatInterface):
         self,
         message: str,
         history: list[Message] | None = None,
-        context: dict | None = None,
+        context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Example implementation of the ChatInterface.
