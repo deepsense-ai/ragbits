@@ -79,9 +79,9 @@ export interface ClientConfig {
 /**
  * Callbacks for handling streaming responses
  */
-export interface StreamCallbacks<T> {
+export interface StreamCallbacks<T, E = Error> {
   onMessage: (data: T) => void | Promise<void>;
-  onError: (error: string) => void | Promise<void>;
+  onError: (error: E) => void | Promise<void>;
   onClose?: () => void | Promise<void>;
 }
 
@@ -176,4 +176,5 @@ export interface ApiRequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   body?: any;
   headers?: Record<string, string>;
+  signal?: AbortSignal;
 }

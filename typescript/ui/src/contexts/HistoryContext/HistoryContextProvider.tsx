@@ -1,6 +1,7 @@
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
+import { noop } from "lodash";
 import {
   ChatResponse,
   ChatResponseType,
@@ -155,9 +156,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
             assistantResponseId,
           );
         },
-        onClose: () => {
-          // Stream closed
-        },
+        onClose: noop,
       });
     },
     [history, serverState, conversationId, addMessage, stream, handleResponse],

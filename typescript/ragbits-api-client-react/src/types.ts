@@ -9,7 +9,6 @@ export type {
   ChatResponse,
   ChatRequest,
   FeedbackRequest,
-  StreamCallbacks,
   ClientConfig,
   ApiRequestOptions,
   RagbitsClient,
@@ -21,21 +20,22 @@ export type {
 export { MessageRole, ChatResponseType } from "ragbits-api-client";
 
 // React-specific hook result types
-export interface RagbitsCallResult<T> {
+export interface RagbitsCallResult<T, E = Error> {
   data: T | null;
-  error: Error | null;
+  error: E | null;
   isLoading: boolean;
   call: (options?: ApiRequestOptions) => Promise<T>;
   reset: () => void;
+  abort: () => void;
 }
 
-export interface RagbitsStreamResult<T> {
+export interface RagbitsStreamResult<T, E = Error> {
   isStreaming: boolean;
-  error: Error | null;
+  error: E | null;
   stream: (
     endpoint: string,
     data: any,
-    callbacks: StreamCallbacks<T>
+    callbacks: StreamCallbacks<T, string>
   ) => () => void;
   cancel: () => void;
 }

@@ -80,11 +80,17 @@ export class RagbitsClient {
    * @param options - Request options
    */
   async makeRequest<T = any>(endpoint: string, options: any = {}): Promise<T> {
-    const { method = "GET", body, headers = {} } = options || {};
+    const {
+      method = "GET",
+      body,
+      headers = {},
+      ...restOptions
+    } = options || {};
 
     const requestOptions: RequestInit = {
       method,
       headers,
+      ...restOptions, // This will include signal and other fetch options
     };
 
     if (body && method !== "GET") {
@@ -104,11 +110,13 @@ export class RagbitsClient {
    * @param endpoint - Streaming endpoint path
    * @param data - Request data
    * @param callbacks - Stream callbacks
+   * @param signal - Optional AbortSignal for cancelling the request
    */
   makeStreamRequest<T extends StreamingEndpointPath>(
     endpoint: T,
     data: StreamingEndpointRequest<T>,
-    callbacks: StreamCallbacks<StreamingEndpointStream<T>>
+    callbacks: StreamCallbacks<StreamingEndpointStream<T>>,
+    signal?: AbortSignal
   ): () => void;
 
   /**
@@ -116,11 +124,13 @@ export class RagbitsClient {
    * @param endpoint - API endpoint path
    * @param data - Request data
    * @param callbacks - Stream callbacks
+   * @param signal - Optional AbortSignal for cancelling the request
    */
   makeStreamRequest<T = any>(
     endpoint: string,
     data: any,
-    callbacks: StreamCallbacks<T>
+    callbacks: StreamCallbacks<T>,
+    signal?: AbortSignal
   ): () => void {
     let isCancelled = false;
 
@@ -133,7 +143,7 @@ export class RagbitsClient {
         throw new Error("Response body is null");
       }
 
-      while (!isCancelled) {
+      while (!isCancelled && !signal?.aborted) {
         try {
           const { value, done } = await reader.read();
           if (done) {
@@ -151,12 +161,14 @@ export class RagbitsClient {
               await callbacks.onMessage(parsedData);
             } catch (parseError) {
               console.error("Error parsing JSON:", parseError);
-              await callbacks.onError("Error processing server response");
+              await callbacks.onError(
+                new Error("Error processing server response")
+              );
             }
           }
         } catch (streamError) {
           console.error("Stream error:", streamError);
-          await callbacks.onError("Error reading stream");
+          await callbacks.onError(new Error("Error reading stream"));
           break;
         }
       }
@@ -171,6 +183,7 @@ export class RagbitsClient {
             Accept: "text/event-stream",
           },
           body: JSON.stringify(data),
+          signal,
         });
 
         if (!response.ok) {
@@ -179,14 +192,24 @@ export class RagbitsClient {
 
         await processStream(response);
       } catch (error) {
+        if (signal?.aborted) {
+          return;
+        }
+
         console.error("Request error:", error);
         const errorMessage =
           error instanceof Error ? error.message : "Error connecting to server";
-        await callbacks.onError(errorMessage);
+        await callbacks.onError(new Error(errorMessage));
       }
     };
 
-    void startStream();
+    try {
+      void startStream();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to start stream";
+      void callbacks.onError(new Error(errorMessage));
+    }
 
     return () => {
       isCancelled = true;

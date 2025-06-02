@@ -20,37 +20,82 @@ export function useRagbitsCall<T = any>(
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const abort = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  }, []);
 
   const call = useCallback(
     async (options: ApiRequestOptions = {}): Promise<T> => {
+      // Abort any existing request
+      abort();
+
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       setIsLoading(true);
       setError(null);
 
       try {
-        const mergedOptions = { ...defaultOptions, ...options };
+        const mergedOptions = {
+          ...defaultOptions,
+          ...options,
+          headers: {
+            ...defaultOptions?.headers,
+            ...options.headers,
+          },
+        };
+
+        // Add abort signal to the request options
+        const requestOptions = {
+          ...mergedOptions,
+          signal: abortController.signal,
+        };
+
         // Use the generic overload of makeRequest to avoid type constraints
         const result = await (client as any).makeRequest(
           endpoint,
-          mergedOptions
+          requestOptions
         );
-        setData(result);
+
+        // Only update state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setData(result);
+          abortControllerRef.current = null;
+        }
+
         return result;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error("API call failed");
-        setError(error);
-        throw error;
+        // Only update error state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          const error =
+            err instanceof Error ? err : new Error("API call failed");
+          setError(error);
+          abortControllerRef.current = null;
+          throw error;
+        }
+        throw err;
       } finally {
-        setIsLoading(false);
+        // Only update loading state if request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     },
-    [client, endpoint, defaultOptions]
+    [client, endpoint, defaultOptions, abort]
   );
 
   const reset = useCallback(() => {
+    abort();
     setData(null);
     setError(null);
     setIsLoading(false);
-  }, []);
+  }, [abort]);
 
   return {
     data,
@@ -58,6 +103,7 @@ export function useRagbitsCall<T = any>(
     isLoading,
     call,
     reset,
+    abort,
   };
 }
 
@@ -68,12 +114,12 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
   const { client } = useRagbitsContext();
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const cancelRef = useRef<(() => void) | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const cancel = useCallback(() => {
-    if (cancelRef.current) {
-      cancelRef.current();
-      cancelRef.current = null;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
       setIsStreaming(false);
     }
   }, []);
@@ -82,10 +128,13 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
     (
       endpoint: string,
       data: any,
-      callbacks: StreamCallbacks<T>
+      callbacks: StreamCallbacks<T, string>
     ): (() => void) => {
       // Cancel any existing stream
       cancel();
+
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
       setError(null);
       setIsStreaming(true);
@@ -95,25 +144,38 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
           makeStreamRequest<T>(
             endpoint: string,
             data: any,
-            callbacks: StreamCallbacks<T>
+            callbacks: StreamCallbacks<T, Error>,
+            signal?: AbortSignal
           ): () => void;
         }
-      ).makeStreamRequest<T>(endpoint, data, {
-        onMessage: callbacks.onMessage,
-        onError: (err: string) => {
-          const error = new Error(err);
-          setError(error);
-          setIsStreaming(false);
-          callbacks.onError(err);
+      ).makeStreamRequest<T>(
+        endpoint,
+        data,
+        {
+          onMessage: callbacks.onMessage,
+          onError: (err: Error) => {
+            // Only update state if not aborted
+            if (!abortController.signal.aborted) {
+              setError(err);
+              setIsStreaming(false);
+              callbacks.onError(err.message); // Convert Error to string for user callback
+            }
+          },
+          onClose: () => {
+            // Only update state if not aborted
+            if (!abortController.signal.aborted) {
+              setIsStreaming(false);
+              callbacks.onClose?.();
+            }
+          },
         },
-        onClose: () => {
-          setIsStreaming(false);
-          callbacks.onClose?.();
-        },
-      });
+        abortController.signal
+      );
 
-      cancelRef.current = cancelFn;
-      return cancelFn;
+      return () => {
+        cancel();
+        cancelFn();
+      };
     },
     [client, cancel]
   );
