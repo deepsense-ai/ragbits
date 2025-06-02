@@ -221,20 +221,19 @@ class IngestStrategy(WithConstructionConfig, ABC):
         return [element for enriched_elements in grouped_enriched_elements for element in enriched_elements]
 
     @staticmethod
-    async def _remove_elements(elements: Iterable[Element], vector_store: VectorStore) -> None:
+    async def _remove_elements(document_ids: list[str], vector_store: VectorStore) -> None:
         """
-        Remove entries from the vector store whose source id is present in the elements metadata.
+        Remove documents entries from the vector store.
 
         Args:
-            elements: The list of elements whose source ids will be removed from the vector store.
-            vector_store: The vector store to store document chunks.
+            document_ids: The list of document ids to remove from the vector store.
+            vector_store: The vector store to remove document elements from.
         """
-        unique_source_ids = {element.document_meta.source.id for element in elements}
         # TODO: Pass 'where' argument to the list method to filter results and optimize search
         ids_to_delete = [
             entry.id
             for entry in await vector_store.list()
-            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in unique_source_ids
+            if entry.metadata.get("document_meta", {}).get("source", {}).get("id") in document_ids
         ]
         if ids_to_delete:
             await vector_store.remove(ids_to_delete)

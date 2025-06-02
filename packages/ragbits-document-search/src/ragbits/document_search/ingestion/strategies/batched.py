@@ -1,9 +1,9 @@
 import asyncio
 from collections.abc import Iterable
 from dataclasses import dataclass
-from itertools import islice
 
 from ragbits.core.sources.base import Source
+from ragbits.core.utils.helpers import batched
 from ragbits.core.vector_stores.base import VectorStore
 from ragbits.document_search.documents.document import Document, DocumentMeta
 from ragbits.document_search.documents.element import Element
@@ -34,7 +34,9 @@ class BatchedIngestStrategy(IngestStrategy):
 
     def __init__(
         self,
-        batch_size: int = 10,
+        batch_size: int = 1,
+        enrich_batch_size: int = 1024,
+        index_batch_size: int = 1024,
         num_retries: int = 3,
         backoff_multiplier: int = 1,
         backoff_max: int = 60,
@@ -43,13 +45,20 @@ class BatchedIngestStrategy(IngestStrategy):
         Initialize the BatchedIngestStrategy instance.
 
         Args:
-            batch_size: The size of the batch to ingest documents in.
+            batch_size: The batch size for parsing documents.
+                Describes the maximum number of documents to parse at once.
+            enrich_batch_size: The batch size for enriching elements.
+                Describes the maximum number of document elements to enrich at once.
+            index_batch_size: The batch size for indexing elements.
+                Describes the maximum number of document elements to index at once.
             num_retries: The number of retries per document ingest task error.
             backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
             backoff_max: The maximum allowed delay (in seconds) between retries.
         """
         super().__init__(num_retries=num_retries, backoff_multiplier=backoff_multiplier, backoff_max=backoff_max)
         self.batch_size = batch_size
+        self.enrich_batch_size = enrich_batch_size
+        self.index_batch_size = index_batch_size
 
     async def __call__(
         self,
@@ -71,11 +80,10 @@ class BatchedIngestStrategy(IngestStrategy):
             The ingest execution result.
         """
         results = IngestExecutionResult()
-        documents_iterator = iter(documents)
 
-        while batch := list(islice(documents_iterator, self.batch_size)):
+        for documents_batch in batched(documents, self.batch_size):
             # Parse documents
-            parse_results = await self._parse_batch(batch, parser_router)
+            parse_results = await self._parse_batch(documents_batch, parser_router)
 
             # Split documents into successful and failed
             successfully_parsed = [result for result in parse_results if isinstance(result, IngestTaskResult)]
@@ -185,41 +193,29 @@ class BatchedIngestStrategy(IngestStrategy):
         Returns:
             The task results.
         """
-        responses = await asyncio.gather(
-            *[
-                self._call_with_error_handling(
-                    self._enrich_elements,
-                    elements=[element for element in result.elements if type(element) in enricher_router],
-                    enricher_router=enricher_router,
-                )
-                for result in batch
-            ],
-            return_exceptions=True,
-        )
 
-        results: list[IngestTaskResult | IngestDocumentResult] = []
-        for result, response in zip(batch, responses, strict=True):
-            if isinstance(response, BaseException):
-                if isinstance(response, Exception):
-                    results.append(
-                        IngestDocumentResult(
-                            document_uri=result.document_uri,
-                            error=IngestError.from_exception(response),
-                        )
+        async def _enrich_document(result: IngestTaskResult) -> IngestTaskResult | IngestDocumentResult:
+            try:
+                enriched_elements = [
+                    element
+                    for elements_batch in batched(result.elements, self.enrich_batch_size)
+                    for element in await self._call_with_error_handling(
+                        self._enrich_elements,
+                        elements=elements_batch,
+                        enricher_router=enricher_router,
                     )
-                # Handle only standard exceptions, not BaseExceptions like SystemExit, KeyboardInterrupt, etc.
-                else:
-                    raise response
-            else:
-                results.append(
-                    IngestTaskResult(
-                        document_uri=result.document_uri,
-                        elements=[element for element in result.elements if type(element) not in enricher_router]
-                        + response,
-                    )
+                ]
+                return IngestTaskResult(
+                    document_uri=result.document_uri,
+                    elements=enriched_elements,
+                )
+            except Exception as exc:
+                return IngestDocumentResult(
+                    document_uri=result.document_uri,
+                    error=IngestError.from_exception(exc),
                 )
 
-        return results
+        return await asyncio.gather(*[_enrich_document(result) for result in batch])
 
     async def _index_batch(
         self,
@@ -236,30 +232,28 @@ class BatchedIngestStrategy(IngestStrategy):
         Returns:
             The task results.
         """
-        elements = [element for result in batch for element in result.elements]
-        try:
-            await self._call_with_error_handling(
-                self._remove_elements,
-                elements=elements,
-                vector_store=vector_store,
-            )
-            await self._call_with_error_handling(
-                self._insert_elements,
-                elements=elements,
-                vector_store=vector_store,
-            )
-        except Exception as exc:
-            return [
-                IngestDocumentResult(
+
+        async def _index_document(result: IngestTaskResult) -> IngestDocumentResult:
+            try:
+                await self._call_with_error_handling(
+                    self._remove_elements,
+                    document_ids=[result.document_uri],
+                    vector_store=vector_store,
+                )
+                for elements_batch in batched(result.elements, self.index_batch_size):
+                    await self._call_with_error_handling(
+                        self._insert_elements,
+                        elements=elements_batch,
+                        vector_store=vector_store,
+                    )
+                return IngestDocumentResult(
+                    document_uri=result.document_uri,
+                    num_elements=len(result.elements),
+                )
+            except Exception as exc:
+                return IngestDocumentResult(
                     document_uri=result.document_uri,
                     error=IngestError.from_exception(exc),
                 )
-                for result in batch
-            ]
-        return [
-            IngestDocumentResult(
-                document_uri=result.document_uri,
-                num_elements=len(result.elements),
-            )
-            for result in batch
-        ]
+
+        return await asyncio.gather(*[_index_document(result) for result in batch])

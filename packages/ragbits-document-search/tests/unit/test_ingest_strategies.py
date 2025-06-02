@@ -20,7 +20,7 @@ from ragbits.document_search.ingestion.strategies.sequential import SequentialIn
     params=[
         SequentialIngestStrategy(num_retries=0),
         BatchedIngestStrategy(batch_size=2, num_retries=0),
-        RayDistributedIngestStrategy(cpu_batch_size=1, io_batch_size=2, num_retries=0),
+        RayDistributedIngestStrategy(batch_size=1, enrich_batch_size=2, index_batch_size=2, num_retries=0),
     ],
     ids=["SequentialIngestStrategy", "BatchedIngestStrategy", "RayDistributedIngestStrategy"],
 )
