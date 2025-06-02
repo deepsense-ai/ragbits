@@ -358,21 +358,39 @@ async def test_list_with_nested_where_clause(
 async def test_retrieve_with_where_clause_and_score_threshold(
     mock_pgvector_store: PgVectorStore, mock_db_pool: tuple[MagicMock, AsyncMock]
 ) -> None:
-    data = DATA_JSON_EXAMPLE
-    query = "SQL RETRIEVE QUERY"
     _, mock_conn = mock_db_pool
-    where_clause: dict[str, str | int | float | bool | dict[Any, Any]] = {"key1": "value1"}
+    mock_conn.fetch.return_value = []
+    where = cast(WhereQuery, {"id": "test_id"})
+    await mock_pgvector_store.retrieve(text="test", options=VectorStoreOptions(score_threshold=0.1, where=where))
+    mock_conn.fetch.assert_called_once()
+    calls = mock_conn.fetch.mock_calls
+    assert calls[0].args[0].startswith("SELECT *, vector <=> $1 as distance, 1 - (vector <=> $1) as score FROM")
+    assert calls[0].args[0].endswith("WHERE score >= $2 AND metadata @> $3 ORDER BY distance LIMIT $4;")
 
-    with patch.object(mock_pgvector_store, "_create_retrieve_query") as mock_create_retrieve_query:
-        mock_conn.fetch = AsyncMock(return_value=data)
-        mock_create_retrieve_query.return_value = (query, [["[0.1, 0.2, 0.3]", 0.1, 1]])
-        results = await mock_pgvector_store.retrieve(
-            text="some_text", options=VectorStoreOptions(where=where_clause, score_threshold=0.5)
-        )
-        mock_create_retrieve_query.assert_called_once()
-        mock_conn.fetch.assert_called_once()
-        assert len(results) == 2
-        assert isinstance(results[0], VectorStoreResult)
-        assert isinstance(results[1], VectorStoreResult)
-        assert results[0].entry.id == UUID("8c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
-        assert results[1].entry.id == UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8")
+
+@pytest.mark.asyncio
+async def test_auto_vector_size_determination(mock_db_pool: tuple[MagicMock, AsyncMock]) -> None:
+    """Test that PgVectorStore can determine vector size automatically from embedder."""
+    mock_pool, _mock_conn = mock_db_pool
+    mock_embedder = AsyncMock()
+
+    # Mock the get_vector_size method to return a VectorSize with size 5
+    from ragbits.core.embeddings.base import VectorSize
+
+    mock_embedder.get_vector_size.return_value = VectorSize(size=5, is_sparse=False)
+
+    # Create PgVectorStore without providing vector_size
+    store = PgVectorStore(client=mock_pool, table_name=TEST_TABLE_NAME, embedder=mock_embedder)
+
+    # The vector size should be None initially
+    assert store._vector_size is None
+
+    # When we call _get_vector_size(), it should determine the size from embedder
+    vector_size = await store._get_vector_size()
+    assert vector_size == 5
+
+    # Now _vector_size should be cached
+    assert store._vector_size == 5
+
+    # Verify the embedder's get_vector_size was called
+    mock_embedder.get_vector_size.assert_called_once()

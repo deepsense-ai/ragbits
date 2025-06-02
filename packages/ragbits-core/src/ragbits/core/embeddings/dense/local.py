@@ -2,6 +2,7 @@ from dataclasses import field
 from typing import Any
 
 from ragbits.core.audit.traces import trace
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.options import Options
 
@@ -54,6 +55,19 @@ class LocalEmbedder(DenseEmbedder[LocalEmbedderOptions]):
 
         self.model_name = model_name
         self.model = SentenceTransformer(self.model_name, **model_kwargs)
+
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get the vector size for this local SentenceTransformer model.
+
+        Returns:
+            VectorSize object with the model's embedding dimension.
+        """
+        dimension = self.model.get_sentence_embedding_dimension()
+        if dimension is None:
+            sample_embedding = await self.embed_text(["sample"])
+            dimension = len(sample_embedding[0])
+        return VectorSize(size=dimension, is_sparse=False)
 
     async def embed_text(self, data: list[str], options: LocalEmbedderOptions | None = None) -> list[list[float]]:
         """
