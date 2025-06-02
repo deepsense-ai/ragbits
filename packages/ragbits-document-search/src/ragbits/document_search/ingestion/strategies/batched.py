@@ -34,9 +34,9 @@ class BatchedIngestStrategy(IngestStrategy):
 
     def __init__(
         self,
-        batch_size: int = 1,
-        enrich_batch_size: int = 1024,
-        index_batch_size: int = 1024,
+        batch_size: int | None = None,
+        enrich_batch_size: int | None = None,
+        index_batch_size: int | None = None,
         num_retries: int = 3,
         backoff_multiplier: int = 1,
         backoff_max: int = 60,
@@ -46,11 +46,13 @@ class BatchedIngestStrategy(IngestStrategy):
 
         Args:
             batch_size: The batch size for parsing documents.
-                Describes the maximum number of documents to parse at once.
+                Describes the maximum number of documents to parse at once. If None, all documents are parsed at once.
             enrich_batch_size: The batch size for enriching elements.
                 Describes the maximum number of document elements to enrich at once.
+                If None, all elements are enriched at once.
             index_batch_size: The batch size for indexing elements.
                 Describes the maximum number of document elements to index at once.
+                If None, all elements are indexed at once.
             num_retries: The number of retries per document ingest task error.
             backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
             backoff_max: The maximum allowed delay (in seconds) between retries.

@@ -196,7 +196,7 @@ Running an ingest pipeline can be time-consuming, depending on your expected loa
     from ragbits.document_search import DocumentSearch
     from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
 
-    ingest_strategy = RayDistributedIngestStrategy(batch_size=1)
+    ingest_strategy = RayDistributedIngestStrategy()
     document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
 
     await document_search.ingest("s3://")

@@ -7,6 +7,8 @@ from ragbits.core.utils.helpers import batched
     ("input_data", "batch_size", "expected"),
     [
         ([], 3, []),
+        ([], None, []),
+        ([1, 2, 3], None, [[1, 2, 3]]),
         ([1, 2, 3], 5, [[1, 2, 3]]),
         ([1, 2, 3], 3, [[1, 2, 3]]),
         ([1, 2, 3, 4, 5, 6], 2, [[1, 2], [3, 4], [5, 6]]),
@@ -14,6 +16,8 @@ from ragbits.core.utils.helpers import batched
     ],
     ids=[
         "empty_iterable",
+        "none_batch_size",
+        "none_batch_size_with_remainder",
         "batch_size_larger_than_data",
         "batch_size_equal_to_data",
         "batch_size_divides_data_evenly",

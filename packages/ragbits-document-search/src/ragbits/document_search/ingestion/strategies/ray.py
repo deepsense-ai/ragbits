@@ -22,8 +22,8 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
     def __init__(
         self,
         batch_size: int = 1,
-        enrich_batch_size: int = 1024,
-        index_batch_size: int = 1024,
+        enrich_batch_size: int | None = None,
+        index_batch_size: int | None = None,
         parse_memory: float | None = None,
         processing_memory: float | None = None,
         num_retries: int = 3,
@@ -37,8 +37,10 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
             batch_size: The batch size for parsing documents.
             enrich_batch_size: The batch size for enriching elements.
                 Describes the maximum number of document elements to enrich at once.
+                If None, all elements are enriched at once.
             index_batch_size: The batch size for indexing elements.
                 Describes the maximum number of document elements to index at once.
+                If None, all elements are indexed at once.
             parse_memory: The heap memory in bytes to reserve for each parallel parsing tasks.
             processing_memory: The heap memory in bytes to reserve for each parallel elements processing tasks.
             num_retries: The number of retries per document ingest task error.
