@@ -14,6 +14,7 @@ class PromptWithAttachmentsOfInvalidFormat(PromptError):
     """
 
     def __init__(
-        self, message: str = "Invalid format of image or file in prompt detected. Use one of supported OpenAI mime types"
+        self,
+        message: str = "Invalid format of image or file in prompt detected. Use one of supported OpenAI mime types",
     ) -> None:
         super().__init__(message)

@@ -12,7 +12,6 @@ from typing_extensions import TypeVar, get_original_bases
 
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOutputT
 from ragbits.core.prompt.exceptions import PromptWithAttachmentsOfInvalidFormat
-
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
@@ -44,6 +43,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
     system_prompt_template: Template | None
     user_prompt_template: Template
     attachment_input_fields: list[str] | None = None
+    # Backward compatibility - keep image_input_fields working
+    image_input_fields: list[str] | None = None
 
     @classmethod
     def _get_io_types(cls) -> tuple:
@@ -86,8 +87,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         attachments: list[bytes | str] = []
 
         if isinstance(input_data, BaseModel):
-            attachment_input_fields = cls.attachment_input_fields or []
-            for field in attachment_input_fields:
+            attachment_fields = cls.attachment_input_fields or cls.image_input_fields or []
+            for field in attachment_fields:
                 attachments_for_field = getattr(input_data, field)
                 if attachments_for_field:
                     if isinstance(attachments_for_field, list | tuple):
@@ -157,13 +158,17 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        user_content = []
-        if self.rendered_user_prompt:
-            user_content.append({"type": "text", "text": self.rendered_user_prompt})
-
         if self.attachments:
+            user_content = []
+            if self.rendered_user_prompt:
+                user_content.append({"type": "text", "text": self.rendered_user_prompt})
+
             for attachment in self.attachments:
                 user_content.append(self._create_message_with_attachment(attachment))
+
+            final_user_content: str | list[dict[str, Any]] = user_content
+        else:
+            final_user_content = self.rendered_user_prompt
 
         chat = [
             *(
@@ -172,7 +177,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": user_content},
+            {"role": "user", "content": final_user_content},
             *self._conversation_history,
         ]
         return chat
@@ -298,6 +303,27 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         return attachments
 
+    def list_images(self) -> list[str]:
+        """
+        Returns the images in form of URLs or base64 encoded strings.
+
+        This method is kept for backward compatibility. Use list_attachments() for new code.
+
+        Returns:
+            list[str]: List of image URLs/base64 strings
+        """
+        images = []
+        for message in self.chat:
+            content = message["content"]
+            if not isinstance(content, list):
+                continue
+
+            for item in content:
+                if item["type"] == "image_url":
+                    images.append(item["image_url"]["url"])
+
+        return images
+
     @staticmethod
     def _get_file_data_and_type(data: str | bytes) -> tuple[str, str]:
         """
@@ -310,7 +336,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                 with open(data, "rb") as f:
                     file_bytes = f.read()
             except Exception as e:
-                raise PromptWithAttachmentsOfInvalidFormat(f"Failed to read file: {str(e)}")
+                raise PromptWithAttachmentsOfInvalidFormat(f"Failed to read file: {str(e)}") from e
 
         detected_type = filetype.guess(file_bytes)
         if not detected_type:
@@ -347,7 +373,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         """Create a message with an image or PDF file."""
         try:
             encoded_file, mime_type = Prompt._get_file_data_and_type(attachment)
-            print("mime_type", mime_type, attachment)
 
             if mime_type.startswith("image/"):
                 return Prompt._create_image_message(encoded_file, mime_type)
@@ -358,7 +383,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         except PromptWithAttachmentsOfInvalidFormat:
             raise
         except Exception as e:
-            raise PromptWithAttachmentsOfInvalidFormat(f"Error processing file: {str(e)}")
+            raise PromptWithAttachmentsOfInvalidFormat(f"Error processing file: {str(e)}") from e
 
     def output_schema(self) -> dict | type[BaseModel] | None:
         """

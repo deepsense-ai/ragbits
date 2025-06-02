@@ -326,8 +326,18 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         attachments = prompt.list_attachments()
         if attachments:
-            has_images = any('image_url' in att for att in attachments)
-            has_pdfs = any('file' in att for att in attachments)
+            # Check the chat format directly for attachment types
+            has_images = False
+            has_pdfs = False
+
+            for message in prompt.chat:
+                content = message.get("content", [])
+                if isinstance(content, list):
+                    for item in content:
+                        if item.get("type") == "image_url":
+                            has_images = True
+                        elif item.get("type") == "file":
+                            has_pdfs = True
 
             if has_images and not litellm.supports_vision(self.model_name):
                 raise LLMNotSupportingImagesError()
