@@ -7,20 +7,17 @@ import {
   ChatResponseType,
   MessageRole,
   ServerState,
-} from "../../types/api.ts";
-import { ChatMessage, HistoryState } from "../../types/history.ts";
-import { mapHistoryToMessages } from "../../core/utils/messageMapper";
-import {
   useRagbitsStream,
-  type ChatResponse as ApiChatResponse,
   type ChatRequest,
 } from "ragbits-api-client-react";
+import { ChatMessage, HistoryState } from "../../types/history.ts";
+import { mapHistoryToMessages } from "../../core/utils/messageMapper";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   const [serverState, setServerState] = useState<ServerState | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const stream = useRagbitsStream<ApiChatResponse>();
+  const stream = useRagbitsStream("/api/chat");
 
   const updateHistoryState = (
     updater: (prev: HistoryState) => HistoryState,
@@ -145,7 +142,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
 
       // Send message using the new streaming hook
       stream.stream("/api/chat", chatRequest, {
-        onMessage: (response: ApiChatResponse) =>
+        onMessage: (response: ChatResponse) =>
           handleResponse(response as ChatResponse, assistantResponseId),
         onError: (error: string) => {
           handleResponse(

@@ -3,21 +3,30 @@ import type {
   ApiRequestOptions,
   StreamCallbacks,
   ChatResponse,
+  ApiEndpointPath,
+  ApiEndpointResponse,
+  StreamingEndpointPath,
+  StreamingEndpointStream,
 } from "ragbits-api-client";
 import type { RagbitsCallResult, RagbitsStreamResult } from "./types";
 import { useRagbitsContext } from "./RagbitsProvider";
 
 /**
- * Generic hook for making API calls to Ragbits endpoints
- * @param endpoint - The API endpoint (e.g., "/api/config", "/api/feedback")
+ * Hook for making API calls to Ragbits endpoints
+ * - Only predefined routes are allowed
+ * - Response type can be overridden with explicit type parameter
+ * @param endpoint - The predefined API endpoint
  * @param defaultOptions - Default options for the API call
  */
-export function useRagbitsCall<T = any>(
-  endpoint: string,
+export function useRagbitsCall<
+  TEndpoint extends ApiEndpointPath,
+  TResponse = ApiEndpointResponse<TEndpoint>
+>(
+  endpoint: TEndpoint,
   defaultOptions?: ApiRequestOptions
-): RagbitsCallResult<T> {
+): RagbitsCallResult<TResponse> {
   const { client } = useRagbitsContext();
-  const [data, setData] = useState<T | null>(null);
+  const [data, setData] = useState<TResponse | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -31,7 +40,7 @@ export function useRagbitsCall<T = any>(
   }, []);
 
   const call = useCallback(
-    async (options: ApiRequestOptions = {}): Promise<T> => {
+    async (options: ApiRequestOptions = {}): Promise<TResponse> => {
       // Abort any existing request
       abort();
 
@@ -109,8 +118,14 @@ export function useRagbitsCall<T = any>(
 
 /**
  * Hook for handling streaming responses from Ragbits endpoints
+ * - Only predefined streaming routes are allowed
+ * - Response type can be overridden with explicit type parameter
+ * @param endpoint - The predefined streaming endpoint
  */
-export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
+export function useRagbitsStream<
+  TEndpoint extends StreamingEndpointPath,
+  TResponse = StreamingEndpointStream<TEndpoint>
+>(endpoint: TEndpoint): RagbitsStreamResult<TResponse> {
   const { client } = useRagbitsContext();
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -126,9 +141,8 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
 
   const stream = useCallback(
     (
-      endpoint: string,
       data: any,
-      callbacks: StreamCallbacks<T, string>
+      callbacks: StreamCallbacks<TResponse, string>
     ): (() => void) => {
       // Cancel any existing stream
       cancel();
@@ -148,7 +162,7 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
             signal?: AbortSignal
           ): () => void;
         }
-      ).makeStreamRequest<T>(
+      ).makeStreamRequest<TResponse>(
         endpoint,
         data,
         {
@@ -177,7 +191,7 @@ export function useRagbitsStream<T = ChatResponse>(): RagbitsStreamResult<T> {
         cancelFn();
       };
     },
-    [client, cancel]
+    [client, cancel, endpoint]
   );
 
   return {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { FormSchemaResponse } from "../../types/api.ts";
+import { FormSchemaResponse } from "ragbits-api-client-react";
 
 export const generateZodSchema = (formSchema: FormSchemaResponse | null) => {
   const schemaMap: Record<string, z.ZodTypeAny> = {};
@@ -39,3 +39,11 @@ export const generateZodSchema = (formSchema: FormSchemaResponse | null) => {
 
   return z.object(schemaMap);
 };
+
+export interface FeedbackFormComponentProps {
+  title: string;
+  schema: FormSchemaResponse | null;
+  onClose: () => void;
+  onSubmit: (data: Record<string, string> | null) => void;
+  isOpen: boolean;
+}

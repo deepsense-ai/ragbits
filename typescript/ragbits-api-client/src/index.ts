@@ -65,21 +65,14 @@ export class RagbitsClient {
   }
 
   /**
-   * Strongly typed method to make API requests to known endpoints
-   * @param endpoint - API endpoint path
+   * Method to make API requests to known endpoints only
+   * @param endpoint - API endpoint path (must be predefined)
    * @param options - Typed request options for the specific endpoint
    */
   async makeRequest<T extends ApiEndpointPath>(
     endpoint: T,
     options?: TypedApiRequestOptions<T>
-  ): Promise<ApiEndpointResponse<T>>;
-
-  /**
-   * Generic method to make API requests to any endpoint
-   * @param endpoint - API endpoint path (e.g., "/api/config", "/api/feedback")
-   * @param options - Request options
-   */
-  async makeRequest<T = any>(endpoint: string, options: any = {}): Promise<T> {
+  ): Promise<ApiEndpointResponse<T>> {
     const {
       method = "GET",
       body,
@@ -106,8 +99,8 @@ export class RagbitsClient {
   }
 
   /**
-   * Strongly typed method for streaming requests to known endpoints
-   * @param endpoint - Streaming endpoint path
+   * Method for streaming requests to known endpoints only
+   * @param endpoint - Streaming endpoint path (must be predefined)
    * @param data - Request data
    * @param callbacks - Stream callbacks
    * @param signal - Optional AbortSignal for cancelling the request
@@ -116,20 +109,6 @@ export class RagbitsClient {
     endpoint: T,
     data: StreamingEndpointRequest<T>,
     callbacks: StreamCallbacks<StreamingEndpointStream<T>>,
-    signal?: AbortSignal
-  ): () => void;
-
-  /**
-   * Generic method for streaming requests to any endpoint
-   * @param endpoint - API endpoint path
-   * @param data - Request data
-   * @param callbacks - Stream callbacks
-   * @param signal - Optional AbortSignal for cancelling the request
-   */
-  makeStreamRequest<T = any>(
-    endpoint: string,
-    data: any,
-    callbacks: StreamCallbacks<T>,
     signal?: AbortSignal
   ): () => void {
     let isCancelled = false;
@@ -157,7 +136,9 @@ export class RagbitsClient {
 
             try {
               const jsonString = line.replace("data: ", "").trim();
-              const parsedData = JSON.parse(jsonString) as T;
+              const parsedData = JSON.parse(
+                jsonString
+              ) as StreamingEndpointStream<T>;
               await callbacks.onMessage(parsedData);
             } catch (parseError) {
               console.error("Error parsing JSON:", parseError);

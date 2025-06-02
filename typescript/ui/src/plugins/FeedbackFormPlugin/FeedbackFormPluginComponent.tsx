@@ -15,7 +15,10 @@ import {
 } from "@heroui/react";
 import { generateZodSchema } from "./types";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
-import { FormFieldResponse, FormSchemaResponse } from "../../types/api.ts";
+import {
+  FormFieldResponse,
+  FormSchemaResponse,
+} from "ragbits-api-client-react";
 
 interface FormPluginComponentProps {
   title: string;

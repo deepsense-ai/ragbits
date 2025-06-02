@@ -46,6 +46,52 @@ export interface ChatResponse {
 }
 
 /**
+ * Server state interface for state updates
+ */
+export interface ServerState {
+  state: Record<string, unknown>;
+  signature: string;
+}
+
+/**
+ * Specific chat response types
+ */
+interface MessageIdChatResponse {
+  type: ChatResponseType.MESSAGE_ID;
+  content: string;
+}
+
+interface TextChatResponse {
+  type: ChatResponseType.TEXT;
+  content: string;
+}
+
+interface ReferenceChatResponse {
+  type: ChatResponseType.REFERENCE;
+  content: Reference;
+}
+
+interface ConversationIdChatResponse {
+  type: ChatResponseType.CONVERSATION_ID;
+  content: string;
+}
+
+interface StateUpdateChatResponse {
+  type: ChatResponseType.STATE_UPDATE;
+  content: ServerState;
+}
+
+/**
+ * Typed chat response union
+ */
+export type TypedChatResponse =
+  | TextChatResponse
+  | ReferenceChatResponse
+  | MessageIdChatResponse
+  | ConversationIdChatResponse
+  | StateUpdateChatResponse;
+
+/**
  * Base chat request to the API
  */
 export interface BaseChatRequest {
@@ -70,6 +116,68 @@ export interface FeedbackRequest {
 }
 
 /**
+ * Feedback response from the API
+ */
+export interface FeedbackResponse {
+  success: boolean;
+}
+
+/**
+ * Form field types for configuration
+ */
+export enum FormFieldType {
+  TEXT = "text",
+  SELECT = "select",
+}
+
+/**
+ * Form enabler types
+ */
+export enum FormEnabler {
+  LIKE = "like_enabled",
+  DISLIKE = "dislike_enabled",
+}
+
+/**
+ * Form types
+ */
+export enum FormType {
+  LIKE = "like_form",
+  DISLIKE = "dislike_form",
+}
+
+/**
+ * Form field response structure
+ */
+export interface FormFieldResponse {
+  name: string;
+  label: string;
+  type: FormFieldType;
+  required: boolean;
+  options?: string[];
+}
+
+/**
+ * Form schema response structure
+ */
+export interface FormSchemaResponse {
+  title: string;
+  fields: FormFieldResponse[];
+}
+
+/**
+ * Configuration response from the API
+ */
+export type ConfigResponse<
+  TFormType extends string | number | symbol = FormType,
+  TFormEnabler extends string | number | symbol = FormEnabler
+> = {} & {
+  [key in TFormType]: FormSchemaResponse | null;
+} & {
+  [key in TFormEnabler]: boolean;
+};
+
+/**
  * Configuration for the client
  */
 export interface ClientConfig {
@@ -92,12 +200,12 @@ export interface ApiEndpoints {
   "/api/config": {
     method: "GET";
     request: never;
-    response: Record<string, unknown>;
+    response: ConfigResponse;
   };
   "/api/feedback": {
     method: "POST";
     request: FeedbackRequest;
-    response: Record<string, unknown>;
+    response: FeedbackResponse;
   };
 }
 
@@ -108,7 +216,7 @@ export interface StreamingEndpoints {
   "/api/chat": {
     method: "POST";
     request: ChatRequest;
-    stream: ChatResponse;
+    stream: TypedChatResponse;
   };
 }
 

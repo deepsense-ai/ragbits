@@ -1,4 +1,8 @@
-import { ChatResponse, MessageRole, Reference } from "./api";
+import {
+  TypedChatResponse as ChatResponse,
+  MessageRole,
+  Reference,
+} from "ragbits-api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
 

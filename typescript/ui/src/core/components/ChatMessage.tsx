@@ -1,11 +1,15 @@
 import { forwardRef, useRef, useState } from "react";
 import { Button, cn } from "@heroui/react";
-import { Icon } from "@iconify/react";
+import { Icon } from "@iconify/react/dist/iconify.js";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import {
+  ConfigResponse,
+  FormType,
+  MessageRole,
+} from "ragbits-api-client-react";
 
-import { ChatMessage } from "../../types/history.ts";
-import { ConfigResponse, FormType, MessageRole } from "../../types/api.ts";
+import { ChatMessage as ChatMessageType } from "../../types/history.ts";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 import DelayedTooltip from "./DelayedTooltip";
@@ -16,7 +20,7 @@ export type ChatMessageProps = {
     innerWrapper?: string;
     content?: string;
   };
-  chatMessage: ChatMessage;
+  chatMessage: ChatMessageType;
   onOpenFeedbackForm?: (id: string, name: FormType) => void;
   likeForm: ConfigResponse[FormType.LIKE];
   dislikeForm: ConfigResponse[FormType.DISLIKE];

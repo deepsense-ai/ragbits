@@ -13,14 +13,13 @@ import {
   FormEnabler,
   FormType,
   FormSchemaResponse,
-  ConfigResponse,
-} from "./types/api.ts";
+  useRagbitsCall,
+} from "ragbits-api-client-react";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useRagbitsCall } from "ragbits-api-client-react";
 
 export default function App() {
   const [message, setMessage] = useState<string>("");
@@ -45,8 +44,8 @@ export default function App() {
   const showHistory = useMemo(() => history.length > 0, [history.length]);
 
   // Use the new generic hooks
-  const config = useRagbitsCall<ConfigResponse>("/api/config");
-  const feedback = useRagbitsCall<{ success: boolean }>("/api/feedback", {
+  const config = useRagbitsCall("/api/config");
+  const feedback = useRagbitsCall("/api/feedback", {
     method: "POST",
   });
 
