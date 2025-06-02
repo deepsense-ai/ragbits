@@ -8,6 +8,5 @@ export function mapHistoryToMessages(messages: ChatMessage[]): Message[] {
   return messages.map((message) => ({
     role: message.role,
     content: message.content,
-    id: message.serverId,
   }));
 }

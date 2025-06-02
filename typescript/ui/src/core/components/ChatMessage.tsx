@@ -4,8 +4,8 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  ConfigResponse,
-  FormType,
+  FeedbackType,
+  FormSchemaResponse,
   MessageRole,
 } from "ragbits-api-client-react";
 
@@ -21,9 +21,9 @@ export type ChatMessageProps = {
     content?: string;
   };
   chatMessage: ChatMessageType;
-  onOpenFeedbackForm?: (id: string, name: FormType) => void;
-  likeForm: ConfigResponse[FormType.LIKE];
-  dislikeForm: ConfigResponse[FormType.DISLIKE];
+  onOpenFeedbackForm?: (id: string, name: FeedbackType) => void;
+  likeForm: FormSchemaResponse | null;
+  dislikeForm: FormSchemaResponse | null;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
@@ -135,7 +135,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   </DelayedTooltip>
                   {onOpenFeedbackForm && (
                     <>
-                      {likeForm !== undefined && (
+                      {likeForm !== null && (
                         <DelayedTooltip content="Like" placement="bottom">
                           <Button
                             isIconOnly
@@ -143,14 +143,17 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             className="p-0"
                             aria-label="Rate message as helpful"
                             onPress={() =>
-                              onOpenFeedbackForm(serverId || "", FormType.LIKE)
+                              onOpenFeedbackForm(
+                                serverId || "",
+                                FeedbackType.LIKE,
+                              )
                             }
                           >
                             <Icon icon="heroicons:hand-thumb-up" />
                           </Button>
                         </DelayedTooltip>
                       )}
-                      {dislikeForm !== undefined && (
+                      {dislikeForm !== null && (
                         <DelayedTooltip content="Dislike" placement="bottom">
                           <Button
                             isIconOnly
@@ -160,7 +163,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                             onPress={() =>
                               onOpenFeedbackForm(
                                 serverId || "",
-                                FormType.DISLIKE,
+                                FeedbackType.DISLIKE,
                               )
                             }
                           >

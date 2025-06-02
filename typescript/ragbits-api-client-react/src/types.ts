@@ -1,7 +1,10 @@
 import type {
-  ApiRequestOptions,
   StreamCallbacks,
   RagbitsClient,
+  StreamingEndpointPath,
+  StreamingEndpointRequest,
+  TypedApiRequestOptions,
+  ApiEndpointPath,
 } from "ragbits-api-client";
 
 // Re-export RagbitsClient
@@ -18,7 +21,7 @@ export type {
   ServerState,
   TypedChatResponse,
   ClientConfig,
-  ApiRequestOptions,
+  TypedApiRequestOptions,
   Message,
   Reference,
 } from "ragbits-api-client";
@@ -28,26 +31,32 @@ export {
   MessageRole,
   ChatResponseType,
   FormFieldType,
-  FormEnabler,
-  FormType,
+  FeedbackType,
 } from "ragbits-api-client";
 
 // React-specific hook result types
-export interface RagbitsCallResult<T, E = Error> {
+export interface RagbitsCallResult<
+  T,
+  E = Error,
+  TEndpoint extends ApiEndpointPath = ApiEndpointPath
+> {
   data: T | null;
   error: E | null;
   isLoading: boolean;
-  call: (options?: ApiRequestOptions) => Promise<T>;
+  call: (options?: TypedApiRequestOptions<TEndpoint>) => Promise<T>;
   reset: () => void;
   abort: () => void;
 }
 
-export interface RagbitsStreamResult<T, E = Error> {
+export interface RagbitsStreamResult<
+  T,
+  E = Error,
+  TEndpoint extends StreamingEndpointPath = StreamingEndpointPath
+> {
   isStreaming: boolean;
   error: E | null;
   stream: (
-    endpoint: string,
-    data: any,
+    data: StreamingEndpointRequest<TEndpoint>,
     callbacks: StreamCallbacks<T, string>
   ) => () => void;
   cancel: () => void;

@@ -1,11 +1,12 @@
 import { useState, useCallback, useRef } from "react";
 import type {
-  ApiRequestOptions,
   StreamCallbacks,
   ApiEndpointPath,
   ApiEndpointResponse,
+  TypedApiRequestOptions,
   StreamingEndpointPath,
   StreamingEndpointStream,
+  StreamingEndpointRequest,
 } from "ragbits-api-client";
 import type { RagbitsCallResult, RagbitsStreamResult } from "./types";
 import { useRagbitsContext } from "./RagbitsProvider";
@@ -22,8 +23,8 @@ export function useRagbitsCall<
   TResponse = ApiEndpointResponse<TEndpoint>
 >(
   endpoint: TEndpoint,
-  defaultOptions?: ApiRequestOptions
-): RagbitsCallResult<TResponse> {
+  defaultOptions?: TypedApiRequestOptions<TEndpoint>
+): RagbitsCallResult<TResponse, Error, TEndpoint> {
   const { client } = useRagbitsContext();
   const [data, setData] = useState<TResponse | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -39,9 +40,13 @@ export function useRagbitsCall<
   }, []);
 
   const call = useCallback(
-    async (options: ApiRequestOptions = {}): Promise<TResponse> => {
-      // Abort any existing request
-      abort();
+    async (
+      options: TypedApiRequestOptions<TEndpoint> = {}
+    ): Promise<TResponse> => {
+      // Abort any existing request only if there's one in progress
+      if (abortControllerRef.current && isLoading) {
+        abortControllerRef.current.abort();
+      }
 
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
@@ -65,19 +70,16 @@ export function useRagbitsCall<
           signal: abortController.signal,
         };
 
-        // Use the generic overload of makeRequest to avoid type constraints
-        const result = await (client as any).makeRequest(
-          endpoint,
-          requestOptions
-        );
+        // Now we can use the properly typed makeRequest without casting
+        const result = await client.makeRequest(endpoint, requestOptions);
 
         // Only update state if request wasn't aborted
         if (!abortController.signal.aborted) {
-          setData(result);
+          setData(result as TResponse);
           abortControllerRef.current = null;
         }
 
-        return result;
+        return result as TResponse;
       } catch (err) {
         // Only update error state if request wasn't aborted
         if (!abortController.signal.aborted) {
@@ -95,7 +97,7 @@ export function useRagbitsCall<
         }
       }
     },
-    [client, endpoint, defaultOptions, abort]
+    [client, endpoint, defaultOptions, isLoading]
   );
 
   const reset = useCallback(() => {
@@ -124,7 +126,7 @@ export function useRagbitsCall<
 export function useRagbitsStream<
   TEndpoint extends StreamingEndpointPath,
   TResponse = StreamingEndpointStream<TEndpoint>
->(endpoint: TEndpoint): RagbitsStreamResult<TResponse> {
+>(endpoint: TEndpoint): RagbitsStreamResult<TResponse, Error, TEndpoint> {
   const { client } = useRagbitsContext();
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -140,7 +142,7 @@ export function useRagbitsStream<
 
   const stream = useCallback(
     (
-      data: any,
+      data: StreamingEndpointRequest<TEndpoint>,
       callbacks: StreamCallbacks<TResponse, string>
     ): (() => void) => {
       // Cancel any existing stream
@@ -156,7 +158,7 @@ export function useRagbitsStream<
         client as {
           makeStreamRequest<T>(
             endpoint: string,
-            data: any,
+            data: StreamingEndpointRequest<TEndpoint>,
             callbacks: StreamCallbacks<T, Error>,
             signal?: AbortSignal
           ): () => void;
@@ -171,14 +173,20 @@ export function useRagbitsStream<
             if (!abortController.signal.aborted) {
               setError(err);
               setIsStreaming(false);
-              callbacks.onError(err.message); // Convert Error to string for user callback
+              // Ensure callbacks.onError exists before calling it
+              if (callbacks.onError) {
+                callbacks.onError(err.message); // Convert Error to string for user callback
+              }
             }
           },
           onClose: () => {
             // Only update state if not aborted
             if (!abortController.signal.aborted) {
               setIsStreaming(false);
-              callbacks.onClose?.();
+              // Ensure callbacks.onClose exists before calling it
+              if (callbacks.onClose) {
+                callbacks.onClose();
+              }
             }
           },
         },

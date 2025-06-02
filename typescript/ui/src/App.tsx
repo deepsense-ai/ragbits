@@ -9,12 +9,7 @@ import {
   FeedbackFormPluginName,
 } from "./plugins/FeedbackFormPlugin";
 import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import {
-  FormEnabler,
-  FormType,
-  FormSchemaResponse,
-  useRagbitsCall,
-} from "ragbits-api-client-react";
+import { FeedbackType, useRagbitsCall } from "ragbits-api-client-react";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
@@ -25,7 +20,7 @@ export default function App() {
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [feedbackName, setFeedbackName] = useState<FormType>();
+  const [feedbackName, setFeedbackName] = useState<FeedbackType>();
   const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
     null,
   );
@@ -51,8 +46,10 @@ export default function App() {
 
   // Load config on mount
   useEffect(() => {
-    config.call().catch(console.error);
-  }, []);
+    if (!config.data && !config.isLoading) {
+      config.call().catch(console.error);
+    }
+  }, [config]);
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -79,7 +76,10 @@ export default function App() {
       return;
     }
 
-    if (config.data[FormEnabler.LIKE] || config.data[FormEnabler.DISLIKE]) {
+    if (
+      config.data.feedback.like.enabled ||
+      config.data.feedback.dislike.enabled
+    ) {
       pluginManager.activate(FeedbackFormPluginName);
     }
   }, [config.data]);
@@ -140,7 +140,7 @@ export default function App() {
     setFeedbackName(name);
     setFeedbackMessageId(id);
 
-    if (config.data![name as keyof typeof config.data] === null) {
+    if (config.data!.feedback[name!].form === null) {
       await onFeedbackFormSubmit(null);
       return;
     }
@@ -168,12 +168,8 @@ You can ask me anything! I can provide information, answer questions, and assist
           onOpenFeedbackForm={
             isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
           }
-          likeForm={
-            (config.data?.[FormType.LIKE] as FormSchemaResponse) || null
-          }
-          dislikeForm={
-            (config.data?.[FormType.DISLIKE] as FormSchemaResponse) || null
-          }
+          likeForm={config.data?.feedback.like.form || null}
+          dislikeForm={config.data?.feedback.dislike.form || null}
         />
       ))}
     </ScrollShadow>
@@ -241,8 +237,9 @@ You can ask me anything! I can provide information, answer questions, and assist
         component="FeedbackFormComponent"
         componentProps={{
           title:
-            config.data?.[feedbackName as FormType]?.title ?? "Feedback form",
-          schema: config.data?.[feedbackName as FormType] ?? null,
+            config.data?.feedback[feedbackName!]?.form?.title ??
+            "Feedback form",
+          schema: config.data?.feedback[feedbackName!]?.form ?? null,
           onClose: onOpenChange,
           onSubmit: onFeedbackFormSubmit,
           isOpen,

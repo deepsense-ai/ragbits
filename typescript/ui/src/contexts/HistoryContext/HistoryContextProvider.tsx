@@ -8,7 +8,7 @@ import {
   MessageRole,
   ServerState,
   useRagbitsStream,
-  type ChatRequest,
+  ChatRequest,
 } from "ragbits-api-client-react";
 import { ChatMessage, HistoryState } from "../../types/history.ts";
 import { mapHistoryToMessages } from "../../core/utils/messageMapper";
@@ -141,7 +141,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       };
 
       // Send message using the new streaming hook
-      stream.stream("/api/chat", chatRequest, {
+      stream.stream(chatRequest, {
         onMessage: (response: ChatResponse) =>
           handleResponse(response as ChatResponse, assistantResponseId),
         onError: (error: string) => {

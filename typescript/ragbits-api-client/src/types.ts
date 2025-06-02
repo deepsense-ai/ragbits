@@ -86,24 +86,18 @@ export type TypedChatResponse =
 /**
  * Base chat request to the API
  */
-export interface BaseChatRequest {
+export interface ChatRequest {
   message: string;
   history: Message[];
   context?: Record<string, unknown>;
 }
 
 /**
- * Chat request to the API with optional extensions
- */
-export type ChatRequest<T extends Record<string, unknown> = {}> =
-  BaseChatRequest & T;
-
-/**
  * Feedback request to the API
  */
 export interface FeedbackRequest {
   message_id: string;
-  feedback: string;
+  feedback: FeedbackType;
   payload: Record<string, unknown> | null;
 }
 
@@ -111,7 +105,7 @@ export interface FeedbackRequest {
  * Feedback response from the API
  */
 export interface FeedbackResponse {
-  success: boolean;
+  status: string;
 }
 
 /**
@@ -123,19 +117,11 @@ export enum FormFieldType {
 }
 
 /**
- * Form enabler types
+ * Feedback types for user feedback
  */
-export enum FormEnabler {
-  LIKE = "like_enabled",
-  DISLIKE = "dislike_enabled",
-}
-
-/**
- * Form types
- */
-export enum FormType {
-  LIKE = "like_form",
-  DISLIKE = "dislike_form",
+export enum FeedbackType {
+  LIKE = "like",
+  DISLIKE = "dislike",
 }
 
 /**
@@ -160,14 +146,18 @@ export interface FormSchemaResponse {
 /**
  * Configuration response from the API
  */
-export type ConfigResponse<
-  TFormType extends string | number | symbol = FormType,
-  TFormEnabler extends string | number | symbol = FormEnabler
-> = {} & {
-  [key in TFormType]: FormSchemaResponse | null;
-} & {
-  [key in TFormEnabler]: boolean;
-};
+export interface ConfigResponse {
+  feedback: {
+    like: {
+      enabled: boolean;
+      form: FormSchemaResponse | null;
+    };
+    dislike: {
+      enabled: boolean;
+      form: FormSchemaResponse | null;
+    };
+  };
+}
 
 /**
  * Configuration for the client
@@ -270,11 +260,11 @@ export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
 }
 
 /**
- * Generic request options for API calls
+ * Typed request options for specific streaming endpoints
  */
-export interface ApiRequestOptions {
-  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  body?: any;
+export interface TypedStreamRequestOptions<T extends StreamingEndpointPath> {
+  method?: StreamingEndpointMethod<T>;
+  body?: StreamingEndpointRequest<T>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
 }
