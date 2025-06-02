@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- Add elements batching for ingest strategies
-- BREAKING CHANGE: unified RayDistributedIngestStrategy interface
+- Add elements batching for ingest strategies (#590)
+- BREAKING CHANGE: unified RayDistributedIngestStrategy interface (#590)
 
 ## 0.19.1 (2025-05-27)
 
