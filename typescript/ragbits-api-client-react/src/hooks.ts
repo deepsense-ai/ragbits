@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from "react";
 import type {
   ApiRequestOptions,
   StreamCallbacks,
-  ChatResponse,
   ApiEndpointPath,
   ApiEndpointResponse,
   StreamingEndpointPath,

@@ -9,7 +9,6 @@ export { RagbitsClient } from "ragbits-api-client";
 
 // Re-export core types from ragbits-api-client
 export type {
-  ChatResponse,
   ChatRequest,
   FeedbackRequest,
   FeedbackResponse,

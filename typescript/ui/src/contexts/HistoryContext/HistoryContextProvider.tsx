@@ -3,7 +3,7 @@ import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
 import { noop } from "lodash";
 import {
-  ChatResponse,
+  TypedChatResponse as ChatResponse,
   ChatResponseType,
   MessageRole,
   ServerState,

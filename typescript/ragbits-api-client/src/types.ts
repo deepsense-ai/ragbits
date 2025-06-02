@@ -38,14 +38,6 @@ export enum ChatResponseType {
 }
 
 /**
- * Chat response from the API
- */
-export interface ChatResponse {
-  type: ChatResponseType;
-  content: any;
-}
-
-/**
  * Server state interface for state updates
  */
 export interface ServerState {
