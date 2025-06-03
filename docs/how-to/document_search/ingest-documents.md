@@ -53,7 +53,7 @@ All sources supported by Ragbits are available [here](../sources/load-dataset.md
 
 ## Parsing documents
 
-Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the  [`unstructured`](https://github.com/Unstructured-IO/unstructured) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOC, JPG).
+Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the [`docling`](https://github.com/docling-project/docling) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOCX, JPG).
 
 To define a new parser, extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class.
 
