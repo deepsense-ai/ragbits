@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update utils (#590)
 - Resolve vector_size by PgVectorStore automatically (#588)
 - Add get_vector_size method to all Embedders (#587)
 
