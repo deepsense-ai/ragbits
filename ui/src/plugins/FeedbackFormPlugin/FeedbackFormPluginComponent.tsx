@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -32,7 +32,7 @@ const FeedbackFormPluginComponent = ({
   onClose,
   onSubmit,
 }: FormPluginComponentProps) => {
-  const zodSchema = React.useMemo(() => generateZodSchema(schema), [schema]);
+  const zodSchema = useMemo(() => generateZodSchema(schema), [schema]);
   const { theme } = useThemeContext();
 
   const {
@@ -110,10 +110,19 @@ const FeedbackFormPluginComponent = ({
               </div>
             </ModalBody>
             <ModalFooter>
-              <Button color="danger" variant="light" onPress={onClose}>
+              <Button
+                color="danger"
+                variant="light"
+                onPress={onClose}
+                aria-label="Close feedback form"
+              >
                 Cancel
               </Button>
-              <Button color="primary" type="submit">
+              <Button
+                color="primary"
+                type="submit"
+                aria-label="Submit feedback"
+              >
                 Submit
               </Button>
             </ModalFooter>

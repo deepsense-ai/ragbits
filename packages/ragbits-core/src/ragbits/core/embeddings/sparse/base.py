@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from ragbits.core.embeddings.base import Embedder, SparseVector
+from ragbits.core.embeddings.base import Embedder, SparseVector, VectorSize
 from ragbits.core.options import Options
 
 SparseEmbedderOptionsT = TypeVar("SparseEmbedderOptionsT", bound=Options)
@@ -21,6 +21,15 @@ class SparseEmbedder(Embedder[SparseEmbedderOptionsT], ABC):
 
         Returns:
             list of sparse embeddings.
+        """
+
+    @abstractmethod
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get information about the sparse vector size/dimensions returned by this embedder.
+
+        Returns:
+            VectorSize object with is_sparse=True and the vocabulary size.
         """
 
     async def embed_image(

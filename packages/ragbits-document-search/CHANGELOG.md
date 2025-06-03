@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add elements batching for ingest strategies (#590)
+- BREAKING CHANGE: unified RayDistributedIngestStrategy interface (#590)
+- Switch default document parser to docling (#594)
+
 ## 0.19.1 (2025-05-27)
 
 ### Changed

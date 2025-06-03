@@ -1,4 +1,5 @@
 from ragbits.core.audit.traces import trace
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense.base import DenseEmbedder
 from ragbits.core.options import Options, OptionsT
 
@@ -36,6 +37,15 @@ class NoopEmbedder(DenseEmbedder[Options]):
         self.image_return_values = image_return_values
         self.return_cycle = 0
         self.image_return_cycle = 0
+
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get the vector size for this NoopEmbedder.
+
+        Returns:
+            VectorSize object with the dimension of the first embedding vector.
+        """
+        return VectorSize(size=len(self.return_values[0][0]), is_sparse=False)
 
     async def embed_text(self, data: list[str], options: Options | None = None) -> list[list[float]]:  # noqa: PLR6301
         """

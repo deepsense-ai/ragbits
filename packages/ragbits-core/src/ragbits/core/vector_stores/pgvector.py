@@ -7,7 +7,7 @@ import asyncpg
 from pydantic.json import pydantic_encoder
 
 from ragbits.core.audit.traces import trace
-from ragbits.core.embeddings.base import Embedder, SparseVector
+from ragbits.core.embeddings.base import Embedder, SparseVector, VectorSize
 from ragbits.core.embeddings.sparse.base import SparseEmbedder
 from ragbits.core.vector_stores.base import (
     EmbeddingType,
@@ -53,8 +53,8 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self,
         client: asyncpg.Pool,
         table_name: str,
-        vector_size: int,
         embedder: Embedder,
+        vector_size: int | None = None,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: str | None = None,
         hnsw_params: dict | None = None,
@@ -66,8 +66,8 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         Args:
             client: The pgVector database connection pool.
             table_name: The name of the table.
-            vector_size: The size of the vectors.
             embedder: The embedder to use for converting entries to vectors.
+            vector_size: The size of the vectors. If None, will be determined automatically from the embedder.
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance method to use, default is "cosine" for dense vectors
                 and "sparsevec_l2" for sparse vectors.
@@ -84,7 +84,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
         if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
             raise ValueError(f"Invalid table name: {table_name}")
-        if not isinstance(vector_size, int) or vector_size <= 0:
+        if vector_size is not None and (not isinstance(vector_size, int) or vector_size <= 0):
             raise ValueError("Vector size must be a positive integer.")
 
         if hnsw_params is None:
@@ -103,6 +103,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._client = client
         self._table_name = table_name
         self._vector_size = vector_size
+        self._vector_size_info: VectorSize | None = None
         self._distance_method = distance_method
         self._hnsw_params = hnsw_params
 
@@ -112,6 +113,32 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         """
         # TODO: To be implemented. Required for Ray processing.
         raise NotImplementedError
+
+    async def _get_vector_size_info(self) -> VectorSize:
+        """
+        Get vector size information from the embedder if not already cached.
+
+        Returns:
+            VectorSize information including size and sparsity.
+        """
+        if self._vector_size_info is None:
+            self._vector_size_info = await self._embedder.get_vector_size()
+            # Update _vector_size for backward compatibility if it wasn't provided
+            if self._vector_size is None:
+                self._vector_size = self._vector_size_info.size
+        return self._vector_size_info
+
+    async def _get_vector_size(self) -> int:
+        """
+        Get the vector size, either from the constructor parameter or from the embedder.
+
+        Returns:
+            The vector size as an integer.
+        """
+        if self._vector_size is not None:
+            return self._vector_size
+        vector_size_info = await self._get_vector_size_info()
+        return vector_size_info.size
 
     def _vector_to_string(self, vector: list[float] | SparseVector) -> str:
         """
@@ -124,8 +151,13 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             str: The string representation of the vector.
         """
         if isinstance(vector, SparseVector):
+            # For sparse vectors, we need the vector size to be available
+            # This will be resolved when this method is called from async context
+            vector_size = self._vector_size
+            if vector_size is None:
+                raise RuntimeError("Vector size must be determined before converting sparse vectors to string")
             points_str = ",".join(f"{i}:{v}" for i, v in zip(vector.indices, vector.values, strict=False))
-            return f"{{{points_str}}}/{self._vector_size}"
+            return f"{{{points_str}}}/{vector_size}"
         return json.dumps(vector)
 
     @staticmethod
@@ -234,23 +266,25 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         """
         Create a pgVector table with an HNSW index for given similarity.
         """
+        vector_size = await self._get_vector_size()
         with trace(
             table_name=self._table_name,
             distance_method=self._distance_method,
-            vector_size=self._vector_size,
+            vector_size=vector_size,
             hnsw_index_parameters=self._hnsw_params,
         ):
             distance = DISTANCE_OPS[self._distance_method].function_name
             create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
             # _table_name and has been validated in the class constructor, and it is a valid table name.
-            # _vector_size has been validated in the class constructor, and it is a valid vector size.
+            # vector_size has been validated in the class constructor or obtained from embedder,
+            # and it is a valid vector size.
 
             is_sparse = isinstance(self._embedder, SparseEmbedder)
             vector_func = "VECTOR" if not is_sparse else "SPARSEVEC"
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
-            (id UUID, text TEXT, image_bytes BYTEA, vector {vector_func}({self._vector_size}), metadata JSONB);
+            (id UUID, text TEXT, image_bytes BYTEA, vector {vector_func}({vector_size}), metadata JSONB);
             """
             # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
             create_index_query = f"""
@@ -283,6 +317,10 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         """
         if not entries:
             return
+
+        # Ensure vector size is determined before processing
+        vector_size = await self._get_vector_size()
+
         # _table_name has been validated in the class constructor, and it is a valid table name.
         insert_query = f"""
         INSERT INTO {self._table_name} (id, text, image_bytes, vector, metadata)
@@ -291,7 +329,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         with trace(
             table_name=self._table_name,
             entries=entries,
-            vector_size=self._vector_size,
+            vector_size=vector_size,
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,
         ):
@@ -359,11 +397,14 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         """
         merged_options = (self.default_options | options) if options else self.default_options
 
+        # Ensure vector size is determined before processing
+        vector_size = await self._get_vector_size()
+
         with trace(
             text=text,
             options=merged_options.dict(),
             table_name=self._table_name,
-            vector_size=self._vector_size,
+            vector_size=vector_size,
             distance_method=self._distance_method,
             embedder=repr(self._embedder),
             embedding_type=self._embedding_type,

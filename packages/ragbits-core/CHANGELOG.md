@@ -3,6 +3,9 @@
 ## Unreleased
 
 - Remove outdated quickstart ref from docstring (#565)
+- Update utils (#590)
+- Resolve vector_size by PgVectorStore automatically (#588)
+- Add get_vector_size method to all Embedders (#587)
 
 ## 0.19.1 (2025-05-27)
 
