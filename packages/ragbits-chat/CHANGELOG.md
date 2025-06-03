@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.20.0 (2025-06-03)
+
+### Changed
+
+- ragbits-core updated to version v0.20.0
+
 - remove HeroUI Pro components (#557)
 - refactor UI components to allow modifications (#579)
 - Add setup method to ChatInterface (#586)
