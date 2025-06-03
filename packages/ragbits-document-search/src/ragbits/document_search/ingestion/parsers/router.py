@@ -6,10 +6,10 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
+from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
-from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredDocumentParser
 
-_default_parser = UnstructuredDocumentParser()
+_default_parser = DoclingDocumentParser()
 
 _DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.TXT: _default_parser,

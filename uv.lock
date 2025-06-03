@@ -1,5 +1,5 @@
 version = 1
-revision = 1
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -4648,19 +4648,19 @@ name = "ragbits-document-search"
 version = "0.19.1"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
+    { name = "docling" },
     { name = "filetype" },
     { name = "ragbits-core" },
     { name = "rerankers" },
-    { name = "unstructured" },
-    { name = "unstructured-client" },
 ]
 
 [package.optional-dependencies]
-docling = [
-    { name = "docling" },
-]
 ray = [
     { name = "ray", extra = ["data"] },
+]
+unstructured = [
+    { name = "unstructured" },
+    { name = "unstructured-client" },
 ]
 
 [package.dev-dependencies]
@@ -4675,15 +4675,15 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "docling", marker = "extra == 'docling'", specifier = ">=2.15.1,<3.0.0" },
+    { name = "docling", specifier = ">=2.15.1,<3.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1" },
-    { name = "unstructured", specifier = ">=0.16.9" },
-    { name = "unstructured-client", specifier = ">=0.26.0" },
+    { name = "unstructured", marker = "extra == 'unstructured'", specifier = ">=0.16.9,<1.0.0" },
+    { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
 ]
-provides-extras = ["docling", "ray"]
+provides-extras = ["unstructured", "ray"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4790,7 +4790,7 @@ dependencies = [
     { name = "ragbits-chat" },
     { name = "ragbits-cli" },
     { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "hf", "local", "otel", "pgvector", "qdrant", "s3"] },
-    { name = "ragbits-document-search", extra = ["docling", "ray"] },
+    { name = "ragbits-document-search", extra = ["ray", "unstructured"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -4825,7 +4825,7 @@ requires-dist = [
     { name = "ragbits-chat", editable = "packages/ragbits-chat" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
     { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "hf", "s3"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["docling", "ray"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["unstructured", "ray"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]
