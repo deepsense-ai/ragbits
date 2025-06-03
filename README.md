@@ -59,44 +59,36 @@ Alternatively, you can use individual components of the stack by installing thei
 
 ## Quickstart
 
-To build a simple vector store index using OpenAI:
+### LLMs
+
+tbd
+
+### Document Search
+
+To build and query a simple vector store index using OpenAI:
 
 ```python
+import asyncio
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-document_search = DocumentSearch(
-    vector_store=InMemoryVectorStore(
-        embedder=LiteLLMEmbedder(model_name="text-embedding-3-small"),
-    ),
-)
-```
-
-To ingest the data:
-
-```python
-import asyncio
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
 
 async def run() -> None:
     await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
-
-if __name__ == "__main__":
-    asyncio.run(run())
-```
-
-To query the data:
-
-```python
-import asyncio
-
-async def run() -> None:
     result = await document_search.search("What are the key findings or results presented in this paper?")
     print(result)
 
 if __name__ == "__main__":
     asyncio.run(run())
 ```
+
+### RAG
+
+tbd
 
 ## Rapid development
 
