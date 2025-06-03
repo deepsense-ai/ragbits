@@ -1,10 +1,10 @@
 <div align="center">
 
-<h1>Ragbits</h1>
+<h1>🐰 Ragbits</h1>
 
 *Building blocks for rapid development of GenAI applications*
 
-[Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
+[Homepage](https://deepsense.ai/rd-hub/ragbits/) | [Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
 
 [![PyPI - License](https://img.shields.io/pypi/l/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Version](https://img.shields.io/pypi/v/ragbits)](https://pypi.org/project/ragbits)
@@ -17,6 +17,7 @@
 ## Features
 
 ### 🔨 Build Reliable & Scalable GenAI Apps
+
 - **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
 - **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
 - **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
@@ -24,91 +25,173 @@
 - **Modular installation** – Install only what you need, reducing dependencies and improving performance.
 
 ### 📚 Fast & Flexible RAG Processing
-- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [unstructured](https://unstructured.io/) or create a custom provider.
+
+- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [Docling](https://github.com/docling-project/docling), [Unstructured](https://github.com/Unstructured-IO/unstructured) or create a custom parser.
 - **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
 - **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
 ### 🚀 Deploy & Monitor with Confidence
+
 - **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/project/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/project/use_tracing/#cli-trace-handler).
 - **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/prompts/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
 - **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
 
-
-## What's Included?
-
-- [X] **[Core](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-core)** - Fundamental tools for working with prompts and LLMs.
-- [X] **[Document Search](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-document-search)** - Handles vector search to retrieve relevant documents.
-- [X] **[CLI](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-cli)** - The `ragbits` shell command, enabling tools such as GUI prompt management.
-- [x] **[Guardrails](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-guardrails)** - Ensures response safety and relevance.
-- [x] **[Evaluation](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-evaluate)** - Unified evaluation framework for Ragbits components.
-- [ ] **Flow Controls** - Manages multi-stage chat flows for performing advanced actions *(coming soon)*.
-- [ ] **Structured Querying** - Queries structured data sources in a predictable manner *(coming soon)*.
-- [ ] **Caching** - Adds a caching layer to reduce costs and response times *(coming soon)*.
-
 ## Installation
 
-To use the complete Ragbits stack, install the `ragbits` package:
+To get started quickly, you can install with:
 
 ```sh
 pip install ragbits
 ```
 
-Alternatively, you can use individual components of the stack by installing their respective packages: `ragbits-core`, `ragbits-document-search`, `ragbits-cli`.
+This is a starter bundle of packages, containing:
+
+- [`ragbits-core`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-core) - fundamental tools for working with prompts, LLMs and vector databases.
+- [`ragbits-agents`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-agents) - abstractions for building agentic systems.
+- [`ragbits-document-search`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-document-search) - retrieval and ingestion piplines for knowledge bases.
+- [`ragbits-evaluate`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-evaluate) - unified evaluation framework for Ragbits components.
+- [`ragbits-chat`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-chat) - full-stack infrastructure for building conversational AI applications.
+- [`ragbits-cli`](https://github.com/deepsense-ai/ragbits/tree/main/packages/ragbits-cli) - `ragbits` shell command for interacting with Ragbits components.
+
+Alternatively, you can use individual components of the stack by installing their respective packages.
 
 ## Quickstart
 
-First, create a prompt and a model for the data used in the prompt:
+### Basics
+
+To define a prompt and run LLM:
 
 ```python
+import asyncio
 from pydantic import BaseModel
+from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
-class Dog(BaseModel):
-    breed: str
-    age: int
-    temperament: str
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
 
-class DogNamePrompt(Prompt[Dog, str]):
+class QuestionAnswerPromptOutput(BaseModel):
+    answer: str
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
     system_prompt = """
-    You are a dog name generator. You come up with funny names for dogs given the dog details.
+    You are a question answering agent. Answer the question to the best of your ability.
     """
-
     user_prompt = """
-    The dog is a {breed} breed, {age} years old, and has a {temperament} temperament.
+    Question: {{ question }}
     """
+
+llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+
+async def main() -> None:
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question="What are high memory and low memory on linux?"))
+    response = await llm.generate(prompt)
+    print(response.answer)
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-Next, create an instance of the LLM and the prompt:
+### Document Search
+
+To build and query a simple vector store index:
 
 ```python
-from ragbits.core.llms.litellm import LiteLLM
+import asyncio
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
 
-llm = LiteLLM("gpt-4o")
-example_dog = Dog(breed="Golden Retriever", age=3, temperament="friendly")
-prompt = DogNamePrompt(example_dog)
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
+
+async def run() -> None:
+    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+    result = await document_search.search("What are the key findings presented in this paper?")
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(run())
 ```
 
-Finally, generate a response from the LLM using the prompt:
+### Retrieval-Augmented Generation
+
+To build a simple RAG pipeline:
 
 ```python
-response = await llm.generate(prompt)
-print(f"Generated dog name: {response}")
+import asyncio
+from pydantic import BaseModel
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
+    context: list[str]
+
+class QuestionAnswerPromptOutput(BaseModel):
+    answer: str
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
+    system_prompt = """
+    You are a question answering agent. Answer the question that will be provided using context.
+    If in the given context there is not enough information refuse to answer.
+    """
+    user_prompt = """
+    Question: {{ question }}
+    Context: {% for item in context %}
+        {{ item }}
+    {%- endfor %}
+    """
+
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
+llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+
+async def run() -> None:
+    question = "What are the key findings presented in this paper?"
+
+    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+    result = await document_search.search(question)
+
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
+        question=question,
+        context=[element.text_representation for element in result],
+    ))
+    response = await llm.generate(prompt)
+    print(response.answer)
+
+if __name__ == "__main__":
+    asyncio.run(run())
 ```
 
-## How Ragbits documentation is organized
+## Rapid development
+
+Create Ragbits projects from templates:
+
+```sh
+uvx create-ragbits-app
+```
+
+Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-ragbits-app). If you have a new idea for a template, feel free to contribute!
+
+## Documentation
 
 - [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
-- [How-to guides](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/) - Learn how to use Ragbits in your projects
+- [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/) - Learn how to use Ragbits in your projects
 - [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run Ragbits in your terminal
-- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying API of Ragbits
-
-
-## License
-
-Ragbits is licensed under the [MIT License](https://github.com/deepsense-ai/ragbits/tree/main/LICENSE).
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying Ragbits API
 
 ## Contributing
 
 We welcome contributions! Please read [CONTRIBUTING.md](https://github.com/deepsense-ai/ragbits/tree/main/CONTRIBUTING.md) for more information.
+
+## License
+
+Ragbits is licensed under the [MIT License](https://github.com/deepsense-ai/ragbits/tree/main/LICENSE).
