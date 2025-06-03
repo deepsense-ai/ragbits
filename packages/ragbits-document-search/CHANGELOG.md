@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix: elements without enricher caused errors (#597)
+
 ## 0.20.0 (2025-06-03)
 
 ### Changed
