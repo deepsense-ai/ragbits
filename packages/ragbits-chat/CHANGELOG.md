@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+- Add setup method to ChatInterface (#586)
+
+## 0.19.1 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.1
+
+- fix: dont import all persistence strategies in base file (#584)
+
+## 0.19.0 (2025-05-27)
+
+### Changed
+
+- ragbits-core updated to version v0.19.0
+
+- Add persistance component to save chat interactions from ragbits-chat (#556)
+- Add conversation_id parameter to chat interface context (#556)
+- Add uvicorn to dependencies (#578)
+- Remove HeroUI Pro components (#557)
+
+## 0.18.0 (2025-05-22)
+
+### Changed
+
+- ragbits-core updated to version v0.18.0
+
 - updated ui build (#553)
 - api integration improvements + history context changes (#552)
 - feedback form integration (#540)

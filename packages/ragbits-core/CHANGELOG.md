@@ -3,6 +3,16 @@
 ## Unreleased
 
 - Remove outdated quickstart ref from docstring (#565)
+
+## 0.19.1 (2025-05-27)
+
+## 0.19.0 (2025-05-27)
+
+- rename typevars InputT and OutputT to PromptInputT and PromptOutputT (#569)
+
+## 0.18.0 (2025-05-22)
+
+- Allow to limit VectorStore results by metadata (#564)
 - Switch from imghdr to filetype for image file type check (#563)
 - Remove prompt lab (#549)
 - Add batched() helper method to utils (#555)

@@ -90,6 +90,14 @@ class InMemoryVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             results: list[VectorStoreResult] = []
 
             for entry_id, vector in self._embeddings.items():
+                entry = self._entries[entry_id]
+
+                # Apply metadata filtering
+                if merged_options.where and not all(
+                    entry.metadata.get(key) == value for key, value in merged_options.where.items()
+                ):
+                    continue
+
                 # Calculate score based on vector type
                 if isinstance(query_vector, SparseVector) and isinstance(vector, SparseVector):
                     # For sparse vectors, use dot product between query and document vectors
