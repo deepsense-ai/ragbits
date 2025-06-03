@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove default ImageElement enricher (#595)
 - Add elements batching for ingest strategies (#590)
 - BREAKING CHANGE: unified RayDistributedIngestStrategy interface (#590)
 - Switch default document parser to docling (#594)
