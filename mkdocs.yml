@@ -68,6 +68,8 @@ nav:
           - Retrieval:
             - api_reference/document_search/retrieval/rephrasers.md
             - api_reference/document_search/retrieval/rerankers.md
+      - Agents:
+        - api_reference/agents/index.md
       - Chatbots:
           - api_reference/chat/compressors/base.md
           - api_reference/chat/compressors/llm.md
