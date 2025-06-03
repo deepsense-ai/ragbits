@@ -26,7 +26,7 @@
 
 ### 📚 Fast & Flexible RAG Processing
 
-- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [docling](https://github.com/docling-project/docling), [unstructured](https://github.com/Unstructured-IO/unstructured) or create a custom parser.
+- **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [Docling](https://github.com/docling-project/docling), [Unstructured](https://github.com/Unstructured-IO/unstructured) or create a custom parser.
 - **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
 - **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
@@ -59,9 +59,9 @@ Alternatively, you can use individual components of the stack by installing thei
 
 ## Quickstart
 
-### Large Language Models
+### Basics
 
-To define prompts and run LLMs:
+To define a prompt and run LLM:
 
 ```python
 import asyncio
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
 ### Document Search
 
-To build and query a simple vector store index using OpenAI:
+To build and query a simple vector store index:
 
 ```python
 import asyncio
