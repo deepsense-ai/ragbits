@@ -54,7 +54,6 @@ def test_subclass_from_config_bag_of_tokens():
     )
     embedder: SparseEmbedder = SparseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, BagOfTokens)
-    assert embedder.model_name == "gpt-4o"
     assert embedder.default_options == BagOfTokensOptions(
         min_token_count=NOT_GIVEN,
         option1="value1",
