@@ -1,4 +1,5 @@
 import litellm
+import pytest
 
 from ragbits.core.embeddings import DenseEmbedder, NoopEmbedder
 from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
@@ -59,6 +60,24 @@ def test_subclass_from_config_bag_of_tokens():
         option1="value1",
         option2="value2",
     )  # type: ignore
+
+
+def test_subclass_from_config_bag_of_tokens_both_specified():
+    config = ObjectConstructionConfig.model_validate(
+        {
+            "type": "ragbits.core.embeddings.sparse:BagOfTokens",
+            "config": {
+                "model_name": "gpt-4o",
+                "encoding_name": "cl100k_base",
+                "default_options": {
+                    "option1": "value1",
+                    "option2": "value2",
+                },
+            },
+        }
+    )
+    with pytest.raises(ValueError, match="Please specify only one of encoding_name or model_name"):
+        SparseEmbedder.subclass_from_config(config)
 
 
 def test_from_config_with_router():
