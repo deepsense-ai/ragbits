@@ -14,7 +14,7 @@ hide:
 }
 </style>
 
-<h1 align="center" id="main-header">Ragbits</h1>
+<h1 align="center" id="main-header">🐰 Ragbits</h1>
 
 <p align="center">
   <em size="">Building blocks for rapid development of GenAI applications.</em>
