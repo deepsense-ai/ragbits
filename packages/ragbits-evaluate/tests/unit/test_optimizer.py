@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -55,6 +56,9 @@ class MockDataLoader(DataLoader):
         self.dataset_size = dataset_size
 
     async def load(self) -> Iterable[MockEvaluationData]:
+        return await self.map()
+
+    async def map(self, *args: Any, **kwargs: Any) -> Iterable[MockEvaluationData]:  # noqa: ANN401
         return [MockEvaluationData(input_data=i) for i in range(1, self.dataset_size + 1)]
 
     @classmethod

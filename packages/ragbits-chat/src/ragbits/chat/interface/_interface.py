@@ -1,18 +1,75 @@
 import base64
+import functools
 import hmac
 import json
 import logging
+import time
+import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
+from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig
-from .types import ChatResponse, ChatResponseType, Reference, StateUpdate
+from .types import ChatContext, ChatResponse, ChatResponseType, Reference, StateUpdate
 
 logger = logging.getLogger(__name__)
+
+
+def with_chat_metadata(
+    func: Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]],
+) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
+    """
+    Decorator that adds message and conversation metadata to the chat method and handles history persistence.
+    Generates message_id and conversation_id (if first message) and stores them in context.
+    Also handles history persistence if configured.
+    """
+
+    @functools.wraps(func)
+    async def wrapper(
+        self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
+    ) -> AsyncGenerator[ChatResponse, None]:
+        # Initialize context if None
+        if context is None:
+            context = ChatContext()
+
+        # Generate message_id if not present
+        if not context.message_id:
+            context.message_id = str(uuid.uuid4())
+            yield ChatResponse(type=ChatResponseType.MESSAGE_ID, content=context.message_id)
+
+        # Generate conversation_id if this is the first message
+        if not context.conversation_id and (not history or len(history) == 0):
+            context.conversation_id = str(uuid.uuid4())
+            yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
+
+        responses = []
+        main_response = ""
+        extra_responses = []
+        timestamp = time.time()
+
+        try:
+            async for response in func(self, message, history, context):
+                responses.append(response)
+                if response.type == ChatResponseType.TEXT and isinstance(response.content, str):
+                    main_response = main_response + response.content
+                else:
+                    extra_responses.append(response)
+                yield response
+        finally:
+            if self.history_persistence:
+                await self.history_persistence.save_interaction(
+                    message=message,
+                    response=main_response,
+                    extra_responses=extra_responses,
+                    context=context,
+                    timestamp=timestamp,
+                )
+
+    return wrapper
 
 
 class ChatInterface(ABC):
@@ -28,6 +85,13 @@ class ChatInterface(ABC):
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
+    history_persistence: HistoryPersistenceStrategy | None = None
+
+    def __init_subclass__(cls, **kwargs: dict) -> None:
+        """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
+        super().__init_subclass__(**kwargs)
+        if hasattr(cls, "chat"):
+            cls.chat = functools.wraps(cls.chat)(with_chat_metadata(cls.chat))  # type: ignore
 
     @staticmethod
     def create_text_response(text: str) -> ChatResponse:
@@ -86,12 +150,23 @@ class ChatInterface(ABC):
         expected_signature = ChatInterface._sign_state(state)
         return hmac.compare_digest(expected_signature, signature)
 
+    async def setup(self) -> None:  # noqa: B027
+        """
+        Setup the chat interface.
+
+        This method is called after the chat interface is initialized and before the chat method is called.
+        It is used to setup the chat interface, such as loading the model or initializing the vector store.
+
+        This method is optional and can be overridden by subclasses.
+        """
+        pass
+
     @abstractmethod
     async def chat(
         self,
         message: str,
         history: ChatFormat | None = None,
-        context: dict | None = None,
+        context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Process a chat message and yield responses asynchronously.
@@ -99,7 +174,8 @@ class ChatInterface(ABC):
         Args:
             message: The current user message
             history: Optional list of previous messages in the conversation
-            context: Optional context with optional 'state' field containing conversation state
+            context: Optional context containing conversation metadata and state.
+                    Will be automatically populated with message_id and conversation_id.
 
         Yields:
             ChatResponse objects containing different types of content:

@@ -10,15 +10,15 @@ from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
-from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, OutputT
+from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOutputT
 from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
-InputT = TypeVar("InputT", bound=BaseModel | None)
-FewShotExample = tuple[str | InputT, str | OutputT]
+PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
+FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
 
 
-class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=ABCMeta):
+class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOutputT], metaclass=ABCMeta):
     """
     Generic class for prompts. It contains the system and user prompts, and additional messages.
 
@@ -31,15 +31,15 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
     # Additional messages to be added to the conversation after the system prompt,
     # pairs of user message and assistant response
-    few_shots: list[FewShotExample[InputT, OutputT]] = []
+    few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
-    response_parser: Callable[[str], OutputT | Awaitable[OutputT]]
+    response_parser: Callable[[str], PromptOutputT | Awaitable[PromptOutputT]]
 
     # Automatically set in __init_subclass__
-    input_type: type[InputT] | None
-    output_type: type[OutputT]
+    input_type: type[PromptInputT] | None
+    output_type: type[PromptOutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
     image_input_fields: list[str] | None = None
@@ -72,7 +72,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return Template(template)
 
     @classmethod
-    def _render_template(cls, template: Template, input_data: InputT | None) -> str:
+    def _render_template(cls, template: Template, input_data: PromptInputT | None) -> str:
         # Workaround for not being able to use `input is not None`
         # because of mypy issue: https://github.com/python/mypy/issues/12622
         context = {}
@@ -81,7 +81,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: InputT | None | str) -> list[bytes | str]:
+    def _get_images_from_input_data(cls, input_data: PromptInputT | None | str) -> list[bytes | str]:
         images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
@@ -99,11 +99,11 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return textwrap.dedent(message).strip()
 
     @classmethod
-    def _detect_response_parser(cls) -> Callable[[str], OutputT | Awaitable[OutputT]]:
+    def _detect_response_parser(cls) -> Callable[[str], PromptOutputT | Awaitable[PromptOutputT]]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
         if issubclass(cls.output_type, BaseModel):
-            return cast(Callable[[str], OutputT], build_pydantic_parser(cls.output_type))
+            return cast(Callable[[str], PromptOutputT], build_pydantic_parser(cls.output_type))
         if cls.output_type in DEFAULT_PARSERS:
             return DEFAULT_PARSERS[cls.output_type]
         raise ValueError(f"Response parser not provided for output type {cls.output_type}")
@@ -123,10 +123,10 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __init__(self: "Prompt[None, OutputT]") -> None: ...
+    def __init__(self: "Prompt[None, PromptOutputT]") -> None: ...
 
     @overload
-    def __init__(self: "Prompt[InputT, OutputT]", input_data: InputT) -> None: ...
+    def __init__(self: "Prompt[PromptInputT, PromptOutputT]", input_data: PromptInputT) -> None: ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")
@@ -141,7 +141,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instance_few_shots: list[FewShotExample[InputT, OutputT]] = []
+        self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
 
         # Additional conversation history that can be added dynamically using methods
         self._conversation_history: list[dict[str, Any]] = []
@@ -173,18 +173,20 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         ]
         return chat
 
-    def add_few_shot(self, user_message: str | InputT, assistant_message: str | OutputT) -> "Prompt[InputT, OutputT]":
+    def add_few_shot(
+        self, user_message: str | PromptInputT, assistant_message: str | PromptOutputT
+    ) -> "Prompt[PromptInputT, PromptOutputT]":
         """
         Add a few-shot example to the conversation.
 
         Args:
-            user_message (str | InputT): The raw user message or input data that will be rendered using the
+            user_message (str | PromptInputT): The raw user message or input data that will be rendered using the
                 user prompt template.
-            assistant_message (str | OutputT): The raw assistant response or output data that will be cast to a string
-                or in case of a Pydantic model, to JSON.
+            assistant_message (str | PromptOutputT): The raw assistant response or output data that will be cast to a
+                string or in case of a Pydantic model, to JSON.
 
         Returns:
-            Prompt[InputT, OutputT]: The current prompt instance in order to allow chaining.
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance in order to allow chaining.
         """
         self._instance_few_shots.append((user_message, assistant_message))
         return self
@@ -220,24 +222,24 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def add_user_message(self, message: str | dict[str, Any] | InputT) -> "Prompt[InputT, OutputT]":
+    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":
         """
         Add a user message to the conversation history.
 
         Args:
-            message (str | dict[str, Any] | InputT): The user message content. Can be:
+            message (str | dict[str, Any] | PromptInputT): The user message content. Can be:
                 - A string: Used directly as content
                 - A dictionary: With format {"type": "text", "text": "message"} or image content
-                - An InputT model: Will be rendered using the user prompt template
+                - An PromptInputT model: Will be rendered using the user prompt template
 
         Returns:
-            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        content: str | list[dict[str, Any]] | dict[str, Any] | InputT
+        content: str | list[dict[str, Any]] | dict[str, Any] | PromptInputT
 
         if isinstance(message, BaseModel):
-            # Type checking to ensure we're passing InputT to the methods
-            input_model: InputT = cast(InputT, message)
+            # Type checking to ensure we're passing PromptInputT to the methods
+            input_model: PromptInputT = cast(PromptInputT, message)
 
             # Render the message using the template if it's an input model
             rendered_text = self._render_template(self.user_prompt_template, input_model)
@@ -256,7 +258,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         self._conversation_history.append({"role": "user", "content": content})
         return self
 
-    def add_assistant_message(self, message: str | OutputT) -> "Prompt[InputT, OutputT]":
+    def add_assistant_message(self, message: str | PromptOutputT) -> "Prompt[PromptInputT, PromptOutputT]":
         """
         Add an assistant message to the conversation history.
 
@@ -264,7 +266,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             message (str): The assistant message content.
 
         Returns:
-            Prompt[InputT, OutputT]: The current prompt instance to allow chaining.
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
         if isinstance(message, BaseModel):
             message = message.model_dump_json()
@@ -321,7 +323,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
         """
         return issubclass(self.output_type, BaseModel)
 
-    async def parse_response(self, response: str) -> OutputT:
+    async def parse_response(self, response: str) -> PromptOutputT:
         """
         Parse the response from the LLM to the desired output type.
 
@@ -329,7 +331,7 @@ class Prompt(Generic[InputT, OutputT], BasePromptWithParser[OutputT], metaclass=
             response (str): The response from the LLM.
 
         Returns:
-            OutputT: The parsed response.
+            PromptOutputT: The parsed response.
 
         Raises:
             ResponseParsingError: If the response cannot be parsed.
