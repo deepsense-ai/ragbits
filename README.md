@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>Ragbits</h1>
+<h1>🐰 Ragbits</h1>
 
 *Building blocks for rapid development of GenAI applications*
 
