@@ -59,9 +59,41 @@ Alternatively, you can use individual components of the stack by installing thei
 
 ## Quickstart
 
-### LLMs
+### Large Language Models
 
-tbd
+To define prompts and run LLMs:
+
+```python
+import asyncio
+from pydantic import BaseModel
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
+
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
+
+class QuestionAnswerPromptOutput(BaseModel):
+    answer: str
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
+    system_prompt = """
+    You are a question answering agent. Answer the question to the best of your ability.
+    """
+    user_prompt = """
+    Question: {{ question }}
+    """
+
+async def main() -> None:
+    llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
+        question="What are high memory and low memory on linux?",
+    ))
+    response = await llm.generate(prompt)
+    print(response.answer)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
 
 ### Document Search
 
@@ -79,14 +111,14 @@ document_search = DocumentSearch(vector_store=vector_store)
 
 async def run() -> None:
     await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
-    result = await document_search.search("What are the key findings or results presented in this paper?")
+    result = await document_search.search("What are the key findings presented in this paper?")
     print(result)
 
 if __name__ == "__main__":
     asyncio.run(run())
 ```
 
-### RAG
+### Retrieval-Augmented Generation
 
 tbd
 
