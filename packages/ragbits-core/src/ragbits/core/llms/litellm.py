@@ -1,12 +1,9 @@
-import inspect
-import json
 import time
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 import litellm
 import tiktoken
-from litellm import Message
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -131,7 +128,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-        tools: list[Callable] | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -159,14 +156,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         if tools:
-            available_tools = {tool.__name__: tool for tool in tools}
-            tool_dicts = [self._convert_function_to_tool_dict(tool) for tool in tools]
             start_time = time.perf_counter()
             response = await self._get_litellm_response(
                 conversation=prompt.chat,
                 options=options,
                 response_format=response_format,
-                tools=tool_dicts,
+                tools=tools,
             )
         else:
             start_time = time.perf_counter()
@@ -183,21 +178,21 @@ class LiteLLM(LLM[LiteLLMOptions]):
         results = {}
 
         if tools:
-            results["tool_calls"] = response.choices[0].message.tool_calls  # type: ignore
-            if results["tool_calls"]:
-                tool_messages = self._call_tools(
-                    available_tools=available_tools,
-                    tool_calls=results["tool_calls"],
-                    response_message=response.choices[0].message,  # type: ignore
-                )
-                second_response = await self._get_litellm_response(
-                    conversation=tool_messages,
-                    options=options,
-                    response_format=response_format,
-                )
-                results["response"] = second_response.choices[0].message.content  # type: ignore
+            tool_calls = response.choices[0].message.tool_calls  # type: ignore
+            if tool_calls:
+                tool_call_dicts = [
+                    {
+                        "tool_name": tool_call.function.name,
+                        "tool_arguments": tool_call.function.arguments,
+                        "tool_type": tool_call.type,
+                        "tool_call_id": tool_call.id,
+                    }
+                    for tool_call in tool_calls
+                ]
+                results["tool_calls"] = tool_call_dicts
             else:
-                results["response"] = response.choices[0].message.content  # type: ignore
+                results["tool_calls"] = None
+            results["response"] = response.choices[0].message.content  # type: ignore
         else:
             results["response"] = response.choices[0].message.content  # type: ignore
 
@@ -339,59 +334,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         except litellm.openai.APIResponseValidationError as exc:
             raise LLMResponseError() from exc
         return response
-
-    @staticmethod
-    def _call_tools(available_tools: dict[str, Callable], tool_calls: list, response_message: Message) -> list:
-        messages = [response_message.to_dict()]
-        for tool_call in tool_calls:
-            function_name = tool_call.function.name
-            function_to_call = available_tools[function_name]
-            function_args = json.loads(tool_call.function.arguments)
-            function_response = function_to_call(**function_args)
-            messages.append(
-                {
-                    "tool_call_id": tool_call.id,
-                    "role": "tool",
-                    "name": function_name,
-                    "content": function_response,
-                }
-            )
-        return messages
-
-    @staticmethod
-    def _convert_function_to_tool_dict(func: Callable) -> dict:
-        # https://github.com/openai/build-hours/blob/main/2-assistants/demo_util.py
-        type_map = {
-            str: "string",
-            int: "integer",
-            float: "number",
-            bool: "boolean",
-            list: "array",
-            dict: "object",
-            type(None): "null",
-        }
-
-        signature = inspect.signature(func)
-
-        parameters = {}
-        for param in signature.parameters.values():
-            param_type = type_map.get(param.annotation, "string")
-            parameters[param.name] = {"type": param_type}
-
-        required = [param.name for param in signature.parameters.values() if param.default == inspect._empty]
-
-        return {
-            "type": "function",
-            "function": {
-                "name": func.__name__,
-                "description": func.__doc__ or "",
-                "parameters": {
-                    "type": "object",
-                    "properties": parameters,
-                    "required": required,
-                },
-            },
-        }
 
     def _get_response_format(
         self, output_schema: type[BaseModel] | dict | None, json_mode: bool

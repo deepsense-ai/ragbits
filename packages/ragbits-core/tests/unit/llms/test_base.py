@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from pydantic import BaseModel
 
@@ -30,6 +32,22 @@ class CustomPrompt(BasePromptWithParser[CustomOutputType]):
     @staticmethod
     async def parse_response(response: str) -> CustomOutputType:
         return CustomOutputType(message=response)
+
+
+def get_weather(location: str) -> str:
+    """
+    Returns the current weather for a given location.
+
+    Args:
+        location: The location to get the weather for.
+
+    Returns:
+        The current weather for the given location.
+    """
+    if "san francisco" in location.lower():
+        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
+    else:
+        return json.dumps({"location": location, "temperature": "unknown"})
 
 
 async def test_generate_with_str(llm: MockLLM):
@@ -151,3 +169,19 @@ def test_has_images():
 def test_get_token_id(llm: MockLLM):
     with pytest.raises(NotImplementedError):
         llm.get_token_id("example_token")
+
+
+def test_convert_function_to_function_schema(llm: MockLLM):
+    """Test converting function to function schema"""
+    function_schema = llm._convert_function_to_function_schema(get_weather)
+    expected_function_schema = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "\n    Returns the current weather for a given location.\n\n    "
+            "Args:\n        location: The location to get the weather for.\n\n    Returns:\n        "
+            "The current weather for the given location.\n    ",
+            "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]},
+        },
+    }
+    assert function_schema == expected_function_schema

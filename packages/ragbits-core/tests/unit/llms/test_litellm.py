@@ -7,6 +7,7 @@ from litellm import Message, Router
 from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
 from pydantic import BaseModel
 
+from ragbits.core.llms.base import ToolCall, ToolCallsResponse
 from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
@@ -108,16 +109,6 @@ def mock_llm_responses_with_tool(llm: LiteLLM):
                 )
             ],
         ),
-        ModelResponse(
-            choices=[
-                Choices(
-                    message=Message(
-                        content="Here is weather in San Francisco.",
-                        role="assistant",
-                    ),
-                )
-            ],
-        ),
     ]
 
 
@@ -176,7 +167,33 @@ async def test_generation_with_tools():
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
     output = await llm.generate(prompt, tools=[get_weather])
-    assert output == "Here is weather in San Francisco."
+    assert isinstance(output, ToolCallsResponse)
+    assert output.tool_calls == [
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
+
+
+async def test_generation_with_tools_as_function_schemas():
+    """Test generation of a response with tools given as function schemas."""
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
+    mock_llm_responses_with_tool(llm)
+    function_schema = llm._convert_function_to_function_schema(get_weather)
+    output = await llm.generate(prompt, tools=[function_schema])
+    assert isinstance(output, ToolCallsResponse)
+    assert output.tool_calls == [
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
 
 
 async def test_generation_with_tools_no_tool_used():
@@ -185,6 +202,7 @@ async def test_generation_with_tools_no_tool_used():
     prompt = MockPrompt("Hello, how are you?")
     mock_llm_responses_with_tool_no_tool_used(llm)
     output = await llm.generate(prompt, tools=[get_weather])
+    assert isinstance(output, str)
     assert output == "I'm fine."
 
 
@@ -238,8 +256,8 @@ async def test_generation_with_pydantic_output():
     prompt = PydanticPrompt()
     options = LiteLLMOptions(mock_response='{"response": "I\'m fine, thank you.", "happiness": 100}')
     output = await llm.generate(prompt, options=options)
-    assert output.response == "I'm fine, thank you."
-    assert output.happiness == 100
+    assert output.response == "I'm fine, thank you."  # type: ignore
+    assert output.happiness == 100  # type: ignore
 
 
 async def test_generation_with_metadata():
@@ -351,49 +369,3 @@ def test_get_token_id():
     llm = LiteLLM(model_name="gpt-4o")
     token_id = llm.get_token_id("Yes")
     assert token_id == 13022
-
-
-def test_call_tools():
-    """Test calling tools"""
-    llm = LiteLLM(api_key="test_key")
-    tool_calls = [
-        ChatCompletionMessageToolCall(
-            function=Function(arguments='{"location":"San Francisco"}', name="get_weather"),
-            id="call_Dq3XWqfuMskh9SByzz5g00mM",
-            type="function",
-        )
-    ]
-    response_message = Message(
-        **{  # type: ignore
-            "role": "assistant",
-            "content": "Some response.",
-        }
-    )
-    messages = llm._call_tools(
-        available_tools={"get_weather": get_weather}, tool_calls=tool_calls, response_message=response_message
-    )
-    assert messages[0] == response_message.to_dict()
-    expected_tool_message = {
-        "tool_call_id": "call_Dq3XWqfuMskh9SByzz5g00mM",
-        "role": "tool",
-        "name": "get_weather",
-        "content": get_weather("San Francisco"),
-    }
-    assert messages[1] == expected_tool_message
-
-
-def test_convert_function_to_tool_dict():
-    """Test converting function to tool dict"""
-    llm = LiteLLM(api_key="test_key")
-    tool_dict = llm._convert_function_to_tool_dict(get_weather)
-    expected_tool_dict = {
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "\n    Returns the current weather for a given location.\n\n    "
-            "Args:\n        location: The location to get the weather for.\n\n    Returns:\n        "
-            "The current weather for the given location.\n    ",
-            "parameters": {"type": "object", "properties": {"location": {"type": "string"}}, "required": ["location"]},
-        },
-    }
-    assert tool_dict == expected_tool_dict

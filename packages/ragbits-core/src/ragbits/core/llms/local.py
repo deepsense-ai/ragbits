@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
@@ -95,7 +95,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-        tools: list[Callable] | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Makes a call to the local LLM with the provided prompt and options.

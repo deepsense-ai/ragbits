@@ -1,4 +1,5 @@
 import enum
+import inspect
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import ClassVar, Generic, TypeVar, cast, overload
@@ -19,6 +20,8 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
 
+Tools = list[Callable] | list[dict]
+
 
 class LLMType(enum.Enum):
     """
@@ -37,6 +40,25 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
 
     content: PromptOutputT
     metadata: dict
+
+
+class ToolCall(BaseModel):
+    """
+    A schema of tool call data
+    """
+
+    tool_name: str
+    tool_arguments: str
+    tool_type: str
+    tool_call_id: str
+
+
+class ToolCallsResponse(BaseModel):
+    """
+    A schema of output with tool calls
+    """
+
+    tool_calls: list[ToolCall]
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -95,7 +117,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -130,7 +152,25 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePromptWithParser[PromptOutputT],
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
+        tools: None = None,
+    ) -> PromptOutputT: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: BasePromptWithParser[PromptOutputT],
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
+    ) -> PromptOutputT | ToolCallsResponse: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: None = None,
     ) -> PromptOutputT: ...
 
     @overload
@@ -139,8 +179,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
-    ) -> PromptOutputT: ...
+        tools: Tools | None = None,
+    ) -> PromptOutputT | ToolCallsResponse: ...
 
     @overload
     async def generate(
@@ -148,7 +188,25 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
+        tools: None = None,
+    ) -> str: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: str,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
+    ) -> str | ToolCallsResponse: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: ChatFormat,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: None = None,
     ) -> str: ...
 
     @overload
@@ -157,16 +215,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
-    ) -> str: ...
+        tools: Tools | None = None,
+    ) -> str | ToolCallsResponse: ...
 
     async def generate(
         self,
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[Callable] | None = None,
-    ) -> PromptOutputT:
+        tools: Tools | None = None,
+    ) -> PromptOutputT | ToolCallsResponse:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -179,18 +237,34 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             tools: Functions to be used as tools by LLM.
 
         Returns:
-            Parsed response from LLM.
+            Parsed response from LLM or list of tool calls.
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            raw_response = await self.generate_raw(prompt, options=options, tools=tools)
+            if tools and isinstance(tools[0], Callable):
+                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
+            else:
+                function_schemas = cast(list[dict] | None, tools)
+            function_schemas = cast(list[dict] | None, function_schemas)
+
+            raw_response = await self.generate_raw(prompt, options=options, tools=function_schemas)
+
+            if tools:
+                tool_call_dicts = raw_response["tool_calls"]
+                if tool_call_dicts:
+                    tool_calls = ToolCallsResponse(
+                        tool_calls=[ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts]
+                    )
+                    raw_response["tool_calls"] = tool_calls
+                    outputs.response = raw_response
+                    return tool_calls
+
             if isinstance(prompt, BasePromptWithParser):
                 response = await prompt.parse_response(raw_response["response"])
             else:
                 response = cast(PromptOutputT, raw_response["response"])
             raw_response["response"] = response
             outputs.response = raw_response
-
-        return response
+            return response
 
     @overload
     async def generate_with_metadata(
@@ -293,7 +367,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-        tools: list[Callable] | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Calls LLM inference API.
@@ -329,3 +403,37 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Response stream from LLM.
         """
+
+    @staticmethod
+    def _convert_function_to_function_schema(func: Callable) -> dict:
+        type_map = {
+            str: "string",
+            int: "integer",
+            float: "number",
+            bool: "boolean",
+            list: "array",
+            dict: "object",
+            type(None): "null",
+        }
+
+        signature = inspect.signature(func)
+
+        parameters = {}
+        for param in signature.parameters.values():
+            param_type = type_map.get(param.annotation, "string")
+            parameters[param.name] = {"type": param_type}
+
+        required = [param.name for param in signature.parameters.values() if param.default == inspect._empty]
+
+        return {
+            "type": "function",
+            "function": {
+                "name": func.__name__,
+                "description": func.__doc__ or "",
+                "parameters": {
+                    "type": "object",
+                    "properties": parameters,
+                    "required": required,
+                },
+            },
+        }
