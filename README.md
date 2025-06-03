@@ -119,6 +119,8 @@ if __name__ == "__main__":
 
 ### Retrieval-Augmented Generation
 
+To build a simple RAG pipeline:
+
 ```python
 import asyncio
 from pydantic import BaseModel
@@ -150,11 +152,11 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromp
 embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
-
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
 
 async def run() -> None:
     question = "What are the key findings presented in this paper?"
+
     await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
     result = await document_search.search(question)
 
