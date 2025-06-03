@@ -65,9 +65,17 @@ hide:
 
 To get started quickly, you can install with:
 
-```sh
-pip install ragbits
-```
+=== "pip"
+
+    ```sh
+    pip install ragbits
+    ```
+
+=== "uv"
+
+    ```sh
+    uv add ragbits
+    ```
 
 This is a starter bundle of packages, containing:
 
