@@ -83,11 +83,10 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromp
     Question: {{ question }}
     """
 
+llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+
 async def main() -> None:
-    llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
-    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
-        question="What are high memory and low memory on linux?",
-    ))
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question="What are high memory and low memory on linux?"))
     response = await llm.generate(prompt)
     print(response.answer)
 
@@ -120,7 +119,55 @@ if __name__ == "__main__":
 
 ### Retrieval-Augmented Generation
 
-tbd
+```python
+import asyncio
+from pydantic import BaseModel
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
+    context: list[str]
+
+class QuestionAnswerPromptOutput(BaseModel):
+    answer: str
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
+    system_prompt = """
+    You are a question answering agent. Answer the question that will be provided using context.
+    If in the given context there is not enough information refuse to answer.
+    """
+    user_prompt = """
+    Question: {{ question }}
+    Context: {% for item in context %}
+        {{ item }}
+    {%- endfor %}
+    """
+
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
+
+llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+
+async def run() -> None:
+    question = "What are the key findings presented in this paper?"
+    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+    result = await document_search.search(question)
+
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
+        question=question,
+        context=[element.text_representation for element in result],
+    ))
+    response = await llm.generate(prompt)
+    print(response.answer)
+
+if __name__ == "__main__":
+    asyncio.run(run())
+```
 
 ## Rapid development
 
