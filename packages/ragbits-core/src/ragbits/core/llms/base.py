@@ -1,10 +1,10 @@
 import enum
-import inspect
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel
+from pydantic_ai.tools import Tool
 
 from ragbits.core import llms
 from ragbits.core.audit.traces import trace
@@ -406,34 +406,17 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
     @staticmethod
     def _convert_function_to_function_schema(func: Callable) -> dict:
-        type_map = {
-            str: "string",
-            int: "integer",
-            float: "number",
-            bool: "boolean",
-            list: "array",
-            dict: "object",
-            type(None): "null",
-        }
-
-        signature = inspect.signature(func)
-
-        parameters = {}
-        for param in signature.parameters.values():
-            param_type = type_map.get(param.annotation, "string")
-            parameters[param.name] = {"type": param_type}
-
-        required = [param.name for param in signature.parameters.values() if param.default == inspect._empty]
-
+        tool = Tool(func)
+        function_schema = tool.function_schema
         return {
             "type": "function",
             "function": {
-                "name": func.__name__,
-                "description": func.__doc__ or "",
+                "name": function_schema.function.__name__,
+                "description": function_schema.description,
                 "parameters": {
                     "type": "object",
-                    "properties": parameters,
-                    "required": required,
+                    "properties": function_schema.json_schema["properties"],
+                    "required": function_schema.json_schema["required"],
                 },
             },
         }
