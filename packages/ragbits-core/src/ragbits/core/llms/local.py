@@ -105,7 +105,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
-            tools: Functions to be used as tools by LLM.
+            tools: Functions to be used as tools by LLM (not used).
 
         Returns:
             Response string from LLM.
