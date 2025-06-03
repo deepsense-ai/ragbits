@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Switch default document parser to docling (#594)
+
 ## 0.19.1 (2025-05-27)
 
 ### Changed
