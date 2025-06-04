@@ -178,11 +178,16 @@ def test_convert_function_to_function_schema(llm: MockLLM):
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": "<summary>Returns the current weather for a given location.</summary>\n"
-            "<returns>\n<description>The current weather for the given location.</description>\n</returns>",
+            "description": "Returns the current weather for a given location.",
             "parameters": {
                 "type": "object",
-                "properties": {"location": {"description": "The location to get the weather for.", "type": "string"}},
+                "properties": {
+                    "location": {
+                        "description": "The location to get the weather for.",
+                        "title": "Location",
+                        "type": "string",
+                    }
+                },
                 "required": ["location"],
             },
         },
