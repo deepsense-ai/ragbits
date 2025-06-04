@@ -253,11 +253,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Parsed response from LLM or list of tool calls.
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            if tools and isinstance(tools[0], Callable):
+            function_schemas: list[dict] | None
+            if tools and callable(tools[0]):
                 function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
             else:
                 function_schemas = cast(list[dict] | None, tools)
-            function_schemas = cast(list[dict] | None, function_schemas)
 
             raw_response = await self.generate_raw(prompt, options=options, tools=function_schemas)
 
@@ -536,10 +536,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     args_of_tuple = get_args(ann)
                     args_of_tuple_with_ellipsis_length = 2
                     ann = (
-                        list[args_of_tuple[0]]
+                        list[args_of_tuple[0]]  # type: ignore
                         if len(args_of_tuple) == args_of_tuple_with_ellipsis_length and args_of_tuple[1] is Ellipsis
                         else list[Any]
-                    )  # type: ignore
+                    )
                 else:
                     # If user wrote *args: int, treat as List[int]
                     ann = list[ann]  # type: ignore
@@ -557,7 +557,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     dict_args = get_args(ann)
                     dict_args_to_check_length = 2
                     ann = (
-                        dict[dict_args[0], dict_args[1]]
+                        dict[dict_args[0], dict_args[1]]  # type: ignore
                         if len(dict_args) == dict_args_to_check_length
                         else dict[str, Any]
                     )  # type: ignore

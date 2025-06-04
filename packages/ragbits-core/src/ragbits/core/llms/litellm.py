@@ -183,6 +183,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         if tools:
             tool_calls = response.choices[0].message.tool_calls  # type: ignore
+            tool_call_dicts: list[dict] | None = None
             if tool_calls:
                 tool_call_dicts = [
                     {
@@ -193,9 +194,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                     }
                     for tool_call in tool_calls
                 ]
-                results["tool_calls"] = tool_call_dicts
-            else:
-                results["tool_calls"] = None
+            results["tool_calls"] = tool_call_dicts
             results["response"] = response.choices[0].message.content  # type: ignore
         else:
             results["response"] = response.choices[0].message.content  # type: ignore
