@@ -32,11 +32,13 @@ export function useRagbitsCall<
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const abort = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsLoading(false);
+    if (!abortControllerRef.current) {
+      return null;
     }
+
+    abortControllerRef.current.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
   }, []);
 
   const call = useCallback(
@@ -133,20 +135,24 @@ export function useRagbitsStream<
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const cancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsStreaming(false);
+    if (!abortControllerRef.current) {
+      return null;
     }
+
+    abortControllerRef.current.abort();
+    abortControllerRef.current = null;
+    setIsStreaming(false);
   }, []);
 
   const stream = useCallback(
     (
       data: StreamingEndpointRequest<TEndpoint>,
-      callbacks: StreamCallbacks<TResponse, string>
+      callbacks: StreamCallbacks<StreamingEndpointStream<TEndpoint>, string>
     ): (() => void) => {
-      // Cancel any existing stream
-      cancel();
+      // Abort any existing stream only if there's one in progress
+      if (abortControllerRef.current && isStreaming) {
+        abortControllerRef.current.abort();
+      }
 
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
@@ -154,16 +160,7 @@ export function useRagbitsStream<
       setError(null);
       setIsStreaming(true);
 
-      const cancelFn = (
-        client as {
-          makeStreamRequest<T>(
-            endpoint: string,
-            data: StreamingEndpointRequest<TEndpoint>,
-            callbacks: StreamCallbacks<T, Error>,
-            signal?: AbortSignal
-          ): () => void;
-        }
-      ).makeStreamRequest<TResponse>(
+      const cancelFn = client.makeStreamRequest<TEndpoint>(
         endpoint,
         data,
         {
@@ -173,10 +170,8 @@ export function useRagbitsStream<
             if (!abortController.signal.aborted) {
               setError(err);
               setIsStreaming(false);
-              // Ensure callbacks.onError exists before calling it
-              if (callbacks.onError) {
-                callbacks.onError(err.message); // Convert Error to string for user callback
-              }
+
+              callbacks.onError(err.message);
             }
           },
           onClose: () => {

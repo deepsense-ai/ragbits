@@ -17,7 +17,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   const [serverState, setServerState] = useState<ServerState | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const stream = useRagbitsStream("/api/chat");
+  const chatFactory = useRagbitsStream("/api/chat");
 
   const updateHistoryState = (
     updater: (prev: HistoryState) => HistoryState,
@@ -136,12 +136,12 @@ export function HistoryProvider({ children }: PropsWithChildren) {
 
       const chatRequest: ChatRequest = {
         message: text,
-        history: mapHistoryToMessages(Array.from(history.values())),
+        history: mapHistoryToMessages(history),
         context,
       };
 
       // Send message using the new streaming hook
-      stream.stream(chatRequest, {
+      chatFactory.stream(chatRequest, {
         onMessage: (response: ChatResponse) =>
           handleResponse(response as ChatResponse, assistantResponseId),
         onError: (error: string) => {
@@ -156,7 +156,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         onClose: noop,
       });
     },
-    [history, serverState, conversationId, addMessage, stream, handleResponse],
+    [history, serverState, conversationId, addMessage, chatFactory, handleResponse],
   );
 
   const value = useMemo(
@@ -167,8 +167,8 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       deleteMessage,
       clearHistory,
       sendMessage,
-      isLoading: stream.isStreaming,
-      stopAnswering: stream.cancel,
+      isLoading: chatFactory.isStreaming,
+      stopAnswering: chatFactory.cancel,
     }),
     [
       history,
@@ -177,8 +177,8 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       clearHistory,
       handleResponse,
       sendMessage,
-      stream.isStreaming,
-      stream.cancel,
+      chatFactory.isStreaming,
+      chatFactory.cancel,
     ],
   );
 

@@ -185,11 +185,11 @@ export class RagbitsClient {
     };
 
     try {
-      void startStream();
+      startStream();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to start stream";
-      void callbacks.onError(new Error(errorMessage));
+      callbacks.onError(new Error(errorMessage));
     }
 
     return () => {

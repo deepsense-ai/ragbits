@@ -5,6 +5,7 @@ import type {
   StreamingEndpointRequest,
   TypedApiRequestOptions,
   ApiEndpointPath,
+  StreamingEndpointStream,
 } from "ragbits-api-client";
 
 // Re-export RagbitsClient
@@ -57,7 +58,7 @@ export interface RagbitsStreamResult<
   error: E | null;
   stream: (
     data: StreamingEndpointRequest<TEndpoint>,
-    callbacks: StreamCallbacks<T, string>
+    callbacks: StreamCallbacks<StreamingEndpointStream<TEndpoint>, string>
   ) => () => void;
   cancel: () => void;
 }

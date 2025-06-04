@@ -1,11 +1,11 @@
 import { Message } from "ragbits-api-client-react";
-import { ChatMessage } from "../../types/history";
+import { HistoryState } from "../../types/history";
 
 /**
- * Maps the internal history messages to the API message format
+ * Maps the internal history state to the API message format
  */
-export function mapHistoryToMessages(messages: ChatMessage[]): Message[] {
-  return messages.map((message) => ({
+export function mapHistoryToMessages(history: HistoryState): Message[] {
+  return Array.from(history.values()).map((message) => ({
     role: message.role,
     content: message.content,
   }));
