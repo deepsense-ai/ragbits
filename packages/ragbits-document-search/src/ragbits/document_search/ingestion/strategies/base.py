@@ -205,20 +205,38 @@ class IngestStrategy(WithConstructionConfig, ABC):
         Raises:
             EnricherError: If the enrichment of the elements failed.
             EnricherElementNotSupportedError: If the element type is not supported.
-            EnricherNotFoundError: If no enricher is found for the element type.
         """
         grouped_elements = defaultdict(list)
         for element in elements:
             grouped_elements[type(element)].append(element)
 
-        for element_type in grouped_elements:
-            enricher = enricher_router.get(element_type)
-            enricher.validate_element_type(element_type)
+        # Separate elements that have enrichers from those that don't
+        elements_to_enrich = []
+        elements_without_enrichers = []
 
-        grouped_enriched_elements = await asyncio.gather(
-            *[enricher_router.get(element_type).enrich(elements) for element_type, elements in grouped_elements.items()]
-        )
-        return [element for enriched_elements in grouped_enriched_elements for element in enriched_elements]
+        for element_type, elements_of_type in grouped_elements.items():
+            if element_type in enricher_router:
+                enricher = enricher_router.get(element_type)
+                enricher.validate_element_type(element_type)
+                elements_to_enrich.append((element_type, elements_of_type))
+            else:
+                # No enricher found for this element type, keep elements as-is
+                elements_without_enrichers.extend(elements_of_type)
+
+        # Enrich elements that have enrichers
+        if elements_to_enrich:
+            grouped_enriched_elements = await asyncio.gather(
+                *[
+                    enricher_router.get(element_type).enrich(elements_of_type)
+                    for element_type, elements_of_type in elements_to_enrich
+                ]
+            )
+            enriched_elements = [element for enriched_group in grouped_enriched_elements for element in enriched_group]
+        else:
+            enriched_elements = []
+
+        # Combine enriched elements with elements that don't need enrichment
+        return enriched_elements + elements_without_enrichers
 
     @staticmethod
     async def _remove_elements(document_ids: list[str], vector_store: VectorStore) -> None:
