@@ -74,11 +74,23 @@ def with_chat_metadata(
         extra_responses = []
         timestamp = time.time()
         response_token_count = 0.0
+        first_token_time = None
 
         try:
             async for response in func(self, message, history, context):
                 responses.append(response)
                 if response.type == ChatResponseType.TEXT and isinstance(response.content, str):
+                    # Record time to first token on the first TEXT response
+                    if first_token_time is None and response.content:
+                        first_token_time = time.time() - start_time
+                        record(
+                            ChatMetric.CHAT_TIME_TO_FIRST_TOKEN,
+                            first_token_time,
+                            interface_class=self.__class__.__name__,
+                            is_new_conversation=str(is_new_conversation),
+                            history_length=str(history_length),
+                        )
+
                     main_response = main_response + response.content
                     # Rough token estimation (words * 1.3 for subword tokens)
                     response_token_count += len(response.content.split()) * 1.3

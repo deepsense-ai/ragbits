@@ -18,6 +18,7 @@ class ChatMetric(str, Enum):
 
     # Chat Interface Metrics
     CHAT_REQUEST_DURATION = "chat_request_duration"
+    CHAT_TIME_TO_FIRST_TOKEN = "chat_time_to_first_token"  # noqa: S105
     CHAT_RESPONSE_TOKENS = "chat_response_tokens"
     CHAT_HISTORY_LENGTH = "chat_history_length"
     CHAT_MESSAGE_COUNT = "chat_message_count"
@@ -42,6 +43,15 @@ def _register_chat_metrics() -> None:
         Metric(
             name="chat_request_duration",
             description="Tracks the total duration of chat request processing in seconds",
+            unit="s",
+        ),
+    )
+
+    register_histogram_metric(
+        ChatMetric.CHAT_TIME_TO_FIRST_TOKEN,
+        Metric(
+            name="chat_time_to_first_token",
+            description="Tracks the time taken to get the first token in chat processing",
             unit="s",
         ),
     )
