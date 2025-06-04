@@ -535,10 +535,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     # e.g. def foo(*args: tuple[int, ...]) -> treat as List[int]
                     args_of_tuple = get_args(ann)
                     args_of_tuple_with_ellipsis_length = 2
-                    if len(args_of_tuple) == args_of_tuple_with_ellipsis_length and args_of_tuple[1] is Ellipsis:
-                        ann = list[args_of_tuple[0]]  # type: ignore
-                    else:
-                        ann = list[Any]
+                    ann = (
+                        list[args_of_tuple[0]]
+                        if len(args_of_tuple) == args_of_tuple_with_ellipsis_length and args_of_tuple[1] is Ellipsis
+                        else list[Any]
+                    )  # type: ignore
                 else:
                     # If user wrote *args: int, treat as List[int]
                     ann = list[ann]  # type: ignore

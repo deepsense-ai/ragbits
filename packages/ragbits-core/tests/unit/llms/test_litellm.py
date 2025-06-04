@@ -1,6 +1,6 @@
 import json
 import pickle
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from litellm import Message, Router
@@ -8,7 +8,7 @@ from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function
 from pydantic import BaseModel
 
 from ragbits.core.llms.base import ToolCall, ToolCallsResponse
-from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
+from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUse
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
@@ -161,8 +161,10 @@ async def test_generation_with_parser():
     assert raw_output["response"] == "I'm fine, thank you."
 
 
-async def test_generation_with_tools():
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools(mock_supports_function_calling: MagicMock):
     """Test generation of a response with tools."""
+    mock_supports_function_calling.return_value = True
     llm = LiteLLM(api_key="test_key")
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
@@ -178,8 +180,10 @@ async def test_generation_with_tools():
     ]
 
 
-async def test_generation_with_tools_as_function_schemas():
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools_as_function_schemas(mock_supports_function_calling: MagicMock):
     """Test generation of a response with tools given as function schemas."""
+    mock_supports_function_calling.return_value = True
     llm = LiteLLM(api_key="test_key")
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
@@ -196,14 +200,25 @@ async def test_generation_with_tools_as_function_schemas():
     ]
 
 
-async def test_generation_with_tools_no_tool_used():
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools_no_tool_used(mock_supports_function_calling: MagicMock):
     """Test generation of a response with tools that are not used."""
+    mock_supports_function_calling.return_value = True
     llm = LiteLLM(api_key="test_key")
     prompt = MockPrompt("Hello, how are you?")
     mock_llm_responses_with_tool_no_tool_used(llm)
     output = await llm.generate(prompt, tools=[get_weather])
     assert isinstance(output, str)
     assert output == "I'm fine."
+
+
+@patch("litellm.supports_function_calling")
+async def test_genration_with_tools_not_supported_in_model(mock_supports_function_calling: MagicMock):
+    mock_supports_function_calling.return_value = False
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    with pytest.raises(LLMNotSupportingToolUse):
+        await llm.generate(prompt, tools=[get_weather])
 
 
 async def test_generation_with_static_prompt():

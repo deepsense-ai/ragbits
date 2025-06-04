@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingToolUse,
     LLMResponseError,
     LLMStatusError,
 )
@@ -149,9 +150,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingToolUse: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+        if tools and not litellm.supports_function_calling(self.model_name):
+            raise LLMNotSupportingToolUse()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
