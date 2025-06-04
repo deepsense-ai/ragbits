@@ -6,6 +6,8 @@
 - refactor UI components to allow modifications (#579)
 - Add setup method to ChatInterface (#586)
 - Rebuild UI with new dependencies (#589)
+- Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
+- CI/CD changes for new directory structure (#582)
 
 ## 0.19.1 (2025-05-27)
 
