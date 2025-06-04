@@ -1,4 +1,5 @@
 import base64
+from typing import Any
 
 from openai import AsyncOpenAI
 
@@ -25,22 +26,44 @@ class OpenAIModerationGuardrail(Guardrail):
         Returns:
             verification result
         """
+        inputs: list[dict[str, Any]] = []
         if isinstance(input_to_verify, Prompt):
-            inputs = [{"type": "text", "text": input_to_verify.rendered_user_prompt}]
+            inputs.append({"type": "text", "text": input_to_verify.rendered_user_prompt})
             if input_to_verify.rendered_system_prompt is not None:
                 inputs.append({"type": "text", "text": input_to_verify.rendered_system_prompt})
-            if images := input_to_verify.images:
-                inputs.extend(
-                    [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"},  # type: ignore
-                        }
-                        for im in images
-                    ]
-                )
+            if attachments := input_to_verify.attachments:
+                # Only process image attachments for moderation
+                for attachment in attachments:
+                    if isinstance(attachment, bytes):
+                        # Assume bytes are image data
+                        inputs.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64.b64encode(attachment).decode('utf-8')}"
+                                },
+                            }
+                        )
+                    elif isinstance(attachment, str) and any(
+                        attachment.lower().endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"]
+                    ):
+                        # Handle image file paths
+                        try:
+                            with open(attachment, "rb") as f:
+                                image_data = f.read()
+                            inputs.append(
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64.b64encode(image_data).decode('utf-8')}"
+                                    },
+                                }
+                            )
+                        except OSError:
+                            # Skip if file can't be read (file not found, permission denied, etc.)
+                            continue
         else:
-            inputs = [{"type": "text", "text": input_to_verify}]
+            inputs.append({"type": "text", "text": input_to_verify})
         response = await self._openai_client.moderations.create(model=self._moderation_model, input=inputs)  # type: ignore
 
         fail_reasons = [result for result in response.results if result.flagged]

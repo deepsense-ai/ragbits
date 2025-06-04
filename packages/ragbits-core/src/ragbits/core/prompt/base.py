@@ -37,6 +37,15 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return None
 
+    def list_attachments(self) -> list[str]:  # noqa: PLR6301
+        """
+        Returns the attachments (images, PDFs, etc.) in form of URLs or base64 encoded strings.
+
+        Returns:
+            list of attachments
+        """
+        return []
+
     def list_images(self) -> list[str]:  # noqa: PLR6301
         """
         Returns the images in form of URLs or base64 encoded strings.
@@ -44,7 +53,8 @@ class BasePrompt(metaclass=ABCMeta):
         Returns:
             list of images
         """
-        return []
+        # For backward compatibility, return the same as list_attachments
+        return self.list_attachments()
 
 
 class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta):

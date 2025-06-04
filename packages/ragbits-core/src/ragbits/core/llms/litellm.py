@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingPDFsError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -146,11 +147,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
-            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError()
-
+        self._check_attachment_support(prompt)
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
         start_time = time.perf_counter()
@@ -221,11 +220,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMConnectionError: If there is a connection error with the LLM API.
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
-            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingImagesError: If the model does not support images or PDFs.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
-            raise LLMNotSupportingImagesError()
-
+        self._check_attachment_support(prompt)
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
         start_time = time.perf_counter()
@@ -286,29 +283,38 @@ class LiteLLM(LLM[LiteLLMOptions]):
         entrypoint = self.router or litellm
 
         try:
-            response = await entrypoint.acompletion(
-                messages=conversation,
-                model=self.model_name,
-                base_url=self.api_base,
-                api_key=self.api_key,
-                api_version=self.api_version,
-                response_format=response_format,
-                stream=stream,
+            # Prepare kwargs for the completion call
+            completion_kwargs = {
+                "messages": conversation,
+                "model": self.model_name,
+                "response_format": response_format,
+                "stream": stream,
                 **options.dict(),
-            )
+            }
+
+            # Only add these parameters if we're not using a router
+            # Router instances have these configured at initialization time
+            if self.router is None:
+                if self.api_base is not None:
+                    completion_kwargs["base_url"] = self.api_base
+                if self.api_key is not None:
+                    completion_kwargs["api_key"] = self.api_key
+                if self.api_version is not None:
+                    completion_kwargs["api_version"] = self.api_version
+
+            response = await entrypoint.acompletion(**completion_kwargs)
         except litellm.openai.APIConnectionError as exc:
-            raise LLMConnectionError() from exc
+            raise LLMConnectionError(str(exc)) from exc
         except litellm.openai.APIStatusError as exc:
             raise LLMStatusError(exc.message, exc.status_code) from exc
         except litellm.openai.APIResponseValidationError as exc:
-            raise LLMResponseError() from exc
+            raise LLMResponseError(str(exc)) from exc
         return response
 
     def _get_response_format(
         self, output_schema: type[BaseModel] | dict | None, json_mode: bool
     ) -> type[BaseModel] | dict | None:
         supported_params = litellm.get_supported_openai_params(model=self.model_name)
-
         response_format = None
         if supported_params is not None and "response_format" in supported_params:
             if output_schema is not None and self.use_structured_output:
@@ -316,6 +322,37 @@ class LiteLLM(LLM[LiteLLMOptions]):
             elif json_mode:
                 response_format = {"type": "json_object"}
         return response_format
+
+    def _check_attachment_support(self, prompt: BasePrompt) -> None:
+        """
+        Checks if the model supports the types of attachments in the prompt.
+
+        Args:
+            prompt: The prompt containing attachments to check.
+
+        Raises:
+            LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingPDFsError: If the model does not support PDFs.
+        """
+        attachments = prompt.list_attachments()
+        if attachments:
+            # Check the chat format directly for attachment types
+            has_images = False
+            has_pdfs = False
+
+            for message in prompt.chat:
+                content = message.get("content", [])
+                if isinstance(content, list):
+                    for item in content:
+                        if item.get("type") == "image_url":
+                            has_images = True
+                        elif item.get("type") == "file":
+                            has_pdfs = True
+
+            if has_images and not litellm.supports_vision(self.model_name):
+                raise LLMNotSupportingImagesError()
+            if has_pdfs and not litellm.utils.supports_pdf_input(self.model_name):
+                raise LLMNotSupportingPDFsError()
 
     @property
     def base_url(self) -> str | None:
