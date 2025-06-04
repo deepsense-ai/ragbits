@@ -220,8 +220,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: dict | None = None,
+        history: ChatFormat| None = None,
+        context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         # Search for relevant documents
         result = await self.document_search.search(message)
