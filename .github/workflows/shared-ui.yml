@@ -16,6 +16,22 @@ jobs:
         with:
           node-version: "lts/*"
 
+      - name: Install Ragbits API Client dependencies
+        run: npm i
+        working-directory: typescript/ragbits-api-client
+
+      - name: Install Ragbits API Client React dependencies
+        run: npm i
+        working-directory: typescript/ragbits-api-client-react
+
+      - name: Build Ragbits API Client
+        run: npm run build
+        working-directory: typescript/ragbits-api-client
+
+      - name: Build Ragbits API Client React
+        run: npm run build
+        working-directory: typescript/ragbits-api-client-react
+
       - name: Install UI dependencies
         run: npm i
         working-directory: typescript/ui
