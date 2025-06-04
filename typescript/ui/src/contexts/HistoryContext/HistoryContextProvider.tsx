@@ -156,7 +156,14 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         onClose: noop,
       });
     },
-    [history, serverState, conversationId, addMessage, chatFactory, handleResponse],
+    [
+      history,
+      serverState,
+      conversationId,
+      addMessage,
+      chatFactory,
+      handleResponse,
+    ],
   );
 
   const value = useMemo(
