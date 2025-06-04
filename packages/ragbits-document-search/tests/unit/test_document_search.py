@@ -194,7 +194,7 @@ async def test_document_search_ingest_multiple_from_sources():
     assert {cast(TextElement, result).content for result in results} == {
         "foo",
         "bar",
-        "Ragbits\n\nRepository for internal experiment with our upcoming LLM framework.",
+        "Repository for internal experiment with our upcoming LLM framework.",
     }
 
 

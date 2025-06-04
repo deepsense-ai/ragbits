@@ -19,16 +19,17 @@ def env_vars_not_set(env_vars: list[str]) -> bool:
     return all(os.environ.get(env_var) is None for env_var in env_vars)
 
 
-def batched(data: Iterable[T], batch_size: int) -> Iterator[list[T]]:
+def batched(data: Iterable[T], batch_size: int | None = None) -> Iterator[list[T]]:
     """
     Batches the data into chunks of the given size.
 
     Args:
         data: The data to batch.
-        batch_size: The size of the batch.
+        batch_size: The size of the batch. If None, no batching is performed.
 
     Returns:
-        An iterator of batches of the data, where each batch is a list.
+        An iterator of batches of the data when batch_size is provided,
+        or the original iterator when batch_size is None.
     """
     it = iter(data)
     while batch := list(islice(it, batch_size)):

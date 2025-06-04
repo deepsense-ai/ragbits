@@ -5,14 +5,11 @@ from typing_extensions import Self
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig, import_by_path
 from ragbits.document_search.documents import element
-from ragbits.document_search.documents.element import Element, ImageElement
+from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
 from ragbits.document_search.ingestion.enrichers.exceptions import EnricherNotFoundError
-from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher
 
-_DEFAULT_ENRICHERS: dict[type[Element], ElementEnricher] = {
-    ImageElement: ImageElementEnricher(),
-}
+_DEFAULT_ENRICHERS: dict[type[Element], ElementEnricher] = {}
 
 
 class ElementEnricherRouter(WithConstructionConfig):

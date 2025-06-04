@@ -21,10 +21,11 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
 
     def __init__(
         self,
-        cpu_batch_size: int = 1,
-        cpu_memory: float | None = None,
-        io_batch_size: int = 10,
-        io_memory: float | None = None,
+        batch_size: int = 1,
+        enrich_batch_size: int | None = None,
+        index_batch_size: int | None = None,
+        parse_memory: float | None = None,
+        processing_memory: float | None = None,
         num_retries: int = 3,
         backoff_multiplier: int = 1,
         backoff_max: int = 60,
@@ -33,19 +34,29 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         Initialize the RayDistributedIngestStrategy instance.
 
         Args:
-            cpu_batch_size: The batch size for CPU bound tasks (e.g. parsing).
-            cpu_memory: The heap memory in bytes to reserve for each parallel CPU bound tasks (e.g. parsing).
-            io_batch_size: The batch size for IO bound tasks (e.g. indexing).
-            io_memory: The heap memory in bytes to reserve for each parallel IO bound tasks (e.g. indexing).
+            batch_size: The batch size for parsing documents.
+            enrich_batch_size: The batch size for enriching elements.
+                Describes the maximum number of document elements to enrich at once.
+                If None, all elements are enriched at once.
+            index_batch_size: The batch size for indexing elements.
+                Describes the maximum number of document elements to index at once.
+                If None, all elements are indexed at once.
+            parse_memory: The heap memory in bytes to reserve for each parallel parsing tasks.
+            processing_memory: The heap memory in bytes to reserve for each parallel elements processing tasks.
             num_retries: The number of retries per document ingest task error.
             backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
             backoff_max: The maximum allowed delay (in seconds) between retries.
         """
-        super().__init__(num_retries=num_retries, backoff_multiplier=backoff_multiplier, backoff_max=backoff_max)
-        self.cpu_batch_size = cpu_batch_size
-        self.cpu_memory = cpu_memory
-        self.io_batch_size = io_batch_size
-        self.io_memory = io_memory
+        super().__init__(
+            batch_size=batch_size,
+            enrich_batch_size=enrich_batch_size,
+            index_batch_size=index_batch_size,
+            num_retries=num_retries,
+            backoff_multiplier=backoff_multiplier,
+            backoff_max=backoff_max,
+        )
+        self.parse_memory = parse_memory
+        self.processing_memory = processing_memory
 
     @requires_dependencies(["ray.data"], "ray")
     async def __call__(
@@ -72,9 +83,9 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         # Parse documents
         parse_results = ray.data.from_items(list(documents)).map_batches(
             fn=lambda batch: {"results": asyncio.run(self._parse_batch(batch["item"], parser_router))},
-            batch_size=self.cpu_batch_size,
+            batch_size=self.batch_size,
             num_cpus=1,
-            memory=self.cpu_memory,
+            memory=self.parse_memory,
             zero_copy_batch=True,
         )
 
@@ -93,9 +104,9 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         # Enrich documents
         enrich_results = to_enrich.map_batches(
             fn=lambda batch: {"results": asyncio.run(self._enrich_batch(batch["results"], enricher_router))},
-            batch_size=self.io_batch_size,
+            batch_size=self.batch_size,
             num_cpus=0,
-            memory=self.io_memory,
+            memory=self.processing_memory,
         )
 
         # Split enriched documents into successful and failed
@@ -108,9 +119,9 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         # Index the combined documents
         index_results = to_index.map_batches(
             fn=lambda batch: {"results": asyncio.run(self._index_batch(batch["results"], vector_store))},
-            batch_size=self.io_batch_size,
+            batch_size=self.batch_size,
             num_cpus=0,
-            memory=self.io_memory,
+            memory=self.processing_memory,
         )
 
         # Split indexed documents into successful and failed
