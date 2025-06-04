@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.20.0 (2025-06-03)
+
+### Changed
+
+- ragbits-core updated to version v0.20.0
+
+- Remove default ImageElement enricher (#595)
 - Add elements batching for ingest strategies (#590)
 - BREAKING CHANGE: unified RayDistributedIngestStrategy interface (#590)
 - Switch default document parser to docling (#594)
