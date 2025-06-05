@@ -1,4 +1,4 @@
-# Quickstart: Building Retrieval-Augmented Generation
+# Tutorial: Retrieval-Augmented Generation (RAG)
 
 Let's now go through a more advanced **question answering system** with **retrieval-augmented generation** (RAG) in Ragbits. We will use the same dataset as in [the previous example](./llms.md), but we will try to improve the performance.
 

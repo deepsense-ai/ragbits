@@ -255,10 +255,10 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 
 ## Documentation
 
-- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
-- [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/) - Learn how to use Ragbits in your projects
-- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run Ragbits in your terminal
-- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying Ragbits API
+- [Tutorials](https://ragbits.deepsense.ai/tutorials/intro) - Get started with Ragbits in a few minutes
+- [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting) - Learn how to use Ragbits in your projects
+- [CLI](https://ragbits.deepsense.ai/cli/main) - Learn how to run Ragbits in your terminal
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt) - Explore the underlying Ragbits API
 
 ## Contributing
 

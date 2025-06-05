@@ -1,4 +1,4 @@
-# Quickstart: Working with Large Language Models
+# Tutorial: Large Language Models Intro
 
 Let's walk through a quick example of **basic question answering**. Specifically, let's build **a system for answering tech questions**, e.g. about Linux or iPhone apps.
 

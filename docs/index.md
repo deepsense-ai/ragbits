@@ -286,7 +286,7 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 
 ## Documentation
 
-- [Quickstart](quickstart/llms.md) - Get started with Ragbits in a few minutes
-- [How-to guides](how-to/prompts/use_prompting.md) - Learn how to use Ragbits in your projects
-- [CLI](cli/main.md) - Learn how to manage Ragbits from the command line
-- [API reference](api_reference/core/prompt.md) - Explore the underlying API of Ragbits
+- [Tutorials](tutorials/intro.md) - Get started with Ragbits in a few minutes
+- [How-to](how-to/prompts/use_prompting.md) - Learn how to use Ragbits in your projects
+- [CLI](cli/main.md) - Learn how to run Ragbits in your terminal
+- [API reference](api_reference/core/prompt.md) - Explore the underlying Ragbits API

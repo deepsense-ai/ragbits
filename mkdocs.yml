@@ -6,9 +6,9 @@ repo_url: https://github.com/deepsense-ai/ragbits
 copyright: Copyright &copy; 2025 deepsense.ai
 nav:
   - Ragbits: index.md
-  - Quickstart:
-    - "Basics": quickstart/llms.md
-    - "Retrieval-Augmented Generation": quickstart/rag.md
+  - Tutorials:
+    - "Introduction": tutorials/intro.md
+    - "Retrieval-Augmented Generation": tutorials/rag.md
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md
