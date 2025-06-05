@@ -3,7 +3,7 @@ import pickle
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from litellm import Message, Router
+from litellm import Message, Router, Usage
 from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
 from pydantic import BaseModel
 
@@ -108,6 +108,11 @@ def mock_llm_responses_with_tool(llm: LiteLLM):
                     ),
                 )
             ],
+            usage=Usage(
+                completion_tokens=10,
+                prompt_tokens=20,
+                total_tokens=30,
+            ),
         ),
     ]
 
@@ -121,6 +126,11 @@ def mock_llm_responses_with_tool_no_tool_used(llm: LiteLLM):
                     message=Message(content="I'm fine.", role="assistant", tool_calls=None),
                 )
             ],
+            usage=Usage(
+                completion_tokens=10,
+                prompt_tokens=20,
+                total_tokens=30,
+            ),
         ),
     ]
 
@@ -285,6 +295,45 @@ async def test_generation_with_metadata():
     assert output.metadata == {
         "completion_tokens": 20,
         "prompt_tokens": 10,
+        "total_tokens": 30,
+    }
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_metadata_and_tools(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with metadata and tools."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
+    mock_llm_responses_with_tool(llm)
+    output = await llm.generate_with_metadata(prompt, tools=[get_weather])
+    assert output.tool_calls.tool_calls == [  # type: ignore
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
+    assert output.metadata == {
+        "completion_tokens": 10,
+        "prompt_tokens": 20,
+        "total_tokens": 30,
+    }
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_metadata_and_tools_no_tool_used(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with tools that are not used."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    mock_llm_responses_with_tool_no_tool_used(llm)
+    output = await llm.generate_with_metadata(prompt, tools=[get_weather])
+    assert output.content == "I'm fine."
+    assert output.metadata == {
+        "completion_tokens": 10,
+        "prompt_tokens": 20,
         "total_tokens": 30,
     }
 

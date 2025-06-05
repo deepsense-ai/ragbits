@@ -46,15 +46,6 @@ class LLMType(enum.Enum):
     STRUCTURED_OUTPUT = "structured_output"
 
 
-class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
-    """
-    A schema of output with metadata
-    """
-
-    content: PromptOutputT
-    metadata: dict
-
-
 class ToolCall(BaseModel):
     """
     A schema of tool call data
@@ -72,6 +63,16 @@ class ToolCallsResponse(BaseModel):
     """
 
     tool_calls: list[ToolCall]
+
+
+class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
+    """
+    A schema of output with metadata
+    """
+
+    content: PromptOutputT
+    metadata: dict
+    tool_calls: ToolCallsResponse | None = None
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -285,6 +286,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePromptWithParser[PromptOutputT],
         *,
         options: LLMClientOptionsT | None = None,
+        tools: None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePromptWithParser[PromptOutputT],
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     @overload
@@ -293,6 +304,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     @overload
@@ -301,6 +322,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: str,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     @overload
@@ -310,6 +341,17 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+
+    @overload
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: ChatFormat,
+        *,
+        options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     async def generate_with_metadata(
@@ -317,6 +359,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
+        tools: Tools | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
@@ -325,18 +368,39 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Args:
             prompt: Formatted prompt template with conversation and optional response parsing configuration.
             options: Options to use for the LLM client.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
-            Text response from LLM with metadata.
+            Text response from LLM with metadata and list of tool calls.
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            response = await self.generate_raw(prompt, options=options)
-            content = response.pop("response")
-            if isinstance(prompt, BasePromptWithParser):
+            function_schemas: list[dict] | None
+            if tools and callable(tools[0]):
+                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
+            else:
+                function_schemas = cast(list[dict] | None, tools)
+
+            raw_response = await self.generate_raw(prompt, options=options, tools=function_schemas)
+
+            if tools:
+                tool_call_dicts = raw_response["tool_calls"]
+                if tool_call_dicts:
+                    tool_calls = ToolCallsResponse(
+                        tool_calls=[ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts]
+                    )
+                    raw_response["tool_calls"] = tool_calls
+
+            content = raw_response.pop("response")
+            tool_calls_response: ToolCallsResponse | None
+            tool_calls_response = (
+                cast(ToolCallsResponse, raw_response.pop("tool_calls")) if "tool_calls" in raw_response else None
+            )
+            if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
-                metadata=response,
+                metadata=raw_response,
+                tool_calls=tool_calls_response,
             )
         return outputs.response
 
