@@ -4,18 +4,16 @@ Let's walk through a quick example of **basic question answering**. Specifically
 
 Install the latest Ragbits via `pip install -U ragbits` and follow along.
 
-## Configure environment
+## Configuring the environment
 
 During development, we will use OpenAI's `gpt-4.1-nano` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this out for [other providers](../how-to/llms/use_llms.md) or [local models](../how-to/llms/use_local_llms.md).
 
 !!! tip "Recommended: Set up OpenTelemetry tracing to understand what's happening under the hood."
     OpenTelemetry is an LLMOps tool that natively integrates with Ragbits and offer explainability and experiment tracking. In this tutorial, you can use OpenTelemetry to visualize prompts and optimization progress as traces to understand the Ragbits' behavior better. Check the full setup guide [here](../how-to/audit/use_tracing.md/#using-opentelemetry-tracer).
 
-## Exploring Ragbits components
+## Defining and running Prompts
 
-You can always prompt the LLM directly via `llm.generate("prompt")` or `llm.generate([...])`. However, Ragbits gives you a better way to define your functions.
-
-The simplest way to define a prompt in Ragbits is to create a class that inherits from the [`Prompt`](../api_reference/core/prompt.md) class.
+The recommended way to define a prompt in Ragbits is to create a class that inherits from the [`Prompt`][ragbits.core.prompt.prompt.Prompt] class.
 
 ```python
 from pydantic import BaseModel
@@ -39,6 +37,7 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromp
 In order to run this prompt, initilize LLM client and call `generate` method.
 
 ```python
+import asyncio
 from ragbits.core.llms import LiteLLM
 
 async def main() -> None:
@@ -95,11 +94,14 @@ or 4GB depending on architecture, which requires special handling to access. Low
 the addressable range for the kernel, generally below these limits, and is directly accessible by the system.
 ```
 
+!!! tip "Observe the reasoning process"
+    Try printing `response.reason` to see the step-by-step reasoning the model performed. You'll notice that while this chain-of-thought approach can improve answer quality, it also consumes more tokens due to the additional reasoning content - an important consideration for cost and latency.
+
 Interestingly, asking for reasoning can make the output answer shorter in this case. Is this a good thing or a bad thing? It depends on what you need: there's no free lunch, but Ragbits gives you the tools to experiment with different strategies extremely quickly.
 
-## Evaluation
+## Evaluating the system
 
-Before we get to evaluations, Ragbits provides evaluations only for 2-layer components, such as [`DocumentSearch`][ragbits.document_search.DocumentSearch] or [`Agent`][ragbits.agents.Agent]. To run the evaluations on LLM, you must use them through the [`Agent`][ragbits.agents.Agent] object.
+Ragbits provides evalution for second layer components, such as [`DocumentSearch`][ragbits.document_search.DocumentSearch] or [`Agent`][ragbits.agents.Agent]. To run the evaluation on LLM, you must use it through the [`Agent`][ragbits.agents.Agent] object.
 
 ```python
 from ragbits.agents.types import QuestionAnswerAgent
@@ -120,7 +122,7 @@ async def main() -> None:
     source = WebSource(url="https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_examples.jsonl")
     dataloader = QuestionAnswerDataLoader(
         source=source,
-        split="data[:500]",
+        split="data[:100]",
         question_key="question",
         answer_key="response",
     )
@@ -144,7 +146,6 @@ What kind of metric can suit our question-answering task? There are many choices
 That metric measures essentially an answer correctness, so let's load a [`QuestionAnswerAnswerCorrectness`][ragbits.evaluate.metrics.question_answer.QuestionAnswerAnswerCorrectness] metric from Ragbits. This metric is actually implemented as a very simple Ragbits module using whatever LLM we're working with.
 
 ```python
-from ragbits.agents.types import QuestionAnswerAgent
 from ragbits.evaluate.metrics.question_answer import QuestionAnswerAnswerCorrectness
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerResult
 
@@ -175,18 +176,21 @@ if __name__ == "__main__":
 For evaluation, you could use the metric above in a simple loop and just average the score. But for nice parallelism and utilities, we can rely on [`Evaluator`][ragbits.evaluate.evaluator.Evaluator].
 
 ```python
-from ragbits.agents.types import QuestionAnswerAgent
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics import MetricSet
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerPipeline
 
-evaluator = Evaluator()
-results = await evaluator.compute(
-    dataloader=dataloader,
-    pipeline=QuestionAnswerPipeline(responder),
-    metricset=MetricSet(metric),
-)
-print(results.metrics)
+async def main() -> None:
+    evaluator = Evaluator()
+    results = await evaluator.compute(
+        dataloader=dataloader,
+        pipeline=QuestionAnswerPipeline(responder),
+        metricset=MetricSet(metric),
+    )
+    print(results.metrics)
+
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 ```text
@@ -195,6 +199,6 @@ print(results.metrics)
 
 ## Conclusions
 
-So far, we built a very simple LLM workflow using chain-of-thought for question answering and evaluated it on a small dataset.
+In this tutorial, we built a very simple LLM workflow using chain-of-thought for question answering and evaluated it on a small dataset.
 
 Can we do better? In the next guide, we will build a retrieval-augmented generation (RAG) pipeline in Ragbits for the same task. We'll see how this can boost the score substantially, then we'll use Ragbits optimizer to tune the retrieval parameters, raising our scores even more.
