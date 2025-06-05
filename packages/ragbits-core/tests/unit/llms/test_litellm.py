@@ -1,11 +1,14 @@
+import json
 import pickle
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from litellm import Router
+from litellm import Message, Router, Usage
+from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
 from pydantic import BaseModel
 
-from ragbits.core.llms.exceptions import LLMNotSupportingImagesError
+from ragbits.core.llms.base import ToolCall, ToolCallsResponse
+from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUse
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
@@ -86,6 +89,68 @@ class MockPromptWithImage(MockPrompt):
         return ["fake_image_url"]
 
 
+def mock_llm_responses_with_tool(llm: LiteLLM):
+    llm._get_litellm_response = AsyncMock()  # type: ignore
+    llm._get_litellm_response.side_effect = [
+        ModelResponse(
+            choices=[
+                Choices(
+                    message=Message(
+                        content=None,
+                        role="assistant",
+                        tool_calls=[
+                            ChatCompletionMessageToolCall(
+                                function=Function(arguments='{"location":"San Francisco"}', name="get_weather"),
+                                id="call_Dq3XWqfuMskh9SByzz5g00mM",
+                                type="function",
+                            )
+                        ],
+                    ),
+                )
+            ],
+            usage=Usage(
+                completion_tokens=10,
+                prompt_tokens=20,
+                total_tokens=30,
+            ),
+        ),
+    ]
+
+
+def mock_llm_responses_with_tool_no_tool_used(llm: LiteLLM):
+    llm._get_litellm_response = AsyncMock()  # type: ignore
+    llm._get_litellm_response.side_effect = [
+        ModelResponse(
+            choices=[
+                Choices(
+                    message=Message(content="I'm fine.", role="assistant", tool_calls=None),
+                )
+            ],
+            usage=Usage(
+                completion_tokens=10,
+                prompt_tokens=20,
+                total_tokens=30,
+            ),
+        ),
+    ]
+
+
+def get_weather(location: str) -> str:
+    """
+    Returns the current weather for a given location.
+
+    Args:
+        location: The location to get the weather for.
+
+    Returns:
+        The current weather for the given location.
+    """
+    if "san francisco" in location.lower():
+        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
+    else:
+        return json.dumps({"location": location, "temperature": "unknown"})
+
+
 async def test_generation():
     """Test generation of a response."""
     llm = LiteLLM(api_key="test_key")
@@ -104,6 +169,66 @@ async def test_generation_with_parser():
     assert output == 42
     raw_output = await llm.generate_raw(prompt, options=options)
     assert raw_output["response"] == "I'm fine, thank you."
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with tools."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
+    mock_llm_responses_with_tool(llm)
+    output = await llm.generate(prompt, tools=[get_weather])
+    assert isinstance(output, ToolCallsResponse)
+    assert output.tool_calls == [
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools_as_function_schemas(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with tools given as function schemas."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
+    mock_llm_responses_with_tool(llm)
+    function_schema = llm._convert_function_to_function_schema(get_weather)
+    output = await llm.generate(prompt, tools=[function_schema])
+    assert isinstance(output, ToolCallsResponse)
+    assert output.tool_calls == [
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_tools_no_tool_used(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with tools that are not used."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    mock_llm_responses_with_tool_no_tool_used(llm)
+    output = await llm.generate(prompt, tools=[get_weather])
+    assert isinstance(output, str)
+    assert output == "I'm fine."
+
+
+@patch("litellm.supports_function_calling")
+async def test_genration_with_tools_not_supported_in_model(mock_supports_function_calling: MagicMock):
+    mock_supports_function_calling.return_value = False
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    with pytest.raises(LLMNotSupportingToolUse):
+        await llm.generate(prompt, tools=[get_weather])
 
 
 async def test_generation_with_static_prompt():
@@ -156,8 +281,8 @@ async def test_generation_with_pydantic_output():
     prompt = PydanticPrompt()
     options = LiteLLMOptions(mock_response='{"response": "I\'m fine, thank you.", "happiness": 100}')
     output = await llm.generate(prompt, options=options)
-    assert output.response == "I'm fine, thank you."
-    assert output.happiness == 100
+    assert output.response == "I'm fine, thank you."  # type: ignore
+    assert output.happiness == 100  # type: ignore
 
 
 async def test_generation_with_metadata():
@@ -170,6 +295,45 @@ async def test_generation_with_metadata():
     assert output.metadata == {
         "completion_tokens": 20,
         "prompt_tokens": 10,
+        "total_tokens": 30,
+    }
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_metadata_and_tools(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with metadata and tools."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
+    mock_llm_responses_with_tool(llm)
+    output = await llm.generate_with_metadata(prompt, tools=[get_weather])
+    assert output.tool_calls.tool_calls == [  # type: ignore
+        ToolCall(
+            tool_arguments='{"location":"San Francisco"}',
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
+    ]
+    assert output.metadata == {
+        "completion_tokens": 10,
+        "prompt_tokens": 20,
+        "total_tokens": 30,
+    }
+
+
+@patch("litellm.supports_function_calling")
+async def test_generation_with_metadata_and_tools_no_tool_used(mock_supports_function_calling: MagicMock):
+    """Test generation of a response with tools that are not used."""
+    mock_supports_function_calling.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("Hello, how are you?")
+    mock_llm_responses_with_tool_no_tool_used(llm)
+    output = await llm.generate_with_metadata(prompt, tools=[get_weather])
+    assert output.content == "I'm fine."
+    assert output.metadata == {
+        "completion_tokens": 10,
+        "prompt_tokens": 20,
         "total_tokens": 30,
     }
 

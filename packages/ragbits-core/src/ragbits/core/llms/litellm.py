@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingToolUse,
     LLMResponseError,
     LLMStatusError,
 )
@@ -128,6 +129,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -138,6 +140,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
             Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Response string from LLM.
@@ -147,25 +150,54 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingToolUse: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+        if tools and not litellm.supports_function_calling(self.model_name):
+            raise LLMNotSupportingToolUse()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
-        start_time = time.perf_counter()
-        response = await self._get_litellm_response(
-            conversation=prompt.chat,
-            options=options,
-            response_format=response_format,
-        )
+        if tools:
+            start_time = time.perf_counter()
+            response = await self._get_litellm_response(
+                conversation=prompt.chat,
+                options=options,
+                response_format=response_format,
+                tools=tools,
+            )
+        else:
+            start_time = time.perf_counter()
+            response = await self._get_litellm_response(
+                conversation=prompt.chat,
+                options=options,
+                response_format=response_format,
+            )
         prompt_throughput = time.perf_counter() - start_time
 
         if not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
         results = {}
-        results["response"] = response.choices[0].message.content  # type: ignore
+
+        if tools:
+            tool_calls = response.choices[0].message.tool_calls  # type: ignore
+            tool_call_dicts: list[dict] | None = None
+            if tool_calls:
+                tool_call_dicts = [
+                    {
+                        "tool_name": tool_call.function.name,
+                        "tool_arguments": tool_call.function.arguments,
+                        "tool_type": tool_call.type,
+                        "tool_call_id": tool_call.id,
+                    }
+                    for tool_call in tool_calls
+                ]
+            results["tool_calls"] = tool_call_dicts
+            results["response"] = response.choices[0].message.content  # type: ignore
+        else:
+            results["response"] = response.choices[0].message.content  # type: ignore
 
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
@@ -281,6 +313,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         conversation: ChatFormat,
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
+        tools: list[dict] | None = None,
         stream: bool = False,
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or litellm
@@ -293,6 +326,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 api_key=self.api_key,
                 api_version=self.api_version,
                 response_format=response_format,
+                tools=tools,
                 stream=stream,
                 **options.dict(),
             )
