@@ -59,7 +59,8 @@ hide:
 - **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/project/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/project/use_tracing/#cli-trace-handler).
 - **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/prompts/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
-- **Visual testing UI (Coming Soon)** – Test and optimize applications with a visual interface.
+- **Chat UI** – Deploy [chatbot interface](https://ragbits.deepsense.ai/how-to/chatbots/api/) with API, persistance and user feedback.
+
 
 ## Installation
 
@@ -199,6 +200,79 @@ async def run() -> None:
 if __name__ == "__main__":
     asyncio.run(run())
 ```
+
+### Chatbot interface with UI
+
+To expose your RAG application through Ragbits UI:
+
+```python
+from collections.abc import AsyncGenerator
+
+from pydantic import BaseModel
+
+from ragbits.chat.api import RagbitsAPI
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatContext, ChatResponse
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.base import ChatFormat
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+
+
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
+    context: list[str]
+
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
+    system_prompt = """
+    You are a question answering agent. Answer the question that will be provided using context.
+    If in the given context there is not enough information refuse to answer.
+    """
+    user_prompt = """
+    Question: {{ question }}
+    Context: {% for item in context %}{{ item }}{%- endfor %}
+    """
+
+
+class MyChat(ChatInterface):
+    """Chat interface for fullapp application."""
+
+    async def setup(self) -> None:
+        self.embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+        self.vector_store = InMemoryVectorStore(embedder=self.embedder)
+        self.document_search = DocumentSearch(vector_store=self.vector_store)
+        self.llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+
+        await self.document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+
+    async def chat(
+        self,
+        message: str,
+        history: ChatFormat| None = None,
+        context: ChatContext | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        # Search for relevant documents
+        result = await self.document_search.search(message)
+
+        prompt = QuestionAnswerPrompt(
+            QuestionAnswerPromptInput(
+                question=message,
+                context=[element.text_representation for element in result],
+            )
+        )
+
+        # Stream the response from the LLM
+        async for chunk in self.llm.generate_streaming(prompt):
+            yield self.create_text_response(chunk)
+
+
+if __name__ == "__main__":
+    RagbitsAPI(MyChat).run()
+```
+
 
 ## Rapid development
 
