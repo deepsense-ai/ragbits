@@ -98,8 +98,6 @@ def execute(
 ) -> None:
     """
     Executes a prompt using the specified prompt class and LLM factory.
-
-    For an example of how to use this command, see the [Quickstart guide](../quickstart/quickstart1_prompts.md).
     """
     prompt = _render(prompt_path=prompt_path, payload=payload)
 
