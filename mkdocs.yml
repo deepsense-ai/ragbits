@@ -1,13 +1,13 @@
-site_name: ragbits docs
+site_name: Ragbits docs
 site_description: Building blocks for rapid development of GenAI applications
 site_url: https://ragbits.deepsense.ai
 repo_name: deepsense-ai/ragbits
 repo_url: https://github.com/deepsense-ai/ragbits
 copyright: Copyright &copy; 2025 deepsense.ai
 nav:
-  - ragbits: index.md
+  - Ragbits: index.md
   - Quickstart:
-    - "Large Language Models": quickstart/llms.md
+    - "Basics": quickstart/llms.md
     - "Retrieval-Augmented Generation": quickstart/rag.md
   - How-to:
       - "Prompts":
@@ -70,6 +70,11 @@ nav:
             - api_reference/document_search/retrieval/rerankers.md
       - Agents:
         - api_reference/agents/index.md
+      - Evaluate:
+        - api_reference/evaluate/index.md
+        - api_reference/evaluate/dataloaders.md
+        - api_reference/evaluate/pipelines.md
+        - api_reference/evaluate/metrics.md
       - Chatbots:
           - api_reference/chat/compressors/base.md
           - api_reference/chat/compressors/llm.md

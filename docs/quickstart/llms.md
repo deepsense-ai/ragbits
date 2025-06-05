@@ -141,7 +141,7 @@ QuestionAnswerData(
 
 What kind of metric can suit our question-answering task? There are many choices, but since the answers are long, we may ask: How well does the system response cover all key facts in the gold response? And the other way around, how well is the system response not saying things that aren't in the gold response?
 
-That metric measures essentially an answer correctness, so let's load a `QuestionAnswerAnswerCorrectness` metric from Ragbits. This metric is actually implemented as a very simple Ragbits module using whatever LLM we're working with.
+That metric measures essentially an answer correctness, so let's load a [`QuestionAnswerAnswerCorrectness`][ragbits.evaluate.metrics.question_answer.QuestionAnswerAnswerCorrectness] metric from Ragbits. This metric is actually implemented as a very simple Ragbits module using whatever LLM we're working with.
 
 ```python
 from ragbits.agents.types import QuestionAnswerAgent
@@ -172,7 +172,7 @@ if __name__ == "__main__":
 {'LLM_based_answer_correctness': 1.0}
 ```
 
-For evaluation, you could use the metric above in a simple loop and just average the score. But for nice parallelism and utilities, we can rely on `Evaluator`.
+For evaluation, you could use the metric above in a simple loop and just average the score. But for nice parallelism and utilities, we can rely on [`Evaluator`][ragbits.evaluate.evaluator.Evaluator].
 
 ```python
 from ragbits.agents.types import QuestionAnswerAgent
