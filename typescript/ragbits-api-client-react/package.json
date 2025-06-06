@@ -1,43 +1,53 @@
 {
-  "name": "ragbits-api-client-react",
-  "version": "1.0.0",
-  "description": "React hooks for the Ragbits API client",
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
-  },
-  "dependencies": {
-    "ragbits-api-client": "file:../ragbits-api-client"
-  },
-  "devDependencies": {
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "typescript": "^5.0.0",
-    "tsup": "^8.0.0"
-  },
-  "keywords": [
-    "ragbits",
-    "api",
-    "client",
-    "react",
-    "hooks"
-  ],
-  "author": "",
-  "license": "MIT"
+    "name": "ragbits-api-client-react",
+    "version": "1.0.0",
+    "description": "React hooks for the Ragbits API client",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format cjs,esm --dts",
+        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "peerDependencies": {
+        "react": ">=16.8.0",
+        "react-dom": ">=16.8.0"
+    },
+    "dependencies": {
+        "ragbits-api-client": "file:../ragbits-api-client"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "typescript": "^5.0.0",
+        "tsup": "^8.0.0",
+        "@eslint/js": "^9.17.0",
+        "eslint": "^9.17.0",
+        "eslint-plugin-react-hooks": "^5.0.0",
+        "eslint-plugin-react-refresh": "^0.4.16",
+        "globals": "^15.14.0",
+        "prettier": "^3.4.2",
+        "typescript-eslint": "^8.18.2"
+    },
+    "keywords": [
+        "ragbits",
+        "api",
+        "client",
+        "react",
+        "hooks"
+    ],
+    "author": "",
+    "license": "MIT"
 }

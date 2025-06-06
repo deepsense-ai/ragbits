@@ -25,16 +25,16 @@ The API client now separates endpoints into two categories:
 ### Regular API Calls
 
 ```typescript
-const client = new RagbitsClient();
+const client = new RagbitsClient()
 
 // Strongly typed GET request
-const config = await client.makeRequest("/api/config");
+const config = await client.makeRequest('/api/config')
 
 // Strongly typed POST request
-const feedback = await client.makeRequest("/api/feedback", {
-  method: "POST",
-  body: { message_id: "123", feedback: "positive", payload: null },
-});
+const feedback = await client.makeRequest('/api/feedback', {
+    method: 'POST',
+    body: { message_id: '123', feedback: 'positive', payload: null },
+})
 ```
 
 ### Streaming API Calls
@@ -42,17 +42,17 @@ const feedback = await client.makeRequest("/api/feedback", {
 ```typescript
 // Strongly typed streaming
 const cancel = client.makeStreamRequest(
-  "/api/chat",
-  {
-    message: "Hello!",
-    history: [],
-    context: {},
-  },
-  {
-    onMessage: (response) => console.log(response),
-    onError: (error) => console.error(error),
-  }
-);
+    '/api/chat',
+    {
+        message: 'Hello!',
+        history: [],
+        context: {},
+    },
+    {
+        onMessage: (response) => console.log(response),
+        onError: (error) => console.error(error),
+    }
+)
 ```
 
 ## Key Benefits
@@ -65,22 +65,22 @@ const cancel = client.makeStreamRequest(
 ## Extending Endpoints
 
 ```typescript
-declare module "ragbits-api-client" {
-  interface ApiEndpoints {
-    "/api/users": {
-      method: "GET";
-      request: never;
-      response: { users: User[] };
-    };
-  }
+declare module 'ragbits-api-client' {
+    interface ApiEndpoints {
+        '/api/users': {
+            method: 'GET'
+            request: never
+            response: { users: User[] }
+        }
+    }
 
-  interface StreamingEndpoints {
-    "/api/live-updates": {
-      method: "POST";
-      request: { subscriptions: string[] };
-      stream: { type: string; data: object };
-    };
-  }
+    interface StreamingEndpoints {
+        '/api/live-updates': {
+            method: 'POST'
+            request: { subscriptions: string[] }
+            stream: { type: string; data: object }
+        }
+    }
 }
 ```
 

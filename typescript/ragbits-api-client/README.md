@@ -11,45 +11,45 @@ npm install ragbits-api-client
 ## Usage
 
 ```typescript
-import { RagbitsClient, type ChatResponse } from "ragbits-api-client";
+import { RagbitsClient, type ChatResponse } from 'ragbits-api-client'
 
 // Initialize the client
 const client = new RagbitsClient({
-  baseUrl: "http://127.0.0.1:8000", // Optional, defaults to http://127.0.0.1:8000
-});
+    baseUrl: 'http://127.0.0.1:8000', // Optional, defaults to http://127.0.0.1:8000
+})
 
 // Get API configuration
-const config = await client.getConfig();
+const config = await client.getConfig()
 
 // Send a chat message with streaming response
 const cleanup = client.sendChatMessage(
-  {
-    message: "Hello!",
-    history: [],
-    context: {}, // Optional
-  },
-  {
-    onMessage: (data: ChatResponse) => {
-      console.log("Received message:", data);
+    {
+        message: 'Hello!',
+        history: [],
+        context: {}, // Optional
     },
-    onError: (error: string) => {
-      console.error("Error:", error);
-    },
-    onClose: () => {
-      console.log("Stream closed");
-    },
-  }
-);
+    {
+        onMessage: (data: ChatResponse) => {
+            console.log('Received message:', data)
+        },
+        onError: (error: string) => {
+            console.error('Error:', error)
+        },
+        onClose: () => {
+            console.log('Stream closed')
+        },
+    }
+)
 
 // Cancel the stream if needed
-cleanup();
+cleanup()
 
 // Send feedback
 await client.sendFeedback({
-  message_id: "message-123",
-  feedback: "like",
-  payload: { reason: "helpful" },
-});
+    message_id: 'message-123',
+    feedback: 'like',
+    payload: { reason: 'helpful' },
+})
 ```
 
 ## API Reference
@@ -79,14 +79,14 @@ Get the API configuration.
 Send a chat message and receive streaming responses.
 
 - Parameters:
-  - `chatRequest`: ChatRequest
-    - `message`: string - User message
-    - `history`: Array<{ role: string; content: string; id?: string }> - Chat history
-    - `context`: Record<string, unknown> (optional) - Additional context
-  - `callbacks`: StreamCallbacks
-    - `onMessage`: (data: ChatResponse) => void | Promise<void> - Called when a message chunk is received
-    - `onError`: (error: string) => void | Promise<void> - Called when an error occurs
-    - `onClose`: () => void | Promise<void> (optional) - Called when the stream closes
+    - `chatRequest`: ChatRequest
+        - `message`: string - User message
+        - `history`: Array<{ role: string; content: string; id?: string }> - Chat history
+        - `context`: Record<string, unknown> (optional) - Additional context
+    - `callbacks`: StreamCallbacks
+        - `onMessage`: (data: ChatResponse) => void | Promise<void> - Called when a message chunk is received
+        - `onError`: (error: string) => void | Promise<void> - Called when an error occurs
+        - `onClose`: () => void | Promise<void> (optional) - Called when the stream closes
 - Returns: `() => void` - Cleanup function to cancel the stream
 
 ##### `sendFeedback(feedbackData)`
@@ -94,10 +94,10 @@ Send a chat message and receive streaming responses.
 Send feedback for a message.
 
 - Parameters:
-  - `feedbackData`: FeedbackRequest
-    - `message_id`: string - ID of the message to provide feedback for
-    - `feedback`: string - Type of feedback
-    - `payload`: Record<string, unknown> | null - Additional feedback data
+    - `feedbackData`: FeedbackRequest
+        - `message_id`: string - ID of the message to provide feedback for
+        - `feedback`: string - Type of feedback
+        - `payload`: Record<string, unknown> | null - Additional feedback data
 - Returns: `Promise<Record<string, unknown>>` - Feedback submission response
 
 ## Types
@@ -106,8 +106,8 @@ Send feedback for a message.
 
 ```typescript
 {
-  type: "message" | "reference" | "state_update" | "text" | "message_id";
-  content: any;
+    type: 'message' | 'reference' | 'state_update' | 'text' | 'message_id'
+    content: any
 }
 ```
 
@@ -129,9 +129,9 @@ Send feedback for a message.
 
 ```typescript
 {
-  message_id: string;
-  feedback: string;
-  payload: Record<string, unknown> | null;
+    message_id: string
+    feedback: string
+    payload: Record<string, unknown> | null
 }
 ```
 
