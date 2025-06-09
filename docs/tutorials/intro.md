@@ -169,7 +169,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-```text
+```python
 {'LLM_based_answer_correctness': 1.0}
 ```
 
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-```text
+```python
 {'LLM_based_answer_correctness': 0.68}
 ```
 
