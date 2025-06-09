@@ -4,6 +4,17 @@
 
 - Add function calling for LLMs (#533)
 
+## 1.0.0 (2025-06-04)
+
+## 0.20.1 (2025-06-04)
+
+## 0.20.0 (2025-06-03)
+
+- Refacor: move BagOfTokens model_name / encoding_name parameters to init (#592)
+- Update utils (#590)
+- Resolve vector_size by PgVectorStore automatically (#588)
+- Add get_vector_size method to all Embedders (#587)
+
 ## 0.19.1 (2025-05-27)
 
 ## 0.19.0 (2025-05-27)

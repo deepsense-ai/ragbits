@@ -1,6 +1,7 @@
 import asyncio
 import base64
 
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedderOptions
 
 try:
@@ -68,6 +69,18 @@ class VertexAIMultimodelEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
         supported_models = VertexMultimodalEmbedding().SUPPORTED_MULTIMODAL_EMBEDDING_MODELS
         if model_name not in supported_models:
             raise ValueError(f"Model {model_name} is not supported by VertexAI multimodal embeddings")
+
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get the vector size for this VertexAI multimodal model.
+
+        Embeds a sample text to determine the dimension.
+
+        Returns:
+            VectorSize object with the model's embedding dimension.
+        """
+        sample_embedding = await self.embed_text(["sample"])
+        return VectorSize(size=len(sample_embedding[0]), is_sparse=False)
 
     async def _embed(self, data: list[dict], options: LiteLLMEmbedderOptions | None = None) -> list[dict]:
         """

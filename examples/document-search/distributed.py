@@ -94,10 +94,7 @@ async def main() -> None:
         index_name="jokes",
         embedder=embedder,
     )
-    ingest_strategy = RayDistributedIngestStrategy(
-        cpu_batch_size=1,
-        io_batch_size=4,
-    )
+    ingest_strategy = RayDistributedIngestStrategy(batch_size=1)
     document_search = DocumentSearch(
         vector_store=vector_store,
         ingest_strategy=ingest_strategy,

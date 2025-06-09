@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ragbits.core.embeddings.base import Embedder, EmbedderOptionsT
+from ragbits.core.embeddings.base import Embedder, EmbedderOptionsT, VectorSize
 
 
 class DenseEmbedder(Embedder[EmbedderOptionsT], ABC):  # noqa: F821
@@ -19,6 +19,15 @@ class DenseEmbedder(Embedder[EmbedderOptionsT], ABC):  # noqa: F821
 
         Returns:
             List of embeddings for the given strings.
+        """
+
+    @abstractmethod
+    async def get_vector_size(self) -> VectorSize:
+        """
+        Get information about the dense vector size/dimensions returned by this embedder.
+
+        Returns:
+            VectorSize object with is_sparse=False and the embedding dimension.
         """
 
     async def embed_image(self, images: list[bytes], options: EmbedderOptionsT | None = None) -> list[list[float]]:
