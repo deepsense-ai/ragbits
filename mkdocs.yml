@@ -17,6 +17,7 @@ nav:
       - LLMs:
         - "Interact with LLMs": how-to/llms/use_llms.md
         - "Use local or self-hosted LLMs": how-to/llms/use_local_llms.md
+        - "Use tools with LLMs": how-to/llms/use_tools_with_llms.md
       - Vector Stores:
         - "Perform hybrid search": how-to/vector_stores/hybrid.md
         - "Use sparse retrieval": how-to/vector_stores/sparse_vectors.md
