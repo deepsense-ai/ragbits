@@ -1,3 +1,4 @@
+import ast
 import contextlib
 import enum
 import inspect
@@ -409,16 +410,18 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str, None]:
+        tools: Tools | None = None,
+    ) -> AsyncGenerator[str | ToolCallsResponse, None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
 
         Args:
             prompt: Formatted prompt template with conversation.
             options: Options to use for the LLM client.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
-            Response stream from LLM.
+            Response stream from LLM or list of tool calls.
         """
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             merged_options = (self.default_options | options) if options else self.default_options
@@ -426,16 +429,44 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             if isinstance(prompt, str | list):
                 prompt = SimplePrompt(prompt)
 
-            response = await self._call_streaming(
+            function_schemas: list[dict] | None
+            if tools and callable(tools[0]):
+                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
+            else:
+                function_schemas = cast(list[dict] | None, tools)
+
+            raw_response = await self._call_streaming(
                 prompt=prompt,
                 options=merged_options,
                 json_mode=prompt.json_mode,
                 output_schema=prompt.output_schema(),
+                tools=function_schemas,
             )
+
             outputs.response = ""
-            async for text in response:
-                outputs.response += text
-                yield text
+            async for response_chunk in raw_response:
+                tools_returned = False
+                if tools:
+                    try:
+                        tool_call_dicts = ast.literal_eval(response_chunk)
+                        if (
+                            tool_call_dicts
+                            and isinstance(tool_call_dicts, list)
+                            and isinstance(tool_call_dicts[0], dict)
+                        ):
+                            tool_calls = ToolCallsResponse(
+                                tool_calls=[
+                                    ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts
+                                ]
+                            )
+                            outputs.response = tool_calls
+                            tools_returned = True
+                            yield tool_calls
+                    except (SyntaxError, ValueError):
+                        pass
+                if not tools_returned:
+                    outputs.response += response_chunk  # type: ignore
+                    yield response_chunk
 
     @abstractmethod
     async def _call(
@@ -467,6 +498,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Calls LLM inference API with output streaming.
@@ -476,9 +508,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Additional settings used by LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
+            tools: Functions to be used as tools by LLM.
 
         Returns:
-            Response stream from LLM.
+            Response stream from LLM or list of tool calls.
         """
 
     # This function was copied with a few changes from openai-agents-python library

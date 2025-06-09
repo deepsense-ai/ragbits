@@ -58,6 +58,7 @@ class MockLLM(LLM[MockLLMOptions]):
         options: MockLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Mocks the call to the LLM, using the response from the options if provided.

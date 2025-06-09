@@ -1,9 +1,11 @@
 import json
+from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock
 
 import pytest
 from pydantic import BaseModel
 
-from ragbits.core.llms.base import LLMResponseWithMetadata
+from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall, ToolCallsResponse
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -32,6 +34,31 @@ class CustomPrompt(BasePromptWithParser[CustomOutputType]):
     @staticmethod
     async def parse_response(response: str) -> CustomOutputType:
         return CustomOutputType(message=response)
+
+
+def mock_llm_streaming_responses_with_tool(llm: MockLLM):
+    llm._call_streaming = AsyncMock()  # type: ignore
+
+    async def tool_results() -> AsyncGenerator[str, None]:
+        tool_results_list = [
+            "[{'tool_call_id': 'call_Dq3XWqfuMskh9SByzz5g00mM', 'tool_type': 'function', 'tool_name': 'get_weather',"
+            " 'tool_arguments': '{\"location\":\"San Francisco\"}'}]"
+        ]
+        for x in tool_results_list:
+            yield x
+
+    llm._call_streaming.return_value = tool_results()
+
+
+def mock_llm_streaming_responses_with_tool_no_tool_used(llm: MockLLM):
+    llm._call_streaming = AsyncMock()  # type: ignore
+
+    async def text_results() -> AsyncGenerator[str, None]:
+        text_results_list = ["I'm fine.", "How are you?"]
+        for x in text_results_list:
+            yield x
+
+    llm._call_streaming.return_value = text_results()
 
 
 def get_weather(location: str) -> str:
@@ -138,6 +165,29 @@ async def test_generate_stream_with_base_prompt(llm: MockLLM):
     prompt = SimplePrompt("Hello")
     stream = llm.generate_streaming(prompt)
     assert [response async for response in stream] == ["first response", "second response"]
+
+
+async def test_generate_stream_with_tools_output(llm: MockLLM):
+    mock_llm_streaming_responses_with_tool(llm)
+    stream = llm.generate_streaming("Hello", tools=[get_weather])
+    assert [response async for response in stream] == [
+        ToolCallsResponse(
+            tool_calls=[
+                ToolCall(
+                    tool_arguments='{"location":"San Francisco"}',
+                    tool_name="get_weather",
+                    tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+                    tool_type="function",
+                )
+            ]
+        )
+    ]
+
+
+async def test_generate_stream_with_tools_output_no_tool_used(llm: MockLLM):
+    mock_llm_streaming_responses_with_tool_no_tool_used(llm)
+    stream = llm.generate_streaming("Hello", tools=[get_weather])
+    assert [response async for response in stream] == ["I'm fine.", "How are you?"]
 
 
 def test_init_with_str():

@@ -150,6 +150,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Makes a call to the local LLM with the provided prompt and options in streaming manner.
@@ -159,6 +160,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
+            tools: Functions to be used as tools by LLM (not used).
 
         Returns:
             Async generator of tokens

@@ -235,6 +235,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -245,6 +246,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
             Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by LLM.
 
         Returns:
             Response string from LLM.
@@ -254,25 +256,40 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingToolUse: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+        if tools and not litellm.supports_function_calling(self.model_name):
+            raise LLMNotSupportingToolUse()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
-        start_time = time.perf_counter()
 
-        response = await self._get_litellm_response(
-            conversation=prompt.chat,
-            options=options,
-            response_format=response_format,
-            stream=True,
-        )
-        if not response.completion_stream:  # type: ignore
+        if tools:
+            start_time = time.perf_counter()
+            response = await self._get_litellm_response(
+                conversation=prompt.chat,
+                options=options,
+                response_format=response_format,
+                tools=tools,
+                stream=True,
+            )
+        else:
+            start_time = time.perf_counter()
+            response = await self._get_litellm_response(
+                conversation=prompt.chat,
+                options=options,
+                response_format=response_format,
+                stream=True,
+            )
+
+        if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
         async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
             output_tokens = 0
+            tool_call_dicts: list[dict] = []
             async for item in response:
                 if content := item.choices[0].delta.content:
                     output_tokens += 1
@@ -284,6 +301,19 @@ class LiteLLM(LLM[LiteLLMOptions]):
                             prompt=prompt.__class__.__name__,
                         )
                     yield content
+                elif tool_calls := item.choices[0].delta.tool_calls:
+                    for tcchunk in tool_calls:
+                        while len(tool_call_dicts) <= tcchunk.index:
+                            tool_call_dicts.append(
+                                {"tool_call_id": "", "tool_type": "", "tool_name": "", "tool_arguments": ""}
+                            )
+                        tc = tool_call_dicts[tcchunk.index]
+                        tc["tool_call_id"] += tcchunk.id or ""
+                        tc["tool_type"] += tcchunk.type if tcchunk.type and tcchunk.type != tc["tool_type"] else ""
+                        tc["tool_name"] += tcchunk.function.name or ""
+                        tc["tool_arguments"] += tcchunk.function.arguments or ""
+            if tool_call_dicts:
+                yield str(tool_call_dicts)
 
             total_time = time.perf_counter() - start_time
 
