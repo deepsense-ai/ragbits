@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add function calling for LLMs (#533)
+
 ## 0.19.1 (2025-05-27)
 
 ## 0.19.0 (2025-05-27)
