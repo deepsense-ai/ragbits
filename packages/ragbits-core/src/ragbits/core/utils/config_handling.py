@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import asyncio
 from importlib import import_module
 from pathlib import Path
 from types import ModuleType
@@ -111,7 +112,7 @@ class WithConstructionConfig(abc.ABC):
     def subclass_from_factory(cls, factory_path: str) -> Self:
         """
         Creates the class using the provided factory function. May return a subclass of the class,
-        if requested by the factory.
+        if requested by the factory. Supports both synchronous and asynchronous factory functions.
 
         Args:
             factory_path: A string representing the path to the factory function
@@ -125,9 +126,19 @@ class WithConstructionConfig(abc.ABC):
                 is not a subclass of the current class.
         """
         factory = import_by_path(factory_path, cls.default_module)
-        obj = factory()
+
+        if asyncio.iscoroutinefunction(factory):
+            try:
+                loop = asyncio.get_running_loop()
+                obj = asyncio.run_coroutine_threadsafe(factory, loop).result()
+            except RuntimeError:
+                obj = asyncio.run(factory())
+        else:
+            obj = factory()
+
         if not isinstance(obj, cls):
             raise InvalidConfigError(f"The object returned by factory {factory_path} is not an instance of {cls}")
+
         return obj
 
     @classmethod
