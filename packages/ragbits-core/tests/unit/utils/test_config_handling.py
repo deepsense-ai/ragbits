@@ -32,6 +32,11 @@ def example_factory() -> ExampleClassWithConfigMixin:
     return ExampleSubclass("aligator", 42)
 
 
+async def async_example_factory() -> ExampleClassWithConfigMixin:
+    """Async factory function for testing async support."""
+    return ExampleSubclass("async_aligator", 84)
+
+
 def test_default_from_config():
     config = {"foo": "foo", "bar": 1}
     instance = ExampleClassWithConfigMixin.from_config(config)
@@ -117,3 +122,23 @@ def test_preferred_subclass_instance_yaml():
     assert isinstance(instance, ExampleSubclass)
     assert instance.foo == "I am a foo"
     assert instance.bar == 122
+
+
+def test_subclass_from_async_factory():
+    """Test that async factory functions work correctly with subclass_from_factory."""
+    instance = ExampleClassWithConfigMixin.subclass_from_factory(
+        "unit.utils.test_config_handling:async_example_factory"
+    )
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "async_aligator"
+    assert instance.bar == 84
+
+
+def test_preferred_subclass_async_factory_override():
+    """Test that async factory functions work correctly with preferred_subclass factory override."""
+    instance = ExampleClassWithConfigMixin.preferred_subclass(
+        core_config, factory_path_override="unit.utils.test_config_handling:async_example_factory"
+    )
+    assert isinstance(instance, ExampleSubclass)
+    assert instance.foo == "async_aligator"
+    assert instance.bar == 84

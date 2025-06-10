@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Remove outdated quickstart ref from docstring (#565)
+- Add support for async component factories (#608)
 
 ## 1.0.0 (2025-06-04)
 
