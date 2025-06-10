@@ -159,21 +159,13 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
-        if tools:
-            start_time = time.perf_counter()
-            response = await self._get_litellm_response(
-                conversation=prompt.chat,
-                options=options,
-                response_format=response_format,
-                tools=tools,
-            )
-        else:
-            start_time = time.perf_counter()
-            response = await self._get_litellm_response(
-                conversation=prompt.chat,
-                options=options,
-                response_format=response_format,
-            )
+        start_time = time.perf_counter()
+        response = await self._get_litellm_response(
+            conversation=prompt.chat,
+            options=options,
+            response_format=response_format,
+            tools=tools,
+        )
         prompt_throughput = time.perf_counter() - start_time
 
         if not response.choices:  # type: ignore
@@ -266,23 +258,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
 
-        if tools:
-            start_time = time.perf_counter()
-            response = await self._get_litellm_response(
-                conversation=prompt.chat,
-                options=options,
-                response_format=response_format,
-                tools=tools,
-                stream=True,
-            )
-        else:
-            start_time = time.perf_counter()
-            response = await self._get_litellm_response(
-                conversation=prompt.chat,
-                options=options,
-                response_format=response_format,
-                stream=True,
-            )
+        start_time = time.perf_counter()
+        response = await self._get_litellm_response(
+            conversation=prompt.chat,
+            options=options,
+            response_format=response_format,
+            tools=tools,
+            stream=True,
+        )
 
         if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()

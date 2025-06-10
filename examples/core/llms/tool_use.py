@@ -37,7 +37,7 @@ from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
 
-def get_weather(location: str) -> dict:
+def get_weather(location: str) -> str:
     """
     Returns the current weather for a given location.
 

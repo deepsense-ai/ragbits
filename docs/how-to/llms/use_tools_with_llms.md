@@ -11,7 +11,7 @@ Tools for LLMs need to be defined as functions with docstrings describing the fu
 from ragbits.core.prompt import Prompt
 
 
-def get_weather(location: str, units: str = None) -> dict:
+def get_weather(location: str, units: str = None) -> str:
     """
     Returns the current weather for a given location.
 
