@@ -1,5 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
+from asyncio import AbstractEventLoop
 from itertools import chain
 from typing import Generic, TypeVar
 
@@ -27,8 +28,9 @@ class _MetricLMM(LLMInterface):
     Implementation of required interface of Relari generative metrics based on LiteLMM.
     """
 
-    def __init__(self, llm: LLM) -> None:
+    def __init__(self, llm: LLM, loop: AbstractEventLoop) -> None:
         self._llm = llm
+        self._loop = loop
 
     def run(self, prompt: dict[str, str], temperature: float = 0, max_tokens: int = 1024) -> str:
         formatted_prompt = [
@@ -39,7 +41,10 @@ class _MetricLMM(LLMInterface):
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        return asyncio.run(self._llm.generate(formatted_prompt, options=options))
+        return asyncio.run_coroutine_threadsafe(
+            self._llm.generate(formatted_prompt, options=options),
+            self._loop,
+        ).result()
 
 
 class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
@@ -60,7 +65,7 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
             weight: Metric value weight in the final score, used during optimization.
         """
         super().__init__(weight=weight)
-        self.metric = self.metric_cls(_MetricLMM(llm))
+        self.llm = llm
         self.batch_size = batch_size
 
     @classmethod
@@ -89,16 +94,17 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
         Returns:
             The computed metric.
         """
+        metric = self.metric_cls(_MetricLMM(self.llm, loop=asyncio.get_running_loop()))
         metric_results = chain.from_iterable(
             [
-                await asyncio.gather(*[asyncio.to_thread(self._call_metric, result) for result in batch])
+                await asyncio.gather(*[asyncio.to_thread(self._call_metric, metric, result) for result in batch])
                 for batch in batched(results, self.batch_size)
             ]
         )
-        return self.metric.aggregate(list(metric_results))
+        return metric.aggregate(list(metric_results))
 
     @abstractmethod
-    def _call_metric(self, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
+    def _call_metric(self, metric: MetricT, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
         """
         Call the metric with the proper arguments.
         """
@@ -112,8 +118,12 @@ class QuestionAnswerAnswerCorrectness(QuestionAnswerMetric[LLMBasedAnswerCorrect
 
     metric_cls: type[LLMBasedAnswerCorrectness] = LLMBasedAnswerCorrectness
 
-    def _call_metric(self, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
-        return self.metric(
+    def _call_metric(
+        self,
+        metric: LLMBasedAnswerCorrectness,
+        result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
+    ) -> dict:
+        return metric(
             question=result.question,
             answer=(
                 result.predicted_result.content
@@ -132,8 +142,12 @@ class QuestionAnswerAnswerFaithfulness(QuestionAnswerMetric[LLMBasedFaithfulness
 
     metric_cls: type[LLMBasedFaithfulness] = LLMBasedFaithfulness
 
-    def _call_metric(self, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
-        return self.metric(
+    def _call_metric(
+        self,
+        metric: LLMBasedFaithfulness,
+        result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
+    ) -> dict:
+        return metric(
             question=result.question,
             answer=(
                 result.predicted_result.content
@@ -152,8 +166,12 @@ class QuestionAnswerAnswerRelevance(QuestionAnswerMetric[LLMBasedAnswerRelevance
 
     metric_cls: type[LLMBasedAnswerRelevance] = LLMBasedAnswerRelevance
 
-    def _call_metric(self, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
-        return self.metric(
+    def _call_metric(
+        self,
+        metric: LLMBasedAnswerRelevance,
+        result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
+    ) -> dict:
+        return metric(
             question=result.question,
             answer=(
                 result.predicted_result.content
@@ -171,8 +189,12 @@ class QuestionAnswerAnswerConsistency(QuestionAnswerMetric[LLMBasedStyleConsiste
 
     metric_cls: type[LLMBasedStyleConsistency] = LLMBasedStyleConsistency
 
-    def _call_metric(self, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
-        return self.metric(
+    def _call_metric(
+        self,
+        metric: LLMBasedStyleConsistency,
+        result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
+    ) -> dict:
+        return metric(
             answer=(
                 result.predicted_result.content
                 if isinstance(result.predicted_result.content, str)
