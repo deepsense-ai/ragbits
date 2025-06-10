@@ -24,7 +24,7 @@ async def async_factory_for_cli() -> ExampleClassForCLI:
 
 def test_get_instance_or_exit_with_sync_factory():
     """Test that get_instance_or_exit works with sync factory functions."""
-    instance = get_instance_or_exit(ExampleClassForCLI, factory_path="test_utils:sync_factory_for_cli")
+    instance = get_instance_or_exit(ExampleClassForCLI, factory_path="sync_factory_for_cli")
     assert isinstance(instance, ExampleClassForCLI)
     assert instance.foo == "sync_cli"
     assert instance.bar == 123
@@ -32,7 +32,7 @@ def test_get_instance_or_exit_with_sync_factory():
 
 def test_get_instance_or_exit_with_async_factory():
     """Test that get_instance_or_exit works with async factory functions."""
-    instance = get_instance_or_exit(ExampleClassForCLI, factory_path="test_utils:async_factory_for_cli")
+    instance = get_instance_or_exit(ExampleClassForCLI, factory_path="async_factory_for_cli")
     assert isinstance(instance, ExampleClassForCLI)
     assert instance.foo == "async_cli"
     assert instance.bar == 456
