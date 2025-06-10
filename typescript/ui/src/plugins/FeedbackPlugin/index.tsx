@@ -5,6 +5,6 @@ export const FeedbackFormPluginName = "FeedbackFormPlugin";
 export const FeedbackFormPlugin = createPlugin({
   name: FeedbackFormPluginName,
   components: {
-    FeedbackFormComponent: lazy(() => import("./FeedbackFormPluginComponent")),
+    FeedbackForm: lazy(() => import("./FeedbackForm")),
   },
 });
