@@ -2,6 +2,75 @@
 
 ## Unreleased
 
+## 1.0.0 (2025-06-04)
+
+### 🎉 Major Release
+
+This is the first stable release of ragbits, marking a significant milestone in the project's development.
+The v1.0.0 release represents a mature, production-ready framework for building GenAI applications.
+
+### 🚀 New Features
+
+#### ragbits-core
+- **Vector Store Improvements**:
+  - Automatic vector_size resolution by PgVectorStore
+  - Added get_vector_size method to all Embedders
+  - Added support for limiting VectorStore results by metadata
+- **Embeddings**: Refactored BagOfTokens model with model_name/encoding_name parameters moved to init
+- **Type Safety**: Renamed typevars InputT and OutputT to PromptInputT and PromptOutputT for better clarity
+- **Monitoring**: Added Prometheus & Grafana monitoring for LLMs using OpenTelemetry
+- **File Type Detection**: Switched from imghdr to filetype for image file type detection
+- **Utilities**: Added batched() helper method to utils
+
+#### ragbits-document-search
+- **Advanced Document Processing**: Switch to docling as default document parser for improved document handling
+- **Batching Support**: Added elements batching for ingest strategies to improve performance
+- **Document Types**: Added support for JSONL file type and improved document file type detection
+- **Reranking Enhancements**:
+  - Added LLM reranker with optional score override
+  - Added score threshold to reranker options
+  - Retained score information from vector database or reranker in Element class
+- **Query Processing**: Added query rephraser options for better search results
+- **Error Handling**: Improved error handling for elements without enricher
+
+#### ragbits-chat
+- **Persistence Support**: Added persistence component to save chat interactions from ragbits-chat with conversation_id parameter support
+- **State Management**: Added support for state updates in chat interfaces with automatic signature generation
+- **UI Improvements**: Refactored UI components to allow modifications and rebuilt UI with new dependencies
+- **API Integration**: Enhanced API integration with history context changes and feedback form integration
+
+#### ragbits-evaluate
+- **Question Answering**: Added evaluations for question answering tasks
+- **Dataset Enhancements**:
+  - Added support for slicing datasets
+  - Support for custom column names in evaluation datasets
+  - Support for reference document ids and page numbers
+- **Batch Processing**: Adjusted evaluation pipeline interface to support batch processing
+- **Data Loading**: Separated load and map operations in data loaders
+
+
+## 0.20.1 (2025-06-04)
+
+### Changed
+
+- ragbits-chat updated to version v0.20.1
+- ragbits-cli updated to version v0.20.1
+- ragbits-document-search updated to version v0.20.1
+- ragbits-evaluate updated to version v0.20.1
+- ragbits-guardrails updated to version v0.20.1
+- ragbits-core updated to version v0.20.1
+
+## 0.20.0 (2025-06-03)
+
+### Changed
+
+- ragbits-chat updated to version v0.20.0
+- ragbits-cli updated to version v0.20.0
+- ragbits-document-search updated to version v0.20.0
+- ragbits-evaluate updated to version v0.20.0
+- ragbits-guardrails updated to version v0.20.0
+- ragbits-core updated to version v0.20.0
+
 ## 0.19.1 (2025-05-27)
 
 ### Changed

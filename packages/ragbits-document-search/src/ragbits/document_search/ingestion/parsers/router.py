@@ -6,30 +6,19 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
+from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
-from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredDocumentParser
 
-_default_parser = UnstructuredDocumentParser()
+_default_parser = DoclingDocumentParser()
 
 _DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.TXT: _default_parser,
     DocumentType.MD: _default_parser,
     DocumentType.PDF: _default_parser,
     DocumentType.DOCX: _default_parser,
-    DocumentType.DOC: _default_parser,
     DocumentType.PPTX: _default_parser,
-    DocumentType.PPT: _default_parser,
     DocumentType.XLSX: _default_parser,
-    DocumentType.XLS: _default_parser,
-    DocumentType.CSV: _default_parser,
     DocumentType.HTML: _default_parser,
-    DocumentType.EPUB: _default_parser,
-    DocumentType.ORG: _default_parser,
-    DocumentType.ODT: _default_parser,
-    DocumentType.RST: _default_parser,
-    DocumentType.RTF: _default_parser,
-    DocumentType.TSV: _default_parser,
-    DocumentType.XML: _default_parser,
     DocumentType.JPG: _default_parser,
     DocumentType.PNG: _default_parser,
 }
