@@ -103,8 +103,9 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
         )
         return metric.aggregate(list(metric_results))
 
+    @staticmethod
     @abstractmethod
-    def _call_metric(self, metric: MetricT, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
+    def _call_metric(metric: MetricT, result: QuestionAnswerResult[QuestionAnswerPromptOutputT]) -> dict:
         """
         Call the metric with the proper arguments.
         """
@@ -118,8 +119,8 @@ class QuestionAnswerAnswerCorrectness(QuestionAnswerMetric[LLMBasedAnswerCorrect
 
     metric_cls: type[LLMBasedAnswerCorrectness] = LLMBasedAnswerCorrectness
 
+    @staticmethod
     def _call_metric(
-        self,
         metric: LLMBasedAnswerCorrectness,
         result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
     ) -> dict:
@@ -142,8 +143,8 @@ class QuestionAnswerAnswerFaithfulness(QuestionAnswerMetric[LLMBasedFaithfulness
 
     metric_cls: type[LLMBasedFaithfulness] = LLMBasedFaithfulness
 
+    @staticmethod
     def _call_metric(
-        self,
         metric: LLMBasedFaithfulness,
         result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
     ) -> dict:
@@ -166,8 +167,8 @@ class QuestionAnswerAnswerRelevance(QuestionAnswerMetric[LLMBasedAnswerRelevance
 
     metric_cls: type[LLMBasedAnswerRelevance] = LLMBasedAnswerRelevance
 
+    @staticmethod
     def _call_metric(
-        self,
         metric: LLMBasedAnswerRelevance,
         result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
     ) -> dict:
@@ -189,8 +190,8 @@ class QuestionAnswerAnswerConsistency(QuestionAnswerMetric[LLMBasedStyleConsiste
 
     metric_cls: type[LLMBasedStyleConsistency] = LLMBasedStyleConsistency
 
+    @staticmethod
     def _call_metric(
-        self,
         metric: LLMBasedStyleConsistency,
         result: QuestionAnswerResult[QuestionAnswerPromptOutputT],
     ) -> dict:
