@@ -127,28 +127,18 @@ class WithConstructionConfig(abc.ABC):
         """
         factory = import_by_path(factory_path, cls.default_module)
 
-        # Check if the factory function is async
         if asyncio.iscoroutinefunction(factory):
-            # For async factory functions, run them in an event loop
             try:
-                # Try to get the current event loop
-                asyncio.get_running_loop()
-                # If we're already in a running loop, we need to run in a new thread
-                # This is a fallback for cases where we're called from within an async context
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, factory())
-                    obj = future.result()
+                loop = asyncio.get_running_loop()
+                obj = asyncio.run_coroutine_threadsafe(factory, loop).result()
             except RuntimeError:
-                # No running loop, safe to use asyncio.run
                 obj = asyncio.run(factory())
         else:
-            # For sync factory functions, call them directly (existing behavior)
             obj = factory()
 
         if not isinstance(obj, cls):
             raise InvalidConfigError(f"The object returned by factory {factory_path} is not an instance of {cls}")
+
         return obj
 
     @classmethod
