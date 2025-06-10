@@ -9,11 +9,33 @@
 # ragbits api run examples.api.chat:MyChat
 
 from collections.abc import AsyncGenerator
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 from ragbits.core.llms import LiteLLM
+
+
+class LikeFormExample(BaseModel):
+    """A simple example implementation of the like form that demonstrates how to use Pydantic for form definition."""
+
+    model_config = ConfigDict(title="Like Form")
+
+    like_reason: str = Field(description="Why do you like this?", default="")
+
+
+class DislikeFormExample(BaseModel):
+    """A simple example implementation of the dislike form that demonstrates how to use Pydantic for form definition."""
+
+    model_config = ConfigDict(title="Dislike Form")
+
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
+        description="What was the issue?", default="Incorrect information"
+    )
+    feedback: str = Field(description="Please provide more details", default="")
 
 
 class MyChat(ChatInterface):
@@ -21,26 +43,9 @@ class MyChat(ChatInterface):
 
     feedback_config = FeedbackConfig(
         like_enabled=True,
-        like_form=FeedbackForm(
-            title="Like Form",
-            fields=[
-                FormField(name="like_reason", type="text", required=True, label="Why do you like this?"),
-            ],
-        ),
+        like_form=LikeFormExample(),
         dislike_enabled=True,
-        dislike_form=FeedbackForm(
-            title="Dislike Form",
-            fields=[
-                FormField(
-                    name="issue_type",
-                    type="select",
-                    required=True,
-                    label="What was the issue?",
-                    options=["Incorrect information", "Not helpful", "Unclear", "Other"],
-                ),
-                FormField(name="feedback", type="text", required=True, label="Please provide more details"),
-            ],
-        ),
+        dislike_form=DislikeFormExample(),
     )
 
     def __init__(self) -> None:
