@@ -10,12 +10,12 @@ To run a local instance of pgVector, use Docker to pull and start the database c
 2. **Run the PostgreSQL container with pgVector**
 
 ```bash
-    docker run --name postgres_container \
-            -p 5432:5432 \
-            -e POSTGRES_USER=ragbits_user \
-            -e POSTGRES_PASSWORD=ragbits_password \
-            -e POSTGRES_DB = ragbits_db \
-            -d pgvector/pgvector:0.8.0-pg17
+docker run --name postgres_container \
+        -p 5432:5432 \
+        -e POSTGRES_USER=ragbits_user \
+        -e POSTGRES_PASSWORD=ragbits_password \
+        -e POSTGRES_DB=ragbits_db \
+        -d pgvector/pgvector:0.8.0-pg17
 ```
 
 * `--name` the docker container a name assign to postgres.
