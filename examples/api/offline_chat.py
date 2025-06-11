@@ -50,7 +50,7 @@ class MyChat(ChatInterface):
 
     history_persistence = FileHistoryPersistence(base_path="chat_history")
 
-    feedback_config = FeedbackConfig(
+    feedback_config = FeedbackConfig.from_models(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,

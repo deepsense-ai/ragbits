@@ -47,7 +47,7 @@ class DislikeFormExample(BaseModel):
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""
 
-    feedback_config = FeedbackConfig(
+    feedback_config = FeedbackConfig.from_models(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,

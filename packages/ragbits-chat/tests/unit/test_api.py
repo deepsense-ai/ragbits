@@ -131,12 +131,9 @@ def test_chat_endpoint(client: TestClient) -> None:
 
 def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> None:
     """Test the config endpoint with feedback configuration enabled."""
-    # Create properly structured feedback forms
-    like_form = LikeFormExample
-    dislike_form = DislikeFormExample
     # Set up feedback config
-    api.chat_interface.feedback_config = FeedbackConfig(
-        like_enabled=True, dislike_enabled=True, like_form=like_form, dislike_form=dislike_form
+    api.chat_interface.feedback_config = FeedbackConfig.from_models(
+        like_enabled=True, dislike_enabled=True, like_form=LikeFormExample, dislike_form=DislikeFormExample
     )
 
     response = client.get("/api/config")
@@ -148,8 +145,8 @@ def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> N
     assert "dislike" in data["feedback"]
     assert data["feedback"]["like"]["enabled"] is True
     assert data["feedback"]["dislike"]["enabled"] is True
-    assert data["feedback"]["like"]["form"]["fields"][0]["name"] == "like_reason"
-    assert data["feedback"]["dislike"]["form"]["fields"][0]["name"] == "dislike_reason"
+    assert "like_reason" in data["feedback"]["like"]["form"]["properties"]
+    assert "dislike_reason" in data["feedback"]["dislike"]["form"]["properties"]
 
 
 def test_config_endpoint_without_feedback(client: TestClient) -> None:

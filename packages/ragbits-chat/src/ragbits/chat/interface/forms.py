@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class FeedbackConfig(BaseModel):
@@ -24,11 +24,18 @@ class FeedbackConfig(BaseModel):
         ),
     )
 
-    @field_validator("like_form", "dislike_form", mode="before")
     @classmethod
-    def transform(cls, raw: BaseModel | None) -> dict[str, Any] | None:
-        """Transform the passed Pydantic model to JSONSchema"""
-        if not raw:
-            return None
-
-        return raw.model_json_schema()
+    def from_models(
+        cls,
+        like_enabled: bool,
+        like_form: type[BaseModel] | None,
+        dislike_enabled: bool,
+        dislike_form: type[BaseModel] | None,
+    ) -> "FeedbackConfig":
+        """Create FeedbackConfig from form models"""
+        return cls(
+            like_enabled=like_enabled,
+            like_form=like_form.model_json_schema() if like_form else None,
+            dislike_enabled=dislike_enabled,
+            dislike_form=dislike_form.model_json_schema() if dislike_form else None,
+        )
