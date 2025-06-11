@@ -16,7 +16,9 @@
     "scripts": {
         "build": "tsup src/index.ts --format cjs,esm --dts",
         "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-        "test": "echo \"Error: no test specified\" && exit 1",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "lint": "eslint .",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
@@ -39,7 +41,14 @@
         "eslint-plugin-react-refresh": "^0.4.16",
         "globals": "^15.14.0",
         "prettier": "^3.4.2",
-        "typescript-eslint": "^8.18.2"
+        "typescript-eslint": "^8.18.2",
+        "vitest": "^1.6.0",
+        "@vitest/coverage-v8": "^1.6.0",
+        "jsdom": "^23.0.0",
+        "@testing-library/react": "^14.0.0",
+        "@testing-library/jest-dom": "^6.4.0",
+        "@testing-library/user-event": "^14.5.0",
+        "msw": "^2.0.0"
     },
     "keywords": [
         "ragbits",
