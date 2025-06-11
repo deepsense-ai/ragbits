@@ -249,7 +249,7 @@ export type StreamingEndpointMethod<T extends StreamingEndpointPath> =
     StreamingEndpoints[T]['method']
 
 /**
- * Typed request options for specific API endpoints
+ * Generic request options for API endpoints with typed methods and body
  */
 export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
     method?: ApiEndpointMethod<T>
@@ -257,6 +257,7 @@ export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
         ? undefined
         : ApiEndpointRequest<T>
     headers?: Record<string, string>
+    signal?: AbortSignal
 }
 
 /**
