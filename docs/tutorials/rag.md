@@ -13,8 +13,9 @@ During development, we will use OpenAI's `gpt-4.1-nano` model. To authenticate, 
 
 ## Setting up the retriever
 
-First, let's download the corpus data that we will use for RAG search. To make this fast and cheap to run, we've downsampled the original corpus to 28,000 documents.
-As far as Ragbits is concerned, you can plug in any Python code for calling tools or retrievers. Here, we'll just use OpenAI Embeddings and do top-K search locally, just for convenience.
+First, let's download the corpus data that we will use for RAG search. To make this fast and cheap to run, we have downsampled the original corpus to 28,000 documents.
+
+Before we can search through our documents, we need to parse them into a format that Ragbits can understand. Since our data comes in JSONL format (JSON Lines), we will create a custom document parser that can handle this specific format.
 
 ```python
 import json
@@ -39,6 +40,8 @@ class RAGQADocumentParser(DocumentParser):
             if (parsed := json.loads(line))
         ]
 ```
+
+Now we will configure our document search pipeline using Qdrant as the vector database and OpenAI's embeddings for semantic search. We will also ingest the data into our vector store.
 
 ```python
 import asyncio
@@ -85,17 +88,22 @@ IngestExecutionResult(
 
 ## Building RAG pipeline
 
-In the previous tutorial, we looked at the low-level Ragbits componenets in isolation e.g. [`Prompt`][ragbits.core.prompt.Prompt].
+In the previous tutorial, we looked at the low-level Ragbits components in isolation like [`Prompt`][ragbits.core.prompt.Prompt] or [`LLM`][ragbits.core.llms.base.LLM].
 
-What if we want to build a pipeline that has multiple steps? The syntax below with [`Agent`][ragbits.agents.Agent] allows you to connect a few pieces together, in this case, our retriever and a generation component, so the whole system can be evaluated and optimized.
+What if we want to build a pipeline that has multiple steps? For RAG, we need to combine retrieval and generation seamlessly. Let's start by creating prompts that can handle both questions and retrieved context.
+
+First, we'll create prompts that can work with retrieved context. Notice how we modify our input model to accept both a question and optional context from our retriever.
 
 ```python
+from collections.abc import Sequence
+
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
+from ragbits.document_search.documents.element import Element
 
 class QuestionAnswerPromptInput(BaseModel):
     question: str
-    context: list | None = None
+    context: Sequence[Element] | None = None
 
 class CoTQuestionAnswerPromptOutput(BaseModel):
     reason: str
@@ -109,37 +117,32 @@ class CoTQuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, CoTQuestionAnswe
     """
     user_prompt = """
     Question: {{ question }}
-    Context: {% for item in context %}{{ item }}{%- endfor %}
+    Context: {% for chunk in context %}{{ chunk.text_representation }}{%- endfor %}
     """
 ```
 
-Set up responder:
+The syntax below with [`Agent`][ragbits.agents.Agent] allows you to connect a few pieces together, in this case, our retriever and a generation component, so the whole system can be evaluated and optimized.
+
+
+The [`Agent`][ragbits.agents.Agent] class allows you to connect retrieval and generation components together, creating a pipeline that can be evaluated and optimized as a whole. Here's how we create a RAG agent that inherits from `QuestionAnswerAgent` that we used in the previous tutorial.
 
 ```python
+from ragbits.agents import AgentOptions, AgentResult
 from ragbits.agents.types import QuestionAnswerAgent
+
+class QuestionAnswerAgentWithRAG(QuestionAnswerAgent):
+    async def run(self, input: QuestionAnswerPromptInput, options: AgentOptions | None = None) -> AgentResult[QuestionAnswerPromptOutput]:
+        context = await retriever.search(input.question)
+        return await super().run(QuestionAnswerPromptInput(question=input.question, context=context))
+```
+
+Now let's put it all together and test our RAG pipeline.
+
+```python
 from ragbits.core.llms import LiteLLM
 
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
-responder = QuestionAnswerAgent(llm=llm, prompt=CoTQuestionAnswerPrompt)
-```
-
-Define a RAG pipeline:
-
-```python
-class QuestionAnswerAgentWithRAG(QuestionAnswerAgent):
-    def __init__(self, responder: QuestionAnswerAgent, retriever: DocumentSearch) -> None:
-        self.retriever = retriever
-        self.responder = responder
-
-    async def run(self, input: QuestionAnswerPromptInput, options: AgentOptions | None = None) -> AgentResult[QuestionAnswerPromptOutput]:
-        context = await self.retriever.search(input.question)
-        return await self.responder.run(QuestionAnswerPromptInput(question=input.question, context=context))
-```
-
-Let's use the RAG pipeline.
-
-```python
-rag = QuestionAnswerAgentWithRAG(responder=responder, retriever=retriever)
+rag = QuestionAnswerAgentWithRAG(llm=llm, prompt=CoTQuestionAnswerPrompt)
 
 async def main() -> None:
     response = await rag.run(QuestionAnswerPromptInput(
@@ -152,7 +155,10 @@ if __name__ == "__main__":
 ```
 
 ```text
-In Linux, high memory (HighMem) refers to a segment of physical memory that is not permanently mapped in the kernel's address space, requiring temporary mapping when accessed. Low memory (LowMem) is memory that is always mapped and directly accessible by the kernel. High memory is typically used for user-space programs or caches, and accessing it involves special handling like calling kmap.
+In Linux, high memory (HighMem) refers to a segment of physical memory that is not permanently mapped
+in the kernel's address space, requiring temporary mapping when accessed. Low memory (LowMem) is memory
+that is always mapped and directly accessible by the kernel. High memory is typically used for user-space
+programs or caches, and accessing it involves special handling like calling kmap.
 ```
 
 ## Evaluating the system
@@ -195,9 +201,17 @@ if __name__ == "__main__":
 ```
 
 ```python
-{'LLM_based_answer_correctness': 0.76}
+{'LLM_based_answer_correctness': 0.81625}
 ```
 
 ## Conclusions
 
-...
+Improving from around 42% to approximately 81% on this task, in terms of answer correctness, was pretty easy. But Ragbits gives you paths to continue iterating on the quality of your system and we have barely scratched the surface.
+
+In general, you have the following tools:
+
+- **Query Rephrasing**: Automatically rephrase user questions into multiple variations to capture different semantic angles and improve retrieval recall, especially for ambiguous or poorly-worded queries.
+- **Hybrid Vector Search**: Combine dense vector embeddings with sparse keyword-based search (like BM25) to leverage both semantic similarity and exact keyword matching for more comprehensive document retrieval.
+- **Reranking**: Apply a secondary ranking model to reorder retrieved documents based on their relevance to the specific query, filtering out less relevant results before they reach the language model.
+
+Check the [Document Search guide](../how-to/document_search/search-documents.md) to learn more about available retrieval techniques.
