@@ -18,7 +18,7 @@ from typing import (
 )
 
 from griffe import Docstring, DocstringSectionKind
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
 
 from ragbits.core import llms
 from ragbits.core.audit.traces import trace
@@ -53,9 +53,16 @@ class ToolCall(BaseModel):
     """
 
     tool_name: str
-    tool_arguments: str
-    tool_type: str
-    tool_call_id: str
+    tool_arguments: dict
+    model_config = ConfigDict(extra="allow")
+
+    @field_validator("tool_arguments", mode="before")
+    def parse_tool_arguments(cls, tool_arguments: str) -> dict:
+        """
+        Parser for converting tool arguments from string representation to dict
+        """
+        pased_arguments = ast.literal_eval(tool_arguments)
+        return pased_arguments
 
 
 class ToolCallsResponse(BaseModel):
