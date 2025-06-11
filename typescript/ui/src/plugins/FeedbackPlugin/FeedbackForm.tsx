@@ -1,29 +1,22 @@
-import { useMemo, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useCallback, useState } from "react";
 import {
   Modal,
   ModalContent,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   Button,
-  Input,
-  Select,
-  SelectItem,
   cn,
   useDisclosure,
 } from "@heroui/react";
-import { generateZodSchema } from "./types";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
-import {
-  FeedbackType,
-  FormFieldResponse,
-  useRagbitsCall,
-} from "ragbits-api-client-react";
+import { FeedbackType, useRagbitsCall } from "ragbits-api-client-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import DelayedTooltip from "../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../contexts/ConfigContext/useConfigContext";
+import { FormTheme } from "./formTheme";
+import validator from "@rjsf/validator-ajv8";
+import { RJSFValidationError } from "@rjsf/utils";
+import { IChangeEvent } from "@rjsf/core";
 
 interface FeedbackFormProps {
   messageServerId: string;
@@ -37,24 +30,16 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(
     FeedbackType.LIKE,
   );
-  const schema = feedback[feedbackType].form;
+  const { theme } = useThemeContext();
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
+    headers: {
+      "Content-Type": "application/json",
+    },
     method: "POST",
   });
 
-  const { theme } = useThemeContext();
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-    watch,
-    reset,
-  } = useForm();
-
+  const schema = feedback[feedbackType].form;
   const onOpenChange = () => {
-    reset();
     onClose();
   };
 
@@ -73,8 +58,8 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
     }
   };
 
-  const handleFormSubmit: SubmitHandler<Record<string, string>> = (data) => {
-    onFeedbackFormSubmit(data);
+  const handleFormSubmit = (data: IChangeEvent) => {
+    onFeedbackFormSubmit(data.formData);
     onClose();
   };
 
@@ -88,45 +73,19 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
     onOpen();
   };
 
+  const transformErrors = useCallback((errors: RJSFValidationError[]) => {
+    return errors.map((error) => {
+      if (error.name === "minLength" || error.name === "required") {
+        return { ...error, message: "Field must not be empty" };
+      }
+
+      return error;
+    });
+  }, []);
+
   if (!schema) {
     return null;
   }
-
-  // TODO: switch to separate file or some kind of form builder with methods eg. renderSelect/Checkbox/TextField etc.
-  const renderField = (field: FormFieldResponse) => {
-    const error = errors[field.name]?.message as string;
-
-    if (field.type === "select" && field.options) {
-      return (
-        <Select
-          key={field.name}
-          label={field.label}
-          placeholder={`Select ${field.label.toLowerCase()}`}
-          isRequired={field.required}
-          errorMessage={error}
-          defaultSelectedKeys={[watch(field.name)]}
-          onChange={(e) => setValue(field.name, e.target.value)}
-        >
-          {field.options.map((option) => (
-            <SelectItem key={option} value={option}>
-              {option}
-            </SelectItem>
-          ))}
-        </Select>
-      );
-    }
-
-    return (
-      <Input
-        key={field.name}
-        label={field.label}
-        placeholder={`Enter ${field.label.toLowerCase()}`}
-        isRequired={field.required}
-        errorMessage={error}
-        {...register(field.name)}
-      />
-    );
-  };
 
   return (
     <>
@@ -159,33 +118,40 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} className={cn(theme)}>
         <ModalContent>
           {(onClose) => (
-            <form onSubmit={handleSubmit(handleFormSubmit)}>
+            <>
               <ModalHeader className="flex flex-col gap-1 text-default-900">
                 {schema.title}
               </ModalHeader>
               <ModalBody>
                 <div className="flex flex-col gap-4">
-                  <p>Dummy form</p>
+                  <FormTheme
+                    schema={schema}
+                    validator={validator}
+                    onSubmit={handleFormSubmit}
+                    transformErrors={transformErrors}
+                    liveValidate
+                  >
+                    <div className="flex justify-end gap-4 py-4">
+                      <Button
+                        color="danger"
+                        variant="light"
+                        onPress={onClose}
+                        aria-label="Close feedback form"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        color="primary"
+                        type="submit"
+                        aria-label="Submit feedback"
+                      >
+                        Submit
+                      </Button>
+                    </div>
+                  </FormTheme>
                 </div>
               </ModalBody>
-              <ModalFooter>
-                <Button
-                  color="danger"
-                  variant="light"
-                  onPress={onClose}
-                  aria-label="Close feedback form"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  color="primary"
-                  type="submit"
-                  aria-label="Submit feedback"
-                >
-                  Submit
-                </Button>
-              </ModalFooter>
-            </form>
+            </>
           )}
         </ModalContent>
       </Modal>
