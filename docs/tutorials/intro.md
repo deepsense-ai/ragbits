@@ -22,10 +22,7 @@ from ragbits.core.prompt import Prompt
 class QuestionAnswerPromptInput(BaseModel):
     question: str
 
-class QuestionAnswerPromptOutput(BaseModel):
-    answer: str
-
-class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     system_prompt = """
     You are a question answering agent. Answer the question to the best of your ability.
     """
@@ -34,19 +31,20 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromp
     """
 ```
 
-In order to run this prompt, initilize LLM client and call `generate` method.
+In order to run this prompt, initilize [`LLM`][ragbits.core.llms.base.LLM] client and call [`generate`][ragbits.core.llms.base.LLM.generate] method.
 
 ```python
 import asyncio
+
 from ragbits.core.llms import LiteLLM
 
 async def main() -> None:
-    llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+    llm = LiteLLM(model_name="gpt-4.1-nano")
     prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
         question="What are high memory and low memory on linux?",
     ))
     response = await llm.generate(prompt)
-    print(response.answer)
+    print(response)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -70,12 +68,17 @@ class CoTQuestionAnswerPromptOutput(BaseModel):
 
 class CoTQuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, CoTQuestionAnswerPromptOutput]):
     system_prompt = """
-    You are a question answering agent. Answer the question to the best of your ability. Think step by step.
+    You are a question answering agent. Answer the question to the best of your ability.
+    Think step by step.
     """
     user_prompt = """
     Question: {{ question }}
     """
+```
 
+Note that we have added a schema for the response, you can use it for structured output to get more predictable results by setting `use_structured_output=True` flag.
+
+```python
 async def main() -> None:
     llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
     prompt = CoTQuestionAnswerPrompt(QuestionAnswerPromptInput(
@@ -95,7 +98,7 @@ the addressable range for the kernel, generally below these limits, and is direc
 ```
 
 !!! tip "Observe the reasoning process"
-    Try printing `response.reason` to see the step-by-step reasoning the model performed. You'll notice that while this chain-of-thought approach can improve answer quality, it also consumes more tokens due to the additional reasoning content - an important consideration for cost and latency.
+    Try printing `response.reason` to see the step-by-step reasoning the model performed. You will notice that while this chain-of-thought approach can improve answer quality, it also consumes more tokens due to the additional reasoning content - an important consideration for cost and latency.
 
 Interestingly, asking for reasoning can make the output answer shorter in this case. Is this a good thing or a bad thing? It depends on what you need: there's no free lunch, but Ragbits gives you the tools to experiment with different strategies extremely quickly.
 
@@ -118,14 +121,17 @@ Let's load a dataset of questions and their ground truth answers. Since we start
 from ragbits.core.sources import WebSource
 from ragbits.evaluate.dataloaders.question_answer import QuestionAnswerDataLoader
 
+source = WebSource(url="https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_examples.jsonl")
+dataloader = QuestionAnswerDataLoader(
+    source=source,
+    split="data[:100]",
+    question_key="question",
+    answer_key="response",
+)
+```
+
+```python
 async def main() -> None:
-    source = WebSource(url="https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_examples.jsonl")
-    dataloader = QuestionAnswerDataLoader(
-        source=source,
-        split="data[:100]",
-        question_key="question",
-        answer_key="response",
-    )
     dataset = await dataloader.load()
     print(dataset[0])
 
@@ -143,19 +149,21 @@ QuestionAnswerData(
 
 What kind of metric can suit our question-answering task? There are many choices, but since the answers are long, we may ask: How well does the system response cover all key facts in the gold response? And the other way around, how well is the system response not saying things that aren't in the gold response?
 
-That metric measures essentially an answer correctness, so let's load a [`QuestionAnswerAnswerCorrectness`][ragbits.evaluate.metrics.question_answer.QuestionAnswerAnswerCorrectness] metric from Ragbits. This metric is actually implemented as a very simple Ragbits module using whatever LLM we're working with.
+That metric measures essentially an answer correctness, so let's load a [`QuestionAnswerAnswerCorrectness`][ragbits.evaluate.metrics.question_answer.QuestionAnswerAnswerCorrectness] metric from Ragbits. This metric is actually implemented as a very simple Ragbits module using whatever LLM we are working with.
 
 ```python
 from ragbits.evaluate.metrics.question_answer import QuestionAnswerAnswerCorrectness
+
+judge = LiteLLM(model_name="gpt-4.1")
+metric = QuestionAnswerAnswerCorrectness(judge)
+```
+
+```python
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerResult
 
 async def main() -> None:
-    llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
-    responder = QuestionAnswerAgent(llm=llm, prompt=CoTQuestionAnswerPrompt)
+    dataset = await dataloader.load()
     response = await responder.run(QuestionAnswerPromptInput(question=dataset[0].question))
-
-    judge = LiteLLM(model_name="gpt-4.1")
-    metric = QuestionAnswerAnswerCorrectness(judge)
     score = await metric.compute([
         QuestionAnswerResult(
             question=dataset[0].question,
@@ -201,4 +209,4 @@ if __name__ == "__main__":
 
 In this tutorial, we built a very simple LLM workflow using chain-of-thought for question answering and evaluated it on a small dataset.
 
-Can we do better? In the next guide, we will build a retrieval-augmented generation (RAG) pipeline in Ragbits for the same task. We'll see how this can boost the score substantially, then we'll use Ragbits optimizer to tune the retrieval parameters, raising our scores even more.
+Can we do better? In the next guide, we will build a retrieval-augmented generation (RAG) pipeline in Ragbits for the same task. We will see how this can boost the score substantially.

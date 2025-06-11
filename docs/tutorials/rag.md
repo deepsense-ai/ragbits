@@ -44,8 +44,6 @@ class RAGQADocumentParser(DocumentParser):
 Now we will configure our document search pipeline using Qdrant as the vector database and OpenAI's embeddings for semantic search. We will also ingest the data into our vector store.
 
 ```python
-import asyncio
-
 from qdrant_client import AsyncQdrantClient
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.vector_stores import VectorStoreOptions
@@ -64,6 +62,10 @@ retriever = DocumentSearch(
     ingest_strategy=BatchedIngestStrategy(index_batch_size=1000),
     parser_router=DocumentParserRouter({DocumentType.JSONL: RAGQADocumentParser()}),
 )
+```
+
+```python
+import asyncio
 
 async def main() -> None:
     results = await retriever.ingest("web://https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_corpus.jsonl")
@@ -143,7 +145,9 @@ from ragbits.core.llms import LiteLLM
 
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
 rag = QuestionAnswerAgentWithRAG(llm=llm, prompt=CoTQuestionAnswerPrompt)
+```
 
+```python
 async def main() -> None:
     response = await rag.run(QuestionAnswerPromptInput(
         question="What are high memory and low memory on linux?",
@@ -206,7 +210,7 @@ if __name__ == "__main__":
 
 ## Conclusions
 
-Improving from around 42% to approximately 81% on this task, in terms of answer correctness, was pretty easy. But Ragbits gives you paths to continue iterating on the quality of your system and we have barely scratched the surface.
+Improving from around 68% to approximately 81% on this task, in terms of answer correctness, was pretty easy. But Ragbits gives you paths to continue iterating on the quality of your system and we have barely scratched the surface.
 
 In general, you have the following tools:
 
