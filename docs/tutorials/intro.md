@@ -121,7 +121,7 @@ Let's load a dataset of questions and their ground truth answers. Since we start
 from ragbits.core.sources import WebSource
 from ragbits.evaluate.dataloaders.question_answer import QuestionAnswerDataLoader
 
-source = WebSource(url="https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_examples.jsonl")
+source = WebSource(url="https://huggingface.co/datasets/deepsense-ai/ragbits/resolve/main/ragqa_arena_tech_examples.jsonl")
 dataloader = QuestionAnswerDataLoader(
     source=source,
     split="data[:100]",

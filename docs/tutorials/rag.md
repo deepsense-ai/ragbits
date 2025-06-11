@@ -68,7 +68,7 @@ retriever = DocumentSearch(
 import asyncio
 
 async def main() -> None:
-    results = await retriever.ingest("web://https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_corpus.jsonl")
+    results = await retriever.ingest("web://https://huggingface.co/datasets/deepsense-ai/ragbits/resolve/main/ragqa_arena_tech_corpus.jsonl")
     print(results)
 
 if __name__ == "__main__":
@@ -79,7 +79,7 @@ if __name__ == "__main__":
 IngestExecutionResult(
     successful=[
         IngestDocumentResult(
-            document_uri='web:https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_corpus.jsonl',
+            document_uri='web://https://huggingface.co/datasets/deepsense-ai/ragbits/resolve/main/ragqa_arena_tech_corpus.jsonl',
             num_elements=28436,
             error=None
         )
@@ -179,7 +179,7 @@ from ragbits.evaluate.pipelines.question_answer import QuestionAnswerPipeline
 
 async def main() -> None:
     # Define data loader
-    source = WebSource(url="https://huggingface.co/dspy/cache/resolve/main/ragqa_arena_tech_examples.jsonl")
+    source = WebSource(url="https://huggingface.co/datasets/deepsense-ai/ragbits/resolve/main/ragqa_arena_tech_examples.jsonl")
     dataloader=QuestionAnswerDataLoader(
         source=source,
         split="data[:100]",
