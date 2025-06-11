@@ -171,82 +171,46 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
-        prompt: BasePromptWithParser[PromptOutputT],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
-        options: LLMClientOptionsT | None = None,
         tools: None = None,
+        options: LLMClientOptionsT | None = None,
     ) -> PromptOutputT: ...
 
     @overload
     async def generate(
         self,
-        prompt: BasePromptWithParser[PromptOutputT],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
+        tools: Tools,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
     ) -> PromptOutputT | ToolCallsResponse: ...
 
     @overload
     async def generate(
         self,
-        prompt: BasePrompt,
+        prompt: str | ChatFormat,
         *,
-        options: LLMClientOptionsT | None = None,
         tools: None = None,
-    ) -> PromptOutputT: ...
-
-    @overload
-    async def generate(
-        self,
-        prompt: BasePrompt,
-        *,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> PromptOutputT | ToolCallsResponse: ...
-
-    @overload
-    async def generate(
-        self,
-        prompt: str,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: None = None,
     ) -> str: ...
 
     @overload
     async def generate(
         self,
-        prompt: str,
+        prompt: str | ChatFormat,
         *,
+        tools: Tools,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> str | ToolCallsResponse: ...
-
-    @overload
-    async def generate(
-        self,
-        prompt: ChatFormat,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: None = None,
-    ) -> str: ...
-
-    @overload
-    async def generate(
-        self,
-        prompt: ChatFormat,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
     ) -> str | ToolCallsResponse: ...
 
     async def generate(
         self,
-        prompt: BasePrompt | str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
-        options: LLMClientOptionsT | None = None,
         tools: Tools | None = None,
-    ) -> PromptOutputT | ToolCallsResponse:
+        options: LLMClientOptionsT | None = None,
+    ) -> str | PromptOutputT | ToolCallsResponse:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -255,8 +219,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - BasePrompt instance: Formatted prompt template with conversation
                 - str: Simple text prompt that will be sent as a user message
                 - ChatFormat: List of message dictionaries in OpenAI chat format
+            tools: Functions to be used as tools by the LLM.
             options: Options to use for the LLM client.
-            tools: Functions to be used as tools by LLM.
 
         Returns:
             Parsed response from LLM or list of tool calls.
