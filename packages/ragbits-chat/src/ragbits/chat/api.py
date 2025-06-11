@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.forms import FeedbackForm, FormField
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 
 logger = logging.getLogger(__name__)
@@ -162,15 +163,22 @@ class RagbitsAPI:
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
+            like_config = self.chat_interface.feedback_config.like_form
+            dislike_config = self.chat_interface.feedback_config.dislike_form
+
             config_dict = {
                 "feedback": {
                     "like": {
                         "enabled": self.chat_interface.feedback_config.like_enabled,
-                        "form": self.chat_interface.feedback_config.like_form,
+                        "form": self._map_to_json_schema(like_config)
+                        if isinstance(like_config, FeedbackForm)
+                        else like_config,
                     },
                     "dislike": {
                         "enabled": self.chat_interface.feedback_config.dislike_enabled,
-                        "form": self.chat_interface.feedback_config.dislike_form,
+                        "form": self._map_to_json_schema(dislike_config)
+                        if isinstance(dislike_config, FeedbackForm)
+                        else dislike_config,
                     },
                 }
             }
@@ -218,6 +226,31 @@ class RagbitsAPI:
 
         logger.info(f"Initialized chat implementation: {implementation_class.__name__}")
         return implementation_class()
+
+    @staticmethod
+    def _map_to_json_schema(feedback_config: FeedbackForm) -> dict[str, Any]:
+        """Maps deprecated FeedbackFrom to valid JSONSchema format."""
+
+        def map_field(field: FormField) -> dict[str, Any]:
+            """Maps given field to JSONSchema representation"""
+            properties: dict[str, Any] = {
+                "title": " ".join(field.name.split("_")).title(),
+                "description": field.label,
+                "type": "string",
+            }
+
+            if field.required and field.type == "text":
+                properties["minLength"] = 1
+
+            if field.options:
+                properties["enum"] = field.options
+
+            return properties
+
+        required_fields = [field.name for field in feedback_config.fields if field.required]
+        properties = {field.name: map_field(field) for field in feedback_config.fields}
+
+        return {"title": feedback_config.title, "type": "object", "required": required_fields, "properties": properties}
 
     def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:
         """

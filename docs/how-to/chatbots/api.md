@@ -34,7 +34,7 @@ Save this to a file, for example `chat.py`.
 You can enable user feedback by adding a feedback configuration:
 
 ```python
-from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
 
 class LikeFormExample(BaseModel):
     model_config = ConfigDict(
@@ -56,7 +56,7 @@ class DislikeFormExample(BaseModel):
     feedback: str = Field(description="Please provide more details", min_length=1)
 
 # Add this to your ChatInterface class
-feedback_config = FeedbackConfig.from_models(
+feedback_config = JSONSchemaFeedbackConfig.from_models(
     like_enabled=True,
     like_form=LikeFormExample,
     dislike_enabled=True,
@@ -212,7 +212,7 @@ Here's a complete example of a chat implementation:
 from collections.abc import AsyncGenerator
 
 from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
 from ragbits.api.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
@@ -238,7 +238,7 @@ class DislikeFormExample(BaseModel):
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface."""
 
-    feedback_config = FeedbackConfig.from_models(
+    feedback_config = JSONSchemaFeedbackConfig.from_models(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,

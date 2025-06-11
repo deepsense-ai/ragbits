@@ -14,7 +14,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig
+from ragbits.chat.interface.forms import JSONSchemaFeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
@@ -47,7 +47,7 @@ class DislikeFormExample(BaseModel):
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""
 
-    feedback_config = FeedbackConfig.from_models(
+    feedback_config = JSONSchemaFeedbackConfig.from_models(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,

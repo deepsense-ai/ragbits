@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig
+from ragbits.chat.interface.forms import JSONSchemaFeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference
 
 
@@ -42,7 +42,7 @@ class MockChatInterface(ChatInterface):
     """A mock implementation of ChatInterface for testing."""
 
     def __init__(self) -> None:
-        self.feedback_config = FeedbackConfig()
+        self.feedback_config = JSONSchemaFeedbackConfig()
 
     async def chat(
         self, message: str, history: list[Any] | None = None, context: ChatContext | None = None
@@ -132,7 +132,7 @@ def test_chat_endpoint(client: TestClient) -> None:
 def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> None:
     """Test the config endpoint with feedback configuration enabled."""
     # Set up feedback config
-    api.chat_interface.feedback_config = FeedbackConfig.from_models(
+    api.chat_interface.feedback_config = JSONSchemaFeedbackConfig.from_models(
         like_enabled=True, dislike_enabled=True, like_form=LikeFormExample, dislike_form=DislikeFormExample
     )
 
@@ -146,7 +146,7 @@ def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> N
     assert data["feedback"]["like"]["enabled"] is True
     assert data["feedback"]["dislike"]["enabled"] is True
     assert "like_reason" in data["feedback"]["like"]["form"]["properties"]
-    assert "dislike_reason" in data["feedback"]["dislike"]["form"]["properties"]
+    assert "feedback" in data["feedback"]["dislike"]["form"]["properties"]
 
 
 def test_config_endpoint_without_feedback(client: TestClient) -> None:
