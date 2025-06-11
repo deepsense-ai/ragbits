@@ -22,20 +22,26 @@ from ragbits.core.llms import LiteLLM
 class LikeFormExample(BaseModel):
     """A simple example implementation of the like form that demonstrates how to use Pydantic for form definition."""
 
-    model_config = ConfigDict(title="Like Form")
+    model_config = ConfigDict(
+        title="Like Form",
+        json_schema_serialization_defaults_required=True,
+    )
 
-    like_reason: str = Field(description="Why do you like this?", default="")
+    like_reason: str = Field(
+        description="Why do you like this?",
+        min_length=1,
+    )
 
 
 class DislikeFormExample(BaseModel):
     """A simple example implementation of the dislike form that demonstrates how to use Pydantic for form definition."""
 
-    model_config = ConfigDict(title="Dislike Form")
+    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
 
     issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
-        description="What was the issue?", default="Incorrect information"
+        description="What was the issue?"
     )
-    feedback: str = Field(description="Please provide more details", default="")
+    feedback: str = Field(description="Please provide more details", min_length=1)
 
 
 class MyChat(ChatInterface):
@@ -43,9 +49,9 @@ class MyChat(ChatInterface):
 
     feedback_config = FeedbackConfig(
         like_enabled=True,
-        like_form=LikeFormExample(),
+        like_form=LikeFormExample,
         dislike_enabled=True,
-        dislike_form=DislikeFormExample(),
+        dislike_form=DislikeFormExample,
     )
 
     def __init__(self) -> None:

@@ -166,15 +166,11 @@ class RagbitsAPI:
                 "feedback": {
                     "like": {
                         "enabled": self.chat_interface.feedback_config.like_enabled,
-                        "form": self.chat_interface.feedback_config.like_form.model_json_schema()
-                        if self.chat_interface.feedback_config.like_form
-                        else None,
+                        "form": self.chat_interface.feedback_config.like_form,
                     },
                     "dislike": {
                         "enabled": self.chat_interface.feedback_config.dislike_enabled,
-                        "form": self.chat_interface.feedback_config.dislike_form.model_json_schema()
-                        if self.chat_interface.feedback_config.dislike_form
-                        else None,
+                        "form": self.chat_interface.feedback_config.dislike_form,
                     },
                 }
             }
