@@ -1,76 +1,26 @@
-# How-To: Use tool calling with LLMs in Ragbits
+# How-To: Use Tool Calling with LLMs in Ragbits
 
 This guide will walk you through providing external tools to use by LLMs. This feature enables LLMs to return which of the provided tools to call and with which arguments in order to accomplish a task given in the prompt.
 
+## Define tools
 
-## Using tools with LLMs
+Tools for LLMs can be defined as Python functions or as JSON schemas.
 
-Tools for LLMs need to be defined as functions with docstrings describing the function's purpose, its arguments and its return value:
+=== "Python function"
 
-```python
-from ragbits.core.prompt import Prompt
+    ```python
+    def get_weather(location: str) -> str:
+        """
+        Returns the current weather for a given location.
 
+        Args:
+            location: The location to get the weather for.
+        """
+    ```
 
-def get_weather(location: str, units: str = None) -> str:
-    """
-    Returns the current weather for a given location.
+=== "JSON schema"
 
-    Args:
-        location: The location to get the weather for.
-        units: The units to use for the weather information.
-
-    Returns:
-        The current weather for the given location.
-    """
-    if "tokyo" in location.lower():
-        return json.dumps({"location": "Tokyo", "temperature": "10", "unit": "celsius"})
-    elif "san francisco" in location.lower():
-        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
-    elif "paris" in location.lower():
-        return json.dumps({"location": "Paris", "temperature": "22", "unit": "celsius"})
-    else:
-        return json.dumps({"location": location, "temperature": "unknown"})
-
-
-class QueryWithContext(BaseModel):
-    query: str
-
-
-class OutputSchema(BaseModel):
-    response: str
-
-
-class LLMPrompt(Prompt[QueryWithContext, OutputSchema]):
-    system_prompt = """
-    You are a helpful assistant. Answer the QUESTION that will be provided by the user.
-    """
-
-    user_prompt = """
-    QUESTION:
-    {{ query }}
-    """
-```
-
-Tools can be passed to LLMs as optional generation argument. If LLM decides to use tools then tool calls will be available in ```tool_calls``` field of the response and there will be no text output. If model decides not to use tools then ```tool_calls``` field won't be present and text output will be returned as usual:
-
-```python
-import asyncio
-from ragbits.core.llms.litellm import LiteLLM
-
-async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    query = "Tell me about the temperature in San Francisco."
-    prompt = LLMPrompt(QueryWithContext(query=query))
-    response = await llm.generate(prompt, tools=[get_weather])
-    print(response)
-
-asyncio.run(main())
-```
-
-Tools can also be provided in the following JSON format instead of an implemented function:
-
-```python
-tools = [
+    ```python
     {
         "type": "function",
         "function": {
@@ -89,28 +39,67 @@ tools = [
             },
         },
     }
-]
+    ```
+
+For convenience lets use Python function notation.
+
+```python
+import json
+
+def get_weather(location: str, units: str | None = None) -> str:
+    """
+    Returns the current weather for a given location.
+
+    Args:
+        location: The location to get the weather for.
+        units: The units to use for the weather information.
+
+    Returns:
+        The current weather for the given location.
+    """
+    match location.lower():
+        case "tokyo":
+            return json.dumps({"location": "Tokyo", "temperature": "10", "unit": "celsius"})
+        case "san francisco":
+            return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
+        case "paris":
+            return json.dumps({"location": "Paris", "temperature": "22", "unit": "celsius"})
+        case _:
+            return json.dumps({"location": location, "temperature": "unknown"})
 ```
 
-## Using tools with LLMs in streaming mode
-
-Tools can be also passed to LLMs in streaming mode. If LLM decides to use tools then tool calls will be available in ```tool_calls``` field of the response and there will be no text output stream. If model decides not to use tools then ```tool_calls``` field won't be present and text output stream will be returned as usual:
+Tools can be passed to the LLM as an optional generation argument. If LLM decides to use tools, then the tool calls will be returned directly as a response and there will be no text output.
 
 ```python
 import asyncio
 from ragbits.core.llms.litellm import LiteLLM
 
 async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    query = "Tell me about the temperature in San Francisco."
-    prompt = LLMPrompt(QueryWithContext(query=query))
-    response = llm.generate_streaming(prompt, tools=[get_weather])
-    async for resp in response:
-        print(resp)
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+    response = await llm.generate("What's the temperature in San Francisco?", tools=[get_weather])
+    print(response)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-## Using tools with local LLMs
+!!! info
+    Using tools in local LLMs is not supported - any tools passed as arguments to local LLMs are ignored.
 
-Using tools in local LLMs is not supported - any tools passed as arguments to local LLMs are ignored.
+## Stream tool calls
+
+Tools can also be streamed from the LLM. If LLM decides to use multiple tools, they will be returned in the iterator one by one.
+
+```python
+import asyncio
+from ragbits.core.llms.litellm import LiteLLM
+
+async def main():
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+    response = llm.generate_streaming("What's the temperature in San Francisco?", tools=[get_weather])
+    async for chunk in response:
+        print(chunk)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
