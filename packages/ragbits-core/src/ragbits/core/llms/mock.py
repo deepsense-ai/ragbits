@@ -16,6 +16,7 @@ class MockLLMOptions(Options):
 
     response: str | NotGiven = NOT_GIVEN
     response_stream: list[str] | NotGiven = NOT_GIVEN
+    tool_calls: list[dict] | NotGiven = NOT_GIVEN
 
 
 class MockLLM(LLM[MockLLMOptions]):
@@ -48,9 +49,9 @@ class MockLLM(LLM[MockLLMOptions]):
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(prompt.chat)
-        if not isinstance(options.response, NotGiven):
-            return {"response": options.response, "is_mocked": True}
-        return {"response": "mocked response", "is_mocked": True}
+        response = "mocked response" if isinstance(options.response, NotGiven) else options.response
+        tool_calls = None if isinstance(options.tool_calls, NotGiven) else options.tool_calls
+        return {"response": response, "tool_calls": tool_calls, "is_mocked": True}
 
     async def _call_streaming(  # noqa: PLR6301
         self,
@@ -66,7 +67,9 @@ class MockLLM(LLM[MockLLMOptions]):
         self.calls.append(prompt.chat)
 
         async def generator() -> AsyncGenerator[dict, None]:
-            if not isinstance(options.response_stream, NotGiven):
+            if not isinstance(options.tool_calls, NotGiven):
+                yield {"tool_calls": options.tool_calls}
+            elif not isinstance(options.response_stream, NotGiven):
                 for response in options.response_stream:
                     yield {"response": response}
             elif not isinstance(options.response, NotGiven):

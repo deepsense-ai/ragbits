@@ -23,6 +23,21 @@ def mock_llm() -> MockLLM:
     return MockLLM(default_options=llm_options)
 
 
+@pytest.fixture(name="llm_with_tools")
+def mock_llm_with_tools() -> MockLLM:
+    llm_options = MockLLMOptions(
+        tool_calls=[
+            {
+                "tool_call_id": "call_Dq3XWqfuMskh9SByzz5g00mM",
+                "tool_type": "function",
+                "tool_name": "get_weather",
+                "tool_arguments": '{"location":"San Francisco"}',
+            }
+        ]
+    )
+    return MockLLM(default_options=llm_options)
+
+
 class CustomPrompt(BasePromptWithParser[CustomOutputType]):
     def __init__(self, content: str) -> None:
         self._content = content
@@ -34,34 +49,6 @@ class CustomPrompt(BasePromptWithParser[CustomOutputType]):
     @staticmethod
     async def parse_response(response: str) -> CustomOutputType:
         return CustomOutputType(message=response)
-
-
-def mock_llm_streaming_responses_with_tool(llm: MockLLM):
-    llm._call_streaming = AsyncMock()  # type: ignore
-
-    async def tool_results() -> AsyncGenerator[dict, None]:
-        tool_calls = [
-            {
-                "tool_call_id": "call_Dq3XWqfuMskh9SByzz5g00mM",
-                "tool_type": "function",
-                "tool_name": "get_weather",
-                "tool_arguments": '{"location":"San Francisco"}',
-            }
-        ]
-        yield {"tool_calls": tool_calls}
-
-    llm._call_streaming.return_value = tool_results()
-
-
-def mock_llm_streaming_responses_with_tool_no_tool_used(llm: MockLLM):
-    llm._call_streaming = AsyncMock()  # type: ignore
-
-    async def text_results() -> AsyncGenerator[dict, None]:
-        text_results_list = ["I'm fine.", "How are you?"]
-        for text in text_results_list:
-            yield {"response": text}
-
-    llm._call_streaming.return_value = text_results()
 
 
 def get_weather(location: str) -> str:
@@ -106,19 +93,19 @@ async def test_generate_with_parser_prompt(llm: MockLLM):
 
 async def test_generate_raw_with_str(llm: MockLLM):
     response = await llm.generate_raw("Hello")
-    assert response == {"response": "test response", "is_mocked": True}
+    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
 
 
 async def test_generate_raw_with_chat_format(llm: MockLLM):
     chat = [{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Hello"}]
     response = await llm.generate_raw(chat)
-    assert response == {"response": "test response", "is_mocked": True}
+    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
 
 
 async def test_generate_raw_with_base_prompt(llm: MockLLM):
     prompt = SimplePrompt("Hello")
     response = await llm.generate_raw(prompt)
-    assert response == {"response": "test response", "is_mocked": True}
+    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
 
 
 async def test_generate_metadata_with_str(llm: MockLLM):
@@ -170,9 +157,8 @@ async def test_generate_stream_with_base_prompt(llm: MockLLM):
     assert [response async for response in stream] == ["first response", "second response"]
 
 
-async def test_generate_stream_with_tools_output(llm: MockLLM):
-    mock_llm_streaming_responses_with_tool(llm)
-    stream = llm.generate_streaming("Hello", tools=[get_weather])
+async def test_generate_stream_with_tools_output(llm_with_tools: MockLLM):
+    stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather])
     assert [response async for response in stream] == [
         ToolCall(  # type: ignore
             tool_arguments='{"location":"San Francisco"}',  # type: ignore
@@ -184,9 +170,8 @@ async def test_generate_stream_with_tools_output(llm: MockLLM):
 
 
 async def test_generate_stream_with_tools_output_no_tool_used(llm: MockLLM):
-    mock_llm_streaming_responses_with_tool_no_tool_used(llm)
     stream = llm.generate_streaming("Hello", tools=[get_weather])
-    assert [response async for response in stream] == ["I'm fine.", "How are you?"]
+    assert [response async for response in stream] == ["first response", "second response"]
 
 
 def test_init_with_str():
