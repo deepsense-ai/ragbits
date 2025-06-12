@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import deprecated
 
 
-@deprecated("FeedbackForm is deprecated, you can use custom pydantic models from now on")
+@deprecated("FeedbackForm is deprecated. You can use standard pydantic models instead as like_form and dislike_form.")
 class FormField(BaseModel):
     """Field in a feedback form."""
 
@@ -15,7 +15,7 @@ class FormField(BaseModel):
     options: list[str] | None = Field(None, description="Options for select fields")
 
 
-@deprecated("FeedbackForm is deprecated, you can use custom pydantic models from now on")
+@deprecated("FeedbackForm is deprecated. You can use standard pydantic models instead as like_form and dislike_form.")
 class FeedbackForm(BaseModel):
     """Model for feedback form structure."""
 
