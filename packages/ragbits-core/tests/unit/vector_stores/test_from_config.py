@@ -10,7 +10,7 @@ from ragbits.core.vector_stores.base import VectorStore, VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 
 
 def test_subclass_from_config():
@@ -110,7 +110,7 @@ def test_subclass_from_config_qdrant_client():
 def test_subclass_from_config_weaviate_client():
     config = ObjectConstructionConfig.model_validate(
         {
-            "type": "ragbits.core.vector_stores.weaviate_vector:WeaviateVectorStore",
+            "type": "ragbits.core.vector_stores.weaviate:WeaviateVectorStore",
             "config": {
                 "client": {
                     "type": "WeaviateAsyncClient",

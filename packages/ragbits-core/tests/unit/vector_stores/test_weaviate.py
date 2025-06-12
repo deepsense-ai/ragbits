@@ -10,7 +10,7 @@ from weaviate.collections.classes.internal import MetadataReturn, Object
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.utils.dict_transformations import flatten_dict
 from ragbits.core.vector_stores.base import VectorStoreEntry
-from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore, WeaviateVectorStoreOptions
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore, WeaviateVectorStoreOptions
 
 
 @pytest.fixture

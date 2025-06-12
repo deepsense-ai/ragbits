@@ -11,7 +11,7 @@ from ragbits.core.vector_stores.base import (
     VectorStoreEntry,
     VectorStoreWithEmbedder,
 )
-from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore, WeaviateVectorStoreOptions
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore, WeaviateVectorStoreOptions
 
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 

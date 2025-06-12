@@ -25,7 +25,7 @@ from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 

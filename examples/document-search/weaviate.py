@@ -40,7 +40,7 @@ import weaviate
 from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
-from ragbits.core.vector_stores.weaviate_vector import WeaviateVectorStore
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import DocumentMeta
 
