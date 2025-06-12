@@ -125,7 +125,6 @@ class CoTQuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, CoTQuestionAnswe
 
 The syntax below with [`Agent`][ragbits.agents.Agent] allows you to connect a few pieces together, in this case, our retriever and a generation component, so the whole system can be evaluated and optimized.
 
-
 The [`Agent`][ragbits.agents.Agent] class allows you to connect retrieval and generation components together, creating a pipeline that can be evaluated and optimized as a whole. Here's how we create a RAG agent that inherits from `QuestionAnswerAgent` that we used in the previous tutorial.
 
 ```python
@@ -167,7 +166,7 @@ programs or caches, and accessing it involves special handling like calling kmap
 
 ## Evaluating the system
 
-Earlier with a simple CoT prompt, we got around 68% in terms of answer correctness on our devset. Would this RAG pipeline score better?
+In [the previous tutorial](./intro.md) with a simple CoT prompt, we got around 68% in terms of answer correctness on our devset. Would this RAG pipeline score better?
 
 ```python
 from ragbits.core.sources import WebSource
