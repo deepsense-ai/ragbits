@@ -53,7 +53,7 @@ All sources supported by Ragbits are available [here](../sources/load-dataset.md
 
 ## Parsing documents
 
-Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the  [`unstructured`](https://github.com/Unstructured-IO/unstructured) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOC, JPG).
+Depending on the document type, different parsers operate in the background to convert the document into a list of elements. Ragbits primarily relies on the [`docling`](https://github.com/docling-project/docling) library, which supports parsing and chunking for most common document formats (e.g., PDF, Markdown, DOCX, JPG).
 
 To define a new parser, extend the [`DocumentParser`][ragbits.document_search.ingestion.parsers.base.DocumentParser] class.
 
@@ -196,7 +196,7 @@ Running an ingest pipeline can be time-consuming, depending on your expected loa
     from ragbits.document_search import DocumentSearch
     from ragbits.document_search.ingestion.strategies import RayDistributedIngestStrategy
 
-    ingest_strategy = RayDistributedIngestStrategy(cpu_batch_size=1, io_batch_size=5)
+    ingest_strategy = RayDistributedIngestStrategy()
     document_search = DocumentSearch(ingest_strategy=ingest_strategy, ...)
 
     await document_search.ingest("s3://")

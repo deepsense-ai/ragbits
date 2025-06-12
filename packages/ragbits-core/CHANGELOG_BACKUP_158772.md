@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+<<<<<<< HEAD
+- feat: add get_vector_size method to all Embedders (#587)
 - Integrate Weaviate vector store (#347)
+=======
 - Add support for async component factories (#608)
 
 ## 1.0.0 (2025-06-04)
@@ -15,6 +18,7 @@
 - Update utils (#590)
 - Resolve vector_size by PgVectorStore automatically (#588)
 - Add get_vector_size method to all Embedders (#587)
+>>>>>>> main
 
 ## 0.19.1 (2025-05-27)
 

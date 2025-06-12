@@ -2,7 +2,6 @@
 
 ## Unreleased
 
-- Integrate Weaviate vector store (#347)
 - Add support for async component factories (#608)
 
 ## 1.0.0 (2025-06-04)
