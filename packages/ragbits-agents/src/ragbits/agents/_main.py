@@ -16,7 +16,7 @@ class AgentResult(Generic[PromptOutputT]):
     Result of the agent run.
     """
 
-    content: str | PromptOutputT
+    content: PromptOutputT
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
@@ -97,6 +97,6 @@ class Agent(
         response = await self.llm.generate_with_metadata(prompt, options=llm_options)
 
         return AgentResult(
-            content=response.content,
+            content=response.content,  # type: ignore
             metadata=response.metadata,
         )
