@@ -1,5 +1,5 @@
-import ast
 import enum
+import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import ClassVar, Generic, TypeVar, overload
@@ -48,7 +48,7 @@ class ToolCall(BaseModel):
         """
         Parser for converting tool arguments from string representation to dict
         """
-        pased_arguments = ast.literal_eval(tool_arguments)
+        pased_arguments = json.loads(tool_arguments)
         return pased_arguments
 
 
