@@ -263,13 +263,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             tool_calls = (
                 [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
-                if tools and (_tool_calls := response.pop("tool_calls", []))
+                if tools and (_tool_calls := response.pop("tool_calls", None))
                 else None
             )
-            tool_calls = tool_calls or None
-
             content = response.pop("response", None)
-            if isinstance(prompt, BasePromptWithParser) and content:
+            if isinstance(prompt, BasePromptWithParser) and content is not None:
                 content = await prompt.parse_response(content)
 
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore

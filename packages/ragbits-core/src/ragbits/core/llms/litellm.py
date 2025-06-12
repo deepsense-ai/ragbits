@@ -173,24 +173,20 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMEmptyResponseError()
 
         results = {}
-
-        if tools:
-            tool_calls = response.choices[0].message.tool_calls  # type: ignore
-            tool_call_dicts: list[dict] | None = None
-            if tool_calls:
-                tool_call_dicts = [
-                    {
-                        "tool_name": tool_call.function.name,
-                        "tool_arguments": tool_call.function.arguments,
-                        "tool_type": tool_call.type,
-                        "tool_call_id": tool_call.id,
-                    }
-                    for tool_call in tool_calls
-                ]
-            results["tool_calls"] = tool_call_dicts
-            results["response"] = response.choices[0].message.content  # type: ignore
-        else:
-            results["response"] = response.choices[0].message.content  # type: ignore
+        results["tool_calls"] = (
+            [
+                {
+                    "tool_name": tool_call.function.name,
+                    "tool_arguments": tool_call.function.arguments,
+                    "tool_type": tool_call.type,
+                    "tool_call_id": tool_call.id,
+                }
+                for tool_call in tool_calls
+            ]
+            if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
+            else None
+        )
+        results["response"] = response.choices[0].message.content  # type: ignore
 
         if options.logprobs:
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
@@ -253,6 +249,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUse()
 
