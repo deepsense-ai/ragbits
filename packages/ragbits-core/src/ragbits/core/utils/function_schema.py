@@ -1,20 +1,16 @@
+# This file was copied with a few changes from openai-agents-python library
+# https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
+
 import contextlib
 import inspect
 import logging
 from collections.abc import Callable, Generator
-from typing import (
-    Any,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import Any, get_args, get_origin, get_type_hints
 
 from griffe import Docstring, DocstringSectionKind
 from pydantic import BaseModel, Field, create_model
 
 
-# This function was copied with a few changes from openai-agents-python library
-# https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
 @contextlib.contextmanager
 def _suppress_griffe_logging() -> Generator:
     # Suppresses warnings about missing annotations for params
@@ -27,8 +23,6 @@ def _suppress_griffe_logging() -> Generator:
         logger.setLevel(previous_level)
 
 
-# This function was copied with a few changes from openai-agents-python library
-# https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
 def _generate_func_documentation(func: Callable[..., Any]) -> dict:
     """
     Extracts metadata from a function docstring, in preparation for sending it to an LLM as a tool.
@@ -67,8 +61,6 @@ def _generate_func_documentation(func: Callable[..., Any]) -> dict:
     }
 
 
-# This function was copied with a few changes from openai-agents-python library
-# https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
 def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
     """
     Given a python function, extracts a `FuncSchema` from it, capturing the name, description,
