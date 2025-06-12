@@ -2,14 +2,10 @@ import ast
 import enum
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
-from typing import (
-    ClassVar,
-    Generic,
-    TypeVar,
-    overload,
-)
+from typing import ClassVar, Generic, TypeVar, overload
 
 from pydantic import BaseModel, ConfigDict, field_validator
+from typing_extensions import deprecated
 
 from ragbits.core import llms
 from ragbits.core.audit.traces import trace
@@ -25,7 +21,6 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 from ragbits.core.utils.function_schema import convert_function_to_function_schema
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
-
 Tool = Callable | dict
 
 
@@ -118,12 +113,12 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         """
         raise NotImplementedError("Token id lookup is not supported by this model")
 
+    @deprecated("Use generate_with_metadata() instead")
     async def generate_raw(
         self,
         prompt: BasePrompt | str | ChatFormat,
         *,
         options: LLMClientOptionsT | None = None,
-        tools: list[dict] | None = None,
     ) -> dict:
         """
         Prepares and sends a prompt to the LLM and returns the raw response (without parsing).
@@ -134,7 +129,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - str: Simple text prompt that will be sent as a user message
                 - ChatFormat: List of message dictionaries in OpenAI chat format
             options: Options to use for the LLM client.
-            tools: Functions to be used as tools by LLM.
 
         Returns:
             Raw response from LLM.
@@ -149,7 +143,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options=merged_options,
             json_mode=prompt.json_mode,
             output_schema=prompt.output_schema(),
-            tools=tools,
         )
 
     @overload
@@ -250,28 +243,39 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Text response from LLM with metadata and list of tool calls.
         """
         with trace(name="generate", model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            merged_options = (self.default_options | options) if options else self.default_options
+
+            if isinstance(prompt, str | list):
+                prompt = SimplePrompt(prompt)
+
             parsed_tools = (
                 [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools]
                 if tools
                 else None
             )
-            raw_response = await self.generate_raw(prompt, options=options, tools=parsed_tools)
+            response = await self._call(
+                prompt=prompt,
+                options=merged_options,
+                json_mode=prompt.json_mode,
+                output_schema=prompt.output_schema(),
+                tools=parsed_tools,
+            )
 
             tool_calls = (
                 [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
-                if tools and (_tool_calls := raw_response.pop("tool_calls", []))
+                if tools and (_tool_calls := response.pop("tool_calls", []))
                 else None
             )
             tool_calls = tool_calls or None
 
-            content = raw_response.pop("response", None)
+            content = response.pop("response", None)
             if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
 
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
                 tool_calls=tool_calls,
-                metadata=raw_response,
+                metadata=response,
             )
             return outputs.response
 
