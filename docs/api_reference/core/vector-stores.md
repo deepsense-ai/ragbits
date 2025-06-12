@@ -14,4 +14,4 @@
 
 ::: ragbits.core.vector_stores.pgvector.PgVectorStore
 
-::: ragbits.core.vector_stores.weaviate_vector.WeaviateVectorStore
+::: ragbits.core.vector_stores.weaviate.WeaviateVectorStore
