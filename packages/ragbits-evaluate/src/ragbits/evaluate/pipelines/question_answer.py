@@ -85,7 +85,6 @@ class QuestionAnswerPipeline(
                 for row in data
             ]
         )
-
         return [
             QuestionAnswerResult(
                 question=row.question,

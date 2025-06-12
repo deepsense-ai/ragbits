@@ -14,8 +14,6 @@ from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOut
 from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
-# from ragbits.core.llms.base import ToolCall
-
 PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
 FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
 
