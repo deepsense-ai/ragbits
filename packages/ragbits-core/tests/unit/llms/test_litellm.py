@@ -8,7 +8,7 @@ from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function
 from pydantic import BaseModel
 
 from ragbits.core.llms.base import ToolCall
-from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUse
+from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUseError
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
@@ -226,7 +226,7 @@ async def test_genration_with_tools_not_supported_in_model(mock_supports_functio
     mock_supports_function_calling.return_value = False
     llm = LiteLLM(api_key="test_key")
     prompt = MockPrompt("Hello, how are you?")
-    with pytest.raises(LLMNotSupportingToolUse):
+    with pytest.raises(LLMNotSupportingToolUseError):
         await llm.generate(prompt, tools=[get_weather])
 
 

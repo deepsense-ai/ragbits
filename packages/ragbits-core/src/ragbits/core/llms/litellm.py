@@ -14,7 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
-    LLMNotSupportingToolUse,
+    LLMNotSupportingToolUseError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -139,8 +139,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
-            Only used if the client has been initialized with `use_structured_output=True`.
-            tools: Functions to be used as tools by LLM.
+                Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response string from LLM.
@@ -150,13 +150,13 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
-            LLMNotSupportingToolUse: If the model does not support tool use.
+            LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
-            raise LLMNotSupportingToolUse()
+            raise LLMNotSupportingToolUseError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
@@ -234,8 +234,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
-            Only used if the client has been initialized with `use_structured_output=True`.
-            tools: Functions to be used as tools by LLM.
+                Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response string from LLM.
@@ -245,13 +245,13 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
-            LLMNotSupportingToolUse: If the model does not support tool use.
+            LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
-            raise LLMNotSupportingToolUse()
+            raise LLMNotSupportingToolUseError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)

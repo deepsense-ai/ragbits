@@ -346,10 +346,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
         Args:
             prompt: Formatted prompt template with conversation.
-            options: Additional settings used by LLM.
+            options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
-            tools: Functions to be used as tools by LLM.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response dict from LLM.
@@ -369,10 +369,10 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
         Args:
             prompt: Formatted prompt template with conversation.
-            options: Additional settings used by LLM.
+            options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Schema for structured response (either Pydantic model or a JSON schema).
-            tools: Functions to be used as tools by LLM.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response dict stream from LLM.

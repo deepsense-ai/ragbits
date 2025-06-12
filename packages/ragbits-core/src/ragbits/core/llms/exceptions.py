@@ -54,7 +54,7 @@ class LLMNotSupportingImagesError(LLMError):
         super().__init__(message)
 
 
-class LLMNotSupportingToolUse(LLMError):
+class LLMNotSupportingToolUseError(LLMError):
     """
     Raised when there are tools provided, but LLM doesn't support tool use.
     """
