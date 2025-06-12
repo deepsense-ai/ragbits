@@ -72,7 +72,7 @@ Tools can be passed to the LLM as an optional generation argument. If LLM decide
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import LiteLLM
 
 async def main():
     llm = LiteLLM(model_name="gpt-4o-2024-08-06")
@@ -92,7 +92,7 @@ Tools can also be streamed from the LLM. If LLM decides to use multiple tools, t
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import LiteLLM
 
 async def main():
     llm = LiteLLM(model_name="gpt-4o-2024-08-06")
