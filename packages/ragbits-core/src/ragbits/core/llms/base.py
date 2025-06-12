@@ -39,11 +39,11 @@ class ToolCall(BaseModel):
     A schema of tool call data
     """
 
-    tool_name: str
-    tool_arguments: dict
+    name: str
+    arguments: dict
     model_config = ConfigDict(extra="allow")
 
-    @field_validator("tool_arguments", mode="before")
+    @field_validator("arguments", mode="before")
     def parse_tool_arguments(cls, tool_arguments: str) -> dict:
         """
         Parser for converting tool arguments from string representation to dict

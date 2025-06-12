@@ -1,6 +1,4 @@
 import json
-from collections.abc import AsyncGenerator
-from unittest.mock import AsyncMock
 
 import pytest
 from pydantic import BaseModel
@@ -28,10 +26,10 @@ def mock_llm_with_tools() -> MockLLM:
     llm_options = MockLLMOptions(
         tool_calls=[
             {
-                "tool_call_id": "call_Dq3XWqfuMskh9SByzz5g00mM",
-                "tool_type": "function",
-                "tool_name": "get_weather",
-                "tool_arguments": '{"location":"San Francisco"}',
+                "id": "call_Dq3XWqfuMskh9SByzz5g00mM",
+                "type": "function",
+                "name": "get_weather",
+                "arguments": '{"location":"San Francisco"}',
             }
         ]
     )
@@ -161,10 +159,10 @@ async def test_generate_stream_with_tools_output(llm_with_tools: MockLLM):
     stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather])
     assert [response async for response in stream] == [
         ToolCall(  # type: ignore
-            tool_arguments='{"location":"San Francisco"}',  # type: ignore
-            tool_name="get_weather",
-            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-            tool_type="function",
+            arguments='{"location":"San Francisco"}',  # type: ignore
+            name="get_weather",
+            id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            type="function",
         )
     ]
 

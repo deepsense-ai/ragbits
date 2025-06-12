@@ -176,10 +176,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
         results["tool_calls"] = (
             [
                 {
-                    "tool_name": tool_call.function.name,
-                    "tool_arguments": tool_call.function.arguments,
-                    "tool_type": tool_call.type,
-                    "tool_call_id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                    "type": tool_call.type,
+                    "id": tool_call.id,
                 }
                 for tool_call in tool_calls
             ]
@@ -287,19 +287,17 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 if tool_calls_delta := item.choices[0].delta.tool_calls:
                     for tool_call_chunk in tool_calls_delta:
                         while len(tool_calls) <= tool_call_chunk.index:
-                            tool_calls.append(
-                                {"tool_call_id": "", "tool_type": "", "tool_name": "", "tool_arguments": ""}
-                            )
+                            tool_calls.append({"id": "", "type": "", "name": "", "arguments": ""})
 
-                        tool_calls[tool_call_chunk.index]["tool_call_id"] += tool_call_chunk.id or ""
-                        tool_calls[tool_call_chunk.index]["tool_type"] += (
+                        tool_calls[tool_call_chunk.index]["id"] += tool_call_chunk.id or ""
+                        tool_calls[tool_call_chunk.index]["type"] += (
                             tool_call_chunk.type
                             if tool_call_chunk.type
-                            and tool_call_chunk.type != tool_calls[tool_call_chunk.index]["tool_type"]
+                            and tool_call_chunk.type != tool_calls[tool_call_chunk.index]["type"]
                             else ""
                         )
-                        tool_calls[tool_call_chunk.index]["tool_name"] += tool_call_chunk.function.name or ""
-                        tool_calls[tool_call_chunk.index]["tool_arguments"] += tool_call_chunk.function.arguments or ""
+                        tool_calls[tool_call_chunk.index]["name"] += tool_call_chunk.function.name or ""
+                        tool_calls[tool_call_chunk.index]["arguments"] += tool_call_chunk.function.arguments or ""
 
             if tool_calls:
                 yield {"tool_calls": tool_calls}

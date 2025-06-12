@@ -182,10 +182,10 @@ async def test_generation_with_tools(mock_supports_function_calling: MagicMock):
     output = await llm.generate(prompt, tools=[get_weather])
     assert output == [
         ToolCall(  # type: ignore
-            tool_arguments='{"location":"San Francisco"}',  # type: ignore
-            tool_name="get_weather",
-            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-            tool_type="function",
+            arguments='{"location":"San Francisco"}',  # type: ignore
+            name="get_weather",
+            id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            type="function",
         )
     ]
 
@@ -201,10 +201,10 @@ async def test_generation_with_tools_as_function_schemas(mock_supports_function_
     output = await llm.generate(prompt, tools=[function_schema])
     assert output == [
         ToolCall(  # type: ignore
-            tool_arguments='{"location":"San Francisco"}',  # type: ignore
-            tool_name="get_weather",
-            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-            tool_type="function",
+            arguments='{"location":"San Francisco"}',  # type: ignore
+            name="get_weather",
+            id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            type="function",
         )
     ]
 
@@ -308,10 +308,10 @@ async def test_generation_with_metadata_and_tools(mock_supports_function_calling
     output = await llm.generate_with_metadata(prompt, tools=[get_weather])
     assert output.tool_calls == [  # type: ignore
         ToolCall(  # type: ignore
-            tool_arguments='{"location":"San Francisco"}',  # type: ignore
-            tool_name="get_weather",
-            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-            tool_type="function",
+            arguments='{"location":"San Francisco"}',  # type: ignore
+            name="get_weather",
+            id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            type="function",
         )
     ]
     assert output.metadata == {
