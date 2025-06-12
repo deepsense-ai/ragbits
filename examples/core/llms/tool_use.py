@@ -47,14 +47,15 @@ def get_weather(location: str) -> str:
     Returns:
         The current weather for the given location.
     """
-    if "tokyo" in location.lower():
-        return json.dumps({"location": "Tokyo", "temperature": "10", "unit": "celsius"})
-    elif "san francisco" in location.lower():
-        return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
-    elif "paris" in location.lower():
-        return json.dumps({"location": "Paris", "temperature": "22", "unit": "celsius"})
-    else:
-        return json.dumps({"location": location, "temperature": "unknown"})
+    match location.lower():
+        case "tokyo":
+            return json.dumps({"location": "Tokyo", "temperature": "10", "unit": "celsius"})
+        case "san francisco":
+            return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
+        case "paris":
+            return json.dumps({"location": "Paris", "temperature": "22", "unit": "celsius"})
+        case _:
+            return json.dumps({"location": location, "temperature": "unknown"})
 
 
 class WeatherPromptInput(BaseModel):
@@ -86,7 +87,7 @@ async def main() -> None:
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     prompt = WeatherPrompt(WeatherPromptInput(location="Paris"))
     response = await llm.generate(prompt, tools=[get_weather])
-    print(response.tool_calls)
+    print(response)
 
 
 if __name__ == "__main__":
