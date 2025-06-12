@@ -55,6 +55,8 @@ class ToolCall(BaseModel):
     tool_name: str
     tool_arguments: dict
     model_config = ConfigDict(extra="allow")
+    tool_call_id: str
+    tool_type: str
 
     @field_validator("tool_arguments", mode="before")
     def parse_tool_arguments(cls, tool_arguments: str) -> dict:
