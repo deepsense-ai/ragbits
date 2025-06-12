@@ -51,22 +51,25 @@ class FeedbackConfig(BaseModel):
         dislike_enabled: bool = False,
         dislike_form: type[BaseModel] | FeedbackForm | None = None,
     ) -> None:
+        like_form_json_schema = None
+        dislike_form_json_schema = None
+
         if like_form:
             if isinstance(like_form, FeedbackForm):
-                like_form = self._map_to_json_schema(like_form)
+                like_form_json_schema = self._map_to_json_schema(like_form)
             else:
-                like_form = like_form.model_json_schema()
+                like_form_json_schema = like_form.model_json_schema()
         if dislike_form:
             if isinstance(dislike_form, FeedbackForm):
-                dislike_form = self._map_to_json_schema(dislike_form)
+                dislike_form_json_schema = self._map_to_json_schema(dislike_form)
             else:
-                dislike_form = dislike_form.model_json_schema()
+                dislike_form_json_schema = dislike_form.model_json_schema()
 
         super().__init__(
             like_enabled=like_enabled,
-            like_form=like_form,
+            like_form=like_form_json_schema,
             dislike_enabled=dislike_enabled,
-            dislike_form=dislike_form,
+            dislike_form=dislike_form_json_schema,
         )
 
     @staticmethod
