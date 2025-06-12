@@ -174,14 +174,12 @@ async def test_generate_stream_with_tools_output(llm: MockLLM):
     mock_llm_streaming_responses_with_tool(llm)
     stream = llm.generate_streaming("Hello", tools=[get_weather])
     assert [response async for response in stream] == [
-        [
-            ToolCall(  # type: ignore
-                tool_arguments='{"location":"San Francisco"}',  # type: ignore
-                tool_name="get_weather",
-                tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-                tool_type="function",
-            )
-        ]
+        ToolCall(  # type: ignore
+            tool_arguments='{"location":"San Francisco"}',  # type: ignore
+            tool_name="get_weather",
+            tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+            tool_type="function",
+        )
     ]
 
 

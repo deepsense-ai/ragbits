@@ -58,7 +58,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
 
     content: PromptOutputT
-    metadata: dict
+    metadata: dict = {}
     tool_calls: list[ToolCall] | None = None
 
 
@@ -263,11 +263,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             tool_calls = (
                 [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
-                if tools and (_tool_calls := response.pop("tool_calls", None))
+                if (_tool_calls := response.pop("tool_calls", None)) and tools
                 else None
             )
             content = response.pop("response", None)
-            if isinstance(prompt, BasePromptWithParser) and content is not None:
+            if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
 
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
@@ -283,7 +283,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str | list[ToolCall], None]:
+    ) -> AsyncGenerator[str | ToolCall, None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
 
@@ -314,15 +314,23 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 tools=parsed_tools,
             )
 
-            outputs.response = ""
+            content = ""
+            tool_calls = []
             async for chunk in response:
-                if content := chunk.get("response"):
-                    outputs.response += content
-                    yield content
+                if text := chunk.get("response"):
+                    content += text
+                    yield text
 
-                if tools and (tool_calls := chunk.get("tool_calls", [])):
-                    outputs.response = [ToolCall.model_validate(tool_call) for tool_call in tool_calls]
-                    yield outputs.response
+                if tools and (_tool_calls := chunk.get("tool_calls")):
+                    for tool_call in _tool_calls:
+                        parsed_tool_call = ToolCall.model_validate(tool_call)
+                        tool_calls.append(parsed_tool_call)
+                        yield parsed_tool_call
+
+            outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore
+                content=content or None,
+                tool_calls=tool_calls or None,
+            )
 
     @abstractmethod
     async def _call(
