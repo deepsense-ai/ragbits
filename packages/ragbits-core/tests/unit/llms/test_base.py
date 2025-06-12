@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import BaseModel
 
-from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall, ToolCallsResponse
+from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -39,13 +39,16 @@ class CustomPrompt(BasePromptWithParser[CustomOutputType]):
 def mock_llm_streaming_responses_with_tool(llm: MockLLM):
     llm._call_streaming = AsyncMock()  # type: ignore
 
-    async def tool_results() -> AsyncGenerator[str, None]:
-        tool_results_list = [
-            "[{'tool_call_id': 'call_Dq3XWqfuMskh9SByzz5g00mM', 'tool_type': 'function', 'tool_name': 'get_weather',"
-            " 'tool_arguments': '{\"location\":\"San Francisco\"}'}]"
+    async def tool_results() -> AsyncGenerator[dict, None]:
+        tool_calls = [
+            {
+                "tool_call_id": "call_Dq3XWqfuMskh9SByzz5g00mM",
+                "tool_type": "function",
+                "tool_name": "get_weather",
+                "tool_arguments": '{"location":"San Francisco"}',
+            }
         ]
-        for x in tool_results_list:
-            yield x
+        yield {"tool_calls": tool_calls}
 
     llm._call_streaming.return_value = tool_results()
 
@@ -53,10 +56,10 @@ def mock_llm_streaming_responses_with_tool(llm: MockLLM):
 def mock_llm_streaming_responses_with_tool_no_tool_used(llm: MockLLM):
     llm._call_streaming = AsyncMock()  # type: ignore
 
-    async def text_results() -> AsyncGenerator[str, None]:
+    async def text_results() -> AsyncGenerator[dict, None]:
         text_results_list = ["I'm fine.", "How are you?"]
-        for x in text_results_list:
-            yield x
+        for text in text_results_list:
+            yield {"response": text}
 
     llm._call_streaming.return_value = text_results()
 
@@ -171,16 +174,14 @@ async def test_generate_stream_with_tools_output(llm: MockLLM):
     mock_llm_streaming_responses_with_tool(llm)
     stream = llm.generate_streaming("Hello", tools=[get_weather])
     assert [response async for response in stream] == [
-        ToolCallsResponse(
-            tool_calls=[
-                ToolCall(  # type: ignore
-                    tool_arguments='{"location":"San Francisco"}',  # type: ignore
-                    tool_name="get_weather",
-                    tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
-                    tool_type="function",
-                )
-            ]
-        )
+        [
+            ToolCall(  # type: ignore
+                tool_arguments='{"location":"San Francisco"}',  # type: ignore
+                tool_name="get_weather",
+                tool_call_id="call_Dq3XWqfuMskh9SByzz5g00mM",
+                tool_type="function",
+            )
+        ]
     ]
 
 
@@ -219,27 +220,3 @@ def test_has_images():
 def test_get_token_id(llm: MockLLM):
     with pytest.raises(NotImplementedError):
         llm.get_token_id("example_token")
-
-
-def test_convert_function_to_function_schema(llm: MockLLM):
-    """Test converting function to function schema"""
-    function_schema = llm._convert_function_to_function_schema(get_weather)
-    expected_function_schema = {
-        "type": "function",
-        "function": {
-            "name": "get_weather",
-            "description": "Returns the current weather for a given location.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "description": "The location to get the weather for.",
-                        "title": "Location",
-                        "type": "string",
-                    }
-                },
-                "required": ["location"],
-            },
-        },
-    }
-    assert function_schema == expected_function_schema

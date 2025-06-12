@@ -59,19 +59,19 @@ class MockLLM(LLM[MockLLMOptions]):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[dict, None]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(prompt.chat)
 
-        async def generator() -> AsyncGenerator[str, None]:
+        async def generator() -> AsyncGenerator[dict, None]:
             if not isinstance(options.response_stream, NotGiven):
                 for response in options.response_stream:
-                    yield response
+                    yield {"response": response}
             elif not isinstance(options.response, NotGiven):
-                yield options.response
+                yield {"response": options.response}
             else:
-                yield "mocked response"
+                yield {"response": "mocked response"}
 
         return generator()

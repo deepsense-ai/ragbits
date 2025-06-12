@@ -1,24 +1,15 @@
 import ast
-import contextlib
 import enum
-import inspect
-import logging
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Callable, Generator
+from collections.abc import AsyncGenerator, Callable
 from typing import (
-    Any,
     ClassVar,
     Generic,
     TypeVar,
-    cast,
-    get_args,
-    get_origin,
-    get_type_hints,
     overload,
 )
 
-from griffe import Docstring, DocstringSectionKind
-from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from ragbits.core import llms
 from ragbits.core.audit.traces import trace
@@ -31,10 +22,11 @@ from ragbits.core.prompt.base import (
     SimplePrompt,
 )
 from ragbits.core.utils.config_handling import ConfigurableComponent
+from ragbits.core.utils.function_schema import convert_function_to_function_schema
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
 
-Tools = list[Callable] | list[dict]
+Tool = Callable | dict
 
 
 class LLMType(enum.Enum):
@@ -65,14 +57,6 @@ class ToolCall(BaseModel):
         return pased_arguments
 
 
-class ToolCallsResponse(BaseModel):
-    """
-    A schema of output with tool calls
-    """
-
-    tool_calls: list[ToolCall]
-
-
 class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
     A schema of output with metadata
@@ -80,7 +64,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
 
     content: PromptOutputT
     metadata: dict
-    tool_calls: ToolCallsResponse | None = None
+    tool_calls: list[ToolCall] | None = None
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -182,9 +166,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         self,
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
-        tools: Tools,
+        tools: list[Tool],
         options: LLMClientOptionsT | None = None,
-    ) -> PromptOutputT | ToolCallsResponse: ...
+    ) -> PromptOutputT | list[ToolCall]: ...
 
     @overload
     async def generate(
@@ -200,17 +184,17 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         self,
         prompt: str | ChatFormat,
         *,
-        tools: Tools,
+        tools: list[Tool],
         options: LLMClientOptionsT | None = None,
-    ) -> str | ToolCallsResponse: ...
+    ) -> str | list[ToolCall]: ...
 
     async def generate(
         self,
         prompt: str | ChatFormat | BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
-        tools: Tools | None = None,
+        tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> str | PromptOutputT | ToolCallsResponse:
+    ) -> str | PromptOutputT | list[ToolCall]:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -225,171 +209,86 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Parsed response from LLM or list of tool calls.
         """
-        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            function_schemas: list[dict] | None
-            if tools and callable(tools[0]):
-                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
-            else:
-                function_schemas = cast(list[dict] | None, tools)
-
-            raw_response = await self.generate_raw(prompt, options=options, tools=function_schemas)
-
-            if tools:
-                tool_call_dicts = raw_response["tool_calls"]
-                if tool_call_dicts:
-                    tool_calls = ToolCallsResponse(
-                        tool_calls=[ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts]
-                    )
-                    raw_response["tool_calls"] = tool_calls
-                    outputs.response = raw_response
-                    return tool_calls
-
-            if isinstance(prompt, BasePromptWithParser):
-                response = await prompt.parse_response(raw_response["response"])
-            else:
-                response = cast(PromptOutputT, raw_response["response"])
-            raw_response["response"] = response
-            outputs.response = raw_response
-            return response
+        response = await self.generate_with_metadata(prompt, tools=tools, options=options)
+        return response.tool_calls if tools and response.tool_calls else response.content
 
     @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePromptWithParser[PromptOutputT],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
+        tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-        tools: None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePromptWithParser[PromptOutputT],
+        prompt: str | ChatFormat,
         *,
+        tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: BasePrompt,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: BasePrompt,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: str,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: str,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: ChatFormat,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: ChatFormat,
-        *,
-        options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+    ) -> LLMResponseWithMetadata[str]: ...
 
     async def generate_with_metadata(
         self,
-        prompt: BasePrompt | str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
+        tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]:
+    ) -> LLMResponseWithMetadata[str] | LLMResponseWithMetadata[PromptOutputT]:
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
         output type of the prompt (if available).
 
         Args:
             prompt: Formatted prompt template with conversation and optional response parsing configuration.
+            tools: Functions to be used as tools by the LLM.
             options: Options to use for the LLM client.
-            tools: Functions to be used as tools by LLM.
 
         Returns:
             Text response from LLM with metadata and list of tool calls.
         """
-        with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            function_schemas: list[dict] | None
-            if tools and callable(tools[0]):
-                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
-            else:
-                function_schemas = cast(list[dict] | None, tools)
-
-            raw_response = await self.generate_raw(prompt, options=options, tools=function_schemas)
-
-            if tools:
-                tool_call_dicts = raw_response["tool_calls"]
-                if tool_call_dicts:
-                    tool_calls = ToolCallsResponse(
-                        tool_calls=[ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts]
-                    )
-                    raw_response["tool_calls"] = tool_calls
-
-            content = raw_response.pop("response")
-            tool_calls_response: ToolCallsResponse | None
-            tool_calls_response = (
-                cast(ToolCallsResponse, raw_response.pop("tool_calls")) if "tool_calls" in raw_response else None
+        with trace(name="generate", model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
+            parsed_tools = (
+                [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools]
+                if tools
+                else None
             )
+            raw_response = await self.generate_raw(prompt, options=options, tools=parsed_tools)
+
+            tool_calls = (
+                [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
+                if tools and (_tool_calls := raw_response.pop("tool_calls", []))
+                else None
+            )
+            tool_calls = tool_calls or None
+
+            content = raw_response.pop("response", None)
             if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
+
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
+                tool_calls=tool_calls,
                 metadata=raw_response,
-                tool_calls=tool_calls_response,
             )
-        return outputs.response
+            return outputs.response
 
     async def generate_streaming(
         self,
-        prompt: BasePrompt | str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt,
         *,
+        tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-        tools: Tools | None = None,
-    ) -> AsyncGenerator[str | ToolCallsResponse, None]:
+    ) -> AsyncGenerator[str | list[ToolCall], None]:
         """
         Prepares and sends a prompt to the LLM and streams the results.
 
         Args:
             prompt: Formatted prompt template with conversation.
-            options: Options to use for the LLM client.
-            tools: Functions to be used as tools by LLM.
+            tools: Functions to be used as tools by the LLM.
+            options: Options to use for the LLM.
 
         Returns:
             Response stream from LLM or list of tool calls.
@@ -400,44 +299,28 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             if isinstance(prompt, str | list):
                 prompt = SimplePrompt(prompt)
 
-            function_schemas: list[dict] | None
-            if tools and callable(tools[0]):
-                function_schemas = [self._convert_function_to_function_schema(cast(Callable, tool)) for tool in tools]
-            else:
-                function_schemas = cast(list[dict] | None, tools)
-
-            raw_response = await self._call_streaming(
+            parsed_tools = (
+                [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools]
+                if tools
+                else None
+            )
+            response = await self._call_streaming(
                 prompt=prompt,
                 options=merged_options,
                 json_mode=prompt.json_mode,
                 output_schema=prompt.output_schema(),
-                tools=function_schemas,
+                tools=parsed_tools,
             )
 
             outputs.response = ""
-            async for response_chunk in raw_response:
-                tools_returned = False
-                if tools:
-                    try:
-                        tool_call_dicts = ast.literal_eval(response_chunk)
-                        if (
-                            tool_call_dicts
-                            and isinstance(tool_call_dicts, list)
-                            and isinstance(tool_call_dicts[0], dict)
-                        ):
-                            tool_calls = ToolCallsResponse(
-                                tool_calls=[
-                                    ToolCall.model_validate(tool_call_dict) for tool_call_dict in tool_call_dicts
-                                ]
-                            )
-                            outputs.response = tool_calls
-                            tools_returned = True
-                            yield tool_calls
-                    except (SyntaxError, ValueError):
-                        pass
-                if not tools_returned:
-                    outputs.response += response_chunk  # type: ignore
-                    yield response_chunk
+            async for chunk in response:
+                if content := chunk.get("response"):
+                    outputs.response += content
+                    yield content
+
+                if tools and (tool_calls := chunk.get("tool_calls", [])):
+                    outputs.response = [ToolCall.model_validate(tool_call) for tool_call in tool_calls]
+                    yield outputs.response
 
     @abstractmethod
     async def _call(
@@ -470,7 +353,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[dict, None]:
         """
         Calls LLM inference API with output streaming.
 
@@ -482,190 +365,5 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             tools: Functions to be used as tools by LLM.
 
         Returns:
-            Response stream from LLM or list of tool calls.
+            Response dict stream from LLM.
         """
-
-    # This function was copied with a few changes from openai-agents-python library
-    # https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
-    @staticmethod
-    def _generate_func_documentation(
-        func: Callable[..., Any],
-    ) -> dict:
-        """
-        Extracts metadata from a function docstring, in preparation for sending it to an LLM as a tool.
-
-        Args:
-            func: The function to extract documentation from.
-
-        Returns:
-            A dict containing the function's name, description, and parameter
-            descriptions.
-        """
-        name = func.__name__
-        doc = inspect.getdoc(func)
-        if not doc:
-            return {"name": name, "description": None, "param_descriptions": None}
-
-        with LLM._suppress_griffe_logging():
-            docstring = Docstring(doc, lineno=1, parser="google")
-            parsed = docstring.parse()
-
-        description: str | None = next(
-            (section.value for section in parsed if section.kind == DocstringSectionKind.text), None
-        )
-
-        param_descriptions: dict[str, str] = {
-            param.name: param.description
-            for section in parsed
-            if section.kind == DocstringSectionKind.parameters
-            for param in section.value
-        }
-
-        return {
-            "name": func.__name__,
-            "description": description,
-            "param_descriptions": param_descriptions or None,
-        }
-
-    # This function was copied with a few changes from openai-agents-python library
-    # https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
-    @staticmethod
-    @contextlib.contextmanager
-    def _suppress_griffe_logging() -> Generator:
-        # Suppresses warnings about missing annotations for params
-        logger = logging.getLogger("griffe")
-        previous_level = logger.getEffectiveLevel()
-        logger.setLevel(logging.ERROR)
-        try:
-            yield
-        finally:
-            logger.setLevel(previous_level)
-
-    # This function was copied with a few changes from openai-agents-python library
-    # https://github.com/openai/openai-agents-python/blob/main/src/agents/function_schema.py
-    @staticmethod
-    def _convert_function_to_function_schema(
-        func: Callable[..., Any],
-    ) -> dict:
-        """
-        Given a python function, extracts a `FuncSchema` from it, capturing the name, description,
-        parameter descriptions, and other metadata.
-
-        Args:
-            func: The function to extract the schema from.
-
-        Returns:
-            A dict containing the function's name, description, parameter descriptions,
-            and other metadata.
-        """
-        # 1. Grab docstring info
-        doc_info = LLM._generate_func_documentation(func)
-        param_descs = doc_info["param_descriptions"] or {}
-
-        func_name = doc_info["name"] if doc_info else func.__name__
-
-        # 2. Inspect function signature and get type hints
-        sig = inspect.signature(func)
-        type_hints = get_type_hints(func)
-        params = list(sig.parameters.items())
-        filtered_params = []
-
-        if params:
-            first_name, first_param = params[0]
-            # Prefer the evaluated type hint if available
-            ann = type_hints.get(first_name, first_param.annotation)
-            filtered_params.append((first_name, first_param))
-
-        # For parameters other than the first, raise error if any use RunContextWrapper.
-        for name, param in params[1:]:
-            ann = type_hints.get(name, param.annotation)
-            filtered_params.append((name, param))
-
-        # We will collect field definitions for create_model as a dict:
-        #   field_name -> (type_annotation, default_value_or_Field(...))
-        fields: dict[str, Any] = {}
-
-        for name, param in filtered_params:
-            ann = type_hints.get(name, param.annotation)
-            default = param.default
-
-            # If there's no type hint, assume `Any`
-            if ann == inspect._empty:
-                ann = Any
-
-            # If a docstring param description exists, use it
-            field_description = param_descs.get(name, None)
-
-            # Handle different parameter kinds
-            if param.kind == param.VAR_POSITIONAL:
-                # e.g. *args: extend positional args
-                if get_origin(ann) is tuple:
-                    # e.g. def foo(*args: tuple[int, ...]) -> treat as List[int]
-                    args_of_tuple = get_args(ann)
-                    args_of_tuple_with_ellipsis_length = 2
-                    ann = (
-                        list[args_of_tuple[0]]  # type: ignore
-                        if len(args_of_tuple) == args_of_tuple_with_ellipsis_length and args_of_tuple[1] is Ellipsis
-                        else list[Any]
-                    )
-                else:
-                    # If user wrote *args: int, treat as List[int]
-                    ann = list[ann]  # type: ignore
-
-                # Default factory to empty list
-                fields[name] = (
-                    ann,
-                    Field(default_factory=list, description=field_description),  # type: ignore
-                )
-
-            elif param.kind == param.VAR_KEYWORD:
-                # **kwargs handling
-                if get_origin(ann) is dict:
-                    # e.g. def foo(**kwargs: dict[str, int])
-                    dict_args = get_args(ann)
-                    dict_args_to_check_length = 2
-                    ann = (
-                        dict[dict_args[0], dict_args[1]]  # type: ignore
-                        if len(dict_args) == dict_args_to_check_length
-                        else dict[str, Any]
-                    )  # type: ignore
-                else:
-                    # e.g. def foo(**kwargs: int) -> Dict[str, int]
-                    ann = dict[str, ann]  # type: ignore
-
-                fields[name] = (
-                    ann,
-                    Field(default_factory=dict, description=field_description),  # type: ignore
-                )
-
-            elif default == inspect._empty:
-                # Required field
-                fields[name] = (
-                    ann,
-                    Field(..., description=field_description),
-                )
-            else:
-                # Parameter with a default value
-                fields[name] = (
-                    ann,
-                    Field(default=default, description=field_description),
-                )
-
-        # 3. Dynamically build a Pydantic model
-        dynamic_model = create_model(f"{func_name}_args", __base__=BaseModel, **fields)
-
-        # 4. Build JSON schema from that model
-        json_schema = dynamic_model.model_json_schema()
-
-        return {
-            "type": "function",
-            "function": {
-                "name": func_name,
-                "description": doc_info["description"] if doc_info else None,
-                "parameters": {
-                    "type": "object",
-                    "properties": json_schema["properties"],
-                    "required": json_schema["required"],
-                },
-            },
-        }

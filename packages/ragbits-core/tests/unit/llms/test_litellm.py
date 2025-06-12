@@ -7,11 +7,12 @@ from litellm import Message, Router, Usage
 from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
 from pydantic import BaseModel
 
-from ragbits.core.llms.base import ToolCall, ToolCallsResponse
+from ragbits.core.llms.base import ToolCall
 from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUse
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
+from ragbits.core.utils.function_schema import convert_function_to_function_schema
 
 
 class MockPrompt(BasePrompt):
@@ -179,8 +180,7 @@ async def test_generation_with_tools(mock_supports_function_calling: MagicMock):
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
     output = await llm.generate(prompt, tools=[get_weather])
-    assert isinstance(output, ToolCallsResponse)
-    assert output.tool_calls == [
+    assert output == [
         ToolCall(  # type: ignore
             tool_arguments='{"location":"San Francisco"}',  # type: ignore
             tool_name="get_weather",
@@ -197,10 +197,9 @@ async def test_generation_with_tools_as_function_schemas(mock_supports_function_
     llm = LiteLLM(api_key="test_key")
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
-    function_schema = llm._convert_function_to_function_schema(get_weather)
+    function_schema = convert_function_to_function_schema(get_weather)
     output = await llm.generate(prompt, tools=[function_schema])
-    assert isinstance(output, ToolCallsResponse)
-    assert output.tool_calls == [
+    assert output == [
         ToolCall(  # type: ignore
             tool_arguments='{"location":"San Francisco"}',  # type: ignore
             tool_name="get_weather",
@@ -307,7 +306,7 @@ async def test_generation_with_metadata_and_tools(mock_supports_function_calling
     prompt = MockPrompt("Hello, tell me about weather in San Francisco.")
     mock_llm_responses_with_tool(llm)
     output = await llm.generate_with_metadata(prompt, tools=[get_weather])
-    assert output.tool_calls.tool_calls == [  # type: ignore
+    assert output.tool_calls == [  # type: ignore
         ToolCall(  # type: ignore
             tool_arguments='{"location":"San Francisco"}',  # type: ignore
             tool_name="get_weather",

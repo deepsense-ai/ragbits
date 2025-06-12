@@ -154,6 +154,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUse()
 
@@ -228,7 +229,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[dict, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
@@ -270,9 +271,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
-        async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
+        async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[dict, None]:
             output_tokens = 0
-            tool_call_dicts: list[dict] = []
+            tool_calls: list[dict] = []
+
             async for item in response:
                 if content := item.choices[0].delta.content:
                     output_tokens += 1
@@ -283,20 +285,27 @@ class LiteLLM(LLM[LiteLLMOptions]):
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
-                    yield content
-                elif tool_calls := item.choices[0].delta.tool_calls:
-                    for tcchunk in tool_calls:
-                        while len(tool_call_dicts) <= tcchunk.index:
-                            tool_call_dicts.append(
+                    yield {"response": content}
+
+                if tool_calls_delta := item.choices[0].delta.tool_calls:
+                    for tool_call_chunk in tool_calls_delta:
+                        while len(tool_calls) <= tool_call_chunk.index:
+                            tool_calls.append(
                                 {"tool_call_id": "", "tool_type": "", "tool_name": "", "tool_arguments": ""}
                             )
-                        tc = tool_call_dicts[tcchunk.index]
-                        tc["tool_call_id"] += tcchunk.id or ""
-                        tc["tool_type"] += tcchunk.type if tcchunk.type and tcchunk.type != tc["tool_type"] else ""
-                        tc["tool_name"] += tcchunk.function.name or ""
-                        tc["tool_arguments"] += tcchunk.function.arguments or ""
-            if tool_call_dicts:
-                yield str(tool_call_dicts)
+
+                        tool_calls[tool_call_chunk.index]["tool_call_id"] += tool_call_chunk.id or ""
+                        tool_calls[tool_call_chunk.index]["tool_type"] += (
+                            tool_call_chunk.type
+                            if tool_call_chunk.type
+                            and tool_call_chunk.type != tool_calls[tool_call_chunk.index]["tool_type"]
+                            else ""
+                        )
+                        tool_calls[tool_call_chunk.index]["tool_name"] += tool_call_chunk.function.name or ""
+                        tool_calls[tool_call_chunk.index]["tool_arguments"] += tool_call_chunk.function.arguments or ""
+
+            if tool_calls:
+                yield {"tool_calls": tool_calls}
 
             total_time = time.perf_counter() - start_time
 

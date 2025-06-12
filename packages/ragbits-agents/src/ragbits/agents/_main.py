@@ -16,7 +16,7 @@ class AgentResult(Generic[PromptOutputT]):
     Result of the agent run.
     """
 
-    content: PromptOutputT
+    content: str | PromptOutputT
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
