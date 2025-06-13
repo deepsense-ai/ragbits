@@ -1,29 +1,22 @@
-import { Button, cn, ScrollShadow, useDisclosure } from "@heroui/react";
+import { Button, cn, ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
-import {
-  FeedbackFormPlugin,
-  FeedbackFormPluginName,
-} from "./plugins/FeedbackFormPlugin";
-import PluginWrapper from "./core/utils/plugins/PluginWrapper.tsx";
-import { FeedbackType, useRagbitsCall } from "ragbits-api-client-react";
+import { FeedbackFormPluginName } from "./plugins/FeedbackPlugin/index.tsx";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
+import { useConfigContext } from "./contexts/ConfigContext/useConfigContext.ts";
 
 export default function App() {
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const [feedbackName, setFeedbackName] = useState<FeedbackType>();
-  const [feedbackMessageId, setFeedbackMessageId] = useState<string | null>(
-    null,
-  );
+  const { config } = useConfigContext();
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -32,24 +25,7 @@ export default function App() {
     isLoading: historyIsLoading,
   } = useHistoryContext();
   const { theme } = useThemeContext();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const isFeedbackFormPluginActivated = pluginManager.isPluginActivated(
-    FeedbackFormPluginName,
-  );
   const showHistory = useMemo(() => history.length > 0, [history.length]);
-
-  // Use the new generic hooks
-  const config = useRagbitsCall("/api/config");
-  const feedback = useRagbitsCall("/api/feedback", {
-    method: "POST",
-  });
-
-  // Load config on mount
-  useEffect(() => {
-    if (!config.data && !config.isLoading) {
-      config.call().catch(console.error);
-    }
-  }, [config]);
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -71,18 +47,12 @@ export default function App() {
     }
   }, []);
 
+  // TODO: Might consider moving all default plugins activation to ConfigContextProvider
   useEffect(() => {
-    if (!config.data) {
-      return;
-    }
-
-    if (
-      config.data.feedback.like.enabled ||
-      config.data.feedback.dislike.enabled
-    ) {
+    if (config.feedback.like.enabled || config.feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
     }
-  }, [config.data]);
+  }, [config]);
 
   useEffect(() => {
     setShouldAutoScroll(true);
@@ -121,33 +91,6 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
-    try {
-      await feedback.call({
-        body: {
-          message_id: feedbackMessageId!,
-          feedback: feedbackName!,
-          payload: data,
-        },
-      });
-    } catch (e) {
-      console.error(e);
-      // TODO: Add some information to the UI about error
-    }
-  };
-
-  const onOpenFeedbackForm = async (id: string, name: typeof feedbackName) => {
-    setFeedbackName(name);
-    setFeedbackMessageId(id);
-
-    if (config.data!.feedback[name!].form === null) {
-      await onFeedbackFormSubmit(null);
-      return;
-    }
-
-    onOpen();
-  };
-
   const handleSubmit = () => {
     sendMessage(message);
     setMessage("");
@@ -162,15 +105,7 @@ You can ask me anything! I can provide information, answer questions, and assist
       ref={scrollContainerRef}
     >
       {history.map((m) => (
-        <ChatMessage
-          key={m.id}
-          chatMessage={m}
-          onOpenFeedbackForm={
-            isFeedbackFormPluginActivated ? onOpenFeedbackForm : undefined
-          }
-          likeForm={config.data?.feedback.like.form || null}
-          dislikeForm={config.data?.feedback.dislike.form || null}
-        />
+        <ChatMessage key={m.id} chatMessage={m} />
       ))}
     </ScrollShadow>
   );
@@ -192,7 +127,6 @@ You can ask me anything! I can provide information, answer questions, and assist
   );
 
   const content = showHistory ? historyComponent : heroComponent;
-  const isLoading = config.isLoading || historyIsLoading;
 
   return (
     <div
@@ -223,7 +157,7 @@ You can ask me anything! I can provide information, answer questions, and assist
 
             <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
               <PromptInput
-                isLoading={isLoading}
+                isLoading={historyIsLoading}
                 submit={handleSubmit}
                 message={message}
                 setMessage={setMessage}
@@ -232,19 +166,6 @@ You can ask me anything! I can provide information, answer questions, and assist
           </div>
         </Layout>
       </div>
-      <PluginWrapper
-        plugin={FeedbackFormPlugin}
-        component="FeedbackFormComponent"
-        componentProps={{
-          title:
-            config.data?.feedback[feedbackName!]?.form?.title ??
-            "Feedback form",
-          schema: config.data?.feedback[feedbackName!]?.form ?? null,
-          onClose: onOpenChange,
-          onSubmit: onFeedbackFormSubmit,
-          isOpen,
-        }}
-      />
     </div>
   );
 }
