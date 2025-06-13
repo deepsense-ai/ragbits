@@ -340,6 +340,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "messages": conversation,
             "model": self.model_name,
             "response_format": response_format,
+            "tools": tools,
             "stream": stream,
             **options.dict(),
         }
