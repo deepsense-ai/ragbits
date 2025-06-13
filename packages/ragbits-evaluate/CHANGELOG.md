@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix deadlock on qa metrics compute (#609)
+- Introduce base classes for evaluators and optimizers (#622)
 
 ## 1.0.0 (2025-06-04)
 
