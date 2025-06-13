@@ -61,14 +61,3 @@ class LLMNotSupportingToolUse(LLMError):
 
     def __init__(self, message: str = "There are tools provided, but given LLM doesn't support tool use.") -> None:
         super().__init__(message)
-
-
-class NotSupportedToolInResponse(LLMError):
-    """
-    Raised when there is a tool type returned by an LLM that is not supported.
-    """
-
-    def __init__(
-        self, tool_type: str, message: str = "There is a tool call in LLM response of type that is not supported: "
-    ) -> None:
-        super().__init__(message + tool_type)

@@ -1,11 +1,12 @@
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
+from inspect import iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
+from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, ToolCall
-from ragbits.core.llms.exceptions import NotSupportedToolInResponse
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -128,7 +129,13 @@ class Agent(
             if response.tool_calls:
                 for tool_call in response.tool_calls.tool_calls:
                     if tool_call.tool_type == "function":
-                        tool_call_result = self.tools_mapping[tool_call.tool_name](**tool_call.tool_arguments)
+                        if tool_call.tool_name not in self.tools_mapping:
+                            raise AgentNotAvailableToolSelectedError(tool_call.tool_name)
+                        function_to_call = self.tools_mapping[tool_call.tool_name]
+                        if iscoroutinefunction(function_to_call):
+                            tool_call_result = await function_to_call(**tool_call.tool_arguments)
+                        else:
+                            tool_call_result = function_to_call(**tool_call.tool_arguments)
                         prompt = prompt.add_tool_use_message(
                             tool_call.tool_call_id,
                             tool_call.tool_name,
@@ -136,7 +143,7 @@ class Agent(
                             str(tool_call_result),
                         )
                     else:
-                        raise NotSupportedToolInResponse(tool_call.tool_type)
+                        raise AgentNotSupportedToolInResponseError(tool_call.tool_type)
                     yield AgentResult(
                         content=response.content,
                         metadata=response.metadata,
