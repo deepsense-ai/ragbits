@@ -6,6 +6,9 @@
 
 [Homepage](https://deepsense.ai/rd-hub/ragbits/) | [Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
 
+<a href="https://trendshift.io/repositories/13966" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13966" alt="deepsense-ai%2Fragbits | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+
+
 [![PyPI - License](https://img.shields.io/pypi/l/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Version](https://img.shields.io/pypi/v/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ragbits)](https://pypi.org/project/ragbits)
@@ -229,7 +232,7 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 
 ## Documentation
 
-- [Tutorials](https://ragbits.deepsense.ai/tutorials/intro) - Get started with Ragbits in a few minutes
+- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
 - [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting) - Learn how to use Ragbits in your projects
 - [CLI](https://ragbits.deepsense.ai/cli/main) - Learn how to run Ragbits in your terminal
 - [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt) - Explore the underlying Ragbits API
