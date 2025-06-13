@@ -24,7 +24,7 @@ from ragbits.document_search.documents.document import Document, DocumentType
 from ragbits.document_search.documents.element import Element, TextElement
 from ragbits.document_search.ingestion.parsers import DocumentParser
 
-# for truncating >99th percentile of documents
+# truncate long docs
 MAX_CHARACTERS = 6000
 
 class RAGQADocumentParser(DocumentParser):
@@ -43,7 +43,7 @@ class RAGQADocumentParser(DocumentParser):
 
 Now we will configure our document search pipeline using Qdrant as the vector database and OpenAI's embeddings for semantic search. We will also ingest the data into our vector store.
 
-```python
+```python hl_lines="17"
 from qdrant_client import AsyncQdrantClient
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.vector_stores import VectorStoreOptions
@@ -127,26 +127,26 @@ The syntax below with [`Agent`][ragbits.agents.Agent] allows you to connect a fe
 
 The [`Agent`][ragbits.agents.Agent] class allows you to connect retrieval and generation components together, creating a pipeline that can be evaluated and optimized as a whole. Here's how we create a RAG agent that inherits from `QuestionAnswerAgent` that we used in the previous tutorial.
 
-```python
+```python hl_lines="5 7"
 from ragbits.agents import AgentOptions, AgentResult
 from ragbits.agents.types import QuestionAnswerAgent
 
 class QuestionAnswerAgentWithRAG(QuestionAnswerAgent):
-    async def run(self, input: QuestionAnswerPromptInput, options: AgentOptions | None = None) -> AgentResult[QuestionAnswerPromptOutput]:
+    async def run(self, input: QuestionAnswerPromptInput, options: AgentOptions | None = None) -> AgentResult[CoTQuestionAnswerPromptOutput]:
         context = await retriever.search(input.question)
         return await super().run(QuestionAnswerPromptInput(question=input.question, context=context))
 ```
 
 Now let's put it all together and test our RAG pipeline.
 
-```python
+```python hl_lines="4"
 from ragbits.core.llms import LiteLLM
 
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
 rag = QuestionAnswerAgentWithRAG(llm=llm, prompt=CoTQuestionAnswerPrompt)
 ```
 
-```python
+```python hl_lines="2-4"
 async def main() -> None:
     response = await rag.run(QuestionAnswerPromptInput(
         question="What are high memory and low memory on linux?",
@@ -168,7 +168,7 @@ programs or caches, and accessing it involves special handling like calling kmap
 
 In [the previous tutorial](./intro.md) with a simple CoT prompt, we got around 68% in terms of answer correctness on our devset. Would this RAG pipeline score better?
 
-```python
+```python hl_lines="26"
 from ragbits.core.sources import WebSource
 from ragbits.evaluate.dataloaders.question_answer import QuestionAnswerDataLoader
 from ragbits.evaluate.evaluator import Evaluator
@@ -177,7 +177,7 @@ from ragbits.evaluate.metrics.question_answer import QuestionAnswerAnswerCorrect
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerPipeline
 
 async def main() -> None:
-    # Define data loader
+    # Define the data loader
     source = WebSource(url="https://huggingface.co/datasets/deepsense-ai/ragbits/resolve/main/ragqa_arena_tech_examples.jsonl")
     dataloader=QuestionAnswerDataLoader(
         source=source,
@@ -186,11 +186,11 @@ async def main() -> None:
         answer_key="response",
     )
 
-    # Define metric
+    # Define the metric
     judge = LiteLLM(model_name="gpt-4.1")
     metric = QuestionAnswerAnswerCorrectness(judge)
 
-    # Run evaluation
+    # Run the evaluation
     evaluator = Evaluator()
     results = await evaluator.compute(
         dataloader=dataloader,
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 ```
 
 ```python
-{'LLM_based_answer_correctness': 0.81625}
+{'LLM_based_answer_correctness': 0.81625} # Your result may differ
 ```
 
 ## Conclusions
