@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from typing import Generic, ParamSpec, TypeVar
@@ -41,6 +42,32 @@ class EvaluatorResult(Generic[EvaluationResultT]):
     time_perf: EvaluationTimePerf
 
 
+class BaseEvaluator(WithConstructionConfig, ABC):
+    """
+    Base class for evaluators.
+    """
+
+    @abstractmethod
+    async def compute(
+        self,
+        pipeline: EvaluationPipeline[EvaluationTargetT, EvaluationDataT, EvaluationResultT],
+        dataloader: DataLoader[EvaluationDataT],
+        metricset: MetricSet[EvaluationResultT],
+    ) -> EvaluatorResult[EvaluationResultT]:
+        """
+        Compute the evaluation results for the given pipeline and data.
+
+        Args:
+            pipeline: The pipeline to be evaluated.
+            dataloader: The dataloader to load the data.
+            metricset: The metrics to be computed.
+
+        Returns:
+            The evaluation results.
+        """
+        raise NotImplementedError
+
+
 class EvaluationConfig(BaseModel):
     """
     Schema for the evaluation run config.
@@ -60,7 +87,7 @@ class EvaluatorConfig(BaseModel):
     evaluator: dict | None = None
 
 
-class Evaluator(WithConstructionConfig):
+class Evaluator(BaseEvaluator):
     """
     Evaluator class.
     """

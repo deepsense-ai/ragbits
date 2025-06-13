@@ -1,5 +1,6 @@
 import asyncio
 import warnings
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from copy import deepcopy
 
@@ -25,7 +26,37 @@ class OptimizerConfig(BaseModel):
     neptune_callback: bool = False
 
 
-class Optimizer(WithConstructionConfig):
+class BaseOptimizer(WithConstructionConfig, ABC):
+    """
+    Base class for optimizers.
+    """
+
+    @abstractmethod
+    def optimize(
+        self,
+        pipeline_class: type[EvaluationPipeline],
+        pipeline_config: dict,
+        dataloader: DataLoader,
+        metricset: MetricSet,
+        callbacks: list[Callable] | None = None,
+    ) -> list[tuple[dict, float, dict[str, float]]]:
+        """
+        Run the optimization process for given parameters.
+
+        Args:
+            pipeline_class: Pipeline to be optimized.
+            pipeline_config: Configuration defining the optimization process.
+            dataloader: Data loader.
+            metricset: Metrics to be optimized.
+            callbacks: Experiment callbacks.
+
+        Returns:
+            List of tested configs with associated scores and metrics.
+        """
+        raise NotImplementedError
+
+
+class Optimizer(BaseOptimizer):
     """
     Optimizer class.
     """
