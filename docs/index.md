@@ -273,7 +273,6 @@ if __name__ == "__main__":
     RagbitsAPI(MyChat).run()
 ```
 
-
 ## Rapid development
 
 Create Ragbits projects from templates:
@@ -290,3 +289,7 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 - [How-to](how-to/prompts/use_prompting.md) - Learn how to use Ragbits in your projects
 - [CLI](cli/main.md) - Learn how to run Ragbits in your terminal
 - [API reference](api_reference/core/prompt.md) - Explore the underlying Ragbits API
+
+## License
+
+Ragbits is licensed under the [MIT License](https://github.com/deepsense-ai/ragbits/tree/main/LICENSE).

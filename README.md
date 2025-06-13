@@ -174,8 +174,7 @@ from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.base import ChatFormat
+from ragbits.core.prompt import Prompt, ChatFormat
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.element import Element
