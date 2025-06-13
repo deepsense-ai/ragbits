@@ -167,7 +167,7 @@ if __name__ == "__main__":
 To expose your RAG application through Ragbits UI:
 
 ```python
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable
 from pydantic import BaseModel
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
@@ -181,7 +181,7 @@ from ragbits.document_search.documents.element import Element
 
 class QuestionAnswerPromptInput(BaseModel):
     question: str
-    context: list[Element]
+    context: Iterable[Element]
 
 class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     system_prompt = """
