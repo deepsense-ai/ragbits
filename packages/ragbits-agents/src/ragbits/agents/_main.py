@@ -1,9 +1,12 @@
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
+from inspect import iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
-from ragbits.core.llms.base import LLM, LLMClientOptionsT
+from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, ToolCall
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -16,10 +19,14 @@ class AgentResult(Generic[PromptOutputT]):
     Result of the agent run.
     """
 
-    content: PromptOutputT
+    content: PromptOutputT | str
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
+    tool_call: ToolCall | None = None
+    """Tool call returned by the LLM."""
+    tool_call_result: str | None = None
+    """Result of tool call returned by the LLM."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -50,6 +57,7 @@ class Agent(
         prompt: type[Prompt[PromptInputT, PromptOutputT]],
         *,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
+        tools: list[Callable] | None = None,
     ) -> None:
         """
         Initialize the agent instance.
@@ -58,10 +66,12 @@ class Agent(
             llm: The LLM to use.
             prompt: The prompt to use.
             default_options: The default options for the agent run.
+            tools: Functions to be used as tools by LLM.
         """
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
+        self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
 
     @overload
     async def run(
@@ -93,10 +103,53 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
 
-        prompt = self.prompt(input)
-        response = await self.llm.generate_with_metadata(prompt, options=llm_options)
+        async for _response in self.iter(input, llm_options):
+            pass
 
-        return AgentResult(
-            content=response.content,  # type: ignore
-            metadata=response.metadata,
-        )
+        return _response
+
+    async def iter(
+        self, input: PromptInputT, options: LLMClientOptionsT | None = None
+    ) -> AsyncGenerator[AgentResult[PromptOutputT], None]:
+        """
+        AsyncGenerator object that can be used to iterate over agent responses.
+
+        Args:
+             input: The input for the agent run.
+             options: The options for the agent run.
+
+        Returns:
+            The result of the agent run.
+        """
+        prompt = self.prompt(input)
+        while True:
+            response = await self.llm.generate_with_metadata(
+                prompt, options=options, tools=list(self.tools_mapping.values())
+            )
+            if response.tool_calls:
+                for tool_call in response.tool_calls:
+                    if tool_call.type == "function":
+                        if tool_call.name not in self.tools_mapping:
+                            raise AgentNotAvailableToolSelectedError(tool_call.name)
+                        function_to_call = self.tools_mapping[tool_call.name]
+                        if iscoroutinefunction(function_to_call):
+                            tool_call_result = await function_to_call(**tool_call.arguments)
+                        else:
+                            tool_call_result = function_to_call(**tool_call.arguments)
+                        prompt = prompt.add_tool_use_message(
+                            tool_call.id,
+                            tool_call.name,
+                            str(tool_call.arguments),
+                            str(tool_call_result),
+                        )
+                    else:
+                        raise AgentNotSupportedToolInResponseError(tool_call.type)
+                    yield AgentResult(
+                        content=response.content,
+                        metadata=response.metadata,
+                        tool_call=tool_call,
+                        tool_call_result=str(tool_call_result),
+                    )
+            else:
+                break
+        yield AgentResult(content=response.content, metadata=response.metadata)

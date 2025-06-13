@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add tools to Agent interface (#568)
 - Fix AgentResult typing (#600)
 
 ## 1.0.0 (2025-06-04)

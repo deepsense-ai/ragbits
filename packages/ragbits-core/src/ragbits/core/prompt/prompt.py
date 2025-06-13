@@ -273,6 +273,40 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._conversation_history.append({"role": "assistant", "content": str(message)})
         return self
 
+    def add_tool_use_message(
+        self, tool_call_id: str, tool_name: str, tool_arguments: str, tool_call_result: str
+    ) -> "Prompt[PromptInputT, PromptOutputT]":
+        """
+        Add tool call messages to the conversation history.
+
+        Args:
+            tool_call_id: id of the tool call.
+            tool_name: name of the tool.
+            tool_arguments: arguments of the tool.
+            tool_call_result: the tool call result.
+
+        Returns:
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
+        """
+        self._conversation_history.append(
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": tool_call_id,
+                        "type": "function",
+                        "function": {
+                            "name": tool_name,
+                            "arguments": tool_arguments,
+                        },
+                    }
+                ],
+            }
+        )
+        self._conversation_history.append({"role": "tool", "tool_call_id": tool_call_id, "content": tool_call_result})
+        return self
+
     def list_images(self) -> list[str]:
         """
         Returns the images in form of URLs or base64 encoded strings.
@@ -283,6 +317,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return [
             content["image_url"]["url"]
             for message in self.chat
+            if message["content"]
             for content in message["content"]
             if isinstance(message["content"], list) and content["type"] == "image_url"
         ]
