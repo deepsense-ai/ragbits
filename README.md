@@ -72,10 +72,7 @@ from ragbits.core.prompt import Prompt
 class QuestionAnswerPromptInput(BaseModel):
     question: str
 
-class QuestionAnswerPromptOutput(BaseModel):
-    answer: str
-
-class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     system_prompt = """
     You are a question answering agent. Answer the question to the best of your ability.
     """
@@ -83,12 +80,12 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromp
     Question: {{ question }}
     """
 
-llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+llm = LiteLLM(model_name="gpt-4.1-nano")
 
 async def main() -> None:
     prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question="What are high memory and low memory on linux?"))
     response = await llm.generate(prompt)
-    print(response.answer)
+    print(response)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -123,78 +120,18 @@ To build a simple RAG pipeline:
 
 ```python
 import asyncio
+from collections.abc import Iterable
 from pydantic import BaseModel
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.element import Element
 
 class QuestionAnswerPromptInput(BaseModel):
     question: str
-    context: list[str]
-
-class QuestionAnswerPromptOutput(BaseModel):
-    answer: str
-
-class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, QuestionAnswerPromptOutput]):
-    system_prompt = """
-    You are a question answering agent. Answer the question that will be provided using context.
-    If in the given context there is not enough information refuse to answer.
-    """
-    user_prompt = """
-    Question: {{ question }}
-    Context: {% for item in context %}
-        {{ item }}
-    {%- endfor %}
-    """
-
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
-vector_store = InMemoryVectorStore(embedder=embedder)
-document_search = DocumentSearch(vector_store=vector_store)
-llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
-
-async def run() -> None:
-    question = "What are the key findings presented in this paper?"
-
-    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
-    result = await document_search.search(question)
-
-    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
-        question=question,
-        context=[element.text_representation for element in result],
-    ))
-    response = await llm.generate(prompt)
-    print(response.answer)
-
-if __name__ == "__main__":
-    asyncio.run(run())
-```
-
-### Chatbot interface with UI
-
-To expose your RAG application through Ragbits UI:
-
-```python
-from collections.abc import AsyncGenerator
-
-from pydantic import BaseModel
-
-from ragbits.chat.api import RagbitsAPI
-from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.base import ChatFormat
-from ragbits.core.vector_stores import InMemoryVectorStore
-from ragbits.document_search import DocumentSearch
-
-
-class QuestionAnswerPromptInput(BaseModel):
-    question: str
-    context: list[str]
-
+    context: Iterable[Element]
 
 class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     system_prompt = """
@@ -203,19 +140,65 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     """
     user_prompt = """
     Question: {{ question }}
-    Context: {% for item in context %}{{ item }}{%- endfor %}
+    Context: {% for chunk in context %}{{ chunk.text_representation }}{%- endfor %}
     """
 
+llm = LiteLLM(model_name="gpt-4.1-nano")
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
+
+async def run() -> None:
+    question = "What are the key findings presented in this paper?"
+
+    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+    chunks = await document_search.search(question)
+
+    prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question=question, context=chunks))
+    response = await llm.generate(prompt)
+    print(response)
+
+if __name__ == "__main__":
+    asyncio.run(run())
+```
+
+### Chat UI
+
+To expose your RAG application through Ragbits UI:
+
+```python
+from collections.abc import AsyncGenerator, Iterable
+from pydantic import BaseModel
+from ragbits.chat.api import RagbitsAPI
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatContext, ChatResponse
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt, ChatFormat
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.documents.element import Element
+
+class QuestionAnswerPromptInput(BaseModel):
+    question: str
+    context: Iterable[Element]
+
+class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
+    system_prompt = """
+    You are a question answering agent. Answer the question that will be provided using context.
+    If in the given context there is not enough information refuse to answer.
+    """
+    user_prompt = """
+    Question: {{ question }}
+    Context: {% for chunk in context %}{{ chunk.text_representation }}{%- endfor %}
+    """
 
 class MyChat(ChatInterface):
-    """Chat interface for fullapp application."""
-
     async def setup(self) -> None:
+        self.llm = LiteLLM(model_name="gpt-4.1-nano")
         self.embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
         self.vector_store = InMemoryVectorStore(embedder=self.embedder)
         self.document_search = DocumentSearch(vector_store=self.vector_store)
-        self.llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
-
         await self.document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
 
     async def chat(
@@ -224,23 +207,14 @@ class MyChat(ChatInterface):
         history: ChatFormat | None = None,
         context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
-        # Search for relevant documents
-        result = await self.document_search.search(message)
-
-        prompt = QuestionAnswerPrompt(
-            QuestionAnswerPromptInput(
-                question=message,
-                context=[element.text_representation for element in result],
-            )
-        )
-
-        # Stream the response from the LLM
-        async for chunk in self.llm.generate_streaming(prompt):
-            yield self.create_text_response(chunk)
-
+        chunks = await self.document_search.search(message)
+        prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question=message, context=chunks))
+        async for text in self.llm.generate_streaming(prompt):
+            yield self.create_text_response(text)
 
 if __name__ == "__main__":
-    RagbitsAPI(MyChat).run()
+    api = RagbitsAPI(MyChat)
+    api.run()
 ```
 
 ## Rapid development
@@ -255,10 +229,10 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 
 ## Documentation
 
-- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
-- [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/) - Learn how to use Ragbits in your projects
-- [CLI](https://ragbits.deepsense.ai/cli/main/) - Learn how to run Ragbits in your terminal
-- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt/) - Explore the underlying Ragbits API
+- [Tutorials](https://ragbits.deepsense.ai/tutorials/intro) - Get started with Ragbits in a few minutes
+- [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting) - Learn how to use Ragbits in your projects
+- [CLI](https://ragbits.deepsense.ai/cli/main) - Learn how to run Ragbits in your terminal
+- [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt) - Explore the underlying Ragbits API
 
 ## Contributing
 
