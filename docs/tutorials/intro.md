@@ -61,7 +61,7 @@ directly address all memory with its own address space.
 
 You can further and experiment with different prompting techniques like chain-of-thought in order to elicit reasoning out of your model before it commits to the answer.
 
-```python
+```python hl_lines="1-5"
 class CoTQuestionAnswerPromptOutput(BaseModel):
     reason: str
     answer: str
@@ -78,7 +78,7 @@ class CoTQuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, CoTQuestionAnswe
 
 Note that we have added a schema for the response, you can use it for structured output to get more predictable results by setting `use_structured_output=True` flag.
 
-```python
+```python hl_lines="3-5"
 async def main() -> None:
     llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
     prompt = CoTQuestionAnswerPrompt(QuestionAnswerPromptInput(
@@ -106,7 +106,7 @@ Interestingly, asking for reasoning can make the output answer shorter in this c
 
 Ragbits provides evalution for second layer components, such as [`DocumentSearch`][ragbits.document_search.DocumentSearch] or [`Agent`][ragbits.agents.Agent]. To run the evaluation on LLM, you must use it through the [`Agent`][ragbits.agents.Agent] object.
 
-```python
+```python hl_lines="4"
 from ragbits.agents.types import QuestionAnswerAgent
 
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
@@ -158,7 +158,7 @@ judge = LiteLLM(model_name="gpt-4.1")
 metric = QuestionAnswerAnswerCorrectness(judge)
 ```
 
-```python
+```python hl_lines="5-7"
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerResult
 
 async def main() -> None:
@@ -183,7 +183,7 @@ if __name__ == "__main__":
 
 For evaluation, you could use the metric above in a simple loop and just average the score. But for nice parallelism and utilities, we can rely on [`Evaluator`][ragbits.evaluate.evaluator.Evaluator].
 
-```python
+```python hl_lines="8-10"
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics import MetricSet
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerPipeline
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 ```
 
 ```python
-{'LLM_based_answer_correctness': 0.68}
+{'LLM_based_answer_correctness': 0.68} # Your result may differ
 ```
 
 ## Conclusions
