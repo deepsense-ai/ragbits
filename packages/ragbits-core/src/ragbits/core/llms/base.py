@@ -41,6 +41,8 @@ class ToolCall(BaseModel):
 
     name: str
     arguments: dict
+    id: str
+    type: str
     model_config = ConfigDict(extra="allow")
 
     @field_validator("arguments", mode="before")

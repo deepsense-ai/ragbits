@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add tools to Agent interface (#568)
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
 
