@@ -41,9 +41,9 @@ class RAGQADocumentParser(DocumentParser):
         ]
 ```
 
-Now we will configure our document search pipeline using Qdrant as the vector database and OpenAI's embeddings for semantic search. We will also ingest the data into our vector store.
+Now we will configure our document search pipeline using Qdrant as the vector database and OpenAI's embeddings for semantic search. We will also use our newly created document parser to parse the corpus data.
 
-```python hl_lines="17"
+```python hl_lines="11 12 17"
 from qdrant_client import AsyncQdrantClient
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.vector_stores import VectorStoreOptions
@@ -63,6 +63,8 @@ retriever = DocumentSearch(
     parser_router=DocumentParserRouter({DocumentType.JSONL: RAGQADocumentParser()}),
 )
 ```
+
+In order to ingest the data, we run the [`ingest`][ragbits.document_search.DocumentSearch.ingest] method on our retriever. The index will be saved in the `ragqa_arena_tech_corpus` folder. The ingest process may take about 2 minutes.
 
 ```python
 import asyncio
@@ -94,9 +96,9 @@ In the previous tutorial, we looked at the low-level Ragbits components in isola
 
 What if we want to build a pipeline that has multiple steps? For RAG, we need to combine retrieval and generation seamlessly. Let's start by creating prompts that can handle both questions and retrieved context.
 
-First, we'll create prompts that can work with retrieved context. Notice how we modify our input model to accept both a question and optional context from our retriever.
+First, we will create prompts that can work with retrieved context. Notice how we modify our input model to accept both a question and optional context from our retriever.
 
-```python
+```python hl_lines="9 23"
 from collections.abc import Sequence
 
 from pydantic import BaseModel
@@ -127,7 +129,7 @@ The syntax below with [`Agent`][ragbits.agents.Agent] allows you to connect a fe
 
 The [`Agent`][ragbits.agents.Agent] class allows you to connect retrieval and generation components together, creating a pipeline that can be evaluated and optimized as a whole. Here's how we create a RAG agent that inherits from `QuestionAnswerAgent` that we used in the previous tutorial.
 
-```python hl_lines="5 7"
+```python hl_lines="6"
 from ragbits.agents import AgentOptions, AgentResult
 from ragbits.agents.types import QuestionAnswerAgent
 
@@ -139,18 +141,16 @@ class QuestionAnswerAgentWithRAG(QuestionAnswerAgent):
 
 Now let's put it all together and test our RAG pipeline.
 
-```python hl_lines="4"
+```python
 from ragbits.core.llms import LiteLLM
 
 llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
 rag = QuestionAnswerAgentWithRAG(llm=llm, prompt=CoTQuestionAnswerPrompt)
 ```
 
-```python hl_lines="2-4"
+```python
 async def main() -> None:
-    response = await rag.run(QuestionAnswerPromptInput(
-        question="What are high memory and low memory on linux?",
-    ))
+    response = await rag.run(QuestionAnswerPromptInput(question="What are high memory and low memory on linux?"))
     print(response.content.answer)
 
 if __name__ == "__main__":
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 ```
 
 ```python
-{'LLM_based_answer_correctness': 0.81625} # Your result may differ
+{'LLM_based_answer_correctness': 0.81625}  # Your result may differ
 ```
 
 ## Conclusions
