@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingToolUseError,
     LLMResponseError,
     LLMStatusError,
 )
@@ -128,6 +129,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -137,7 +139,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
-            Only used if the client has been initialized with `use_structured_output=True`.
+                Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response string from LLM.
@@ -147,9 +150,13 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+
+        if tools and not litellm.supports_function_calling(self.model_name):
+            raise LLMNotSupportingToolUseError()
 
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
 
@@ -158,6 +165,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
+            tools=tools,
         )
         prompt_throughput = time.perf_counter() - start_time
 
@@ -165,6 +173,19 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMEmptyResponseError()
 
         results = {}
+        results["tool_calls"] = (
+            [
+                {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                    "type": tool_call.type,
+                    "id": tool_call.id,
+                }
+                for tool_call in tool_calls
+            ]
+            if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
+            else None
+        )
         results["response"] = response.choices[0].message.content  # type: ignore
 
         if options.logprobs:
@@ -203,7 +224,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> AsyncGenerator[str, None]:
+        tools: list[dict] | None = None,
+    ) -> AsyncGenerator[dict, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
@@ -212,7 +234,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format.
             output_schema: Output schema for requesting a specific response format.
-            Only used if the client has been initialized with `use_structured_output=True`.
+                Only used if the client has been initialized with `use_structured_output=True`.
+            tools: Functions to be used as tools by the LLM.
 
         Returns:
             Response string from LLM.
@@ -222,25 +245,33 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
+        if tools and not litellm.supports_function_calling(self.model_name):
+            raise LLMNotSupportingToolUseError()
+
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
-        start_time = time.perf_counter()
 
+        start_time = time.perf_counter()
         response = await self._get_litellm_response(
             conversation=prompt.chat,
             options=options,
             response_format=response_format,
+            tools=tools,
             stream=True,
         )
-        if not response.completion_stream:  # type: ignore
+
+        if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
-        async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[str, None]:
+        async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[dict, None]:
             output_tokens = 0
+            tool_calls: list[dict] = []
+
             async for item in response:
                 if content := item.choices[0].delta.content:
                     output_tokens += 1
@@ -251,7 +282,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
-                    yield content
+                    yield {"response": content}
+
+                if tool_calls_delta := item.choices[0].delta.tool_calls:
+                    for tool_call_chunk in tool_calls_delta:
+                        while len(tool_calls) <= tool_call_chunk.index:
+                            tool_calls.append({"id": "", "type": "", "name": "", "arguments": ""})
+
+                        tool_calls[tool_call_chunk.index]["id"] += tool_call_chunk.id or ""
+                        tool_calls[tool_call_chunk.index]["type"] += (
+                            tool_call_chunk.type
+                            if tool_call_chunk.type
+                            and tool_call_chunk.type != tool_calls[tool_call_chunk.index]["type"]
+                            else ""
+                        )
+                        tool_calls[tool_call_chunk.index]["name"] += tool_call_chunk.function.name or ""
+                        tool_calls[tool_call_chunk.index]["arguments"] += tool_call_chunk.function.arguments or ""
+
+            if tool_calls:
+                yield {"tool_calls": tool_calls}
 
             total_time = time.perf_counter() - start_time
 
@@ -281,6 +330,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         conversation: ChatFormat,
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
+        tools: list[dict] | None = None,
         stream: bool = False,
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or litellm
