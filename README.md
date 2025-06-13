@@ -4,9 +4,10 @@
 
 *Building blocks for rapid development of GenAI applications*
 
+[Homepage](https://deepsense.ai/rd-hub/ragbits/) | [Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
+
 <a href="https://trendshift.io/repositories/13966" target="_blank"><img src="https://trendshift.io/api/badge/repositories/13966" alt="deepsense-ai%2Fragbits | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[Homepage](https://deepsense.ai/rd-hub/ragbits/) | [Documentation](https://ragbits.deepsense.ai) | [Contact](https://deepsense.ai/contact/)
 
 [![PyPI - License](https://img.shields.io/pypi/l/ragbits)](https://pypi.org/project/ragbits)
 [![PyPI - Version](https://img.shields.io/pypi/v/ragbits)](https://pypi.org/project/ragbits)
