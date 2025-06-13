@@ -13,3 +13,5 @@
 ::: ragbits.core.vector_stores.qdrant.QdrantVectorStore
 
 ::: ragbits.core.vector_stores.pgvector.PgVectorStore
+
+::: ragbits.core.vector_stores.weaviate.WeaviateVectorStore

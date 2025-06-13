@@ -1,3 +1,4 @@
+import copy
 import os
 from collections.abc import AsyncGenerator
 from functools import partial
@@ -7,6 +8,7 @@ from uuid import UUID
 
 import asyncpg
 import pytest
+import weaviate
 from chromadb import EphemeralClient
 from qdrant_client import AsyncQdrantClient
 
@@ -23,6 +25,7 @@ from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -64,11 +67,12 @@ async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGener
         lambda _: partial(InMemoryVectorStore),
         lambda _: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
         lambda _: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda _: partial(WeaviateVectorStore, client=weaviate.use_async_with_local(), index_name="test_index_name"),
         lambda pg_pool: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=3),
     ],
-    ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "PgVectorStore"],
+    ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "WeaviateVectorStore", "PgVectorStore"],
 )
-def vector_store_cls_fixture(
+async def vector_store_cls_fixture(
     request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool
 ) -> type[VectorStoreWithDenseEmbedder]:
     """
@@ -140,12 +144,15 @@ async def test_vector_store_list(
     vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await vector_store.store(vector_store_entries)
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await vector_store.store(test_vector_store_entries)
     result_entries = await vector_store.list()
     expected_entries = (
-        [e for e in vector_store_entries if e.text is not None]
+        [e for e in test_vector_store_entries if e.text is not None]
         if vector_store._embedding_type == EmbeddingType.TEXT
-        else [e for e in vector_store_entries if e.image_bytes is not None]
+        else [e for e in test_vector_store_entries if e.image_bytes is not None]
     )
 
     sorted_results = sorted(result_entries, key=lambda entry: entry.id)
@@ -164,24 +171,30 @@ async def test_vector_store_remove(
     vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await vector_store.store(vector_store_entries)
-    await vector_store.remove([vector_store_entries[2].id])
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await vector_store.store(test_vector_store_entries)
+    await vector_store.remove([test_vector_store_entries[2].id])
 
     result_entries = await vector_store.list()
     assert len(result_entries) == 1
-    assert vector_store_entries[2].id not in {entry.id for entry in result_entries}
+    assert test_vector_store_entries[2].id not in {entry.id for entry in result_entries}
 
 
 async def test_vector_store_retrieve(
     vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await vector_store.store(vector_store_entries)
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await vector_store.store(test_vector_store_entries)
     result_entries = await vector_store.retrieve(text="foo")
     expected_entries = (
-        [e for e in vector_store_entries if e.text is not None]
+        [e for e in test_vector_store_entries if e.text is not None]
         if vector_store._embedding_type == EmbeddingType.TEXT
-        else [e for e in vector_store_entries if e.image_bytes is not None]
+        else [e for e in test_vector_store_entries if e.image_bytes is not None]
     )
 
     sorted_results = sorted(result_entries, key=lambda r: r.entry.id)
@@ -206,12 +219,17 @@ async def test_vector_store_retrieve_order(
     vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await vector_store.store(vector_store_entries)
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await vector_store.store(test_vector_store_entries)
     results = await vector_store.retrieve(text="foo", options=VectorStoreOptions(k=1))
 
     assert len(results) == 1
     expected_entry = (
-        vector_store_entries[0] if vector_store._embedding_type == EmbeddingType.TEXT else vector_store_entries[1]
+        test_vector_store_entries[0]
+        if vector_store._embedding_type == EmbeddingType.TEXT
+        else test_vector_store_entries[1]
     )
 
     assert results[0].entry.id == expected_entry.id
@@ -256,7 +274,10 @@ async def test_vector_store_retrieve_with_where_clause(
     text_vector_store: VectorStoreWithDenseEmbedder,
     vector_store_entries: list[VectorStoreEntry],
 ) -> None:
-    await text_vector_store.store(vector_store_entries)
+    test_vector_store_entries = copy.deepcopy(vector_store_entries)
+    if isinstance(text_vector_store, WeaviateVectorStore):
+        test_vector_store_entries[0].metadata["some_list"] = test_vector_store_entries[0].metadata["some_list"][0]
+    await text_vector_store.store(test_vector_store_entries)
 
     # Test with a simple where clause
     results = await text_vector_store.retrieve(
@@ -271,7 +292,7 @@ async def test_vector_store_retrieve_with_where_clause(
 
     # Should only return the first entry which matches both conditions
     assert len(results) == 1
-    assert results[0].entry.id == vector_store_entries[0].id
+    assert results[0].entry.id == test_vector_store_entries[0].id
     assert results[0].entry.metadata["foo"] == "bar"
     assert results[0].entry.metadata["nested_foo"]["nested_bar"] == "nested_baz"
 
