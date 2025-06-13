@@ -15,7 +15,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import JSONSchemaFeedbackConfig
+from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 from ragbits.chat.persistence.file import FileHistoryPersistence
 
@@ -50,7 +50,7 @@ class MyChat(ChatInterface):
 
     history_persistence = FileHistoryPersistence(base_path="chat_history")
 
-    feedback_config = JSONSchemaFeedbackConfig.from_models(
+    feedback_config = FeedbackConfig(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,

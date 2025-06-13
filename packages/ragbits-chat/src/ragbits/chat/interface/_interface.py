@@ -13,7 +13,7 @@ from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
 from ..persistence import HistoryPersistenceStrategy
-from .forms import FeedbackConfig, JSONSchemaFeedbackConfig
+from .forms import FeedbackConfig
 from .types import ChatContext, ChatResponse, ChatResponseType, Reference, StateUpdate
 
 logger = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ class ChatInterface(ABC):
     * State updates: Updates to the conversation state
     """
 
-    feedback_config: JSONSchemaFeedbackConfig | FeedbackConfig = JSONSchemaFeedbackConfig()
+    feedback_config: FeedbackConfig = FeedbackConfig()
     history_persistence: HistoryPersistenceStrategy | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
