@@ -95,6 +95,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
+        tools: list[dict] | None = None,
     ) -> dict:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -104,6 +105,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
+            tools: Functions to be used as tools by LLM (not used).
 
         Returns:
             Response string from LLM.
@@ -148,7 +150,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         options: LocalLLMOptions,
         json_mode: bool = False,
         output_schema: type[BaseModel] | dict | None = None,
-    ) -> AsyncGenerator[str, None]:
+        tools: list[dict] | None = None,
+    ) -> AsyncGenerator[dict, None]:
         """
         Makes a call to the local LLM with the provided prompt and options in streaming manner.
 
@@ -157,6 +160,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             json_mode: Force the response to be in JSON format (not used).
             output_schema: Output schema for requesting a specific response format (not used).
+            tools: Functions to be used as tools by LLM (not used).
 
         Returns:
             Async generator of tokens
@@ -174,7 +178,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
         async def streamer_to_async_generator(
             streamer: TextIteratorStreamer, generation_thread: threading.Thread
-        ) -> AsyncGenerator[str, None]:
+        ) -> AsyncGenerator[dict, None]:
             output_tokens = 0
             generation_thread.start()
             for text in streamer:
@@ -188,7 +192,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
                             prompt=prompt.__class__.__name__,
                         )
 
-                yield text
+                yield {"response": text}
                 await asyncio.sleep(0.0)
 
             generation_thread.join()

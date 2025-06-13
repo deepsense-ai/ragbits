@@ -101,6 +101,6 @@ class Agent(
         response = await self.llm.generate_with_metadata(prompt, options=llm_options)
 
         return AgentResult(
-            content=response.content,
+            content=response.content,  # type: ignore
             metadata=response.metadata,
         )
