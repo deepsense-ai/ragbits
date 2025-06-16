@@ -1,9 +1,8 @@
 from collections.abc import Callable
+from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
-
-from pydantic.dataclasses import dataclass
 
 from ragbits import agents
 from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
@@ -14,7 +13,7 @@ from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
 
-@dataclass(config={"extra": "allow"})
+@dataclass
 class ToolCallResult:
     """
     Result of the tool call.
@@ -147,7 +146,13 @@ class Agent(
                 tool_output = (
                     await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
                 )
-                tool_calls.append(ToolCallResult(**tool_call.model_dump(), output=tool_output))
+                tool_calls.append(
+                    ToolCallResult(
+                        name=tool_call.name,
+                        arguments=tool_call.arguments,
+                        output=tool_output,
+                    )
+                )
                 prompt = prompt.add_tool_use_message(
                     tool_call_id=tool_call.id,
                     tool_name=tool_call.name,

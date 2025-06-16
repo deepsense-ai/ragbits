@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import ClassVar, Generic, TypeVar, overload
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
 
 from ragbits.core import llms
@@ -39,11 +39,10 @@ class ToolCall(BaseModel):
     A schema of tool call data
     """
 
-    name: str
-    arguments: dict
     id: str
     type: str
-    model_config = ConfigDict(extra="allow")
+    name: str
+    arguments: dict
 
     @field_validator("arguments", mode="before")
     def parse_tool_arguments(cls, tool_arguments: str) -> dict:
@@ -148,27 +147,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         )
 
     @overload
-    async def generate(  # type: ignore
-        self,
-        prompt: BasePromptWithParser[PromptOutputT],
-        *,
-        tools: None = None,
-        options: LLMClientOptionsT | None = None,
-    ) -> PromptOutputT: ...
-
-    @overload
-    async def generate(  # type: ignore
-        self,
-        prompt: BasePromptWithParser[PromptOutputT],
-        *,
-        tools: list[Tool],
-        options: LLMClientOptionsT | None = None,
-    ) -> PromptOutputT | list[ToolCall]: ...
-
-    @overload
     async def generate(
         self,
-        prompt: str | ChatFormat | BasePrompt,
+        prompt: str | ChatFormat,
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
@@ -177,11 +158,29 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
-        prompt: str | ChatFormat | BasePrompt,
+        prompt: str | ChatFormat,
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
     ) -> str | list[ToolCall]: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> PromptOutputT: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        *,
+        tools: list[Tool],
+        options: LLMClientOptionsT | None = None,
+    ) -> PromptOutputT | list[ToolCall]: ...
 
     async def generate(
         self,
@@ -210,16 +209,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate_with_metadata(
         self,
-        prompt: str | ChatFormat | BasePrompt,
+        prompt: str | ChatFormat,
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[str]: ...
 
     @overload
-    async def generate_with_metadata(  # type: ignore
+    async def generate_with_metadata(
         self,
-        prompt: BasePromptWithParser[PromptOutputT],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,

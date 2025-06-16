@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Add tools to Agent interface (#568)
+- Fix typing in LLM (#568)
+- Fix parsing functions with no arguments in convert_function_to_function_schema (#568)
 - Remove outdated quickstart ref from docstring (#565)
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
