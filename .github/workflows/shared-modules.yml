@@ -32,6 +32,10 @@ jobs:
         run: npm run format:check
         working-directory: typescript/ragbits-api-client
 
+      - name: Run ragbits-api-client tests
+        run: npm run test:run
+        working-directory: typescript/ragbits-api-client
+
       - name: Build ragbits-api-client
         run: npm run build
         working-directory: typescript/ragbits-api-client
@@ -42,6 +46,10 @@ jobs:
 
       - name: Run ragbits-api-client-react Prettier check
         run: npm run format:check
+        working-directory: typescript/ragbits-api-client-react
+
+      - name: Run ragbits-api-client-react tests
+        run: npm run test:run
         working-directory: typescript/ragbits-api-client-react
 
       - name: Build ragbits-api-client-react
