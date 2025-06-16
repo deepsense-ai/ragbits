@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add tools to Agent interface (#568)
 - Update Agent run method docstring (#565)
 - Fix AgentResult typing (#600)
 
