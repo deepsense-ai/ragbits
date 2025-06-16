@@ -179,8 +179,8 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
             "description": doc_info["description"] if doc_info else None,
             "parameters": {
                 "type": "object",
-                "properties": json_schema["properties"],
-                "required": json_schema["required"],
+                "properties": json_schema.get("properties", {}),
+                "required": json_schema.get("required", []),
             },
         },
     }

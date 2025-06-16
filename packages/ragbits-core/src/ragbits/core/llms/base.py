@@ -148,18 +148,18 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         )
 
     @overload
-    async def generate(
+    async def generate(  # type: ignore
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        prompt: BasePromptWithParser[PromptOutputT],
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> PromptOutputT: ...
 
     @overload
-    async def generate(
+    async def generate(  # type: ignore
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        prompt: BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
@@ -168,7 +168,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
-        prompt: str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt,
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
@@ -177,7 +177,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
-        prompt: str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt,
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
@@ -210,20 +210,20 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
-        *,
-        tools: list[Tool] | None = None,
-        options: LLMClientOptionsT | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
-
-    @overload
-    async def generate_with_metadata(
-        self,
-        prompt: str | ChatFormat,
+        prompt: str | ChatFormat | BasePrompt,
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[str]: ...
+
+    @overload
+    async def generate_with_metadata(  # type: ignore
+        self,
+        prompt: BasePromptWithParser[PromptOutputT],
+        *,
+        tools: list[Tool] | None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     async def generate_with_metadata(
         self,
