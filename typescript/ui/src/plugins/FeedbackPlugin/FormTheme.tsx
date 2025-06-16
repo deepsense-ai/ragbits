@@ -7,7 +7,7 @@ function EmptyComponent() {
   return null;
 }
 
-export const FormTheme = withTheme({
+const FormTheme = withTheme({
   templates: {
     FieldTemplate,
     ErrorListTemplate: EmptyComponent,
@@ -28,3 +28,5 @@ export const FormTheme = withTheme({
     SelectWidget,
   },
 });
+
+export default FormTheme;

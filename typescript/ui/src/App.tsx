@@ -2,21 +2,17 @@ import { Button, cn, ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { pluginManager } from "./core/utils/plugins/PluginManager";
 import PromptInput from "./core/components/PromptInput/PromptInput";
-import { FeedbackFormPluginName } from "./plugins/FeedbackPlugin/index.tsx";
 import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
 import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import { useConfigContext } from "./contexts/ConfigContext/useConfigContext.ts";
 
 export default function App() {
   const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const { config } = useConfigContext();
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const {
@@ -46,13 +42,6 @@ export default function App() {
       setShouldAutoScroll(true);
     }
   }, []);
-
-  // TODO: Might consider moving all default plugins activation to ConfigContextProvider
-  useEffect(() => {
-    if (config.feedback.like.enabled || config.feedback.dislike.enabled) {
-      pluginManager.activate(FeedbackFormPluginName);
-    }
-  }, [config]);
 
   useEffect(() => {
     setShouldAutoScroll(true);

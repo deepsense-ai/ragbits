@@ -13,7 +13,7 @@ import { FeedbackType, useRagbitsCall } from "ragbits-api-client-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import DelayedTooltip from "../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../contexts/ConfigContext/useConfigContext";
-import { FormTheme } from "./formTheme";
+import FormTheme from "./FormTheme";
 import validator from "@rjsf/validator-ajv8";
 import { RJSFValidationError } from "@rjsf/utils";
 import { IChangeEvent } from "@rjsf/core";
@@ -89,7 +89,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
 
   return (
     <>
-      {feedback.like !== null && (
+      {feedback.like.enabled && (
         <DelayedTooltip content="Like" placement="bottom">
           <Button
             isIconOnly
@@ -102,7 +102,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
           </Button>
         </DelayedTooltip>
       )}
-      {feedback.dislike !== null && (
+      {feedback.dislike.enabled && (
         <DelayedTooltip content="Dislike" placement="bottom">
           <Button
             isIconOnly

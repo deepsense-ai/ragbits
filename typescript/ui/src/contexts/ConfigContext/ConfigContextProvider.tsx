@@ -1,8 +1,10 @@
-import { PropsWithChildren, useMemo } from "react";
+import { PropsWithChildren, useEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "ragbits-api-client-react";
 import { useThemeContext } from "../ThemeContext/useThemeContext";
 import { CircularProgress, cn } from "@heroui/react";
+import { FeedbackFormPluginName } from "../../plugins/FeedbackPlugin";
+import { pluginManager } from "../../core/utils/plugins/PluginManager";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { theme } = useThemeContext();
@@ -16,6 +18,17 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     return {
       config: config.data,
     };
+  }, [config.data]);
+
+  useEffect(() => {
+    if (!config.data) {
+      return;
+    }
+
+    const { feedback } = config.data;
+    if (feedback.like.enabled || feedback.dislike.enabled) {
+      pluginManager.activate(FeedbackFormPluginName);
+    }
   }, [config.data]);
 
   // Load config on mount

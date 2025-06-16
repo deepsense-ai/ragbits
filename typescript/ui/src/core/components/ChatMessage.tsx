@@ -130,6 +130,10 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       componentProps={{
                         messageServerId: serverId,
                       }}
+                      skeletonSize={{
+                        width: "88px",
+                        height: "40px",
+                      }}
                     />
                   )}
                 </div>
