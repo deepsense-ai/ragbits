@@ -7,7 +7,7 @@ from pydantic.dataclasses import dataclass
 
 from ragbits import agents
 from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
-from ragbits.core.llms.base import LLM, LLMClientOptionsT
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -114,14 +114,16 @@ class Agent(
         llm_options = merged_options.llm_options or None
 
         prompt = self.prompt(input)
-
         tool_calls = []
 
         while True:
-            response = await self.llm.generate_with_metadata(
-                prompt=prompt,
-                tools=list(self.tools_mapping.values()),
-                options=llm_options,
+            response = cast(
+                LLMResponseWithMetadata[PromptOutputT],
+                await self.llm.generate_with_metadata(
+                    prompt=prompt,
+                    tools=list(self.tools_mapping.values()),
+                    options=llm_options,
+                ),
             )
             if not response.tool_calls:
                 break
@@ -146,10 +148,9 @@ class Agent(
                 )
 
         return AgentResult(
-            # TODO: remove this type ignore once Agent will accept BasePrompt and str as input
-            content=response.content,  # type: ignore
+            content=response.content,
             metadata=response.metadata,
-            tool_calls=tool_calls,
+            tool_calls=tool_calls or None,
         )
 
     # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478

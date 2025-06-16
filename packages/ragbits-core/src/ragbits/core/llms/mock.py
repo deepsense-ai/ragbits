@@ -50,7 +50,12 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         self.calls.append(prompt.chat)
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
-        tool_calls = None if isinstance(options.tool_calls, NotGiven) else options.tool_calls
+
+        tool_calls = (
+            None
+            if isinstance(options.tool_calls, NotGiven) or any(message["role"] == "tool" for message in prompt.chat)
+            else options.tool_calls
+        )
         return {"response": response, "tool_calls": tool_calls, "is_mocked": True}
 
     async def _call_streaming(  # noqa: PLR6301
@@ -67,7 +72,9 @@ class MockLLM(LLM[MockLLMOptions]):
         self.calls.append(prompt.chat)
 
         async def generator() -> AsyncGenerator[dict, None]:
-            if not isinstance(options.tool_calls, NotGiven):
+            if not isinstance(options.tool_calls, NotGiven) and not any(
+                message["role"] == "tool" for message in prompt.chat
+            ):
                 yield {"tool_calls": options.tool_calls}
             elif not isinstance(options.response_stream, NotGiven):
                 for response in options.response_stream:
