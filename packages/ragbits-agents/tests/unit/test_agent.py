@@ -4,7 +4,7 @@ import pytest
 
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentResult, ToolCallResult
-from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
+from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
 
@@ -112,7 +112,7 @@ async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM):
         tools=[fake_func],
     )
 
-    with pytest.raises(AgentNotAvailableToolSelectedError):
+    with pytest.raises(AgentToolNotAvailableError):
         await agent.run()
 
 
@@ -123,5 +123,5 @@ async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
         tools=[get_weather],
     )
 
-    with pytest.raises(AgentNotSupportedToolInResponseError):
+    with pytest.raises(AgentToolNotSupportedError):
         await agent.run()

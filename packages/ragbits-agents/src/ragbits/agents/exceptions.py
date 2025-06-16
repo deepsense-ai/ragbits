@@ -8,21 +8,21 @@ class AgentError(Exception):
         self.message = message
 
 
-class AgentNotSupportedToolInResponseError(AgentError):
+class AgentToolNotSupportedError(AgentError):
     """
-    Raised when there is a tool type returned by an LLM that is not supported.
-    """
-
-    def __init__(
-        self, tool_type: str, message: str = "There is a tool call in LLM response of type that is not supported: "
-    ) -> None:
-        super().__init__(message + tool_type)
-
-
-class AgentNotAvailableToolSelectedError(AgentError):
-    """
-    Raised when there was a tool select that is not available.
+    Raised when the selected tool type is not supported.
     """
 
-    def __init__(self, tool_name: str, message: str = "Selected tool is not available: ") -> None:
-        super().__init__(message + tool_name)
+    def __init__(self, tool_type: str) -> None:
+        super().__init__(f"The tool call type in LLM response is not supported: {tool_type}")
+        self.tool_type = tool_type
+
+
+class AgentToolNotAvailableError(AgentError):
+    """
+    Raised when the selected tool is not available.
+    """
+
+    def __init__(self, tool_name: str) -> None:
+        super().__init__(f"Selected tool is not available: {tool_name}")
+        self.tool_name = tool_name

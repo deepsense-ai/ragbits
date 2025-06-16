@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Generic, cast, overload
 from pydantic.dataclasses import dataclass
 
 from ragbits import agents
-from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
+from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -110,6 +110,10 @@ class Agent(
 
         Returns:
             The result of the agent run.
+
+        Raises:
+            AgentToolNotSupportedError: If the selected tool type is not supported.
+            AgentToolNotAvailableError: If the selected tool is not available.
         """
         input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
         options = args[1] if len(args) > 1 else kwargs.get("options")
@@ -134,10 +138,10 @@ class Agent(
 
             for tool_call in response.tool_calls:
                 if tool_call.type != "function":
-                    raise AgentNotSupportedToolInResponseError(tool_call.type)
+                    raise AgentToolNotSupportedError(tool_call.type)
 
                 if tool_call.name not in self.tools_mapping:
-                    raise AgentNotAvailableToolSelectedError(tool_call.name)
+                    raise AgentToolNotAvailableError(tool_call.name)
 
                 tool = self.tools_mapping[tool_call.name]
                 tool_output = (
@@ -203,10 +207,10 @@ class Agent(
 
     #             if isinstance(chunk, ToolCall):
     #                 if chunk.type != "function":
-    #                     raise AgentNotSupportedToolInResponseError(chunk.type)
+    #                     raise AgentToolNotSupportedError(chunk.type)
 
     #                 if chunk.name not in tools_mapping:
-    #                     raise AgentNotAvailableToolSelectedError(chunk.name)
+    #                     raise AgentToolNotAvailableError(chunk.name)
 
     #                 tool = tools_mapping[chunk.name]
     #                 tool_output = (
