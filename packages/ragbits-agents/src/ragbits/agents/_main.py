@@ -6,6 +6,7 @@ from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
 from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
+from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -123,48 +124,50 @@ class Agent(
         prompt = self.prompt(input)
         tool_calls = []
 
-        while True:
-            response = cast(
-                LLMResponseWithMetadata[PromptOutputT],
-                await self.llm.generate_with_metadata(
-                    prompt=prompt,
-                    tools=list(self.tools_mapping.values()),
-                    options=llm_options,
-                ),
-            )
-            if not response.tool_calls:
-                break
-
-            for tool_call in response.tool_calls:
-                if tool_call.type != "function":
-                    raise AgentToolNotSupportedError(tool_call.type)
-
-                if tool_call.name not in self.tools_mapping:
-                    raise AgentToolNotAvailableError(tool_call.name)
-
-                tool = self.tools_mapping[tool_call.name]
-                tool_output = (
-                    await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
+        with trace(input=input, options=merged_options) as outputs:
+            while True:
+                response = cast(
+                    LLMResponseWithMetadata[PromptOutputT],
+                    await self.llm.generate_with_metadata(
+                        prompt=prompt,
+                        tools=list(self.tools_mapping.values()),
+                        options=llm_options,
+                    ),
                 )
-                tool_calls.append(
-                    ToolCallResult(
-                        name=tool_call.name,
-                        arguments=tool_call.arguments,
-                        output=tool_output,
+                if not response.tool_calls:
+                    break
+
+                for tool_call in response.tool_calls:
+                    if tool_call.type != "function":
+                        raise AgentToolNotSupportedError(tool_call.type)
+
+                    if tool_call.name not in self.tools_mapping:
+                        raise AgentToolNotAvailableError(tool_call.name)
+
+                    tool = self.tools_mapping[tool_call.name]
+                    tool_output = (
+                        await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
                     )
-                )
-                prompt = prompt.add_tool_use_message(
-                    tool_call_id=tool_call.id,
-                    tool_name=tool_call.name,
-                    tool_arguments=tool_call.arguments,
-                    tool_call_result=tool_output,
-                )
+                    tool_calls.append(
+                        ToolCallResult(
+                            name=tool_call.name,
+                            arguments=tool_call.arguments,
+                            output=tool_output,
+                        )
+                    )
+                    prompt = prompt.add_tool_use_message(
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.name,
+                        tool_arguments=tool_call.arguments,
+                        tool_call_result=tool_output,
+                    )
 
-        return AgentResult(
-            content=response.content,
-            metadata=response.metadata,
-            tool_calls=tool_calls or None,
-        )
+            outputs.result = AgentResult(
+                content=response.content,
+                metadata=response.metadata,
+                tool_calls=tool_calls or None,
+            )
+            return outputs.result
 
     # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478
     # @overload
