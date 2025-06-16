@@ -96,13 +96,17 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
-    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:  # noqa: D417
+    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
 
         Args:
-            input: The input for the agent run.
-            options: The options for the agent run.
+            *args: Positional arguments corresponding to the overload signatures.
+                - If provided, the first positional argument is interpreted as `input`.
+                - If a second positional argument is provided, it is interpreted as `options`.
+            **kwargs: Keyword arguments corresponding to the overload signatures.
+                - `input`: The input for the agent run.
+                - `options`: The options for the agent run.
 
         Returns:
             The result of the agent run.
