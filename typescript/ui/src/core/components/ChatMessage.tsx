@@ -3,16 +3,14 @@ import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import {
-  FeedbackType,
-  FormSchemaResponse,
-  MessageRole,
-} from "ragbits-api-client-react";
+import { MessageRole } from "ragbits-api-client-react";
 
 import { ChatMessage as ChatMessageType } from "../../types/history.ts";
 import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext.ts";
 import { Theme } from "../../contexts/ThemeContext/ThemeContext.ts";
 import DelayedTooltip from "./DelayedTooltip";
+import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
+import { FeedbackFormPlugin } from "../../plugins/FeedbackPlugin/index.tsx";
 
 export type ChatMessageProps = {
   classNames?: {
@@ -21,20 +19,11 @@ export type ChatMessageProps = {
     content?: string;
   };
   chatMessage: ChatMessageType;
-  onOpenFeedbackForm?: (id: string, name: FeedbackType) => void;
-  likeForm: FormSchemaResponse | null;
-  dislikeForm: FormSchemaResponse | null;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
-    {
-      chatMessage: { serverId, content, role, references },
-      onOpenFeedbackForm,
-      classNames,
-      likeForm,
-      dislikeForm,
-    },
+    { chatMessage: { serverId, content, role, references }, classNames },
     ref,
   ) => {
     const rightAlign = role === MessageRole.USER;
@@ -133,45 +122,19 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       <Icon icon={copyIcon} />
                     </Button>
                   </DelayedTooltip>
-                  {onOpenFeedbackForm && (
-                    <>
-                      {likeForm !== null && (
-                        <DelayedTooltip content="Like" placement="bottom">
-                          <Button
-                            isIconOnly
-                            variant="ghost"
-                            className="p-0"
-                            aria-label="Rate message as helpful"
-                            onPress={() =>
-                              onOpenFeedbackForm(
-                                serverId || "",
-                                FeedbackType.LIKE,
-                              )
-                            }
-                          >
-                            <Icon icon="heroicons:hand-thumb-up" />
-                          </Button>
-                        </DelayedTooltip>
-                      )}
-                      {dislikeForm !== null && (
-                        <DelayedTooltip content="Dislike" placement="bottom">
-                          <Button
-                            isIconOnly
-                            variant="ghost"
-                            className="p-0"
-                            aria-label="Rate message as unhelpful"
-                            onPress={() =>
-                              onOpenFeedbackForm(
-                                serverId || "",
-                                FeedbackType.DISLIKE,
-                              )
-                            }
-                          >
-                            <Icon icon="heroicons:hand-thumb-down" />
-                          </Button>
-                        </DelayedTooltip>
-                      )}
-                    </>
+
+                  {serverId && (
+                    <PluginWrapper
+                      plugin={FeedbackFormPlugin}
+                      component="FeedbackForm"
+                      componentProps={{
+                        messageServerId: serverId,
+                      }}
+                      skeletonSize={{
+                        width: "88px",
+                        height: "40px",
+                      }}
+                    />
                   )}
                 </div>
               </>

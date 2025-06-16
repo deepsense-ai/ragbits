@@ -8,7 +8,8 @@ import { ThemeContextProvider } from "./contexts/ThemeContext/ThemeContextProvid
 import { RagbitsProvider } from "ragbits-api-client-react";
 import { loadIcons } from "@iconify/react";
 import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
-import { FeedbackFormPlugin } from "./plugins/FeedbackFormPlugin";
+import { FeedbackFormPlugin } from "./plugins/FeedbackPlugin/index.tsx";
+import { ConfigContextProvider } from "./contexts/ConfigContext/ConfigContextProvider.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -27,13 +28,15 @@ loadIcons([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HeroUIProvider>
-      <RagbitsProvider>
-        <HistoryProvider>
-          <ThemeContextProvider>
-            <App />
-          </ThemeContextProvider>
-        </HistoryProvider>
-      </RagbitsProvider>
+      <ThemeContextProvider>
+        <RagbitsProvider>
+          <ConfigContextProvider>
+            <HistoryProvider>
+              <App />
+            </HistoryProvider>
+          </ConfigContextProvider>
+        </RagbitsProvider>
+      </ThemeContextProvider>
     </HeroUIProvider>
   </StrictMode>,
 );
