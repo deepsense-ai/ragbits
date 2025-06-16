@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { pluginManager } from "./PluginManager";
 
-export const usePluginManager = (pluginName: string) => {
+export const usePlugin = (pluginName: string) => {
   const subscribe = (callback: () => void) => {
     return pluginManager.subscribe(callback);
   };
