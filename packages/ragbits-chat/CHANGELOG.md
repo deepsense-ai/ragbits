@@ -5,6 +5,18 @@
 - Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
 - CI/CD changes for new directory structure (#582)
 
+## 1.0.0 (2025-06-04)
+
+### Changed
+
+- ragbits-core updated to version v1.0.0
+
+## 0.20.1 (2025-06-04)
+
+### Changed
+
+- ragbits-core updated to version v0.20.1
+
 ## 0.20.0 (2025-06-03)
 
 ### Changed
