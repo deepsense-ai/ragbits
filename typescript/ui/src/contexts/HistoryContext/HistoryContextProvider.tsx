@@ -99,7 +99,6 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     (response: ChatResponse, messageId: string): void => {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
-        ChatResponseType.MESSAGE_ID,
         ChatResponseType.CONVERSATION_ID,
       ];
 
