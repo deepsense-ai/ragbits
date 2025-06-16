@@ -1,4 +1,4 @@
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import Callable
 from inspect import iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
@@ -7,7 +7,7 @@ from pydantic.dataclasses import dataclass
 
 from ragbits import agents
 from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, ToolCall
+from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -31,7 +31,7 @@ class AgentResult(Generic[PromptOutputT]):
     Result of the agent run.
     """
 
-    content: PromptOutputT | str
+    content: PromptOutputT
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
@@ -44,8 +44,6 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     Options for the agent run.
     """
 
-    tools: list[Callable] | None | NotGiven = NOT_GIVEN
-    """The tools available for the LLM."""
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
     """The options for the LLM."""
 
@@ -68,6 +66,7 @@ class Agent(
         llm: LLM[LLMClientOptionsT],
         prompt: type[Prompt[PromptInputT, PromptOutputT]],
         *,
+        tools: list[Callable] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -76,11 +75,13 @@ class Agent(
         Args:
             llm: The LLM to use.
             prompt: The prompt to use.
+            tools: The tools available to the agent.
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
+        self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
 
     @overload
     async def run(
@@ -110,17 +111,16 @@ class Agent(
         options = args[1] if len(args) > 1 else kwargs.get("options")
 
         merged_options = (self.default_options | options) if options else self.default_options
-        tools = merged_options.tools or None
         llm_options = merged_options.llm_options or None
 
         prompt = self.prompt(input)
-        tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+
         tool_calls = []
 
         while True:
             response = await self.llm.generate_with_metadata(
                 prompt=prompt,
-                tools=tools,  # type: ignore
+                tools=list(self.tools_mapping.values()),
                 options=llm_options,
             )
             if not response.tool_calls:
@@ -130,10 +130,10 @@ class Agent(
                 if tool_call.type != "function":
                     raise AgentNotSupportedToolInResponseError(tool_call.type)
 
-                if tool_call.name not in tools_mapping:
+                if tool_call.name not in self.tools_mapping:
                     raise AgentNotAvailableToolSelectedError(tool_call.name)
 
-                tool = tools_mapping[tool_call.name]
+                tool = self.tools_mapping[tool_call.name]
                 tool_output = (
                     await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
                 )
@@ -146,73 +146,75 @@ class Agent(
                 )
 
         return AgentResult(
-            content=response.content,
+            # TODO: remove this type ignore once Agent will accept BasePrompt and str as input
+            content=response.content,  # type: ignore
             metadata=response.metadata,
             tool_calls=tool_calls,
         )
 
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, PromptInputT, str]",
-        input: PromptInputT,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AsyncGenerator[str | ToolCall, None]: ...
+    # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478
+    # @overload
+    # def run_streaming(
+    #     self: "Agent[LLMClientOptionsT, PromptInputT, str]",
+    #     input: PromptInputT,
+    #     options: AgentOptions[LLMClientOptionsT] | None = None,
+    # ) -> AsyncGenerator[str | ToolCall, None]: ...
 
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, None, str]",
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AsyncGenerator[str | ToolCall, None]: ...
+    # @overload
+    # def run_streaming(
+    #     self: "Agent[LLMClientOptionsT, None, str]",
+    #     options: AgentOptions[LLMClientOptionsT] | None = None,
+    # ) -> AsyncGenerator[str | ToolCall, None]: ...
 
-    async def run_streaming(self, *args: Any, **kwargs: Any) -> AsyncGenerator[str | ToolCall, None]:  # noqa: D417
-        """
-        Run the agent. The method is experimental, inputs and outputs may change in the future.
+    # async def run_streaming(self, *args: Any, **kwargs: Any) -> AsyncGenerator[str | ToolCall, None]:  # noqa: D417
+    #     """
+    #     Run the agent. The method is experimental, inputs and outputs may change in the future.
 
-        Args:
-            input: The input for the agent run.
-            options: The options for the agent run.
+    #     Args:
+    #         input: The input for the agent run.
+    #         options: The options for the agent run.
 
-        Yields:
-            Response text chunks or tool calls from the Agent.
-        """
-        input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
-        options = args[1] if len(args) > 1 else kwargs.get("options")
+    #     Yields:
+    #         Response text chunks or tool calls from the Agent.
+    #     """
+    #     input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
+    #     options = args[1] if len(args) > 1 else kwargs.get("options")
 
-        merged_options = (self.default_options | options) if options else self.default_options
-        tools = merged_options.tools or None
-        llm_options = merged_options.llm_options or None
+    #     merged_options = (self.default_options | options) if options else self.default_options
+    #     tools = merged_options.tools or None
+    #     llm_options = merged_options.llm_options or None
 
-        prompt = self.prompt(input)
-        tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+    #     prompt = self.prompt(input)
+    #     tools_mapping = {} if not tools else {f.__name__: f for f in tools}
 
-        while True:
-            returned_tool_call = False
-            async for chunk in self.llm.generate_streaming(
-                prompt=prompt,
-                tools=tools,  # type: ignore
-                options=llm_options,
-            ):
-                yield chunk
+    #     while True:
+    #         returned_tool_call = False
+    #         async for chunk in self.llm.generate_streaming(
+    #             prompt=prompt,
+    #             tools=tools,  # type: ignore
+    #             options=llm_options,
+    #         ):
+    #             yield chunk
 
-                if isinstance(chunk, ToolCall):
-                    if chunk.type != "function":
-                        raise AgentNotSupportedToolInResponseError(chunk.type)
+    #             if isinstance(chunk, ToolCall):
+    #                 if chunk.type != "function":
+    #                     raise AgentNotSupportedToolInResponseError(chunk.type)
 
-                    if chunk.name not in tools_mapping:
-                        raise AgentNotAvailableToolSelectedError(chunk.name)
+    #                 if chunk.name not in tools_mapping:
+    #                     raise AgentNotAvailableToolSelectedError(chunk.name)
 
-                    tool = tools_mapping[chunk.name]
-                    tool_output = (
-                        await tool(**chunk.arguments) if iscoroutinefunction(tool) else tool(**chunk.arguments)
-                    )
+    #                 tool = tools_mapping[chunk.name]
+    #                 tool_output = (
+    #                     await tool(**chunk.arguments) if iscoroutinefunction(tool) else tool(**chunk.arguments)
+    #                 )
 
-                    prompt = prompt.add_tool_use_message(
-                        tool_call_id=chunk.id,
-                        tool_name=chunk.name,
-                        tool_arguments=chunk.arguments,
-                        tool_call_result=tool_output,
-                    )
-                    returned_tool_call = True
+    #                 prompt = prompt.add_tool_use_message(
+    #                     tool_call_id=chunk.id,
+    #                     tool_name=chunk.name,
+    #                     tool_arguments=chunk.arguments,
+    #                     tool_call_result=tool_output,
+    #                 )
+    #                 returned_tool_call = True
 
-            if not returned_tool_call:
-                break
+    #         if not returned_tool_call:
+    #             break
