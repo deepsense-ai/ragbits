@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator, Callable
-from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
+
+from pydantic.dataclasses import dataclass
 
 from ragbits import agents
 from ragbits.agents.exceptions import AgentNotAvailableToolSelectedError, AgentNotSupportedToolInResponseError
@@ -11,6 +12,17 @@ from ragbits.core.options import Options
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
+
+
+@dataclass(config={"extra": "allow"})
+class ToolCallResult:
+    """
+    Result of the tool call.
+    """
+
+    name: str
+    arguments: dict
+    output: Any
 
 
 @dataclass
@@ -23,10 +35,8 @@ class AgentResult(Generic[PromptOutputT]):
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
-    tool_call: ToolCall | None = None
-    """Tool call returned by the LLM."""
-    tool_call_result: str | None = None
-    """Result of tool call returned by the LLM."""
+    tool_calls: list[ToolCallResult] | None = None
+    """Tool calls run by the Agent."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -34,6 +44,8 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     Options for the agent run.
     """
 
+    tools: list[Callable] | None | NotGiven = NOT_GIVEN
+    """The tools available for the LLM."""
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
     """The options for the LLM."""
 
@@ -57,7 +69,6 @@ class Agent(
         prompt: type[Prompt[PromptInputT, PromptOutputT]],
         *,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
-        tools: list[Callable] | None = None,
     ) -> None:
         """
         Initialize the agent instance.
@@ -66,12 +77,10 @@ class Agent(
             llm: The LLM to use.
             prompt: The prompt to use.
             default_options: The default options for the agent run.
-            tools: Functions to be used as tools by LLM.
         """
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
-        self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
 
     @overload
     async def run(
@@ -101,55 +110,109 @@ class Agent(
         options = args[1] if len(args) > 1 else kwargs.get("options")
 
         merged_options = (self.default_options | options) if options else self.default_options
+        tools = merged_options.tools or None
         llm_options = merged_options.llm_options or None
 
-        async for _response in self.iter(input, llm_options):
-            pass
-
-        return _response
-
-    async def iter(
-        self, input: PromptInputT, options: LLMClientOptionsT | None = None
-    ) -> AsyncGenerator[AgentResult[PromptOutputT], None]:
-        """
-        AsyncGenerator object that can be used to iterate over agent responses.
-
-        Args:
-             input: The input for the agent run.
-             options: The options for the agent run.
-
-        Returns:
-            The result of the agent run.
-        """
         prompt = self.prompt(input)
+        tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+        tool_calls = []
+
         while True:
             response = await self.llm.generate_with_metadata(
-                prompt, options=options, tools=list(self.tools_mapping.values())
+                prompt=prompt,
+                tools=tools,  # type: ignore
+                options=llm_options,
             )
-            if response.tool_calls:
-                for tool_call in response.tool_calls:
-                    if tool_call.type == "function":
-                        if tool_call.name not in self.tools_mapping:
-                            raise AgentNotAvailableToolSelectedError(tool_call.name)
-                        function_to_call = self.tools_mapping[tool_call.name]
-                        if iscoroutinefunction(function_to_call):
-                            tool_call_result = await function_to_call(**tool_call.arguments)
-                        else:
-                            tool_call_result = function_to_call(**tool_call.arguments)
-                        prompt = prompt.add_tool_use_message(
-                            tool_call.id,
-                            tool_call.name,
-                            str(tool_call.arguments),
-                            str(tool_call_result),
-                        )
-                    else:
-                        raise AgentNotSupportedToolInResponseError(tool_call.type)
-                    yield AgentResult(
-                        content=response.content,
-                        metadata=response.metadata,
-                        tool_call=tool_call,
-                        tool_call_result=str(tool_call_result),
-                    )
-            else:
+            if not response.tool_calls:
                 break
-        yield AgentResult(content=response.content, metadata=response.metadata)
+
+            for tool_call in response.tool_calls:
+                if tool_call.type != "function":
+                    raise AgentNotSupportedToolInResponseError(tool_call.type)
+
+                if tool_call.name not in tools_mapping:
+                    raise AgentNotAvailableToolSelectedError(tool_call.name)
+
+                tool = tools_mapping[tool_call.name]
+                tool_output = (
+                    await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
+                )
+                tool_calls.append(ToolCallResult(**tool_call.model_dump(), output=tool_output))
+                prompt = prompt.add_tool_use_message(
+                    tool_call_id=tool_call.id,
+                    tool_name=tool_call.name,
+                    tool_arguments=tool_call.arguments,
+                    tool_call_result=tool_output,
+                )
+
+        return AgentResult(
+            content=response.content,
+            metadata=response.metadata,
+            tool_calls=tool_calls,
+        )
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, PromptInputT, str]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AsyncGenerator[str | ToolCall, None]: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, str]",
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AsyncGenerator[str | ToolCall, None]: ...
+
+    async def run_streaming(self, *args: Any, **kwargs: Any) -> AsyncGenerator[str | ToolCall, None]:  # noqa: D417
+        """
+        Run the agent. The method is experimental, inputs and outputs may change in the future.
+
+        Args:
+            input: The input for the agent run.
+            options: The options for the agent run.
+
+        Yields:
+            Response text chunks or tool calls from the Agent.
+        """
+        input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
+        options = args[1] if len(args) > 1 else kwargs.get("options")
+
+        merged_options = (self.default_options | options) if options else self.default_options
+        tools = merged_options.tools or None
+        llm_options = merged_options.llm_options or None
+
+        prompt = self.prompt(input)
+        tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+
+        while True:
+            returned_tool_call = False
+            async for chunk in self.llm.generate_streaming(
+                prompt=prompt,
+                tools=tools,  # type: ignore
+                options=llm_options,
+            ):
+                yield chunk
+
+                if isinstance(chunk, ToolCall):
+                    if chunk.type != "function":
+                        raise AgentNotSupportedToolInResponseError(chunk.type)
+
+                    if chunk.name not in tools_mapping:
+                        raise AgentNotAvailableToolSelectedError(chunk.name)
+
+                    tool = tools_mapping[chunk.name]
+                    tool_output = (
+                        await tool(**chunk.arguments) if iscoroutinefunction(tool) else tool(**chunk.arguments)
+                    )
+
+                    prompt = prompt.add_tool_use_message(
+                        tool_call_id=chunk.id,
+                        tool_name=chunk.name,
+                        tool_arguments=chunk.arguments,
+                        tool_call_result=tool_output,
+                    )
+                    returned_tool_call = True
+
+            if not returned_tool_call:
+                break

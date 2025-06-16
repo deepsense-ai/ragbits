@@ -274,37 +274,47 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return self
 
     def add_tool_use_message(
-        self, tool_call_id: str, tool_name: str, tool_arguments: str, tool_call_result: str
+        self,
+        tool_call_id: str,
+        tool_name: str,
+        tool_arguments: dict,
+        tool_call_result: Any,  # noqa: ANN401
     ) -> "Prompt[PromptInputT, PromptOutputT]":
         """
         Add tool call messages to the conversation history.
 
         Args:
-            tool_call_id: id of the tool call.
-            tool_name: name of the tool.
-            tool_arguments: arguments of the tool.
-            tool_call_result: the tool call result.
+            tool_call_id (str): The id of the tool call.
+            tool_name (str): The name of the tool.
+            tool_arguments (dict): The arguments of the tool.
+            tool_call_result (any): The tool call result.
 
         Returns:
             Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        self._conversation_history.append(
-            {
-                "role": "assistant",
-                "content": None,
-                "tool_calls": [
-                    {
-                        "id": tool_call_id,
-                        "type": "function",
-                        "function": {
-                            "name": tool_name,
-                            "arguments": tool_arguments,
-                        },
-                    }
-                ],
-            }
+        self._conversation_history.extend(
+            [
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": tool_call_id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_name,
+                                "arguments": str(tool_arguments),
+                            },
+                        }
+                    ],
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
+                    "content": str(tool_call_result),
+                },
+            ]
         )
-        self._conversation_history.append({"role": "tool", "tool_call_id": tool_call_id, "content": tool_call_result})
         return self
 
     def list_images(self) -> list[str]:
