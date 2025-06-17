@@ -278,6 +278,24 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             )
             return outputs.response
 
+    @overload
+    def generate_streaming(
+        self,
+        prompt: str | ChatFormat | BasePrompt,
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> AsyncGenerator[str, None]: ...
+
+    @overload
+    def generate_streaming(
+        self,
+        prompt: str | ChatFormat | BasePrompt,
+        *,
+        tools: list[Tool],
+        options: LLMClientOptionsT | None = None,
+    ) -> AsyncGenerator[str | ToolCall, None]: ...
+
     async def generate_streaming(
         self,
         prompt: str | ChatFormat | BasePrompt,

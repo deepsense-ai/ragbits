@@ -5,10 +5,15 @@ from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
-from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
+from ragbits.agents.exceptions import (
+    AgentInvalidPromptInputError,
+    AgentToolNotAvailableError,
+    AgentToolNotSupportedError,
+)
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
+from ragbits.core.prompt.base import SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -64,7 +69,7 @@ class Agent(
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: type[Prompt[PromptInputT, PromptOutputT]],
+        prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | None = None,
         *,
         tools: list[Callable] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -73,8 +78,12 @@ class Agent(
         Initialize the agent instance.
 
         Args:
-            llm: The LLM to use.
-            prompt: The prompt to use.
+            llm: The LLM to run the agent.
+            prompt: The prompt for the agent. Can be:
+                - str: A string prompt that will be used as system message when combined with string input,
+                    or as the user message when no input is provided during run().
+                - type[Prompt]: A structured prompt class that will be instantiated with the input.
+                - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
             tools: The tools available to the agent.
             default_options: The default options for the agent run.
         """
@@ -82,6 +91,13 @@ class Agent(
         self.llm = llm
         self.prompt = prompt
         self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+
+    @overload
+    async def run(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AgentResult[PromptOutputT]: ...
 
     @overload
     async def run(
@@ -105,7 +121,10 @@ class Agent(
                 - If provided, the first positional argument is interpreted as `input`.
                 - If a second positional argument is provided, it is interpreted as `options`.
             **kwargs: Keyword arguments corresponding to the overload signatures.
-                - `input`: The input for the agent run.
+                - `input`: The input for the agent run. Can be:
+                  - str: A string input that will be used as user message.
+                  - PromptInputT: Structured input for use with structured prompt classes.
+                  - None: No input. Only valid when a string prompt was provided during initialization.
                 - `options`: The options for the agent run.
 
         Returns:
@@ -114,6 +133,7 @@ class Agent(
         Raises:
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
+            AgentInvalidPromptInputError: If the prompt/input combination is invalid.
         """
         input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
         options = args[1] if len(args) > 1 else kwargs.get("options")
@@ -121,7 +141,7 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
 
-        prompt = self.prompt(input)
+        prompt = self._create_prompt(input)
         tool_calls = []
 
         with trace(input=input, options=merged_options) as outputs:
@@ -168,6 +188,23 @@ class Agent(
                 tool_calls=tool_calls or None,
             )
             return outputs.result
+
+    def _create_prompt(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
+        if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
+            return self.prompt(input)
+        elif isinstance(self.prompt, str) and isinstance(input, str):
+            return SimplePrompt(
+                [
+                    {"role": "system", "content": self.prompt},
+                    {"role": "user", "content": input},
+                ]
+            )
+        elif isinstance(self.prompt, str) and input is None:
+            return SimplePrompt(self.prompt)
+        elif isinstance(input, str):
+            return SimplePrompt(input)
+        else:
+            raise AgentInvalidPromptInputError(self.prompt, input)
 
     # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478
     # @overload
