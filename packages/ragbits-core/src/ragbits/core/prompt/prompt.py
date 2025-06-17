@@ -222,7 +222,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT_co], BasePromptWithParser[Promp
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT_co]":
+    def add_user_message(
+        self, message: str | dict[str, Any] | PromptInputT
+    ) -> "Prompt[PromptInputT, PromptOutputT_co]":
         """
         Add a user message to the conversation history.
 

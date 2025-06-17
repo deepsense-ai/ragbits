@@ -221,7 +221,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-        
+
             tools: Functions to be used as tools by the LLM.
 
         Returns:

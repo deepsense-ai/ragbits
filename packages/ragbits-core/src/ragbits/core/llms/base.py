@@ -239,7 +239,13 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> str | PromptOutputT_co | list[ToolCall] | list[list[ToolCall] | str] | list[str | PromptOutputT_co | list[ToolCall]]:
+    ) -> (
+        str
+        | PromptOutputT_co
+        | list[ToolCall]
+        | list[list[ToolCall] | str]
+        | list[str | PromptOutputT_co | list[ToolCall]]
+    ):
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -339,7 +345,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools] if tools else None
         )
 
-        prompts : list[BasePrompt] = [SimplePrompt(p) if isinstance(p, str | list) else p for p in prompt]  # type: ignore
+        prompts: list[BasePrompt] = [SimplePrompt(p) if isinstance(p, str | list) else p for p in prompt]  # type: ignore
 
         merged_options = (self.default_options | options) if options else self.default_options
 
