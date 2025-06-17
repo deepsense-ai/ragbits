@@ -4,7 +4,11 @@ import pytest
 
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentResult, ToolCallResult
-from ragbits.agents.exceptions import AgentToolNotAvailableError, AgentToolNotSupportedError
+from ragbits.agents.exceptions import (
+    AgentInvalidPromptInputError,
+    AgentToolNotAvailableError,
+    AgentToolNotSupportedError,
+)
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
 
@@ -125,3 +129,36 @@ async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
 
     with pytest.raises(AgentToolNotSupportedError):
         await agent.run()
+
+
+async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input(llm_without_tool_call: MockLLM):
+    agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
+
+    with pytest.raises(AgentInvalidPromptInputError) as exc_info:
+        await agent.run(input=None)
+
+    assert exc_info.value.prompt_type is None
+    assert exc_info.value.input_type is None
+    assert "Invalid prompt/input combination: prompt=None, input=None" in str(exc_info.value)
+
+
+async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_tool_call: MockLLM):
+    agent = Agent(llm=llm_without_tool_call, prompt=123)  # type: ignore
+
+    with pytest.raises(AgentInvalidPromptInputError) as exc_info:
+        await agent.run(input={"key": "value"})
+
+    assert exc_info.value.prompt_type == 123
+    assert exc_info.value.input_type == {"key": "value"}
+    assert "Invalid prompt/input combination" in str(exc_info.value)
+
+
+async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_tool_call: MockLLM):
+    agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
+
+    with pytest.raises(AgentInvalidPromptInputError) as exc_info:
+        await agent.run(input=["item1", "item2"])
+
+    assert exc_info.value.prompt_type is None
+    assert exc_info.value.input_type == ["item1", "item2"]
+    assert "Invalid prompt/input combination" in str(exc_info.value)
