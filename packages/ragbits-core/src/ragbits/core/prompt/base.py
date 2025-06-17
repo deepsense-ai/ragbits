@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Generic
 
 from pydantic import BaseModel
-from typing_extensions import TypeVar
+from typing_extensions import Self, TypeVar
 
 ChatFormat = list[dict[str, Any]]
 PromptOutputT_co = TypeVar("PromptOutputT_co", default=str, covariant=True)
@@ -75,7 +75,9 @@ class SimplePrompt(BasePrompt):
     """
 
     def __init__(self, content: str | ChatFormat) -> None:
-        self._content = content
+        self._conversation_history: list[dict[str, Any]] = (
+            [{"role": "user", "content": content}] if isinstance(content, str) else content
+        )
 
     @property
     def chat(self) -> ChatFormat:
@@ -85,9 +87,51 @@ class SimplePrompt(BasePrompt):
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        if isinstance(self._content, str):
-            return [{"role": "user", "content": self._content}]
-        return self._content
+        return self._conversation_history
 
     def __repr__(self) -> str:
         return f"SimplePrompt(content={self._content})"
+
+    def add_tool_use_message(
+        self,
+        tool_call_id: str,
+        tool_name: str,
+        tool_arguments: dict,
+        tool_call_result: Any,  # noqa: ANN401
+    ) -> Self:
+        """
+        Add tool call messages to the conversation history.
+
+        Args:
+            tool_call_id (str): The id of the tool call.
+            tool_name (str): The name of the tool.
+            tool_arguments (dict): The arguments of the tool.
+            tool_call_result (any): The tool call result.
+
+        Returns:
+            The current prompt with updated conversation history.
+        """
+        self._conversation_history.extend(
+            [
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": tool_call_id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_name,
+                                "arguments": str(tool_arguments),
+                            },
+                        }
+                    ],
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call_id,
+                    "content": str(tool_call_result),
+                },
+            ]
+        )
+        return self

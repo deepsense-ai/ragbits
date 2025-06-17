@@ -109,7 +109,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Returns:
             Number of tokens in the prompt.
         """
-        return sum(litellm.token_counter(model=self.model_name, text=message["content"]) for message in prompt.chat)
+        return sum(
+            litellm.token_counter(model=self.model_name, text=message.get("content") or "") for message in prompt.chat
+        )
 
     def get_token_id(self, token: str) -> int:
         """

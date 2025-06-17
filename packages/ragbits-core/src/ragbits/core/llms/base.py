@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable, MutableSequence
 from typing import ClassVar, Generic, TypeVar, overload
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
 
 from ragbits.core import llms
@@ -40,9 +40,10 @@ class ToolCall(BaseModel):
     A schema of tool call data
     """
 
+    id: str
+    type: str
     name: str
     arguments: dict
-    model_config = ConfigDict(extra="allow")
 
     @field_validator("arguments", mode="before")
     def parse_tool_arguments(cls, tool_arguments: str) -> dict:
