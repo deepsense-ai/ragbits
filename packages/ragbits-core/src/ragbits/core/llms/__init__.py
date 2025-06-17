@@ -1,5 +1,5 @@
 from .base import LLM
 from .litellm import LiteLLM, LiteLLMOptions
-from .local import LocalLLMOptions
+from .local import LocalLLM, LocalLLMOptions
 
-__all__ = ["LLM", "LiteLLM", "LiteLLMOptions", "LocalLLMOptions"]
+__all__ = ["LLM", "LiteLLM", "LiteLLMOptions", "LocalLLM", "LocalLLMOptions"]
