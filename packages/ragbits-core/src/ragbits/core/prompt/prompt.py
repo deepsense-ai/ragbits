@@ -10,15 +10,15 @@ from jinja2 import Environment, Template, meta
 from pydantic import BaseModel
 from typing_extensions import TypeVar, get_original_bases
 
-from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOutputT
+from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOutputT_co
 from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
-FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
+FewShotExample = tuple[str | PromptInputT, str | PromptOutputT_co]
 
 
-class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOutputT], metaclass=ABCMeta):
+class Prompt(Generic[PromptInputT, PromptOutputT_co], BasePromptWithParser[PromptOutputT_co], metaclass=ABCMeta):
     """
     Generic class for prompts. It contains the system and user prompts, and additional messages.
 
@@ -31,15 +31,15 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
     # Additional messages to be added to the conversation after the system prompt,
     # pairs of user message and assistant response
-    few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
+    few_shots: list[FewShotExample[PromptInputT, PromptOutputT_co]] = []
 
     # function that parses the response from the LLM to specific output type
     # if not provided, the class tries to set it automatically based on the output type
-    response_parser: Callable[[str], PromptOutputT | Awaitable[PromptOutputT]]
+    response_parser: Callable[[str], PromptOutputT_co | Awaitable[PromptOutputT_co]]
 
     # Automatically set in __init_subclass__
     input_type: type[PromptInputT] | None
-    output_type: type[PromptOutputT]
+    output_type: type[PromptOutputT_co]
     system_prompt_template: Template | None
     user_prompt_template: Template
     image_input_fields: list[str] | None = None
@@ -99,11 +99,11 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return textwrap.dedent(message).strip()
 
     @classmethod
-    def _detect_response_parser(cls) -> Callable[[str], PromptOutputT | Awaitable[PromptOutputT]]:
+    def _detect_response_parser(cls) -> Callable[[str], PromptOutputT_co | Awaitable[PromptOutputT_co]]:
         if hasattr(cls, "response_parser") and cls.response_parser is not None:
             return cls.response_parser
         if issubclass(cls.output_type, BaseModel):
-            return cast(Callable[[str], PromptOutputT], build_pydantic_parser(cls.output_type))
+            return cast(Callable[[str], PromptOutputT_co], build_pydantic_parser(cls.output_type))
         if cls.output_type in DEFAULT_PARSERS:
             return DEFAULT_PARSERS[cls.output_type]
         raise ValueError(f"Response parser not provided for output type {cls.output_type}")
@@ -123,10 +123,10 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return super().__init_subclass__(**kwargs)
 
     @overload
-    def __init__(self: "Prompt[None, PromptOutputT]") -> None: ...
+    def __init__(self: "Prompt[None, PromptOutputT_co]") -> None: ...
 
     @overload
-    def __init__(self: "Prompt[PromptInputT, PromptOutputT]", input_data: PromptInputT) -> None: ...
+    def __init__(self: "Prompt[PromptInputT, PromptOutputT_co]", input_data: PromptInputT) -> None: ...
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         input_data = args[0] if args else kwargs.get("input_data")
@@ -141,7 +141,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
-        self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
+        self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT_co]] = []
 
         # Additional conversation history that can be added dynamically using methods
         self._conversation_history: list[dict[str, Any]] = []
@@ -174,8 +174,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return chat
 
     def add_few_shot(
-        self, user_message: str | PromptInputT, assistant_message: str | PromptOutputT
-    ) -> "Prompt[PromptInputT, PromptOutputT]":
+        self, user_message: str | PromptInputT, assistant_message: str | PromptOutputT_co
+    ) -> "Prompt[PromptInputT, PromptOutputT_co]":
         """
         Add a few-shot example to the conversation.
 
@@ -222,7 +222,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":
+    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT_co]":
         """
         Add a user message to the conversation history.
 
@@ -258,7 +258,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._conversation_history.append({"role": "user", "content": content})
         return self
 
-    def add_assistant_message(self, message: str | PromptOutputT) -> "Prompt[PromptInputT, PromptOutputT]":
+    def add_assistant_message(self, message: str | PromptOutputT_co) -> "Prompt[PromptInputT, PromptOutputT_co]":
         """
         Add an assistant message to the conversation history.
 
@@ -323,7 +323,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         """
         return issubclass(self.output_type, BaseModel)
 
-    async def parse_response(self, response: str) -> PromptOutputT:
+    async def parse_response(self, response: str) -> PromptOutputT_co:
         """
         Parse the response from the LLM to the desired output type.
 

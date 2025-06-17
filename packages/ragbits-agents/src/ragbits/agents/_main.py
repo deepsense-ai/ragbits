@@ -5,18 +5,18 @@ from typing import Any, ClassVar, Generic, cast, overload
 from ragbits import agents
 from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.options import Options
-from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
+from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT_co
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
 
 @dataclass
-class AgentResult(Generic[PromptOutputT]):
+class AgentResult(Generic[PromptOutputT_co]):
     """
     Result of the agent run.
     """
 
-    content: PromptOutputT
+    content: PromptOutputT_co
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
@@ -32,7 +32,7 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
 
 class Agent(
-    ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]
+    ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT_co]
 ):
     """
     Agent class that orchestrates the LLM and the prompt.
@@ -47,7 +47,7 @@ class Agent(
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: type[Prompt[PromptInputT, PromptOutputT]],
+        prompt: type[Prompt[PromptInputT, PromptOutputT_co]],
         *,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
@@ -65,18 +65,18 @@ class Agent(
 
     @overload
     async def run(
-        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT_co]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT]: ...
+    ) -> AgentResult[PromptOutputT_co]: ...
 
     @overload
     async def run(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT_co]",
         options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT]: ...
+    ) -> AgentResult[PromptOutputT_co]: ...
 
-    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:  # noqa: D417
+    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT_co]:  # noqa: D417
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
 

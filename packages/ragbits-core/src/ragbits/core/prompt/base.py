@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing_extensions import TypeVar
 
 ChatFormat = list[dict[str, Any]]
-PromptOutputT = TypeVar("PromptOutputT", default=str)
+PromptOutputT_co = TypeVar("PromptOutputT_co", default=str, covariant=True)
 
 
 class BasePrompt(metaclass=ABCMeta):
@@ -47,14 +47,14 @@ class BasePrompt(metaclass=ABCMeta):
         return []
 
 
-class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta):
+class BasePromptWithParser(Generic[PromptOutputT_co], BasePrompt, metaclass=ABCMeta):
     """
     Base class for prompts that know how to parse the output from the LLM to their specific
     output type.
     """
 
     @abstractmethod
-    async def parse_response(self, response: str) -> PromptOutputT:
+    async def parse_response(self, response: str) -> PromptOutputT_co:
         """
         Parse the response from the LLM to the desired output type.
 
@@ -62,7 +62,7 @@ class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta
             response (str): The response from the LLM.
 
         Returns:
-            PromptOutputT: The parsed response.
+            PromptOutputT_co: The parsed response.
 
         Raises:
             ResponseParsingError: If the response cannot be parsed.
@@ -88,3 +88,6 @@ class SimplePrompt(BasePrompt):
         if isinstance(self._content, str):
             return [{"role": "user", "content": self._content}]
         return self._content
+
+    def __repr__(self) -> str:
+        return f"SimplePrompt(content={self._content})"
