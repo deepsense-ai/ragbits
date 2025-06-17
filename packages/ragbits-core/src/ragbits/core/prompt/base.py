@@ -90,7 +90,7 @@ class SimplePrompt(BasePrompt):
         return self._conversation_history
 
     def __repr__(self) -> str:
-        return f"SimplePrompt(content={self._content})"
+        return f"SimplePrompt(content={self._conversation_history})"
 
     def add_tool_use_message(
         self,
