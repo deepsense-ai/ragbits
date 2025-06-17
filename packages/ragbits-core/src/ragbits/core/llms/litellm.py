@@ -127,8 +127,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self,
         prompt: BasePrompt,
         options: LiteLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> dict:
         """
@@ -137,9 +135,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Output schema for requesting a specific response format.
-                Only used if the client has been initialized with `use_structured_output=True`.
             tools: Functions to be used as tools by the LLM.
 
         Returns:
@@ -222,8 +217,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self,
         prompt: BasePrompt,
         options: LiteLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
@@ -232,9 +225,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Output schema for requesting a specific response format.
-                Only used if the client has been initialized with `use_structured_output=True`.
+        
             tools: Functions to be used as tools by the LLM.
 
         Returns:
@@ -253,7 +244,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
-        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
+        response_format = self._get_response_format(output_schema=prompt.output_schema(), json_mode=prompt.json_mode)
         input_tokens = self.count_tokens(prompt)
 
         start_time = time.perf_counter()

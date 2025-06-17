@@ -337,8 +337,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         self,
         prompt: BasePrompt,
         options: LLMClientOptionsT,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> dict:
         """
@@ -347,8 +345,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Schema for structured response (either Pydantic model or a JSON schema).
             tools: Functions to be used as tools by the LLM.
 
         Returns:
@@ -360,8 +356,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         self,
         prompt: BasePrompt,
         options: LLMClientOptionsT,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
@@ -370,8 +364,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Schema for structured response (either Pydantic model or a JSON schema).
             tools: Functions to be used as tools by the LLM.
 
         Returns:

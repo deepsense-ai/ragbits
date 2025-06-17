@@ -41,8 +41,6 @@ class MockLLM(LLM[MockLLMOptions]):
         self,
         prompt: BasePrompt,
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> dict:
         """
@@ -57,8 +55,6 @@ class MockLLM(LLM[MockLLMOptions]):
         self,
         prompt: BasePrompt,
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """

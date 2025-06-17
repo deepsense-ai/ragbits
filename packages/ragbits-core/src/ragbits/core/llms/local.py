@@ -93,8 +93,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         self,
         prompt: BasePrompt,
         options: LocalLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> dict:
         """
@@ -148,8 +146,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         self,
         prompt: BasePrompt,
         options: LocalLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
