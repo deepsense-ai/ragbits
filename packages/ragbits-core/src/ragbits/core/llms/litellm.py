@@ -1,9 +1,11 @@
+import asyncio
 import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Iterable
 from typing import Any
 
 import litellm
 import tiktoken
+from litellm import Router
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -41,6 +43,8 @@ class LiteLLMOptions(Options):
     top_logprobs: int | None | NotGiven = NOT_GIVEN
     logit_bias: dict | None | NotGiven = NOT_GIVEN
     mock_response: str | None | NotGiven = NOT_GIVEN
+    tpm: int | None | NotGiven = NOT_GIVEN
+    rpm: int | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
@@ -125,20 +129,20 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     async def _call(
         self,
-        prompt: BasePrompt,
+        prompt: Iterable[BasePrompt],
         options: LiteLLMOptions,
         tools: list[dict] | None = None,
-    ) -> dict:
+    ) -> list[dict]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
-            prompt: BasePrompt object containing the conversation
+            prompt: Iterable of BasePrompt objects containing conversations
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
 
         Returns:
-            Response string from LLM.
+            list of dictionaries with responses from the LLM and metadata.
 
         Raises:
             LLMConnectionError: If there is a connection error with the LLM API.
@@ -147,69 +151,61 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMNotSupportingImagesError: If the model does not support images.
             LLMNotSupportingToolUseError: If the model does not support tool use.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
+        if any(p.list_images() for p in prompt) and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
-        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
-
         start_time = time.perf_counter()
-        response = await self._get_litellm_response(
-            conversation=prompt.chat,
-            options=options,
-            response_format=response_format,
-            tools=tools,
-        )
-        prompt_throughput = time.perf_counter() - start_time
-
-        if not response.choices:  # type: ignore
-            raise LLMEmptyResponseError()
-
-        results = {}
-        results["tool_calls"] = (
-            [
-                {
-                    "name": tool_call.function.name,
-                    "arguments": tool_call.function.arguments,
-                    "type": tool_call.type,
-                    "id": tool_call.id,
-                }
-                for tool_call in tool_calls
-            ]
-            if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
-            else None
-        )
-        results["response"] = response.choices[0].message.content  # type: ignore
-
-        if options.logprobs:
-            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
-
-        if response.usage:  # type: ignore
-            results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
-            results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
-            results["total_tokens"] = response.usage.total_tokens  # type: ignore
-
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
-                value=response.usage.prompt_tokens,  # type: ignore
-                model=self.model_name,
-                prompt=prompt.__class__.__name__,
+        raw_responses = await asyncio.gather(
+            *(
+                self._get_litellm_response(
+                    conversation=single_prompt.chat,
+                    options=options,
+                    response_format=self._get_response_format(
+                        output_schema=single_prompt.output_schema(), json_mode=single_prompt.json_mode
+                    ),
+                    tools=tools,
+                )
+                for single_prompt in prompt
             )
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
-                value=response.usage.total_tokens / prompt_throughput,  # type: ignore
-                model=self.model_name,
-                prompt=prompt.__class__.__name__,
+        )
+
+        results: list[dict] = []
+        throughput_batch = time.perf_counter() - start_time
+
+        for response in raw_responses:
+            if not response.choices:  # type: ignore
+                raise LLMEmptyResponseError()
+
+            result = {}
+            result["response"] = response.choices[0].message.content  # type: ignore
+            result["throughput"] = throughput_batch / float(len(raw_responses))
+
+            result["tool_calls"] = (
+                [
+                    {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                        "type": tool_call.type,
+                        "id": tool_call.id,
+                    }
+                    for tool_call in tool_calls
+                ]
+                if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
+                else None
             )
 
-        record(
-            metric=HistogramMetric.PROMPT_THROUGHPUT,
-            value=prompt_throughput,
-            model=self.model_name,
-            prompt=prompt.__class__.__name__,
-        )
+            if options.logprobs:
+                result["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
+
+            if response.usage:  # type: ignore
+                result["completion_tokens"] = response.usage.completion_tokens  # type: ignore
+                result["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
+                result["total_tokens"] = response.usage.total_tokens  # type: ignore
+
+            results.append(result)
 
         return results
 
@@ -316,6 +312,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         return response_to_async_generator(response)  # type: ignore
 
+    def _create_router_from_self_and_options(self, options: LiteLLMOptions) -> Router:
+        params: dict[str, Any] = {
+            "model": self.model_name,
+            "api_key": self.api_key,
+            "api_version": self.api_version,
+            "base_url": self.api_base,
+        }
+
+        if options.tpm:
+            params["tpm"] = options.tpm
+        if options.rpm:
+            params["rpm"] = options.rpm
+
+        return Router(
+            model_list=[{"model_name": self.model_name, "litellm_params": params}],
+            routing_strategy="usage-based-routing-v2",
+            enable_pre_call_checks=True,
+        )
+
     async def _get_litellm_response(
         self,
         conversation: ChatFormat,
@@ -324,15 +339,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
         tools: list[dict] | None = None,
         stream: bool = False,
     ) -> ModelResponse | CustomStreamWrapper:
-        entrypoint = self.router or litellm
+        entrypoint = self.router or self._create_router_from_self_and_options(options)
 
         try:
             response = await entrypoint.acompletion(
-                messages=conversation,
                 model=self.model_name,
-                base_url=self.api_base,
-                api_key=self.api_key,
-                api_version=self.api_version,
+                messages=conversation,
                 response_format=response_format,
                 tools=tools,
                 stream=stream,
