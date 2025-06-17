@@ -1,6 +1,4 @@
-from collections.abc import AsyncGenerator
-
-from pydantic import BaseModel
+from collections.abc import AsyncGenerator, Iterable
 
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
@@ -39,31 +37,39 @@ class MockLLM(LLM[MockLLMOptions]):
 
     async def _call(  # noqa: PLR6301
         self,
-        prompt: BasePrompt,
+        prompt: Iterable[BasePrompt],
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> dict:
+    ) -> list[dict]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
-        self.calls.append(prompt.chat)
+        prompt = list(prompt)
+        self.calls.extend([p.chat for p in prompt])
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
-
         tool_calls = (
             None
-            if isinstance(options.tool_calls, NotGiven) or any(message["role"] == "tool" for message in prompt.chat)
+            if isinstance(options.tool_calls, NotGiven)
+            or any(message["role"] == "tool" for p in prompt for message in p.chat)
             else options.tool_calls
         )
-        return {"response": response, "tool_calls": tool_calls, "is_mocked": True}
+        return [
+            {
+                "response": response,
+                "tool_calls": tool_calls,
+                "is_mocked": True,
+                "prompt_tokens": 10 * (i + 1),
+                "total_tokens": 30 * (i + 1),
+                "completion_tokens": 20 * (i + 1),
+                "throughput": 1 / len(prompt),
+            }
+            for i in range(len(prompt))
+        ]
 
     async def _call_streaming(  # noqa: PLR6301
         self,
         prompt: BasePrompt,
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """

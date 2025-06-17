@@ -291,11 +291,10 @@ async def test_generation_with_metadata():
     options = LiteLLMOptions(mock_response="I'm fine, thank you.")
     output = await llm.generate_with_metadata(prompt, options=options)
     assert output.content == "I'm fine, thank you."
-    assert output.metadata == {
-        "completion_tokens": 20,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-    }
+    assert output.metadata["completion_tokens"] == 20
+    assert output.metadata["prompt_tokens"] == 10
+    assert output.metadata["total_tokens"] == 30
+    assert "throughput" in output.metadata
 
 
 @patch("litellm.supports_function_calling")
@@ -314,11 +313,10 @@ async def test_generation_with_metadata_and_tools(mock_supports_function_calling
             type="function",
         )
     ]
-    assert output.metadata == {
-        "completion_tokens": 10,
-        "prompt_tokens": 20,
-        "total_tokens": 30,
-    }
+    assert output.metadata["completion_tokens"] == 10
+    assert output.metadata["prompt_tokens"] == 20
+    assert output.metadata["total_tokens"] == 30
+    assert "throughput" in output.metadata
 
 
 @patch("litellm.supports_function_calling")
@@ -330,11 +328,10 @@ async def test_generation_with_metadata_and_tools_no_tool_used(mock_supports_fun
     mock_llm_responses_with_tool_no_tool_used(llm)
     output = await llm.generate_with_metadata(prompt, tools=[get_weather])
     assert output.content == "I'm fine."
-    assert output.metadata == {
-        "completion_tokens": 10,
-        "prompt_tokens": 20,
-        "total_tokens": 30,
-    }
+    assert output.metadata["completion_tokens"] == 10
+    assert output.metadata["prompt_tokens"] == 20
+    assert output.metadata["total_tokens"] == 30
+    assert "throughput" in output.metadata
 
 
 async def test_generation_without_image_support():
@@ -432,3 +429,35 @@ def test_get_token_id():
     llm = LiteLLM(model_name="gpt-4o")
     token_id = llm.get_token_id("Yes")
     assert token_id == 13022
+
+
+async def test_create_router_from_self_and_options():
+    """Test that _create_router_from_self_and_options creates a Router with correct configuration."""
+    llm = LiteLLM(
+        model_name="gpt-3.5-turbo",
+        api_key="test_key",
+        api_base="https://test-api.openai.azure.com",
+        api_version="2024-07-19-test",
+    )
+
+    router = llm._create_router_from_self_and_options(LiteLLMOptions())
+
+    assert router.routing_strategy == "usage-based-routing-v2"
+    assert router.enable_pre_call_checks is True
+    assert len(router.model_list) == 1
+
+    model_config = router.model_list[0]
+    assert model_config["model_name"] == "gpt-3.5-turbo"
+    assert model_config["litellm_params"]["model"] == "gpt-3.5-turbo"
+    assert model_config["litellm_params"]["api_key"] == "test_key"
+    assert model_config["litellm_params"]["api_version"] == "2024-07-19-test"
+    assert model_config["litellm_params"]["base_url"] == "https://test-api.openai.azure.com"
+    assert "tpm" not in model_config["litellm_params"]
+    assert "rpm" not in model_config["litellm_params"]
+
+    # Test with TPM/RPM limits
+    router_with_limits = llm._create_router_from_self_and_options(LiteLLMOptions(tpm=1000, rpm=60))
+
+    model_config_with_limits = router_with_limits.model_list[0]
+    assert model_config_with_limits["litellm_params"]["tpm"] == 1000
+    assert model_config_with_limits["litellm_params"]["rpm"] == 60

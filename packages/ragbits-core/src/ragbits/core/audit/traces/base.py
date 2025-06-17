@@ -122,7 +122,7 @@ class AttributeFormatter:
         self.data = data
         self.prefix = prefix
         self.flattened: dict[
-            str, str | float | int | bool | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
+            str, str | float | int | bool | None | Sequence[str] | Sequence[bool] | Sequence[int] | Sequence[float]
         ] = {}
 
     def process_attributes(
@@ -178,13 +178,13 @@ class AttributeFormatter:
             self.flattened[curr_key] = self.process_string(repr(item), curr_key)
             return
 
-        if isinstance(item, int | float | bool):
+        if isinstance(item, int | float | bool) or item is None:
             self.flattened[curr_key] = item
         # shorten too long string if not prompt
         elif isinstance(item, str):
             self.flattened[curr_key] = self.process_string(item, curr_key)
-        elif item is None:
-            self.flattened[curr_key] = repr(None)
+        elif isinstance(item, BasePrompt):
+            self.flattened[curr_key] = self.process_string(str(item.chat), curr_key)
         elif isinstance(item, list | tuple | set):
             if item == []:
                 self.flattened[curr_key] = repr(item)
@@ -254,6 +254,10 @@ class AttributeFormatter:
         # process prompt in chat format
         elif "prompt" in curr_key.split(".") and self.is_in_chat_format(lst):
             self.process_prompt_chat(curr_key, lst)  # type: ignore
+        elif isinstance(lst[0], BasePrompt):
+            for idx, item in enumerate(lst):
+                position_key = f"{curr_key}.[{idx}]"
+                self.process_item(item, position_key, recurrence)
         elif list_length < self.max_list_length and len(repr(lst)) < self.max_string_length:
             self.flattened[curr_key] = repr(lst)
         else:
