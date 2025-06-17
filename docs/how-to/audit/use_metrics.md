@@ -28,6 +28,8 @@ To create a histogram metric, use the [`create_histogram`][ragbits.core.audit.me
 
 ```python
 from ragbits.core.audit import create_histogram, record
+import random
+import time
 
 request_duration = create_histogram(
     name="request_duration",
@@ -35,8 +37,9 @@ request_duration = create_histogram(
     description="Duration of requests",
 )
 
-for duration in [10, 20, 30, 40, 50]:
-    record(request_duration, duration)
+for i in range(1000):
+        record(request_duration, random.randint(1, 100))
+        time.sleep(1)
 ```
 
 ## Using OpenTelemetry meter
