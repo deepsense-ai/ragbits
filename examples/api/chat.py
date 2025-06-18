@@ -58,8 +58,9 @@ class MyChat(ChatInterface):
     ui_customization = UICustomization(
         header=HeaderCustomization(title="Example Ragbits Chat", subtitle="by deepsense.ai", logo="🐰"),
         welcome_message=(
-            "Hello! I'm your AI assistant.\n\n How can I help you today?"
-            "You can ask me *anything*! I can provide information, answer questions, and assist you with various tasks."
+            "Hello! I'm your AI assistant.\n\n How can I help you today? "
+            "You can ask me **anything**! "
+            "I can provide information, answer questions, and assist you with various tasks."
         ),
     )
 
