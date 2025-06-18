@@ -6,6 +6,7 @@
 - Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
 - CI/CD changes for new directory structure (#582)
 - Move form definitions to JSONSchema (#616)
+- Allow UI cutomization using config endpoint (#643)
 
 ## 1.0.0 (2025-06-04)
 
