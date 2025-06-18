@@ -19,11 +19,16 @@ export type ChatMessageProps = {
     content?: string;
   };
   chatMessage: ChatMessageType;
+  isLoading: boolean;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
-    { chatMessage: { serverId, content, role, references }, classNames },
+    {
+      chatMessage: { serverId, content, role, references },
+      classNames,
+      isLoading,
+    },
     ref,
   ) => {
     const rightAlign = role === MessageRole.USER;
@@ -82,18 +87,28 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               </div>
             ) : (
               <>
-                <Markdown
-                  className={cn(
-                    "markdown-container prose max-w-full",
-                    theme === Theme.DARK && "dark:prose-invert",
-                    classNames?.content,
-                  )}
-                  remarkPlugins={[remarkGfm]}
-                >
-                  {content}
-                </Markdown>
-                {references && references.length > 0 && (
-                  <div className="text-xs">
+                {content.length > 0 ? (
+                  <Markdown
+                    className={cn(
+                      "markdown-container prose max-w-full",
+                      theme === Theme.DARK && "dark:prose-invert",
+                      classNames?.content,
+                    )}
+                    remarkPlugins={[remarkGfm]}
+                  >
+                    {content}
+                  </Markdown>
+                ) : (
+                  <div className="flex items-center gap-2 text-default-500">
+                    <Icon
+                      icon="heroicons:arrow-path"
+                      className="animate-spin"
+                    />
+                    <span>Thinking...</span>
+                  </div>
+                )}
+                {references && references.length > 0 && !isLoading && (
+                  <div className="text-xs italic text-default-500">
                     <ul className="list-disc pl-4">
                       {references.map((reference, index) => (
                         <li key={index}>
@@ -111,30 +126,34 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   </div>
                 )}
                 <div className="mt-2 flex items-center gap-2">
-                  <DelayedTooltip content="Copy" placement="bottom">
-                    <Button
-                      isIconOnly
-                      variant="ghost"
-                      className="p-0"
-                      aria-label="Copy message"
-                      onPress={onCopyClick}
-                    >
-                      <Icon icon={copyIcon} />
-                    </Button>
-                  </DelayedTooltip>
+                  {!isLoading && (
+                    <>
+                      <DelayedTooltip content="Copy" placement="bottom">
+                        <Button
+                          isIconOnly
+                          variant="ghost"
+                          className="p-0"
+                          aria-label="Copy message"
+                          onPress={onCopyClick}
+                        >
+                          <Icon icon={copyIcon} />
+                        </Button>
+                      </DelayedTooltip>
 
-                  {serverId && (
-                    <PluginWrapper
-                      plugin={FeedbackFormPlugin}
-                      component="FeedbackForm"
-                      componentProps={{
-                        messageServerId: serverId,
-                      }}
-                      skeletonSize={{
-                        width: "88px",
-                        height: "40px",
-                      }}
-                    />
+                      {serverId && (
+                        <PluginWrapper
+                          plugin={FeedbackFormPlugin}
+                          component="FeedbackForm"
+                          componentProps={{
+                            messageServerId: serverId,
+                          }}
+                          skeletonSize={{
+                            width: "88px",
+                            height: "40px",
+                          }}
+                        />
+                      )}
+                    </>
                   )}
                 </div>
               </>
