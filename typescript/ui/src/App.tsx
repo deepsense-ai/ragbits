@@ -3,24 +3,28 @@ import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import PromptInput from "./core/components/PromptInput/PromptInput";
-import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext.ts";
-import { useThemeContext } from "./contexts/ThemeContext/useThemeContext.ts";
+import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext";
+import { useThemeContext } from "./contexts/ThemeContext/useThemeContext";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
+import { useConfigContext } from "./contexts/ConfigContext/useConfigContext";
 
 export default function App() {
-  const [message, setMessage] = useState<string>("");
-  const [showScrollDownButton, setShowScrollDownButton] = useState(false);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const {
+    config: { customization },
+  } = useConfigContext();
   const {
     history,
     sendMessage,
     isLoading: historyIsLoading,
   } = useHistoryContext();
   const { theme } = useThemeContext();
+  const [message, setMessage] = useState<string>("");
+  const [showScrollDownButton, setShowScrollDownButton] = useState(false);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => history.length > 0, [history.length]);
 
   const handleScroll = useCallback(() => {
@@ -85,9 +89,6 @@ export default function App() {
     setMessage("");
   };
 
-  const heroMessage = `Hello! I'm your AI assistant.\n\n How can I help you today?
-You can ask me anything! I can provide information, answer questions, and assist you with various tasks.`;
-
   const historyComponent = (
     <ScrollShadow
       className="relative flex h-full flex-col gap-6 pb-8"
@@ -102,12 +103,14 @@ You can ask me anything! I can provide information, answer questions, and assist
   const heroComponent = (
     <div className="flex h-full w-full items-center justify-center">
       <div className="flex w-full max-w-[600px] flex-col gap-4">
-        <Markdown
-          className="text-center text-large text-default-900"
-          remarkPlugins={[remarkGfm]}
-        >
-          {heroMessage}
-        </Markdown>
+        {customization?.welcome_message && (
+          <Markdown
+            className="text-center text-large text-default-900"
+            remarkPlugins={[remarkGfm]}
+          >
+            {customization?.welcome_message}
+          </Markdown>
+        )}
         <div className="text-center text-small text-default-500">
           You can start a conversation by typing in the input box below.
         </div>
@@ -116,6 +119,9 @@ You can ask me anything! I can provide information, answer questions, and assist
   );
 
   const content = showHistory ? historyComponent : heroComponent;
+  const logo = customization?.header?.logo ?? "🐰";
+  const title = customization?.header?.title ?? "Ragbits Chat";
+  const subTitle = customization?.header?.subtitle ?? "by deepsense.ai";
 
   return (
     <div
@@ -125,7 +131,7 @@ You can ask me anything! I can provide information, answer questions, and assist
       )}
     >
       <div className="h-full w-full max-w-full">
-        <Layout subTitle="by deepsense.ai" title="Ragbits Chat">
+        <Layout subTitle={subTitle} title={title} logo={logo}>
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             {content}
             {/* Floating Scroll-to-bottom button */}

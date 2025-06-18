@@ -11,6 +11,7 @@ from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference
+from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 
 
 class LikeFormExample(BaseModel):
@@ -160,6 +161,34 @@ def test_config_endpoint_without_feedback(client: TestClient) -> None:
     assert data["feedback"]["dislike"]["enabled"] is False
     assert data["feedback"]["like"]["form"] is None
     assert data["feedback"]["dislike"]["form"] is None
+
+
+def test_config_endpoint_with_customization(client: TestClient, api: RagbitsAPI) -> None:
+    """Test the config endpoint with customization."""
+    # Set up customization
+    api.chat_interface.ui_customization = UICustomization(
+        header=HeaderCustomization(title="Custom Title", subtitle="Custom Subtitle", logo="Custom Logo"),
+        welcome_message="Custom Welcome Message",
+    )
+
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "customization" in data
+    assert data["customization"]["header"]["title"] == "Custom Title"
+    assert data["customization"]["header"]["subtitle"] == "Custom Subtitle"
+    assert data["customization"]["header"]["logo"] == "Custom Logo"
+    assert data["customization"]["welcome_message"] == "Custom Welcome Message"
+
+
+def test_config_endpoint_without_customization(client: TestClient) -> None:
+    """Test the config endpoint without customization."""
+    # Default MockChatInterface has no customization
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "customization" in data
+    assert data["customization"] is None
 
 
 def test_validation_exception_handler(client: TestClient) -> None:
