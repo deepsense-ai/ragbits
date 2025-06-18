@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added Eslint, Prettier & CI/CD for Ragbits API Clients
+- Added Eslint, Prettier & CI/CD for Ragbits API Clients (#604)
 - Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
 - CI/CD changes for new directory structure (#582)
 - Move form definitions to JSONSchema (#616)

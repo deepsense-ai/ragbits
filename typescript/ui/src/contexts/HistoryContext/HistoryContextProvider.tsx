@@ -1,7 +1,6 @@
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
-import { noop } from "lodash";
 import {
   TypedChatResponse as ChatResponse,
   ChatResponseType,
@@ -111,6 +110,35 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     [_handleNonHistoryResponse, _handleHistoryResponse],
   );
 
+  const setMessageLoading = useCallback(
+    (messageId: string, isLoading: boolean) => {
+      updateHistoryState((prev) => {
+        const next = new Map(prev);
+        const message = next.get(messageId);
+        if (message) {
+          next.set(messageId, { ...message, isLoading });
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  const stopAnswering = useCallback(() => {
+    // Find the last assistant message that is loading
+    const lastLoadingMessage = Array.from(history.values())
+      .reverse()
+      .find(
+        (message) =>
+          message.role === MessageRole.ASSISTANT && message.isLoading,
+      );
+
+    if (lastLoadingMessage) {
+      setMessageLoading(lastLoadingMessage.id, false);
+    }
+    chatFactory.cancel();
+  }, [history, setMessageLoading, chatFactory.cancel]);
+
   const sendMessage = useCallback(
     (text?: string): void => {
       if (!text) return;
@@ -125,6 +153,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const assistantResponseId = addMessage({
         role: MessageRole.ASSISTANT,
         content: "",
+        isLoading: true,
       });
 
       // Prepare chat request with conversation context
@@ -151,8 +180,11 @@ export function HistoryProvider({ children }: PropsWithChildren) {
             },
             assistantResponseId,
           );
+          setMessageLoading(assistantResponseId, false);
         },
-        onClose: noop,
+        onClose: () => {
+          setMessageLoading(assistantResponseId, false);
+        },
       });
     },
     [
@@ -174,7 +206,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       clearHistory,
       sendMessage,
       isLoading: chatFactory.isStreaming,
-      stopAnswering: chatFactory.cancel,
+      stopAnswering,
     }),
     [
       history,
@@ -184,7 +216,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       handleResponse,
       sendMessage,
       chatFactory.isStreaming,
-      chatFactory.cancel,
+      stopAnswering,
     ],
   );
 
