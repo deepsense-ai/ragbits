@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
+from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 
 
@@ -52,6 +53,14 @@ class MyChat(ChatInterface):
         like_form=LikeFormExample,
         dislike_enabled=True,
         dislike_form=DislikeFormExample,
+    )
+
+    ui_customization = UICustomization(
+        header=HeaderCustomization(title="Example Ragbits Chat", subtitle="by deepsense.ai", logo="🐰"),
+        welcome_message=(
+            "Hello! I'm your AI assistant.\n\n How can I help you today?"
+            "You can ask me *anything*! I can provide information, answer questions, and assist you with various tasks."
+        ),
     )
 
     def __init__(self) -> None:

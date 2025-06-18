@@ -175,7 +175,10 @@ class RagbitsAPI:
                         "enabled": self.chat_interface.feedback_config.dislike_enabled,
                         "form": dislike_config,
                     },
-                }
+                },
+                "customization": self.chat_interface.ui_customization.model_dump()
+                if self.chat_interface.ui_customization
+                else None,
             }
 
             return JSONResponse(content=config_dict)
