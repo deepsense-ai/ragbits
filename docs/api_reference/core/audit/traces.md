@@ -13,3 +13,5 @@
 ::: ragbits.core.audit.traces.cli.CLITraceHandler
 
 ::: ragbits.core.audit.traces.otel.OtelTraceHandler
+
+::: ragbits.core.audit.traces.logfire.LogfireTraceHandler

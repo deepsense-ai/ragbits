@@ -1,8 +1,8 @@
 """
 Ragbits Core Example: OpenTelemetry
 
-This example demonstrates how to collect traces and metrics using Ragbits audit module.
-We run the LLM generation several times to collect telemetry data, and then export it to the OpenTelementry collector and visualize it in Grafana.
+This example demonstrates how to collect traces and metrics using Ragbits audit module with OpenTelemetry.
+We run the LLM generation several times to collect telemetry data, and then export it to the OpenTelemetry collector and visualize it in Grafana.
 
 The script exports traces to the local OTLP collector running on http://localhost:4317.
 The recommended way to run it is using the official Docker image:

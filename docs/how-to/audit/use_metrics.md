@@ -63,3 +63,24 @@ set_metric_handlers("otel")
     This code snippet exports metrics to the local OpenTelemetry collector running at <http://localhost:4317>. To visualize metrics from Ragbits, open a browser and navigate to the Grafana dashboard at <http://localhost:3000>.
 
 A full example along with a detailed installation guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/otel.py).
+
+## Using Logfire meter
+
+To export metrics to the Logfire collector, you need to generate a write token in your Logfire project settings and set it as an environment variable.
+
+```bash
+export LOGFIRE_TOKEN=<your-logfire-write-token>
+```
+
+Create a new project dashboard based on the "Basic System Metrics (Logfire)" template. This template includes pre-configured panels for visualizing system metrics.
+
+Then set up the [`LogfireMetricHandler`][ragbits.core.audit.metrics.logfire.LogfireMetricHandler] using the [`set_metric_handlers`][ragbits.core.audit.metrics.set_metric_handlers] method.
+
+```python
+from ragbits.core.audit import set_metric_handlers
+
+set_metric_handlers("logfire")
+```
+
+You will find collected metrics in the dashboard you created before.
+A full example along with a detailed guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/logfire_.py).
