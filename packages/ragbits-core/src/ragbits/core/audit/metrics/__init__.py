@@ -38,11 +38,13 @@ def set_metric_handlers(handlers: Handler | list[Handler]) -> None:
             match handler.lower():
                 case "otel":
                     from ragbits.core.audit.metrics.otel import OtelMetricHandler
+
                     if not any(isinstance(item, OtelMetricHandler) for item in _metric_handlers):
                         _metric_handlers.append(OtelMetricHandler())
 
                 case "logfire":
                     from ragbits.core.audit.metrics.logfire import LogfireMetricHandler
+
                     if not any(isinstance(item, LogfireMetricHandler) for item in _metric_handlers):
                         _metric_handlers.append(LogfireMetricHandler())
 

@@ -74,7 +74,7 @@ export LOGFIRE_TOKEN=<your-logfire-write-token>
 
 Create a new project dashboard based on the "Basic System Metrics (Logfire)" template. This template includes pre-configured panels for visualizing system metrics.
 
-Then set up the [`LogfireTraceHandler`][ragbits.core.audit.metrics.logfire.LogfireTraceHandler] using the [`set_metric_handlers`][ragbits.core.audit.metrics.set_metric_handlers] method.
+Then set up the [`LogfireMetricHandler`][ragbits.core.audit.metrics.logfire.LogfireMetricHandler] using the [`set_metric_handlers`][ragbits.core.audit.metrics.set_metric_handlers] method.
 
 ```python
 from ragbits.core.audit import set_metric_handlers

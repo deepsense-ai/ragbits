@@ -124,9 +124,7 @@ async def process_request() -> None:
         DinnerIdeaPrompt(DinnerIdeaPromptInput(chef_type=chef_type, ingredients=ingredients))
         for chef_type in ["busy parent", "budget cook", "Michelin chef"]
     ]
-    responses = await asyncio.gather(
-        *[llm.generate(prompt) for llm, prompt in zip(chefs, prompts, strict=False)]
-    )
+    responses = await asyncio.gather(*[llm.generate(prompt) for llm, prompt in zip(chefs, prompts, strict=False)])
 
     assistant = LiteLLM(model_name="o3", use_structured_output=True)
     prompt = AssistantPrompt(AssistantPromptInput(suggestions=[response.answer for response in responses]))
