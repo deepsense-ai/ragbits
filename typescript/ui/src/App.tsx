@@ -95,7 +95,11 @@ You can ask me anything! I can provide information, answer questions, and assist
       ref={scrollContainerRef}
     >
       {history.map((m) => (
-        <ChatMessage key={m.id} chatMessage={m} isLoading={m.isLoading ?? false} />
+        <ChatMessage
+          key={m.id}
+          chatMessage={m}
+          isLoading={m.isLoading ?? false}
+        />
       ))}
     </ScrollShadow>
   );

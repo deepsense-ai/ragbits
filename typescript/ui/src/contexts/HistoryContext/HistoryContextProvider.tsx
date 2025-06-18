@@ -194,6 +194,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       addMessage,
       chatFactory,
       handleResponse,
+      setMessageLoading,
     ],
   );
 
