@@ -1,9 +1,10 @@
-from opentelemetry.metrics import Histogram, MeterProvider, get_meter
+import logfire
+from opentelemetry.metrics import MeterProvider
 
-from ragbits.core.audit.metrics.base import MetricHandler
+from ragbits.core.audit.metrics.otel import OtelMetricHandler
 
 
-class LogfireMetricHandler(MetricHandler[Histogram]):
+class LogfireMetricHandler(OtelMetricHandler):
     """
     Logfire metric handler.
     """
@@ -16,30 +17,6 @@ class LogfireMetricHandler(MetricHandler[Histogram]):
             provider: The meter provider to use.
             metric_prefix: Prefix for all metric names.
         """
-        super().__init__(metric_prefix=metric_prefix)
-        self._meter = get_meter(name=__name__, meter_provider=provider)
-
-    def create_histogram(self, name: str, unit: str = "", description: str = "") -> Histogram:
-        """
-        Create a histogram metric.
-
-        Args:
-            name: The histogram metric name.
-            unit: The histogram metric unit.
-            description: The histogram metric description.
-
-        Returns:
-            The initialized histogram metric.
-        """
-        pass
-
-    def record(self, metric: Histogram, value: int | float, attributes: dict | None = None) -> None:  # noqa: PLR6301
-        """
-        Record the value for a specified histogram metric.
-
-        Args:
-            metric: The histogram metric to record.
-            value: The value to record for the metric.
-            attributes: Additional metadata for the metric.
-        """
-        pass
+        logfire.configure()
+        logfire.instrument_system_metrics()
+        super().__init__(provider=provider, metric_prefix=metric_prefix)
