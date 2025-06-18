@@ -28,7 +28,8 @@ class HistogramMetric(Enum):
     TIME_TO_FIRST_TOKEN = auto()
 
 
-HISTOGRAM_METRICS = {
+# Global registry for histogram metrics - can be extended by other packages
+HISTOGRAM_METRICS: dict[HistogramMetric | str, Metric] = {
     HistogramMetric.PROMPT_THROUGHPUT: Metric(
         name="prompt_throughput",
         description="Tracks the response time of LLM calls in seconds",
@@ -50,6 +51,19 @@ HISTOGRAM_METRICS = {
         unit="s",
     ),
 }
+
+
+def register_histogram_metric(key: HistogramMetric | str, metric: Metric) -> None:
+    """
+    Register a new histogram metric in the global registry.
+
+    This allows other packages to extend the metrics system.
+
+    Args:
+        key: The metric key (enum value or string)
+        metric: The metric configuration
+    """
+    HISTOGRAM_METRICS[key] = metric
 
 
 class MetricHandler(Generic[HistogramT], ABC):
