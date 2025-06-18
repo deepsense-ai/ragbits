@@ -1,11 +1,11 @@
-name: Shared modules checks
+name: Shared client checks
 
 on:
   workflow_call:
 
 jobs:
-  modules:
-    name: Run modules checks
+  client:
+    name: Run client checks
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
