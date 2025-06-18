@@ -35,7 +35,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     const [didAnimate, setDidAnimate] = useState(false);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
-    const [loadingIcon, setLoadingIcon] = useState("heroicons:arrow-path");
 
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { theme } = useThemeContext();
@@ -101,7 +100,10 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   </Markdown>
                 ) : (
                   <div className="flex items-center gap-2 text-default-500">
-                    <Icon icon={loadingIcon} className="animate-spin" />
+                    <Icon
+                      icon="heroicons:arrow-path"
+                      className="animate-spin"
+                    />
                     <span>Thinking...</span>
                   </div>
                 )}
