@@ -50,15 +50,15 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
                     if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(OtelTraceHandler())
 
-                case "cli":
-                    from ragbits.core.audit.traces.cli import CLITraceHandler
-                    if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
-                        _trace_handlers.append(CLITraceHandler())
-
                 case "logfire":
                     from ragbits.core.audit.traces.logfire import LogfireTraceHandler
                     if not any(isinstance(item, LogfireTraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(LogfireTraceHandler())
+
+                case "cli":
+                    from ragbits.core.audit.traces.cli import CLITraceHandler
+                    if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(CLITraceHandler())
 
                 case _:
                     raise ValueError(f"Handler {handler} not found.")
