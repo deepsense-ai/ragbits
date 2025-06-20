@@ -31,7 +31,7 @@ To visualize the metrics collected by Ragbits, follow these steps:
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core[otel,logfire]",
+#     "ragbits-core[logfire]",
 #     "tqdm",
 # ]
 # ///
