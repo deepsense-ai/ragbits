@@ -16,6 +16,16 @@ TEST_MESSAGE: Final[str] = "Hello from Ragbits Python client!"
 
 
 def run_sync_demo() -> None:
+    """Run a demo of the synchronous Ragbits chat client.
+
+    This function demonstrates how to use the RagbitsChatClient to:
+    1. Connect to the Ragbits server
+    2. Send a test message
+    3. Stream and print the response chunks
+    4. Properly clean up the client connection
+
+    The output will show the server's streaming response and the conversation ID.
+    """
     print("\n=== Synchronous client ===")
     client = RagbitsChatClient(SERVER_URL)
     try:
@@ -28,6 +38,16 @@ def run_sync_demo() -> None:
 
 
 async def run_async_demo() -> None:
+    """Run a demo of the asynchronous Ragbits chat client.
+
+    This function demonstrates how to use the AsyncRagbitsChatClient to:
+    1. Connect to the Ragbits server
+    2. Send a test message
+    3. Stream and print the response chunks
+    4. Properly clean up the client connection
+
+    The output will show the server's streaming response and the conversation ID.
+    """
     print("\n=== Asynchronous client ===")
     client = AsyncRagbitsChatClient(SERVER_URL)
     try:
