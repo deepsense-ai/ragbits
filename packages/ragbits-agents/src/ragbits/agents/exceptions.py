@@ -30,6 +30,16 @@ class AgentToolNotAvailableError(AgentError):
         super().__init__(f"Selected tool is not available: {tool_name}")
         self.tool_name = tool_name
 
+class AgentToolExecutionError(AgentError):
+    """
+    Raised when the tool execution fails.
+    """
+
+    def __init__(self, tool_name: str, error: Exception) -> None:
+        super().__init__(f"Tool execution failed: {tool_name}, error: {error}")
+        self.tool_name = tool_name
+        self.error = error
+
 
 class AgentInvalidPromptInputError(AgentError):
     """

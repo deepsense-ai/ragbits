@@ -46,6 +46,71 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return []
 
+    def add_assistant_message(self, message: str | PromptOutputT) -> Self:
+        """
+        Add an assistant message to the conversation history.
+
+        Args:
+            message (str): The assistant message content.
+
+        Returns:
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
+        """
+        if hasattr(self, "_conversation_history"):
+            if isinstance(message, BaseModel):
+                message = message.model_dump_json()
+            self._conversation_history.append({"role": "assistant", "content": str(message)})
+            return self
+        else:
+            raise ValueError("Cannot add assistant message to a prompt that does not have a conversation history")
+
+    def add_tool_use_message(
+        self,
+        id: str,
+        name: str,
+        arguments: dict,
+        result: Any,  # noqa: ANN401
+    ) -> Self:
+        """
+        Add tool call messages to the conversation history.
+
+        Args:
+            id (str): The id of the tool call.
+            name (str): The name of the tool.
+            arguments (dict): The arguments of the tool.
+            result (any): The tool call result.
+
+        Returns:
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
+        """
+        if hasattr(self, "_conversation_history"):
+            self._conversation_history.extend(
+                [
+                    {
+                        "role": "assistant",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": id,
+                                "type": "function",
+                                "function": {
+                                    "name": name,
+                                    "arguments": str(arguments),
+                                },
+                            }
+                        ],
+                    },
+                    {
+                        "role": "tool",
+                        "tool_call_id": id,
+                        "content": str(result),
+                    },
+                ]
+            )
+        else:
+            raise ValueError("Cannot add tool use message to a prompt that does not have a conversation history")
+        return self
+
 
 class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta):
     """
@@ -88,47 +153,3 @@ class SimplePrompt(BasePrompt):
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
         return self._conversation_history
-
-    def add_tool_use_message(
-        self,
-        tool_call_id: str,
-        tool_name: str,
-        tool_arguments: dict,
-        tool_call_result: Any,  # noqa: ANN401
-    ) -> Self:
-        """
-        Add tool call messages to the conversation history.
-
-        Args:
-            tool_call_id (str): The id of the tool call.
-            tool_name (str): The name of the tool.
-            tool_arguments (dict): The arguments of the tool.
-            tool_call_result (any): The tool call result.
-
-        Returns:
-            The current prompt with updated conversation history.
-        """
-        self._conversation_history.extend(
-            [
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_name,
-                                "arguments": str(tool_arguments),
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": str(tool_call_result),
-                },
-            ]
-        )
-        return self
