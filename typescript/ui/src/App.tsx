@@ -3,12 +3,13 @@ import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import PromptInput from "./core/components/PromptInput/PromptInput";
-import { useHistoryContext } from "./contexts/HistoryContext/useHistoryContext";
-import { useThemeContext } from "./contexts/ThemeContext/useThemeContext";
+import { useHistoryContext } from "./core/contexts/HistoryContext/useHistoryContext";
+import { useThemeContext } from "./core/contexts/ThemeContext/useThemeContext";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react";
-import { useConfigContext } from "./contexts/ConfigContext/useConfigContext";
+import { useConfigContext } from "./core/contexts/ConfigContext/useConfigContext";
+import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
 
 export default function App() {
   const {
@@ -119,9 +120,9 @@ export default function App() {
   );
 
   const content = showHistory ? historyComponent : heroComponent;
-  const logo = customization?.header?.logo ?? "🐰";
-  const title = customization?.header?.title ?? "Ragbits Chat";
-  const subTitle = customization?.header?.subtitle ?? "by deepsense.ai";
+  const logo = customization?.header?.logo ?? DEFAULT_LOGO;
+  const title = customization?.header?.title ?? DEFAULT_TITLE;
+  const subTitle = customization?.header?.subtitle ?? DEFAULT_SUBTITLE;
 
   return (
     <div

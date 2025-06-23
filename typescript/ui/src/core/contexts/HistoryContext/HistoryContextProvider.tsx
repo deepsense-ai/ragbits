@@ -10,8 +10,8 @@ import {
   useRagbitsStream,
   ChatRequest,
 } from "ragbits-api-client-react";
-import { ChatMessage, HistoryState } from "../../types/history.ts";
-import { mapHistoryToMessages } from "../../core/utils/messageMapper";
+import { ChatMessage, HistoryState } from "../../../types/history.ts";
+import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());

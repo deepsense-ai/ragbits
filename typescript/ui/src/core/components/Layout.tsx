@@ -1,8 +1,8 @@
 import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useHistoryContext } from "../../contexts/HistoryContext/useHistoryContext";
-import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
-import { Theme } from "../../contexts/ThemeContext/ThemeContext";
+import { useHistoryContext } from "../contexts/HistoryContext/useHistoryContext";
+import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
+import { Theme } from "../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
 import { ReactNode } from "react";
 
