@@ -10,7 +10,7 @@ class LogfireTraceHandler(OtelTraceHandler):
     Logfire trace handler.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         """
         Initialize the LogfireTraceHandler instance.
         """

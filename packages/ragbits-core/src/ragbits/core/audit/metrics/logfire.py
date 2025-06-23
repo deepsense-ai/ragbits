@@ -10,7 +10,7 @@ class LogfireMetricHandler(OtelMetricHandler):
     Logfire metric handler.
     """
 
-    def __init__(self, metric_prefix: str = "ragbits", *args: Any, **kwargs: Any) -> None:
+    def __init__(self, metric_prefix: str = "ragbits", *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         """
         Initialize the LogfireMetricHandler instance.
         """
