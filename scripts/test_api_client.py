@@ -26,6 +26,7 @@ def run_sync_demo() -> None:
         client.stop()
     print("\nConversation id:", client.conversation_id)
 
+
 async def run_async_demo() -> None:
     print("\n=== Asynchronous client ===")
     client = AsyncRagbitsChatClient(SERVER_URL)
@@ -38,7 +39,8 @@ async def run_async_demo() -> None:
         await client.aclose()
     print("\nConversation id:", client.conversation_id)
 
+
 if __name__ == "__main__":
     run_sync_demo()
     asyncio.run(run_async_demo())
-    print("\nAll done! ✅") 
+    print("\nAll done! ✅")
