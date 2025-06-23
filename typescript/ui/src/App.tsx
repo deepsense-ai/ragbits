@@ -19,6 +19,7 @@ export default function App() {
     history,
     sendMessage,
     isLoading: historyIsLoading,
+    stopAnswering,
   } = useHistoryContext();
   const { theme } = useThemeContext();
   const showHistory = useMemo(() => history.length > 0, [history.length]);
@@ -94,7 +95,15 @@ You can ask me anything! I can provide information, answer questions, and assist
       ref={scrollContainerRef}
     >
       {history.map((m) => (
-        <ChatMessage key={m.id} chatMessage={m} />
+        <ChatMessage
+          key={m.id}
+          chatMessage={m}
+          isLoading={
+            historyIsLoading &&
+            m.role === "assistant" &&
+            m.id === history[history.length - 1].id
+          }
+        />
       ))}
     </ScrollShadow>
   );
@@ -150,6 +159,7 @@ You can ask me anything! I can provide information, answer questions, and assist
                 submit={handleSubmit}
                 message={message}
                 setMessage={setMessage}
+                stopAnswering={stopAnswering}
               />
             </div>
           </div>
