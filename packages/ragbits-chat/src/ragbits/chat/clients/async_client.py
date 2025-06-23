@@ -14,7 +14,6 @@ from .types import (
     Message,
     MessageRole,
     ServerState,
-    map_history_to_messages,
 )
 
 __all__ = ["AsyncRagbitsChatClient"]
@@ -26,7 +25,7 @@ _DEFAULT_HEADERS = {
 
 
 class AsyncRagbitsChatClient(AsyncChatClientBase):
-    """Asynchronous Ragbits chat client (uses *httpx.AsyncClient*)."""
+    """Asynchronous Ragbits chat client."""
 
     def __init__(
         self,
@@ -43,8 +42,8 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
 
         self._streaming_response: httpx.Response | None = None
 
-    def new_conversation(self) -> None:  # noqa: D401
-        """Reset local state – start fresh conversation."""
+    def new_conversation(self) -> None:
+        """Start a fresh conversation, resetting local state."""
         self.history.clear()
         self.conversation_id = None
         self.server_state = None
@@ -85,7 +84,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in map_history_to_messages(self.history)],
+            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
             "context": merged_context,
         }
 

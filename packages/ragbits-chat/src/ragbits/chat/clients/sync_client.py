@@ -14,7 +14,6 @@ from .types import (
     Message,
     MessageRole,
     ServerState,
-    map_history_to_messages,
 )
 
 __all__ = ["RagbitsChatClient"]
@@ -44,7 +43,7 @@ class RagbitsChatClient(SyncChatClientBase):
         self._streaming_response: httpx.Response | None = None
 
     def new_conversation(self) -> None:
-        """Reset local state – start a fresh conversation."""
+        """Start a fresh conversation, resetting local state."""
         self.history.clear()
         self.conversation_id = None
         self.server_state = None
@@ -55,11 +54,7 @@ class RagbitsChatClient(SyncChatClientBase):
         *,
         context: dict[str, Any] | None = None,
     ) -> str:
-        """Send *message* and return the final assistant reply.
-
-        Internally this collects the *text* chunks returned by
-        :py:meth:`send_message` and concatenates them into a single string.
-        """
+        """Send *message* and return the final assistant reply."""
         assistant_reply_parts: list[str] = []
         for chunk in self.send_message(message, context=context):
             if chunk.type is ChatResponseType.TEXT:
@@ -90,7 +85,7 @@ class RagbitsChatClient(SyncChatClientBase):
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in map_history_to_messages(self.history)],
+            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
             "context": merged_context,
         }
 

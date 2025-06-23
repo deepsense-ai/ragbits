@@ -16,7 +16,7 @@ class SyncChatClientBase(ABC):
     """Abstract base class for synchronous chat clients."""
 
     @abstractmethod
-    def new_conversation(self) -> None:  # pragma: no cover
+    def new_conversation(self) -> None:
         """Start a fresh conversation, resetting local state."""
 
     @abstractmethod
