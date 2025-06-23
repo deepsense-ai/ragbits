@@ -1,4 +1,4 @@
-from .client import AsyncRagbitsChatClient, RagbitsChatClient
+from .clients import AsyncRagbitsChatClient, RagbitsChatClient
 from .types import (
     ChatResponse,
     ChatResponseType,
