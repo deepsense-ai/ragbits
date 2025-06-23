@@ -9,8 +9,8 @@ import {
   useRagbitsStream,
   ChatRequest,
 } from "ragbits-api-client-react";
-import { ChatMessage, HistoryState } from "../../types/history.ts";
-import { mapHistoryToMessages } from "../../core/utils/messageMapper";
+import { ChatMessage, HistoryState } from "../../../types/history.ts";
+import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
 import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {

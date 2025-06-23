@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
+from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
@@ -85,6 +86,7 @@ class ChatInterface(ABC):
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
+    ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:

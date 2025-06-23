@@ -3,8 +3,8 @@ import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "ragbits-api-client-react";
 import { useThemeContext } from "../ThemeContext/useThemeContext";
 import { CircularProgress, cn } from "@heroui/react";
-import { FeedbackFormPluginName } from "../../plugins/FeedbackPlugin";
-import { pluginManager } from "../../core/utils/plugins/PluginManager";
+import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
+import { pluginManager } from "../../utils/plugins/PluginManager";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { theme } = useThemeContext();

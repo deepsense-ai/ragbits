@@ -144,6 +144,18 @@ export interface FormSchemaResponse {
 }
 
 /**
+ * UI customization configuration
+ */
+export interface UICustomization {
+    header: {
+        title?: string
+        subtitle?: string
+        logo?: string
+    }
+    welcome_message?: string
+}
+
+/**
  * Configuration response from the API
  */
 export interface ConfigResponse {
@@ -157,6 +169,7 @@ export interface ConfigResponse {
             form: FormSchemaResponse | null
         }
     }
+    customization: UICustomization | null
 }
 
 /**
