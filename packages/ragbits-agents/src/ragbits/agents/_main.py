@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType
@@ -13,7 +14,7 @@ from ragbits.agents.exceptions import (
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
-from ragbits.core.prompt.base import SimplePrompt
+from ragbits.core.prompt.base import ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -40,6 +41,8 @@ class AgentResult(Generic[PromptOutputT]):
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
+    history: ChatFormat
+    """The history of the agent."""
     tool_calls: list[ToolCallResult] | None = None
     """Tool calls run by the Agent."""
 
@@ -71,6 +74,8 @@ class Agent(
         llm: LLM[LLMClientOptionsT],
         prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | None = None,
         *,
+        history: ChatFormat | None = None,
+        keep_history: bool = False,
         tools: list[Callable] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
@@ -84,6 +89,8 @@ class Agent(
                     or as the user message when no input is provided during run().
                 - type[Prompt]: A structured prompt class that will be instantiated with the input.
                 - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
+            history: The history of the agent.
+            keep_history: Whether to keep the history of the agent.
             tools: The tools available to the agent.
             default_options: The default options for the agent run.
         """
@@ -91,6 +98,8 @@ class Agent(
         self.llm = llm
         self.prompt = prompt
         self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+        self.history = history or []
+        self.keep_history = keep_history
 
     @overload
     async def run(
@@ -141,7 +150,7 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
 
-        prompt = self._create_prompt(input)
+        updated_history = self._get_updated_history(input)
         tool_calls = []
 
         with trace(input=input, options=merged_options) as outputs:
@@ -149,7 +158,7 @@ class Agent(
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
-                        prompt=prompt,
+                        prompt=updated_history,
                         tools=list(self.tools_mapping.values()),
                         options=llm_options,
                     ),
@@ -175,36 +184,59 @@ class Agent(
                             output=tool_output,
                         )
                     )
-                    prompt = prompt.add_tool_use_message(
-                        tool_call_id=tool_call.id,
-                        tool_name=tool_call.name,
-                        tool_arguments=tool_call.arguments,
-                        tool_call_result=tool_output,
+                    updated_history = updated_history.add_tool_use_message(
+                        id=tool_call.id,
+                        name=tool_call.name,
+                        arguments=tool_call.arguments,
+                        result=tool_output,
                     )
 
-            outputs.result = AgentResult(
+            outputs.result = {
+                "content": response.content,
+                "metadata": response.metadata,
+                "tool_calls": tool_calls or None,
+            }
+
+            updated_history = updated_history.add_assistant_message(response.content)
+
+            if self.keep_history:
+                self.history = updated_history.chat
+
+            return AgentResult(
                 content=response.content,
                 metadata=response.metadata,
                 tool_calls=tool_calls or None,
+                history=updated_history.chat,
             )
-            return outputs.result
 
-    def _create_prompt(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
+    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt:
+        curr_history = deepcopy(self.history)
+
+        incoming_system_prompt = None
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
-            return self.prompt(input)
+            incoming_prompt = self.prompt(input)
+            incoming_system_prompt = incoming_prompt.system_prompt
+            incoming_user_prompt = incoming_prompt.user_prompt
         elif isinstance(self.prompt, str) and isinstance(input, str):
-            return SimplePrompt(
-                [
-                    {"role": "system", "content": self.prompt},
-                    {"role": "user", "content": input},
-                ]
-            )
+            incoming_system_prompt = self.prompt
+            incoming_user_prompt = input
         elif isinstance(self.prompt, str) and input is None:
-            return SimplePrompt(self.prompt)
+            incoming_user_prompt = self.prompt
         elif isinstance(input, str):
-            return SimplePrompt(input)
+            incoming_user_prompt = input
         else:
             raise AgentInvalidPromptInputError(self.prompt, input)
+
+        if incoming_system_prompt:
+            system_idx = next((i for i, msg in enumerate(curr_history) if msg["role"] == "system"), -1)
+            if system_idx == -1:
+                curr_history.insert(0, {"role": "system", "content": incoming_system_prompt})
+            else:
+                curr_history[system_idx]["content"] = incoming_system_prompt
+
+        curr_history.append({"role": "user", "content": incoming_user_prompt})
+
+        return SimplePrompt(curr_history)
 
     # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478
     # @overload

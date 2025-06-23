@@ -258,65 +258,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._conversation_history.append({"role": "user", "content": content})
         return self
 
-    def add_assistant_message(self, message: str | PromptOutputT) -> "Prompt[PromptInputT, PromptOutputT]":
-        """
-        Add an assistant message to the conversation history.
-
-        Args:
-            message (str): The assistant message content.
-
-        Returns:
-            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
-        """
-        if isinstance(message, BaseModel):
-            message = message.model_dump_json()
-        self._conversation_history.append({"role": "assistant", "content": str(message)})
-        return self
-
-    def add_tool_use_message(
-        self,
-        tool_call_id: str,
-        tool_name: str,
-        tool_arguments: dict,
-        tool_call_result: Any,  # noqa: ANN401
-    ) -> "Prompt[PromptInputT, PromptOutputT]":
-        """
-        Add tool call messages to the conversation history.
-
-        Args:
-            tool_call_id (str): The id of the tool call.
-            tool_name (str): The name of the tool.
-            tool_arguments (dict): The arguments of the tool.
-            tool_call_result (any): The tool call result.
-
-        Returns:
-            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
-        """
-        self._conversation_history.extend(
-            [
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_name,
-                                "arguments": str(tool_arguments),
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": str(tool_call_result),
-                },
-            ]
-        )
-        return self
-
     def list_images(self) -> list[str]:
         """
         Returns the images in form of URLs or base64 encoded strings.
