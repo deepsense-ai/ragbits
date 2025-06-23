@@ -17,6 +17,7 @@ __all__ = [
 
 class MessageRole(str, Enum):
     """Role of a message in a conversation."""
+
     USER = "user"
     ASSISTANT = "assistant"
     SYSTEM = "system"
@@ -24,12 +25,14 @@ class MessageRole(str, Enum):
 
 class Message(BaseModel):
     """Represents a single message in a chat conversation."""
+
     role: MessageRole
     content: str
 
 
 class Reference(BaseModel):
     """Represents a reference associated with a chat response."""
+
     title: str
     content: str
     url: str | None = None
@@ -37,6 +40,7 @@ class Reference(BaseModel):
 
 class ChatResponseType(str, Enum):
     """Types of chat responses."""
+
     TEXT = "text"
     REFERENCE = "reference"
     MESSAGE_ID = "message_id"
@@ -46,6 +50,7 @@ class ChatResponseType(str, Enum):
 
 class ServerState(BaseModel):
     """Represents the server-side state of a chat conversation."""
+
     state: dict[str, Any]
     signature: str
 

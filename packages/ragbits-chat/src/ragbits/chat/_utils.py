@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 from pydantic import TypeAdapter
 
@@ -22,7 +21,7 @@ def build_api_url(base_url: str, path: str) -> str:
 PREFIX = "data: "
 
 
-def parse_sse_line(line: str) -> Optional[ChatResponse]:
+def parse_sse_line(line: str) -> ChatResponse | None:
     r"""Parse a single *Server-Sent-Event* line coming from RagbitsAPI.
 
     Expected format:  ``data: {....json....}\n``

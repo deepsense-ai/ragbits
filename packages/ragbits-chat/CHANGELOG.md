@@ -7,6 +7,7 @@
 ### Changed
 
 - ragbits-core updated to version v1.0.0
+- added synchronous and asynchronous Python api client
 
 ## 0.20.1 (2025-06-04)
 

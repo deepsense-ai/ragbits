@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 
@@ -44,19 +44,18 @@ class RagbitsChatClient:
 
         self._streaming_response: httpx.Response | None = None
 
-
     def new_conversation(self) -> None:
         """Reset local state – start fresh conversation."""
         self.history.clear()
         self.conversation_id = None
         self.server_state = None
 
-    def ask(self, message: str, *, context: Dict[str, Any] | None = None) -> str:
+    def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:
         """Convenience wrapper around :py:meth:`send_message`.
 
         Collects the streaming response and returns the final assistant text.
         """
-        assistant_reply_parts: List[str] = []
+        assistant_reply_parts: list[str] = []
         for chunk in self.send_message(message, context=context):
             if chunk.type is ChatResponseType.TEXT:
                 assistant_reply_parts.append(chunk.content)
@@ -66,7 +65,7 @@ class RagbitsChatClient:
         self,
         message: str,
         *,
-        context: Dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> Generator[ChatResponse, None, None]:
         """Send *message* to server and *yield* :class:`ChatResponse` chunks.
 
@@ -81,7 +80,7 @@ class RagbitsChatClient:
         self.history.append(assistant_reply)
         assistant_index = len(self.history) - 1
 
-        merged_context: Dict[str, Any] = {}
+        merged_context: dict[str, Any] = {}
         if self.server_state is not None:
             merged_context.update(self.server_state.model_dump())
         if self.conversation_id is not None:
@@ -89,7 +88,7 @@ class RagbitsChatClient:
         if context:
             merged_context.update(context)
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "message": message,
             "history": [m.model_dump() for m in map_history_to_messages(self.history)],
             "context": merged_context,
@@ -122,7 +121,6 @@ class RagbitsChatClient:
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update local client-side state based on *resp*."""
-
         if resp.type is ChatResponseType.STATE_UPDATE:
             self.server_state = resp.content  # type: ignore[assignment]
         elif resp.type is ChatResponseType.CONVERSATION_ID:
@@ -149,11 +147,11 @@ class AsyncRagbitsChatClient:
         self._base_url = base_url.rstrip("/")
         self._client = httpx.AsyncClient(timeout=timeout, headers=_DEFAULT_HEADERS)
 
-        self.history: List[Message] = []
+        self.history: list[Message] = []
         self.conversation_id: str | None = None
         self.server_state: ServerState | None = None
 
-        self._streaming_response: Optional[httpx.Response] = None
+        self._streaming_response: httpx.Response | None = None
 
     def new_conversation(self) -> None:
         """Reset local state – start fresh conversation."""
@@ -161,12 +159,12 @@ class AsyncRagbitsChatClient:
         self.conversation_id = None
         self.server_state = None
 
-    async def ask(self, message: str, *, context: Dict[str, Any] | None = None) -> str:
+    async def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:
         """Convenience wrapper around :py:meth:`send_message`.
 
         Collects the streaming response and returns the final assistant text.
         """
-        parts: List[str] = []
+        parts: list[str] = []
         async for chunk in self.send_message(message, context=context):
             if chunk.type is ChatResponseType.TEXT:
                 parts.append(chunk.content)
@@ -176,17 +174,16 @@ class AsyncRagbitsChatClient:
         self,
         message: str,
         *,
-        context: Dict[str, Any] | None = None,
+        context: dict[str, Any] | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """Asynchronous version of :py:meth:`RagbitsChatClient.send_message`."""
-
         user_msg = Message(role=MessageRole.USER, content=message)
         self.history.append(user_msg)
         assistant_reply = Message(role=MessageRole.ASSISTANT, content="")
         self.history.append(assistant_reply)
         assistant_index = len(self.history) - 1
 
-        merged_context: Dict[str, Any] = {}
+        merged_context: dict[str, Any] = {}
         if self.server_state is not None:
             merged_context.update(self.server_state.model_dump())
         if self.conversation_id is not None:
@@ -194,7 +191,7 @@ class AsyncRagbitsChatClient:
         if context:
             merged_context.update(context)
 
-        payload: Dict[str, Any] = {
+        payload: dict[str, Any] = {
             "message": message,
             "history": [m.model_dump() for m in map_history_to_messages(self.history)],
             "context": merged_context,
@@ -229,7 +226,6 @@ class AsyncRagbitsChatClient:
 
     async def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update local client-side state based on *resp*."""
-
         if resp.type is ChatResponseType.STATE_UPDATE:
             self.server_state = resp.content  # type: ignore[assignment]
         elif resp.type is ChatResponseType.CONVERSATION_ID:
