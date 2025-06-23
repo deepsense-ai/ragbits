@@ -25,7 +25,7 @@ class SyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:  # pragma: no cover
+    ) -> str:
         """Send *message* and return the final assistant reply."""
 
     @abstractmethod
@@ -34,11 +34,11 @@ class SyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> Generator[ChatResponse, None, None]:  # pragma: no cover
+    ) -> Generator[ChatResponse, None, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
 
     @abstractmethod
-    def stop(self) -> None:  # pragma: no cover
+    def stop(self) -> None:
         """Abort a currently running request (if any)."""
 
 
@@ -46,7 +46,7 @@ class AsyncChatClientBase(ABC):
     """Abstract base class for asynchronous chat clients."""
 
     @abstractmethod
-    def new_conversation(self) -> None:  # pragma: no cover
+    def new_conversation(self) -> None:
         """Start a fresh conversation, resetting local state."""
 
     @abstractmethod
@@ -55,7 +55,7 @@ class AsyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:  # pragma: no cover
+    ) -> str:
         """Send *message* and return the final assistant reply."""
 
     @abstractmethod
@@ -64,9 +64,9 @@ class AsyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> AsyncGenerator[ChatResponse, None]:  # pragma: no cover
+    ) -> AsyncGenerator[ChatResponse, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
 
     @abstractmethod
-    async def stop(self) -> None:  # pragma: no cover
+    async def stop(self) -> None:
         """Abort a currently running request (if any)."""
