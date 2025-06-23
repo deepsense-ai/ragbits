@@ -209,16 +209,30 @@ class Agent(
                 history=updated_history.chat,
             )
 
-    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt:
+    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt | Prompt:
         curr_history = deepcopy(self.history)
-
-        incoming_system_prompt = None
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
-            incoming_prompt = self.prompt(input)
-            incoming_system_prompt = incoming_prompt.system_prompt
-            incoming_user_prompt = incoming_prompt.user_prompt
-        elif isinstance(self.prompt, str) and isinstance(input, str):
-            incoming_system_prompt = self.prompt
+            # If we had actual instance we could just run add_user_message here
+            if self.keep_history:
+                self.prompt = self.prompt(input, curr_history)
+                return self.prompt
+            else:
+                return self.prompt(input, curr_history)
+        
+        if isinstance(self.prompt, Prompt):
+            self.prompt.add_user_message(input)
+            return self.prompt
+
+        if isinstance(self.prompt, str) and isinstance(input, str):
+            system_prompt = {"role": "system", "content": self.prompt}
+            if len(curr_history) == 0:
+                curr_history.append(system_prompt)
+            else:
+                system_idx = next((i for i, msg in enumerate(curr_history) if msg["role"] == "system"), -1)
+                if system_idx == -1:
+                    curr_history.insert(0, system_prompt)
+                else:
+                    curr_history[system_idx] = system_prompt
             incoming_user_prompt = input
         elif isinstance(self.prompt, str) and input is None:
             incoming_user_prompt = self.prompt
@@ -226,13 +240,6 @@ class Agent(
             incoming_user_prompt = input
         else:
             raise AgentInvalidPromptInputError(self.prompt, input)
-
-        if incoming_system_prompt:
-            system_idx = next((i for i, msg in enumerate(curr_history) if msg["role"] == "system"), -1)
-            if system_idx == -1:
-                curr_history.insert(0, {"role": "system", "content": incoming_system_prompt})
-            else:
-                curr_history[system_idx]["content"] = incoming_system_prompt
 
         curr_history.append({"role": "user", "content": incoming_user_prompt})
 

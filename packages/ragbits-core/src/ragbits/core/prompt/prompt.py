@@ -144,7 +144,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
 
         # Additional conversation history that can be added dynamically using methods
-        self._conversation_history: list[dict[str, Any]] = []
+        history = args[1] if len(args) > 1 else kwargs.get("history")
+        self._conversation_history: list[dict[str, Any]] = history or []
+        self.add_user_message(input_data)
         super().__init__()
 
     @property
@@ -155,12 +157,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        user_content = (
-            [{"type": "text", "text": self.rendered_user_prompt}]
-            + [self._create_message_with_image(image) for image in self.images]
-            if self.images
-            else self.rendered_user_prompt
-        )
         chat = [
             *(
                 [{"role": "system", "content": self.rendered_system_prompt}]
@@ -168,7 +164,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": user_content},
             *self._conversation_history,
         ]
         return chat
