@@ -9,6 +9,7 @@
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
 - Add message update functions to BasePrompt (#648)
+- Add Logfire integration to handle traces and metrics (#642)
 
 ## 1.0.0 (2025-06-04)
 
