@@ -11,6 +11,7 @@ import {
 } from "ragbits-api-client-react";
 import { ChatMessage, HistoryState } from "../../types/history.ts";
 import { mapHistoryToMessages } from "../../core/utils/messageMapper";
+import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
@@ -110,35 +111,6 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     [_handleNonHistoryResponse, _handleHistoryResponse],
   );
 
-  const setMessageLoading = useCallback(
-    (messageId: string, isLoading: boolean) => {
-      updateHistoryState((prev) => {
-        const next = new Map(prev);
-        const message = next.get(messageId);
-        if (message) {
-          next.set(messageId, { ...message, isLoading });
-        }
-        return next;
-      });
-    },
-    [],
-  );
-
-  const stopAnswering = useCallback(() => {
-    // Find the last assistant message that is loading
-    const lastLoadingMessage = Array.from(history.values())
-      .reverse()
-      .find(
-        (message) =>
-          message.role === MessageRole.ASSISTANT && message.isLoading,
-      );
-
-    if (lastLoadingMessage) {
-      setMessageLoading(lastLoadingMessage.id, false);
-    }
-    chatFactory.cancel();
-  }, [history, setMessageLoading, chatFactory.cancel]);
-
   const sendMessage = useCallback(
     (text?: string): void => {
       if (!text) return;
@@ -153,7 +125,6 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const assistantResponseId = addMessage({
         role: MessageRole.ASSISTANT,
         content: "",
-        isLoading: true,
       });
 
       // Prepare chat request with conversation context
@@ -180,11 +151,8 @@ export function HistoryProvider({ children }: PropsWithChildren) {
             },
             assistantResponseId,
           );
-          setMessageLoading(assistantResponseId, false);
         },
-        onClose: () => {
-          setMessageLoading(assistantResponseId, false);
-        },
+        onClose: noop,
       });
     },
     [
@@ -194,7 +162,6 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       addMessage,
       chatFactory,
       handleResponse,
-      setMessageLoading,
     ],
   );
 
@@ -207,7 +174,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       clearHistory,
       sendMessage,
       isLoading: chatFactory.isStreaming,
-      stopAnswering,
+      stopAnswering: chatFactory.cancel,
     }),
     [
       history,
@@ -217,7 +184,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       handleResponse,
       sendMessage,
       chatFactory.isStreaming,
-      stopAnswering,
+      chatFactory.cancel,
     ],
   );
 

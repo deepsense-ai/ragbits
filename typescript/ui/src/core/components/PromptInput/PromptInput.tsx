@@ -67,6 +67,11 @@ const PromptInput = ({
     [handleSubmit],
   );
 
+  const handleStopAnswering = useCallback(() => {
+    stopAnswering();
+    textAreaRef?.current?.focus();
+  }, [stopAnswering]);
+
   return (
     <Form
       className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
@@ -100,7 +105,7 @@ const PromptInput = ({
         radius="full"
         size="sm"
         type={isLoading ? "button" : "submit"}
-        onPress={isLoading ? stopAnswering : undefined}
+        onPress={isLoading ? handleStopAnswering : undefined}
         {...sendButtonProps}
       >
         {!isLoading &&

@@ -17,7 +17,6 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   references?: Reference[];
-  isLoading?: boolean;
 }
 
 export interface HistoryContext {

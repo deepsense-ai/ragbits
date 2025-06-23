@@ -98,7 +98,11 @@ You can ask me anything! I can provide information, answer questions, and assist
         <ChatMessage
           key={m.id}
           chatMessage={m}
-          isLoading={m.isLoading ?? false}
+          isLoading={
+            historyIsLoading &&
+            m.role === "assistant" &&
+            m.id === history[history.length - 1].id
+          }
         />
       ))}
     </ScrollShadow>
