@@ -41,11 +41,6 @@ jobs:
     if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/shared-packages.yml
 
-  client:
-    needs: check-source-changes
-    if: ${{ needs.check-source-changes.outputs.client-changed == 'true' }}
-    uses: ./.github/workflows/shared-client.yml
-
   ui:
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' }}

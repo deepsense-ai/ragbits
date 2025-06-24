@@ -8,33 +8,6 @@ import type {
     StreamingEndpointStream,
 } from 'ragbits-api-client'
 
-// Re-export RagbitsClient
-export { RagbitsClient } from 'ragbits-api-client'
-
-// Re-export core types from ragbits-api-client
-export type {
-    ChatRequest,
-    FeedbackRequest,
-    FeedbackResponse,
-    ConfigResponse,
-    FormFieldResponse,
-    FormSchemaResponse,
-    ServerState,
-    TypedChatResponse,
-    ClientConfig,
-    TypedApiRequestOptions,
-    Message,
-    Reference,
-} from 'ragbits-api-client'
-
-// Re-export enums as values
-export {
-    MessageRole,
-    ChatResponseType,
-    FormFieldType,
-    FeedbackType,
-} from 'ragbits-api-client'
-
 // React-specific hook result types
 export interface RagbitsCallResult<
     T,

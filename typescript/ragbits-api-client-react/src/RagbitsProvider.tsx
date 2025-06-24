@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react'
 import { RagbitsClient } from 'ragbits-api-client'
-import type { ClientConfig, RagbitsContextValue } from './types'
+import type { ClientConfig, RagbitsContextValue } from './index'
 
 const RagbitsContext = createContext<RagbitsContextValue | null>(null)
 

@@ -1,3 +1,5 @@
+import { RJSFSchema } from '@rjsf/utils'
+
 /**
  * Message roles for chat conversations
  */
@@ -35,6 +37,14 @@ export enum ChatResponseType {
     TEXT = 'text',
     MESSAGE_ID = 'message_id',
     CONVERSATION_ID = 'conversation_id',
+}
+
+/**
+ * Feedback types for user feedback
+ */
+export enum FeedbackType {
+    LIKE = 'like',
+    DISLIKE = 'dislike',
 }
 
 /**
@@ -109,41 +119,6 @@ export interface FeedbackResponse {
 }
 
 /**
- * Form field types for configuration
- */
-export enum FormFieldType {
-    TEXT = 'text',
-    SELECT = 'select',
-}
-
-/**
- * Feedback types for user feedback
- */
-export enum FeedbackType {
-    LIKE = 'like',
-    DISLIKE = 'dislike',
-}
-
-/**
- * Form field response structure
- */
-export interface FormFieldResponse {
-    name: string
-    label: string
-    type: FormFieldType
-    required: boolean
-    options?: string[]
-}
-
-/**
- * Form schema response structure
- */
-export interface FormSchemaResponse {
-    title: string
-    fields: FormFieldResponse[]
-}
-
-/**
  * UI customization configuration
  */
 export interface UICustomization {
@@ -162,11 +137,11 @@ export interface ConfigResponse {
     feedback: {
         like: {
             enabled: boolean
-            form: FormSchemaResponse | null
+            form: RJSFSchema | null
         }
         dislike: {
             enabled: boolean
-            form: FormSchemaResponse | null
+            form: RJSFSchema | null
         }
     }
     customization: UICustomization | null
@@ -262,7 +237,7 @@ export type StreamingEndpointMethod<T extends StreamingEndpointPath> =
     StreamingEndpoints[T]['method']
 
 /**
- * Typed request options for specific API endpoints
+ * Generic request options for API endpoints with typed methods and body
  */
 export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
     method?: ApiEndpointMethod<T>
@@ -270,6 +245,7 @@ export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
         ? undefined
         : ApiEndpointRequest<T>
     headers?: Record<string, string>
+    signal?: AbortSignal
 }
 
 /**
