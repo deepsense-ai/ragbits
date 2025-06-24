@@ -1,3 +1,5 @@
+import { RJSFSchema } from '@rjsf/utils'
+
 /**
  * Message roles for chat conversations
  */
@@ -117,14 +119,6 @@ export interface FeedbackResponse {
 }
 
 /**
- * Form schema response structure
- */
-export interface FormSchemaResponse {
-    title: string
-    fields: Record<string, unknown>[]
-}
-
-/**
  * UI customization configuration
  */
 export interface UICustomization {
@@ -143,11 +137,11 @@ export interface ConfigResponse {
     feedback: {
         like: {
             enabled: boolean
-            form: FormSchemaResponse | null
+            form: RJSFSchema | null
         }
         dislike: {
             enabled: boolean
-            form: FormSchemaResponse | null
+            form: RJSFSchema | null
         }
     }
     customization: UICustomization | null
