@@ -19,7 +19,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run python examples/document-search/multimodal_basic.py
+    uv run examples/document-search/multimodal.py
     ```
 """
 
