@@ -1,49 +1,12 @@
 import { http, HttpResponse } from 'msw'
-import type {
-    ConfigResponse,
-    FeedbackResponse,
-    TypedChatResponse,
-} from 'ragbits-api-client'
+import type { FeedbackResponse, TypedChatResponse } from 'ragbits-api-client'
 import { ChatResponseType } from 'ragbits-api-client'
+import { defaultConfigResponse } from '../utils'
 
 export const handlers = [
     // Mock /api/config endpoint (GET)
     http.get('http://127.0.0.1:8000/api/config', () => {
-        const response: ConfigResponse = {
-            feedback: {
-                like: {
-                    enabled: true,
-                    form: {
-                        title: 'Like Feedback',
-                        fields: [
-                            {
-                                name: 'comment',
-                                label: 'Comment',
-                                type: 'text',
-                                required: false,
-                            },
-                        ],
-                    },
-                },
-                dislike: {
-                    enabled: true,
-                    form: {
-                        title: 'Dislike Feedback',
-                        fields: [
-                            {
-                                name: 'reason',
-                                label: 'Reason',
-                                type: 'select',
-                                required: true,
-                                options: ['Incorrect', 'Unclear', 'Other'],
-                            },
-                        ],
-                    },
-                },
-            },
-            customization: null,
-        }
-        return HttpResponse.json(response)
+        return HttpResponse.json(defaultConfigResponse)
     }),
 
     // Mock /api/feedback endpoint (POST)

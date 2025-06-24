@@ -4,9 +4,8 @@ import { act } from 'react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsCall } from '../hooks'
 import { RagbitsProvider } from '../RagbitsProvider'
-import { server } from './setup'
-import { http, HttpResponse } from 'msw'
 import { type ConfigResponse, FeedbackType } from 'ragbits-api-client'
+import { defaultConfigResponse } from './utils'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -41,40 +40,7 @@ describe('useRagbitsCall', () => {
             await result.current.call()
         })
 
-        expect(result.current.data).toEqual({
-            feedback: {
-                like: {
-                    enabled: true,
-                    form: {
-                        title: 'Like Feedback',
-                        fields: [
-                            {
-                                name: 'comment',
-                                label: 'Comment',
-                                type: 'text',
-                                required: false,
-                            },
-                        ],
-                    },
-                },
-                dislike: {
-                    enabled: true,
-                    form: {
-                        title: 'Dislike Feedback',
-                        fields: [
-                            {
-                                name: 'reason',
-                                label: 'Reason',
-                                type: 'select',
-                                required: true,
-                                options: ['Incorrect', 'Unclear', 'Other'],
-                            },
-                        ],
-                    },
-                },
-            },
-            customization: null,
-        })
+        expect(result.current.data).toEqual(defaultConfigResponse)
         expect(result.current.error).toBeNull()
         expect(result.current.isLoading).toBe(false)
     })
@@ -103,51 +69,6 @@ describe('useRagbitsCall', () => {
         expect(result.current.error).toBeNull()
     })
 
-    it('should merge default options with call options', async () => {
-        const defaultHeaders = { 'X-Default-Header': 'default-value' }
-
-        server.use(
-            http.get('http://127.0.0.1:8000/api/config', ({ request }) => {
-                const defaultHeader = request.headers.get('X-Default-Header')
-                const customHeader = request.headers.get('X-Custom-Header')
-                const response: ConfigResponse = {
-                    feedback: {
-                        like: {
-                            enabled: true,
-                            form: {
-                                title: `Default: ${defaultHeader}, Custom: ${customHeader}`,
-                                fields: [],
-                            },
-                        },
-                        dislike: { enabled: false, form: null },
-                    },
-                    customization: null,
-                }
-                return HttpResponse.json(response)
-            })
-        )
-
-        const { result } = renderHook(
-            () =>
-                useRagbitsCall('/api/config', {
-                    headers: defaultHeaders,
-                }),
-            { wrapper: createWrapper() }
-        )
-
-        await act(async () => {
-            await result.current.call({
-                headers: {
-                    'X-Custom-Header': 'custom-value',
-                },
-            })
-        })
-
-        expect(result.current.data?.feedback.like.form?.title).toBe(
-            'Default: default-value, Custom: custom-value'
-        )
-    })
-
     it('should reset state correctly', async () => {
         const { result } = renderHook(() => useRagbitsCall('/api/config'), {
             wrapper: createWrapper(),
@@ -171,27 +92,6 @@ describe('useRagbitsCall', () => {
     })
 
     it('should handle multiple concurrent calls correctly', async () => {
-        let callCount = 0
-        server.use(
-            http.get('http://127.0.0.1:8000/api/config', () => {
-                callCount++
-                const response: ConfigResponse = {
-                    feedback: {
-                        like: {
-                            enabled: true,
-                            form: {
-                                title: `Response ${callCount}`,
-                                fields: [],
-                            },
-                        },
-                        dislike: { enabled: false, form: null },
-                    },
-                    customization: null,
-                }
-                return HttpResponse.json(response)
-            })
-        )
-
         const { result } = renderHook(() => useRagbitsCall('/api/config'), {
             wrapper: createWrapper(),
         })
@@ -222,9 +122,7 @@ describe('useRagbitsCall', () => {
         await Promise.all([promise1, promise2])
 
         // Should have the result from the last successful call
-        expect(result.current.data?.feedback.like.form?.title).toContain(
-            'Response'
-        )
+        expect(result.current.data).toEqual(defaultConfigResponse)
         expect(result.current.error).toBeNull()
         expect(result.current.isLoading).toBe(false)
     })

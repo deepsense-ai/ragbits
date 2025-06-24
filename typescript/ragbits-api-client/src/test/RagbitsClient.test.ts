@@ -3,6 +3,8 @@ import { RagbitsClient } from '../index'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../types'
+import { FeedbackType } from '../types'
+import { defaultConfigResponse } from './utils'
 
 describe('RagbitsClient', () => {
     let client: RagbitsClient
@@ -50,34 +52,13 @@ describe('RagbitsClient', () => {
         it('should make successful GET request', async () => {
             const response = await client.makeRequest('/api/config')
 
-            expect(response).toEqual({
-                feedback: {
-                    like: {
-                        enabled: true,
-                        form: {
-                            title: 'Like Feedback',
-                            fields: [
-                                {
-                                    name: 'reason',
-                                    label: 'What did you like?',
-                                    type: 'text',
-                                    required: false,
-                                },
-                            ],
-                        },
-                    },
-                    dislike: {
-                        enabled: true,
-                        form: null,
-                    },
-                },
-            })
+            expect(response).toEqual(defaultConfigResponse)
         })
 
         it('should make successful POST request with body', async () => {
             const requestBody: FeedbackRequest = {
                 message_id: 'msg-123',
-                feedback: 'like' as FeedbackType,
+                feedback: FeedbackType.LIKE,
                 payload: { reason: 'Great response!' },
             }
 

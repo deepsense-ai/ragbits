@@ -1,4 +1,5 @@
 import { http, HttpResponse } from 'msw'
+import { defaultConfigResponse } from '../utils'
 
 export const handlers = [
     // Config endpoint with conditional error handling
@@ -8,28 +9,7 @@ export const handlers = [
             return new HttpResponse(null, { status: 500 })
         }
 
-        return HttpResponse.json({
-            feedback: {
-                like: {
-                    enabled: true,
-                    form: {
-                        title: 'Like Feedback',
-                        fields: [
-                            {
-                                name: 'reason',
-                                label: 'What did you like?',
-                                type: 'text',
-                                required: false,
-                            },
-                        ],
-                    },
-                },
-                dislike: {
-                    enabled: true,
-                    form: null,
-                },
-            },
-        })
+        return HttpResponse.json(defaultConfigResponse)
     }),
 
     // Feedback endpoint
