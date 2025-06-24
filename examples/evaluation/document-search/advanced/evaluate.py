@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-core[chroma,hf]",
-#     "ragbits-document-search",
+#     "ragbits-document-search[unstructured]",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
@@ -41,7 +41,11 @@ async def evaluate(config: DictConfig) -> None:
         print("Evaluation results uploaded to Neptune")
 
 
-@hydra.main(config_path="config", config_name="retrieval", version_base="3.2")
+@hydra.main(
+    config_path="examples/evaluation/document-search/advanced/config",
+    config_name="retrieval",
+    version_base="3.2",
+)
 def main(config: DictConfig) -> None:
     """
     Runs the evaluation process.
