@@ -8,6 +8,7 @@ import {
   ServerState,
   useRagbitsStream,
   ChatRequest,
+  LiveUpdate,
 } from "ragbits-api-client-react";
 import { ChatMessage, HistoryState } from "../../../types/history.ts";
 import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
@@ -64,6 +65,30 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     [],
   );
 
+  const _handleLiveUpdate = useCallback(
+    (liveUpdate: LiveUpdate, message: ChatMessage) => {
+      const { update_id, content, type } = liveUpdate;
+
+      const existingUpdates = message.liveUpdates ?? new Map();
+      const newUpdates = new Map(existingUpdates);
+
+      const isKnown = newUpdates.has(update_id);
+
+      if (type === "START" && isKnown) {
+        console.error(
+          `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
+        );
+
+        return newUpdates;
+      }
+
+      newUpdates.set(update_id, content);
+
+      return newUpdates;
+    },
+    [],
+  );
+
   const _handleHistoryResponse = useCallback(
     (response: ChatResponse, messageId: string): void => {
       updateHistoryState((prev) => {
@@ -86,6 +111,12 @@ export function HistoryProvider({ children }: PropsWithChildren) {
             break;
           case ChatResponseType.MESSAGE_ID:
             updatedMessage.serverId = response.content;
+            break;
+          case ChatResponseType.LIVE_UPDATE:
+            updatedMessage.liveUpdates = _handleLiveUpdate(
+              response.content,
+              updatedMessage,
+            );
             break;
         }
         next.set(messageId, updatedMessage);

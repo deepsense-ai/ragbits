@@ -1,5 +1,6 @@
 import {
   TypedChatResponse as ChatResponse,
+  LiveUpdate,
   MessageRole,
   Reference,
 } from "ragbits-api-client-react";
@@ -17,6 +18,7 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   references?: Reference[];
+  liveUpdates?: Map<string, LiveUpdate['content']>;
 }
 
 export interface HistoryContext {
