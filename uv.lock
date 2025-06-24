@@ -4749,7 +4749,7 @@ ray = [
     { name = "ray", extra = ["data"] },
 ]
 unstructured = [
-    { name = "unstructured" },
+    { name = "unstructured", extra = ["md"] },
     { name = "unstructured-client" },
 ]
 
@@ -4771,7 +4771,7 @@ requires-dist = [
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1,<1.0.0" },
-    { name = "unstructured", marker = "extra == 'unstructured'", specifier = ">=0.16.9,<1.0.0" },
+    { name = "unstructured", extras = ["md"], marker = "extra == 'unstructured'", specifier = ">=0.16.9,<1.0.0" },
     { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
 ]
 provides-extras = ["unstructured", "ray"]
@@ -6390,6 +6390,11 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/08/c3/5bd80074a63c972f0f9adac5276955f6cbcceb71ac05ae72cc524ad93813/unstructured-0.16.11.tar.gz", hash = "sha256:33ebf68aae11ce33c8a96335296557b5abd8ba96eaba3e5a1554c0b9eee40bb5", size = 1664314 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/59/67/71d1e61e8127dd9ab66117d3c5ebfc6f87c1d00bf13ff3bcc837feed6e09/unstructured-0.16.11-py3-none-any.whl", hash = "sha256:a92d5bc2c2b7bb23369641fb7a7f0daba1775639199306ce4cd83ca564a03763", size = 1748042 },
+]
+
+[package.optional-dependencies]
+md = [
+    { name = "markdown" },
 ]
 
 [[package]]
