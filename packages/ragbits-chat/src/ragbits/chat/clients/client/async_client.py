@@ -55,3 +55,11 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
         conv = self.new_conversation()
         async for chunk in conv.send_message(message, context=context):
             yield chunk
+
+    async def __aenter__(self) -> AsyncRagbitsChatClient:
+        """Return *self* inside an ``async with`` block."""
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: D401,N802
+        """Ensure the underlying async HTTP session is closed on exit."""
+        await self.aclose()

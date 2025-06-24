@@ -39,10 +39,6 @@ class SyncChatClientBase(ABC):
     ) -> Generator[ChatResponse, None, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
 
-    @abstractmethod
-    def stop(self) -> None:
-        """Abort a currently running request (if any)."""
-
 
 class AsyncChatClientBase(ABC):
     """Abstract base class for asynchronous chat clients."""

@@ -62,3 +62,11 @@ class RagbitsChatClient(SyncChatClientBase):
         """Stateless proxy to :pyclass:`Conversation.send_message`."""
         conv = self.new_conversation()
         yield from conv.send_message(message, context=context)
+
+    def __enter__(self) -> RagbitsChatClient:
+        """Return *self* to allow usage via the *with* statement."""
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        """Ensure the underlying HTTP session is closed on context exit."""
+        self.close()

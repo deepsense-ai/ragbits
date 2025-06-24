@@ -31,11 +31,7 @@ class AsyncConversation(AsyncConversationBase):
         self.server_state: StateUpdate | None = None
         self._streaming_response: httpx.Response | None = None
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
-    async def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:  # noqa: D401
+    async def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:
         """Send *message* and return the final assistant reply."""
         parts: list[str] = []
         async for chunk in self.send_message(message, context=context):
@@ -101,10 +97,6 @@ class AsyncConversation(AsyncConversationBase):
         if self._streaming_response is not None and not self._streaming_response.is_closed:
             await self._streaming_response.aclose()
             self._streaming_response = None
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         if resp.type is ChatResponseType.STATE_UPDATE and isinstance(resp.content, StateUpdate):
