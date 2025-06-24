@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from types import TracebackType
 from typing import Any
 
 import httpx
@@ -50,7 +52,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> Any:
+    ) -> AsyncGenerator[Any, None]:
         """Stateless proxy to :class:`AsyncConversation.send_message`."""
         conv = self.new_conversation()
         async for chunk in conv.send_message(message, context=context):
@@ -60,6 +62,11 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
         """Return *self* inside an ``async with`` block."""
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:  # noqa: D401,N802
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         """Ensure the underlying async HTTP session is closed on exit."""
         await self.aclose()

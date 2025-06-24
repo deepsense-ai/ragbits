@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from types import TracebackType
 from typing import Any
 
 import httpx
@@ -67,6 +68,11 @@ class RagbitsChatClient(SyncChatClientBase):
         """Return *self* to allow usage via the *with* statement."""
         return self
 
-    def __exit__(self, exc_type, exc, tb) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         """Ensure the underlying HTTP session is closed on context exit."""
         self.close()
