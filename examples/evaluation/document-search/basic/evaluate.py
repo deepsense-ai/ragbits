@@ -2,7 +2,7 @@
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-core[chroma,hf]",
-#     "ragbits-document-search",
+#     "ragbits-document-search[unstructured]",
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
