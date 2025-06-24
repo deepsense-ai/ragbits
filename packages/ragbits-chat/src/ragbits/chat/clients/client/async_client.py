@@ -4,8 +4,8 @@ from typing import Any
 
 import httpx
 
-from .base import AsyncChatClientBase, AsyncConversationBase
-from .conversation import AsyncConversation
+from ..base import AsyncChatClientBase, AsyncConversationBase
+from ..conversation import AsyncConversation
 
 __all__ = ["AsyncRagbitsChatClient"]
 

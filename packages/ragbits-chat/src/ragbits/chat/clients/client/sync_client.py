@@ -5,9 +5,9 @@ from typing import Any
 
 import httpx
 
-from ..interface.types import ChatResponse
-from .base import SyncChatClientBase, SyncConversationBase
-from .conversation import Conversation
+from ...interface.types import ChatResponse
+from ..base import SyncChatClientBase, SyncConversationBase
+from ..conversation import Conversation
 
 __all__ = ["RagbitsChatClient"]
 
@@ -49,13 +49,7 @@ class RagbitsChatClient(SyncChatClientBase):
         *,
         context: dict[str, Any] | None = None,
     ) -> str:
-        """Convenience wrapper that proxies through a fresh Conversation.
-
-        This preserves the original *ask* method for backwards–compatibility
-        while encouraging users to work with :pyclass:`Conversation` objects
-        directly. Each invocation operates on a **new** conversation so no
-        state is preserved across calls.
-        """
+        """Convenience wrapper that proxies through a fresh Conversation."""
         conv = self.new_conversation()
         return conv.ask(message, context=context)
 
