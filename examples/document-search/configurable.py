@@ -17,7 +17,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/document-search/from_config.py
+    uv run examples/document-search/configurable.py
     ```
 """
 # /// script
