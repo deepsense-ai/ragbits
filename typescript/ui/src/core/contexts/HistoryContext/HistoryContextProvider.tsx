@@ -1,7 +1,6 @@
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
-import { noop } from "lodash";
 import {
   TypedChatResponse as ChatResponse,
   ChatResponseType,
@@ -10,8 +9,9 @@ import {
   useRagbitsStream,
   ChatRequest,
 } from "ragbits-api-client-react";
-import { ChatMessage, HistoryState } from "../../types/history.ts";
-import { mapHistoryToMessages } from "../../core/utils/messageMapper";
+import { ChatMessage, HistoryState } from "../../../types/history.ts";
+import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
+import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());

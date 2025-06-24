@@ -38,6 +38,14 @@ export enum ChatResponseType {
 }
 
 /**
+ * Feedback types for user feedback
+ */
+export enum FeedbackType {
+    LIKE = 'like',
+    DISLIKE = 'dislike',
+}
+
+/**
  * Server state interface for state updates
  */
 export interface ServerState {
@@ -97,8 +105,7 @@ export interface ChatRequest {
  */
 export interface FeedbackRequest {
     message_id: string
-    // TODO: add type
-    feedback: any
+    feedback: FeedbackType
     payload: Record<string, unknown> | null
 }
 
@@ -110,23 +117,23 @@ export interface FeedbackResponse {
 }
 
 /**
- * Form field response structure
- */
-export interface FormFieldResponse {
-    name: string
-    label: string
-    // TODO: add type
-    type: any
-    required: boolean
-    options?: string[]
-}
-
-/**
  * Form schema response structure
  */
 export interface FormSchemaResponse {
     title: string
-    fields: FormFieldResponse[]
+    fields: Record<string, unknown>[]
+}
+
+/**
+ * UI customization configuration
+ */
+export interface UICustomization {
+    header: {
+        title?: string
+        subtitle?: string
+        logo?: string
+    }
+    welcome_message?: string
 }
 
 /**
@@ -143,6 +150,7 @@ export interface ConfigResponse {
             form: FormSchemaResponse | null
         }
     }
+    customization: UICustomization | null
 }
 
 /**

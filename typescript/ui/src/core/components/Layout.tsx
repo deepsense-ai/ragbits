@@ -1,8 +1,8 @@
 import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useHistoryContext } from "../../contexts/HistoryContext/useHistoryContext";
-import { useThemeContext } from "../../contexts/ThemeContext/useThemeContext";
-import { Theme } from "../../contexts/ThemeContext/ThemeContext";
+import { useHistoryContext } from "../contexts/HistoryContext/useHistoryContext";
+import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
+import { Theme } from "../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
 import { ReactNode } from "react";
 
@@ -10,6 +10,7 @@ interface LayoutProps {
   children: ReactNode;
   title: string;
   subTitle?: string;
+  logo: string;
   classNames?: {
     header?: string;
     title?: string;
@@ -22,6 +23,7 @@ export default function Layout({
   children,
   title,
   subTitle,
+  logo,
   classNames,
 }: LayoutProps) {
   const { clearHistory, stopAnswering } = useHistoryContext();
@@ -35,6 +37,38 @@ export default function Layout({
     stopAnswering();
     clearHistory();
   };
+
+  function isURL(input: string): boolean {
+    if (isAbsoluteURL(input)) {
+      return true;
+    }
+
+    return looksLikeRelativeURL(input) && isRelativeURL(input);
+  }
+
+  function isAbsoluteURL(str: string): boolean {
+    try {
+      new URL(str);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function isRelativeURL(str: string): boolean {
+    try {
+      const DUMMY_BASE_URL = "http://base.local";
+      new URL(str, DUMMY_BASE_URL);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function looksLikeRelativeURL(str: string): boolean {
+    // Reject emojis, spaces, and unrelated strings.
+    return /^[./~\w%-][\w./~%-]*$/.test(str);
+  }
 
   return (
     <div
@@ -51,9 +85,13 @@ export default function Layout({
           )}
         >
           <div className="flex w-full items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
-              🐰
-            </div>
+            {isURL(logo) ? (
+              <img src={logo} className="h-8 w-8" width={32} height={32} />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
+                {logo}
+              </div>
+            )}
             <div className="w-full min-w-[120px] sm:w-auto">
               <div
                 className={cn(

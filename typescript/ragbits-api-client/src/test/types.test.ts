@@ -26,4 +26,10 @@ describe('Package Exports', () => {
             'conversation_id'
         )
     })
+
+    it('should export FeedbackType enum with correct values', () => {
+        expect(RagbitsApiClient.FeedbackType).toBeDefined()
+        expect(RagbitsApiClient.FeedbackType.LIKE).toBe('like')
+        expect(RagbitsApiClient.FeedbackType.DISLIKE).toBe('dislike')
+    })
 })

@@ -18,21 +18,25 @@ interface PromptInputProps {
   submit: () => void;
   message: string;
   setMessage: (message: string) => void;
+  stopAnswering: () => void;
   formProps?: FormProps;
   inputProps?: TextAreaProps;
   sendButtonProps?: ButtonProps;
   customSendIcon?: ReactNode;
+  customStopIcon?: ReactNode;
 }
 
 const PromptInput = ({
   message,
   setMessage,
   submit,
+  stopAnswering,
   isLoading,
   formProps,
   inputProps,
   sendButtonProps,
   customSendIcon,
+  customStopIcon,
 }: PromptInputProps) => {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -63,6 +67,11 @@ const PromptInput = ({
     [handleSubmit],
   );
 
+  const handleStopAnswering = useCallback(() => {
+    stopAnswering();
+    textAreaRef?.current?.focus();
+  }, [stopAnswering]);
+
   return (
     <Form
       className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
@@ -90,23 +99,33 @@ const PromptInput = ({
       />
       <Button
         isIconOnly
-        aria-label="Send message to the chat"
-        color={!message ? "default" : "primary"}
-        isDisabled={!message || isLoading}
+        aria-label={isLoading ? "Stop answering" : "Send message to the chat"}
+        color={!isLoading && !message ? "default" : "primary"}
+        isDisabled={!isLoading && !message}
         radius="full"
         size="sm"
-        type="submit"
+        type={isLoading ? "button" : "submit"}
+        onPress={isLoading ? handleStopAnswering : undefined}
         {...sendButtonProps}
       >
-        {customSendIcon ?? (
-          <Icon
-            className={cn(
-              !message ? "text-default-600" : "text-primary-foreground",
-            )}
-            icon="heroicons:arrow-up"
-            width={20}
-          />
-        )}
+        {!isLoading &&
+          (customSendIcon ?? (
+            <Icon
+              className={cn(
+                !message ? "text-default-600" : "text-primary-foreground",
+              )}
+              icon="heroicons:arrow-up"
+              width={20}
+            />
+          ))}
+        {isLoading &&
+          (customStopIcon ?? (
+            <Icon
+              className="text-primary-foreground"
+              icon="heroicons:stop"
+              width={20}
+            />
+          ))}
       </Button>
     </Form>
   );

@@ -8,9 +8,6 @@ import type {
     StreamingEndpointStream,
 } from 'ragbits-api-client'
 
-// Re-export everything from ragbits-api-client
-export * from 'ragbits-api-client'
-
 // React-specific hook result types
 export interface RagbitsCallResult<
     T,

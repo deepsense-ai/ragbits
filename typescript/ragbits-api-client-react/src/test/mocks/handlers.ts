@@ -41,6 +41,7 @@ export const handlers = [
                     },
                 },
             },
+            customization: null,
         }
         return HttpResponse.json(response)
     }),
