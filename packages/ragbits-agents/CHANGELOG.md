@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add agent support for string prompts (#631)
+- Add tools to Agent interface (#568)
+- Update Agent run method docstring (#565)
 - Fix AgentResult typing (#600)
 
 ## 1.0.0 (2025-06-04)

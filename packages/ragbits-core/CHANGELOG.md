@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+- Fix typing in LLM generate_streaming (#628)
+- Fix typing in LLM generate (#568)
+- Fix parsing functions with no arguments in convert_function_to_function_schema (#568)
+- Remove outdated quickstart ref from docstring (#565)
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
+- Add Logfire integration to handle traces and metrics (#642)
 
 ## 1.0.0 (2025-06-04)
 
@@ -11,7 +16,7 @@
 
 ## 0.20.0 (2025-06-03)
 
-- Refacor: move BagOfTokens model_name / encoding_name parameters to init (#592)
+- Move BagOfTokens model_name / encoding_name parameters to init (#592)
 - Update utils (#590)
 - Resolve vector_size by PgVectorStore automatically (#588)
 - Add get_vector_size method to all Embedders (#587)
