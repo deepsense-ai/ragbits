@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 
+from ...interface.types import ChatResponse
 from ..base import AsyncChatClientBase, AsyncConversationBase
 from ..conversation import AsyncConversation
 
@@ -52,7 +53,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[ChatResponse, None]:
         """Stateless proxy to :class:`AsyncConversation.send_message`."""
         conv = self.new_conversation()
         async for chunk in conv.send_message(message, context=context):
