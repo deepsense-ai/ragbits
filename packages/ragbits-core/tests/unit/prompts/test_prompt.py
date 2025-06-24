@@ -182,9 +182,8 @@ def test_image_wrong_format():
         user_prompt = "What is on this image?"
         image_input_fields = ["image"]
 
-    prompt = ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
     with pytest.raises(PromptWithImagesOfInvalidFormat):
-        prompt.chat  # noqa: B018
+        ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
 
 
 def test_image_encoding():

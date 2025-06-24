@@ -1,6 +1,7 @@
 import json
 
 import pytest
+from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentResult, ToolCallResult
@@ -11,6 +12,16 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
+
+
+class WeatherInput(BaseModel):
+    location: str
+    date: str
+
+
+class WeatherPrompt(Prompt[WeatherInput, str]):
+    system_prompt = "You are a weather assistant"
+    user_prompt = "What's the weather like in {{location}} on {{date}}?"
 
 
 class CustomPrompt(Prompt):
@@ -266,22 +277,62 @@ async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_custom_prompt(llm_without_tool_call: MockLLM):
-    """Test history handling with custom prompt class."""
+async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_without_tool_call: MockLLM):
+    """Test history handling with custom prompt class with input type."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
-        prompt=CustomPrompt,
+        prompt=WeatherPrompt,
         keep_history=True,
     )
 
-    await agent.run("This will be ignored")
+    input_data = WeatherInput(location="London", date="today")
+    await agent.run(input_data)
+
+    input_data2 = WeatherInput(location="Paris", date="tomorrow")
+    await agent.run(input_data2)
 
     assert agent.history is not None
-    assert len(agent.history) == 2  # user + assistant, as this prompt doesn't have a system prompt
-    assert agent.history[0]["role"] == "user"
-    assert agent.history[0]["content"] == "Custom test prompt"
-    assert agent.history[1]["role"] == "assistant"
-    assert agent.history[1]["content"] == "Test LLM output"
+    print(agent.history)
+    assert len(agent.history) == 5
+    assert agent.history[0]["role"] == "system"
+    assert agent.history[0]["content"] == "You are a weather assistant"
+    assert agent.history[1]["role"] == "user"
+    assert agent.history[1]["content"] == "What's the weather like in London on today?"
+    assert agent.history[2]["role"] == "assistant"
+    assert agent.history[2]["content"] == "Test LLM output"
+    assert agent.history[3]["role"] == "user"
+    assert agent.history[3]["content"] == "What's the weather like in Paris on tomorrow?"
+    assert agent.history[4]["role"] == "assistant"
+    assert agent.history[4]["content"] == "Test LLM output"
+
+
+async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_without_tool_call: MockLLM):
+    """Test history handling with custom prompt class with input type."""
+    agent: Agent = Agent(
+        llm=llm_without_tool_call,
+        prompt=WeatherPrompt,
+        keep_history=False,
+    )
+
+    input_data = WeatherInput(location="London", date="today")
+    result = await agent.run(input_data)
+    assert agent.history == []
+    assert result.history[0]["role"] == "system"
+    assert result.history[0]["content"] == "You are a weather assistant"
+    assert result.history[1]["role"] == "user"
+    assert result.history[1]["content"] == "What's the weather like in London on today?"
+    assert result.history[2]["role"] == "assistant"
+    assert result.history[2]["content"] == "Test LLM output"
+
+    input_data2 = WeatherInput(location="Paris", date="tomorrow")
+    result2 = await agent.run(input_data2)
+    assert agent.history == []
+    assert result2.history[0]["role"] == "system"
+    assert result2.history[0]["content"] == "You are a weather assistant"
+    assert result2.history[1]["role"] == "user"
+    assert result2.history[1]["content"] == "What's the weather like in Paris on tomorrow?"
+    assert result2.history[2]["role"] == "assistant"
+    assert result2.history[2]["content"] == "Test LLM output"
 
 
 async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: MockLLM):
@@ -302,7 +353,7 @@ async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_multiple_runs(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_call: MockLLM):
     """Test history accumulation across multiple runs."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,

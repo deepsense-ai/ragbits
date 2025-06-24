@@ -133,6 +133,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         if self.input_type and input_data is None:
             raise ValueError("Input data must be provided")
 
+        if isinstance(input_data, str):
+            raise ValueError("Input data must be of pydantic model type")
+
         self.rendered_system_prompt = (
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )

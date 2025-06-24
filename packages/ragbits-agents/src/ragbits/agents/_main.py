@@ -72,7 +72,7 @@ class Agent(
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | None = None,
+        prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | Prompt[PromptInputT, PromptOutputT] | None = None,
         *,
         history: ChatFormat | None = None,
         keep_history: bool = False,
@@ -88,6 +88,7 @@ class Agent(
                 - str: A string prompt that will be used as system message when combined with string input,
                     or as the user message when no input is provided during run().
                 - type[Prompt]: A structured prompt class that will be instantiated with the input.
+                - Prompt: Already instantiated prompt instance
                 - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
@@ -209,7 +210,7 @@ class Agent(
                 history=updated_history.chat,
             )
 
-    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt | Prompt:
+    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         curr_history = deepcopy(self.history)
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
             # If we had actual instance we could just run add_user_message here
@@ -218,7 +219,7 @@ class Agent(
                 return self.prompt
             else:
                 return self.prompt(input, curr_history)
-        
+
         if isinstance(self.prompt, Prompt):
             self.prompt.add_user_message(input)
             return self.prompt
