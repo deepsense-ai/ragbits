@@ -41,7 +41,7 @@ to run it is using the official Docker image:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search[ray]",
-#     "ragbits-core",
+#     "ragbits-core[qdrant]",
 # ]
 # ///
 
