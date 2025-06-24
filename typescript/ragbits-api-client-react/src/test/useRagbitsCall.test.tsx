@@ -6,7 +6,7 @@ import { useRagbitsCall } from '../hooks'
 import { RagbitsProvider } from '../RagbitsProvider'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
-import { FeedbackType, type ConfigResponse } from 'ragbits-api-client'
+import { type ConfigResponse } from 'ragbits-api-client'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -85,7 +85,7 @@ describe('useRagbitsCall', () => {
 
         const requestBody = {
             message_id: 'msg-123',
-            feedback: FeedbackType.LIKE,
+            feedback: 'like',
             payload: { comment: 'Great response!' },
         }
 

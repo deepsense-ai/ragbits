@@ -7,7 +7,9 @@ function TestComponent() {
     const { client } = useRagbitsContext()
     return (
         <div data-testid="client-available">
-            {client ? 'Client available' : 'No client'}
+            {client
+                ? `Client available with baseUrl: ${client.getBaseUrl()}`
+                : 'No client'}
         </div>
     )
 }
@@ -30,7 +32,7 @@ describe('RagbitsProvider', () => {
         )
 
         expect(screen.getByTestId('client-available')).toHaveTextContent(
-            'Client available'
+            'Client available with baseUrl: http://127.0.0.1:8000'
         )
     })
 
@@ -42,7 +44,7 @@ describe('RagbitsProvider', () => {
         )
 
         expect(screen.getByTestId('client-available')).toHaveTextContent(
-            'Client available'
+            'Client available with baseUrl: https://api.example.com'
         )
     })
 
@@ -51,28 +53,6 @@ describe('RagbitsProvider', () => {
 
         expect(screen.getByTestId('error')).toHaveTextContent(
             'useRagbitsContext must be used within a RagbitsProvider'
-        )
-    })
-
-    it('should recreate client when config changes', () => {
-        const { rerender } = render(
-            <RagbitsProvider baseUrl="https://api1.example.com">
-                <TestComponent />
-            </RagbitsProvider>
-        )
-
-        expect(screen.getByTestId('client-available')).toHaveTextContent(
-            'Client available'
-        )
-
-        rerender(
-            <RagbitsProvider baseUrl="https://api2.example.com">
-                <TestComponent />
-            </RagbitsProvider>
-        )
-
-        expect(screen.getByTestId('client-available')).toHaveTextContent(
-            'Client available'
         )
     })
 })

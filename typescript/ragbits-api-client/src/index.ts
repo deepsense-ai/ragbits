@@ -36,6 +36,13 @@ export class RagbitsClient {
     }
 
     /**
+     * Get the base URL used by this client
+     */
+    getBaseUrl(): string {
+        return this.baseUrl
+    }
+
+    /**
      * Build full API URL from path
      * @private
      */

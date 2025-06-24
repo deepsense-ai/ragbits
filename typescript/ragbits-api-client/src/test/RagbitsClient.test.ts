@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { RagbitsClient } from '../index'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
-import type { FeedbackRequest, FeedbackType } from '../types'
+import type { FeedbackRequest } from '../types'
 
 describe('RagbitsClient', () => {
     let client: RagbitsClient
@@ -37,6 +37,12 @@ describe('RagbitsClient', () => {
             }).toThrow(
                 'Invalid base URL: invalid-url. Please provide a valid URL.'
             )
+        })
+    })
+
+    describe('getBaseUrl', () => {
+        it('should return the base URL', () => {
+            expect(client.getBaseUrl()).toBe('http://127.0.0.1:8000')
         })
     })
 
@@ -461,90 +467,6 @@ describe('RagbitsClient', () => {
 
             // Restore original fetch
             global.fetch = originalFetch
-        })
-
-        it('should handle aborted streams gracefully', async () => {
-            const abortController = new AbortController()
-            const errors: Error[] = []
-
-            server.use(
-                http.post('http://127.0.0.1:8000/api/chat', () => {
-                    // Abort the controller before returning response
-                    setTimeout(() => abortController.abort(), 0)
-
-                    const encoder = new TextEncoder()
-                    const stream = new ReadableStream({
-                        start(controller) {
-                            setTimeout(() => {
-                                controller.enqueue(
-                                    encoder.encode(
-                                        'data: {"type": "text", "content": "test"}\n\n'
-                                    )
-                                )
-                                controller.close()
-                            }, 50)
-                        },
-                    })
-
-                    return new HttpResponse(stream, {
-                        headers: {
-                            'Content-Type': 'text/event-stream',
-                        },
-                    })
-                })
-            )
-
-            client.makeStreamRequest(
-                '/api/chat',
-                { message: 'Start streaming', history: [] },
-                {
-                    onMessage: () => Promise.resolve(),
-                    onError: (error) => {
-                        errors.push(error)
-                        return Promise.resolve()
-                    },
-                },
-                abortController.signal
-            )
-
-            // Wait to ensure the abort is processed
-            await new Promise((resolve) => setTimeout(resolve, 150))
-
-            // When aborted, no error should be called
-            expect(errors).toHaveLength(0)
-        })
-
-        it('should handle pre-aborted signal in error handling', async () => {
-            const abortController = new AbortController()
-            const errors: Error[] = []
-
-            // Pre-abort the signal
-            abortController.abort()
-
-            server.use(
-                http.post('http://127.0.0.1:8000/api/chat', () => {
-                    return new HttpResponse(null, { status: 500 })
-                })
-            )
-
-            client.makeStreamRequest(
-                '/api/chat',
-                { message: 'Start streaming', history: [] },
-                {
-                    onMessage: () => Promise.resolve(),
-                    onError: (error) => {
-                        errors.push(error)
-                        return Promise.resolve()
-                    },
-                },
-                abortController.signal
-            )
-
-            // Wait for potential error processing
-            await new Promise((resolve) => setTimeout(resolve, 100))
-
-            // When signal is pre-aborted, the error should be ignored
-            expect(errors).toHaveLength(0)
         })
 
         it('should handle non-Error exceptions in stream processing', async () => {

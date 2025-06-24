@@ -97,7 +97,8 @@ export interface ChatRequest {
  */
 export interface FeedbackRequest {
     message_id: string
-    feedback: FeedbackType
+    // TODO: add type
+    feedback: any
     payload: Record<string, unknown> | null
 }
 
@@ -109,28 +110,13 @@ export interface FeedbackResponse {
 }
 
 /**
- * Form field types for configuration
- */
-export enum FormFieldType {
-    TEXT = 'text',
-    SELECT = 'select',
-}
-
-/**
- * Feedback types for user feedback
- */
-export enum FeedbackType {
-    LIKE = 'like',
-    DISLIKE = 'dislike',
-}
-
-/**
  * Form field response structure
  */
 export interface FormFieldResponse {
     name: string
     label: string
-    type: FormFieldType
+    // TODO: add type
+    type: any
     required: boolean
     options?: string[]
 }

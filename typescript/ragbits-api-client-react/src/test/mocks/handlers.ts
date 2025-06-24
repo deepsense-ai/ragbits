@@ -4,7 +4,7 @@ import type {
     FeedbackResponse,
     TypedChatResponse,
 } from 'ragbits-api-client'
-import { ChatResponseType, FormFieldType } from 'ragbits-api-client'
+import { ChatResponseType } from 'ragbits-api-client'
 
 export const handlers = [
     // Mock /api/config endpoint (GET)
@@ -19,7 +19,7 @@ export const handlers = [
                             {
                                 name: 'comment',
                                 label: 'Comment',
-                                type: FormFieldType.TEXT,
+                                type: 'text',
                                 required: false,
                             },
                         ],
@@ -33,7 +33,7 @@ export const handlers = [
                             {
                                 name: 'reason',
                                 label: 'Reason',
-                                type: FormFieldType.SELECT,
+                                type: 'select',
                                 required: true,
                                 options: ['Incorrect', 'Unclear', 'Other'],
                             },
@@ -89,21 +89,6 @@ export const handlers = [
                 'Cache-Control': 'no-cache',
                 Connection: 'keep-alive',
             },
-        })
-    }),
-
-    // Mock delayed /api/config endpoint for testing loading states
-    http.get('https://custom-api.example.com/api/config', () => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const response: ConfigResponse = {
-                    feedback: {
-                        like: { enabled: false, form: null },
-                        dislike: { enabled: false, form: null },
-                    },
-                }
-                resolve(HttpResponse.json(response))
-            }, 100)
         })
     }),
 ]
