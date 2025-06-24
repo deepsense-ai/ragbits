@@ -3,7 +3,7 @@ import base64
 import textwrap
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
-from typing import Any, Generic, cast, get_args, get_origin, overload
+from typing import Any, Generic, cast, get_args, get_origin
 
 import filetype
 from jinja2 import Environment, Template, meta
@@ -122,14 +122,21 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         return super().__init_subclass__(**kwargs)
 
-    @overload
-    def __init__(self: "Prompt[None, PromptOutputT]") -> None: ...
+    def __init__(self, input_data: PromptInputT | None = None, history: ChatFormat | None = None) -> None:
+        """
+        Initialize the Prompt instance.
 
-    @overload
-    def __init__(self: "Prompt[PromptInputT, PromptOutputT]", input_data: PromptInputT) -> None: ...
+        Args:
+            input_data: The input data to render the prompt templates with. Must be a Pydantic model
+                instance if the prompt has an input type defined. If None and input_type is defined,
+                a ValueError will be raised.
+            history: Optional conversation history to initialize the prompt with. If provided,
+                should be in the standard OpenAI chat format.
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        input_data = args[0] if args else kwargs.get("input_data")
+        Raises:
+            ValueError: If input_data is None when input_type is defined, or if input_data
+                is a string instead of a Pydantic model.
+        """
         if self.input_type and input_data is None:
             raise ValueError("Input data must be provided")
 
@@ -147,9 +154,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
 
         # Additional conversation history that can be added dynamically using methods
-        history = args[1] if len(args) > 1 else kwargs.get("history")
         self._conversation_history: list[dict[str, Any]] = history or []
-        self.add_user_message(input_data)
+        self.add_user_message(input_data if input_data else self.rendered_user_prompt)
         super().__init__()
 
     @property
