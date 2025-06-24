@@ -5,7 +5,7 @@ import logging
 
 from pydantic import TypeAdapter
 
-from .types import ChatResponse
+from .interface.types import ChatResponse
 
 logger = logging.getLogger(__name__)
 

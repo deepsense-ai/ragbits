@@ -1,11 +1,11 @@
 from .clients import AsyncRagbitsChatClient, RagbitsChatClient
-from .types import (
+from .interface.types import (
     ChatResponse,
     ChatResponseType,
     Message,
     MessageRole,
     Reference,
-    ServerState,
+    StateUpdate,
 )
 
 __all__ = [
@@ -16,5 +16,5 @@ __all__ = [
     "MessageRole",
     "RagbitsChatClient",
     "Reference",
-    "ServerState",
+    "StateUpdate",
 ]

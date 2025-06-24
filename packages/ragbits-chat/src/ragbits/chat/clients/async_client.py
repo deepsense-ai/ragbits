@@ -6,15 +6,15 @@ from typing import Any
 import httpx
 
 from .._utils import build_api_url, parse_sse_line
-from .base import AsyncChatClientBase
-from .exceptions import ChatClientRequestError, ChatClientResponseError
-from .types import (
+from ..interface.types import (
     ChatResponse,
     ChatResponseType,
     Message,
     MessageRole,
-    ServerState,
+    StateUpdate,
 )
+from .base import AsyncChatClientBase
+from .exceptions import ChatClientRequestError, ChatClientResponseError
 
 __all__ = ["AsyncRagbitsChatClient"]
 
@@ -38,7 +38,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
 
         self.history: list[Message] = []
         self.conversation_id: str | None = None
-        self.server_state: ServerState | None = None
+        self.server_state: StateUpdate | None = None
 
         self._streaming_response: httpx.Response | None = None
 

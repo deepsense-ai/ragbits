@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
-from .types import ChatResponse
+from ..interface.types import ChatResponse
 
 __all__ = [
     "AsyncChatClientBase",
