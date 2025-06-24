@@ -136,10 +136,7 @@ jobs:
 
       - name: Run examples
         run: |
-          find examples -name '*.py' | while read file; do
-            echo "Running example: $file"
-            uv run "$file"
-          done
+          ./.github/scripts/check_examples.sh
 
   tests:
     name: Run tests
