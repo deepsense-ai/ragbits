@@ -4625,6 +4625,7 @@ source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
     { name = "filetype" },
+    { name = "griffe" },
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
@@ -4709,6 +4710,7 @@ requires-dist = [
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "google-auth", marker = "extra == 'logfire'", specifier = ">=2.35.0" },
     { name = "google-auth", marker = "extra == 'otel'", specifier = ">=2.35.0" },
+    { name = "griffe", specifier = ">=1.3.2,<2.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
     { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
@@ -4893,7 +4895,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "aiosqlite" },
-    { name = "griffe" },
     { name = "griffe-typingdoc" },
     { name = "mkdocs" },
     { name = "mkdocs-autorefs" },
@@ -4928,7 +4929,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
-    { name = "griffe", specifier = ">=1.3.2" },
     { name = "griffe-typingdoc", specifier = ">=0.2.7" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-autorefs", specifier = ">=1.2.0" },
