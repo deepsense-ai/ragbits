@@ -143,6 +143,11 @@ class ChatInterface(ABC):
         )
 
     @staticmethod
+    def create_followup_messages(messages: list[str]) -> ChatResponse:
+        """Helper method to create a live update response."""
+        return ChatResponse(type=ChatResponseType.FOLLOWUP_MESSAGES, content=messages)
+
+    @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:
         """
         Sign the state with HMAC to ensure integrity.

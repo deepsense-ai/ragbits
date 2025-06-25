@@ -65,13 +65,14 @@ class ChatResponseType(str, Enum):
     MESSAGE_ID = "message_id"
     CONVERSATION_ID = "conversation_id"
     LIVE_UPDATE = "live_update"
+    FOLLOWUP_MESSAGES = "followup_messages"
 
 
 class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate
+    content: str | Reference | StateUpdate | LiveUpdate | list[str]
 
     def as_text(self) -> str | None:
         """
@@ -112,6 +113,16 @@ class ChatResponse(BaseModel):
                 print(f"Got live update: {live_update.content.label}")
         """
         return cast(LiveUpdate, self.content) if self.type == ChatResponseType.LIVE_UPDATE else None
+
+    def as_followup_messages(self) -> list[str] | None:
+        """
+        Return the content as list of strings if this is a followup messages response, else None.
+
+        Example:
+            if followup_messages := response.as_followup_messages():
+                print(f"Got followup messages: {followup_messages}")
+        """
+        return cast(list[str], self.content) if self.type == ChatResponseType.FOLLOWUP_MESSAGES else None
 
 
 class ChatContext(BaseModel):

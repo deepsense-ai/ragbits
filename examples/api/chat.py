@@ -112,3 +112,5 @@ class MyChat(ChatInterface):
 
         async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
             yield self.create_text_response(chunk)
+
+        yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])

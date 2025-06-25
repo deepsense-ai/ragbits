@@ -123,3 +123,5 @@ class MyChat(ChatInterface):
         # Generate and yield text chunks
         async for chunk in self._generate_response(message):
             yield self.create_text_response(chunk)
+
+        yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])
