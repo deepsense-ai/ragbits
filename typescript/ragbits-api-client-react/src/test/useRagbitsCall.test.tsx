@@ -4,7 +4,7 @@ import { act } from 'react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsCall } from '../hooks'
 import { RagbitsProvider } from '../RagbitsProvider'
-import { type ConfigResponse, FeedbackType } from 'ragbits-api-client'
+import { type ConfigResponse, FeedbackType } from '@ragbits/api-client'
 import { defaultConfigResponse } from './utils'
 
 function createWrapper() {
