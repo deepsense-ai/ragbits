@@ -1,6 +1,6 @@
 {
-    "name": "ragbits-api-client-react",
-    "version": "1.0.0",
+    "name": "@ragbits/api-client-react",
+    "version": "0.0.1",
     "description": "React hooks for the Ragbits API client",
     "main": "dist/index.cjs",
     "module": "dist/index.js",
@@ -28,7 +28,7 @@
         "react-dom": ">=16.8.0"
     },
     "dependencies": {
-        "ragbits-api-client": "file:../ragbits-api-client"
+        "@ragbits/api-client": ""
     },
     "devDependencies": {
         "@types/react": "^18.2.0",
@@ -55,8 +55,7 @@
         "api",
         "client",
         "react",
-        "hooks"
     ],
-    "author": "",
+    "author": "deepsense.ai",
     "license": "MIT"
 }

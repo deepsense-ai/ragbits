@@ -1,6 +1,6 @@
 {
-    "name": "ragbits-api-client",
-    "version": "1.0.0",
+    "name": "@ragbits/api-client",
+    "version": "0.0.1",
     "description": "JavaScript client for the Ragbits API",
     "main": "dist/index.cjs",
     "module": "dist/index.js",
@@ -28,7 +28,7 @@
         "api",
         "client"
     ],
-    "author": "",
+    "author": "deepsense.ai",
     "license": "MIT",
     "devDependencies": {
         "@eslint/js": "^9.17.0",
