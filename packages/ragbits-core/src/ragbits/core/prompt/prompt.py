@@ -226,7 +226,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":
+    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":  # type: ignore
         """
         Add a user message to the conversation history.
 
@@ -239,7 +239,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         Returns:
             Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        content: str | list[dict[str, Any]] | dict[str, Any] | PromptInputT
+        content: str | list[dict[str, Any]] | dict[str, Any]
 
         if isinstance(message, BaseModel):
             # Type checking to ensure we're passing PromptInputT to the methods
@@ -256,11 +256,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             else:
                 content = rendered_text
         else:
-            # Use the message directly if it's a string or dict
-            content = message
+            content = cast(str | dict[str, Any], message)
 
-        self._conversation_history.append({"role": "user", "content": content})
-        return self
+        return super().add_user_message(content)
 
     def list_images(self) -> list[str]:
         """

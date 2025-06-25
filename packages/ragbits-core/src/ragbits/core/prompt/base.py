@@ -14,7 +14,6 @@ class BasePrompt(metaclass=ABCMeta):
     """
 
     @property
-    @abstractmethod
     def chat(self) -> ChatFormat:
         """
         Returns the conversation in the standard OpenAI chat format.
@@ -22,6 +21,9 @@ class BasePrompt(metaclass=ABCMeta):
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history: list[dict[str, Any]] = []
+        return self._conversation_history
 
     @property
     def json_mode(self) -> bool:
@@ -56,13 +58,13 @@ class BasePrompt(metaclass=ABCMeta):
         Returns:
             Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        if hasattr(self, "_conversation_history"):
-            if isinstance(message, BaseModel):
-                message = message.model_dump_json()
-            self._conversation_history.append({"role": "assistant", "content": str(message)})
-            return self
-        else:
-            raise ValueError("Cannot add assistant message to a prompt that does not have a conversation history")
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        if isinstance(message, BaseModel):
+            message = message.model_dump_json()
+        self._conversation_history.append({"role": "assistant", "content": str(message)})
+        return self
 
     def add_tool_use_message(
         self,
@@ -83,32 +85,51 @@ class BasePrompt(metaclass=ABCMeta):
         Returns:
             Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        if hasattr(self, "_conversation_history"):
-            self._conversation_history.extend(
-                [
-                    {
-                        "role": "assistant",
-                        "content": None,
-                        "tool_calls": [
-                            {
-                                "id": id,
-                                "type": "function",
-                                "function": {
-                                    "name": name,
-                                    "arguments": str(arguments),
-                                },
-                            }
-                        ],
-                    },
-                    {
-                        "role": "tool",
-                        "tool_call_id": id,
-                        "content": str(result),
-                    },
-                ]
-            )
-        else:
-            raise ValueError("Cannot add tool use message to a prompt that does not have a conversation history")
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        self._conversation_history.extend(
+            [
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": id,
+                            "type": "function",
+                            "function": {
+                                "name": name,
+                                "arguments": str(arguments),
+                            },
+                        }
+                    ],
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "content": str(result),
+                },
+            ]
+        )
+
+        return self
+
+    def add_user_message(self, message: str | dict[str, Any] | list[dict[str, Any]]) -> Self:
+        """
+        Add a user message to the conversation history.
+
+        Args:
+            message: The user message content. Can be:
+                - A string: Used directly as content
+                - A dictionary: With format {"type": "text", "text": "message"} or image content
+
+        Returns:
+            Prompt: The current prompt instance to allow chaining.
+        """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        self._conversation_history.append({"role": "user", "content": message})
         return self
 
 
@@ -143,13 +164,3 @@ class SimplePrompt(BasePrompt):
         self._conversation_history: list[dict[str, Any]] = (
             [{"role": "user", "content": content}] if isinstance(content, str) else content
         )
-
-    @property
-    def chat(self) -> ChatFormat:
-        """
-        Returns the conversation in the chat format.
-
-        Returns:
-            ChatFormat: A list of dictionaries, each containing the role and content of a message.
-        """
-        return self._conversation_history

@@ -151,7 +151,7 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
 
-        updated_history = self._get_updated_history(input)
+        prompt_with_history = self._get_prompt_with_history(input)
         tool_calls = []
 
         with trace(input=input, options=merged_options) as outputs:
@@ -159,7 +159,7 @@ class Agent(
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
-                        prompt=updated_history,
+                        prompt=prompt_with_history,
                         tools=list(self.tools_mapping.values()),
                         options=llm_options,
                     ),
@@ -185,7 +185,7 @@ class Agent(
                             output=tool_output,
                         )
                     )
-                    updated_history = updated_history.add_tool_use_message(
+                    prompt_with_history = prompt_with_history.add_tool_use_message(
                         id=tool_call.id,
                         name=tool_call.name,
                         arguments=tool_call.arguments,
@@ -198,19 +198,19 @@ class Agent(
                 "tool_calls": tool_calls or None,
             }
 
-            updated_history = updated_history.add_assistant_message(response.content)
+            prompt_with_history = prompt_with_history.add_assistant_message(response.content)
 
             if self.keep_history:
-                self.history = updated_history.chat
+                self.history = prompt_with_history.chat
 
             return AgentResult(
                 content=response.content,
                 metadata=response.metadata,
                 tool_calls=tool_calls or None,
-                history=updated_history.chat,
+                history=prompt_with_history.chat,
             )
 
-    def _get_updated_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
+    def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         curr_history = deepcopy(self.history)
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
             # If we had actual instance we could just run add_user_message here
