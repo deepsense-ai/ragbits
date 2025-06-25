@@ -8,6 +8,7 @@
 # To run this example execute following CLI command:
 # ragbits api run examples.api.chat:MyChat
 
+import asyncio
 from collections.abc import AsyncGenerator
 from typing import Literal
 
@@ -15,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig
-from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 
@@ -91,6 +92,23 @@ class MyChat(ChatInterface):
             content="This is an example reference document that might be relevant to your query.",
             url="https://example.com/reference1",
         )
+
+        example_live_updates = [
+            self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),
+            self.create_live_update(
+                "0", LiveUpdateType.FINISH, "[EXAMPLE] Searched the web", "Found 11 matching results"
+            ),
+            self.create_live_update(
+                "1",
+                LiveUpdateType.FINISH,
+                "[EXAMPLE] Ingested the results from previous query",
+                "Found 4 connected topics",
+            ),
+        ]
+
+        for live_update in example_live_updates:
+            yield live_update
+            await asyncio.sleep(2)
 
         async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
             yield self.create_text_response(chunk)
