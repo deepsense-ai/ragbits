@@ -6,7 +6,7 @@ import {
     RenderHookOptions,
 } from '@testing-library/react'
 import { RagbitsProvider } from '../RagbitsProvider'
-import type { ConfigResponse } from 'ragbits-api-client'
+import type { ConfigResponse } from '@ragbits/api-client'
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
     baseUrl?: string
