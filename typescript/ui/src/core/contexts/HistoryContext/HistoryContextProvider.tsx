@@ -16,6 +16,9 @@ import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
+  const [followupMessages, setFollowupMessages] = useState<string[] | null>(
+    null,
+  );
   const [serverState, setServerState] = useState<ServerState | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const chatFactory = useRagbitsStream("/api/chat");
@@ -29,6 +32,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const addMessage = useCallback((message: Omit<ChatMessage, "id">): string => {
     const id = uuidv4();
     const newMessage: ChatMessage = { ...message, id };
+    setFollowupMessages(null);
     updateHistoryState((prev) => {
       const next = new Map(prev);
       next.set(id, newMessage);
@@ -59,6 +63,9 @@ export function HistoryProvider({ children }: PropsWithChildren) {
           break;
         case ChatResponseType.CONVERSATION_ID:
           setConversationId(response.content);
+          break;
+        case ChatResponseType.FOLLOWUP_MESSAGES:
+          setFollowupMessages(response.content);
           break;
       }
     },
@@ -131,6 +138,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
         ChatResponseType.CONVERSATION_ID,
+        ChatResponseType.FOLLOWUP_MESSAGES,
       ];
 
       if (NON_HISTORY_TYPES.includes(response.type)) {
@@ -204,18 +212,20 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       deleteMessage,
       clearHistory,
       sendMessage,
-      isLoading: chatFactory.isStreaming,
       stopAnswering: chatFactory.cancel,
+      followupMessages,
+      isLoading: chatFactory.isStreaming,
     }),
     [
       history,
       addMessage,
+      handleResponse,
       deleteMessage,
       clearHistory,
-      handleResponse,
       sendMessage,
-      chatFactory.isStreaming,
       chatFactory.cancel,
+      chatFactory.isStreaming,
+      followupMessages,
     ],
   );
 

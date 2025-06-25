@@ -18,11 +18,12 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   references?: Reference[];
-  liveUpdates?: Map<string, LiveUpdate['content']>;
+  liveUpdates?: Map<string, LiveUpdate["content"]>;
 }
 
 export interface HistoryContext {
   history: ChatMessage[];
+  followupMessages: string[] | null;
   isLoading: boolean;
   /**
    * Sends a message to the chat window with animations and delayed rendering.

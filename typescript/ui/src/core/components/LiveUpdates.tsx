@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { ChatMessage } from "../../types/history";
 import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
-import { Button } from "@heroui/react";
+import { Button, cn } from "@heroui/react";
 import ShimmerText from "./ShimmerText";
 
 interface LiveUpdatesProps {
@@ -23,6 +23,7 @@ export default function LiveUpdates({
     return null;
   }
 
+  const hasMultipleUpdates = updates?.length > 1;
   const lastUpdate = updates[updates.length - 1];
   const earlierUpdates = updates.slice(0, -1);
   const shimmerDuration =
@@ -30,7 +31,10 @@ export default function LiveUpdates({
     10;
 
   return (
-    <div className="flex cursor-pointer flex-col" onClick={toggleExpanded}>
+    <div
+      className={cn("flex flex-col", hasMultipleUpdates && "cursor-pointer")}
+      onClick={toggleExpanded}
+    >
       <motion.div
         initial={false}
         animate={{
@@ -74,20 +78,17 @@ export default function LiveUpdates({
             </>
           )}
         </div>
-        <motion.div
-          className="flex flex-col"
-          animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 5, repeat: Infinity }}
-        ></motion.div>
-        <Button variant="light" isIconOnly onPress={toggleExpanded}>
-          <motion.div
-            initial={{ rotate: 0 }}
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Icon icon="heroicons:chevron-down" />
-          </motion.div>
-        </Button>
+        {hasMultipleUpdates && (
+          <Button variant="light" isIconOnly onPress={toggleExpanded}>
+            <motion.div
+              initial={{ rotate: 0 }}
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Icon icon="heroicons:chevron-down" />
+            </motion.div>
+          </Button>
+        )}
       </div>
     </div>
   );
