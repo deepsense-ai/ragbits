@@ -1,23 +1,32 @@
-# Ragbits API Client React
+# @ragbits/api-client-react
 
-React hooks for the Ragbits API client. This package provides React-friendly hooks built on top of the core `ragbits-api-client` package.
+React hooks for the Ragbits API client. This package provides React-friendly hooks built on top of the core `@ragbits/api-client` package with full TypeScript support and automatic state management.
+
+## Features
+
+- **React hooks** - Type-safe hooks for API calls and streaming
+- **Automatic state management** - Loading states, error handling, and data caching
+- **Request cancellation** - Built-in abort functionality for ongoing requests
+- **Streaming support** - Real-time streaming with React state integration
+- **TypeScript support** - Full type safety with predefined endpoints
+- **Context provider** - Easy setup with React Context
 
 ## Installation
 
 ```bash
-npm install ragbits-api-client-react
+npm install @ragbits/api-client-react
 ```
 
-Note: This package depends on `ragbits-api-client` which will be installed automatically.
+**Note:** This package depends on `@ragbits/api-client` which will be installed automatically.
 
-## Usage
+## Quick Start
 
-### Setup Provider
+### 1. Setup Provider
 
 First, wrap your app with the `RagbitsProvider`:
 
 ```tsx
-import { RagbitsProvider } from 'ragbits-api-client-react'
+import { RagbitsProvider } from '@ragbits/api-client-react'
 
 function App() {
     return (
@@ -28,27 +37,15 @@ function App() {
 }
 ```
 
-### Generic API Calls with useRagbitsCall
+### 2. Hooks Usage Examples
 
-The `useRagbitsCall` hook provides a React-friendly way to make API calls using the underlying `RagbitsClient`:
+#### API Call Example
 
 ```tsx
-import { useRagbitsCall } from 'ragbits-api-client-react'
-
-// Define your response types
-interface Config {
-    model: string
-    temperature: number
-}
+import { useRagbitsCall } from '@ragbits/api-client-react'
 
 function ConfigComponent() {
-    // GET request
-    const config = useRagbitsCall<Config>('/api/config')
-
-    // POST request for feedback
-    const feedback = useRagbitsCall<{ success: boolean }>('/api/feedback', {
-        method: 'POST',
-    })
+    const config = useRagbitsCall('/api/config')
 
     const handleLoadConfig = async () => {
         try {
@@ -59,70 +56,46 @@ function ConfigComponent() {
         }
     }
 
-    const handleSendFeedback = async () => {
-        try {
-            await feedback.call({
-                body: {
-                    message_id: 'msg-123',
-                    feedback: 'positive',
-                    payload: { rating: 5 },
-                },
-            })
-            console.log('Feedback sent:', feedback.data)
-        } catch (error) {
-            console.error('Failed to send feedback:', error)
-        }
-    }
-
     return (
         <div>
             <button onClick={handleLoadConfig} disabled={config.isLoading}>
-                {config.isLoading ? 'Loading...' : 'Load Config'}
-            </button>
-
-            <button onClick={handleSendFeedback} disabled={feedback.isLoading}>
-                {feedback.isLoading ? 'Sending...' : 'Send Feedback'}
+                {config.isLoading
+                    ? 'Loading...'
+                    : config.data
+                      ? 'Reload Config'
+                      : 'Load Config'}
             </button>
 
             {config.data && (
                 <div>
-                    <h3>Config:</h3>
-                    <pre>{JSON.stringify(config.data, null, 2)}</pre>
+                    <h3>Config loaded successfully</h3>
                 </div>
             )}
 
-            {config.error && <p>Config Error: {config.error.message}</p>}
-            {feedback.error && <p>Feedback Error: {feedback.error.message}</p>}
+            {config.error && <p>Error: {config.error.message}</p>}
         </div>
     )
 }
 ```
 
-### Streaming with useRagbitsStream
-
-The `useRagbitsStream` hook provides React state management for streaming responses:
+#### Streaming Example
 
 ```tsx
-import { useRagbitsStream } from 'ragbits-api-client-react'
-import type { ChatResponse, ChatRequest } from 'ragbits-api-client-react'
+import { useRagbitsStream } from '@ragbits/api-client-react'
 
 function ChatComponent() {
-    const [messages, setMessages] = useState<ChatResponse[]>([])
-    const [input, setInput] = useState('')
-    const stream = useRagbitsStream<ChatResponse>()
+    const chatStream = useRagbitsStream('/api/chat')
 
     const handleSendMessage = () => {
-        if (!input.trim()) return
-
-        const chatRequest: ChatRequest = {
-            message: input,
+        const chatRequest = {
+            message: 'Hello!',
             history: [],
             context: {},
         }
 
-        stream.stream('/api/chat', chatRequest, {
-            onMessage: (response) => {
-                setMessages((prev) => [...prev, response])
+        chatStream.stream(chatRequest, {
+            onMessage: (chunk) => {
+                console.log('chunk:', chunk)
             },
             onError: (error) => {
                 console.error('Stream error:', error)
@@ -131,147 +104,150 @@ function ChatComponent() {
                 console.log('Stream completed')
             },
         })
-
-        setInput('')
     }
 
     return (
         <div>
-            <div>
-                {messages.map((msg, index) => (
-                    <div key={index}>
-                        <strong>{msg.type}:</strong>{' '}
-                        {JSON.stringify(msg.content)}
-                    </div>
-                ))}
-            </div>
-
-            <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={stream.isStreaming}
-                placeholder="Type your message..."
-            />
-
             <button
                 onClick={handleSendMessage}
-                disabled={stream.isStreaming || !input.trim()}
+                disabled={chatStream.isStreaming}
             >
-                {stream.isStreaming ? 'Streaming...' : 'Send'}
+                {chatStream.isStreaming ? 'Streaming...' : 'Send Message'}
             </button>
 
-            <button onClick={stream.cancel} disabled={!stream.isStreaming}>
+            <button
+                onClick={chatStream.cancel}
+                disabled={!chatStream.isStreaming}
+            >
                 Cancel
             </button>
 
-            {stream.error && <p>Error: {stream.error.message}</p>}
+            {chatStream.error && <p>Error: {chatStream.error.message}</p>}
         </div>
     )
 }
 ```
 
-### Using the Core Client Directly
-
-You can also access the underlying `RagbitsClient` instance directly:
-
-```tsx
-import { useRagbitsContext } from 'ragbits-api-client-react'
-
-function DirectClientComponent() {
-    const { client } = useRagbitsContext()
-
-    const handleDirectCall = async () => {
-        // Use the client directly
-        const config = await client.getConfig()
-        console.log('Config:', config)
-
-        // Or use the generic methods
-        const customData = await client.makeRequest('/api/custom-endpoint', {
-            method: 'POST',
-            body: { custom: 'data' },
-        })
-    }
-
-    return <button onClick={handleDirectCall}>Use Client Directly</button>
-}
-```
-
-## Architecture
-
-This package is built on top of `ragbits-api-client` and provides:
-
-- **React-friendly hooks** with proper state management
-- **TypeScript support** with full type safety
-- **Automatic cleanup** for streams and requests
-- **Error handling** with React state
-- **Loading states** for better UX
-
-The underlying `RagbitsClient` handles:
-
-- HTTP requests and responses
-- Streaming connections
-- Error handling at the network level
-- URL building and configuration
-
 ## API Reference
 
-### RagbitsProvider
+### `RagbitsProvider`
 
-Provider component that sets up the `RagbitsClient` instance.
+Provider component that sets up the `RagbitsClient` instance and provides it to the React context.
 
 **Props:**
 
-- `baseUrl?: string` - Base URL for the API (default: "http://127.0.0.1:8000")
-- `children: ReactNode` - Child components
+```typescript
+interface RagbitsProviderProps {
+    baseUrl?: string // Base URL for the API (default: "http://127.0.0.1:8000")
+    children: ReactNode
+}
+```
 
-### useRagbitsCall<T>(endpoint, defaultOptions?)
+### `useRagbitsCall<T>(endpoint, defaultOptions?)`
 
-React hook for making API calls with state management.
+React hook for making type-safe API calls with automatic state management.
 
 **Parameters:**
 
-- `endpoint: string` - API endpoint path
-- `defaultOptions?: ApiRequestOptions` - Default request options
+- `endpoint`: Predefined API endpoint path (e.g., '/api/config', '/api/feedback')
+- `defaultOptions` (optional): Default request options
 
 **Returns:**
 
-- `data: T | null` - Response data
-- `error: Error | null` - Error if request failed
-- `isLoading: boolean` - Loading state
-- `call: (options?) => Promise<T>` - Function to make the API call
-- `reset: () => void` - Reset state to initial values
+```typescript
+interface RagbitsCallResult<T, E = Error> {
+    data: T | null // Response data
+    error: E | null // Error if request failed
+    isLoading: boolean // Loading state
+    call: (options?) => Promise<T> // Function to make the API call
+    reset: () => void // Reset state to initial values
+    abort: () => void // Abort current request
+}
+```
 
-### useRagbitsStream<T>()
+### `useRagbitsStream<T>(endpoint)`
 
-React hook for handling streaming responses with state management.
+React hook for handling streaming responses with automatic state management.
 
-**Returns:**
+**Parameters:**
 
-- `isStreaming: boolean` - Whether a stream is active
-- `error: Error | null` - Stream error
-- `stream: (endpoint, data, callbacks) => () => void` - Start streaming
-- `cancel: () => void` - Cancel current stream
-
-### useRagbitsContext()
-
-Access the underlying `RagbitsClient` instance.
+- `endpoint`: Predefined streaming endpoint path (e.g., '/api/chat')
 
 **Returns:**
 
-- `client: RagbitsClient` - The client instance
+```typescript
+interface RagbitsStreamResult<E = Error> {
+    isStreaming: boolean // Whether a stream is active
+    error: E | null // Stream error
+    stream: (data, callbacks) => () => void // Start streaming
+    cancel: () => void // Cancel current stream
+}
+```
 
-### Types
+### `useRagbitsContext()`
 
-All types from `ragbits-api-client` are re-exported:
+Access the underlying `RagbitsClient` instance directly.
+
+**Returns:**
+
+```typescript
+interface RagbitsContextValue {
+    client: RagbitsClient
+}
+```
+
+## Types
+
+All types from `@ragbits/api-client` are re-exported:
 
 ```typescript
 import type {
-    ChatResponse,
+    // Core types
+    RagbitsClient,
+    ClientConfig,
+
+    // Request/Response types
     ChatRequest,
     FeedbackRequest,
+    ConfigResponse,
+    FeedbackResponse,
+
+    // Message types
+    Message,
+    MessageRole,
+    TypedChatResponse,
+    ChatResponseType,
+
+    // Feedback types
+    FeedbackType,
+
+    // Stream types
     StreamCallbacks,
-    ClientConfig,
-    ApiRequestOptions,
-    RagbitsClient,
-} from 'ragbits-api-client-react'
+
+    // Endpoint types
+    ApiEndpointPath,
+    StreamingEndpointPath,
+    ApiEndpointResponse,
+    StreamingEndpointStream,
+    TypedApiRequestOptions,
+} from '@ragbits/api-client-react'
 ```
+
+## Browser Support
+
+This package supports all modern browsers with React 16.8+ (for hooks):
+
+- Chrome 42+
+- Firefox 39+
+- Safari 10.1+
+- Edge 14+
+
+## Node.js Support
+
+For Node.js environments, you'll need:
+
+- Node.js 18+
+
+## License
+
+MIT
