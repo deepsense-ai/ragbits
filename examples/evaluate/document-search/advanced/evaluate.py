@@ -4,6 +4,7 @@
 #     "ragbits-core[chroma,hf]",
 #     "ragbits-document-search[unstructured]",
 #     "ragbits-evaluate[relari]",
+#     "unstructured[md]>=0.16.9,<1.0.0",
 # ]
 # ///
 import asyncio
