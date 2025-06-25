@@ -28,6 +28,7 @@ To run the script, execute the following command:
 # dependencies = [
 #     "ragbits-document-search",
 #     "ragbits-core",
+#     "google-auth>=2.35.0",
 # ]
 # ///
 import asyncio
