@@ -11,6 +11,7 @@ import { Theme } from "../contexts/ThemeContext/ThemeContext.ts";
 import DelayedTooltip from "./DelayedTooltip";
 import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../plugins/FeedbackPlugin/index.tsx";
+import LiveUpdates from "./LiveUpdates.tsx";
 
 export type ChatMessageProps = {
   classNames?: {
@@ -25,7 +26,7 @@ export type ChatMessageProps = {
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   (
     {
-      chatMessage: { serverId, content, role, references },
+      chatMessage: { serverId, content, role, references, liveUpdates },
       classNames,
       isLoading,
     },
@@ -87,26 +88,31 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               </div>
             ) : (
               <>
-                {content.length > 0 ? (
-                  <Markdown
-                    className={cn(
-                      "markdown-container prose max-w-full",
-                      theme === Theme.DARK && "dark:prose-invert",
-                      classNames?.content,
-                    )}
-                    remarkPlugins={[remarkGfm]}
-                  >
-                    {content}
-                  </Markdown>
-                ) : (
-                  <div className="flex items-center gap-2 text-default-500">
-                    <Icon
-                      icon="heroicons:arrow-path"
-                      className="animate-spin"
-                    />
-                    <span>Thinking...</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 text-default-500">
+                  <LiveUpdates
+                    isLoading={isLoading}
+                    liveUpdates={liveUpdates}
+                  />
+                  {isLoading && !liveUpdates && (
+                    <>
+                      <Icon
+                        icon="heroicons:arrow-path"
+                        className="animate-spin"
+                      />
+                      <span>Thinking...</span>
+                    </>
+                  )}
+                </div>
+                <Markdown
+                  className={cn(
+                    "markdown-container prose max-w-full",
+                    theme === Theme.DARK && "dark:prose-invert",
+                    classNames?.content,
+                  )}
+                  remarkPlugins={[remarkGfm]}
+                >
+                  {content}
+                </Markdown>
                 {references && references.length > 0 && !isLoading && (
                   <div className="text-xs italic text-default-500">
                     <ul className="list-disc pl-4">

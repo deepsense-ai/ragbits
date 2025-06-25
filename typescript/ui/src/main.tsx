@@ -23,6 +23,7 @@ loadIcons([
   "heroicons:moon",
   "heroicons:arrow-down",
   "heroicons:arrow-up",
+  "heroicons:chevron-down",
 ]);
 
 createRoot(document.getElementById("root")!).render(

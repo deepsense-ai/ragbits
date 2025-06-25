@@ -106,13 +106,13 @@ class MyChat(ChatInterface):
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),
             self.create_live_update(
-                "0", LiveUpdateType.FINISH, "[EXAMPLE] Searched the web", "Found 11 matching results"
+                "0", LiveUpdateType.FINISH, "[EXAMPLE] Searched the web", "Found 11 matching results."
             ),
             self.create_live_update(
                 "1",
                 LiveUpdateType.FINISH,
                 "[EXAMPLE] Ingested the results from previous query",
-                "Found 4 connected topics",
+                "Found 4 connected topics.",
             ),
         ]
 

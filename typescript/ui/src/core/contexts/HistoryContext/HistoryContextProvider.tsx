@@ -123,7 +123,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         return next;
       });
     },
-    [],
+    [_handleLiveUpdate],
   );
 
   const handleResponse = useCallback(
