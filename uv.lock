@@ -4663,10 +4663,12 @@ local = [
     { name = "transformers" },
 ]
 logfire = [
+    { name = "google-auth" },
     { name = "logfire", extra = ["system-metrics"] },
     { name = "opentelemetry-api" },
 ]
 otel = [
+    { name = "google-auth" },
     { name = "opentelemetry-api" },
 ]
 pgvector = [
@@ -4705,6 +4707,8 @@ requires-dist = [
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
+    { name = "google-auth", marker = "extra == 'logfire'", specifier = ">=2.35.0" },
+    { name = "google-auth", marker = "extra == 'otel'", specifier = ">=2.35.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
     { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
