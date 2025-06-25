@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import type { FeedbackResponse, TypedChatResponse } from '@ragbits/api-client'
-import { ChatResponseType } from 'ragbits-api-client'
+import { ChatResponseType } from '@ragbits/api-client'
 import { defaultConfigResponse } from '../utils'
 
 export const handlers = [

@@ -6,7 +6,7 @@ import type {
     TypedApiRequestOptions,
     ApiEndpointPath,
     StreamingEndpointStream,
-} from 'ragbits-api-client'
+} from '@ragbits/api-client'
 
 // React-specific hook result types
 export interface RagbitsCallResult<

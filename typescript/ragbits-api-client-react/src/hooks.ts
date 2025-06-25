@@ -7,7 +7,7 @@ import type {
     StreamingEndpointPath,
     StreamingEndpointStream,
     StreamingEndpointRequest,
-} from 'ragbits-api-client'
+} from '@ragbits/api-client'
 import type { RagbitsCallResult, RagbitsStreamResult } from './types'
 import { useRagbitsContext } from './RagbitsProvider'
 

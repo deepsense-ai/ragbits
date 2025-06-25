@@ -5,7 +5,7 @@ import { waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsStream } from '../hooks'
 import { RagbitsProvider } from '../RagbitsProvider'
-import { ChatResponseType, type TypedChatResponse } from 'ragbits-api-client'
+import { ChatResponseType, type TypedChatResponse } from '@ragbits/api-client'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
