@@ -19,11 +19,7 @@ logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 
-@hydra.main(
-    config_path="examples/evaluation/document-search/advanced/config",
-    config_name="optimization",
-    version_base="3.2",
-)
+@hydra.main(config_path="config", config_name="optimization", version_base="3.2")
 def main(config: DictConfig) -> None:
     """
     Runs the optimization process.
