@@ -1,12 +1,22 @@
+"""
+Ragbits Chat Example: Offline Chat Interface
+
+This example demonstrates how to use the `ChatInterface` to create a simple chat application that works offline.
+It showcases different response types, including text responses, live updates, and reference documents.
+
+To run the script, execute the following command:
+
+    ```bash
+    ragbits api run examples.api.offline_chat:MyChat
+    ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-chat",
 # ]
 # ///
-#
-# To run this example execute following CLI command:
-# ragbits api run examples.api.offline_chat:MyChat
 
 import asyncio
 from collections.abc import AsyncGenerator

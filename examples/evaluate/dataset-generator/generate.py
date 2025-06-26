@@ -1,3 +1,26 @@
+"""
+Ragbits Evaluate Example: Dataset Generation
+
+This example demonstrates how to generate a synthetic dataset using the `DatasetGenerationPipeline` class.
+It uses Hydra for configuration management and allows specifying topics for dataset generation.
+The generated dataset is then logged to a file.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/evaluate/dataset-generator/generate.py
+    ```
+"""
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core",
+#     "ragbits-document-search",
+#     "ragbits-evaluate",
+# ]
+# ///
+
 import hydra
 from omegaconf import DictConfig
 

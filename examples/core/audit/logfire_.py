@@ -1,5 +1,5 @@
 """
-Ragbits Core Example: Logfire
+Ragbits Core Example: Logfire Audit
 
 This example demonstrates how to collect traces and metrics using Ragbits audit module with Logfire.
 We run the LLM generation several times to emit telemetry data, which is automatically captured by Logfire.
@@ -35,6 +35,7 @@ To visualize the metrics collected by Ragbits, follow these steps:
 #     "tqdm",
 # ]
 # ///
+
 import asyncio
 from collections.abc import AsyncGenerator
 

@@ -1,3 +1,16 @@
+"""
+Ragbits Chat Example: Chat Interface
+
+This example demonstrates how to use the `ChatInterface` to create a simple chat application.
+It showcases different response types, including text responses, live updates, and reference documents.
+
+To run the script, execute the following command:
+
+    ```bash
+    ragbits api run examples.api.chat:MyChat
+    ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -5,8 +18,6 @@
 # ]
 # ///
 #
-# To run this example execute following CLI command:
-# ragbits api run examples.api.chat:MyChat
 
 import asyncio
 from collections.abc import AsyncGenerator

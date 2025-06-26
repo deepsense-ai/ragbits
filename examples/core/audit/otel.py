@@ -1,5 +1,5 @@
 """
-Ragbits Core Example: OpenTelemetry
+Ragbits Core Example: OpenTelemetry Audit
 
 This example demonstrates how to collect traces and metrics using Ragbits audit module with OpenTelemetry.
 We run the LLM generation several times to collect telemetry data, and then export it to the OpenTelemetry collector and visualize it in Grafana.
@@ -36,6 +36,7 @@ To visualize the metrics collected by Ragbits, follow these steps:
 #     "tqdm",
 # ]
 # ///
+
 import asyncio
 from collections.abc import AsyncGenerator
 

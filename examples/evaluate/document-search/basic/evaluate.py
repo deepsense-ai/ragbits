@@ -1,3 +1,16 @@
+"""
+Ragbits Evaluate Example: Basic Document Search Evaluation
+
+This example demonstrates how to evaluate a basic document search pipeline using the `Evaluator` class.
+It configures a simple pipeline with ChromaDB as the vector store, LiteLLMEmbedder for embeddings, and HuggingFaceSource for data.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/evaluate/document-search/basic/evaluate.py
+    ```
+"""  # noqa: E501
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -7,6 +20,7 @@
 #     "unstructured[md]>=0.16.9,<1.0.0",
 # ]
 # ///
+
 import asyncio
 import logging
 

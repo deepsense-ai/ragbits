@@ -1,3 +1,20 @@
+"""
+Ragbits Evaluate Example: Advanced Document Search Optimization
+
+This example demonstrates how to optimize an advanced document search pipeline using the `Optimizer` class.
+It uses Hydra for configuration management to define the optimization process.
+
+To run the script, execute the following commands:
+
+    ```bash
+    # default settings:
+    uv run examples/evaluate/document-search/advanced/optimize.py
+
+    # Neptune logging:
+    uv run examples/evaluate/document-search/advanced/optimize.py neptune_callback=True
+    ```
+"""
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -6,6 +23,7 @@
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
+
 import logging
 from typing import cast
 
