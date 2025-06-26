@@ -68,9 +68,7 @@ class Conversation(SyncConversationBase):
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [
-                m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM
-            ],
+            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
             "context": merged_context,
         }
 
@@ -97,18 +95,13 @@ class Conversation(SyncConversationBase):
                     self._process_incoming(parsed, assistant_index)
                     yield parsed
         except httpx.RequestError as exc:
-            raise ChatClientRequestError(
-                f"Error communicating with {url}: {exc}"
-            ) from exc
+            raise ChatClientRequestError(f"Error communicating with {url}: {exc}") from exc
         finally:
             self._streaming_response = None
 
     def stop(self) -> None:
         """Abort currently running stream (if any)."""
-        if (
-            self._streaming_response is not None
-            and not self._streaming_response.is_closed
-        ):
+        if self._streaming_response is not None and not self._streaming_response.is_closed:
             self._streaming_response.close()
             self._streaming_response = None
 
