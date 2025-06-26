@@ -306,7 +306,6 @@ class RagbitsAPI:
     @staticmethod
     async def _chat_response_to_sse(
         responses: AsyncGenerator[ChatResponse],
-        start_time: float,
     ) -> AsyncGenerator[str, None]:
         """
         Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
@@ -314,7 +313,6 @@ class RagbitsAPI:
 
         Args:
             responses: The chat response generator
-            start_time: The start time of the API request
         """
         chunk_count = 0
         stream_start_time = time.time()
