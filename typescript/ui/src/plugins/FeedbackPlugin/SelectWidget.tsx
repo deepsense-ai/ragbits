@@ -36,10 +36,8 @@ export default function SelectWidget({
       onFocus={() => onFocus?.(id, value)}
       className="mb-2"
     >
-      {enumOptions.map((option) => (
-        <SelectItem key={option.label} value={option.value}>
-          {option.label}
-        </SelectItem>
+      {enumOptions.map((option: { label: string; value: any }) => (
+        <SelectItem key={option.label}>{option.label}</SelectItem>
       ))}
     </Select>
   );

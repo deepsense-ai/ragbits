@@ -13,7 +13,7 @@
         "outDir": "dist",
         "composite": true
     },
-    "references": [{"path": "../api-client"}],
+    "references": [{ "path": "../api-client" }],
     "include": ["src"],
     "exclude": ["node_modules", "dist"]
 }

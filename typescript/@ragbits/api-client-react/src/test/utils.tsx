@@ -4,6 +4,7 @@ import {
     renderHook,
     RenderOptions,
     RenderHookOptions,
+    RenderResult,
 } from '@testing-library/react'
 import { RagbitsProvider } from '../RagbitsProvider'
 import type { ConfigResponse } from '@ragbits/api-client'
@@ -26,7 +27,7 @@ function createWrapper(baseUrl?: string) {
 export function renderWithProvider(
     ui: React.ReactElement,
     options: CustomRenderOptions = {}
-) {
+): RenderResult {
     const { baseUrl, ...renderOptions } = options
 
     return render(ui, {

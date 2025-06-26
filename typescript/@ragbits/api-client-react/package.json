@@ -4,18 +4,19 @@
     "description": "React hooks for the Ragbits API client",
     "main": "dist/index.cjs",
     "module": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "types": "dist/src/index.d.ts",
     "type": "module",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
+            "types": "./dist/src/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
         }
     },
     "scripts": {
-        "build": "tsup src/index.ts --format cjs,esm --dts",
-        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "clean": "rm -rf dist",
+        "build": "tsc -b .",
+        "dev": "tsc -b . --watch",
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",
