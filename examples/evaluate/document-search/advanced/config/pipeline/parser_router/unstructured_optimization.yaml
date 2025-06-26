@@ -2,6 +2,7 @@ txt:
   type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser
   config:
     use_api: false
+    ignore_images: true
     partition_kwargs:
       strategy: hi_res
     chunking_kwargs:
@@ -19,6 +20,7 @@ md:
   type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser
   config:
     use_api: false
+    ignore_images: true
     partition_kwargs:
       strategy: hi_res
     chunking_kwargs:
