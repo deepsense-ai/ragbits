@@ -18,7 +18,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "composite": true
   },
+  "references": [{"path": "../@ragbits/api-client-react"}],
   "include": ["src"]
 }

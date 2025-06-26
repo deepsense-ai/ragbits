@@ -1,0 +1,5 @@
+{
+  "name": "ragbits",
+  "private": true,
+  "workspaces": ["typescript/*"]
+}

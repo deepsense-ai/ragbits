@@ -8,7 +8,7 @@ import { MessageRole } from "ragbits-api-client-react";
 import { ChatMessage as ChatMessageType } from "../../types/history.ts";
 import { useThemeContext } from "../contexts/ThemeContext/useThemeContext.ts";
 import { Theme } from "../contexts/ThemeContext/ThemeContext.ts";
-import DelayedTooltip from "./DelayedTooltip";
+import DelayedTooltip from "./DelayedTooltip.tsx";
 import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../plugins/FeedbackPlugin/index.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
