@@ -1,8 +1,9 @@
 import {
   TypedChatResponse as ChatResponse,
+  LiveUpdate,
   MessageRole,
   Reference,
-} from "ragbits-api-client-react";
+} from "@ragbits/api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
 
@@ -17,10 +18,12 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   references?: Reference[];
+  liveUpdates?: Map<string, LiveUpdate["content"]>;
 }
 
 export interface HistoryContext {
   history: ChatMessage[];
+  followupMessages: string[] | null;
   isLoading: boolean;
   /**
    * Sends a message to the chat window with animations and delayed rendering.

@@ -9,8 +9,8 @@ PACKAGES_CHANGED=$(echo "$CHANGED_FILES" | grep -qv '^typescript/ui/' && echo "t
 # Check if any UI files have changed
 UI_CHANGED=$(echo "$CHANGED_FILES" | grep -q '^typescript/ui/' && echo "true" || echo "false")
 
-# Check if any TypeScript module files have changed (ragbits-api-client or ragbits-api-client-react)
-CLIENT_CHANGED=$(echo "$CHANGED_FILES" | grep -q '^typescript/ragbits-api-client' && echo "true" || echo "false")
+# Check if any TypeScript module files have changed (@ragbits/api-client or @ragbits/api-client-react)
+CLIENT_CHANGED=$(echo "$CHANGED_FILES" | grep -q '^typescript/@ragbits/api-client' && echo "true" || echo "false")
 
 # Set the GitHub outputs
 echo "packages-changed=$PACKAGES_CHANGED" >> "$GITHUB_OUTPUT"

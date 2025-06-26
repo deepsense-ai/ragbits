@@ -1,4 +1,4 @@
-import { ConfigResponse } from "ragbits-api-client-react";
+import { ConfigResponse } from "@ragbits/api-client-react";
 import { createContext } from "react";
 
 export interface IConfigContext {

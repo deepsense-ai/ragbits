@@ -8,13 +8,18 @@ import {
   ServerState,
   useRagbitsStream,
   ChatRequest,
-} from "ragbits-api-client-react";
+  LiveUpdate,
+  LiveUpdateType,
+} from "@ragbits/api-client-react";
 import { ChatMessage, HistoryState } from "../../../types/history.ts";
 import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
 import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
+  const [followupMessages, setFollowupMessages] = useState<string[] | null>(
+    null,
+  );
   const [serverState, setServerState] = useState<ServerState | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const chatFactory = useRagbitsStream("/api/chat");
@@ -28,6 +33,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   const addMessage = useCallback((message: Omit<ChatMessage, "id">): string => {
     const id = uuidv4();
     const newMessage: ChatMessage = { ...message, id };
+    setFollowupMessages(null);
     updateHistoryState((prev) => {
       const next = new Map(prev);
       next.set(id, newMessage);
@@ -59,7 +65,34 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         case ChatResponseType.CONVERSATION_ID:
           setConversationId(response.content);
           break;
+        case ChatResponseType.FOLLOWUP_MESSAGES:
+          setFollowupMessages(response.content);
+          break;
       }
+    },
+    [],
+  );
+
+  const _handleLiveUpdate = useCallback(
+    (liveUpdate: LiveUpdate, message: ChatMessage) => {
+      const { update_id, content, type } = liveUpdate;
+
+      const existingUpdates = message.liveUpdates ?? new Map();
+      const newUpdates = new Map(existingUpdates);
+
+      const isKnown = newUpdates.has(update_id);
+
+      if (type === LiveUpdateType.START && isKnown) {
+        console.error(
+          `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
+        );
+
+        return newUpdates;
+      }
+
+      newUpdates.set(update_id, content);
+
+      return newUpdates;
     },
     [],
   );
@@ -87,12 +120,18 @@ export function HistoryProvider({ children }: PropsWithChildren) {
           case ChatResponseType.MESSAGE_ID:
             updatedMessage.serverId = response.content;
             break;
+          case ChatResponseType.LIVE_UPDATE:
+            updatedMessage.liveUpdates = _handleLiveUpdate(
+              response.content,
+              updatedMessage,
+            );
+            break;
         }
         next.set(messageId, updatedMessage);
         return next;
       });
     },
-    [],
+    [_handleLiveUpdate],
   );
 
   const handleResponse = useCallback(
@@ -100,6 +139,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       const NON_HISTORY_TYPES = [
         ChatResponseType.STATE_UPDATE,
         ChatResponseType.CONVERSATION_ID,
+        ChatResponseType.FOLLOWUP_MESSAGES,
       ];
 
       if (NON_HISTORY_TYPES.includes(response.type)) {
@@ -173,18 +213,20 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       deleteMessage,
       clearHistory,
       sendMessage,
-      isLoading: chatFactory.isStreaming,
       stopAnswering: chatFactory.cancel,
+      followupMessages,
+      isLoading: chatFactory.isStreaming,
     }),
     [
       history,
       addMessage,
+      handleResponse,
       deleteMessage,
       clearHistory,
-      handleResponse,
       sendMessage,
-      chatFactory.isStreaming,
       chatFactory.cancel,
+      chatFactory.isStreaming,
+      followupMessages,
     ],
   );
 

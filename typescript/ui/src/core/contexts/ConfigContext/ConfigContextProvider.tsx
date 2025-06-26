@@ -1,6 +1,6 @@
 import { PropsWithChildren, useEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
-import { useRagbitsCall } from "ragbits-api-client-react";
+import { useRagbitsCall } from "@ragbits/api-client-react";
 import { useThemeContext } from "../ThemeContext/useThemeContext";
 import { CircularProgress, cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";

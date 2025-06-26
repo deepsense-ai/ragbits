@@ -1,6 +1,7 @@
 {
   "files": [],
   "references": [
+    { "path": "../@ragbits/api-client-react" },
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
   ]

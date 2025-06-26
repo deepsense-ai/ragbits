@@ -15,7 +15,16 @@ from ragbits.core.utils import get_secret_key
 
 from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig
-from .types import ChatContext, ChatResponse, ChatResponseType, Reference, StateUpdate
+from .types import (
+    ChatContext,
+    ChatResponse,
+    ChatResponseType,
+    LiveUpdate,
+    LiveUpdateContent,
+    LiveUpdateType,
+    Reference,
+    StateUpdate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +129,23 @@ class ChatInterface(ABC):
             type=ChatResponseType.STATE_UPDATE,
             content=StateUpdate(state=state, signature=signature),
         )
+
+    @staticmethod
+    def create_live_update(
+        update_id: str, type: LiveUpdateType, label: str, description: str | None = None
+    ) -> ChatResponse:
+        """Helper method to create a live update response."""
+        return ChatResponse(
+            type=ChatResponseType.LIVE_UPDATE,
+            content=LiveUpdate(
+                update_id=update_id, type=type, content=LiveUpdateContent(label=label, description=description)
+            ),
+        )
+
+    @staticmethod
+    def create_followup_messages(messages: list[str]) -> ChatResponse:
+        """Helper method to create a live update response."""
+        return ChatResponse(type=ChatResponseType.FOLLOWUP_MESSAGES, content=messages)
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

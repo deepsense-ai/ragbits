@@ -14,21 +14,22 @@
         }
     },
     "scripts": {
-        "build": "tsup src/index.ts --format cjs,esm --dts",
-        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "build": "npm run clean && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --declarationDir dist --project tsconfig.json",
+        "dev": "tsc -b . --watch",
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",
         "lint": "eslint .",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "clean": "rm -rf ./dist"
     },
     "peerDependencies": {
         "react": ">=16.8.0",
         "react-dom": ">=16.8.0"
     },
     "dependencies": {
-        "@ragbits/api-client": "^0.0.2"
+        "@ragbits/api-client": "*"
     },
     "devDependencies": {
         "@eslint/js": "^9.17.0",

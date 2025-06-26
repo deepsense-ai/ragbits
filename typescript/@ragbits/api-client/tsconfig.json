@@ -4,13 +4,15 @@
         "module": "ESNext",
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "moduleResolution": "node",
-        "jsx": "react-jsx",
         "strict": true,
         "declaration": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "dist"
+        "outDir": "dist",
+        "declarationDir": "dist",
+        "composite": true,
+        "rootDir": "src"
     },
     "include": ["src"],
     "exclude": ["node_modules", "dist"]

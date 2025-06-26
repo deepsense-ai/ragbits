@@ -17,12 +17,12 @@ export default function App() {
   } = useConfigContext();
   const {
     history,
-    sendMessage,
     isLoading: historyIsLoading,
+    followupMessages,
+    sendMessage,
     stopAnswering,
   } = useHistoryContext();
   const { theme } = useThemeContext();
-  const [message, setMessage] = useState<string>("");
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
@@ -86,9 +86,8 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const handleSubmit = () => {
-    sendMessage(message);
-    setMessage("");
+  const handleSubmit = (text: string) => {
+    sendMessage(text);
   };
 
   const historyComponent = (
@@ -144,29 +143,27 @@ export default function App() {
         <Layout subTitle={subTitle} title={title} logo={logo}>
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             {content}
-            {/* Floating Scroll-to-bottom button */}
-            <Button
-              variant="solid"
-              onPress={scrollToBottom}
-              className={cn(
-                "absolute bottom-32 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
-                showScrollDownButton && showHistory
-                  ? "opacity-100"
-                  : "pointer-events-none opacity-0",
-              )}
-              tabIndex={-1}
-              startContent={<Icon icon="heroicons:arrow-down" />}
-            >
-              Scroll to bottom
-            </Button>
-
-            <div className="mt-auto flex max-w-full flex-col gap-2 px-6">
+            <div className="relative mt-auto flex max-w-full flex-col gap-2 px-6">
+              {/* Floating Scroll-to-bottom button */}
+              <Button
+                variant="solid"
+                onPress={scrollToBottom}
+                className={cn(
+                  "absolute -top-16 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
+                  showScrollDownButton && showHistory
+                    ? "opacity-100"
+                    : "pointer-events-none opacity-0",
+                )}
+                tabIndex={-1}
+                startContent={<Icon icon="heroicons:arrow-down" />}
+              >
+                Scroll to bottom
+              </Button>
               <PromptInput
                 isLoading={historyIsLoading}
                 submit={handleSubmit}
-                message={message}
-                setMessage={setMessage}
                 stopAnswering={stopAnswering}
+                followupMessages={followupMessages}
               />
             </div>
           </div>

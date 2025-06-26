@@ -8,17 +8,18 @@ import {
   useCallback,
   useRef,
   ReactNode,
+  useState,
 } from "react";
 
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
+import HorizontalActions from "./HorizontalActions";
 
 interface PromptInputProps {
-  isLoading: boolean;
-  submit: () => void;
-  message: string;
-  setMessage: (message: string) => void;
+  submit: (text: string) => void;
   stopAnswering: () => void;
+  isLoading: boolean;
+  followupMessages?: string[] | null;
   formProps?: FormProps;
   inputProps?: TextAreaProps;
   sendButtonProps?: ButtonProps;
@@ -27,8 +28,7 @@ interface PromptInputProps {
 }
 
 const PromptInput = ({
-  message,
-  setMessage,
+  followupMessages,
   submit,
   stopAnswering,
   isLoading,
@@ -38,12 +38,14 @@ const PromptInput = ({
   customSendIcon,
   customStopIcon,
 }: PromptInputProps) => {
+  const [message, setMessage] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = useCallback(() => {
     if (!message && !isLoading) return;
 
-    submit();
+    submit(message);
+    setMessage("");
     textAreaRef?.current?.focus();
   }, [isLoading, submit, message]);
 
@@ -73,61 +75,69 @@ const PromptInput = ({
   }, [stopAnswering]);
 
   return (
-    <Form
-      className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
-      validationBehavior="native"
-      onSubmit={onSubmit}
-      {...formProps}
-    >
-      <PromptInputText
-        ref={textAreaRef}
-        aria-label="Message to the chat"
-        classNames={{
-          input: "text-medium",
-          inputWrapper:
-            "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
-        }}
-        name="message"
-        placeholder="Enter a message here"
-        autoFocus
-        maxRows={16}
-        minRows={1}
-        value={message}
-        onKeyDown={handleKeyDown}
-        onValueChange={setMessage}
-        {...inputProps}
+    <div className="rounded-medium">
+      <HorizontalActions
+        isVisible={!!followupMessages}
+        actions={followupMessages ?? []}
+        sendMessage={submit}
       />
-      <Button
-        isIconOnly
-        aria-label={isLoading ? "Stop answering" : "Send message to the chat"}
-        color={!isLoading && !message ? "default" : "primary"}
-        isDisabled={!isLoading && !message}
-        radius="full"
-        size="sm"
-        type={isLoading ? "button" : "submit"}
-        onPress={isLoading ? handleStopAnswering : undefined}
-        {...sendButtonProps}
+
+      <Form
+        className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
+        validationBehavior="native"
+        onSubmit={onSubmit}
+        {...formProps}
       >
-        {!isLoading &&
-          (customSendIcon ?? (
-            <Icon
-              className={cn(
-                !message ? "text-default-600" : "text-primary-foreground",
-              )}
-              icon="heroicons:arrow-up"
-              width={20}
-            />
-          ))}
-        {isLoading &&
-          (customStopIcon ?? (
-            <Icon
-              className="text-primary-foreground"
-              icon="heroicons:stop"
-              width={20}
-            />
-          ))}
-      </Button>
-    </Form>
+        <PromptInputText
+          ref={textAreaRef}
+          aria-label="Message to the chat"
+          classNames={{
+            input: "text-medium",
+            inputWrapper:
+              "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
+          }}
+          name="message"
+          placeholder="Enter a message here"
+          autoFocus
+          maxRows={16}
+          minRows={1}
+          value={message}
+          onKeyDown={handleKeyDown}
+          onValueChange={setMessage}
+          {...inputProps}
+        />
+        <Button
+          isIconOnly
+          aria-label={isLoading ? "Stop answering" : "Send message to the chat"}
+          color={!isLoading && !message ? "default" : "primary"}
+          isDisabled={!isLoading && !message}
+          radius="full"
+          size="sm"
+          type={isLoading ? "button" : "submit"}
+          onPress={isLoading ? handleStopAnswering : undefined}
+          {...sendButtonProps}
+        >
+          {!isLoading &&
+            (customSendIcon ?? (
+              <Icon
+                className={cn(
+                  !message ? "text-default-600" : "text-primary-foreground",
+                )}
+                icon="heroicons:arrow-up"
+                width={20}
+              />
+            ))}
+          {isLoading &&
+            (customStopIcon ?? (
+              <Icon
+                className="text-primary-foreground"
+                icon="heroicons:stop"
+                width={20}
+              />
+            ))}
+        </Button>
+      </Form>
+    </div>
   );
 };
 

@@ -198,7 +198,9 @@ class RagbitsAPI:
             data = json.dumps(
                 {
                     "type": response.type.value,
-                    "content": response.content if isinstance(response.content, str) else response.content.model_dump(),
+                    "content": response.content
+                    if isinstance(response.content, str | list)
+                    else response.content.model_dump(),
                 }
             )
             yield f"data: {data}\n\n"

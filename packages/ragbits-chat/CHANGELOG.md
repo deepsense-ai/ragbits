@@ -8,6 +8,7 @@
 - CI/CD changes for new directory structure (#582)
 - Move form definitions to JSONSchema (#616)
 - Allow UI cutomization using config endpoint (#643)
+- Add support for live updates and followup messages (#654)
 
 ## 1.0.0 (2025-06-04)
 

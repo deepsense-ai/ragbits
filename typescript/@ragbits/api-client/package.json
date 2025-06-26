@@ -14,14 +14,15 @@
         }
     },
     "scripts": {
-        "build": "tsup src/index.ts --format cjs,esm --dts",
-        "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+        "build": "npm run clean && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --project tsconfig.json",
+        "dev": "tsc -b . --watch",
         "test": "vitest",
         "test:run": "vitest run",
         "test:coverage": "vitest run --coverage",
         "lint": "eslint .",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "clean": "rm -rf ./dist"
     },
     "keywords": [
         "ragbits",

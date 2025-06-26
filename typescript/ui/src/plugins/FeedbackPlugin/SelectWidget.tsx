@@ -37,9 +37,7 @@ export default function SelectWidget({
       className="mb-2"
     >
       {enumOptions.map((option) => (
-        <SelectItem key={option.label} value={option.value}>
-          {option.label}
-        </SelectItem>
+        <SelectItem key={option.value}>{option.label}</SelectItem>
       ))}
     </Select>
   );

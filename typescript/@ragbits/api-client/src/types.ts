@@ -37,6 +37,8 @@ export enum ChatResponseType {
     TEXT = 'text',
     MESSAGE_ID = 'message_id',
     CONVERSATION_ID = 'conversation_id',
+    LIVE_UPDATE = 'live_update',
+    FOLLOWUP_MESSAGES = 'followup_messages',
 }
 
 /**
@@ -53,6 +55,20 @@ export enum FeedbackType {
 export interface ServerState {
     state: Record<string, unknown>
     signature: string
+}
+
+export enum LiveUpdateType {
+    START = 'START',
+    FINISH = 'FINISH',
+}
+
+export interface LiveUpdate {
+    update_id: string
+    type: LiveUpdateType
+    content: {
+        label: string
+        description?: string
+    }
 }
 
 /**
@@ -83,6 +99,16 @@ interface StateUpdateChatResponse {
     content: ServerState
 }
 
+interface LiveUpdateChatResponse {
+    type: ChatResponseType.LIVE_UPDATE
+    content: LiveUpdate
+}
+
+interface FollowupMessagesChatResponse {
+    type: ChatResponseType.FOLLOWUP_MESSAGES
+    content: string[]
+}
+
 /**
  * Typed chat response union
  */
@@ -92,6 +118,8 @@ export type TypedChatResponse =
     | MessageIdChatResponse
     | ConversationIdChatResponse
     | StateUpdateChatResponse
+    | LiveUpdateChatResponse
+    | FollowupMessagesChatResponse
 
 /**
  * Base chat request to the API
