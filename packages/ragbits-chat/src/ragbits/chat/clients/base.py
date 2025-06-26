@@ -22,7 +22,7 @@ class SyncChatClientBase(ABC):
         """Create and return a new conversation instance."""
 
     @abstractmethod
-    def ask(
+    def run(
         self,
         message: str,
         *,
@@ -31,7 +31,7 @@ class SyncChatClientBase(ABC):
         """Send *message* and return the final assistant reply."""
 
     @abstractmethod
-    def send_message(
+    def run_straming(
         self,
         message: str,
         *,
@@ -48,7 +48,7 @@ class AsyncChatClientBase(ABC):
         """Create and return a new conversation instance."""
 
     @abstractmethod
-    async def ask(
+    async def run(
         self,
         message: str,
         *,
@@ -57,7 +57,7 @@ class AsyncChatClientBase(ABC):
         """Send *message* and return the final assistant reply."""
 
     @abstractmethod
-    async def send_message(
+    def run_streaming(
         self,
         message: str,
         *,

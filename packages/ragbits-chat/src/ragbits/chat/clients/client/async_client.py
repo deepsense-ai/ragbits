@@ -38,23 +38,23 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
         """Close the underlying *httpx.AsyncClient* session."""
         await self._client.aclose()
 
-    async def ask(
+    async def run(
         self,
         message: str,
         *,
         context: dict[str, Any] | None = None,
     ) -> str:
-        """Convenience wrapper that proxies through a fresh AsyncConversation."""
+        """Send *message* and return the final assistant reply."""
         conv = self.new_conversation()
         return await conv.ask(message, context=context)
 
-    async def send_message(
+    async def run_streaming(
         self,
         message: str,
         *,
         context: dict[str, Any] | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Stateless proxy to :class:`AsyncConversation.send_message`."""
+        """Send *message* and yield streaming :class:`ChatResponse` chunks."""
         conv = self.new_conversation()
         async for chunk in conv.send_message(message, context=context):
             yield chunk

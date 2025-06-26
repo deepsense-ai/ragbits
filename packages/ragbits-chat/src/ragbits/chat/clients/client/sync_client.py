@@ -44,23 +44,23 @@ class RagbitsChatClient(SyncChatClientBase):
         """Close the underlying *httpx.Client* session."""
         self._client.close()
 
-    def ask(
+    def run(
         self,
         message: str,
         *,
         context: dict[str, Any] | None = None,
     ) -> str:
-        """Convenience wrapper that proxies through a fresh Conversation."""
+        """Send *message* and return the final assistant reply."""
         conv = self.new_conversation()
         return conv.ask(message, context=context)
 
-    def send_message(
+    def run_streaming(
         self,
         message: str,
         *,
         context: dict[str, Any] | None = None,
     ) -> Generator[ChatResponse, None, None]:
-        """Stateless proxy to :pyclass:`Conversation.send_message`."""
+        """Send *message* and yield streaming :class:`ChatResponse` chunks."""
         conv = self.new_conversation()
         yield from conv.send_message(message, context=context)
 
