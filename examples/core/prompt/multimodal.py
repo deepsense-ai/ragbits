@@ -50,7 +50,7 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
     """
 
     system_prompt = """
-    You are themed image describer. Descirbe the image in the provided theme.
+    You are themed image describer. Describe the image in the provided theme.
     """
 
     user_prompt = """
