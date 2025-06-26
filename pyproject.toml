@@ -12,6 +12,8 @@ dependencies = [
     "ragbits-guardrails[openai]",
     "ragbits-chat",
     "ragbits-agents",
+    "a2a-sdk>=0.2.9",
+    "ipykernel>=6.29.5",
 ]
 
 [tool.uv]
