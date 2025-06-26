@@ -57,7 +57,12 @@ def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
         VectorStoreEntry(
             id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"),
             text="This text is about parrots and cats.",
-            metadata={"foo": "bar", "nested_foo": {"nested_bar": "nested_baz"}, "some_list": 1},
+            metadata={
+                "foo": "bar",
+                "nested_foo": {"nested_bar": "nested_baz"},
+                "some_list": 1,
+                "simple": "no_simple_value",
+            },
         ),
         VectorStoreEntry(
             id=UUID("367cd073-6a6b-47fe-a032-4bb3a754f6fe"),
@@ -67,7 +72,7 @@ def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
             id=UUID("d9d11902-f26a-409b-967b-46c30f0b65de"),
             image_bytes=second_image_bytes,
             text="It is a document about animals.",
-            metadata={"baz": "qux"},
+            metadata={"baz": "qux", "simple": "simple_value", "nested_foo": {"nested_bar": "no_nested_baz"}},
         ),
     ]
 
@@ -83,6 +88,33 @@ async def test_vector_store_list(
         if vector_store._embedding_type == EmbeddingType.TEXT
         else [e for e in vector_store_keyword_search_entries if e.image_bytes is not None]
     )
+
+    sorted_results = sorted(result_entries, key=lambda entry: entry.id)
+    sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
+
+    for result, expected in zip(sorted_results, sorted_expected, strict=True):
+        assert result.id == expected.id
+
+        # Chroma is unable to store None values so unfortunately we have to tolerate empty strings
+        assert result.text == expected.text or (expected.text is None and result.text == "")
+        assert result.metadata == expected.metadata
+        assert result.image_bytes == expected.image_bytes
+
+
+@pytest.mark.parametrize(
+    "filter",
+    [("simple", {"simple": "simple_value"}), ("nested_foo", {"nested_foo": {"nested_bar": "nested_baz"}})],
+)
+async def test_vector_store_list_with_filter(
+    vector_store: VectorStoreWithEmbedder,
+    vector_store_keyword_search_entries: list[VectorStoreEntry],
+    filter: tuple[str, dict],
+) -> None:
+    await vector_store.store(vector_store_keyword_search_entries)
+    result_entries = await vector_store.list(filter[1])
+    expected_entries = [
+        e for e in vector_store_keyword_search_entries if e.metadata.get(filter[0], None) == filter[1][filter[0]]
+    ]
 
     sorted_results = sorted(result_entries, key=lambda entry: entry.id)
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)

@@ -6,7 +6,7 @@ import weaviate
 import weaviate.classes as wvc
 from typing_extensions import Self
 from weaviate import WeaviateAsyncClient
-from weaviate.classes.config import Configure, VectorDistances
+from weaviate.classes.config import Configure, DataType, Property, Tokenization, VectorDistances
 from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.collections.classes.filters import FilterReturn
 
@@ -54,6 +54,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
     Vector store implementation using [Weaviate](https://weaviate.io/).
     """
 
+    TYPE_TO_PROPERTY_MAPPING = {int: DataType.INT, str: DataType.TEXT, float: DataType.NUMBER, bool: DataType.BOOL}
     options_cls = WeaviateVectorStoreOptions
 
     def __init__(
@@ -134,10 +135,31 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                 embeddings: dict = await self._create_embeddings(entries)
 
                 if not await self._client.collections.exists(self._index_name):
+                    properties_with_types: dict[str, DataType] = {}
+                    for entry in entries:
+                        for k, v in self._flatten_metadata(
+                            entry.model_dump(exclude={"id", "text"}, exclude_none=True, mode="json")
+                        ).items():
+                            value_type = WeaviateVectorStore.TYPE_TO_PROPERTY_MAPPING.get(type(v), None)
+                            if not value_type:
+                                raise ValueError(f"Unsupported type of metadata field with key {k}: {type(v)}")
+                            if k in properties_with_types and value_type != properties_with_types[k]:
+                                raise ValueError(
+                                    f"Key {k} was already mapped to {properties_with_types[k]}"
+                                    f", cannot be changed to {value_type}"
+                                )
+                            properties_with_types[k] = value_type
+
                     await self._client.collections.create(
                         name=self._index_name,
                         vectorizer_config=Configure.Vectorizer.none(),
                         vector_index_config=Configure.VectorIndex.hnsw(distance_metric=self._distance_method),
+                        properties=[
+                            Property(
+                                name=k, data_type=v, tokenization=Tokenization.FIELD if v == DataType.TEXT else None
+                            )
+                            for k, v in properties_with_types.items()
+                        ],
                     )
 
                 index = self._client.collections.get(self._index_name)
