@@ -36,15 +36,15 @@ class Conversation(SyncConversationBase):
         self.server_state: StateUpdate | None = None
         self._streaming_response: httpx.Response | None = None
 
-    def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:
+    def run(self, message: str, *, context: dict[str, Any] | None = None) -> str:
         """Send *message* and return the final assistant reply as a string."""
         parts: list[str] = []
-        for chunk in self.send_message(message, context=context):
+        for chunk in self.run_streaming(message, context=context):
             if chunk.type is ChatResponseType.TEXT:
                 parts.append(str(chunk.content))
         return "".join(parts)
 
-    def send_message(
+    def run_streaming(
         self,
         message: str,
         *,
@@ -68,7 +68,9 @@ class Conversation(SyncConversationBase):
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
+            "history": [
+                m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM
+            ],
             "context": merged_context,
         }
 
@@ -95,13 +97,18 @@ class Conversation(SyncConversationBase):
                     self._process_incoming(parsed, assistant_index)
                     yield parsed
         except httpx.RequestError as exc:
-            raise ChatClientRequestError(f"Error communicating with {url}: {exc}") from exc
+            raise ChatClientRequestError(
+                f"Error communicating with {url}: {exc}"
+            ) from exc
         finally:
             self._streaming_response = None
 
     def stop(self) -> None:
         """Abort currently running stream (if any)."""
-        if self._streaming_response is not None and not self._streaming_response.is_closed:
+        if (
+            self._streaming_response is not None
+            and not self._streaming_response.is_closed
+        ):
             self._streaming_response.close()
             self._streaming_response = None
 
@@ -113,8 +120,9 @@ class Conversation(SyncConversationBase):
             self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
             pass
-        elif resp.as_text() is not None:
+        text_content = resp.as_text()
+        if text_content is not None:
             assistant_msg = self.history[assistant_index]
-            assistant_msg.content += resp.as_text()
+            assistant_msg.content += text_content
         elif resp.as_reference() is not None:
             pass

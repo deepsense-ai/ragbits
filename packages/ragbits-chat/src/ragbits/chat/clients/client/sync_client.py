@@ -52,7 +52,7 @@ class RagbitsChatClient(SyncChatClientBase):
     ) -> str:
         """Send *message* and return the final assistant reply."""
         conv = self.new_conversation()
-        return conv.ask(message, context=context)
+        return conv.run(message, context=context)
 
     def run_streaming(
         self,
@@ -62,7 +62,7 @@ class RagbitsChatClient(SyncChatClientBase):
     ) -> Generator[ChatResponse, None, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
         conv = self.new_conversation()
-        yield from conv.send_message(message, context=context)
+        yield from conv.run_streaming(message, context=context)
 
     def __enter__(self) -> RagbitsChatClient:
         """Return *self* to allow usage via the *with* statement."""

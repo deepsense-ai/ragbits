@@ -31,15 +31,15 @@ class AsyncConversation(AsyncConversationBase):
         self.server_state: StateUpdate | None = None
         self._streaming_response: httpx.Response | None = None
 
-    async def ask(self, message: str, *, context: dict[str, Any] | None = None) -> str:
+    async def run(self, message: str, *, context: dict[str, Any] | None = None) -> str:
         """Send *message* and return the final assistant reply."""
         parts: list[str] = []
-        async for chunk in self.send_message(message, context=context):
+        async for chunk in self.run_streaming(message, context=context):
             if chunk.type is ChatResponseType.TEXT:
                 parts.append(str(chunk.content))
         return "".join(parts)
 
-    async def send_message(
+    async def run_streaming(
         self,
         message: str,
         *,
@@ -105,8 +105,9 @@ class AsyncConversation(AsyncConversationBase):
             self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
             pass
-        elif resp.as_text() is not None:
+        text_content = resp.as_text()
+        if text_content is not None:
             assistant_msg = self.history[assistant_index]
-            assistant_msg.content += resp.as_text()
+            assistant_msg.content += text_content
         elif resp.as_reference() is not None:
             pass

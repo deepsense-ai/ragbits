@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator, Generator
 from types import TracebackType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import httpx
@@ -179,7 +179,7 @@ async def test_async_stop_closes_stream(sse_lines: list[str]) -> None:
     """Stop must close an active stream in AsyncConversation."""
     resp = _DummyAsyncStreamResponse(sse_lines)
     conv = AsyncConversation(base_url="h", http_client=httpx.AsyncClient())
-    conv._streaming_response = resp  # type: ignore[attr-defined]
+    conv._streaming_response = cast(httpx.Response, resp)
     await conv.stop()
     assert resp.is_closed is True
     assert conv._streaming_response is None
@@ -189,7 +189,7 @@ def test_sync_stop_closes_stream(sse_lines: list[str]) -> None:
     """Stop must close an active stream in Conversation."""
     resp = _DummyStreamResponse(sse_lines)
     conv = Conversation(base_url="h", http_client=httpx.Client())
-    conv._streaming_response = resp  # type: ignore[attr-defined]
+    conv._streaming_response = cast(httpx.Response, resp)
     conv.stop()
     assert resp.is_closed is True
     assert conv._streaming_response is None

@@ -46,7 +46,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
     ) -> str:
         """Send *message* and return the final assistant reply."""
         conv = self.new_conversation()
-        return await conv.ask(message, context=context)
+        return await conv.run(message, context=context)
 
     async def run_streaming(
         self,
@@ -56,7 +56,7 @@ class AsyncRagbitsChatClient(AsyncChatClientBase):
     ) -> AsyncGenerator[ChatResponse, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
         conv = self.new_conversation()
-        async for chunk in conv.send_message(message, context=context):
+        async for chunk in conv.run_streaming(message, context=context):
             yield chunk
 
     async def __aenter__(self) -> AsyncRagbitsChatClient:

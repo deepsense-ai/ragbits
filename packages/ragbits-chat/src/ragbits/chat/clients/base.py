@@ -31,7 +31,7 @@ class SyncChatClientBase(ABC):
         """Send *message* and return the final assistant reply."""
 
     @abstractmethod
-    def run_straming(
+    def run_streaming(
         self,
         message: str,
         *,
@@ -76,7 +76,7 @@ class SyncConversationBase(ABC):
     """
 
     @abstractmethod
-    def ask(
+    def run(
         self,
         message: str,
         *,
@@ -85,7 +85,7 @@ class SyncConversationBase(ABC):
         """Send *message* and return the assistant reply as a fully-formed string."""
 
     @abstractmethod
-    def send_message(
+    def run_streaming(
         self,
         message: str,
         *,
@@ -102,7 +102,7 @@ class AsyncConversationBase(ABC):
     """Abstract base class for **asynchronous** chat conversations."""
 
     @abstractmethod
-    async def ask(
+    async def run(
         self,
         message: str,
         *,
@@ -111,7 +111,7 @@ class AsyncConversationBase(ABC):
         """Send *message* and return the assistant reply as a fully-formed string."""
 
     @abstractmethod
-    def send_message(
+    def run_streaming(
         self,
         message: str,
         *,

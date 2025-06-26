@@ -80,6 +80,12 @@ class ChatResponse(BaseModel):
         """
         return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
 
+    def as_conversation_id(self) -> str | None:
+        """
+        Return the content as ConversationID if this is a conversation id, else None.
+        """
+        return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_ID else None
+
 
 class ChatContext(BaseModel):
     """Represents the context of a chat conversation."""

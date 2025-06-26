@@ -1,7 +1,7 @@
 import asyncio
 from collections.abc import AsyncGenerator, Generator
 from types import TracebackType
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -29,7 +29,11 @@ class _DummyStreamResponse:
     def raise_for_status(self) -> None:
         """Mimic successful response ― unless status code indicates error."""
         if self.status_code >= 400:
-            raise httpx.HTTPStatusError("error", request=None, response=httpx.Response(self.status_code))
+            raise httpx.HTTPStatusError(
+                "error",
+                request=httpx.Request("POST", "http://testserver"),
+                response=httpx.Response(self.status_code),
+            )
 
     def __enter__(self) -> "_DummyStreamResponse":
         return self
@@ -64,7 +68,9 @@ class _DummyAsyncStreamResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise httpx.HTTPStatusError("error", request=None, response=httpx.Response(self.status_code))
+            raise httpx.HTTPStatusError(
+                "error", request=httpx.Request("POST", "http://testserver"), response=httpx.Response(self.status_code)
+            )
 
     async def __aenter__(self) -> "_DummyAsyncStreamResponse":
         return self
@@ -153,7 +159,7 @@ def test_sync_chat_client_ask_proxy() -> None:
         mock_conv_instance.ask.return_value = "answer"
 
         client = RagbitsChatClient(base_url="http://testserver")
-        assert client.ask("question") == "answer"
+        assert client.run("question") == "answer"
         MockConv.assert_called_once_with(base_url="http://testserver", http_client=client._client)
         mock_conv_instance.ask.assert_called_once_with("question", context=None)
 
@@ -186,7 +192,7 @@ async def test_async_chat_client_ask_proxy() -> None:
         mock_conv_instance.ask.return_value.set_result("answer")
 
         client = AsyncRagbitsChatClient(base_url="http://testserver")
-        result = await client.ask("question")
+        result = await client.run("question")
         assert result == "answer"
         MockConv.assert_called_once_with(base_url="http://testserver", http_client=client._client)
         mock_conv_instance.ask.assert_called_once_with("question", context=None)
@@ -196,7 +202,7 @@ def test_conversation_stop_closes_stream(sse_lines: list[str]) -> None:
     """Calling *stop* must close the active streaming response and reset state."""
     response = _DummyStreamResponse(sse_lines)
     conv = Conversation(base_url="http://testserver", http_client=httpx.Client())
-    conv._streaming_response = response
+    conv._streaming_response = cast(httpx.Response, response)
 
     conv.stop()
 
