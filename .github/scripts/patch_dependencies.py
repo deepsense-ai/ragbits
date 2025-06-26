@@ -34,7 +34,7 @@ def patch_dependencies(file: Path, branch_to_patch: str) -> None:
                 pkg = line[start:end]
                 pkg_base = pkg.split("[")[0]
                 git_url = GIT_URL_TEMPLATE.format(branch=branch_to_patch, package=pkg_base)
-                patched_pkg = f'#    "{pkg} @ {git_url}",\n'
+                patched_pkg = f'# "{pkg} @ {git_url}",\n'
                 output_lines.append(patched_pkg)
             else:
                 output_lines.append(line)

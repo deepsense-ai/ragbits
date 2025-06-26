@@ -5,35 +5,35 @@
 ### Evaluation on ingested data
 
 ```sh
-uv run examples/evaluation/document-search/advanced/evaluate.py
+uv run examples/evaluate/document-search/advanced/evaluate.py
 ```
 
 ```sh
-uv run examples/evaluation/document-search/advanced/evaluate.py +experiments=chunking-250
+uv run examples/evaluate/document-search/advanced/evaluate.py +experiments=chunking-250
 ```
 
 ```sh
-uv run examples/evaluation/document-search/advanced/evaluate.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
+uv run examples/evaluate/document-search/advanced/evaluate.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
 ```
 
 ### Logging
 
 ```sh
-uv run examples/evaluation/document-search/advanced/evaluate.py logger.local=True
+uv run examples/evaluate/document-search/advanced/evaluate.py logger.local=True
 ```
 
 ```sh
-uv run examples/evaluation/document-search/advanced/evaluate.py logger.neptune=True
+uv run examples/evaluate/document-search/advanced/evaluate.py logger.neptune=True
 ```
 
 ## Optimization
 
 ```sh
-uv run examples/evaluation/document-search/advanced/optimize.py
+uv run examples/evaluate/document-search/advanced/optimize.py
 ```
 
 ### Monitoring
 
 ```sh
-uv run examples/evaluation/document-search/advanced/optimize.py neptune_callback=True
+uv run examples/evaluate/document-search/advanced/optimize.py neptune_callback=True
 ```
