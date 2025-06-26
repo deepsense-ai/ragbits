@@ -3,12 +3,12 @@
 set -euo pipefail
 
 # Export variables required for the examples
-export GOOGLE_CLOUD_PROJECT
-export GOOGLE_APPLICATION_CREDENTIALS
-export OPENAI_API_KEY
-export GEMINI_API_KEY
-export ANTHROPIC_API_KEY
-export LOGFIRE_TOKEN
+export GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}"
+export GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS}"
+export OPENAI_API_KEY="${OPENAI_API_KEY}"
+export GEMINI_API_KEY="${GEMINI_API_KEY}"
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"
+export LOGFIRE_TOKEN="${LOGFIRE_TOKEN}"
 
 find examples -name '*.py' | while read file; do
   echo "Running the script: $file"
