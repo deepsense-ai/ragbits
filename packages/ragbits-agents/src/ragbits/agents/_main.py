@@ -1,9 +1,11 @@
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from inspect import iscoroutinefunction
+from inspect import getdoc, iscoroutinefunction
 from types import ModuleType
 from typing import Any, ClassVar, Generic, cast, overload
+
+from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
