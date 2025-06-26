@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
 from ragbits.core.audit.metrics import record
+from ragbits.core.audit.traces import trace
 
 from .metrics import ChatMetric
 
@@ -193,9 +194,26 @@ class RagbitsAPI:
                 context=chat_context,
             )
 
-            # Pass the generator to the SSE formatter
+            # wrapper function to trace the response generation
+            async def chat_response() -> AsyncGenerator[str, None]:
+                response_text = ""
+
+                with trace(
+                    message=request.message,
+                    history=[msg.model_dump() for msg in request.history],
+                    context=chat_context,
+                ) as outputs:
+                    async for chunk in RagbitsAPI._chat_response_to_sse(response_generator):
+                        if chunk.startswith("data: "):
+                            data_dict = json.loads(chunk[len("data: ") :])
+                            if data_dict.get("type") == "text":
+                                response_text += str(data_dict.get("content", ""))
+                        yield chunk
+
+                    outputs.response = response_text
+
             streaming_response = StreamingResponse(
-                RagbitsAPI._chat_response_to_sse(response_generator, start_time),
+                chat_response(),
                 media_type="text/event-stream",
             )
 
