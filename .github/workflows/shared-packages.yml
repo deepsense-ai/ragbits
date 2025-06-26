@@ -142,16 +142,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      qdrant:
-        image: qdrant/qdrant
-        ports:
-          - 6333:6333
-        options: >-
-          --health-cmd "wget --spider http://localhost:6333 || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
