@@ -10,7 +10,9 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "dist",
-        "composite": true
+        "declarationDir": "dist",
+        "composite": true,
+        "rootDir": "src"
     },
     "include": ["src"],
     "exclude": ["node_modules", "dist"]

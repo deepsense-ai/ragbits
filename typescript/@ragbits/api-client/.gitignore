@@ -26,3 +26,5 @@ coverage
 *.sln
 *.sw?
 .vite
+
+tsconfig.tsbuildinfo

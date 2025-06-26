@@ -41,6 +41,7 @@ export default function FormInput({
       ...getInputProps(schema, type, options),
     },
     "color",
+    "onBeforeInput",
   );
 
   const hasError = (rawErrors ? rawErrors.length > 0 : false) && !hideError;

@@ -11,9 +11,10 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "outDir": "dist",
-        "composite": true
+        "composite": true,
+        "rootDir": "src"
     },
-    "references": [{"path": "../api-client"}],
+    "references": [{ "path": "../api-client" }],
     "include": ["src"],
     "exclude": ["node_modules", "dist"]
 }

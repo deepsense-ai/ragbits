@@ -21,6 +21,5 @@
     "noUncheckedSideEffectImports": true,
     "composite": true
   },
-  "references": [{"path": "../@ragbits/api-client-react"}],
   "include": ["src"]
 }

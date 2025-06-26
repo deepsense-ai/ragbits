@@ -34,6 +34,7 @@
     "@eslint/js": "^9.17.0",
     "@iconify/react": "^5.2.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/lodash": "^4.17.19",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
