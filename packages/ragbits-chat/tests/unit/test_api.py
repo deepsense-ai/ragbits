@@ -1,15 +1,42 @@
 import json
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference
+from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+
+
+class LikeFormExample(BaseModel):
+    """A simple example implementation of the like form that demonstrates how to use Pydantic for form definition."""
+
+    model_config = ConfigDict(
+        title="Like Form",
+        json_schema_serialization_defaults_required=True,
+    )
+
+    like_reason: str = Field(
+        description="Why do you like this?",
+        min_length=1,
+    )
+
+
+class DislikeFormExample(BaseModel):
+    """A simple example implementation of the dislike form that demonstrates how to use Pydantic for form definition."""
+
+    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
+
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
+        description="What was the issue?"
+    )
+    feedback: str = Field(description="Please provide more details", min_length=1)
 
 
 class MockChatInterface(ChatInterface):
@@ -105,32 +132,9 @@ def test_chat_endpoint(client: TestClient) -> None:
 
 def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> None:
     """Test the config endpoint with feedback configuration enabled."""
-    # Create properly structured feedback forms
-    like_form = FeedbackForm(
-        title="Like Feedback",
-        fields=[
-            FormField(
-                name="like_reason", type="text", required=True, label="Why did you like this response?", options=None
-            )
-        ],
-    )
-
-    dislike_form = FeedbackForm(
-        title="Dislike Feedback",
-        fields=[
-            FormField(
-                name="dislike_reason",
-                type="text",
-                required=True,
-                label="Why did you dislike this response?",
-                options=None,
-            )
-        ],
-    )
-
     # Set up feedback config
     api.chat_interface.feedback_config = FeedbackConfig(
-        like_enabled=True, dislike_enabled=True, like_form=like_form, dislike_form=dislike_form
+        like_enabled=True, dislike_enabled=True, like_form=LikeFormExample, dislike_form=DislikeFormExample
     )
 
     response = client.get("/api/config")
@@ -142,8 +146,8 @@ def test_config_endpoint_with_feedback(client: TestClient, api: RagbitsAPI) -> N
     assert "dislike" in data["feedback"]
     assert data["feedback"]["like"]["enabled"] is True
     assert data["feedback"]["dislike"]["enabled"] is True
-    assert data["feedback"]["like"]["form"]["fields"][0]["name"] == "like_reason"
-    assert data["feedback"]["dislike"]["form"]["fields"][0]["name"] == "dislike_reason"
+    assert "like_reason" in data["feedback"]["like"]["form"]["properties"]
+    assert "feedback" in data["feedback"]["dislike"]["form"]["properties"]
 
 
 def test_config_endpoint_without_feedback(client: TestClient) -> None:
@@ -157,6 +161,34 @@ def test_config_endpoint_without_feedback(client: TestClient) -> None:
     assert data["feedback"]["dislike"]["enabled"] is False
     assert data["feedback"]["like"]["form"] is None
     assert data["feedback"]["dislike"]["form"] is None
+
+
+def test_config_endpoint_with_customization(client: TestClient, api: RagbitsAPI) -> None:
+    """Test the config endpoint with customization."""
+    # Set up customization
+    api.chat_interface.ui_customization = UICustomization(
+        header=HeaderCustomization(title="Custom Title", subtitle="Custom Subtitle", logo="Custom Logo"),
+        welcome_message="Custom Welcome Message",
+    )
+
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "customization" in data
+    assert data["customization"]["header"]["title"] == "Custom Title"
+    assert data["customization"]["header"]["subtitle"] == "Custom Subtitle"
+    assert data["customization"]["header"]["logo"] == "Custom Logo"
+    assert data["customization"]["welcome_message"] == "Custom Welcome Message"
+
+
+def test_config_endpoint_without_customization(client: TestClient) -> None:
+    """Test the config endpoint without customization."""
+    # Default MockChatInterface has no customization
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "customization" in data
+    assert data["customization"] is None
 
 
 def test_validation_exception_handler(client: TestClient) -> None:

@@ -1,0 +1,19 @@
+{
+  "name": "ragbits",
+  "private": true,
+  "workspaces": [
+    "typescript/@ragbits/*",
+    "typescript/ui"
+  ],
+  "scripts": {
+    "build": "npm run build:packages && npm run build:ui",
+    "build:packages": "npm run build --workspace=@ragbits/api-client && npm run build --workspace=@ragbits/api-client-react",
+    "build:ui": "npm run build --workspace=ui",
+    "build:clean": "npm run clean && npm run build",
+    "clean": "npm run clean --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "npm run format --workspaces --if-present"
+  }
+}
