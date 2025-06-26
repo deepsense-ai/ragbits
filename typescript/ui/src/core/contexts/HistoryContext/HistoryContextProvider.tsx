@@ -9,7 +9,7 @@ import {
   useRagbitsStream,
   ChatRequest,
   LiveUpdate,
-} from "ragbits-api-client-react";
+} from "@ragbits/api-client-react";
 import { ChatMessage, HistoryState } from "../../../types/history.ts";
 import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
 import { noop } from "lodash";

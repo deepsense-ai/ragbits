@@ -3,7 +3,7 @@ import {
   LiveUpdate,
   MessageRole,
   Reference,
-} from "ragbits-api-client-react";
+} from "@ragbits/api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
 

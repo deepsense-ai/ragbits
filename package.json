@@ -1,5 +1,7 @@
 {
-  "name": "ragbits",
   "private": true,
-  "workspaces": ["typescript/*"]
+  "workspaces": [
+    "typescript/@ragbits/*",
+    "typescript/ui"
+  ]
 }

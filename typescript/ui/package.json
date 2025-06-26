@@ -15,7 +15,7 @@
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.6.14",
     "@hookform/resolvers": "^5.0.1",
-    "@ragbits/api-client-react": "workspace:*",
+    "@ragbits/api-client-react": "*",
     "@rjsf/core": "^5.24.11",
     "@rjsf/utils": "^5.24.11",
     "@rjsf/validator-ajv8": "^5.24.11",

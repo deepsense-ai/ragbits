@@ -3,7 +3,7 @@ import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { MessageRole } from "ragbits-api-client-react";
+import { MessageRole } from "@ragbits/api-client-react";
 
 import { ChatMessage as ChatMessageType } from "../../types/history.ts";
 import { useThemeContext } from "../contexts/ThemeContext/useThemeContext.ts";

@@ -1,4 +1,4 @@
-import { Message } from "ragbits-api-client-react";
+import { Message } from "@ragbits/api-client-react";
 import { HistoryState } from "../../types/history";
 
 /**
