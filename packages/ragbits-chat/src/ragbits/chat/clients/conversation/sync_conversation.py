@@ -68,7 +68,9 @@ class Conversation(SyncConversationBase):
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
+            "history": [
+                m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM
+            ],
             "context": merged_context,
         }
 
@@ -95,27 +97,31 @@ class Conversation(SyncConversationBase):
                     self._process_incoming(parsed, assistant_index)
                     yield parsed
         except httpx.RequestError as exc:
-            raise ChatClientRequestError(f"Error communicating with {url}: {exc}") from exc
+            raise ChatClientRequestError(
+                f"Error communicating with {url}: {exc}"
+            ) from exc
         finally:
             self._streaming_response = None
 
     def stop(self) -> None:
         """Abort currently running stream (if any)."""
-        if self._streaming_response is not None and not self._streaming_response.is_closed:
+        if (
+            self._streaming_response is not None
+            and not self._streaming_response.is_closed
+        ):
             self._streaming_response.close()
             self._streaming_response = None
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update our local state based on *resp*."""
-        if resp.type is ChatResponseType.STATE_UPDATE and isinstance(resp.content, StateUpdate):
-            self.server_state = resp.content
-        elif resp.type is ChatResponseType.CONVERSATION_ID and isinstance(resp.content, str):
-            self.conversation_id = resp.content
+        if resp.as_state_update() is not None:
+            self.server_state = resp.as_state_update()
+        elif resp.as_conversation_id() is not None:
+            self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
             pass
-        elif resp.type is ChatResponseType.TEXT:
+        elif resp.as_text() is not None:
             assistant_msg = self.history[assistant_index]
-            if isinstance(resp.content, str):
-                assistant_msg.content += resp.content
-        elif resp.type is ChatResponseType.REFERENCE:
+            assistant_msg.content += resp.as_text()
+        elif resp.as_reference() is not None:
             pass

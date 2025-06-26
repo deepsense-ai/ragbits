@@ -99,15 +99,14 @@ class AsyncConversation(AsyncConversationBase):
             self._streaming_response = None
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
-        if resp.type is ChatResponseType.STATE_UPDATE and isinstance(resp.content, StateUpdate):
-            self.server_state = resp.content
-        elif resp.type is ChatResponseType.CONVERSATION_ID and isinstance(resp.content, str):
-            self.conversation_id = resp.content
+        if resp.as_state_update() is not None:
+            self.server_state = resp.as_state_update()
+        elif resp.as_conversation_id() is not None:
+            self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
             pass
-        elif resp.type is ChatResponseType.TEXT:
+        elif resp.as_text() is not None:
             assistant_msg = self.history[assistant_index]
-            if isinstance(resp.content, str):
-                assistant_msg.content += resp.content
-        elif resp.type is ChatResponseType.REFERENCE:
+            assistant_msg.content += resp.as_text()
+        elif resp.as_reference() is not None:
             pass
