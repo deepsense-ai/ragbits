@@ -25,7 +25,9 @@ class _DummyStreamResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise httpx.HTTPStatusError("error", request=None, response=httpx.Response(self.status_code))
+            raise httpx.HTTPStatusError(
+                "error", request=httpx.Request("GET", "http://host"), response=httpx.Response(self.status_code)
+            )
 
     def __enter__(self) -> "_DummyStreamResponse":
         return self
@@ -60,7 +62,9 @@ class _DummyAsyncStreamResponse:
 
     def raise_for_status(self) -> None:
         if self.status_code >= 400:
-            raise httpx.HTTPStatusError("error", request=None, response=httpx.Response(self.status_code))
+            raise httpx.HTTPStatusError(
+                "error", request=httpx.Request("GET", "http://host"), response=httpx.Response(self.status_code)
+            )
 
     async def __aenter__(self) -> "_DummyAsyncStreamResponse":
         return self

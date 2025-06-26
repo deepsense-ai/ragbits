@@ -1,14 +1,11 @@
-import asyncio
 from collections.abc import AsyncGenerator, Generator
 from types import TracebackType
 from typing import Any, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import httpx
 import pytest
 
-from ragbits.chat.clients.client.async_client import AsyncRagbitsChatClient
-from ragbits.chat.clients.client.sync_client import RagbitsChatClient
 from ragbits.chat.clients.conversation.async_conversation import AsyncConversation
 from ragbits.chat.clients.conversation.sync_conversation import Conversation
 from ragbits.chat.clients.exceptions import ChatClientRequestError, ChatClientResponseError
