@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
 
@@ -6,9 +6,13 @@ import weaviate
 import weaviate.classes as wvc
 from typing_extensions import Self
 from weaviate import WeaviateAsyncClient
+from weaviate.auth import AuthCredentials
 from weaviate.classes.config import Configure, DataType, Property, Tokenization, VectorDistances
 from weaviate.classes.query import Filter, MetadataQuery
 from weaviate.collections.classes.filters import FilterReturn
+from weaviate.config import AdditionalConfig, Proxies
+from weaviate.connect.base import ConnectionParams
+from weaviate.embedded import EmbeddedOptions
 
 from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings import Embedder
@@ -91,12 +95,61 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         # so currently properties containing lists are not supported by ragbits.
         self._separator = "___"
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> tuple[Callable, tuple]:
         """
         Enables the WeaviateVectorStore to be pickled and unpickled.
         """
-        # TODO: To be implemented. Required for Ray processing.
-        raise NotImplementedError
+
+        def _reconstruct(
+            connection_params: ConnectionParams | None,
+            embedded_options: EmbeddedOptions | None,
+            auth_client_secret: AuthCredentials | None,
+            additional_headers: dict | None,
+            additional_config: AdditionalConfig | None,
+            skip_init_checks: bool,
+            index_name: str,
+            embedder: Embedder,
+            distance_method: VectorDistances,
+            default_options: WeaviateVectorStoreOptions,
+        ) -> WeaviateVectorStore:
+            return WeaviateVectorStore(
+                client=WeaviateAsyncClient(
+                    connection_params=connection_params,
+                    embedded_options=embedded_options,
+                    auth_client_secret=auth_client_secret,
+                    additional_headers=additional_headers,
+                    additional_config=additional_config,
+                    skip_init_checks=skip_init_checks,
+                ),
+                index_name=index_name,
+                embedder=embedder,
+                distance_method=distance_method,
+                default_options=default_options,
+            )
+
+        proxies = self._client._connection._proxies
+        return (
+            _reconstruct,
+            (
+                self._client._connection._connection_params,
+                self._client._connection.embedded_db.options if self._client._connection.embedded_db else None,
+                self._client._connection._auth,
+                self._client._connection.additional_headers,
+                AdditionalConfig(
+                    connection=self._client._connection._ConnectionBase__connection_config,  # type: ignore
+                    proxies=Proxies(
+                        http=proxies.get("http", None), https=proxies.get("https", None), grpc=proxies.get("grpc", None)
+                    ),
+                    timeout=self._client._connection.timeout_config,
+                    trust_env=self._client._connection._ConnectionBase__trust_env,  # type: ignore
+                ),
+                self._client._connection._skip_init_checks,
+                self._index_name,
+                self._embedder,
+                self._distance_method,
+                self.default_options,
+            ),
+        )
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
