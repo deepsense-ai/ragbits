@@ -6366,7 +6366,7 @@ wheels = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.11"
+version = "0.16.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -6391,9 +6391,9 @@ dependencies = [
     { name = "unstructured-client" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/c3/5bd80074a63c972f0f9adac5276955f6cbcceb71ac05ae72cc524ad93813/unstructured-0.16.11.tar.gz", hash = "sha256:33ebf68aae11ce33c8a96335296557b5abd8ba96eaba3e5a1554c0b9eee40bb5", size = 1664314 }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/f9/066ff9f521fd8dbef01be7d11185861430171600cd708d1634bfe360df21/unstructured-0.16.9.tar.gz", hash = "sha256:30b47d5baf2a4eaa993c75812fa947c9fea870000eb82473a216829aa1d407d5", size = 1660476 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/67/71d1e61e8127dd9ab66117d3c5ebfc6f87c1d00bf13ff3bcc837feed6e09/unstructured-0.16.11-py3-none-any.whl", hash = "sha256:a92d5bc2c2b7bb23369641fb7a7f0daba1775639199306ce4cd83ca564a03763", size = 1748042 },
+    { url = "https://files.pythonhosted.org/packages/e8/f7/76d96581c5e5ce68f4badc1f180c9eec674d961792b7bece53528a4de432/unstructured-0.16.9-py3-none-any.whl", hash = "sha256:246e44dc99e7913677b9bb274782a7d61f2e2682581106c346b6daf969bbaaa0", size = 1744542 },
 ]
 
 [[package]]
