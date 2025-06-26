@@ -111,7 +111,7 @@ class AsyncConversationBase(ABC):
         """Send *message* and return the assistant reply as a fully-formed string."""
 
     @abstractmethod
-    async def send_message(
+    def send_message(
         self,
         message: str,
         *,
