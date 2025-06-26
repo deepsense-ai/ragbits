@@ -13,6 +13,7 @@ dependencies = [
     "ragbits-chat",
     "ragbits-agents",
     "a2a-sdk>=0.2.9",
+    "types-requests>=2.32.4.20250611",
 ]
 
 [tool.uv]

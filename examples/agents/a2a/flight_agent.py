@@ -3,9 +3,10 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
+from ragbits.agents.a2a.server import create_agent_app, run_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
-from ragbits.agents.server import create_agent_server, run_agent_server
+
 
 def get_flight_info(departure: str, arrival: str) -> str:
     """
@@ -18,12 +19,11 @@ def get_flight_info(departure: str, arrival: str) -> str:
     Returns:
         A JSON string with mock flight details.
     """
-
-    if "new york" in departure.lower() and "london" in arrival.lower():
+    if "new york" in departure.lower() and "paris" in arrival.lower():
         return json.dumps(
             {
                 "from": "New York",
-                "to": "London",
+                "to": "Paris",
                 "flights": [
                     {"airline": "British Airways", "departure": "10:00 AM", "arrival": "10:00 PM"},
                     {"airline": "Delta", "departure": "1:00 PM", "arrival": "1:00 AM"},
@@ -46,11 +46,15 @@ def get_flight_info(departure: str, arrival: str) -> str:
 
 
 class FlightPromptInput(BaseModel):
+    """Defines the structured input schema for the flight search prompt."""
+
     departure: str
     arrival: str
 
 
 class FlightPrompt(Prompt[FlightPromptInput]):
+    """Prompt for a flight search assistant."""
+
     system_prompt = """
     You are a helpful travel assistant that finds available flights between two cities.
     """
@@ -58,6 +62,7 @@ class FlightPrompt(Prompt[FlightPromptInput]):
     user_prompt = """
     I need to fly from {{ departure }} to {{ arrival }}. What flights are available?
     """
+
 
 llm = LiteLLM(
     model_name="gpt-4o-2024-08-06",
@@ -69,5 +74,5 @@ agent_card = agent.to_a2a(
     description="Provides available flight information between two cities.",
 )
 
-app = create_agent_server(agent, agent_card, FlightPromptInput)
+app = create_agent_app(agent, agent_card, FlightPromptInput)
 run_agent_server(agent, agent_card, FlightPromptInput)

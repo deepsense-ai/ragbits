@@ -13,7 +13,6 @@ class Request(BaseModel):
     Represents a request to the agent server.
     """
 
-    method: str
     params: dict
 
 
@@ -34,7 +33,7 @@ def _format_response(result: AgentResult) -> dict:
     }
 
 
-def create_agent_server(agent: Agent, agent_card: AgentCard, input_model: BaseModel) -> FastAPI:
+def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[BaseModel]) -> FastAPI:
     """
     Create a FastAPI server for the given agent and input schema.
     The server exposes:
@@ -69,7 +68,7 @@ def create_agent_server(agent: Agent, agent_card: AgentCard, input_model: BaseMo
     return app
 
 
-def run_agent_server(agent: Agent, agent_card: AgentCard, input_model: BaseModel) -> None:
+def run_agent_server(agent: Agent, agent_card: AgentCard, input_model: type[BaseModel]) -> None:
     """
     Run a Uvicorn server that serves the given agent over HTTP.
     Uses the host and port specified in the agent_card URL.
@@ -78,8 +77,16 @@ def run_agent_server(agent: Agent, agent_card: AgentCard, input_model: BaseModel
         agent: The ragbits Agent instance to serve.
         agent_card: The agent's metadata including name, description, and URL.
         input_model: A Pydantic model for validating input parameters.
+
+    Raises:
+        ValueError: If the hostname or port extracted from the agent_card URL is None.
     """
-    app = create_agent_server(agent=agent, agent_card=agent_card, input_model=input_model)
+    app = create_agent_app(agent=agent, agent_card=agent_card, input_model=input_model)
     url = urlparse(agent_card.url)
+
+    if url.hostname is None:
+        raise ValueError(f"Hostname could not be parsed from URL: {agent_card.url}")
+    if url.port is None:
+        raise ValueError(f"Port could not be parsed from URL: {agent_card.url}")
 
     uvicorn.run(app, host=url.hostname, port=url.port)
