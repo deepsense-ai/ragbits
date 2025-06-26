@@ -168,7 +168,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
         run: |
-          echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS" \
+          echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS"
           ./.github/scripts/run_examples.sh
 
   tests:
