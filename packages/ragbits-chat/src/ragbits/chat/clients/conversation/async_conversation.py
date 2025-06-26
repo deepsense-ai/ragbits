@@ -54,6 +54,7 @@ class AsyncConversation(AsyncConversationBase):
 
         merged_context: dict[str, Any] = {}
         if self.server_state is not None:
+            merged_context.update(self.server_state.state)
             merged_context.update(self.server_state.model_dump())
         if self.conversation_id is not None:
             merged_context["conversation_id"] = self.conversation_id

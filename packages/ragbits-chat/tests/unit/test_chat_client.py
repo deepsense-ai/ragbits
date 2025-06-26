@@ -102,8 +102,8 @@ def sse_lines() -> list[str]:
     ]
 
 
-def test_sync_conversation_ask_and_state_update(sse_lines: list[str]) -> None:
-    """Ensure :pyclass:`Conversation.ask` correctly aggregates text and updates state."""
+def test_sync_conversation_run_and_state_update(sse_lines: list[str]) -> None:
+    """Ensure :pyclass:`Conversation.run` correctly aggregates text and updates state."""
     http_client = httpx.Client()
 
     def _mock_stream(method: str, url: str, json: dict[str, Any]) -> _DummyStreamResponse:
@@ -111,7 +111,7 @@ def test_sync_conversation_ask_and_state_update(sse_lines: list[str]) -> None:
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = Conversation(base_url="http://testserver", http_client=http_client)
-        result = conv.ask("Hello")
+        result = conv.run("Hello")
 
     assert result == "Hello world"
     assert len(conv.history) == 2
@@ -136,7 +136,7 @@ def test_sync_conversation_error_handling_response_error(sse_lines: list[str]) -
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = Conversation(base_url="http://testserver", http_client=http_client)
         with pytest.raises(ChatClientResponseError):
-            conv.ask("Hello")
+            conv.run("Hello")
 
 
 def test_sync_conversation_error_handling_request_error() -> None:
@@ -149,23 +149,11 @@ def test_sync_conversation_error_handling_request_error() -> None:
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = Conversation(base_url="http://testserver", http_client=http_client)
         with pytest.raises(ChatClientRequestError):
-            next(conv.send_message("Hello"))
-
-
-def test_sync_chat_client_ask_proxy() -> None:
-    """Ensure *RagbitsChatClient.ask* delegates to a fresh *Conversation*."""
-    with patch("ragbits.chat.clients.conversation.sync_conversation.Conversation") as MockConv:
-        mock_conv_instance = MockConv.return_value
-        mock_conv_instance.ask.return_value = "answer"
-
-        client = RagbitsChatClient(base_url="http://testserver")
-        assert client.run("question") == "answer"
-        MockConv.assert_called_once_with(base_url="http://testserver", http_client=client._client)
-        mock_conv_instance.ask.assert_called_once_with("question", context=None)
+            next(conv.run_streaming("Hello"))
 
 
 @pytest.mark.asyncio
-async def test_async_conversation_ask_and_state_update(sse_lines: list[str]) -> None:
+async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> None:
     """Same assertions as the sync variant but for *AsyncConversation*."""
     http_client = httpx.AsyncClient()
 
@@ -174,28 +162,13 @@ async def test_async_conversation_ask_and_state_update(sse_lines: list[str]) -> 
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = AsyncConversation(base_url="http://testserver", http_client=http_client)
-        result = await conv.ask("Hello")
+        result = await conv.run("Hello")
 
     assert result == "Hello world"
     assert len(conv.history) == 2
     assert conv.conversation_id == "conv123"
     assert conv.server_state is not None
     assert conv.server_state.state == {"foo": "bar"}
-
-
-@pytest.mark.asyncio
-async def test_async_chat_client_ask_proxy() -> None:
-    """Ensure *AsyncRagbitsChatClient.ask* delegates to a fresh *AsyncConversation*."""
-    with patch("ragbits.chat.clients.conversation.async_conversation.AsyncConversation") as MockConv:
-        mock_conv_instance = MockConv.return_value
-        mock_conv_instance.ask = MagicMock(return_value=asyncio.Future())
-        mock_conv_instance.ask.return_value.set_result("answer")
-
-        client = AsyncRagbitsChatClient(base_url="http://testserver")
-        result = await client.run("question")
-        assert result == "answer"
-        MockConv.assert_called_once_with(base_url="http://testserver", http_client=client._client)
-        mock_conv_instance.ask.assert_called_once_with("question", context=None)
 
 
 def test_conversation_stop_closes_stream(sse_lines: list[str]) -> None:

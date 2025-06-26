@@ -99,7 +99,7 @@ def test_send_message_yields_responses_sync(sse_lines: list[str]) -> None:
     http_client = httpx.Client()
     with patch.object(http_client, "stream", return_value=_DummyStreamResponse(sse_lines)):
         conv = Conversation(base_url="http://host", http_client=http_client)
-        responses = list(conv.send_message("hi"))
+        responses = list(conv.run_streaming("hi"))
     assert [r.type for r in responses] == [
         ChatResponseType.CONVERSATION_ID,
         ChatResponseType.STATE_UPDATE,
@@ -127,7 +127,7 @@ def test_history_excludes_system_messages() -> None:
     conv = Conversation(base_url="x", http_client=http_client)
     conv.history.append(Message(role=MessageRole.SYSTEM, content="sys"))
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        list(conv.send_message("hello"))
+        list(conv.run_streaming("hello"))
     assert all(msg["role"] != MessageRole.SYSTEM.value for msg in sent_payload["history"])
 
 
@@ -145,7 +145,9 @@ def test_context_merging() -> None:
     conv.server_state = StateUpdate(state={"a": 1}, signature="sig")
     conv.conversation_id = "c1"
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        list(conv.send_message("question", context={"b": 2}))
+        list(conv.run_streaming("question", context={"b": 2}))
+
+    print(captured["context"])
     assert captured["context"]["conversation_id"] == "c1"
     assert captured["context"]["a"] == 1
     assert captured["context"]["b"] == 2
@@ -157,7 +159,7 @@ def test_sync_send_message_raises_on_status_error(sse_lines: list[str]) -> None:
     with patch.object(http_client, "stream", return_value=_DummyStreamResponse(sse_lines, status_code=502)):
         conv = Conversation(base_url="u", http_client=http_client)
         with pytest.raises(ChatClientResponseError):
-            list(conv.send_message("boom"))
+            list(conv.run_streaming("boom"))
 
 
 @pytest.mark.asyncio
@@ -167,7 +169,7 @@ async def test_send_message_yields_responses_async(sse_lines: list[str]) -> None
     with patch.object(http_client, "stream", return_value=_DummyAsyncStreamResponse(sse_lines)):
         conv = AsyncConversation(base_url="h", http_client=http_client)
         collected = []
-        async for chunk in conv.send_message("q"):
+        async for chunk in conv.run_streaming("q"):
             collected.append(chunk)
     assert collected[0].type is ChatResponseType.CONVERSATION_ID
     assert collected[-1].type is ChatResponseType.TEXT
