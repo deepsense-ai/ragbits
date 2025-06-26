@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 find examples -name '*.py' | while read file; do
   echo "Patching dependencies for the script: $file"
 
