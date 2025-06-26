@@ -57,9 +57,14 @@ export interface ServerState {
     signature: string
 }
 
+export enum LiveUpdateType {
+    START = 'START',
+    FINISH = 'FINISH',
+}
+
 export interface LiveUpdate {
     update_id: string
-    type: 'START' | 'FINISH'
+    type: LiveUpdateType
     content: {
         label: string
         description?: string

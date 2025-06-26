@@ -9,6 +9,7 @@ import {
   useRagbitsStream,
   ChatRequest,
   LiveUpdate,
+  LiveUpdateType,
 } from "@ragbits/api-client-react";
 import { ChatMessage, HistoryState } from "../../../types/history.ts";
 import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
@@ -81,7 +82,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
 
       const isKnown = newUpdates.has(update_id);
 
-      if (type === "START" && isKnown) {
+      if (type === LiveUpdateType.START && isKnown) {
         console.error(
           `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
         );
