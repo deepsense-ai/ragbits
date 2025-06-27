@@ -8,6 +8,7 @@ jobs:
     name: Run linters
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: examples
     permissions:
       checks: write
       pull-requests: write
@@ -167,8 +168,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
-        run: |
-          echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS"
+        run: |  
+          echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
+          echo "OPENAI_API_KEY: ${OPENAI_API_KEY:0:5}
           ./.github/scripts/run_examples.sh
 
   tests:
