@@ -38,7 +38,11 @@ from ragbits.agents.a2a.agent_orchestrator import AgentOrchestrator
 from ragbits.core.llms import LiteLLM
 
 
-async def main():
+async def main() -> None:
+    """
+    Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
+    The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
+    """
     llm = LiteLLM(
         model_name="gpt-4o-2024-08-06",
         use_structured_output=True,
