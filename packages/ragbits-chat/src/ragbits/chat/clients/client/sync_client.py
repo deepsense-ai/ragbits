@@ -1,0 +1,78 @@
+from __future__ import annotations
+
+from collections.abc import Generator
+from types import TracebackType
+from typing import Any
+
+import httpx
+
+from ...interface.types import ChatResponse
+from ..base import SyncChatClientBase, SyncConversationBase
+from ..conversation import Conversation
+
+__all__ = ["RagbitsChatClient"]
+
+_DEFAULT_HEADERS = {
+    "Content-Type": "application/json",
+    "Accept": "text/event-stream",
+}
+
+
+class RagbitsChatClient(SyncChatClientBase):
+    """Stateless *synchronous* Ragbits chat client.
+
+    The sole responsibility of this class is to spawn new
+    :class:`ragbits.chat.clients.conversation.Conversation` objects. All
+    conversation-specific state (history, server-state, etc.) lives in the
+    returned *Conversation* instance.
+    """
+
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:8000",
+        *,
+        timeout: float | None = None,
+    ) -> None:
+        self._base_url = base_url.rstrip("/")
+        self._client = httpx.Client(timeout=timeout, headers=_DEFAULT_HEADERS)
+
+    def new_conversation(self) -> SyncConversationBase:
+        """Return a brand-new :class:`Conversation`."""
+        return Conversation(base_url=self._base_url, http_client=self._client)
+
+    def close(self) -> None:
+        """Close the underlying *httpx.Client* session."""
+        self._client.close()
+
+    def run(
+        self,
+        message: str,
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> str:
+        """Send *message* and return the final assistant reply."""
+        conv = self.new_conversation()
+        return conv.run(message, context=context)
+
+    def run_streaming(
+        self,
+        message: str,
+        *,
+        context: dict[str, Any] | None = None,
+    ) -> Generator[ChatResponse, None, None]:
+        """Send *message* and yield streaming :class:`ChatResponse` chunks."""
+        conv = self.new_conversation()
+        yield from conv.run_streaming(message, context=context)
+
+    def __enter__(self) -> RagbitsChatClient:
+        """Return *self* to allow usage via the *with* statement."""
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        """Ensure the underlying HTTP session is closed on context exit."""
+        self.close()

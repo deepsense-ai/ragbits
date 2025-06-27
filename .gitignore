@@ -9,6 +9,9 @@ venv/
 __pycache__/
 **.egg-info/
 
+# Local cursor rules
+.cursor/rules/local/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -101,5 +104,4 @@ qdrant/
 .aider*
 
 .DS_Store
-
 node_modules/
