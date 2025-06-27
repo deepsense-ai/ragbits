@@ -170,7 +170,7 @@ jobs:
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
         run: |  
           echo "GOOGLE_APPLICATION_CREDENTIALS: $GOOGLE_APPLICATION_CREDENTIALS"
-          echo "OPENAI_API_KEY: ${OPENAI_API_KEY:0:5}
+          echo "OPENAI_API_KEY: ${OPENAI_API_KEY:0:5}"
           ./.github/scripts/run_examples.sh
 
   tests:
