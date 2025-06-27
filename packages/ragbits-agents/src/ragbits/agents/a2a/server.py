@@ -29,6 +29,7 @@ def _format_response(result: AgentResult) -> dict:
     return {
         "content": result.content,
         "metadata": result.metadata,
+        "history": result.history,
         "tool_calls": [t.__dict__ for t in result.tool_calls or []],
     }
 
