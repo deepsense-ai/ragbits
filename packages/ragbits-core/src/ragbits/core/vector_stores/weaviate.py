@@ -146,7 +146,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                     timeout=self._client._connection.timeout_config,
                     trust_env=self._client._connection._ConnectionBase__trust_env,  # type: ignore
                 ),
-                self._client._skip_init_checks,
+                self._client._connection._skip_init_checks,
                 self._index_name,
                 self._embedder,
                 self._distance_method,
