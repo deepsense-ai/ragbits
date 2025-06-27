@@ -87,7 +87,9 @@ class AgentOrchestrator:
             else None
         )
 
-        return AgentResult[str](content=content, history=[], metadata=metadata, tool_calls=tool_calls)
+        return AgentResult[str](
+            content=content, history=result_data["history"], metadata=metadata, tool_calls=tool_calls
+        )
 
     def _run_tasks(self, tasks: list[dict]) -> list[AgentResult[str]]:
         """
