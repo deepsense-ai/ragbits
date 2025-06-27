@@ -9,6 +9,7 @@
 - Move form definitions to JSONSchema (#616)
 - Allow UI cutomization using config endpoint (#643)
 - Add support for live updates and followup messages (#654)
+- Fix invalid context structure in requests from FE (#663)
 
 ## 1.0.0 (2025-06-04)
 
