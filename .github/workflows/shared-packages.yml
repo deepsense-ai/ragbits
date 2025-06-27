@@ -8,7 +8,6 @@ jobs:
     name: Run linters
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: examples
     permissions:
       checks: write
       pull-requests: write
