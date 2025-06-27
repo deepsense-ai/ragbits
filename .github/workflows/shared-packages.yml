@@ -144,6 +144,22 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      weaviate:
+        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
+        env:
+          QUERY_DEFAULTS_LIMIT: 25
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
+          PERSISTENCE_DATA_PATH: /var/lib/weaviate
+          ENABLE_API_BASED_MODULES: true
+          CLUSTER_HOSTNAME: node1
+        ports:
+          - 8080:8080
+          - 50051:50051
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v4
