@@ -109,11 +109,12 @@ async def test_agent_run_tools(llm_with_tool_call: MockLLM):
     assert result.content == "Temperature is 72 fahrenheit"
     assert result.tool_calls == [
         ToolCallResult(
+            id="test",
             name="get_weather",
             arguments={
                 "location": "San Francisco",
             },
-            output='{"location": "San Francisco", "temperature": "72", "unit": ' '"fahrenheit"}',
+            result='{"location": "San Francisco", "temperature": "72", "unit": ' '"fahrenheit"}',
         ),
     ]
 

@@ -1,20 +1,21 @@
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentToolExecutionError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
 from ragbits.core.options import Options
-from ragbits.core.prompt.base import ChatFormat, SimplePrompt
+from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -26,9 +27,10 @@ class ToolCallResult:
     Result of the tool call.
     """
 
+    id: str
     name: str
     arguments: dict
-    output: Any
+    result: Any
 
 
 @dataclass
@@ -56,11 +58,56 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     """The options for the LLM."""
 
 
+class _AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
+    """
+    An async iterator that collects all yielded items.
+    This object is returned by methods like `run_streaming`. It can be used
+    in an `async for` loop to process items as they arrive. After the
+    loop completes, the `collected` attribute holds a list of all items
+    that were yielded.
+    """
+
+    def __init__(self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace]):
+        self._generator = generator
+        self.content = ""
+        self.tool_calls: list[ToolCallResult] = []
+        self.metadata: dict = {}
+        self.history: ChatFormat = []
+
+    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
+        return self
+
+    async def __anext__(self) -> str | ToolCall | ToolCallResult:
+        try:
+            item = await self._generator.__anext__()
+            match item:
+                case str():
+                    self.content += item
+                case ToolCall():
+                    pass
+                case ToolCallResult():
+                    self.tool_calls.append(item)
+                case BasePrompt():
+                    self.history.append(item.chat)
+                case SimpleNamespace():
+                    item.result = {
+                        "content": self.content,
+                        "metadata": self.metadata,
+                        "tool_calls": self.tool_calls,
+                    }
+                    raise StopAsyncIteration
+                case _:
+                    raise ValueError(f"Unexpected item: {item}")
+            return item
+        except StopAsyncIteration:
+            raise
+
+
 class Agent(
     ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]
 ):
     """
-    Agent class that orchestrates the LLM and the prompt.
+    Agent class that orchestrates the LLM and the prompt, and can call tools.
 
     Current implementation is highly experimental, and the API is subject to change.
     """
@@ -119,10 +166,13 @@ class Agent(
     @overload
     async def run(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
-    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:
+    async def run(
+        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+    ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
 
@@ -145,8 +195,7 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
         """
-        input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
-        options = args[1] if len(args) > 1 else kwargs.get("options")
+        input = cast(PromptInputT, input)
 
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
@@ -168,29 +217,10 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
-                    if tool_call.type != "function":
-                        raise AgentToolNotSupportedError(tool_call.type)
+                    result = await self._execute_tool(tool_call)
+                    tool_calls.append(result)
 
-                    if tool_call.name not in self.tools_mapping:
-                        raise AgentToolNotAvailableError(tool_call.name)
-
-                    tool = self.tools_mapping[tool_call.name]
-                    tool_output = (
-                        await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
-                    )
-                    tool_calls.append(
-                        ToolCallResult(
-                            name=tool_call.name,
-                            arguments=tool_call.arguments,
-                            output=tool_output,
-                        )
-                    )
-                    prompt_with_history = prompt_with_history.add_tool_use_message(
-                        id=tool_call.id,
-                        name=tool_call.name,
-                        arguments=tool_call.arguments,
-                        result=tool_output,
-                    )
+                    prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
 
             outputs.result = {
                 "content": response.content,
@@ -210,10 +240,74 @@ class Agent(
                 history=prompt_with_history.chat,
             )
 
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, str]",
+        input: str,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> _AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> _AgentResultStreaming: ...
+
+    def run_streaming(
+        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+    ) -> _AgentResultStreaming:
+        """
+        This method returns an `AgentResultStreaming` object that can be asynchronously
+        iterated over. After iteration is complete, the `collected` attribute
+        of the returned object will contain all the yielded chunks.
+
+        Args:
+            input: The input for the agent run.
+            options: The options for the agent run.
+
+        Returns:
+            A `StreamingResult` object for iteration and collection.
+        """
+        generator = self._stream_internal(input, options)
+        return _AgentResultStreaming(generator)
+
+    async def _stream_internal(
+        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace]:
+        input = cast(PromptInputT, input)
+        merged_options = (self.default_options | options) if options else self.default_options
+        llm_options = merged_options.llm_options or None
+
+        prompt_with_history = self._get_prompt_with_history(input)
+        with trace(input=input, options=merged_options) as outputs:
+            while True:
+                returned_tool_call = False
+                async for chunk in self.llm.generate_streaming(
+                    prompt=prompt_with_history,
+                    tools=list(self.tools_mapping.values()),
+                    options=llm_options,
+                ):
+                    yield chunk
+
+                    if isinstance(chunk, ToolCall):
+                        result = await self._execute_tool(chunk)
+                        yield result
+                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                        returned_tool_call = True
+
+                if not returned_tool_call:
+                    break
+
+            if self.keep_history:
+                self.history = prompt_with_history.chat
+
+            yield prompt_with_history
+            yield outputs
+
     def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         curr_history = deepcopy(self.history)
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
-            # If we had actual instance we could just run add_user_message here
             if self.keep_history:
                 self.prompt = self.prompt(input, curr_history)
                 return self.prompt
@@ -246,69 +340,25 @@ class Agent(
 
         return SimplePrompt(curr_history)
 
-    # TODO: implement run_streaming method according to the comment - https://github.com/deepsense-ai/ragbits/pull/623#issuecomment-2970514478
-    # @overload
-    # def run_streaming(
-    #     self: "Agent[LLMClientOptionsT, PromptInputT, str]",
-    #     input: PromptInputT,
-    #     options: AgentOptions[LLMClientOptionsT] | None = None,
-    # ) -> AsyncGenerator[str | ToolCall, None]: ...
+    async def _execute_tool(self, tool_call: ToolCall) -> ToolCallResult:
+        if tool_call.type != "function":
+            raise AgentToolNotSupportedError(tool_call.type)
 
-    # @overload
-    # def run_streaming(
-    #     self: "Agent[LLMClientOptionsT, None, str]",
-    #     options: AgentOptions[LLMClientOptionsT] | None = None,
-    # ) -> AsyncGenerator[str | ToolCall, None]: ...
+        if tool_call.name not in self.tools_mapping:
+            raise AgentToolNotAvailableError(tool_call.name)
 
-    # async def run_streaming(self, *args: Any, **kwargs: Any) -> AsyncGenerator[str | ToolCall, None]:  # noqa: D417
-    #     """
-    #     Run the agent. The method is experimental, inputs and outputs may change in the future.
+        tool = self.tools_mapping[tool_call.name]
 
-    #     Args:
-    #         input: The input for the agent run.
-    #         options: The options for the agent run.
+        try:
+            tool_output = (
+                await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
+            )
+        except Exception as e:
+            raise AgentToolExecutionError(tool_call.name, e) from e
 
-    #     Yields:
-    #         Response text chunks or tool calls from the Agent.
-    #     """
-    #     input = cast(PromptInputT, args[0] if args else kwargs.get("input"))
-    #     options = args[1] if len(args) > 1 else kwargs.get("options")
-
-    #     merged_options = (self.default_options | options) if options else self.default_options
-    #     tools = merged_options.tools or None
-    #     llm_options = merged_options.llm_options or None
-
-    #     prompt = self.prompt(input)
-    #     tools_mapping = {} if not tools else {f.__name__: f for f in tools}
-
-    #     while True:
-    #         returned_tool_call = False
-    #         async for chunk in self.llm.generate_streaming(
-    #             prompt=prompt,
-    #             tools=tools,  # type: ignore
-    #             options=llm_options,
-    #         ):
-    #             yield chunk
-
-    #             if isinstance(chunk, ToolCall):
-    #                 if chunk.type != "function":
-    #                     raise AgentToolNotSupportedError(chunk.type)
-
-    #                 if chunk.name not in tools_mapping:
-    #                     raise AgentToolNotAvailableError(chunk.name)
-
-    #                 tool = tools_mapping[chunk.name]
-    #                 tool_output = (
-    #                     await tool(**chunk.arguments) if iscoroutinefunction(tool) else tool(**chunk.arguments)
-    #                 )
-
-    #                 prompt = prompt.add_tool_use_message(
-    #                     tool_call_id=chunk.id,
-    #                     tool_name=chunk.name,
-    #                     tool_arguments=chunk.arguments,
-    #                     tool_call_result=tool_output,
-    #                 )
-    #                 returned_tool_call = True
-
-    #         if not returned_tool_call:
-    #             break
+        return ToolCallResult(
+            id=tool_call.id,
+            name=tool_call.name,
+            arguments=tool_call.arguments,
+            result=tool_output,
+        )
