@@ -291,7 +291,7 @@ async def main() -> None:
             if text := chunk.as_text():
                 print(text, end="")
 
-            
+
     sync_client = RagbitsChatClient(base_url="http://127.0.0.1:8000")
 
     # Simple one-off request
