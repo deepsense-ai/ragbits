@@ -169,7 +169,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
 
       // Prepare chat request with conversation context
       const context = {
-        ...(serverState?.state ?? {}),
+        ...(serverState ?? {}),
         ...(conversationId ? { conversation_id: conversationId } : {}),
       };
 
