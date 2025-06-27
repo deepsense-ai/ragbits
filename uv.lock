@@ -1596,14 +1596,14 @@ wheels = [
 
 [[package]]
 name = "griffe"
-version = "1.3.2"
+version = "1.7.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/37/813e72a3458fa3d996cf6bcc6a0caa919d16540f873366b0d328d51d684a/griffe-1.3.2.tar.gz", hash = "sha256:1ec50335aa507ed2445f2dd45a15c9fa3a45f52c9527e880571dfc61912fd60c", size = 382540, upload-time = "2024-10-01T13:40:52.252Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a9/3e/5aa9a61f7c3c47b0b52a1d930302992229d191bf4bc76447b324b731510a/griffe-1.7.3.tar.gz", hash = "sha256:52ee893c6a3a968b639ace8015bec9d36594961e156e23315c8e8e51401fa50b", size = 395137, upload-time = "2025-04-23T11:29:09.147Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/49/39967633dd3c5f06fde83fec140228671a7344289ece0cfdd3cbe4798d69/griffe-1.3.2-py3-none-any.whl", hash = "sha256:2e34b5e46507d615915c8e6288bb1a2234bd35dee44d01e40a2bc2f25bd4d10c", size = 126992, upload-time = "2024-10-01T13:40:50.035Z" },
+    { url = "https://files.pythonhosted.org/packages/58/c6/5c20af38c2a57c15d87f7f38bee77d63c1d2a3689f74fefaf35915dd12b2/griffe-1.7.3-py3-none-any.whl", hash = "sha256:c6b3ee30c2f0f17f30bcdef5068d6ab7a2a4f1b8bf1a3e74b56fffd21e1c5f75", size = 129303, upload-time = "2025-04-23T11:29:07.145Z" },
 ]
 
 [[package]]
@@ -4590,6 +4590,7 @@ source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
     { name = "filetype" },
+    { name = "griffe" },
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
@@ -4669,6 +4670,7 @@ requires-dist = [
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
+    { name = "griffe", specifier = ">=1.7.3,<2.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
