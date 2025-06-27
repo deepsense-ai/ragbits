@@ -131,9 +131,9 @@ jobs:
       postgres:
         image: pgvector/pgvector:0.8.0-pg17
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: examples
+          POSTGRES_USER: ragbits_example
+          POSTGRES_PASSWORD: ragbits_example
+          POSTGRES_DB: ragbits_example
         ports:
           - 5432:5432
         options: >-
