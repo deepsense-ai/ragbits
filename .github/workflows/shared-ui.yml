@@ -16,21 +16,37 @@ jobs:
         with:
           node-version: "lts/*"
 
+      - name: Install Ragbits API Client dependencies
+        run: npm i
+        working-directory: typescript/@ragbits/api-client
+
+      - name: Install Ragbits API Client React dependencies
+        run: npm i
+        working-directory: typescript/@ragbits/api-client-react
+
+      - name: Build Ragbits API Client
+        run: npm run build
+        working-directory: typescript/@ragbits/api-client
+
+      - name: Build Ragbits API Client React
+        run: npm run build
+        working-directory: typescript/@ragbits/api-client-react
+
       - name: Install UI dependencies
         run: npm i
-        working-directory: ui
+        working-directory: typescript/ui
 
       - name: Run ESLint
         run: npm run lint
-        working-directory: ui
+        working-directory: typescript/ui
 
       - name: Run Prettier
         run: npm run format:check
-        working-directory: ui
+        working-directory: typescript/ui
 
       - name: Check build
         run: npm run build
-        working-directory: ui
+        working-directory: typescript/ui
 
       - name: Check Ragbits Chat UI build sync
         run: |

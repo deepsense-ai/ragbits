@@ -104,3 +104,4 @@ qdrant/
 .aider*
 
 .DS_Store
+node_modules/

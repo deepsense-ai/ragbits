@@ -4,6 +4,7 @@ import pydantic
 import pytest
 
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.base import BasePromptWithParser
 from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
 
 
@@ -182,9 +183,8 @@ def test_image_wrong_format():
         user_prompt = "What is on this image?"
         image_input_fields = ["image"]
 
-    prompt = ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
     with pytest.raises(PromptWithImagesOfInvalidFormat):
-        prompt.chat  # noqa: B018
+        ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
 
 
 def test_image_encoding():
@@ -633,3 +633,52 @@ def test_conversation_history():
             "content": _PromptOutput(song_title="Jazz Song", song_lyrics="Jazz lyrics").model_dump_json(),
         },
     ]
+
+
+class TestBasePromptWithParser(BasePromptWithParser[str]):
+    """Test implementation of BasePromptWithParser for testing add_x_message methods."""
+
+    async def parse_response(self, response: str) -> str:  # noqa: PLR6301
+        """Parse the response."""
+        return response.upper()
+
+
+def test_base_prompt_with_parser_add_user_message_no_history():
+    """Test adding a user message when no conversation history exists."""
+    prompt = TestBasePromptWithParser()
+
+    result = prompt.add_user_message("Hello world")
+    assert prompt.chat == [{"role": "user", "content": "Hello world"}]
+    assert result is prompt
+
+
+def test_base_prompt_with_parser_add_assistant_message_no_history():
+    """Test adding an assistant message when no conversation history exists."""
+    prompt = TestBasePromptWithParser()
+
+    result = prompt.add_assistant_message("Hello there!")
+    assert prompt.chat == [{"role": "assistant", "content": "Hello there!"}]
+    assert result is prompt
+
+
+def test_base_prompt_with_parser_add_tool_use_message_no_history():
+    """Test adding tool use messages when no conversation history exists."""
+    prompt = TestBasePromptWithParser()
+
+    result = prompt.add_tool_use_message(
+        id="tool_123", name="test_function", arguments={"param": "value"}, result="tool result"
+    )
+
+    assert prompt.chat[0]["role"] == "assistant"
+    assert prompt.chat[0]["content"] is None
+    assert "tool_calls" in prompt.chat[0]
+    assert prompt.chat[0]["tool_calls"][0]["id"] == "tool_123"
+    assert prompt.chat[0]["tool_calls"][0]["type"] == "function"
+    assert prompt.chat[0]["tool_calls"][0]["function"]["name"] == "test_function"
+    assert prompt.chat[0]["tool_calls"][0]["function"]["arguments"] == "{'param': 'value'}"
+
+    assert prompt.chat[1]["role"] == "tool"
+    assert prompt.chat[1]["tool_call_id"] == "tool_123"
+    assert prompt.chat[1]["content"] == "tool result"
+
+    assert result is prompt
