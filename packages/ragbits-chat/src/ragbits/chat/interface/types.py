@@ -130,6 +130,7 @@ class ChatResponse(BaseModel):
         """
         return cast(list[str], self.content) if self.type == ChatResponseType.FOLLOWUP_MESSAGES else None
 
+
 class ChatContext(BaseModel):
     """Represents the context of a chat conversation."""
 
