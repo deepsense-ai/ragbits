@@ -4625,6 +4625,7 @@ source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
     { name = "filetype" },
+    { name = "griffe" },
     { name = "jinja2" },
     { name = "litellm" },
     { name = "pydantic" },
@@ -4663,10 +4664,12 @@ local = [
     { name = "transformers" },
 ]
 logfire = [
+    { name = "google-auth" },
     { name = "logfire", extra = ["system-metrics"] },
     { name = "opentelemetry-api" },
 ]
 otel = [
+    { name = "google-auth" },
     { name = "opentelemetry-api" },
 ]
 pgvector = [
@@ -4705,6 +4708,9 @@ requires-dist = [
     { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
+    { name = "google-auth", marker = "extra == 'logfire'", specifier = ">=2.35.0" },
+    { name = "google-auth", marker = "extra == 'otel'", specifier = ">=2.35.0" },
+    { name = "griffe", specifier = ">=1.3.2,<2.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
     { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
@@ -4817,7 +4823,7 @@ dev = [
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
     { name = "datasets", specifier = ">=3.0.1,<4.0.0" },
-    { name = "distilabel", specifier = ">=1.4.1,<2.0.0" },
+    { name = "distilabel", specifier = ">=1.4.1,<1.5.0" },
     { name = "hydra-core", specifier = ">=1.3.2,<2.0.0" },
     { name = "neptune", extras = ["optuna"], specifier = ">=1.12.0,<2.0.0" },
     { name = "optuna", specifier = ">=4.0.0,<5.0.0" },
@@ -4889,7 +4895,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "aiosqlite" },
-    { name = "griffe" },
     { name = "griffe-typingdoc" },
     { name = "mkdocs" },
     { name = "mkdocs-autorefs" },
@@ -4924,7 +4929,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "aiosqlite", specifier = ">=0.21.0" },
-    { name = "griffe", specifier = ">=1.3.2" },
     { name = "griffe-typingdoc", specifier = ">=0.2.7" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-autorefs", specifier = ">=1.2.0" },
@@ -6362,7 +6366,7 @@ wheels = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.11"
+version = "0.16.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -6387,9 +6391,9 @@ dependencies = [
     { name = "unstructured-client" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/c3/5bd80074a63c972f0f9adac5276955f6cbcceb71ac05ae72cc524ad93813/unstructured-0.16.11.tar.gz", hash = "sha256:33ebf68aae11ce33c8a96335296557b5abd8ba96eaba3e5a1554c0b9eee40bb5", size = 1664314 }
+sdist = { url = "https://files.pythonhosted.org/packages/c8/f9/066ff9f521fd8dbef01be7d11185861430171600cd708d1634bfe360df21/unstructured-0.16.9.tar.gz", hash = "sha256:30b47d5baf2a4eaa993c75812fa947c9fea870000eb82473a216829aa1d407d5", size = 1660476 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/67/71d1e61e8127dd9ab66117d3c5ebfc6f87c1d00bf13ff3bcc837feed6e09/unstructured-0.16.11-py3-none-any.whl", hash = "sha256:a92d5bc2c2b7bb23369641fb7a7f0daba1775639199306ce4cd83ca564a03763", size = 1748042 },
+    { url = "https://files.pythonhosted.org/packages/e8/f7/76d96581c5e5ce68f4badc1f180c9eec674d961792b7bece53528a4de432/unstructured-0.16.9-py3-none-any.whl", hash = "sha256:246e44dc99e7913677b9bb274782a7d61f2e2682581106c346b6daf969bbaaa0", size = 1744542 },
 ]
 
 [[package]]

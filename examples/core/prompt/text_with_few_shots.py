@@ -1,17 +1,8 @@
 """
 Ragbits Core Example: Text Prompt with Few Shots
 
-This example shows how to use the `Prompt` class to generate themed text using an LLM.
+This example demonstrates how to use the `Prompt` class to generate themed text using an LLM.
 We define a `LoremPrompt` that generates Latin-style placeholder text based on a specified theme.
-
-The script performs the following steps:
-
-    1. Define input and output formats using Pydantic models.
-    2. Implement the `LoremPrompt` class with a structured system prompt.
-    3. Provide few-shot examples to guide the model's responses.
-    4. Initialize the `LiteLLM` class to generate text.
-    5. Generate and a themed Lorem Ipsum response.
-    6. Print the generated text.
 
 To run the script, execute the following command:
 
@@ -26,6 +17,7 @@ To run the script, execute the following command:
 #     "ragbits-core",
 # ]
 # ///
+
 import asyncio
 
 from pydantic import BaseModel

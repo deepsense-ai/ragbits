@@ -46,6 +46,7 @@ jobs:
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/shared-packages.yml
+    secrets: inherit
 
   client:
     needs: check-source-changes

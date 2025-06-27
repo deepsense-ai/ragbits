@@ -1,11 +1,39 @@
+"""
+Ragbits Evaluate Example: Advanced Document Search Evaluation
+
+This example demonstrates how to evaluate an advanced document search pipeline using the `Evaluator` class.
+It uses Hydra for configuration management to define the evaluation process.
+
+To run the script, execute the following commands:
+
+    ```bash
+    # default settings:
+    uv run examples/evaluate/document-search/advanced/evaluate.py
+
+    # custom settings:
+    uv run examples/evaluate/document-search/advanced/evaluate.py +experiments=chunking-250
+
+    # multirun with custom settings:
+    uv run examples/evaluate/document-search/advanced/evaluate.py --multirun +experiments=chunking-250,chunking-500,chunking-1000
+
+    # local logging:
+    uv run examples/evaluate/document-search/advanced/evaluate.py logger.local=True
+
+    # Neptune logging:
+    uv run examples/evaluate/document-search/advanced/evaluate.py logger.neptune=True
+    ```
+"""  # noqa: E501
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-core[chroma,hf]",
-#     "ragbits-document-search",
+#     "ragbits-document-search[unstructured]",
 #     "ragbits-evaluate[relari]",
+#     "unstructured[md]>=0.16.9,<1.0.0",
 # ]
 # ///
+
 import asyncio
 import logging
 from typing import cast

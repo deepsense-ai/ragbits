@@ -1,18 +1,11 @@
 """
-Ragbits Core Example: Tool use
+Ragbits Core Example: Tool Use with LLM
 
-This example shows how to provide tools and return tool calls from LLM.
+This example demonstrates how to provide tools and return tool calls from LLM.
 We provide a list of tools as additional `tools` parameter to the `llm.generate` method.
 
 Important: this feature does not call provided tools, LLM only decides which tools to call
 in order to accomplish a given task.
-
-The script performs the following steps:
-
-    1. Define a function to use as tool for generating weather forecast.
-    2. Initialize the `LiteLLM` class to generate text.
-    3. Return tool calls for generating weather forecast based on the specified location.
-    4. Print the returned tool calls.
 
 To run the script, execute the following command:
 
@@ -27,6 +20,7 @@ To run the script, execute the following command:
 #     "ragbits-core",
 # ]
 # ///
+
 import asyncio
 import json
 

@@ -2,24 +2,13 @@
 Ragbits Document Search Example: Multimodal search
 
 This example demonstrates how to use the `DocumentSearch` to index and search for images and text documents.
-
-It employes the "multimodalembedding" from VertexAI. In order to use it, make sure that you are
+It employs the `MultimodalEmbedding` from VertexAI. In order to use it, make sure that you are
 logged in to Google Cloud (using the `gcloud auth login` command) and that you have the necessary permissions.
-
-The script performs the following steps:
-    1. Create a list of example documents.
-    2. Initialize the `VertexAIMultimodelEmbedder` class (which uses the VertexAI multimodal embeddings).
-    3. Initialize `HybridSearchVectorStore` with two `InMemoryVectorStore` instances (one for text and one for images).
-    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
-    5. Ingest the documents into the `DocumentSearch` instance.
-    6. List all embeddings in the vector store.
-    7. Search for documents using a query.
-    8. Print the search results.
 
 To run the script, execute the following command:
 
     ```bash
-    uv run python examples/document-search/multimodal_basic.py
+    uv run examples/document-search/multimodal.py
     ```
 """
 
@@ -28,8 +17,10 @@ To run the script, execute the following command:
 # dependencies = [
 #     "ragbits-document-search",
 #     "ragbits-core",
+#     "google-auth>=2.35.0",
 # ]
 # ///
+
 import asyncio
 from pathlib import Path
 
