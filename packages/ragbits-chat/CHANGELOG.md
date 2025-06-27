@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- fix: fixed tracing in ragbits-chat
+
 ## 1.0.0 (2025-06-04)
 
 ### Changed
@@ -148,4 +152,3 @@
 
 - Initial release of the package (#271).
 - Added last message recontextualization (#271).
-
