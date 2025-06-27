@@ -6,7 +6,6 @@ __all__ = [
     "AgentOptions",
     "AgentResult",
     "QuestionAnswerAgent",
-    "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
     "ToolCallResult",
