@@ -247,7 +247,7 @@ class Agent(
         curr_history.append({"role": "user", "content": incoming_user_prompt})
 
         return SimplePrompt(curr_history)
-    
+
     def to_a2a(
         self,
         name: str,
