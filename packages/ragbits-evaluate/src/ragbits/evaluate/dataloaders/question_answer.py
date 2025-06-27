@@ -27,7 +27,6 @@ class QuestionAnswerDataLoader(DataLoader[QuestionAnswerData]):
         Args:
             source: The source to load the data from.
             split: The split to load the data from.
-            required_keys: The required keys to load the data from.
             question_key: The dataset column name that contains the question.
             answer_key: The dataset column name that contains the answer.
             context_key: The dataset column name that contains the context. Context is optional.
