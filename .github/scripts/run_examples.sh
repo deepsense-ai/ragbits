@@ -10,6 +10,12 @@ export GEMINI_API_KEY="${GEMINI_API_KEY}"
 export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY}"
 export LOGFIRE_TOKEN="${LOGFIRE_TOKEN}"
 
+if [[ -n "$OPENAI_API_KEY" ]]; then
+  echo "OPENAI_API_KEY is not empty: ${OPENAI_API_KEY:0:5}..."
+else
+  echo "OPENAI_API_KEY is empty."
+fi
+
 find examples -name '*.py' | while read file; do
   echo "Running the script: $file"
 
