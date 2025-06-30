@@ -82,7 +82,7 @@ def llm_wrong_tool_type() -> MockLLM:
     return MockLLM(default_options=options)
 
 
-async def test_agent_run_no_tools(llm_without_tool_call: MockLLM):
+async def test_agent_run_no_tools(llm_without_tool_call: MockLLM) -> None:
     """Test a simple run of the agent without tools."""
     agent = Agent(
         llm=llm_without_tool_call,
@@ -96,7 +96,7 @@ async def test_agent_run_no_tools(llm_without_tool_call: MockLLM):
     assert result.tool_calls is None
 
 
-async def test_agent_run_tools(llm_with_tool_call: MockLLM):
+async def test_agent_run_tools(llm_with_tool_call: MockLLM) -> None:
     """Test a simple run of the agent without tools."""
     agent = Agent(
         llm=llm_with_tool_call,
@@ -118,7 +118,7 @@ async def test_agent_run_tools(llm_with_tool_call: MockLLM):
     ]
 
 
-async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM):
+async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM) -> None:
     def fake_func() -> None: ...
 
     agent = Agent(
@@ -131,7 +131,7 @@ async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM):
         await agent.run()
 
 
-async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
+async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM) -> None:
     agent = Agent(
         llm=llm_wrong_tool_type,
         prompt=CustomPrompt,
@@ -142,7 +142,9 @@ async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
         await agent.run()
 
 
-async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input(llm_without_tool_call: MockLLM):
+async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input(
+    llm_without_tool_call: MockLLM,
+) -> None:
     agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
@@ -153,7 +155,7 @@ async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input
     assert "Invalid prompt/input combination: prompt=None, input=None" in str(exc_info.value)
 
 
-async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_tool_call: MockLLM):
+async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_tool_call: MockLLM) -> None:
     agent = Agent(llm=llm_without_tool_call, prompt=123)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
@@ -164,7 +166,7 @@ async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_
     assert "Invalid prompt/input combination" in str(exc_info.value)
 
 
-async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_tool_call: MockLLM):
+async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_tool_call: MockLLM) -> None:
     agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
@@ -175,7 +177,7 @@ async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_too
     assert "Invalid prompt/input combination" in str(exc_info.value)
 
 
-async def test_agent_with_initial_history(llm_without_tool_call: MockLLM):
+async def test_agent_with_initial_history(llm_without_tool_call: MockLLM) -> None:
     """Test agent with initial history."""
     initial_history = [
         {"role": "system", "content": "You are a helpful assistant"},
@@ -207,7 +209,7 @@ async def test_agent_with_initial_history(llm_without_tool_call: MockLLM):
     assert agent.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_without_keep_history(llm_without_tool_call: MockLLM):
+async def test_agent_without_keep_history(llm_without_tool_call: MockLLM) -> None:
     """Test agent without history preservation."""
     initial_history = [
         {"role": "user", "content": "Previous message"},
@@ -239,7 +241,7 @@ async def test_agent_without_keep_history(llm_without_tool_call: MockLLM):
     assert result.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call: MockLLM) -> None:
     """Test history handling with string prompt and string input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -259,7 +261,7 @@ async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call:
     assert agent.history[2]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: MockLLM) -> None:
     """Test history handling with string prompt and no input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -277,7 +279,7 @@ async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_without_tool_call: MockLLM) -> None:
     """Test history handling with custom prompt class with input type."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -306,7 +308,7 @@ async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_
     assert agent.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_without_tool_call: MockLLM) -> None:
     """Test history handling with custom prompt class with input type."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -335,7 +337,7 @@ async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_wi
     assert result2.history[2]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: MockLLM) -> None:
     """Test history handling with no prompt and string input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -353,7 +355,7 @@ async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_call: MockLLM):
+async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_call: MockLLM) -> None:
     """Test history accumulation across multiple runs."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -381,7 +383,7 @@ async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_c
     assert result2.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_tools(llm_with_tool_call: MockLLM):
+async def test_agent_history_with_tools(llm_with_tool_call: MockLLM) -> None:
     """Test history handling with tool calls."""
     agent: Agent = Agent(
         llm=llm_with_tool_call,
