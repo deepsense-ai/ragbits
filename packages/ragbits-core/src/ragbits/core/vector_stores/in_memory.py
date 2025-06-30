@@ -1,8 +1,7 @@
+import math
 from itertools import islice
 from typing import cast
 from uuid import UUID
-
-import numpy as np
 
 from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.embeddings import Embedder, SparseVector
@@ -113,7 +112,9 @@ class InMemoryVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
                     # For dense vectors, use negative L2 distance
                     query_vector_dense = cast(list[float], query_vector)
                     vector_dense = cast(list[float], vector)
-                    score = float(np.linalg.norm(np.array(vector_dense) - np.array(query_vector_dense))) * -1
+                    score = -math.sqrt(
+                        sum((a - b) ** 2 for a, b in zip(vector_dense, query_vector_dense, strict=False))
+                    )
 
                 result = VectorStoreResult(entry=self._entries[entry_id], vector=vector, score=score)
                 if merged_options.score_threshold is None or result.score >= merged_options.score_threshold:

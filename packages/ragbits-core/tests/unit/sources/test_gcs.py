@@ -22,7 +22,7 @@ class MockStorage(StorageClient):
         *,
         headers: dict[str, Any] | None = None,
         timeout: int = 60,
-        session: ClientSession | None = None,
+        session: ClientSession | None = None,  # type: ignore
     ) -> bytes:
         """Mock download method."""
         key = f"{bucket}/{object_name}"
@@ -35,7 +35,7 @@ class MockStorage(StorageClient):
         *,
         params: dict[str, str] | None = None,
         headers: dict[str, Any] | None = None,
-        session: ClientSession | None = None,
+        session: ClientSession | None = None,  # type: ignore
         timeout: int = 60,
     ) -> dict[str, Any]:
         """Mock list_objects method."""
