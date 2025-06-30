@@ -2,15 +2,25 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ragbits.core.audit.metrics import create_histogram, record, set_metric_handlers
-from ragbits.core.audit.metrics.base import MetricHandler
+from ragbits.core.audit.metrics import record_metric, set_metric_handlers
+from ragbits.core.audit.metrics.base import MetricHandler, MetricType
 
 
-class MockMetricHandler(MetricHandler[MagicMock]):
-    def create_histogram(self, name: str, unit: str = "", description: str = "") -> MagicMock:  # noqa: PLR6301
-        return MagicMock()
+class MockMetricHandler(MetricHandler):
+    @classmethod
+    def create_metric(
+        cls, name: str, unit: str = "", description: str = "", metric_type: MetricType = MetricType.HISTOGRAM
+    ) -> MagicMock:
+        mock = MagicMock()
+        mock.name = name
+        mock.unit = unit
+        mock.description = description
+        mock.type = metric_type
+        return mock
 
-    def record(self, metric: MagicMock, value: int | float, attributes: dict | None = None) -> None: ...
+    def _record(self, metric: MagicMock, value: int | float, attributes: dict | None = None) -> None:
+        # Implementation for tests
+        pass
 
 
 @pytest.fixture
@@ -20,32 +30,36 @@ def mock_handler() -> MockMetricHandler:
     return handler
 
 
-def test_record_with_default_create_histogram(mock_handler: MockMetricHandler) -> None:
+def test_record_metric_with_default(mock_handler: MockMetricHandler) -> None:
     metric = MagicMock()
-    mock_handler.create_histogram = MagicMock(return_value=metric)  # type: ignore
-    mock_handler.record = MagicMock()  # type: ignore
+    mock_handler.create_metric = MagicMock(return_value=metric)  # type: ignore
+    mock_handler._record = MagicMock()  # type: ignore
 
-    record("test_metric", 1)
+    record_metric("test_metric", 1, metric_type=MetricType.HISTOGRAM)
 
-    mock_handler.create_histogram.assert_called_once_with(
+    mock_handler.create_metric.assert_called_once_with(
         name="ragbits_test_metric",
         unit="",
         description="",
+        metric_type=MetricType.HISTOGRAM,
     )
-    mock_handler.record.assert_called_once_with(metric=metric, value=1, attributes={})
+    mock_handler._record.assert_called_once_with(metric=metric, value=1, attributes={})
 
 
-def test_record_with_create_histogram(mock_handler: MockMetricHandler) -> None:
+def test_record_metric_with_registration(mock_handler: MockMetricHandler) -> None:
     metric = MagicMock()
-    mock_handler.create_histogram = MagicMock(return_value=metric)  # type: ignore
-    mock_handler.record = MagicMock()  # type: ignore
+    mock_handler.create_metric = MagicMock(return_value=metric)  # type: ignore
+    mock_handler._record = MagicMock()  # type: ignore
 
-    metric_name = create_histogram(name="test_metric", unit="test_unit", description="test_description")
-    record(metric_name, 1)
+    mock_handler.register_metric_instance(
+        name="test_metric", unit="test_unit", description="test_description", metric_type=MetricType.COUNTER
+    )
+    record_metric("test_metric", 1, metric_type=MetricType.COUNTER)
 
-    mock_handler.create_histogram.assert_called_once_with(
+    mock_handler.create_metric.assert_called_once_with(
         name="ragbits_test_metric",
         unit="test_unit",
         description="test_description",
+        metric_type=MetricType.COUNTER,
     )
-    mock_handler.record.assert_called_once_with(metric=metric, value=1, attributes={})
+    mock_handler._record.assert_called_once_with(metric=metric, value=1, attributes={})

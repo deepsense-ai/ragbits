@@ -9,11 +9,12 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
-from ragbits.core.audit.metrics import record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
-from ..metrics import ChatMetric
+from ..metrics import ChatCounterMetric, ChatHistogramMetric
 from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig
 from .types import ChatContext, ChatResponse, ChatResponseType, Reference, StateUpdate
@@ -42,7 +43,12 @@ def with_chat_metadata(
 
         # Track history length
         history_length = len(history) if history else 0
-        record(ChatMetric.CHAT_HISTORY_LENGTH, history_length, interface_class=self.__class__.__name__)
+        record_metric(
+            ChatHistogramMetric.CHAT_HISTORY_LENGTH,
+            history_length,
+            metric_type=MetricType.HISTOGRAM,
+            interface_class=self.__class__.__name__,
+        )
 
         # Generate message_id if not present
         if not context.message_id:
@@ -57,7 +63,12 @@ def with_chat_metadata(
             yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
 
             # Track new conversation
-            record(ChatMetric.CHAT_CONVERSATION_COUNT, 1, interface_class=self.__class__.__name__)
+            record_metric(
+                ChatCounterMetric.CHAT_CONVERSATION_COUNT,
+                1,
+                metric_type=MetricType.COUNTER,
+                interface_class=self.__class__.__name__,
+            )
 
         responses = []
         main_response = ""
@@ -73,9 +84,10 @@ def with_chat_metadata(
                     # Record time to first token on the first TEXT response
                     if first_token_time is None and response.content:
                         first_token_time = time.time() - start_time
-                        record(
-                            ChatMetric.CHAT_TIME_TO_FIRST_TOKEN,
+                        record_metric(
+                            ChatHistogramMetric.CHAT_TIME_TO_FIRST_TOKEN,
                             first_token_time,
+                            metric_type=MetricType.HISTOGRAM,
                             interface_class=self.__class__.__name__,
                             is_new_conversation=str(is_new_conversation),
                             history_length=str(history_length),
@@ -89,26 +101,29 @@ def with_chat_metadata(
                 yield response
 
             # Track successful message processing
-            record(
-                ChatMetric.CHAT_MESSAGE_COUNT,
+            record_metric(
+                ChatCounterMetric.CHAT_MESSAGE_COUNT,
                 1,
+                metric_type=MetricType.COUNTER,
                 interface_class=self.__class__.__name__,
                 is_new_conversation=str(is_new_conversation),
             )
 
             # Track response tokens
             if response_token_count > 0:
-                record(
-                    ChatMetric.CHAT_RESPONSE_TOKENS,
+                record_metric(
+                    ChatHistogramMetric.CHAT_RESPONSE_TOKENS,
                     response_token_count,
+                    metric_type=MetricType.HISTOGRAM,
                     interface_class=self.__class__.__name__,
                 )
 
         except Exception as e:
             # Track errors
-            record(
-                ChatMetric.CHAT_ERROR_COUNT,
+            record_metric(
+                ChatCounterMetric.CHAT_ERROR_COUNT,
                 1,
+                metric_type=MetricType.COUNTER,
                 interface_class=self.__class__.__name__,
                 error_type=type(e).__name__,
             )
@@ -116,9 +131,10 @@ def with_chat_metadata(
         finally:
             # Track request duration
             duration = time.time() - start_time
-            record(
-                ChatMetric.CHAT_REQUEST_DURATION,
+            record_metric(
+                ChatHistogramMetric.CHAT_REQUEST_DURATION,
                 duration,
+                metric_type=MetricType.HISTOGRAM,
                 interface_class=self.__class__.__name__,
                 is_new_conversation=str(is_new_conversation),
                 history_length=str(history_length),
@@ -215,7 +231,12 @@ class ChatInterface(ABC):
         is_valid = hmac.compare_digest(expected_signature, signature)
 
         # Track state verification
-        record(ChatMetric.CHAT_STATE_VERIFICATION_COUNT, 1, verification_result="success" if is_valid else "failure")
+        record_metric(
+            ChatCounterMetric.CHAT_STATE_VERIFICATION_COUNT,
+            1,
+            metric_type=MetricType.COUNTER,
+            verification_result="success" if is_valid else "failure",
+        )
 
         return is_valid
 
@@ -284,6 +305,12 @@ class ChatInterface(ABC):
             payload: The payload of the feedback
         """
         # Track feedback submission
-        record(ChatMetric.CHAT_FEEDBACK_COUNT, 1, interface_class=self.__class__.__name__, feedback_type=feedback)
+        record_metric(
+            ChatCounterMetric.CHAT_FEEDBACK_COUNT,
+            1,
+            metric_type=MetricType.COUNTER,
+            interface_class=self.__class__.__name__,
+            feedback_type=feedback,
+        )
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")

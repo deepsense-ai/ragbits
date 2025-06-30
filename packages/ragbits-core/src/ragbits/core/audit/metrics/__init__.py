@@ -1,13 +1,14 @@
+from enum import Enum
 from typing import Any
 
-from ragbits.core.audit.metrics.base import HistogramMetric, MetricHandler, register_histogram_metric
+from ragbits.core.audit.metrics.base import MetricHandler, MetricType, register_metric
 
 __all__ = [
-    "HistogramMetric",
     "MetricHandler",
+    "MetricType",
     "clear_metric_handlers",
-    "record",
-    "register_histogram_metric",
+    "record_metric",
+    "register_metric",
     "set_metric_handlers",
 ]
 
@@ -55,31 +56,20 @@ def clear_metric_handlers() -> None:
     _metric_handlers.clear()
 
 
-def create_histogram(name: str, unit: str = "", description: str = "") -> str:
+def record_metric(
+    metric: str | Enum,
+    value: int | float,
+    metric_type: MetricType,
+    **attributes: Any,  # noqa: ANN401
+) -> None:
     """
-    Create a histogram metric.
+    Record a metric of any type using the global metric handlers.
 
     Args:
-        name: The histogram metric name.
-        unit: The histogram metric unit.
-        description: The histogram metric description.
-
-    Returns:
-        The initialized histogram metric.
+        metric: The metric key (name or enum value) to record
+        value: The value to record
+        metric_type: The type of metric (histogram, counter, gauge)
+        **attributes: Additional metadata for the metric
     """
     for handler in _metric_handlers:
-        handler.register_histogram(name=name, unit=unit, description=description)
-    return name
-
-
-def record(metric: HistogramMetric | str, value: int | float, **attributes: Any) -> None:  # noqa: ANN401
-    """
-    Record a histogram metric using the global metric handlers.
-
-    Args:
-        metric: The histogram metric name to record.
-        value: The value to record.
-        attributes: Additional metadata for the metric.
-    """
-    for handler in _metric_handlers:
-        handler.record_histogram(metric=metric, value=value, attributes=attributes)
+        handler.record_metric(metric_key=metric, value=value, attributes=attributes, metric_type=metric_type)
