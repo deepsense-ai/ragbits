@@ -142,6 +142,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      grafana:
+        image: grafana/otel-lgtm
+        ports:
+          - 3000:3000
+          - 4317:4317
+          - 4318:4318
+        options: >-
+          --mount type=bind,src=${{ github.workspace }}/examples/core/audit/config/grafana/ragbits-dashboard.json,dst=/otel-lgtm/ragbits-dashboard.json
+          --mount type=bind,src=${{ github.workspace }}/examples/core/audit/config/grafana/grafana-dashboards.yaml,dst=/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml
+
     steps:
       - uses: actions/checkout@v4
 
@@ -149,13 +159,6 @@ jobs:
         uses: astral-sh/setup-uv@v2
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
-
-      - name: Run Grafana
-        run: |
-          docker run \
-            --mount type=bind,src=${{ github.workspace }}/examples/core/audit/config/grafana/ragbits-dashboard.json,dst=/otel-lgtm/ragbits-dashboard.json \
-            --mount type=bind,src=${{ github.workspace }}/examples/core/audit/config/grafana/grafana-dashboards.yaml,dst=/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml \
-            -p 3000:3000 -p 4317:4317 -p 4318:4318 -d --rm -ti grafana/otel-lgtm
 
       - name: Run examples
         env:
