@@ -19,7 +19,7 @@ The script performs the following steps:
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/document-search/weaviate.py
+    uv run examples/document-search/weaviate_db.py
     ```
 
 Requires local Weaviate instance to be running, instructions how to set it up can be found here: https://weaviate.io/developers/weaviate/quickstart/local
