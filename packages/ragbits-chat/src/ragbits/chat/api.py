@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Message
 from ragbits.core.audit.metrics import record
 from ragbits.core.audit.traces import trace
 
@@ -147,7 +147,7 @@ class RagbitsAPI:
 
             return JSONResponse(content=config_dict)
 
-    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:
+    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 
@@ -197,6 +197,8 @@ class RagbitsAPI:
             # wrapper function to trace the response generation
             async def chat_response() -> AsyncGenerator[str, None]:
                 response_text = ""
+                reference_text = ""
+                state_update_text = ""
 
                 with trace(
                     message=request.message,
@@ -204,13 +206,27 @@ class RagbitsAPI:
                     context=chat_context,
                 ) as outputs:
                     async for chunk in RagbitsAPI._chat_response_to_sse(response_generator):
-                        if chunk.startswith("data: "):
-                            data_dict = json.loads(chunk[len("data: ") :])
-                            if data_dict.get("type") == "text":
-                                response_text += str(data_dict.get("content", ""))
+                        data_dict = json.loads(chunk[len("data: ") :])
+
+                        content = str(data_dict.get("content", ""))
+
+                        match data_dict.get("type"):
+                            case ChatResponseType.TEXT:
+                                response_text += content
+                            case ChatResponseType.REFERENCE:
+                                reference_text += content
+                            case ChatResponseType.STATE_UPDATE:
+                                state_update_text += content
+                            case ChatResponseType.MESSAGE_ID:
+                                outputs.message_id = content
+                            case ChatResponseType.CONVERSATION_ID:
+                                outputs.conversation_id = content
+
                         yield chunk
 
-                    outputs.response = response_text
+                    outputs.response_text = response_text
+                    outputs.reference_text = reference_text
+                    outputs.state_update_text = state_update_text
 
             streaming_response = StreamingResponse(
                 chat_response(),
