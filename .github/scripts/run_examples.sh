@@ -38,7 +38,7 @@ patch_dependencies() {
         full_pkg="${BASH_REMATCH[1]}"
         pkg_base="${full_pkg%%[*}"
         git_url=$(printf "$GIT_URL_TEMPLATE" "$branch" "$pkg_base")
-        echo "# \"${pkg_base} @ ${git_url}\"," >> "$tmp_file"
+        echo "# \"${full_pkg} @ ${git_url}\"," >> "$tmp_file"
       else
         echo "$line" >> "$tmp_file"
       fi
