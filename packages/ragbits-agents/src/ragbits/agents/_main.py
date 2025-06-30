@@ -58,7 +58,7 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     """The options for the LLM."""
 
 
-class _AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
+class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
     """
     An async iterator that collects all yielded items.
     This object is returned by methods like `run_streaming`. It can be used
