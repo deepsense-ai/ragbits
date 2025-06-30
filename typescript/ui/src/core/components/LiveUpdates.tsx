@@ -40,6 +40,7 @@ export default function LiveUpdates({
         animate={{
           height: isExpanded ? "auto" : 0,
           opacity: isExpanded ? 1 : 0,
+          marginBottom: isExpanded ? "0.5rem" : 0,
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         style={{ overflow: "hidden" }}
@@ -62,7 +63,7 @@ export default function LiveUpdates({
         </div>
       </motion.div>
 
-      <div className="mt-2 flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="relative overflow-hidden bg-transparent">
           {isLoading ? (
             <ShimmerText duration={shimmerDuration}>
