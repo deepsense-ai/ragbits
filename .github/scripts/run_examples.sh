@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Export variables required for the examples
+echo "Export env variables required for the examples..."
 export GOOGLE_CLOUD_PROJECT
 export GOOGLE_APPLICATION_CREDENTIALS
 export OPENAI_API_KEY
@@ -10,20 +10,52 @@ export GEMINI_API_KEY
 export ANTHROPIC_API_KEY
 export LOGFIRE_TOKEN
 
-find examples -name '*.py' | while read file; do
+GIT_URL_TEMPLATE="git+https://github.com/deepsense-ai/ragbits.git@%s#subdirectory=packages/%s"
+PR_BRANCH="${PR_BRANCH:-sb/test-examples-in-cicd}"
+
+patch_dependencies() {
+  local file="$1"
+  local branch="$2"
+  local tmp_file
+  tmp_file=$(mktemp)
+  local in_script_block=false
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ "$line" == "# /// script"* ]]; then
+      in_script_block=true
+      echo "$line" >> "$tmp_file"
+      continue
+    fi
+
+    if [[ "$line" == "# ///"* && "$in_script_block" == true ]]; then
+      in_script_block=false
+      echo "$line" >> "$tmp_file"
+      continue
+    fi
+
+    if [[ "$in_script_block" == true && "$line" == *ragbits* ]]; then
+      if [[ "$line" =~ \"([^\"]+)\" ]]; then
+        full_pkg="${BASH_REMATCH[1]}"
+        pkg_base="${full_pkg%%[*}"
+        git_url=$(printf "$GIT_URL_TEMPLATE" "$branch" "$pkg_base")
+        echo "# \"${pkg_base} @ ${git_url}\"," >> "$tmp_file"
+      else
+        echo "$line" >> "$tmp_file"
+      fi
+    else
+      echo "$line" >> "$tmp_file"
+    fi
+
+  done < "$file"
+  mv "$tmp_file" "$file"
+}
+
+export -f patch_dependencies
+
+find examples -name '*.py' | while read -r file; do
   echo "Running the script: $file"
-
-  # Copying the file to a temporary location
-  file_dir=$(dirname "$file")
-  tmp_file=$(mktemp "$file_dir/tmp_XXXXXX.py")
-  cp "$file" "$tmp_file"
-
-  # Patching the dependencies based on the PR branch
-  python ./.github/scripts/patch_dependencies.py "$tmp_file" "${PR_BRANCH:-main}"
-
-  # Running the script with uv
-  uv run "$tmp_file"
-  rm "$tmp_file"
+  patch_dependencies "$file" "$PR_BRANCH"
+  uv run "$file"
 done
 
 echo "All examples run successfully."
