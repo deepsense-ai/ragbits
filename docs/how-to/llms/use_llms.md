@@ -46,7 +46,7 @@ print(response)
 
 ## Using Local LLMs
 
-For guidance on setting up and using local models in Ragbits, refer to the [Local LLMs Guide](https://ragbits.deepsense.ai/how-to/use_local_llms/).
+For guidance on setting up and using local models in Ragbits, refer to the [Local LLMs Guide](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
 
 # Calling LLM Classes with prompts, raw strings and conversations
 
