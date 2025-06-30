@@ -1,10 +1,9 @@
 import time
 from collections.abc import AsyncGenerator, Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
-import litellm
+import lazy_import
 import tiktoken
-from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -21,6 +20,13 @@ from ragbits.core.llms.exceptions import (
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
+
+litellm = lazy_import.lazy_module("litellm")
+
+
+if TYPE_CHECKING:
+    from litellm import Router
+    from litellm.utils import CustomStreamWrapper, ModelResponse
 
 
 class LiteLLMOptions(Options):
@@ -60,7 +66,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         api_key: str | None = None,
         api_version: str | None = None,
         use_structured_output: bool = False,
-        router: litellm.Router | None = None,
+        router: Optional["Router"] = None,
         custom_model_cost_config: dict | None = None,
     ) -> None:
         """
@@ -270,7 +276,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
-        async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[dict, None]:
+        async def response_to_async_generator(response: "CustomStreamWrapper") -> AsyncGenerator[dict, None]:
             output_tokens = 0
             tool_calls: list[dict] = []
 
@@ -334,7 +340,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format: type[BaseModel] | dict | None,
         tools: list[dict] | None = None,
         stream: bool = False,
-    ) -> ModelResponse | CustomStreamWrapper:
+    ) -> "ModelResponse | CustomStreamWrapper":
         entrypoint = self.router or litellm
 
         try:

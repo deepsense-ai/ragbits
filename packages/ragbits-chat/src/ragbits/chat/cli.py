@@ -1,7 +1,5 @@
 import typer
 
-from ragbits.chat.api import RagbitsAPI
-
 ds_app = typer.Typer(no_args_is_help=True)
 
 
@@ -34,6 +32,8 @@ def run(
     """
     Run API service with UI demo
     """
+    from ragbits.chat.api import RagbitsAPI
+
     api = RagbitsAPI(
         chat_interface=chat_interface,
         cors_origins=cors_origins,
