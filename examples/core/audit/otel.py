@@ -33,6 +33,7 @@ To visualize the metrics collected by Ragbits, follow these steps:
 #     "ragbits-core[otel]",
 #     "opentelemetry-sdk",
 #     "opentelemetry-exporter-otlp-proto-grpc",
+#     "google-auth>=2.35.0",
 #     "tqdm",
 # ]
 # ///

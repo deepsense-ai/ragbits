@@ -32,6 +32,7 @@ To visualize the metrics collected by Ragbits, follow these steps:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-core[logfire]",
+#     "google-auth>=2.35.0",
 #     "tqdm",
 # ]
 # ///

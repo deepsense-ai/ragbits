@@ -68,13 +68,11 @@ openai = [
 ]
 otel = [
     "opentelemetry-api>=1.27.0,<2.0.0",
-    "google-auth>=2.35.0",
 ]
 logfire = [
     "logfire>=3.19.0,<4.0.0",
     "logfire[system-metrics]>=3.19.0,<4.0.0",
     "opentelemetry-api>=1.27.0,<2.0.0",
-    "google-auth>=2.35.0",
 ]
 promptfoo = [
     "PyYAML>=6.0.2,<7.0.0",
