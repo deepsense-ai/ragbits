@@ -110,6 +110,30 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     classNames?.content,
                   )}
                   remarkPlugins={[remarkGfm]}
+                  components={{
+                    pre: ({ node, ...props }) => (
+                      <pre
+                        className={cn(
+                          "max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800",
+                          theme === Theme.DARK &&
+                            "dark:bg-gray-800 dark:text-gray-200",
+                        )}
+                      >
+                        {props.children}
+                      </pre>
+                    ),
+                    code: ({ node, ...props }) => (
+                      <code
+                        className={cn(
+                          "rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800",
+                          theme === Theme.DARK &&
+                            "dark:bg-gray-800 dark:text-gray-200",
+                        )}
+                      >
+                        {props.children}
+                      </code>
+                    ),
+                  }}
                 >
                   {content}
                 </Markdown>
