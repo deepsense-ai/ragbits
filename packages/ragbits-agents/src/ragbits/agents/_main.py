@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, cast, overload
+from typing import Any, ClassVar, Generic, cast
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
@@ -60,19 +60,17 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
     """
-    An async iterator that collects all yielded items.
-    This object is returned by methods like `run_streaming`. It can be used
-    in an `async for` loop to process items as they arrive. After the
-    loop completes, the `collected` attribute holds a list of all items
-    that were yielded.
+    An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
+    by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
+    all items are available under the same names as in AgentResult class.
     """
 
-    def __init__(self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace]):
+    def __init__(self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]):
         self._generator = generator
-        self.content = ""
-        self.tool_calls: list[ToolCallResult] = []
+        self.content: str = ""
+        self.tool_calls: list[ToolCallResult] | None = None
         self.metadata: dict = {}
-        self.history: ChatFormat = []
+        self.history: ChatFormat
 
     def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
         return self
@@ -86,10 +84,14 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
                 case ToolCall():
                     pass
                 case ToolCallResult():
+                    if self.tool_calls is None:
+                        self.tool_calls = []
                     self.tool_calls.append(item)
                 case BasePrompt():
-                    self.history.append(item.chat)
-                case SimpleNamespace():
+                    item.add_assistant_message(self.content)
+                    self.history = item.chat
+                    item = await self._generator.__anext__()
+                    item = cast(SimpleNamespace, item)
                     item.result = {
                         "content": self.content,
                         "metadata": self.metadata,
@@ -149,27 +151,6 @@ class Agent(
         self.history = history or []
         self.keep_history = keep_history
 
-    @overload
-    async def run(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
-        input: str,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT]: ...
-
-    @overload
-    async def run(
-        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
-        input: PromptInputT,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT]: ...
-
-    @overload
-    async def run(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
-        input: None = None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT]: ...
-
     async def run(
         self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
     ) -> AgentResult[PromptOutputT]:
@@ -177,15 +158,11 @@ class Agent(
         Run the agent. The method is experimental, inputs and outputs may change in the future.
 
         Args:
-            *args: Positional arguments corresponding to the overload signatures.
-                - If provided, the first positional argument is interpreted as `input`.
-                - If a second positional argument is provided, it is interpreted as `options`.
-            **kwargs: Keyword arguments corresponding to the overload signatures.
-                - `input`: The input for the agent run. Can be:
-                  - str: A string input that will be used as user message.
-                  - PromptInputT: Structured input for use with structured prompt classes.
-                  - None: No input. Only valid when a string prompt was provided during initialization.
-                - `options`: The options for the agent run.
+            input: The input for the agent run. Can be:
+                - str: A string input that will be used as user message.
+                - PromptInputT: Structured input for use with structured prompt classes.
+                - None: No input. Only valid when a string prompt was provided during initialization.
+            options: The options for the agent run.
 
         Returns:
             The result of the agent run.
@@ -240,27 +217,12 @@ class Agent(
                 history=prompt_with_history.chat,
             )
 
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, None, str]",
-        input: str,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> _AgentResultStreaming: ...
-
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
-        input: None = None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> _AgentResultStreaming: ...
-
     def run_streaming(
         self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
-    ) -> _AgentResultStreaming:
+    ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
-        iterated over. After iteration is complete, the `collected` attribute
-        of the returned object will contain all the yielded chunks.
+        iterated over. After the loop completes, all items are available under the same names as in AgentResult class.
 
         Args:
             input: The input for the agent run.
@@ -268,13 +230,18 @@ class Agent(
 
         Returns:
             A `StreamingResult` object for iteration and collection.
+
+        Raises:
+            AgentToolNotSupportedError: If the selected tool type is not supported.
+            AgentToolNotAvailableError: If the selected tool is not available.
+            AgentInvalidPromptInputError: If the prompt/input combination is invalid.
         """
         generator = self._stream_internal(input, options)
-        return _AgentResultStreaming(generator)
+        return AgentResultStreaming(generator)
 
     async def _stream_internal(
         self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace]:
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]:
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
@@ -298,11 +265,9 @@ class Agent(
 
                 if not returned_tool_call:
                     break
-
+            yield prompt_with_history
             if self.keep_history:
                 self.history = prompt_with_history.chat
-
-            yield prompt_with_history
             yield outputs
 
     def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
