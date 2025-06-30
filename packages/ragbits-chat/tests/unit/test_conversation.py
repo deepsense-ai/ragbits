@@ -113,8 +113,8 @@ def test_send_message_yields_responses_sync(sse_lines: list[str]) -> None:
         ChatResponseType.TEXT,
     ]
     assert conv.conversation_id == "cid"
-    assert conv.server_state is not None
-    assert conv.server_state.state == {"x": 1}
+    assert conv.conversation_state is not None
+    assert conv.conversation_state.state == {"x": 1}
     assert conv.history[-1].content == "foo bar"
 
 
@@ -146,14 +146,13 @@ def test_context_merging() -> None:
 
     http_client = httpx.Client()
     conv = Conversation(base_url="x", http_client=http_client)
-    conv.server_state = StateUpdate(state={"a": 1}, signature="sig")
+    conv.conversation_state = StateUpdate(state={"a": 1}, signature="sig")
     conv.conversation_id = "c1"
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         list(conv.run_streaming("question", context={"b": 2}))
 
-    print(captured["context"])
     assert captured["context"]["conversation_id"] == "c1"
-    assert captured["context"]["a"] == 1
+    assert captured["context"]["state"]["a"] == 1
     assert captured["context"]["b"] == 2
 
 

@@ -117,8 +117,8 @@ def test_sync_conversation_run_and_state_update(sse_lines: list[str]) -> None:
     assert conv.history[1].role.value == "assistant"
     assert conv.history[1].content == "Hello world"
     assert conv.conversation_id == "conv123"
-    assert conv.server_state is not None
-    assert conv.server_state.state == {"foo": "bar"}
+    assert conv.conversation_state is not None
+    assert conv.conversation_state.state == {"foo": "bar"}
 
 
 def test_sync_conversation_error_handling_response_error(sse_lines: list[str]) -> None:
@@ -164,8 +164,8 @@ async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> 
     assert result == "Hello world"
     assert len(conv.history) == 2
     assert conv.conversation_id == "conv123"
-    assert conv.server_state is not None
-    assert conv.server_state.state == {"foo": "bar"}
+    assert conv.conversation_state is not None
+    assert conv.conversation_state.state == {"foo": "bar"}
 
 
 def test_conversation_stop_closes_stream(sse_lines: list[str]) -> None:

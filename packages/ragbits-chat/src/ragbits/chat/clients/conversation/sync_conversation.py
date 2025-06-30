@@ -33,7 +33,7 @@ class Conversation(SyncConversationBase):
 
         self.history: list[Message] = []
         self.conversation_id: str | None = None
-        self.server_state: StateUpdate | None = None
+        self.conversation_state: StateUpdate | None = None
         self._streaming_response: httpx.Response | None = None
 
     def run(self, message: str, *, context: dict[str, Any] | None = None) -> str:
@@ -59,9 +59,8 @@ class Conversation(SyncConversationBase):
         assistant_index = len(self.history) - 1
 
         merged_context: dict[str, Any] = {}
-        if self.server_state is not None:
-            merged_context.update(self.server_state.state)
-            merged_context.update(self.server_state.model_dump())
+        if self.conversation_state is not None:
+            merged_context.update(self.conversation_state.model_dump())
         if self.conversation_id is not None:
             merged_context["conversation_id"] = self.conversation_id
         if context:
@@ -109,7 +108,7 @@ class Conversation(SyncConversationBase):
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update our local state based on *resp*."""
         if resp.as_state_update() is not None:
-            self.server_state = resp.as_state_update()
+            self.conversation_state = resp.as_state_update()
         elif resp.as_conversation_id() is not None:
             self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
