@@ -14,6 +14,7 @@ def mock_responses_llm() -> MagicMock:
     return mock
 
 
+@patch("ragbits.agents.tools.openai.AsyncOpenAI")
 @pytest.mark.parametrize(
     ("tool_name", "should_succeed"),
     [
@@ -23,7 +24,7 @@ def mock_responses_llm() -> MagicMock:
         ("non_existing_tool", False),
     ],
 )
-def test_get_openai_tool(tool_name: str, should_succeed: bool) -> None:
+def test_get_openai_tool(mock_async_openai: MagicMock, tool_name: str, should_succeed: bool) -> None:
     """Test that get_openai_tool returns the correct tool."""
     if should_succeed:
         tool = get_openai_tool(tool_name, "test_model")
@@ -33,7 +34,8 @@ def test_get_openai_tool(tool_name: str, should_succeed: bool) -> None:
             get_openai_tool(tool_name, "test_model")
 
 
-async def test_search_web(mock_responses_llm: MagicMock) -> None:
+@patch("ragbits.agents.tools.openai.AsyncOpenAI")
+async def test_search_web(mock_async_openai: MagicMock, mock_responses_llm: MagicMock) -> None:
     """Test that search_web calls use_tool and returns output_text."""
     mock_response = MagicMock()
     mock_response.output_text = "Test output"
@@ -47,7 +49,8 @@ async def test_search_web(mock_responses_llm: MagicMock) -> None:
     assert result == "Test output"
 
 
-async def test_code_interpreter(mock_responses_llm: MagicMock) -> None:
+@patch("ragbits.agents.tools.openai.AsyncOpenAI")
+async def test_code_interpreter(mock_async_openai: MagicMock, mock_responses_llm: MagicMock) -> None:
     """Test that code_interpreter calls use_tool and returns output_text."""
     mock_response = MagicMock()
     mock_response.output_text = "Interpreter output"
@@ -61,8 +64,11 @@ async def test_code_interpreter(mock_responses_llm: MagicMock) -> None:
     assert result == "Interpreter output"
 
 
+@patch("ragbits.agents.tools.openai.AsyncOpenAI")
 @patch("builtins.open", new_callable=MagicMock)
-async def test_image_generation(mock_open: MagicMock, mock_responses_llm: MagicMock) -> None:
+async def test_image_generation(
+    mock_open: MagicMock, mock_async_openai: MagicMock, mock_responses_llm: MagicMock
+) -> None:
     """Test image_generation saves image and returns correct text."""
     image_data = base64.b64encode(b"test_image_content").decode("utf-8")
 
@@ -89,7 +95,8 @@ async def test_image_generation(mock_open: MagicMock, mock_responses_llm: MagicM
     assert result == "Image saved to cat.png\nGenerated image."
 
 
-async def test_image_generation_no_image(mock_responses_llm: MagicMock) -> None:
+@patch("ragbits.agents.tools.openai.AsyncOpenAI")
+async def test_image_generation_no_image(mock_async_openai: MagicMock, mock_responses_llm: MagicMock) -> None:
     """Test image_generation when no image is returned."""
     mock_output_item = MagicMock()
     mock_output_item.type = "image_generation_call"
