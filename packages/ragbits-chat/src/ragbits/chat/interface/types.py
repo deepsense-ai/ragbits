@@ -34,6 +34,28 @@ class StateUpdate(BaseModel):
     signature: str
 
 
+class LiveUpdateType(str, Enum):
+    """Types of live update events."""
+
+    START = "START"
+    FINISH = "FINISH"
+
+
+class LiveUpdateContent(BaseModel):
+    """Represents content of a live update."""
+
+    label: str
+    description: str | None
+
+
+class LiveUpdate(BaseModel):
+    """Represents an live update performed by an agent."""
+
+    update_id: str
+    type: LiveUpdateType
+    content: LiveUpdateContent
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface."""
 
@@ -42,13 +64,15 @@ class ChatResponseType(str, Enum):
     STATE_UPDATE = "state_update"
     MESSAGE_ID = "message_id"
     CONVERSATION_ID = "conversation_id"
+    LIVE_UPDATE = "live_update"
+    FOLLOWUP_MESSAGES = "followup_messages"
 
 
 class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate
+    content: str | Reference | StateUpdate | LiveUpdate | list[str]
 
     def as_text(self) -> str | None:
         """
@@ -79,6 +103,26 @@ class ChatResponse(BaseModel):
                 state = verify_state(state_update)
         """
         return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
+
+    def as_live_update(self) -> LiveUpdate | None:
+        """
+        Return the content as LiveUpdate if this is a live update, else None.
+
+        Example:
+            if live_update := response.as_live_update():
+                print(f"Got live update: {live_update.content.label}")
+        """
+        return cast(LiveUpdate, self.content) if self.type == ChatResponseType.LIVE_UPDATE else None
+
+    def as_followup_messages(self) -> list[str] | None:
+        """
+        Return the content as list of strings if this is a followup messages response, else None.
+
+        Example:
+            if followup_messages := response.as_followup_messages():
+                print(f"Got followup messages: {followup_messages}")
+        """
+        return cast(list[str], self.content) if self.type == ChatResponseType.FOLLOWUP_MESSAGES else None
 
 
 class ChatContext(BaseModel):
