@@ -15,7 +15,7 @@ from ragbits.core.prompt.base import (
     BasePrompt,
     BasePromptWithParser,
     ChatFormat,
-    PromptOutputT_co,
+    PromptOutputT,
     SimplePrompt,
 )
 from ragbits.core.utils.config_handling import ConfigurableComponent
@@ -54,12 +54,12 @@ class ToolCall(BaseModel):
         return pased_arguments
 
 
-class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT_co]):
+class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
     A schema of output with metadata
     """
 
-    content: PromptOutputT_co
+    content: PromptOutputT
     metadata: dict = {}
     tool_calls: list[ToolCall] | None = None
 
@@ -160,38 +160,38 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT_co],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> PromptOutputT_co: ...
+    ) -> PromptOutputT: ...
 
     @overload
     async def generate(
         self,
-        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT_co]],
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> list[PromptOutputT_co]: ...
+    ) -> list[PromptOutputT]: ...
 
     @overload
     async def generate(
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT_co],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
-    ) -> PromptOutputT_co | list[ToolCall]: ...
+    ) -> PromptOutputT | list[ToolCall]: ...
 
     @overload
     async def generate(
         self,
-        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT_co]],
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
-    ) -> list[PromptOutputT_co | list[ToolCall]]: ...
+    ) -> list[PromptOutputT | list[ToolCall]]: ...
 
     @overload
     async def generate(
@@ -234,19 +234,13 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str
         | ChatFormat
         | BasePrompt
-        | BasePromptWithParser[PromptOutputT_co]
+        | BasePromptWithParser[PromptOutputT]
         | MutableSequence[ChatFormat | str]
-        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT_co]],
+        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> (
-        str
-        | PromptOutputT_co
-        | list[ToolCall]
-        | list[list[ToolCall] | str]
-        | list[str | PromptOutputT_co | list[ToolCall]]
-    ):
+    ) -> str | PromptOutputT | list[ToolCall] | list[list[ToolCall] | str] | list[str | PromptOutputT | list[ToolCall]]:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -271,20 +265,20 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT_co],
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT_co]: ...
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
     @overload
     async def generate_with_metadata(
         self,
-        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT_co]],
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> list[LLMResponseWithMetadata[PromptOutputT_co]]: ...
+    ) -> list[LLMResponseWithMetadata[PromptOutputT]]: ...
 
     @overload
     async def generate_with_metadata(
@@ -310,16 +304,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         | ChatFormat
         | MutableSequence[str | ChatFormat]
         | BasePrompt
-        | BasePromptWithParser[PromptOutputT_co]
-        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT_co]],
+        | BasePromptWithParser[PromptOutputT]
+        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> (
         LLMResponseWithMetadata[str]
         | list[LLMResponseWithMetadata[str]]
-        | LLMResponseWithMetadata[PromptOutputT_co]
-        | list[LLMResponseWithMetadata[PromptOutputT_co]]
+        | LLMResponseWithMetadata[PromptOutputT]
+        | list[LLMResponseWithMetadata[PromptOutputT]]
     ):
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the

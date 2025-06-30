@@ -14,7 +14,7 @@ from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import SimplePrompt
-from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT_co
+from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
@@ -31,12 +31,12 @@ class ToolCallResult:
 
 
 @dataclass
-class AgentResult(Generic[PromptOutputT_co]):
+class AgentResult(Generic[PromptOutputT]):
     """
     Result of the agent run.
     """
 
-    content: PromptOutputT_co
+    content: PromptOutputT
     """The output content of the LLM."""
     metadata: dict
     """The additional data returned by the LLM."""
@@ -54,7 +54,7 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
 
 class Agent(
-    ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT_co]
+    ConfigurableComponent[AgentOptions[LLMClientOptionsT]], Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]
 ):
     """
     Agent class that orchestrates the LLM and the prompt.
@@ -69,7 +69,7 @@ class Agent(
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        prompt: str | type[Prompt[PromptInputT, PromptOutputT_co]] | None = None,
+        prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | None = None,
         *,
         tools: list[Callable] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -94,25 +94,25 @@ class Agent(
 
     @overload
     async def run(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT_co]",
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT_co]: ...
+    ) -> AgentResult[PromptOutputT]: ...
 
     @overload
     async def run(
-        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT_co]",
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT_co]: ...
+    ) -> AgentResult[PromptOutputT]: ...
 
     @overload
     async def run(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT_co]",
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         options: AgentOptions[LLMClientOptionsT] | None = None,
-    ) -> AgentResult[PromptOutputT_co]: ...
+    ) -> AgentResult[PromptOutputT]: ...
 
-    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT_co]:
+    async def run(self, *args: Any, **kwargs: Any) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
 
@@ -147,7 +147,7 @@ class Agent(
         with trace(input=input, options=merged_options) as outputs:
             while True:
                 response = cast(
-                    LLMResponseWithMetadata[PromptOutputT_co],
+                    LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt,
                         tools=list(self.tools_mapping.values()),
@@ -189,7 +189,7 @@ class Agent(
             )
             return outputs.result
 
-    def _create_prompt(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT_co]:
+    def _create_prompt(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
             return self.prompt(input)
         elif isinstance(self.prompt, str) and isinstance(input, str):
