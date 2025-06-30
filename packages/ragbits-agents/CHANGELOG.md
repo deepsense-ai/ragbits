@@ -7,6 +7,7 @@
 - Update Agent run method docstring (#565)
 - Fix AgentResult typing (#600)
 - Support history handling in Agent (#648)
+- Support run_streaming in Agent (#650)
 
 ## 1.0.0 (2025-06-04)
 
