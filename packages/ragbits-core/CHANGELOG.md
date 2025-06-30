@@ -9,6 +9,7 @@
 - Remove outdated quickstart ref from docstring (#565)
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
+- Add support for batch generation (#608)
 - Add message update functions to BasePrompt (#648)
 - Add Logfire integration to handle traces and metrics (#642)
 

@@ -8,6 +8,7 @@ import pytest
 
 from ragbits.core.audit.traces import _get_function_inputs, set_trace_handlers, trace, traceable
 from ragbits.core.audit.traces.base import AttributeFormatter, TraceHandler
+from ragbits.core.prompt.base import SimplePrompt
 from ragbits.core.vector_stores import VectorStoreEntry
 
 
@@ -171,9 +172,15 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
         ({}, "prefix", {}),
         # Simple types
         (
-            {"str": "value", "int": 42, "float": 3.14, "bool": True},
+            {"str": "value", "prompt": SimplePrompt("prompt"), "int": 42, "float": 3.14, "bool": True},
             None,
-            {"str": "value", "int": 42, "float": 3.14, "bool": True},
+            {
+                "str": "value",
+                "prompt": "[{'role': 'user', 'content': 'prompt'}]",
+                "int": 42,
+                "float": 3.14,
+                "bool": True,
+            },
         ),
         # # With prefix
         ({"str": "value", "int": 42}, "prefix", {"prefix.str": "value", "prefix.int": 42}),
@@ -231,7 +238,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
                 "test.vector": "[0.01, '...', 0.04](total 6136 elements)",
                 "test.vcs.VectorStoreEntry.id.UUID": "UUID('9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8')",
                 "test.vcs.VectorStoreEntry.text": "Some text",
-                "test.vcs.VectorStoreEntry.image_bytes": "None",
+                "test.vcs.VectorStoreEntry.image_bytes": None,
                 "test.vcs.VectorStoreEntry.metadata.for_shortening": "A" * AttributeFormatter.max_string_length + "...",
                 "test.not_for_shortening.response": "A" * AttributeFormatter.max_string_length
                 + "B" * AttributeFormatter.max_string_length,
