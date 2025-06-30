@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add support for async component factories (#608)
+- support all metric types
 
 ## 1.0.0 (2025-06-04)
 
@@ -195,4 +196,3 @@
 - ChromaDB integration.
 - Prompts lab.
 - Prompts autodiscovery.
-
