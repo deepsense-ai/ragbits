@@ -10,7 +10,6 @@ import {
   ReactNode,
   useState,
   useEffect,
-  useMemo,
 } from "react";
 
 import PromptInputText from "./PromptInputText";
@@ -48,59 +47,46 @@ const PromptInput = ({
   history,
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
+  const [quickMessages, setQuickMessages] = useState<string[]>([]);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
-  const historyLength = useMemo(() => history?.length ?? 0, [history?.length]);
-  const quickMessageIndex = useRef(Math.max(historyLength - 2, 0));
+  const quickMessageIndex = useRef(Math.max(quickMessages.length - 1, 0));
 
   const setQuickMessage = useCallback(() => {
-    if (!history) {
-      return;
-    }
+    const quickMessage = quickMessages[quickMessageIndex.current];
 
-    const quickMessage = history[quickMessageIndex.current];
-    if (!quickMessage || quickMessage.role !== MessageRole.USER) {
-      return;
-    }
+    setMessage(quickMessage);
+  }, [quickMessages]);
 
-    setMessage(quickMessage.content);
-  }, [history]);
+  const onArrowUp = useCallback(() => {
+    quickMessageIndex.current = Math.max(quickMessageIndex.current - 1, 0);
+    setQuickMessage();
+  }, [setQuickMessage]);
 
-  const onArrowUp = useCallback(
-    (isFirst: boolean) => {
-      if (!isFirst) {
-        return;
-      }
+  const onArrowDown = useCallback(() => {
+    quickMessageIndex.current = Math.min(
+      quickMessages.length - 1,
+      quickMessageIndex.current + 1,
+    );
+    setQuickMessage();
+  }, [quickMessages, setQuickMessage]);
 
-      quickMessageIndex.current = Math.max(quickMessageIndex.current - 2, 0);
-      setQuickMessage();
+  const handleSubmit = useCallback(
+    (text?: string) => {
+      if (!message && !isLoading && text) return;
+
+      submit(text ?? message);
+      setQuickMessages((quickMessages) => {
+        const newQuickMessages = quickMessages.slice(0, -1);
+        newQuickMessages.push(text ?? message);
+        return newQuickMessages;
+      });
+      setMessage("");
+      textAreaRef?.current?.focus();
     },
-    [setQuickMessage],
+    [isLoading, submit, message],
   );
-
-  const onArrowDown = useCallback(
-    (isLast: boolean) => {
-      if (!isLast) {
-        return;
-      }
-
-      quickMessageIndex.current = Math.min(
-        Math.max(historyLength - 2, 0),
-        quickMessageIndex.current + 2,
-      );
-      setQuickMessage();
-    },
-    [historyLength, setQuickMessage],
-  );
-
-  const handleSubmit = useCallback(() => {
-    if (!message && !isLoading) return;
-
-    submit(message);
-    setMessage("");
-    textAreaRef?.current?.focus();
-  }, [isLoading, submit, message]);
 
   const onSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
@@ -115,12 +101,22 @@ const PromptInput = ({
     (e: KeyboardEvent<HTMLInputElement>) => {
       if (!textAreaRef.current) return;
 
-      if (e.key === "ArrowUp" && onArrowUp) {
-        onArrowUp(isCaretInFirstLine(textAreaRef.current));
+      if (e.key === "ArrowUp") {
+        if (!isCaretInFirstLine(textAreaRef.current)) {
+          return;
+        }
+
+        e.preventDefault();
+        onArrowUp();
       }
 
-      if (e.key === "ArrowDown" && onArrowDown) {
-        onArrowDown(isCaretInLastLine(textAreaRef.current));
+      if (e.key === "ArrowDown") {
+        if (!isCaretInLastLine(textAreaRef.current)) {
+          return;
+        }
+
+        e.preventDefault();
+        onArrowDown();
       }
 
       if (e.key === "Enter" && !e.shiftKey) {
@@ -143,24 +139,36 @@ const PromptInput = ({
     textAreaRef?.current?.focus();
   }, [stopAnswering]);
 
-  const sendFollowupMessage = useCallback(
-    (text: string) => {
-      setMessage("");
-      submit(text);
-    },
-    [submit],
-  );
+  const handleValueChange = useCallback((value: string) => {
+    setQuickMessages((quickMessages) => {
+      const newQuickMessages = [...quickMessages];
+      newQuickMessages[quickMessageIndex.current] = value;
+
+      return newQuickMessages;
+    });
+    setMessage(value);
+  }, []);
 
   useEffect(() => {
-    quickMessageIndex.current = Math.max(0, historyLength);
-  }, [historyLength]);
+    const newQuickMessages = (history ?? [])
+      .filter((m) => m.role === MessageRole.USER)
+      .map((m) => m.content);
+
+    if (quickMessages.length - 1 === newQuickMessages.length) {
+      return;
+    }
+
+    newQuickMessages.push("");
+    quickMessageIndex.current = Math.max(newQuickMessages.length - 1, 0);
+    setQuickMessages(newQuickMessages);
+  }, [history, quickMessages.length]);
 
   return (
     <div className="rounded-medium">
       <HorizontalActions
         isVisible={!!followupMessages}
         actions={followupMessages ?? []}
-        sendMessage={sendFollowupMessage}
+        sendMessage={handleSubmit}
       />
 
       <Form
@@ -184,7 +192,7 @@ const PromptInput = ({
           minRows={1}
           value={message}
           onKeyDown={handleKeyDown}
-          onValueChange={setMessage}
+          onValueChange={handleValueChange}
           {...inputProps}
         />
         <Button
