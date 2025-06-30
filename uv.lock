@@ -1184,6 +1184,15 @@ wheels = [
 ]
 
 [[package]]
+name = "executing"
+version = "2.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/91/50/a9d80c47ff289c611ff12e63f7c5d13942c65d68125160cefd768c73e6e4/executing-2.2.0.tar.gz", hash = "sha256:5d108c028108fe2551d1a7b2e8b713341e2cb4fc0aa7dcf966fa4327a5226755", size = 978693 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7b/8f/c4d9bafc34ad7ad5d8dc16dd1347ee0e507a52c3adb6bfa8887e1c6a26ba/executing-2.2.0-py2.py3-none-any.whl", hash = "sha256:11387150cad388d62750327a53d3339fad4888b39a6fe233c3afbb54ecffd3aa", size = 26702 },
+]
+
+[[package]]
 name = "fastapi"
 version = "0.115.9"
 source = { registry = "https://pypi.org/simple" }
@@ -2177,6 +2186,30 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/00/37/c4776c052a29a0ac44bb7ded5ca64790dfd8d07dbc4413b6448048b7f6c2/litellm-1.55.0.tar.gz", hash = "sha256:d33dfabb7aa6f18294c43f20429d7d962b48104a0c2ddce08df7370029ac4780", size = 6195432, upload-time = "2024-12-12T19:27:42.736Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ba/7a/e2a210433357611dbb463c5e03dcfec6938047fce3294ae2240eb6716faf/litellm-1.55.0-py3-none-any.whl", hash = "sha256:b257242039cc0753cdf7e7e288f9379d8ccad58015ce95bdc8a8ec337d2fa7eb", size = 6463217, upload-time = "2024-12-12T19:27:38.239Z" },
+]
+
+[[package]]
+name = "logfire"
+version = "3.19.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "executing" },
+    { name = "opentelemetry-exporter-otlp-proto-http" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "opentelemetry-sdk" },
+    { name = "protobuf" },
+    { name = "rich" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fc/2f/93c9e9672851db4078a7d509ba821dad5627539f58992cc095e7a9c4986f/logfire-3.19.0.tar.gz", hash = "sha256:976ff50f0c1aa9d525e5a461c3ee8fbd75ed64d5e928e193fd0774c023473b3a", size = 487027 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/86/978d13e1a5403324b8a5efb688ef8fd051f192fc0272a7e030b59420c5a9/logfire-3.19.0-py3-none-any.whl", hash = "sha256:dec21e86925ff057d202585be91d384f3454ac8fa3c02b9d2b742ae5d06e6287", size = 198558 },
+]
+
+[package.optional-dependencies]
+system-metrics = [
+    { name = "opentelemetry-instrumentation-system-metrics" },
 ]
 
 [[package]]
@@ -3396,6 +3429,24 @@ wheels = [
 ]
 
 [[package]]
+name = "opentelemetry-exporter-otlp-proto-http"
+version = "1.27.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "deprecated" },
+    { name = "googleapis-common-protos" },
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-exporter-otlp-proto-common" },
+    { name = "opentelemetry-proto" },
+    { name = "opentelemetry-sdk" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/31/0a/f05c55e8913bf58a033583f2580a0ec31a5f4cf2beacc9e286dcb74d6979/opentelemetry_exporter_otlp_proto_http-1.27.0.tar.gz", hash = "sha256:2103479092d8eb18f61f3fbff084f67cc7f2d4a7d37e75304b8b56c1d09ebef5", size = 15059 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2d/8d/4755884afc0b1db6000527cac0ca17273063b6142c773ce4ecd307a82e72/opentelemetry_exporter_otlp_proto_http-1.27.0-py3-none-any.whl", hash = "sha256:688027575c9da42e179a69fe17e2d1eba9b14d81de8d13553a21d3114f3b4d75", size = 17203 },
+]
+
+[[package]]
 name = "opentelemetry-instrumentation"
 version = "0.48b0"
 source = { registry = "https://pypi.org/simple" }
@@ -3439,6 +3490,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/58/20/43477da5850ef2cd3792715d442aecd051e885e0603b6ee5783b2104ba8f/opentelemetry_instrumentation_fastapi-0.48b0.tar.gz", hash = "sha256:21a72563ea412c0b535815aeed75fc580240f1f02ebc72381cfab672648637a2", size = 18497, upload-time = "2024-08-28T21:28:01.14Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/50/745ab075a3041b7a5f29a579d2c28eaad54f64b4589d8f9fd364c62cf0f3/opentelemetry_instrumentation_fastapi-0.48b0-py3-none-any.whl", hash = "sha256:afeb820a59e139d3e5d96619600f11ce0187658b8ae9e3480857dd790bc024f2", size = 11777, upload-time = "2024-08-28T21:26:57.457Z" },
+]
+
+[[package]]
+name = "opentelemetry-instrumentation-system-metrics"
+version = "0.48b0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "opentelemetry-api" },
+    { name = "opentelemetry-instrumentation" },
+    { name = "psutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0d/3f/69627fdd62ed2f0310b99f9fe1d2ff6049791d4382d7dbf57c79e306b6d5/opentelemetry_instrumentation_system_metrics-0.48b0.tar.gz", hash = "sha256:77e713d9fd024b5f7143c0c46c1a1114e41d04d900088774bcf7b6cd82ea6546", size = 13573 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f0/fa/53dc695dd6940b9b5a84e4051198166eac40d00830e2adb7e3091ce17d2d/opentelemetry_instrumentation_system_metrics-0.48b0-py3-none-any.whl", hash = "sha256:06806f43a63190ef950ca96e1501561a47a912ca2e27f7d106b53e3a5431a694", size = 12049 },
 ]
 
 [[package]]
@@ -4617,6 +4682,10 @@ local = [
     { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
     { name = "transformers" },
 ]
+logfire = [
+    { name = "logfire", extra = ["system-metrics"] },
+    { name = "opentelemetry-api" },
+]
 otel = [
     { name = "opentelemetry-api" },
 ]
@@ -4659,7 +4728,10 @@ requires-dist = [
     { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
     { name = "litellm", specifier = ">=1.55.0,<2.0.0" },
+    { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
+    { name = "logfire", extras = ["system-metrics"], marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
+    { name = "opentelemetry-api", marker = "extra == 'logfire'", specifier = ">=1.27.0,<2.0.0" },
     { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.27.0,<2.0.0" },
     { name = "pydantic", specifier = ">=2.9.1,<3.0.0" },
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
@@ -4670,7 +4742,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3"]
+provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -4829,7 +4901,7 @@ dependencies = [
     { name = "ragbits-agents" },
     { name = "ragbits-chat" },
     { name = "ragbits-cli" },
-    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "hf", "local", "otel", "pgvector", "qdrant", "s3"] },
+    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "hf", "local", "logfire", "otel", "pgvector", "qdrant", "s3"] },
     { name = "ragbits-document-search", extra = ["ray", "unstructured"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
@@ -4864,7 +4936,7 @@ requires-dist = [
     { name = "ragbits-agents", editable = "packages/ragbits-agents" },
     { name = "ragbits-chat", editable = "packages/ragbits-chat" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "qdrant", "pgvector", "azure", "gcs", "hf", "s3"], editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "logfire", "qdrant", "pgvector", "azure", "gcs", "hf", "s3"], editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", extras = ["unstructured", "ray"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },

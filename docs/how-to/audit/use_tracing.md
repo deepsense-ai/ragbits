@@ -72,3 +72,22 @@ set_trace_handlers("otel")
     This code snippet exports traces to the local OpenTelemetry collector running at <http://localhost:4317>. To visualize traces from Ragbits, open a browser and navigate to the Grafana dashboard at <http://localhost:3000>.
 
 A full example along with a detailed installation guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/otel.py).
+
+## Using Logfire tracer
+
+To export traces to the Logfire collector, you need to generate a write token in your Logfire project settings and set it as an environment variable.
+
+```bash
+export LOGFIRE_TOKEN=<your-logfire-write-token>
+```
+
+Then set up the [`LogfireTraceHandler`][ragbits.core.audit.traces.logfire.LogfireTraceHandler] using the [`set_trace_handlers`][ragbits.core.audit.traces.set_trace_handlers] method.
+
+```python
+from ragbits.core.audit import set_trace_handlers
+
+set_trace_handlers("logfire")
+```
+
+You will find collected traces in the Live section of the Logfire project dashboard.
+A full example along with a detailed guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/logfire_.py).

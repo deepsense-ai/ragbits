@@ -34,31 +34,33 @@ Save this to a file, for example `chat.py`.
 You can enable user feedback by adding a feedback configuration:
 
 ```python
-from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
+
+class LikeFormExample(BaseModel):
+    model_config = ConfigDict(
+        title="Like Form",
+        json_schema_serialization_defaults_required=True,
+    )
+
+    like_reason: str = Field(
+        description="Why do you like this?",
+        min_length=1,
+    )
+
+class DislikeFormExample(BaseModel):
+    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
+
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
+        description="What was the issue?"
+    )
+    feedback: str = Field(description="Please provide more details", min_length=1)
 
 # Add this to your ChatInterface class
-feedback_config = FeedbackConfig(
+feedback_config = JSONSchemaFeedbackConfig.from_models(
     like_enabled=True,
-    like_form=FeedbackForm(
-        title="Like Form",
-        fields=[
-            FormField(name="like_reason", type="text", required=True, label="Why do you like this?"),
-        ],
-    ),
+    like_form=LikeFormExample,
     dislike_enabled=True,
-    dislike_form=FeedbackForm(
-        title="Dislike Form",
-        fields=[
-            FormField(
-                name="issue_type",
-                type="select",
-                required=True,
-                label="What was the issue?",
-                options=["Incorrect information", "Not helpful", "Unclear", "Other"],
-            ),
-            FormField(name="feedback", type="text", required=True, label="Please provide more details"),
-        ],
-    ),
+    dislike_form=DislikeFormExample,
 )
 ```
 
@@ -210,35 +212,37 @@ Here's a complete example of a chat implementation:
 from collections.abc import AsyncGenerator
 
 from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.forms import FeedbackConfig, FeedbackForm, FormField
+from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
 from ragbits.api.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
+
+class LikeFormExample(BaseModel):
+    model_config = ConfigDict(
+        title="Like Form",
+        json_schema_serialization_defaults_required=True,
+    )
+
+    like_reason: str = Field(
+        description="Why do you like this?",
+        min_length=1,
+    )
+
+class DislikeFormExample(BaseModel):
+    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
+
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
+        description="What was the issue?"
+    )
+    feedback: str = Field(description="Please provide more details", min_length=1)
 
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface."""
 
-    feedback_config = FeedbackConfig(
+    feedback_config = JSONSchemaFeedbackConfig.from_models(
         like_enabled=True,
-        like_form=FeedbackForm(
-            title="Like Form",
-            fields=[
-                FormField(name="like_reason", type="text", required=True, label="Why do you like this?"),
-            ],
-        ),
+        like_form=LikeFormExample,
         dislike_enabled=True,
-        dislike_form=FeedbackForm(
-            title="Dislike Form",
-            fields=[
-                FormField(
-                    name="issue_type",
-                    type="select",
-                    required=True,
-                    label="What was the issue?",
-                    options=["Incorrect information", "Not helpful", "Unclear", "Other"],
-                ),
-                FormField(name="feedback", type="text", required=True, label="Please provide more details"),
-            ],
-        ),
+        dislike_form=DislikeFormExample,
     )
 
     def __init__(self) -> None:

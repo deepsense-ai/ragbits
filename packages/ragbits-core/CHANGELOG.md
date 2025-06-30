@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)
 - Fix parsing functions with no arguments in convert_function_to_function_schema (#568)
@@ -9,6 +10,8 @@
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
 - Add support for batch generation (#608)
+- Add message update functions to BasePrompt (#648)
+- Add Logfire integration to handle traces and metrics (#642)
 
 ## 1.0.0 (2025-06-04)
 

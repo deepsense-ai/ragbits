@@ -13,3 +13,5 @@
 ::: ragbits.core.audit.metrics.base.MetricHandler
 
 ::: ragbits.core.audit.metrics.otel.OtelMetricHandler
+
+::: ragbits.core.audit.metrics.logfire.LogfireMetricHandler
