@@ -1,30 +1,65 @@
 import json
+from typing import TypeVar
 
 import requests
+from pydantic import BaseModel
 
-from ragbits.agents import AgentResult, ToolCallResult
+from ragbits.agents import Agent, AgentOptions, AgentResult, ToolCallResult
 from ragbits.agents.a2a.routing_prompt import RoutingPrompt, RoutingPromptInput
 from ragbits.agents.a2a.summarize_results_prompt import SummarizeAgentResultsInput, SummarizeAgentResultsPrompt
 from ragbits.core.llms import LiteLLM
+from ragbits.core.options import Options
+from ragbits.core.prompt.base import ChatFormat
+
+OptionsT = TypeVar("OptionsT", bound=Options)
 
 
-class AgentOrchestrator:
+class RemoteAgentTask(BaseModel):
+    """Model representing a task for a remote agent"""
+
+    agent_url: str
+    parameters: dict
+
+
+class AgentOrchestrator(Agent):
     """
     Coordinates querying and aggregating responses from multiple remote agents
-    using an LLM-driven routing and summarization approach.
+    using tools for routing and task execution.
     """
 
-    def __init__(self, llm: LiteLLM, timeout: float = 20.0):
+    def __init__(
+        self,
+        llm: LiteLLM,
+        timeout: float = 20.0,
+        *,
+        history: ChatFormat | None = None,
+        keep_history: bool = False,
+        default_options: AgentOptions[OptionsT] | None = None,
+    ):
         """
-        Initializes the orchestrator with the given LLM.
+        Initialize the orchestrator with tools for agent coordination.
 
         Args:
-            llm: The LLM instance.
+            llm: The LLM to run the agent.
             timeout: Timeout in seconds for the HTTP request.
+            history: The history of the agent.
+            keep_history: Whether to keep the history of the agent.
+            default_options: The default options for the agent run.
+
         """
-        self._llm = llm
+        super().__init__(
+            llm=llm,
+            prompt=None,
+            history=history,
+            keep_history=keep_history,
+            tools=[self.create_agent_tasks, self.execute_agent_task, self.summarize_agent_results],
+            default_options=default_options,
+        )
+
         self._timeout = timeout
-        self._remote_agents: dict = {}
+        self._remote_agents: dict[str, dict] = {}
+        self._current_tasks: list[RemoteAgentTask] = []
+        self._current_results: list[AgentResult] = []
 
     def add_remote_agent(self, host: str, port: int, protocol: str = "http") -> None:
         """
@@ -40,70 +75,91 @@ class AgentOrchestrator:
             agent_card = requests.get(f"{url}/.well-known/agent.json", timeout=self._timeout)
             self._remote_agents[url] = agent_card.json()
 
-    async def _create_tasks(self, message: str) -> list[dict]:
+    async def create_agent_tasks(self, message: str) -> str:
         """
-        Generates a list of tasks by routing the input message to appropriate remote agents.
+        Creates tasks for remote agents based on the input message.
 
         Args:
-            message: The user query or request to route.
+            message: The user query to route to agents
 
         Returns:
-            A list of task dictionaries specifying agent URLs and parameters,
-            parsed from the routing prompt's structured output.
+            JSON string of created tasks
         """
         prompt_input = RoutingPromptInput(message=message, agents=self._list_remote_agents())
         prompt = RoutingPrompt(prompt_input)
-        response = await self._llm.generate(prompt)
-        return json.loads(response)
+        response = await self.llm.generate(prompt)
 
-    def _run_task(self, agent_url: str, params: dict) -> AgentResult:
+        tasks = json.loads(response)
+        self._current_tasks = [RemoteAgentTask(**task) for task in tasks]
+
+        return json.dumps(
+            {
+                "status": "success",
+                "task_count": len(self._current_tasks),
+                "tasks": [task.dict() for task in self._current_tasks],
+            }
+        )
+
+    async def execute_agent_task(self, task_index: int) -> str:
         """
-        Executes a single task by sending a request to the specified remote agent.
+        Executes a specific task from the current task list.
 
         Args:
-            agent_url: The base URL of the remote agent.
-            params: Parameters to send to the remote agent.
+            task_index: Index of the task to execute
 
         Returns:
-            The agent's structured response including content,
-            metadata, and optional tool call results.
+            JSON string of the execution result
         """
+        if not self._current_tasks or task_index >= len(self._current_tasks):
+            return json.dumps({"status": "error", "message": "Invalid task index"})
+
+        task = self._current_tasks[task_index]
+        result = self._execute_single_task(task.agent_url, task.parameters)
+        self._current_results.append(result)
+
+        tool_calls = None
+        if result.tool_calls:
+            tool_calls = [{"name": tc.name, "arguments": tc.arguments, "output": tc.output} for tc in result.tool_calls]
+
+        return json.dumps(
+            {
+                "status": "success",
+                "agent_url": task.agent_url,
+                "result": {"content": result.content, "metadata": result.metadata, "tool_calls": tool_calls},
+            }
+        )
+
+    async def summarize_agent_results(self, message: str) -> str:
+        """
+        Summarizes all collected agent results.
+
+        Args:
+            message: The original user message
+
+        Returns:
+            The summarized response
+        """
+        if not self._current_results:
+            return "No results to summarize"
+
+        input_data = SummarizeAgentResultsInput(message=message, agent_results=self._current_results)
+        prompt = SummarizeAgentResultsPrompt(input_data=input_data)
+        return await self.llm.generate(prompt)
+
+    def _execute_single_task(self, agent_url: str, params: dict) -> AgentResult:
         payload = {"params": params}
         raw_response = requests.post(agent_url, json=payload, timeout=self._timeout)
         raw_response.raise_for_status()
 
         response = raw_response.json()
         result_data = response["result"]
-        content = result_data["content"]
-        metadata = result_data.get("metadata", {})
-        tool_calls_data = result_data.get("tool_calls", [])
 
-        tool_calls = (
-            [
-                ToolCallResult(name=call["name"], arguments=call["arguments"], output=call["output"])
-                for call in tool_calls_data
-            ]
-            if tool_calls_data
-            else None
+        return AgentResult(
+            content=result_data["content"],
+            metadata=result_data.get("metadata", {}),
+            history=result_data["history"],
+            tool_calls=[ToolCallResult(**call) for call in result_data.get("tool_calls", [])] or None,
         )
-
-        return AgentResult[str](
-            content=content, history=result_data["history"], metadata=metadata, tool_calls=tool_calls
-        )
-
-    def _run_tasks(self, tasks: list[dict]) -> list[AgentResult[str]]:
-        """
-        Executes multiple tasks sequentially by invoking the corresponding remote agents.
-
-        Args:
-            tasks: A list of task dictionaries each containing 'agent_url' and 'parameters'.
-
-        Returns:
-            A list of results returned from each invoked agent.
-        """
-        results = [self._run_task(task["agent_url"], task["parameters"]) for task in tasks]
-
-        return results
 
     def _list_remote_agents(self) -> list[dict]:
         """
@@ -113,9 +169,8 @@ class AgentOrchestrator:
             A list of dictionaries describing each remote agent's name, URL,
             description, and skills.
         """
-        agent_list = []
-        for url, data in self._remote_agents.items():
-            agent_info = {
+        return [
+            {
                 "name": data.get("name"),
                 "agent_url": url,
                 "description": data.get("description"),
@@ -124,26 +179,5 @@ class AgentOrchestrator:
                     for skill in data.get("skills", [])
                 ],
             }
-            agent_list.append(agent_info)
-        return agent_list
-
-    async def run(self, message: str) -> str:
-        """
-        Runs the full orchestration pipeline for a given message:
-        1. Routes the message to relevant agents and generates tasks.
-        2. Executes all tasks and collects their results.
-        3. Summarizes the aggregated results into a final response using the LLM.
-
-        Args:
-            message: The user query or input message.
-
-        Returns:
-            The final summarized response generated by the LLM.
-        """
-        tasks = await self._create_tasks(message=message)
-        results = self._run_tasks(tasks)
-
-        input_data = SummarizeAgentResultsInput(message=message, agent_results=results)
-        prompt = SummarizeAgentResultsPrompt(input_data=input_data)
-        response = await self._llm.generate(prompt)
-        return response
+            for url, data in self._remote_agents.items()
+        ]

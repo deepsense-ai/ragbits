@@ -53,7 +53,7 @@ async def main() -> None:
     host.add_remote_agent("127.0.0.1", "8001")
 
     response = await host.run("I want to travel from New York to Paris. Find me hotel and flight please.")
-    print(response)
+    print(response.content)
 
 
 if __name__ == "__main__":
