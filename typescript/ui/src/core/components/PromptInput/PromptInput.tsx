@@ -9,17 +9,24 @@ import {
   useRef,
   ReactNode,
   useState,
+  useEffect,
 } from "react";
 
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
+import { useCaretLogicalLineDetection } from "../../utils/useTextAreaCaretDetection";
+import { ChatMessage } from "../../../types/history";
+import { MessageRole } from "@ragbits/api-client-react";
 
 interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
+  onArrowUp?: (isFirstLine: boolean) => void;
+  onArrowDown?: (isLastLine: boolean) => void;
   isLoading: boolean;
   followupMessages?: string[] | null;
+  history?: ChatMessage[];
   formProps?: FormProps;
   inputProps?: TextAreaProps;
   sendButtonProps?: ButtonProps;
@@ -37,17 +44,49 @@ const PromptInput = ({
   sendButtonProps,
   customSendIcon,
   customStopIcon,
+  history,
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
+  const [quickMessages, setQuickMessages] = useState<string[]>([]);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const { isCaretInFirstLine, isCaretInLastLine } =
+    useCaretLogicalLineDetection();
+  const quickMessageIndex = useRef(Math.max(quickMessages.length - 1, 0));
 
-  const handleSubmit = useCallback(() => {
-    if (!message && !isLoading) return;
+  const setQuickMessage = useCallback(() => {
+    const quickMessage = quickMessages[quickMessageIndex.current];
 
-    submit(message);
-    setMessage("");
-    textAreaRef?.current?.focus();
-  }, [isLoading, submit, message]);
+    setMessage(quickMessage);
+  }, [quickMessages]);
+
+  const onArrowUp = useCallback(() => {
+    quickMessageIndex.current = Math.max(quickMessageIndex.current - 1, 0);
+    setQuickMessage();
+  }, [setQuickMessage]);
+
+  const onArrowDown = useCallback(() => {
+    quickMessageIndex.current = Math.min(
+      quickMessages.length - 1,
+      quickMessageIndex.current + 1,
+    );
+    setQuickMessage();
+  }, [quickMessages, setQuickMessage]);
+
+  const handleSubmit = useCallback(
+    (text?: string) => {
+      if (!message && !isLoading && text) return;
+
+      submit(text ?? message);
+      setQuickMessages((quickMessages) => {
+        const newQuickMessages = quickMessages.slice(0, -1);
+        newQuickMessages.push(text ?? message);
+        return newQuickMessages;
+      });
+      setMessage("");
+      textAreaRef?.current?.focus();
+    },
+    [isLoading, submit, message],
+  );
 
   const onSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
@@ -60,13 +99,39 @@ const PromptInput = ({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
+      if (!textAreaRef.current) return;
+
+      if (e.key === "ArrowUp") {
+        if (!isCaretInFirstLine(textAreaRef.current)) {
+          return;
+        }
+
+        e.preventDefault();
+        onArrowUp();
+      }
+
+      if (e.key === "ArrowDown") {
+        if (!isCaretInLastLine(textAreaRef.current)) {
+          return;
+        }
+
+        e.preventDefault();
+        onArrowDown();
+      }
+
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
 
         handleSubmit();
       }
     },
-    [handleSubmit],
+    [
+      handleSubmit,
+      isCaretInFirstLine,
+      isCaretInLastLine,
+      onArrowDown,
+      onArrowUp,
+    ],
   );
 
   const handleStopAnswering = useCallback(() => {
@@ -74,12 +139,36 @@ const PromptInput = ({
     textAreaRef?.current?.focus();
   }, [stopAnswering]);
 
+  const handleValueChange = useCallback((value: string) => {
+    setQuickMessages((quickMessages) => {
+      const newQuickMessages = [...quickMessages];
+      newQuickMessages[quickMessageIndex.current] = value;
+
+      return newQuickMessages;
+    });
+    setMessage(value);
+  }, []);
+
+  useEffect(() => {
+    const newQuickMessages = (history ?? [])
+      .filter((m) => m.role === MessageRole.USER)
+      .map((m) => m.content);
+
+    if (quickMessages.length - 1 === newQuickMessages.length) {
+      return;
+    }
+
+    newQuickMessages.push("");
+    quickMessageIndex.current = Math.max(newQuickMessages.length - 1, 0);
+    setQuickMessages(newQuickMessages);
+  }, [history, quickMessages.length]);
+
   return (
     <div className="rounded-medium">
       <HorizontalActions
         isVisible={!!followupMessages}
         actions={followupMessages ?? []}
-        sendMessage={submit}
+        sendMessage={handleSubmit}
       />
 
       <Form
@@ -92,7 +181,7 @@ const PromptInput = ({
           ref={textAreaRef}
           aria-label="Message to the chat"
           classNames={{
-            input: "text-medium",
+            input: "text-medium text-default-foreground",
             inputWrapper:
               "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
           }}
@@ -103,7 +192,7 @@ const PromptInput = ({
           minRows={1}
           value={message}
           onKeyDown={handleKeyDown}
-          onValueChange={setMessage}
+          onValueChange={handleValueChange}
           {...inputProps}
         />
         <Button
