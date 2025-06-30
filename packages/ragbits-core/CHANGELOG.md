@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Lazy-load litellm module (#665)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)
 - Fix parsing functions with no arguments in convert_function_to_function_schema (#568)
