@@ -41,8 +41,7 @@ class OtelMetricHandler(MetricHandler):
         elif metric_type == MetricType.COUNTER:
             return self._meter.create_counter(name=name, unit=unit, description=description)
         elif metric_type == MetricType.GAUGE:
-            # For demonstration, create an ObservableGauge with no callback (user must set callback later)
-            return self._meter.create_observable_gauge(name=name, unit=unit, description=description, callbacks=[])
+            return self._meter.create_gauge(name=name, unit=unit, description=description)
         else:
             raise ValueError(f"Unsupported metric type: {metric_type}")
 
