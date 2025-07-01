@@ -17,10 +17,11 @@ from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Message
-from ragbits.core.audit.metrics import record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
 
-from .metrics import ChatMetric
+from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
 
@@ -154,13 +155,16 @@ class RagbitsAPI:
         start_time = time.time()
 
         # Track API request
-        record(ChatMetric.API_REQUEST_COUNT, 1, endpoint="/api/chat", method="POST")
+        record_metric(
+            ChatCounterMetric.API_REQUEST_COUNT, 1, metric_type=MetricType.COUNTER, endpoint="/api/chat", method="POST"
+        )
 
         try:
             if not self.chat_interface:
-                record(
-                    ChatMetric.API_ERROR_COUNT,
+                record_metric(
+                    ChatCounterMetric.API_ERROR_COUNT,
                     1,
+                    metric_type=MetricType.COUNTER,
                     endpoint="/api/chat",
                     status_code="500",
                     error_type="chat_interface_not_initialized",
@@ -176,9 +180,10 @@ class RagbitsAPI:
                 signature = request.context["signature"]
                 if not ChatInterface.verify_state(state, signature):
                     logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
-                    record(
-                        ChatMetric.API_ERROR_COUNT,
+                    record_metric(
+                        ChatCounterMetric.API_ERROR_COUNT,
                         1,
+                        metric_type=MetricType.COUNTER,
                         endpoint="/api/chat",
                         status_code="400",
                         error_type="invalid_state_signature",
@@ -237,17 +242,32 @@ class RagbitsAPI:
 
             # Track successful request duration
             duration = time.time() - start_time
-            record(ChatMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="success")
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/chat",
+                method="POST",
+                status="success",
+            )
 
             return streaming_response
 
         except HTTPException as e:
             # Track HTTP errors
             duration = time.time() - start_time
-            record(ChatMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="error")
-            record(
-                ChatMetric.API_ERROR_COUNT,
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/chat",
+                method="POST",
+                status="error",
+            )
+            record_metric(
+                ChatCounterMetric.API_ERROR_COUNT,
                 1,
+                metric_type=MetricType.COUNTER,
                 endpoint="/api/chat",
                 status_code=str(e.status_code),
                 error_type="http_exception",
@@ -256,8 +276,22 @@ class RagbitsAPI:
         except Exception as e:
             # Track unexpected errors
             duration = time.time() - start_time
-            record(ChatMetric.API_REQUEST_DURATION, duration, endpoint="/api/chat", method="POST", status="error")
-            record(ChatMetric.API_ERROR_COUNT, 1, endpoint="/api/chat", status_code="500", error_type=type(e).__name__)
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/chat",
+                method="POST",
+                status="error",
+            )
+            record_metric(
+                ChatCounterMetric.API_ERROR_COUNT,
+                1,
+                metric_type=MetricType.COUNTER,
+                endpoint="/api/chat",
+                status_code="500",
+                error_type=type(e).__name__,
+            )
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
     async def _handle_feedback(self, request: FeedbackRequest) -> JSONResponse:
@@ -265,13 +299,20 @@ class RagbitsAPI:
         start_time = time.time()
 
         # Track API request
-        record(ChatMetric.API_REQUEST_COUNT, 1, endpoint="/api/feedback", method="POST")
+        record_metric(
+            ChatCounterMetric.API_REQUEST_COUNT,
+            1,
+            metric_type=MetricType.COUNTER,
+            endpoint="/api/feedback",
+            method="POST",
+        )
 
         try:
             if not self.chat_interface:
-                record(
-                    ChatMetric.API_ERROR_COUNT,
+                record_metric(
+                    ChatCounterMetric.API_ERROR_COUNT,
                     1,
+                    metric_type=MetricType.COUNTER,
                     endpoint="/api/feedback",
                     status_code="500",
                     error_type="chat_interface_not_initialized",
@@ -286,9 +327,10 @@ class RagbitsAPI:
 
             # Track successful request duration
             duration = time.time() - start_time
-            record(
-                ChatMetric.API_REQUEST_DURATION,
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
                 duration,
+                metric_type=MetricType.HISTOGRAM,
                 endpoint="/api/feedback",
                 method="POST",
                 status="success",
@@ -299,10 +341,18 @@ class RagbitsAPI:
         except HTTPException as e:
             # Track HTTP errors
             duration = time.time() - start_time
-            record(ChatMetric.API_REQUEST_DURATION, duration, endpoint="/api/feedback", method="POST", status="error")
-            record(
-                ChatMetric.API_ERROR_COUNT,
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/feedback",
+                method="POST",
+                status="error",
+            )
+            record_metric(
+                ChatCounterMetric.API_ERROR_COUNT,
                 1,
+                metric_type=MetricType.COUNTER,
                 endpoint="/api/feedback",
                 status_code=str(e.status_code),
                 error_type="http_exception",
@@ -311,10 +361,18 @@ class RagbitsAPI:
         except Exception as e:
             # Track unexpected errors
             duration = time.time() - start_time
-            record(ChatMetric.API_REQUEST_DURATION, duration, endpoint="/api/feedback", method="POST", status="error")
-            record(
-                ChatMetric.API_ERROR_COUNT,
+            record_metric(
+                ChatHistogramMetric.API_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/feedback",
+                method="POST",
+                status="error",
+            )
+            record_metric(
+                ChatCounterMetric.API_ERROR_COUNT,
                 1,
+                metric_type=MetricType.COUNTER,
                 endpoint="/api/feedback",
                 status_code="500",
                 error_type=type(e).__name__,
@@ -350,8 +408,18 @@ class RagbitsAPI:
         finally:
             # Track streaming metrics
             stream_duration = time.time() - stream_start_time
-            record(ChatMetric.API_STREAM_DURATION, stream_duration, endpoint="/api/chat")
-            record(ChatMetric.API_STREAM_CHUNK_COUNT, chunk_count, endpoint="/api/chat")
+            record_metric(
+                ChatHistogramMetric.API_STREAM_DURATION,
+                stream_duration,
+                metric_type=MetricType.HISTOGRAM,
+                endpoint="/api/chat",
+            )
+            record_metric(
+                ChatCounterMetric.API_STREAM_CHUNK_COUNT,
+                chunk_count,
+                metric_type=MetricType.COUNTER,
+                endpoint="/api/chat",
+            )
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

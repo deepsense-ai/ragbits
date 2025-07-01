@@ -17,6 +17,7 @@
 - Fix followup messages not sending (#680)
 - Improve typing of TypeScript libraries (#681)
 - fix: fixed tracing in ragbits-chat
+- feat: support all metric types
 
 ## 1.0.0 (2025-06-04)
 
