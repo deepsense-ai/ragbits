@@ -58,17 +58,17 @@ To enable this, simply set `keep_history=True` when constructing the agent. The 
 The following example demonstrates how an agent with history enabled maintains context between interactions:
 
 ```python
-async def main() -> None:  
-    """Run the weather agent with conversation history."""  
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)  
-    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather], keep_history=True)  
+async def main() -> None:
+    """Run the weather agent with conversation history."""
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather], keep_history=True)
 
-    await agent.run(WeatherPromptInput(location="Paris"))  
+    await agent.run(WeatherPromptInput(location="Paris"))
 
-    # Follow-up question about Tokyo - the agent retains weather context  
-    response = await agent.run("What about Tokyo?")  
-    print(response) 
-``` 
+    # Follow-up question about Tokyo - the agent retains weather context
+    response = await agent.run("What about Tokyo?")
+    print(response)
+```
 
 In this scenario, the agent recognizes that the follow-up question "What about Tokyo?" refers to weather information due to the preserved conversation history. The expected output would be an AgentResult containing the response:
 
