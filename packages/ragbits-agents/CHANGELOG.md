@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add support for MCP servers (#632)
 - Add agent support for string prompts (#631)
 - Add tools to Agent interface (#568)
 - Update Agent run method docstring (#565)
