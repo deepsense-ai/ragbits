@@ -5,13 +5,25 @@ import requests
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentOptions, AgentResult, ToolCallResult
-from ragbits.agents.a2a.routing_prompt import RoutingPrompt, RoutingPromptInput
-from ragbits.agents.a2a.summarize_results_prompt import SummarizeAgentResultsInput, SummarizeAgentResultsPrompt
 from ragbits.core.llms import LiteLLM
 from ragbits.core.options import Options
-from ragbits.core.prompt.base import ChatFormat
+from ragbits.core.prompt import ChatFormat, Prompt
 
 OptionsT = TypeVar("OptionsT", bound=Options)
+
+
+class RoutingPromptInput(BaseModel):
+    """Represents a routing prompt input."""
+
+    message: str
+    agents: list
+
+
+class ResultsSumarizationPromptInput(BaseModel):
+    """Represents a results summarization prompt input."""
+
+    message: str
+    agent_results: list
 
 
 class RemoteAgentTask(BaseModel):
@@ -30,6 +42,8 @@ class AgentOrchestrator(Agent):
     def __init__(
         self,
         llm: LiteLLM,
+        routing_prompt: type[Prompt[RoutingPromptInput, list[dict]]],
+        results_summarization_prompt: type[Prompt[ResultsSumarizationPromptInput, list]],
         timeout: float = 20.0,
         *,
         history: ChatFormat | None = None,
@@ -41,6 +55,8 @@ class AgentOrchestrator(Agent):
 
         Args:
             llm: The LLM to run the agent.
+            routing_prompt: Prompt template for routing messages to agents.
+            results_summarization_prompt: Prompt template for summarizing agent results.
             timeout: Timeout in seconds for the HTTP request.
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
@@ -57,7 +73,12 @@ class AgentOrchestrator(Agent):
         )
 
         self._timeout = timeout
+
+        self._routing_prompt = routing_prompt
+        self._results_summarization_prompt = results_summarization_prompt
+
         self._remote_agents: dict[str, dict] = {}
+
         self._current_tasks: list[RemoteAgentTask] = []
         self._current_results: list[AgentResult] = []
 
@@ -86,7 +107,7 @@ class AgentOrchestrator(Agent):
             JSON string of created tasks
         """
         prompt_input = RoutingPromptInput(message=message, agents=self._list_remote_agents())
-        prompt = RoutingPrompt(prompt_input)
+        prompt = self._routing_prompt(prompt_input)
         response = await self.llm.generate(prompt)
 
         tasks = json.loads(response)
@@ -142,8 +163,8 @@ class AgentOrchestrator(Agent):
         if not self._current_results:
             return "No results to summarize"
 
-        input_data = SummarizeAgentResultsInput(message=message, agent_results=self._current_results)
-        prompt = SummarizeAgentResultsPrompt(input_data=input_data)
+        input_data = ResultsSumarizationPromptInput(message=message, agent_results=self._current_results)
+        prompt = self._results_summarization_prompt(input_data=input_data)
         return await self.llm.generate(prompt)
 
     def _execute_single_task(self, agent_url: str, params: dict) -> AgentResult:

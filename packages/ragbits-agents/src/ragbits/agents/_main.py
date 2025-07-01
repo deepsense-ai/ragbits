@@ -289,12 +289,12 @@ class Agent(
             url=f"{protocol}://{host}:{port}",
             defaultInputModes=default_input_modes or ["text"],
             defaultOutputModes=default_output_modes or ["text"],
-            skills=skills or [self.extract_agent_skill(f) for f in self.tools_mapping.values()],
+            skills=skills or [self._extract_agent_skill(f) for f in self.tools_mapping.values()],
             capabilities=capabilities or AgentCapabilities(),
         )
 
     @staticmethod
-    def extract_agent_skill(func: Callable) -> AgentSkill:
+    def _extract_agent_skill(func: Callable) -> AgentSkill:
         """
         Extracts an AgentSkill description from a given callable.
         Uses the function name and its docstring to populate the skill's metadata.
