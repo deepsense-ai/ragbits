@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Integrate Weaviate vector store (#347)
 - Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)

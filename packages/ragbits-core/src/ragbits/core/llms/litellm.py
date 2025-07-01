@@ -337,18 +337,28 @@ class LiteLLM(LLM[LiteLLMOptions]):
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or litellm
 
+        # Prepare kwargs for the completion call
+        completion_kwargs = {
+            "messages": conversation,
+            "model": self.model_name,
+            "response_format": response_format,
+            "tools": tools,
+            "stream": stream,
+            **options.dict(),
+        }
+
+        # Only add these parameters if we're not using a router
+        # Router instances have these configured at initialization time
+        if self.router is None:
+            if self.api_base is not None:
+                completion_kwargs["base_url"] = self.api_base
+            if self.api_key is not None:
+                completion_kwargs["api_key"] = self.api_key
+            if self.api_version is not None:
+                completion_kwargs["api_version"] = self.api_version
+
         try:
-            response = await entrypoint.acompletion(
-                messages=conversation,
-                model=self.model_name,
-                base_url=self.api_base,
-                api_key=self.api_key,
-                api_version=self.api_version,
-                response_format=response_format,
-                tools=tools,
-                stream=stream,
-                **options.dict(),
-            )
+            response = await entrypoint.acompletion(**completion_kwargs)
         except litellm.openai.APIConnectionError as exc:
             raise LLMConnectionError() from exc
         except litellm.openai.APIStatusError as exc:
