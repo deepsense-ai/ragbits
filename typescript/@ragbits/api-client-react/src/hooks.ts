@@ -5,28 +5,29 @@ import type {
     TypedRequestOptions,
     EndpointDefinition,
     BaseApiEndpoints,
-    BaseStreamingEndpoints,
     EndpointRequest,
+    BaseStreamingEndpoints,
 } from '@ragbits/api-client'
 import type { RagbitsCallResult, RagbitsStreamResult } from './types'
 import { useRagbitsContext } from './RagbitsProvider'
 
 /**
  * Hook for making API calls to Ragbits endpoints
- * - Only predefined routes are allowed
- * - Response type can be overridden with explicit type parameter
+ * - Supports any endpoints by providing `Endpoints` generic argument
  * @param endpoint - The predefined API endpoint
  * @param defaultOptions - Default options for the API call
  */
 export function useRagbitsCall<
-    Url extends keyof Endpoints extends string ? keyof Endpoints : never,
-    Endpoints extends Record<string, EndpointDefinition> = BaseApiEndpoints,
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseApiEndpoints,
+    URL extends keyof Endpoints = keyof Endpoints,
 >(
-    endpoint: Url,
-    defaultOptions?: TypedRequestOptions<Url, Endpoints>
-): RagbitsCallResult<Url, Endpoints, Error> {
+    endpoint: URL,
+    defaultOptions?: TypedRequestOptions<URL, Endpoints>
+): RagbitsCallResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
-    const [data, setData] = useState<EndpointResponse<Url, Endpoints> | null>(
+    const [data, setData] = useState<EndpointResponse<URL, Endpoints> | null>(
         null
     )
     const [error, setError] = useState<Error | null>(null)
@@ -45,8 +46,8 @@ export function useRagbitsCall<
 
     const call = useCallback(
         async (
-            options: TypedRequestOptions<Url, Endpoints> = {}
-        ): Promise<EndpointResponse<Url, Endpoints>> => {
+            options: TypedRequestOptions<URL, Endpoints> = {}
+        ): Promise<EndpointResponse<URL, Endpoints>> => {
             // Abort any existing request only if there's one in progress
             if (abortControllerRef.current && isLoading) {
                 abortControllerRef.current.abort()
@@ -75,7 +76,7 @@ export function useRagbitsCall<
                 }
 
                 // Now we can use the properly typed makeRequest without casting
-                const result = await client.makeRequest<Url, Endpoints>(
+                const result = await client.makeRequest<Endpoints>(
                     endpoint,
                     requestOptions
                 )
@@ -128,17 +129,15 @@ export function useRagbitsCall<
 
 /**
  * Hook for handling streaming responses from Ragbits endpoints
- * - Only predefined streaming routes are allowed
- * - Response type can be overridden with explicit type parameter
+ * - Supports any streaming endpoints by providing `Endpoints` generic argument
  * @param endpoint - The predefined streaming endpoint
  */
 export function useRagbitsStream<
-    Url extends keyof Endpoints extends string ? keyof Endpoints : never,
-    Endpoints extends Record<
-        string,
-        EndpointDefinition
-    > = BaseStreamingEndpoints,
->(endpoint: Url): RagbitsStreamResult<Url, Endpoints, Error> {
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseStreamingEndpoints,
+    URL extends keyof Endpoints = keyof Endpoints,
+>(endpoint: URL): RagbitsStreamResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [isStreaming, setIsStreaming] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -156,8 +155,8 @@ export function useRagbitsStream<
 
     const stream = useCallback(
         (
-            data: EndpointRequest<Url, Endpoints>,
-            callbacks: StreamCallbacks<EndpointResponse<Url, Endpoints>, string>
+            data: EndpointRequest<URL, Endpoints>,
+            callbacks: StreamCallbacks<EndpointResponse<URL, Endpoints>, string>
         ): (() => void) => {
             // Abort any existing stream only if there's one in progress
             if (abortControllerRef.current && isStreaming) {

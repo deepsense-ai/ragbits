@@ -191,7 +191,8 @@ export interface StreamCallbacks<T, E = Error> {
     onClose?: () => void | Promise<void>
 }
 
-export interface EndpointDefinition<Req = unknown, Res = unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface EndpointDefinition<Req = any, Res = any> {
     method: string
     request: Req
     response: Res
@@ -200,7 +201,7 @@ export interface EndpointDefinition<Req = unknown, Res = unknown> {
 /**
  * Base predefined API endpoint definitions with their request/response types
  */
-export type BaseApiEndpoints = {
+export interface BaseApiEndpoints {
     '/api/config': EndpointDefinition<never, ConfigResponse>
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
 }
@@ -208,49 +209,52 @@ export type BaseApiEndpoints = {
 /**
  * Streaming API endpoint definitions with their request/stream response types
  */
-export type BaseStreamingEndpoints = {
+export interface BaseStreamingEndpoints {
     '/api/chat': EndpointDefinition<ChatRequest, TypedChatResponse>
 }
 
 /**
  * Extract endpoint paths as a union type
  */
-export type EndpointPath<Endpoints extends Record<string, EndpointDefinition>> =
-    keyof Endpoints
+export type EndpointPath<
+    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+> = keyof Endpoints
 
 /**
  * Extract request type for a specific API endpoint
  */
 export type EndpointRequest<
-    Url extends keyof Endpoints,
-    Endpoints extends Record<string, EndpointDefinition>,
-> = Endpoints[Url]['request']
+    URL extends keyof Endpoints,
+    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+> = Endpoints[URL]['request']
 
 /**
  * Extract response type for a specific API endpoint
  */
 export type EndpointResponse<
-    Url extends keyof Endpoints,
-    Endpoints extends Record<string, EndpointDefinition>,
-> = Endpoints[Url]['response']
+    URL extends keyof Endpoints,
+    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+> = Endpoints[URL]['response']
 
 /**
  * Extract HTTP method for a specific API endpoint
  */
 export type EndpointMethod<
-    Url extends keyof Endpoints,
-    Endpoints extends Record<string, EndpointDefinition>,
-> = Endpoints[Url]['method']
+    URL extends keyof Endpoints,
+    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+> = Endpoints[URL]['method']
 
 /**
  * Generic request options for API endpoints with typed methods and body
  */
 export interface TypedRequestOptions<
-    T extends keyof E,
-    E extends Record<string, EndpointDefinition>,
+    URL extends keyof Endpoints,
+    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
 > {
-    method?: E[T]['method']
-    body?: E[T]['request'] extends never ? undefined : E[T]['request']
+    method?: Endpoints[URL]['method']
+    body?: Endpoints[URL]['request'] extends never
+        ? undefined
+        : Endpoints[URL]['request']
     headers?: Record<string, string>
     signal?: AbortSignal
 }
