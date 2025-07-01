@@ -985,7 +985,7 @@ wheels = [
 
 [[package]]
 name = "distilabel"
-version = "1.5.3"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "datasets" },
@@ -1000,14 +1000,13 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
     { name = "scipy" },
-    { name = "setuptools" },
     { name = "tblib" },
     { name = "typer" },
     { name = "universal-pathlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/48/05731a23722c8a5679be32d0246fb9f76fb204aae7f1453b41fec617f187/distilabel-1.5.3.tar.gz", hash = "sha256:1c45cb8fede34339427923d463348867b78bddb4f8db9f9204f03398e8e8f3f0", size = 6750597, upload-time = "2025-01-28T10:08:40.08Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/3b/094ace29aead425bcdc1199e7a12cf4b833f1e85958e9782f8f3388b84d8/distilabel-1.5.0.tar.gz", hash = "sha256:328361cee3cf633d98b0ab6187ee8dba7eb126e49dc1c0981622615882c74419", size = 6750643, upload-time = "2025-01-17T08:28:43.819Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/f0/0c164c0dd56b14014872aa4854c37997a1d0fae5f17503e4b6873f51850c/distilabel-1.5.3-py3-none-any.whl", hash = "sha256:e3c10ccdf1e4fc45e81bc19ab7da2b248bc57fad277e14eac0976f25641c77b3", size = 511212, upload-time = "2025-01-28T10:08:38.18Z" },
+    { url = "https://files.pythonhosted.org/packages/21/ab/333f94700a345fe8b9c3998959d8c7da6383527673de6127c03c7679e33c/distilabel-1.5.0-py3-none-any.whl", hash = "sha256:ad60d5cc9bb98d01cb3f208bd1347d1caec2eed03b8b4cfc8d3246f33ac8da2f", size = 510653, upload-time = "2025-01-17T08:28:41.619Z" },
 ]
 
 [[package]]

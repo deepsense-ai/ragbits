@@ -165,7 +165,7 @@ async def main() -> None:
     """
 
     async def run() -> AsyncGenerator:
-        for _ in range(5):
+        while True:
             await process_request()
             yield
 
