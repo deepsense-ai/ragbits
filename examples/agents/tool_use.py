@@ -1,7 +1,7 @@
 """
 Ragbits Agents Example: Tool use
 
-This example shows how to use agent with tools.
+This example demonstrates how to use agent with tools.
 We provide a single method as a tool to the agent and expect it to call it when answering query.
 
 To run the script, execute the following command:

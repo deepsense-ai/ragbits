@@ -5,24 +5,14 @@ This example demonstrates how to use the `DocumentSearch` class to search for do
 We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
 the embeddings.
 
-The script performs the following steps:
-
-    1. Create a list of documents.
-    2. Initialize the `LiteLLMEmbedder` class with the OpenAI `text-embedding-3-small` embedding model.
-    3. Initialize the `WeaviateVectorStore` class with a `WeaviateAsyncClient` local instance and an index name.
-    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
-    5. Ingest the documents into the `DocumentSearch` instance.
-    6. List all documents in the vector store.
-    7. Search for documents using a query.
-    8. Print the list of all documents and the search results.
-
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/document-search/weaviate_db.py
+    uv run examples/document-search/weaviate_.py
     ```
 
-Requires local Weaviate instance to be running, instructions how to set it up can be found here: https://weaviate.io/developers/weaviate/quickstart/local
+Requires local Weaviate instance to be running, instructions how to set it up can be found here:
+https://weaviate.io/developers/weaviate/quickstart/local
 """
 
 # /// script

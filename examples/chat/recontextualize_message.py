@@ -1,20 +1,26 @@
 """
-Ragbits Conversations Example: Recontextualize Last Message
+Ragbits Chat Example: Recontextualize Last Message
 
-This example demonstrates how to use the `StandaloneMessageCompressor` compressor to recontextualize
-the last message in a conversation history.
+This example demonstrates how to use the `StandaloneMessageCompressor` compressor
+to recontextualize the last message in a conversation history.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/chat/recontextualize_message.py
+    ```
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-conversations",
+#     "ragbits-chat",
 # ]
 # ///
 
 import asyncio
 
-from ragbits.conversations.history.compressors.llm import StandaloneMessageCompressor
+from ragbits.chat.history.compressors.llm import StandaloneMessageCompressor
 from ragbits.core.llms.litellm import LiteLLM
 from ragbits.core.prompt import ChatFormat
 
