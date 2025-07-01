@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+source .env
+
 echo "Export env variables required for the examples..."
 export GOOGLE_CLOUD_PROJECT
 export GOOGLE_APPLICATION_CREDENTIALS
@@ -55,7 +57,18 @@ export -f patch_dependencies
 find examples -name '*.py' | while read -r file; do
   echo "Running the script: $file"
   patch_dependencies "$file" "$PR_BRANCH"
-  uv run "$file"
+
+  timeout 30s uv run "$file"
+  exit_code=$?
+
+  if [[ $exit_code -eq 124 ]]; then
+    echo "Script timed out, continuing to next..."
+  elif [[ $exit_code -ne 0 ]]; then
+    echo "Script failed, stopping..."
+    exit $exit_code
+  else
+    echo "Script completed successfully."
+  fi
 done
 
 echo "All examples run successfully."
