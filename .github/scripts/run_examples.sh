@@ -13,7 +13,7 @@ export ANTHROPIC_API_KEY
 export LOGFIRE_TOKEN
 
 GIT_URL_TEMPLATE="git+https://github.com/deepsense-ai/ragbits.git@%s#subdirectory=packages/%s"
-PR_BRANCH="${PR_BRANCH:-sb/test-examples-in-cicd}"
+PR_BRANCH="${PR_BRANCH:-main}"
 
 patch_dependencies() {
   local file="$1"
@@ -58,8 +58,10 @@ find examples -name '*.py' | while read -r file; do
   echo "Running the script: $file"
   patch_dependencies "$file" "$PR_BRANCH"
 
+  set +e
   timeout 30s uv run "$file"
   exit_code=$?
+  set -e
 
   if [[ $exit_code -eq 124 ]]; then
     echo "Script timed out, continuing to next..."
