@@ -935,7 +935,7 @@ wheels = [
 
 [[package]]
 name = "distilabel"
-version = "1.4.1"
+version = "1.5.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "datasets" },
@@ -949,13 +949,14 @@ dependencies = [
     { name = "pydantic" },
     { name = "rich" },
     { name = "scipy" },
+    { name = "setuptools" },
     { name = "tblib" },
     { name = "typer" },
     { name = "universal-pathlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/1b/331aeeda851a888e8bff84b8074cb1301909b06e509140a85a23dd1345cf/distilabel-1.4.1.tar.gz", hash = "sha256:0c373be234e8f2982ec7f940d9a95585b15306b6ab5315f5a6a45214d8f34006", size = 6420123, upload-time = "2024-10-16T07:30:48.242Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fc/48/05731a23722c8a5679be32d0246fb9f76fb204aae7f1453b41fec617f187/distilabel-1.5.3.tar.gz", hash = "sha256:1c45cb8fede34339427923d463348867b78bddb4f8db9f9204f03398e8e8f3f0", size = 6750597, upload-time = "2025-01-28T10:08:40.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/b3/62d07a936cd9c3039d811681c33b9fc898e48219cf22c9186954e2575365/distilabel-1.4.1-py3-none-any.whl", hash = "sha256:4643da7f3abae86a330d86d1498443ea56978e462e21ae3d106a4c6013386965", size = 442152, upload-time = "2024-10-16T07:30:45.712Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/f0/0c164c0dd56b14014872aa4854c37997a1d0fae5f17503e4b6873f51850c/distilabel-1.5.3-py3-none-any.whl", hash = "sha256:e3c10ccdf1e4fc45e81bc19ab7da2b248bc57fad277e14eac0976f25641c77b3", size = 511212, upload-time = "2025-01-28T10:08:38.18Z" },
 ]
 
 [[package]]
@@ -4819,7 +4820,7 @@ dev = [
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
     { name = "datasets", specifier = ">=3.0.1,<4.0.0" },
-    { name = "distilabel", specifier = ">=1.4.1,<1.5.0" },
+    { name = "distilabel", specifier = ">=1.5.0,<2.0.0" },
     { name = "hydra-core", specifier = ">=1.3.2,<2.0.0" },
     { name = "neptune", extras = ["optuna"], specifier = ">=1.12.0,<2.0.0" },
     { name = "optuna", specifier = ">=4.0.0,<5.0.0" },
