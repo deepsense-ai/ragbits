@@ -1,12 +1,12 @@
 import { useState, useCallback, useRef } from 'react'
 import type {
     StreamCallbacks,
-    ApiEndpointPath,
-    ApiEndpointResponse,
-    TypedApiRequestOptions,
-    StreamingEndpointPath,
-    StreamingEndpointStream,
-    StreamingEndpointRequest,
+    EndpointResponse,
+    TypedRequestOptions,
+    EndpointDefinition,
+    BaseApiEndpoints,
+    BaseStreamingEndpoints,
+    EndpointRequest,
 } from '@ragbits/api-client'
 import type { RagbitsCallResult, RagbitsStreamResult } from './types'
 import { useRagbitsContext } from './RagbitsProvider'
@@ -19,14 +19,16 @@ import { useRagbitsContext } from './RagbitsProvider'
  * @param defaultOptions - Default options for the API call
  */
 export function useRagbitsCall<
-    TEndpoint extends ApiEndpointPath,
-    TResponse = ApiEndpointResponse<TEndpoint>,
+    Url extends keyof Endpoints extends string ? keyof Endpoints : never,
+    Endpoints extends Record<string, EndpointDefinition> = BaseApiEndpoints,
 >(
-    endpoint: TEndpoint,
-    defaultOptions?: TypedApiRequestOptions<TEndpoint>
-): RagbitsCallResult<TResponse, Error, TEndpoint> {
+    endpoint: Url,
+    defaultOptions?: TypedRequestOptions<Url, Endpoints>
+): RagbitsCallResult<Url, Endpoints, Error> {
     const { client } = useRagbitsContext()
-    const [data, setData] = useState<TResponse | null>(null)
+    const [data, setData] = useState<EndpointResponse<Url, Endpoints> | null>(
+        null
+    )
     const [error, setError] = useState<Error | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -43,8 +45,8 @@ export function useRagbitsCall<
 
     const call = useCallback(
         async (
-            options: TypedApiRequestOptions<TEndpoint> = {}
-        ): Promise<TResponse> => {
+            options: TypedRequestOptions<Url, Endpoints> = {}
+        ): Promise<EndpointResponse<Url, Endpoints>> => {
             // Abort any existing request only if there's one in progress
             if (abortControllerRef.current && isLoading) {
                 abortControllerRef.current.abort()
@@ -73,18 +75,18 @@ export function useRagbitsCall<
                 }
 
                 // Now we can use the properly typed makeRequest without casting
-                const result = await client.makeRequest(
+                const result = await client.makeRequest<Url, Endpoints>(
                     endpoint,
                     requestOptions
                 )
 
                 // Only update state if request wasn't aborted
                 if (!abortController.signal.aborted) {
-                    setData(result as TResponse)
+                    setData(result)
                     abortControllerRef.current = null
                 }
 
-                return result as TResponse
+                return result
             } catch (err) {
                 // Only update error state if request wasn't aborted
                 if (!abortController.signal.aborted) {
@@ -130,9 +132,13 @@ export function useRagbitsCall<
  * - Response type can be overridden with explicit type parameter
  * @param endpoint - The predefined streaming endpoint
  */
-export function useRagbitsStream<TEndpoint extends StreamingEndpointPath>(
-    endpoint: TEndpoint
-): RagbitsStreamResult<Error, TEndpoint> {
+export function useRagbitsStream<
+    Url extends keyof Endpoints extends string ? keyof Endpoints : never,
+    Endpoints extends Record<
+        string,
+        EndpointDefinition
+    > = BaseStreamingEndpoints,
+>(endpoint: Url): RagbitsStreamResult<Url, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [isStreaming, setIsStreaming] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -150,11 +156,8 @@ export function useRagbitsStream<TEndpoint extends StreamingEndpointPath>(
 
     const stream = useCallback(
         (
-            data: StreamingEndpointRequest<TEndpoint>,
-            callbacks: StreamCallbacks<
-                StreamingEndpointStream<TEndpoint>,
-                string
-            >
+            data: EndpointRequest<Url, Endpoints>,
+            callbacks: StreamCallbacks<EndpointResponse<Url, Endpoints>, string>
         ): (() => void) => {
             // Abort any existing stream only if there's one in progress
             if (abortControllerRef.current && isStreaming) {

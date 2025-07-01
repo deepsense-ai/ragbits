@@ -1,12 +1,12 @@
 import type {
     ClientConfig,
     StreamCallbacks,
-    ApiEndpointPath,
-    ApiEndpointResponse,
-    TypedApiRequestOptions,
-    StreamingEndpointPath,
-    StreamingEndpointRequest,
-    StreamingEndpointStream,
+    BaseApiEndpoints,
+    EndpointDefinition,
+    EndpointResponse,
+    TypedRequestOptions,
+    BaseStreamingEndpoints,
+    EndpointRequest,
 } from './types'
 
 /**
@@ -76,10 +76,13 @@ export class RagbitsClient {
      * @param endpoint - API endpoint path (must be predefined)
      * @param options - Typed request options for the specific endpoint
      */
-    async makeRequest<T extends ApiEndpointPath>(
-        endpoint: T,
-        options?: TypedApiRequestOptions<T>
-    ): Promise<ApiEndpointResponse<T>> {
+    async makeRequest<
+        Url extends keyof Endpoints extends string ? keyof Endpoints : never,
+        Endpoints extends Record<string, EndpointDefinition> = BaseApiEndpoints,
+    >(
+        endpoint: Url,
+        options?: TypedRequestOptions<Url, Endpoints>
+    ): Promise<EndpointResponse<Url, Endpoints>> {
         const {
             method = 'GET',
             body,
@@ -112,10 +115,16 @@ export class RagbitsClient {
      * @param callbacks - Stream callbacks
      * @param signal - Optional AbortSignal for cancelling the request
      */
-    makeStreamRequest<T extends StreamingEndpointPath>(
-        endpoint: T,
-        data: StreamingEndpointRequest<T>,
-        callbacks: StreamCallbacks<StreamingEndpointStream<T>>,
+    makeStreamRequest<
+        Url extends keyof Endpoints extends string ? keyof Endpoints : never,
+        Endpoints extends Record<
+            string,
+            EndpointDefinition
+        > = BaseStreamingEndpoints,
+    >(
+        endpoint: Url,
+        data: EndpointRequest<Url, Endpoints>,
+        callbacks: StreamCallbacks<EndpointResponse<Url, Endpoints>>,
         signal?: AbortSignal
     ): () => void {
         let isCancelled = false
@@ -145,7 +154,7 @@ export class RagbitsClient {
                             const jsonString = line.replace('data: ', '').trim()
                             const parsedData = JSON.parse(
                                 jsonString
-                            ) as StreamingEndpointStream<T>
+                            ) as EndpointResponse<Url, Endpoints>
                             await callbacks.onMessage(parsedData)
                         } catch (parseError) {
                             console.error('Error parsing JSON:', parseError)

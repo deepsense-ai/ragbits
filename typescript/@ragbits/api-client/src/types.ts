@@ -191,97 +191,66 @@ export interface StreamCallbacks<T, E = Error> {
     onClose?: () => void | Promise<void>
 }
 
+export interface EndpointDefinition<Req = unknown, Res = unknown> {
+    method: string
+    request: Req
+    response: Res
+}
+
 /**
- * Regular API endpoint definitions with their request/response types
+ * Base predefined API endpoint definitions with their request/response types
  */
-export interface ApiEndpoints {
-    '/api/config': {
-        method: 'GET'
-        request: never
-        response: ConfigResponse
-    }
-    '/api/feedback': {
-        method: 'POST'
-        request: FeedbackRequest
-        response: FeedbackResponse
-    }
+export type BaseApiEndpoints = {
+    '/api/config': EndpointDefinition<never, ConfigResponse>
+    '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
 }
 
 /**
  * Streaming API endpoint definitions with their request/stream response types
  */
-export interface StreamingEndpoints {
-    '/api/chat': {
-        method: 'POST'
-        request: ChatRequest
-        stream: TypedChatResponse
-    }
+export type BaseStreamingEndpoints = {
+    '/api/chat': EndpointDefinition<ChatRequest, TypedChatResponse>
 }
 
 /**
  * Extract endpoint paths as a union type
  */
-export type ApiEndpointPath = keyof ApiEndpoints
-
-/**
- * Extract streaming endpoint paths as a union type
- */
-export type StreamingEndpointPath = keyof StreamingEndpoints
+export type EndpointPath<Endpoints extends Record<string, EndpointDefinition>> =
+    keyof Endpoints
 
 /**
  * Extract request type for a specific API endpoint
  */
-export type ApiEndpointRequest<T extends ApiEndpointPath> =
-    ApiEndpoints[T]['request']
+export type EndpointRequest<
+    Url extends keyof Endpoints,
+    Endpoints extends Record<string, EndpointDefinition>,
+> = Endpoints[Url]['request']
 
 /**
  * Extract response type for a specific API endpoint
  */
-export type ApiEndpointResponse<T extends ApiEndpointPath> =
-    ApiEndpoints[T]['response']
+export type EndpointResponse<
+    Url extends keyof Endpoints,
+    Endpoints extends Record<string, EndpointDefinition>,
+> = Endpoints[Url]['response']
 
 /**
  * Extract HTTP method for a specific API endpoint
  */
-export type ApiEndpointMethod<T extends ApiEndpointPath> =
-    ApiEndpoints[T]['method']
-
-/**
- * Extract request type for a specific streaming endpoint
- */
-export type StreamingEndpointRequest<T extends StreamingEndpointPath> =
-    StreamingEndpoints[T]['request']
-
-/**
- * Extract stream response type for a specific streaming endpoint
- */
-export type StreamingEndpointStream<T extends StreamingEndpointPath> =
-    StreamingEndpoints[T]['stream']
-
-/**
- * Extract HTTP method for a specific streaming endpoint
- */
-export type StreamingEndpointMethod<T extends StreamingEndpointPath> =
-    StreamingEndpoints[T]['method']
+export type EndpointMethod<
+    Url extends keyof Endpoints,
+    Endpoints extends Record<string, EndpointDefinition>,
+> = Endpoints[Url]['method']
 
 /**
  * Generic request options for API endpoints with typed methods and body
  */
-export interface TypedApiRequestOptions<T extends ApiEndpointPath> {
-    method?: ApiEndpointMethod<T>
-    body?: ApiEndpointRequest<T> extends never
-        ? undefined
-        : ApiEndpointRequest<T>
-    headers?: Record<string, string>
-    signal?: AbortSignal
-}
-
-/**
- * Typed request options for specific streaming endpoints
- */
-export interface TypedStreamRequestOptions<T extends StreamingEndpointPath> {
-    method?: StreamingEndpointMethod<T>
-    body?: StreamingEndpointRequest<T>
+export interface TypedRequestOptions<
+    T extends keyof E,
+    E extends Record<string, EndpointDefinition>,
+> {
+    method?: E[T]['method']
+    body?: E[T]['request'] extends never ? undefined : E[T]['request']
     headers?: Record<string, string>
     signal?: AbortSignal
 }
