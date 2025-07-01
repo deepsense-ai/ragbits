@@ -60,7 +60,9 @@ def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
             metadata={
                 "foo": "bar",
                 "nested_foo": {"nested_bar": "nested_baz"},
-                "some_list": 1,
+                "some_int": 1,
+                "some_bool": True,
+                "some_float": 1.0,
                 "simple": "no_simple_value",
             },
         ),
@@ -72,7 +74,14 @@ def vector_store_keyword_search_entries_fixture() -> list[VectorStoreEntry]:
             id=UUID("d9d11902-f26a-409b-967b-46c30f0b65de"),
             image_bytes=second_image_bytes,
             text="It is a document about animals.",
-            metadata={"baz": "qux", "simple": "simple_value", "nested_foo": {"nested_bar": "no_nested_baz"}},
+            metadata={
+                "some_int": 2,
+                "some_bool": False,
+                "some_float": 2.0,
+                "baz": "qux",
+                "simple": "simple_value",
+                "nested_foo": {"nested_bar": "no_nested_baz"},
+            },
         ),
     ]
 
@@ -103,7 +112,13 @@ async def test_vector_store_list(
 
 @pytest.mark.parametrize(
     "filter",
-    [("simple", {"simple": "simple_value"}), ("nested_foo", {"nested_foo": {"nested_bar": "nested_baz"}})],
+    [
+        ("simple", {"simple": "simple_value"}),
+        ("nested_foo", {"nested_foo": {"nested_bar": "nested_baz"}}),
+        ("some_int", {"some_int": 1}),
+        ("some_bool", {"some_bool": False}),
+        ("some_float", {"some_float": 1.0}),
+    ],
 )
 async def test_vector_store_list_with_filter(
     vector_store: VectorStoreWithEmbedder,
@@ -115,7 +130,6 @@ async def test_vector_store_list_with_filter(
     expected_entries = [
         e for e in vector_store_keyword_search_entries if e.metadata.get(filter[0], None) == filter[1][filter[0]]
     ]
-
     sorted_results = sorted(result_entries, key=lambda entry: entry.id)
     sorted_expected = sorted(expected_entries, key=lambda entry: entry.id)
 

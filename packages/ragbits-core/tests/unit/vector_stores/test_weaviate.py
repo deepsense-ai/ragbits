@@ -162,6 +162,34 @@ async def test_store_uses_existing_collection(mock_weaviate_store: WeaviateVecto
     mock_weaviate_store._client.collections.get.return_value.data.insert_many.assert_called_once_with([expected_object])  # type: ignore
 
 
+async def test_unsupported_type_is_not_added_as_propety(
+    mock_weaviate_store: WeaviateVectorStore,
+) -> None:
+    entry = VectorStoreEntry(
+        id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"), text="test", metadata={"unsupported": None}
+    )
+    mock_weaviate_store._client.collections.exists.return_value = False  # type: ignore
+    with pytest.warns(UserWarning, match="Unsupported type of metadata field with key"):
+        await mock_weaviate_store.store([entry])
+
+    mock_weaviate_store._client.collections.create.assert_called_once()  # type: ignore
+    create_call_kwargs = mock_weaviate_store._client.collections.create.call_args.kwargs  # type: ignore
+    assert create_call_kwargs["properties"] == []
+
+
+async def test_two_entries_with_different_metadata_types(
+    mock_weaviate_store: WeaviateVectorStore,
+) -> None:
+    mock_weaviate_store._client.collections.exists.return_value = False  # type: ignore
+    entries = [
+        VectorStoreEntry(id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"), text="test", metadata={"unsupported": 1}),
+        VectorStoreEntry(id=UUID("48183d3f-61c6-4ef3-bf62-e45d9389acee"), text="test", metadata={"unsupported": "1"}),
+    ]
+
+    with pytest.raises(ValueError, match="was already mapped to"):
+        await mock_weaviate_store.store(entries)
+
+
 @pytest.mark.asyncio
 async def test_store_handles_empty_entries(mock_weaviate_store: WeaviateVectorStore):
     await mock_weaviate_store.store([])
