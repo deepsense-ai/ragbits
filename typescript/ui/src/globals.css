@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.markdown-container pre {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.prose {
+  overflow-wrap: break-word;
+}

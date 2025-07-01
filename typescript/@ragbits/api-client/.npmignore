@@ -1,0 +1,63 @@
+# Source files (not needed in published package)
+src/
+
+# Test files
+test/
+tests/
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# Test configuration and coverage
+vitest.config.ts
+vitest.config.js
+coverage/
+.nyc_output/
+
+# Development configuration
+eslint.config.js
+eslint.config.ts
+.prettierrc
+prettier.config.js
+prettier.config.ts
+tsconfig.json
+tsconfig.*.json
+
+# Development dependencies and tools
+node_modules/
+.git/
+.gitignore
+.github/
+
+# Build artifacts (except dist which should be included)
+*.tsbuildinfo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

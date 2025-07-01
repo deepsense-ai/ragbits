@@ -44,18 +44,27 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
         if isinstance(handler, TraceHandler):
             _trace_handlers.append(handler)
         elif isinstance(handler, str):
-            if handler == "otel":
-                from ragbits.core.audit.traces.otel import OtelTraceHandler
+            match handler.lower():
+                case "otel":
+                    from ragbits.core.audit.traces.otel import OtelTraceHandler
 
-                if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
-                    _trace_handlers.append(OtelTraceHandler())
-            elif handler == "cli":
-                from ragbits.core.audit.traces.cli import CLITraceHandler
+                    if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(OtelTraceHandler())
 
-                if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
-                    _trace_handlers.append(CLITraceHandler())
-            else:
-                raise ValueError(f"Handler {handler} not found.")
+                case "logfire":
+                    from ragbits.core.audit.traces.logfire import LogfireTraceHandler
+
+                    if not any(isinstance(item, LogfireTraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(LogfireTraceHandler())
+
+                case "cli":
+                    from ragbits.core.audit.traces.cli import CLITraceHandler
+
+                    if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(CLITraceHandler())
+
+                case _:
+                    raise ValueError(f"Handler {handler} not found.")
         else:
             raise TypeError(f"Invalid handler type: {type(handler)}")
 
