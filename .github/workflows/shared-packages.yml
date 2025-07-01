@@ -157,12 +157,6 @@ jobs:
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
 
-      - name: Copy dashboards to Grafana container
-        run: |
-          container_id=$(docker ps --filter ancestor=grafana/otel-lgtm --format "{{.ID}}")
-          docker cp examples/core/audit/config/grafana/ragbits-dashboard.json "$container_id:/otel-lgtm/ragbits-dashboard.json"
-          docker cp examples/core/audit/config/grafana/grafana-dashboards.yaml "$container_id:/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml"
-
       - name: Run examples
         env:
           PR_BRANCH: ${{ github.head_ref }}
