@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-source .env
-
 echo "Export env variables required for the examples..."
 export GOOGLE_CLOUD_PROJECT
 export GOOGLE_APPLICATION_CREDENTIALS
