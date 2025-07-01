@@ -11,6 +11,7 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
+from ragbits.agents.mcp.server import MCPServer
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata
 from ragbits.core.options import Options
@@ -77,6 +78,7 @@ class Agent(
         history: ChatFormat | None = None,
         keep_history: bool = False,
         tools: list[Callable] | None = None,
+        mcp_servers: list[MCPServer] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -93,12 +95,14 @@ class Agent(
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
             tools: The tools available to the agent.
+            mcp_servers: The MCP servers available to the agent.
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
         self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+        self.mcp_servers = mcp_servers
         self.history = history or []
         self.keep_history = keep_history
 
