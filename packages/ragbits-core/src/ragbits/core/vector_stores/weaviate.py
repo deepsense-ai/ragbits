@@ -1,4 +1,4 @@
-import logging
+import warnings
 from collections.abc import Callable, Mapping, Sequence
 from typing import TypeVar, cast
 from uuid import UUID
@@ -27,8 +27,6 @@ from ragbits.core.vector_stores.base import (
     VectorStoreWithEmbedder,
     WhereQuery,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class WeaviateVectorStoreOptions(VectorStoreOptions):
@@ -198,7 +196,7 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
                         ).items():
                             value_type = WeaviateVectorStore.TYPE_TO_PROPERTY_MAPPING.get(type(v), None)
                             if not value_type:
-                                logger.warning(
+                                warnings.warn(
                                     f"Unsupported type of metadata field with key {k}: {type(v)}, it will be ignored."
                                 )
                                 continue
