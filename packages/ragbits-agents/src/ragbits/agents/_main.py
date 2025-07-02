@@ -152,7 +152,7 @@ class Agent(
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
-        self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+        self.tools = tools
         self.mcp_servers = mcp_servers
         self.history = history or []
         self.keep_history = keep_history
@@ -198,6 +198,7 @@ class Agent(
         llm_options = merged_options.llm_options or None
 
         prompt_with_history = self._get_prompt_with_history(input)
+        tools_mapping = await self._get_all_tools()
         tool_calls = []
 
         with trace(input=input, options=merged_options) as outputs:
@@ -206,7 +207,7 @@ class Agent(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
-                        tools=list(self.tools_mapping.values()),
+                        tools=list(tools_mapping.values()),
                         options=llm_options,
                     ),
                 )
@@ -214,7 +215,7 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call)
+                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
                     tool_calls.append(result)
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
@@ -281,18 +282,20 @@ class Agent(
         llm_options = merged_options.llm_options or None
 
         prompt_with_history = self._get_prompt_with_history(input)
+        tools_mapping = await self._get_all_tools()
+
         with trace(input=input, options=merged_options) as outputs:
             while True:
                 returned_tool_call = False
                 async for chunk in self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=list(self.tools_mapping.values()),
+                    tools=list(tools_mapping.values()),
                     options=llm_options,
                 ):
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(chunk)
+                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
@@ -339,14 +342,18 @@ class Agent(
 
         return SimplePrompt(curr_history)
 
-    async def _execute_tool(self, tool_call: ToolCall) -> ToolCallResult:
+    async def _get_all_tools(self) -> dict[str, Callable]:
+        return {} if not self.tools else {tool.__name__: tool for tool in self.tools}
+
+    @staticmethod
+    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Callable]) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
-        if tool_call.name not in self.tools_mapping:
+        if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
-        tool = self.tools_mapping[tool_call.name]
+        tool = tools_mapping[tool_call.name]
 
         try:
             tool_output = (
@@ -403,7 +410,7 @@ class Agent(
             url=f"{protocol}://{host}:{port}",
             defaultInputModes=default_input_modes or ["text"],
             defaultOutputModes=default_output_modes or ["text"],
-            skills=skills or [self._extract_agent_skill(f) for f in self.tools_mapping.values()],
+            skills=skills or [self._extract_agent_skill(tool) for tool in self.tools or []],
             capabilities=capabilities or AgentCapabilities(),
         )
 
