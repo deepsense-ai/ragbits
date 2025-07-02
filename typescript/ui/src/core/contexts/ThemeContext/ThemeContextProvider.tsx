@@ -8,16 +8,23 @@ import {
 import { ThemeContext, Theme } from "./ThemeContext";
 
 function getPreferredTheme() {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? Theme.DARK
-    : Theme.LIGHT;
+  const preferredDark = window.matchMedia(
+    "(prefers-color-scheme: dark)",
+  ).matches;
+
+  document.documentElement.classList.toggle("dark", preferredDark);
+
+  return preferredDark ? Theme.DARK : Theme.LIGHT;
 }
 
 function getSnapshot() {
   const saved = window.localStorage.getItem("theme");
+
   if (saved === Theme.DARK || saved === Theme.LIGHT) {
+    document.documentElement.classList.toggle("dark", saved === Theme.DARK);
     return saved;
   }
+
   return getPreferredTheme();
 }
 
