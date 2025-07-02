@@ -277,7 +277,7 @@ class Agent(
             default_output_modes: List of output content modes supported. Defaults to ["text"].
             capabilities: Agent capabilities; if None, defaults to empty capabilities.
             skills: List of AgentSkill objects representing the agent's skills.
-            If None, attempts to extract skills from the agent's registered tools.
+                If None, attempts to extract skills from the agent's registered tools.
 
         Returns:
             An A2A-compliant agent descriptor including URL and capabilities.
