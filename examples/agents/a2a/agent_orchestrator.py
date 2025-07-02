@@ -140,7 +140,7 @@ class AgentOrchestrator(Agent):
 
         tool_calls = None
         if result.tool_calls:
-            tool_calls = [{"name": tc.name, "arguments": tc.arguments, "output": tc.output} for tc in result.tool_calls]
+            tool_calls = [{"name": tc.name, "arguments": tc.arguments, "output": tc.result} for tc in result.tool_calls]
 
         return json.dumps(
             {
