@@ -23,11 +23,11 @@ uv run examples/agents/a2a/orchestrator_client.py
 import asyncio
 import threading
 
-from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
-from hotel_agent import server as hotel_agent_server
 from uvicorn import Server
 
+from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
 from flight_agent import server as flight_agent_server
+from hotel_agent import server as hotel_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
