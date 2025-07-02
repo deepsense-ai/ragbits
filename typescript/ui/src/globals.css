@@ -6,3 +6,7 @@
   overflow: auto;
   max-width: 100%;
 }
+
+.prose {
+  overflow-wrap: break-word;
+}

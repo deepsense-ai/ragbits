@@ -5,16 +5,6 @@ This example demonstrates how to use the `Prompt` class to generate themed text 
 with both text and image inputs. We define an `ImagePrompt` that generates a themed description
 for a given image, using few-shot examples to improve response accuracy.
 
-The script performs the following steps:
-
-    1. Define input and output formats using Pydantic models.
-    2. Implement the `ImagePrompt` class with a structured system prompt.
-    3. Specify `image_url` as an input field for multimodal processing.
-    4. Provide multimodal few-shot examples to guide the model's responses.
-    5. Initialize the `LiteLLM` class to generate text.
-    6. Generate a themed description based on the image.
-    7. Print the generated description.
-
 To run the script, execute the following command:
 
     ```bash
@@ -28,6 +18,7 @@ To run the script, execute the following command:
 #     "ragbits-core",
 # ]
 # ///
+
 import asyncio
 
 from pydantic import BaseModel
@@ -59,7 +50,7 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
     """
 
     system_prompt = """
-    You are themed image describer. Descirbe the image in the provided theme.
+    You are themed image describer. Describe the image in the provided theme.
     """
 
     user_prompt = """

@@ -28,6 +28,20 @@ class VectorStoreEntry(BaseModel):
     metadata: dict = {}
 
     @pydantic.model_validator(mode="after")
+    def validate_metadata_serializable(self) -> Self:
+        """
+        Validates that metadata is JSON serializable.
+
+        Raises:
+            ValueError: If metadata contains non-serializable values.
+        """
+        try:
+            self.model_dump_json()
+        except Exception as e:
+            raise ValueError(f"Metadata must be JSON serializable. Error: {str(e)}") from e
+        return self
+
+    @pydantic.model_validator(mode="after")
     def text_or_image_required(self) -> Self:
         """
         Validates that either text or image_bytes are provided.

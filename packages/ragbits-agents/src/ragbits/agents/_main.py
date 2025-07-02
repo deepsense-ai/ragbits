@@ -1,9 +1,11 @@
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from inspect import iscoroutinefunction
+from inspect import getdoc, iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import Any, ClassVar, Generic, cast, overload
+
+from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
@@ -355,3 +357,63 @@ class Agent(
             arguments=tool_call.arguments,
             result=tool_output,
         )
+
+    def get_agent_card(
+        self,
+        name: str,
+        description: str,
+        version: str = "0.0.0",
+        host: str = "127.0.0.1",
+        port: str = "8000",
+        protocol: str = "http",
+        default_input_modes: list[str] | None = None,
+        default_output_modes: list[str] | None = None,
+        capabilities: AgentCapabilities | None = None,
+        skills: list[AgentSkill] | None = None,
+    ) -> AgentCard:
+        """
+        Creates an AgentCard that encapsulates metadata about the agent,
+        such as its name, version, description, network location, supported input/output modes,
+        capabilities, and skills.
+
+        Args:
+            name: Human-readable name of the agent.
+            description: A brief description of the agent.
+            version: Version string of the agent. Defaults to "0.0.0".
+            host: Hostname or IP where the agent will be served. Defaults to "0.0.0.0".
+            port: Port number on which the agent listens. Defaults to "8000".
+            protocol: URL scheme (e.g. "http" or "https"). Defaults to "http".
+            default_input_modes: List of input content modes supported by the agent. Defaults to ["text"].
+            default_output_modes: List of output content modes supported. Defaults to ["text"].
+            capabilities: Agent capabilities; if None, defaults to empty capabilities.
+            skills: List of AgentSkill objects representing the agent's skills.
+                If None, attempts to extract skills from the agent's registered tools.
+
+        Returns:
+            An A2A-compliant agent descriptor including URL and capabilities.
+        """
+        return AgentCard(
+            name=name,
+            version=version,
+            description=description,
+            url=f"{protocol}://{host}:{port}",
+            defaultInputModes=default_input_modes or ["text"],
+            defaultOutputModes=default_output_modes or ["text"],
+            skills=skills or [self._extract_agent_skill(f) for f in self.tools_mapping.values()],
+            capabilities=capabilities or AgentCapabilities(),
+        )
+
+    @staticmethod
+    def _extract_agent_skill(func: Callable) -> AgentSkill:
+        """
+        Extracts an AgentSkill description from a given callable.
+        Uses the function name and its docstring to populate the skill's metadata.
+
+        Args:
+            func: The function to extract skill information from.
+
+        Returns:
+            The skill representation with name, id, description, and tags.
+        """
+        doc = getdoc(func) or ""
+        return AgentSkill(name=func.__name__.replace("_", " ").title(), id=func.__name__, description=doc, tags=[])
