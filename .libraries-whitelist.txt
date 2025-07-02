@@ -11,3 +11,4 @@ psycopg
 pytest-postgresql
 python-bidi
 griffe
+types-requests

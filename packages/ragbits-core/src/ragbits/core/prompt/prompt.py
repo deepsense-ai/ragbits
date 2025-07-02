@@ -3,7 +3,7 @@ import base64
 import textwrap
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
-from typing import Any, Generic, cast, get_args, get_origin
+from typing import Any, Generic, cast, get_args, get_origin, overload
 
 import filetype
 from jinja2 import Environment, Template, meta
@@ -121,6 +121,16 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         cls.response_parser = staticmethod(cls._detect_response_parser())
 
         return super().__init_subclass__(**kwargs)
+
+    @overload
+    def __init__(
+        self: "Prompt[None, PromptOutputT]", input_data: None = None, history: ChatFormat | None = None
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: "Prompt[PromptInputT, PromptOutputT]", input_data: PromptInputT, history: ChatFormat | None = None
+    ) -> None: ...
 
     def __init__(self, input_data: PromptInputT | None = None, history: ChatFormat | None = None) -> None:
         """

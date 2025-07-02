@@ -985,7 +985,7 @@ wheels = [
 
 [[package]]
 name = "distilabel"
-version = "1.4.1"
+version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "datasets" },
@@ -1004,9 +1004,9 @@ dependencies = [
     { name = "typer" },
     { name = "universal-pathlib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2e/1b/331aeeda851a888e8bff84b8074cb1301909b06e509140a85a23dd1345cf/distilabel-1.4.1.tar.gz", hash = "sha256:0c373be234e8f2982ec7f940d9a95585b15306b6ab5315f5a6a45214d8f34006", size = 6420123, upload-time = "2024-10-16T07:30:48.242Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b7/3b/094ace29aead425bcdc1199e7a12cf4b833f1e85958e9782f8f3388b84d8/distilabel-1.5.0.tar.gz", hash = "sha256:328361cee3cf633d98b0ab6187ee8dba7eb126e49dc1c0981622615882c74419", size = 6750643, upload-time = "2025-01-17T08:28:43.819Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/b3/62d07a936cd9c3039d811681c33b9fc898e48219cf22c9186954e2575365/distilabel-1.4.1-py3-none-any.whl", hash = "sha256:4643da7f3abae86a330d86d1498443ea56978e462e21ae3d106a4c6013386965", size = 442152, upload-time = "2024-10-16T07:30:45.712Z" },
+    { url = "https://files.pythonhosted.org/packages/21/ab/333f94700a345fe8b9c3998959d8c7da6383527673de6127c03c7679e33c/distilabel-1.5.0-py3-none-any.whl", hash = "sha256:ad60d5cc9bb98d01cb3f208bd1347d1caec2eed03b8b4cfc8d3246f33ac8da2f", size = 510653, upload-time = "2025-01-17T08:28:41.619Z" },
 ]
 
 [[package]]
@@ -4976,7 +4976,7 @@ dev = [
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
     { name = "datasets", specifier = ">=3.0.1,<4.0.0" },
-    { name = "distilabel", specifier = ">=1.4.1,<1.5.0" },
+    { name = "distilabel", specifier = ">=1.5.0,<2.0.0" },
     { name = "hydra-core", specifier = ">=1.3.2,<2.0.0" },
     { name = "neptune", extras = ["optuna"], specifier = ">=1.12.0,<2.0.0" },
     { name = "optuna", specifier = ">=4.0.0,<5.0.0" },
