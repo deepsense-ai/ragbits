@@ -1,6 +1,6 @@
 from typing import Any
 
-from distilabel.llms.base import LLM
+from distilabel.models import LLM
 
 from ragbits.evaluate.dataset_generator.tasks.text_generation.base import BaseDistilabelTask
 from ragbits.evaluate.dataset_generator.utils import get_closest_substring, get_passages_list
