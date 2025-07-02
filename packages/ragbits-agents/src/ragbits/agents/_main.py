@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, cast
+from typing import Any, ClassVar, Generic, cast, overload
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
@@ -151,6 +151,20 @@ class Agent(
         self.history = history or []
         self.keep_history = keep_history
 
+    @overload
+    async def run(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AgentResult[PromptOutputT]: ...
+
+    @overload
+    async def run(
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AgentResult[PromptOutputT]: ...
+
     async def run(
         self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
     ) -> AgentResult[PromptOutputT]:
@@ -216,6 +230,20 @@ class Agent(
                 tool_calls=tool_calls or None,
                 history=prompt_with_history.chat,
             )
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+    ) -> AgentResultStreaming: ...
 
     def run_streaming(
         self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
