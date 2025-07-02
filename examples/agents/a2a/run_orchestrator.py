@@ -34,7 +34,8 @@ To run this script
 # ///
 import asyncio
 
-from ragbits.agents.a2a import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
+from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
+
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
