@@ -106,14 +106,14 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   )}
                   remarkPlugins={[remarkGfm]}
                   components={{
-                    pre: ({ node, ...props }) => (
+                    pre: ({ children }) => (
                       <pre className="max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                        {props.children}
+                        {children}
                       </pre>
                     ),
-                    code: ({ node, ...props }) => (
+                    code: ({ children }) => (
                       <code className="rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                        {props.children}
+                        {children}
                       </code>
                     ),
                   }}
