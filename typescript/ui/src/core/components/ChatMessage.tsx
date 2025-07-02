@@ -16,6 +16,7 @@ export type ChatMessageProps = {
     wrapper?: string;
     innerWrapper?: string;
     content?: string;
+    liveUpdates?: string;
   };
   chatMessage: ChatMessageType;
   isLoading: boolean;
@@ -88,6 +89,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   <LiveUpdates
                     isLoading={isLoading}
                     liveUpdates={liveUpdates}
+                    classNames={{ liveUpdates: classNames?.liveUpdates }}
                   />
                   {isLoading && !liveUpdates && (
                     <>
@@ -95,7 +97,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         icon="heroicons:arrow-path"
                         className="animate-spin"
                       />
-                      <span>Thinking...</span>
+                      <span>
+                        {content.length > 0 ? "Generating..." : "Thinking..."}
+                      </span>
                     </>
                   )}
                 </div>

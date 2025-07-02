@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
 - Loading indicator, delayed message buttons, integrated abort controller (#641)
@@ -140,7 +141,6 @@
 
 ## 0.9.0 (2025-02-25)
 
-
 ### Changed
 
 - ragbits-core updated to version v0.9.0
@@ -162,4 +162,3 @@
 
 - Initial release of the package (#271).
 - Added last message recontextualization (#271).
-
