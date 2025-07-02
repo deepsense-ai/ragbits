@@ -4,6 +4,7 @@
 
 - Update qa data loader docstring (#565)
 - Fix deadlock on qa metrics compute (#609)
+- Upgrade distilabel version to 1.5.0 (#682)
 
 ## 1.0.0 (2025-06-04)
 
