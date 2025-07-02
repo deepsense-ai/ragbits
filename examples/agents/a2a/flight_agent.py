@@ -3,7 +3,7 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents.a2a.server import create_agent_app, run_agent_server
+from ragbits.agents.a2a.server import create_agent_app, create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -75,4 +75,4 @@ agent_card = agent.get_agent_card(
 )
 
 app = create_agent_app(agent, agent_card, FlightPromptInput)
-run_agent_server(agent, agent_card, FlightPromptInput)
+server = create_agent_server(agent, agent_card, FlightPromptInput)

@@ -69,25 +69,36 @@ def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[Base
     return app
 
 
-def run_agent_server(agent: Agent, agent_card: AgentCard, input_model: type[BaseModel]) -> None:
+def create_agent_server(
+    agent: Agent,
+    agent_card: AgentCard,
+    input_model: type[BaseModel],
+) -> uvicorn.Server:
     """
-    Run a Uvicorn server that serves the given agent over HTTP.
-    Uses the host and port specified in the agent_card URL.
+    Create a Uvicorn server instance that serves the specified agent over HTTP.
+
+    The server's host and port are extracted from the URL in the given agent_card.
 
     Args:
-        agent: The ragbits Agent instance to serve.
-        agent_card: The agent's metadata including name, description, and URL.
-        input_model: A Pydantic model for validating input parameters.
+        agent: The Ragbits Agent instance to serve.
+        agent_card: Metadata for the agent, including its URL.
+        input_model: A Pydantic model class used to validate incoming request data.
+
+    Returns:
+        A configured uvicorn.Server instance ready to be started.
 
     Raises:
-        ValueError: If the hostname or port extracted from the agent_card URL is None.
+        ValueError: If the URL in agent_card does not contain a valid hostname or port.
     """
     app = create_agent_app(agent=agent, agent_card=agent_card, input_model=input_model)
     url = urlparse(agent_card.url)
 
-    if url.hostname is None:
-        raise ValueError(f"Hostname could not be parsed from URL: {agent_card.url}")
-    if url.port is None:
-        raise ValueError(f"Port could not be parsed from URL: {agent_card.url}")
+    if not url.hostname:
+        raise ValueError(f"Could not parse hostname from URL: {agent_card.url}")
+    if not url.port:
+        raise ValueError(f"Could not parse port from URL: {agent_card.url}")
 
-    uvicorn.run(app, host=url.hostname, port=url.port)
+    config = uvicorn.Config(app=app, host=url.hostname, port=url.port)
+    server = uvicorn.Server(config=config)
+
+    return server

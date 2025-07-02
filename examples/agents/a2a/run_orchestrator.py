@@ -7,22 +7,10 @@ and can be invoked remotely using the A2A protocol.
 
 The orchestrator automatically routes sub-tasks to the correct agent based on the content of the request.
 
-To run this script
-1. Start the hotel agent server in one terminal:
-
-    ```bash
-    uv run examples/agents/a2a/hotel_agent.py
-    ```
-
-2. Start the flight agent server in a second terminal:
-    ```bash
-    uv run examples/agents/a2a/flight_agent.py
-    ```
-
-3. Then run this orchestrator client script:
-    ```bash
-    uv run examples/agents/a2a/orchestrator_client.py
-    ```
+To execute this script simply run:
+```bash
+uv run examples/agents/a2a/orchestrator_client.py
+```
 """
 
 # /// script
@@ -33,9 +21,13 @@ To run this script
 # ]
 # ///
 import asyncio
+import threading
 
 from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
+from hotel_agent import server as hotel_agent_server
+from uvicorn import Server
 
+from flight_agent import server as flight_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -104,11 +96,30 @@ Please write a concise, user-friendly reply to the user message based on these r
     user_prompt = "{{ message }}"
 
 
+async def wait_for_server_to_start(server: Server, check_interval: float = 0.001) -> None:
+    """
+    Starts the given server in a background thread and asynchronously waits until it signals readiness.
+
+    Args:
+        server: The server instance to run. Expected to have a `.run()` method and `.started` attribute.
+        check_interval: Time in seconds between readiness checks (default: 0.001).
+
+    Returns:
+        None
+    """
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    while not server.started:
+        await asyncio.sleep(check_interval)
+
+
 async def main() -> None:
     """
     Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
+    await asyncio.gather(*(wait_for_server_to_start(server) for server in [hotel_agent_server, flight_agent_server]))
+
     llm = LiteLLM(
         model_name="gpt-4o-2024-08-06",
         use_structured_output=True,
