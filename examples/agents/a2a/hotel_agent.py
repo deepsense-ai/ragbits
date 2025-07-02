@@ -74,7 +74,7 @@ llm = LiteLLM(
 
 agent = Agent(llm=llm, prompt=HotelPrompt, tools=[get_hotel_recommendations])
 
-agent_card = agent.to_a2a(
+agent_card = agent.get_agent_card(
     name="Hotel Recommendation Agent", description="Recommends hotels for a given city and travel dates.", port="8001"
 )
 

@@ -248,7 +248,7 @@ class Agent(
 
         return SimplePrompt(curr_history)
 
-    def to_a2a(
+    def get_agent_card(
         self,
         name: str,
         description: str,

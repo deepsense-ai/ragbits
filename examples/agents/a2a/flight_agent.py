@@ -69,7 +69,7 @@ llm = LiteLLM(
     use_structured_output=True,
 )
 agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
-agent_card = agent.to_a2a(
+agent_card = agent.get_agent_card(
     name="Flight Info Agent",
     description="Provides available flight information between two cities.",
 )
