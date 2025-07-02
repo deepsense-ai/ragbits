@@ -1,21 +1,32 @@
 import { useCallback, useState } from "react";
-import { ChatMessage } from "../../types/history";
-import { motion } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { Button, cn } from "@heroui/react";
+import { motion } from "framer-motion";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+import { ChatMessage } from "../../types/history";
 import ShimmerText from "./ShimmerText";
+import { Theme } from "../contexts/ThemeContext/ThemeContext";
+import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
 
 interface LiveUpdatesProps {
   isLoading: boolean;
   liveUpdates: ChatMessage["liveUpdates"];
+  classNames?: {
+    liveUpdates?: string;
+  };
 }
 
 export default function LiveUpdates({
   isLoading,
   liveUpdates,
+  classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const updates = liveUpdates ? Array.from(liveUpdates.values()) : null;
+
+  const { theme } = useThemeContext();
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
@@ -55,9 +66,16 @@ export default function LiveUpdates({
               style={{ pointerEvents: isExpanded ? "auto" : "none" }}
             >
               <div className="text-default-500">{update.label}</div>
-              <div className="text-sm text-default-400">
+              <Markdown
+                className={cn(
+                  "markdown-container prose max-w-full text-sm text-default-400",
+                  theme === Theme.DARK && "dark:prose-invert",
+                  classNames?.liveUpdates,
+                )}
+                remarkPlugins={[remarkGfm]}
+              >
                 {update.description}
-              </div>
+              </Markdown>
             </motion.div>
           ))}
         </div>
@@ -68,14 +86,30 @@ export default function LiveUpdates({
           {isLoading ? (
             <ShimmerText duration={shimmerDuration}>
               <div>{lastUpdate.label}</div>
-              <div className="text-sm">{lastUpdate.description}</div>
+              <Markdown
+                className={cn(
+                  "markdown-container prose max-w-full text-sm",
+                  theme === Theme.DARK && "dark:prose-invert",
+                  classNames?.liveUpdates,
+                )}
+                remarkPlugins={[remarkGfm]}
+              >
+                {lastUpdate.description}
+              </Markdown>
             </ShimmerText>
           ) : (
             <>
               <div className="text-default-500">{lastUpdate.label}</div>
-              <div className="text-sm text-default-400">
+              <Markdown
+                className={cn(
+                  "markdown-container prose max-w-full text-sm text-default-400",
+                  theme === Theme.DARK && "dark:prose-invert",
+                  classNames?.liveUpdates,
+                )}
+                remarkPlugins={[remarkGfm]}
+              >
                 {lastUpdate.description}
-              </div>
+              </Markdown>
             </>
           )}
         </div>
