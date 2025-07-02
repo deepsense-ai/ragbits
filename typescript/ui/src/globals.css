@@ -6,3 +6,7 @@
 .markdown-container code::after {
   content: none;
 }
+
+.prose {
+  overflow-wrap: break-word;
+}

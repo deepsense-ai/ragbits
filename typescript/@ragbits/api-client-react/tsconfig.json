@@ -12,7 +12,8 @@
         "forceConsistentCasingInFileNames": true,
         "outDir": "dist",
         "composite": true,
-        "rootDir": "src"
+        "rootDir": "src",
+        "declarationDir": "dist"
     },
     "references": [{ "path": "../api-client" }],
     "include": ["src"],

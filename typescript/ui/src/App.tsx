@@ -161,6 +161,7 @@ export default function App() {
                 submit={handleSubmit}
                 stopAnswering={stopAnswering}
                 followupMessages={followupMessages}
+                history={history}
               />
             </div>
           </div>

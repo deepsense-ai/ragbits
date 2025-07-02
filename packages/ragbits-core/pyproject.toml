@@ -39,6 +39,7 @@ dependencies = [
     "litellm>=1.55.0,<2.0.0",
     "aiohttp>=3.10.8,<4.0.0",
     "filetype>=1.2.0,<2.0.0",
+    "griffe>=1.7.3,<2.0.0"
 ]
 
 [project.urls]
@@ -93,6 +94,9 @@ hf = [
 ]
 s3 = [
     "boto3>=1.35.42,<2.0.0",
+]
+weaviate = [
+    "weaviate-client>=4.15.4,<5.0.0",
 ]
 
 [tool.uv]
