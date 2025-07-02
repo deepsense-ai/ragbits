@@ -97,7 +97,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         icon="heroicons:arrow-path"
                         className="animate-spin"
                       />
-                      {content.length > 0 ? null : <span>Thinking...</span>}
+                      <span>
+                        {content.length > 0 ? "Generating..." : "Thinking..."}
+                      </span>
                     </>
                   )}
                 </div>
