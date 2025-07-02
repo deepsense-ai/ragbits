@@ -7,8 +7,6 @@ import remarkGfm from "remark-gfm";
 
 import { ChatMessage } from "../../types/history";
 import ShimmerText from "./ShimmerText";
-import { Theme } from "../contexts/ThemeContext/ThemeContext";
-import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
 
 interface LiveUpdatesProps {
   isLoading: boolean;
@@ -25,8 +23,6 @@ export default function LiveUpdates({
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const updates = liveUpdates ? Array.from(liveUpdates.values()) : null;
-
-  const { theme } = useThemeContext();
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
@@ -68,8 +64,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{update.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm text-default-400",
-                  theme === Theme.DARK && "dark:prose-invert",
+                  "markdown-container prose max-w-full text-sm text-default-400 dark:prose-invert",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -88,8 +83,7 @@ export default function LiveUpdates({
               <div>{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm",
-                  theme === Theme.DARK && "dark:prose-invert",
+                  "markdown-container prose max-w-full text-sm text-transparent dark:prose-invert",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -102,8 +96,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm text-default-400",
-                  theme === Theme.DARK && "dark:prose-invert",
+                  "markdown-container prose max-w-full text-sm text-default-400 dark:prose-invert",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}

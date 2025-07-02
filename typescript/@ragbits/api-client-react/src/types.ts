@@ -1,36 +1,44 @@
 import type {
     StreamCallbacks,
     RagbitsClient,
-    StreamingEndpointPath,
-    StreamingEndpointRequest,
-    TypedApiRequestOptions,
-    ApiEndpointPath,
-    StreamingEndpointStream,
+    RequestOptions,
+    EndpointDefinition,
+    BaseApiEndpoints,
+    EndpointRequest,
+    EndpointResponse,
+    BaseStreamingEndpoints,
 } from '@ragbits/api-client'
 
 // React-specific hook result types
 export interface RagbitsCallResult<
-    T,
-    E = Error,
-    TEndpoint extends ApiEndpointPath = ApiEndpointPath,
+    URL extends keyof Endpoints,
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseApiEndpoints,
+    Err = Error,
 > {
-    data: T | null
-    error: E | null
+    data: EndpointResponse<URL, Endpoints> | null
+    error: Err | null
     isLoading: boolean
-    call: (options?: TypedApiRequestOptions<TEndpoint>) => Promise<T>
+    call: (
+        options?: RequestOptions<URL, Endpoints>
+    ) => Promise<EndpointResponse<URL, Endpoints>>
     reset: () => void
     abort: () => void
 }
 
 export interface RagbitsStreamResult<
-    E = Error,
-    TEndpoint extends StreamingEndpointPath = StreamingEndpointPath,
+    URL extends keyof Endpoints,
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseStreamingEndpoints,
+    Err = Error,
 > {
     isStreaming: boolean
-    error: E | null
+    error: Err | null
     stream: (
-        data: StreamingEndpointRequest<TEndpoint>,
-        callbacks: StreamCallbacks<StreamingEndpointStream<TEndpoint>, string>
+        data: EndpointRequest<URL, Endpoints>,
+        callbacks: StreamCallbacks<EndpointResponse<URL, Endpoints>, string>
     ) => () => void
     cancel: () => void
 }
