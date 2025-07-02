@@ -1,0 +1,8 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./typescript/@ragbits/api-client" },
+    { "path": "./typescript/@ragbits/api-client-react" },
+    { "path": "./typescript/ui" }
+  ]
+}

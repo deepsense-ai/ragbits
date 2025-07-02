@@ -36,6 +36,9 @@ async def main():
 asyncio.run(main())
 ```
 
+!!! tip
+    Prompts also support history in OpenAI Chat Format, try `#!py JokePrompt(history=[{"role": "assistant", "content": "What you call a cute door?/n A-door-able"}])`
+
 ### Extending the Prompt with an Input Model
 To extend the prompt with an input model, define a Pydantic model for the input data and pass it as a generic type to the [`Prompt`][ragbits.core.prompt.Prompt] class. The output type defaults to string.
 

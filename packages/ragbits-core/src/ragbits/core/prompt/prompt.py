@@ -3,7 +3,7 @@ import base64
 import textwrap
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
-from typing import Any, Generic, cast, get_args, get_origin, overload
+from typing import Any, Generic, cast, get_args, get_origin
 
 import filetype
 from jinja2 import Environment, Template, meta
@@ -122,16 +122,26 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         return super().__init_subclass__(**kwargs)
 
-    @overload
-    def __init__(self: "Prompt[None, PromptOutputT]") -> None: ...
+    def __init__(self, input_data: PromptInputT | None = None, history: ChatFormat | None = None) -> None:
+        """
+        Initialize the Prompt instance.
 
-    @overload
-    def __init__(self: "Prompt[PromptInputT, PromptOutputT]", input_data: PromptInputT) -> None: ...
+        Args:
+            input_data: The input data to render the prompt templates with. Must be a Pydantic model
+                instance if the prompt has an input type defined. If None and input_type is defined,
+                a ValueError will be raised.
+            history: Optional conversation history to initialize the prompt with. If provided,
+                should be in the standard OpenAI chat format.
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        input_data = args[0] if args else kwargs.get("input_data")
+        Raises:
+            ValueError: If input_data is None when input_type is defined, or if input_data
+                is a string instead of a Pydantic model.
+        """
         if self.input_type and input_data is None:
             raise ValueError("Input data must be provided")
+
+        if isinstance(input_data, str):
+            raise ValueError("Input data must be of pydantic model type")
 
         self.rendered_system_prompt = (
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
@@ -144,7 +154,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self._instance_few_shots: list[FewShotExample[PromptInputT, PromptOutputT]] = []
 
         # Additional conversation history that can be added dynamically using methods
-        self._conversation_history: list[dict[str, Any]] = []
+        self._conversation_history: list[dict[str, Any]] = history or []
+        self.add_user_message(input_data if input_data else self.rendered_user_prompt)
         super().__init__()
 
     @property
@@ -155,12 +166,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
-        user_content = (
-            [{"type": "text", "text": self.rendered_user_prompt}]
-            + [self._create_message_with_image(image) for image in self.images]
-            if self.images
-            else self.rendered_user_prompt
-        )
         chat = [
             *(
                 [{"role": "system", "content": self.rendered_system_prompt}]
@@ -168,7 +173,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                 else []
             ),
             *self.list_few_shots(),
-            {"role": "user", "content": user_content},
             *self._conversation_history,
         ]
         return chat
@@ -222,7 +226,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             result.append({"role": "assistant", "content": assistant_content})
         return result
 
-    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":
+    def add_user_message(self, message: str | dict[str, Any] | PromptInputT) -> "Prompt[PromptInputT, PromptOutputT]":  # type: ignore
         """
         Add a user message to the conversation history.
 
@@ -235,7 +239,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         Returns:
             Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
         """
-        content: str | list[dict[str, Any]] | dict[str, Any] | PromptInputT
+        content: str | list[dict[str, Any]] | dict[str, Any]
 
         if isinstance(message, BaseModel):
             # Type checking to ensure we're passing PromptInputT to the methods
@@ -252,70 +256,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             else:
                 content = rendered_text
         else:
-            # Use the message directly if it's a string or dict
-            content = message
+            content = cast(str | dict[str, Any], message)
 
-        self._conversation_history.append({"role": "user", "content": content})
-        return self
-
-    def add_assistant_message(self, message: str | PromptOutputT) -> "Prompt[PromptInputT, PromptOutputT]":
-        """
-        Add an assistant message to the conversation history.
-
-        Args:
-            message (str): The assistant message content.
-
-        Returns:
-            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
-        """
-        if isinstance(message, BaseModel):
-            message = message.model_dump_json()
-        self._conversation_history.append({"role": "assistant", "content": str(message)})
-        return self
-
-    def add_tool_use_message(
-        self,
-        tool_call_id: str,
-        tool_name: str,
-        tool_arguments: dict,
-        tool_call_result: Any,  # noqa: ANN401
-    ) -> "Prompt[PromptInputT, PromptOutputT]":
-        """
-        Add tool call messages to the conversation history.
-
-        Args:
-            tool_call_id (str): The id of the tool call.
-            tool_name (str): The name of the tool.
-            tool_arguments (dict): The arguments of the tool.
-            tool_call_result (any): The tool call result.
-
-        Returns:
-            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
-        """
-        self._conversation_history.extend(
-            [
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_name,
-                                "arguments": str(tool_arguments),
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": str(tool_call_result),
-                },
-            ]
-        )
-        return self
+        return super().add_user_message(content)
 
     def list_images(self) -> list[str]:
         """
