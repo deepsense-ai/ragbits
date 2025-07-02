@@ -8,11 +8,11 @@ import {
   cn,
   useDisclosure,
 } from "@heroui/react";
-import { useThemeContext } from "../../core/contexts/ThemeContext/useThemeContext";
+import { useThemeContext } from "../../../core/contexts/ThemeContext/useThemeContext";
 import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import DelayedTooltip from "../../core/components/DelayedTooltip";
-import { useConfigContext } from "../../core/contexts/ConfigContext/useConfigContext";
+import DelayedTooltip from "../../../core/components/DelayedTooltip";
+import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import FormTheme from "./FormTheme";
 import validator from "@rjsf/validator-ajv8";
 import { RJSFValidationError } from "@rjsf/utils";

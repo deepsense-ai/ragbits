@@ -11,7 +11,8 @@
 - Add support for live updates and followup messages (#654)
 - Fix invalid context structure in requests from FE (#663)
 - Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
-- Fix followup messages not sending (#670)
+- Fix followup messages not sending (#680)
+- Improve typing of TypeScript libraries (#681)
 
 ## 1.0.0 (2025-06-04)
 
