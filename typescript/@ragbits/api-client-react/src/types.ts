@@ -1,7 +1,7 @@
 import type {
     StreamCallbacks,
     RagbitsClient,
-    TypedRequestOptions,
+    RequestOptions,
     EndpointDefinition,
     BaseApiEndpoints,
     EndpointRequest,
@@ -21,7 +21,7 @@ export interface RagbitsCallResult<
     error: Err | null
     isLoading: boolean
     call: (
-        options?: TypedRequestOptions<URL, Endpoints>
+        options?: RequestOptions<URL, Endpoints>
     ) => Promise<EndpointResponse<URL, Endpoints>>
     reset: () => void
     abort: () => void

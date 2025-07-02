@@ -247,7 +247,7 @@ export type EndpointMethod<
 /**
  * Generic request options for API endpoints with typed methods and body
  */
-export interface TypedRequestOptions<
+export interface RequestOptions<
     URL extends keyof Endpoints,
     Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
 > {

@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import type {
     StreamCallbacks,
     EndpointResponse,
-    TypedRequestOptions,
+    RequestOptions,
     EndpointDefinition,
     BaseApiEndpoints,
     EndpointRequest,
@@ -24,7 +24,7 @@ export function useRagbitsCall<
     URL extends keyof Endpoints = keyof Endpoints,
 >(
     endpoint: URL,
-    defaultOptions?: TypedRequestOptions<URL, Endpoints>
+    defaultOptions?: RequestOptions<URL, Endpoints>
 ): RagbitsCallResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [data, setData] = useState<EndpointResponse<URL, Endpoints> | null>(
@@ -46,7 +46,7 @@ export function useRagbitsCall<
 
     const call = useCallback(
         async (
-            options: TypedRequestOptions<URL, Endpoints> = {}
+            options: RequestOptions<URL, Endpoints> = {}
         ): Promise<EndpointResponse<URL, Endpoints>> => {
             // Abort any existing request only if there's one in progress
             if (abortControllerRef.current && isLoading) {

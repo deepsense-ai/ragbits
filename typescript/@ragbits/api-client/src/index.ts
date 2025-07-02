@@ -4,7 +4,7 @@ import type {
     BaseApiEndpoints,
     EndpointDefinition,
     EndpointResponse,
-    TypedRequestOptions,
+    RequestOptions,
     BaseStreamingEndpoints,
     EndpointRequest,
 } from './types'
@@ -83,7 +83,7 @@ export class RagbitsClient {
         URL extends keyof Endpoints = keyof Endpoints,
     >(
         endpoint: URL,
-        options?: TypedRequestOptions<URL, Endpoints>
+        options?: RequestOptions<URL, Endpoints>
     ): Promise<EndpointResponse<URL, Endpoints>> {
         const {
             method = 'GET',
