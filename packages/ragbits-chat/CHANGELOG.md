@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added custom styling for multiline and inline-code (#668)
+- Changed toggling darkmode for tailwind class selector (#668)
 - Loading indicator, delayed message buttons, integrated abort controller (#641)
 - Added Eslint, Prettier & CI/CD for Ragbits API Clients (#604)
 - Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
