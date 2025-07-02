@@ -10,3 +10,4 @@ mirakuru
 psycopg
 pytest-postgresql
 python-bidi
+griffe

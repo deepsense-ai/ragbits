@@ -1,3 +1,16 @@
+"""
+Ragbits Evaluate Example: Basic Document Search Optimization
+
+This example demonstrates how to optimize a basic document search pipeline using the `Optimizer` class.
+It configures a simple pipeline with ChromaDB as the vector store, LiteLLMEmbedder for embeddings, and HuggingFaceSource for data.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/evaluate/document-search/basic/optimize.py
+    ```
+"""  # noqa: E501
+
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -6,6 +19,7 @@
 #     "ragbits-evaluate[relari]",
 # ]
 # ///
+
 import logging
 from pathlib import Path
 

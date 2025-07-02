@@ -1,33 +1,36 @@
 """
-Ragbits Document Search Example: Qdrant
+Ragbits Document Search Example: Weaviate
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `QdrantVectorStore` class to store
+We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
 the embeddings.
 
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/document-search/qdrant.py
+    uv run examples/document-search/weaviate_.py
     ```
+
+Requires local Weaviate instance to be running, instructions how to set it up can be found here:
+https://weaviate.io/developers/weaviate/quickstart/local
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core[qdrant]",
+#     "ragbits-core[weaviate]",
 # ]
 # ///
 
 import asyncio
 
-from qdrant_client import AsyncQdrantClient
+import weaviate
 
 from ragbits.core.audit import set_trace_handlers
 from ragbits.core.embeddings.dense import LiteLLMEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
-from ragbits.core.vector_stores.qdrant import QdrantVectorStore
+from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
 from ragbits.document_search.documents.document import DocumentMeta
 
@@ -61,11 +64,10 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
-        model_name="text-embedding-3-small",
-    )
-    vector_store = QdrantVectorStore(
-        client=AsyncQdrantClient(location=":memory:"),
+    client = weaviate.use_async_with_local()
+    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    vector_store = WeaviateVectorStore(
+        client=client,
         index_name="jokes",
         embedder=embedder,
     )

@@ -1,26 +1,12 @@
 """
-Ragbits Document Search Example: pgvector
+Ragbits Document Search Example: PgVector
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
 We will use the `LiteLLMEmbedder` class to embed the documents and the query, and the `PgVectorStore` class to store
 the embeddings in a Postgres database.
 
-The script performs the following steps:
-    1. Create a list of documents.
-    2. Initialize the `LiteLLMEmbedder` class with the OpenAI `text-embedding-3-small` embedding model.
-    3. Initialize the `PgVectorStore` class with a database connection pool and a table name.
-    4. Initialize the `DocumentSearch` class with the embedder and the vector store.
-    5. Ingest the documents into the `DocumentSearch` instance.
-    6. Search for documents using a query.
-    7. Print the search results.
-
-To run the script, execute the following command:
-    ```bash
-    uv run examples/document-search/pgvector.py
-    ```
-
-The script requires a Postgres database with the `pgvector` extension installed. To run a Docker container with the
-required setup, execute the following command:
+The script requires a Postgres database with the `pgvector` extension installed.
+To run a Docker container with the required setup, execute the following command:
 
     ```bash
     docker run --rm -e POSTGRES_USER=ragbits_example \
@@ -28,6 +14,12 @@ required setup, execute the following command:
            -e POSTGRES_DB=ragbits_example \
            -p 5432:5432 \
            pgvector/pgvector:0.8.0-pg17
+    ```
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/document-search/pgvector.py
     ```
 """
 
