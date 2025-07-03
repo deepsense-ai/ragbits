@@ -2,12 +2,15 @@
 
 ## Unreleased
 
+- Integrate Weaviate vector store (#347)
+- Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)
 - Fix parsing functions with no arguments in convert_function_to_function_schema (#568)
 - Remove outdated quickstart ref from docstring (#565)
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
+- Add message update functions to BasePrompt (#648)
 - Add Logfire integration to handle traces and metrics (#642)
 - Added GoogleSource as a source (#686)
 

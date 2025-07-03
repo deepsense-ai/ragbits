@@ -1,0 +1,62 @@
+{
+    "name": "@ragbits/api-client-react",
+    "version": "0.0.3",
+    "description": "React hooks for the Ragbits API client",
+    "main": "dist/index.cjs",
+    "module": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "scripts": {
+        "build": "npm run clean && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --declarationDir dist --project tsconfig.json",
+        "dev": "tsc -b . --watch",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:coverage": "vitest run --coverage",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
+        "clean": "rm -rf ./dist"
+    },
+    "peerDependencies": {
+        "react": ">=16.8.0",
+        "react-dom": ">=16.8.0"
+    },
+    "dependencies": {
+        "@ragbits/api-client": "*"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.17.0",
+        "@testing-library/jest-dom": "^6.4.0",
+        "@testing-library/react": "^14.0.0",
+        "@testing-library/user-event": "^14.5.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "@vitest/coverage-v8": "^1.6.0",
+        "eslint": "^9.17.0",
+        "eslint-plugin-react-hooks": "^5.0.0",
+        "eslint-plugin-react-refresh": "^0.4.16",
+        "globals": "^15.14.0",
+        "jsdom": "^23.0.0",
+        "msw": "^2.0.0",
+        "prettier": "^3.4.2",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0",
+        "typescript-eslint": "^8.18.2",
+        "vitest": "^1.6.0"
+    },
+    "keywords": [
+        "ragbits",
+        "api",
+        "client",
+        "react"
+    ],
+    "author": "deepsense.ai",
+    "license": "MIT"
+}

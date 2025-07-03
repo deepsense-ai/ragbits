@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Loading indicator, delayed message buttons, integrated abort controller (#641)
+- Added Eslint, Prettier & CI/CD for Ragbits API Clients (#604)
+- Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
+- CI/CD changes for new directory structure (#582)
+- Move form definitions to JSONSchema (#616)
+- Allow UI cutomization using config endpoint (#643)
+- Add support for live updates and followup messages (#654)
+- Fix invalid context structure in requests from FE (#663)
+- Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
+- Fix followup messages not sending (#670)
+
 ## 1.0.0 (2025-06-04)
 
 ### Changed

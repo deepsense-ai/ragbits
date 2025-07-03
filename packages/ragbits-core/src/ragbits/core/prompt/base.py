@@ -14,7 +14,6 @@ class BasePrompt(metaclass=ABCMeta):
     """
 
     @property
-    @abstractmethod
     def chat(self) -> ChatFormat:
         """
         Returns the conversation in the standard OpenAI chat format.
@@ -22,6 +21,9 @@ class BasePrompt(metaclass=ABCMeta):
         Returns:
             ChatFormat: A list of dictionaries, each containing the role and content of a message.
         """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history: list[dict[str, Any]] = []
+        return self._conversation_history
 
     @property
     def json_mode(self) -> bool:
@@ -45,6 +47,90 @@ class BasePrompt(metaclass=ABCMeta):
             list of images
         """
         return []
+
+    def add_assistant_message(self, message: str | PromptOutputT) -> Self:
+        """
+        Add an assistant message to the conversation history.
+
+        Args:
+            message (str): The assistant message content.
+
+        Returns:
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
+        """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        if isinstance(message, BaseModel):
+            message = message.model_dump_json()
+        self._conversation_history.append({"role": "assistant", "content": str(message)})
+        return self
+
+    def add_tool_use_message(
+        self,
+        id: str,
+        name: str,
+        arguments: dict,
+        result: Any,  # noqa: ANN401
+    ) -> Self:
+        """
+        Add tool call messages to the conversation history.
+
+        Args:
+            id (str): The id of the tool call.
+            name (str): The name of the tool.
+            arguments (dict): The arguments of the tool.
+            result (any): The tool call result.
+
+        Returns:
+            Prompt[PromptInputT, PromptOutputT]: The current prompt instance to allow chaining.
+        """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        self._conversation_history.extend(
+            [
+                {
+                    "role": "assistant",
+                    "content": None,
+                    "tool_calls": [
+                        {
+                            "id": id,
+                            "type": "function",
+                            "function": {
+                                "name": name,
+                                "arguments": str(arguments),
+                            },
+                        }
+                    ],
+                },
+                {
+                    "role": "tool",
+                    "tool_call_id": id,
+                    "content": str(result),
+                },
+            ]
+        )
+
+        return self
+
+    def add_user_message(self, message: str | dict[str, Any] | list[dict[str, Any]]) -> Self:
+        """
+        Add a user message to the conversation history.
+
+        Args:
+            message: The user message content. Can be:
+                - A string: Used directly as content
+                - A dictionary: With format {"type": "text", "text": "message"} or image content
+
+        Returns:
+            Prompt: The current prompt instance to allow chaining.
+        """
+        if not hasattr(self, "_conversation_history"):
+            self._conversation_history = []
+
+        self._conversation_history.append({"role": "user", "content": message})
+        return self
 
 
 class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta):
@@ -78,57 +164,3 @@ class SimplePrompt(BasePrompt):
         self._conversation_history: list[dict[str, Any]] = (
             [{"role": "user", "content": content}] if isinstance(content, str) else content
         )
-
-    @property
-    def chat(self) -> ChatFormat:
-        """
-        Returns the conversation in the chat format.
-
-        Returns:
-            ChatFormat: A list of dictionaries, each containing the role and content of a message.
-        """
-        return self._conversation_history
-
-    def add_tool_use_message(
-        self,
-        tool_call_id: str,
-        tool_name: str,
-        tool_arguments: dict,
-        tool_call_result: Any,  # noqa: ANN401
-    ) -> Self:
-        """
-        Add tool call messages to the conversation history.
-
-        Args:
-            tool_call_id (str): The id of the tool call.
-            tool_name (str): The name of the tool.
-            tool_arguments (dict): The arguments of the tool.
-            tool_call_result (any): The tool call result.
-
-        Returns:
-            The current prompt with updated conversation history.
-        """
-        self._conversation_history.extend(
-            [
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": tool_call_id,
-                            "type": "function",
-                            "function": {
-                                "name": tool_name,
-                                "arguments": str(tool_arguments),
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call_id,
-                    "content": str(tool_call_result),
-                },
-            ]
-        )
-        return self

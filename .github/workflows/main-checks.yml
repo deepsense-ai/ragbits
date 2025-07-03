@@ -25,6 +25,7 @@ jobs:
     outputs:
       packages-changed: ${{ steps.filter.outputs.packages-changed }}
       ui-changed: ${{ steps.filter.outputs.ui-changed }}
+      client-changed: ${{ steps.filter.outputs.client-changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +40,7 @@ jobs:
     needs: check-source-changes
     if: ${{ needs.check-source-changes.outputs.packages-changed == 'true' }}
     uses: ./.github/workflows/shared-packages.yml
+    secrets: inherit
 
   ui:
     needs: check-source-changes
