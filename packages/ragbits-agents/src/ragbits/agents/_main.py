@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from inspect import getdoc, iscoroutinefunction
+from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
@@ -364,13 +364,13 @@ class Agent(
             result=tool_output,
         )
 
-    def get_agent_card(
+    async def get_agent_card(
         self,
         name: str,
         description: str,
         version: str = "0.0.0",
         host: str = "127.0.0.1",
-        port: str = "8000",
+        port: int = 8000,
         protocol: str = "http",
         default_input_modes: list[str] | None = None,
         default_output_modes: list[str] | None = None,
@@ -405,14 +405,13 @@ class Agent(
             url=f"{protocol}://{host}:{port}",
             defaultInputModes=default_input_modes or ["text"],
             defaultOutputModes=default_output_modes or ["text"],
-            skills=skills or [self._extract_agent_skill(tool) for tool in self.tools or []],
+            skills=skills or await self._extract_agent_skills(),
             capabilities=capabilities or AgentCapabilities(),
         )
 
-    @staticmethod
-    def _extract_agent_skill(func: Callable) -> AgentSkill:
+    async def _extract_agent_skills(self) -> list[AgentSkill]:
         """
-        Extracts an AgentSkill description from a given callable.
+        Extracts an agent skills description from a given callable.
         Uses the function name and its docstring to populate the skill's metadata.
 
         Args:
@@ -421,5 +420,13 @@ class Agent(
         Returns:
             The skill representation with name, id, description, and tags.
         """
-        doc = getdoc(func) or ""
-        return AgentSkill(name=func.__name__.replace("_", " ").title(), id=func.__name__, description=doc, tags=[])
+        all_tools = await self._get_all_tools()
+        return [
+            AgentSkill(
+                name=tool.name.replace("_", " ").title(),
+                id=tool.name,
+                description=tool.description or "",
+                tags=[],
+            )
+            for tool in all_tools.values()
+        ]
