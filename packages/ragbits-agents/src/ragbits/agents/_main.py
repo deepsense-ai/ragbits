@@ -378,7 +378,7 @@ class Agent(
         skills: list[AgentSkill] | None = None,
     ) -> AgentCard:
         """
-        Creates an AgentCard that encapsulates metadata about the agent,
+        Create an AgentCard that encapsulates metadata about the agent,
         such as its name, version, description, network location, supported input/output modes,
         capabilities, and skills.
 
@@ -387,7 +387,7 @@ class Agent(
             description: A brief description of the agent.
             version: Version string of the agent. Defaults to "0.0.0".
             host: Hostname or IP where the agent will be served. Defaults to "0.0.0.0".
-            port: Port number on which the agent listens. Defaults to "8000".
+            port: Port number on which the agent listens. Defaults to 8000.
             protocol: URL scheme (e.g. "http" or "https"). Defaults to "http".
             default_input_modes: List of input content modes supported by the agent. Defaults to ["text"].
             default_output_modes: List of output content modes supported. Defaults to ["text"].
@@ -411,11 +411,7 @@ class Agent(
 
     async def _extract_agent_skills(self) -> list[AgentSkill]:
         """
-        Extracts an agent skills description from a given callable.
-        Uses the function name and its docstring to populate the skill's metadata.
-
-        Args:
-            func: The function to extract skill information from.
+        Extract agent skills from all available tools.
 
         Returns:
             The skill representation with name, id, description, and tags.
