@@ -71,12 +71,7 @@ export default function Layout({
   }
 
   return (
-    <div
-      className={cn(
-        "flex h-full min-h-[48rem] justify-center py-4",
-        theme === Theme.DARK && "dark",
-      )}
-    >
+    <div className={cn("flex h-full min-h-[48rem] justify-center py-4")}>
       <div className="flex w-full flex-col px-4 sm:max-w-[1200px]">
         <header
           className={cn(

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Integrate Weaviate vector store (#347)
 - Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)
@@ -11,6 +12,7 @@
 - Add function calling for LLMs (#533)
 - Add message update functions to BasePrompt (#648)
 - Add Logfire integration to handle traces and metrics (#642)
+- Clean up Overloads for Prompt (#650)
 
 ## 1.0.0 (2025-06-04)
 
