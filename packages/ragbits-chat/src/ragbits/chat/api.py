@@ -179,6 +179,7 @@ class RagbitsAPI:
                 "customization": self.chat_interface.ui_customization.model_dump()
                 if self.chat_interface.ui_customization
                 else None,
+                "debug_mode": self.chat_interface.debug_mode,
             }
 
             return JSONResponse(content=config_dict)

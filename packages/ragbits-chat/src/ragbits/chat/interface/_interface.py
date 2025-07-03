@@ -97,6 +97,7 @@ class ChatInterface(ABC):
     feedback_config: FeedbackConfig = FeedbackConfig()
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
+    debug_mode: bool = False
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
