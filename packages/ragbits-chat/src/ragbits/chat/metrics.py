@@ -41,9 +41,18 @@ class ChatCounterMetric(str, Enum):
     API_STREAM_CHUNK_COUNT = "api_stream_chunk_count"
 
 
-def _register_chat_metrics() -> None:
-    """Register all chat-specific metrics with the core metrics system."""
-    # Histograms for durations and distributions
+class ChatGaugeMetric(str, Enum):
+    """
+    Chat-specific gauge metrics that track current values.
+    Currently, no gauge metrics are defined, but this can be extended in the future.
+    """
+
+    # No gauge metrics defined yet
+    pass
+
+
+def _register_histogram_metrics() -> None:
+    """Register all chat-specific histogram metrics with the core metrics system."""
     register_metric(
         ChatHistogramMetric.CHAT_REQUEST_DURATION,
         Metric(
@@ -104,11 +113,13 @@ def _register_chat_metrics() -> None:
         ),
     )
 
-    # Counters for events
+
+def _register_counter_metrics() -> None:
+    """Register all chat-specific counter metrics with the core metrics system."""
     register_metric(
         ChatCounterMetric.CHAT_MESSAGE_COUNT,
         Metric(
-            name="chat_message_count",
+            name="chat",
             description="Tracks the count of chat messages processed",
             unit="messages",
             type=MetricType.COUNTER,
@@ -118,7 +129,7 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.CHAT_CONVERSATION_COUNT,
         Metric(
-            name="chat_conversation_count",
+            name="chat",
             description="Tracks the count of new conversations started",
             unit="conversations",
             type=MetricType.COUNTER,
@@ -128,9 +139,9 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.CHAT_FEEDBACK_COUNT,
         Metric(
-            name="chat_feedback_count",
+            name="chat",
             description="Tracks the count of feedback submissions",
-            unit="feedback",
+            unit="feedbacks",
             type=MetricType.COUNTER,
         ),
     )
@@ -138,7 +149,7 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.CHAT_ERROR_COUNT,
         Metric(
-            name="chat_error_count",
+            name="chat",
             description="Tracks the count of errors during chat processing",
             unit="errors",
             type=MetricType.COUNTER,
@@ -148,7 +159,7 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.CHAT_STATE_VERIFICATION_COUNT,
         Metric(
-            name="chat_state_verification_count",
+            name="chat_state",
             description="Tracks the count of state verifications",
             unit="verifications",
             type=MetricType.COUNTER,
@@ -158,7 +169,7 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.API_REQUEST_COUNT,
         Metric(
-            name="api_request_count",
+            name="api",
             description="Tracks the count of API requests by endpoint",
             unit="requests",
             type=MetricType.COUNTER,
@@ -168,7 +179,7 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.API_ERROR_COUNT,
         Metric(
-            name="api_error_count",
+            name="api",
             description="Tracks the count of API errors by status code",
             unit="errors",
             type=MetricType.COUNTER,
@@ -178,12 +189,30 @@ def _register_chat_metrics() -> None:
     register_metric(
         ChatCounterMetric.API_STREAM_CHUNK_COUNT,
         Metric(
-            name="api_stream_chunk_count",
+            name="api_stream",
             description="Tracks the number of chunks streamed per response",
             unit="chunks",
             type=MetricType.COUNTER,
         ),
     )
+
+
+def _register_gauge_metrics() -> None:
+    """
+    Register all chat-specific gauge metrics with the core metrics system.
+    Currently, no gauge metrics are defined, but this function can be extended in the future.
+    """
+    pass
+
+
+def _register_chat_metrics() -> None:
+    """
+    Register all chat-specific metrics with the core metrics system.
+    This includes histograms, counters, and gauges.
+    """
+    _register_histogram_metrics()
+    _register_counter_metrics()
+    _register_gauge_metrics()
 
 
 # Register metrics when module is imported
