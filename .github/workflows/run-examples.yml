@@ -1,4 +1,4 @@
-name: Examples
+name: Check examples
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   examples:
-    name: Run examples
+    name: Check examples job
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
