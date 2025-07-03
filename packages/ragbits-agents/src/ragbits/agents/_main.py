@@ -421,7 +421,7 @@ class Agent(
             AgentSkill(
                 name=tool.name.replace("_", " ").title(),
                 id=tool.name,
-                description=tool.description or "",
+                description=f"{tool.description}\n\nParameters:\n{tool.parameters}",
                 tags=[],
             )
             for tool in all_tools.values()
