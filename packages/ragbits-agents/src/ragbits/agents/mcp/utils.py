@@ -1,4 +1,3 @@
-import logging
 from contextlib import suppress
 from functools import partial
 from typing import Any
@@ -10,11 +9,20 @@ with suppress(ImportError):
     from mcp import Tool as MCPTool
     from mcp.types import CallToolResult
 
-logger = logging.getLogger(__name__)
-
 
 async def get_all_tools(servers: list[MCPServer]) -> list[Tool]:
-    """Get all function tools from a list of MCP servers."""
+    """
+    Get all function tools from a list of MCP servers.
+
+    Args:
+        servers: List of MCP servers to retrieve tools from.
+
+    Returns:
+        Combined list of all tools from all servers.
+
+    Raises:
+        RuntimeError: If duplicate tool names are found across different servers.
+    """
     tools = []
     tool_names: set[str] = set()
     for server in servers:
@@ -29,7 +37,15 @@ async def get_all_tools(servers: list[MCPServer]) -> list[Tool]:
 
 
 async def get_tools(server: MCPServer) -> list[Tool]:
-    """Get all function tools from a single MCP server."""
+    """
+    Get all function tools from a single MCP server.
+
+    Args:
+        server: The MCP server to retrieve tools from.
+
+    Returns:
+        List of Tool instances from the server.
+    """
     tools = await server.list_tools()
     return [
         Tool(
@@ -44,5 +60,15 @@ async def get_tools(server: MCPServer) -> list[Tool]:
 
 
 async def call_mcp_tool(server: MCPServer, tool: "MCPTool", **arguments: Any) -> "CallToolResult":  # noqa: ANN401
-    """Invoke an MCP tool."""
+    """
+    Invoke an MCP tool.
+
+    Args:
+        server: The MCP server containing the tool.
+        tool: The MCP tool to invoke.
+        **arguments: Keyword arguments to pass to the tool.
+
+    Returns:
+        The result of the tool execution.
+    """
     return await server.call_tool(tool.name, arguments)
