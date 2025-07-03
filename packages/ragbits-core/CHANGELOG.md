@@ -9,6 +9,7 @@
 - Add support for async component factories (#608)
 - Add function calling for LLMs (#533)
 - Add Logfire integration to handle traces and metrics (#642)
+- Added GoogleSource as a source (#686)
 
 ## 1.0.0 (2025-06-04)
 
