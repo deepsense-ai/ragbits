@@ -1,0 +1,48 @@
+import logging
+from contextlib import suppress
+from functools import partial
+from typing import Any
+
+from ragbits.agents.mcp.server import MCPServer
+from ragbits.agents.tool import Tool
+
+with suppress(ImportError):
+    from mcp import Tool as MCPTool
+    from mcp.types import CallToolResult
+
+logger = logging.getLogger(__name__)
+
+
+async def get_all_tools(servers: list[MCPServer]) -> list[Tool]:
+    """Get all function tools from a list of MCP servers."""
+    tools = []
+    tool_names: set[str] = set()
+    for server in servers:
+        server_tools = await get_tools(server)
+        server_tool_names = {tool.name for tool in server_tools}
+        if len(server_tool_names & tool_names) > 0:
+            raise RuntimeError(f"Duplicate tool names found across MCP servers: " f"{server_tool_names & tool_names}")
+        tool_names.update(server_tool_names)
+        tools.extend(server_tools)
+
+    return tools
+
+
+async def get_tools(server: MCPServer) -> list[Tool]:
+    """Get all function tools from a single MCP server."""
+    tools = await server.list_tools()
+    return [
+        Tool(
+            name=tool.name,
+            description=tool.description,
+            # MCP spec doesn't require the inputSchema to have `properties`, but OpenAI spec does.
+            parameters={**tool.inputSchema, "properties": tool.inputSchema.get("properties", {})},
+            on_tool_call=partial(call_mcp_tool, server, tool),
+        )
+        for tool in tools
+    ]
+
+
+async def call_mcp_tool(server: MCPServer, tool: "MCPTool", **arguments: Any) -> "CallToolResult":  # noqa: ANN401
+    """Invoke an MCP tool."""
+    return await server.call_tool(tool.name, arguments)

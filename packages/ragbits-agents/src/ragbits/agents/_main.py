@@ -3,7 +3,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from inspect import getdoc, iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, cast, overload
+from typing import ClassVar, Generic, cast, overload
 
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
@@ -15,6 +15,8 @@ from ragbits.agents.exceptions import (
     AgentToolNotSupportedError,
 )
 from ragbits.agents.mcp.server import MCPServer
+from ragbits.agents.mcp.utils import get_all_tools
+from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
 from ragbits.core.options import Options
@@ -25,31 +27,19 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 
 
 @dataclass
-class ToolCallResult:
-    """
-    Result of the tool call.
-    """
-
-    id: str
-    name: str
-    arguments: dict
-    result: Any
-
-
-@dataclass
 class AgentResult(Generic[PromptOutputT]):
     """
     Result of the agent run.
     """
 
     content: PromptOutputT
-    """The output content of the LLM."""
+    """The output content of the agent."""
     metadata: dict
-    """The additional data returned by the LLM."""
+    """The additional data returned by the agent."""
     history: ChatFormat
     """The history of the agent."""
     tool_calls: list[ToolCallResult] | None = None
-    """Tool calls run by the Agent."""
+    """Tool calls run by the agent."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -207,7 +197,7 @@ class Agent(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
-                        tools=list(tools_mapping.values()),
+                        tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                         options=llm_options,
                     ),
                 )
@@ -289,7 +279,7 @@ class Agent(
                 returned_tool_call = False
                 async for chunk in self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=list(tools_mapping.values()),
+                    tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                     options=llm_options,
                 ):
                     yield chunk
@@ -342,11 +332,14 @@ class Agent(
 
         return SimplePrompt(curr_history)
 
-    async def _get_all_tools(self) -> dict[str, Callable]:
-        return {} if not self.tools else {tool.__name__: tool for tool in self.tools}
+    async def _get_all_tools(self) -> dict[str, Tool]:
+        all_tools = [Tool.from_callable(tool) for tool in self.tools or []]
+        if self.mcp_servers:
+            all_tools.extend(await get_all_tools(self.mcp_servers))
+        return {tool.name: tool for tool in all_tools}
 
     @staticmethod
-    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Callable]) -> ToolCallResult:
+    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Tool]) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
@@ -357,7 +350,9 @@ class Agent(
 
         try:
             tool_output = (
-                await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
+                await tool.on_tool_call(**tool_call.arguments)
+                if iscoroutinefunction(tool.on_tool_call)
+                else tool.on_tool_call(**tool_call.arguments)
             )
         except Exception as e:
             raise AgentToolExecutionError(tool_call.name, e) from e
