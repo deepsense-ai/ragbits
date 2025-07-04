@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Live updates support for Python api client(#527)
+- Live updates support for Python api client(#683)
 - Synchronous and asynchronous Python api client
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
