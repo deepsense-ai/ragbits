@@ -8,21 +8,17 @@ import { toJSONSafe } from "../utils/json";
 const DEFAULT_STYLES = {
   container:
     "max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  label: defaultStyles.label + " text-gray-800 dark:text-gray-200",
-  collapseIcon:
-    defaultStyles.collapseIcon + " text-gray-800 dark:text-gray-200",
-  expandIcon: defaultStyles.expandIcon + " text-gray-800 dark:text-gray-200",
-  collapsedContent:
-    defaultStyles.collapsedContent + " text-gray-800 dark:text-gray-200",
-  punctuation: "text-gray-800 dark:text-gray-200",
-  stringValue: defaultStyles.stringValue + " text-gray-800 dark:text-gray-200",
-  otherValue: defaultStyles.otherValue + " text-gray-800 dark:text-gray-200",
-  numberValue: defaultStyles.numberValue + " text-gray-800 dark:text-gray-200",
-  nullValue: defaultStyles.nullValue + " text-gray-800 dark:text-gray-200",
-  booleanValue:
-    defaultStyles.booleanValue + " text-gray-800 dark:text-gray-200",
-  undefinedValue:
-    defaultStyles.undefinedValue + " text-gray-800 dark:text-gray-200",
+  label: `${defaultStyles.label} text-gray-800 dark:text-gray-200`,
+  collapseIcon: `${defaultStyles.collapseIcon} text-gray-800 dark:text-gray-200`,
+  expandIcon: `${defaultStyles.expandIcon} text-gray-800 dark:text-gray-200`,
+  collapsedContent: `${defaultStyles.collapsedContent} text-gray-800 dark:text-gray-200`,
+  punctuation: `text-gray-800 dark:text-gray-200`,
+  stringValue: `${defaultStyles.stringValue} text-gray-800 dark:text-gray-200`,
+  otherValue: `${defaultStyles.otherValue} text-gray-800 dark:text-gray-200`,
+  numberValue: `${defaultStyles.numberValue} text-gray-800 dark:text-gray-200`,
+  nullValue: `${defaultStyles.nullValue} text-gray-800 dark:text-gray-200`,
+  booleanValue: `${defaultStyles.booleanValue} text-gray-800 dark:text-gray-200`,
+  undefinedValue: `${defaultStyles.undefinedValue} text-gray-800 dark:text-gray-200`,
 };
 
 interface DebugPanelProps {

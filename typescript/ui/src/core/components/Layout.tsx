@@ -144,6 +144,9 @@ export default function Layout({
                   onPress={() => setDebugOpened((o) => !o)}
                 >
                   <Icon icon="heroicons:bug-ant" />
+                  {isDebugOpened && (
+                    <div className="absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500" />
+                  )}
                 </Button>
               </DelayedTooltip>
             )}
