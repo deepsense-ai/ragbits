@@ -49,8 +49,8 @@ class RagbitsChatClient(SyncChatClientBase):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:
-        """Send *message* and return the final assistant reply."""
+    ) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks."""
         conv = self.new_conversation()
         return conv.run(message, context=context)
 
