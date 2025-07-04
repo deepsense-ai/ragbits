@@ -75,6 +75,7 @@ class MyChat(ChatInterface):
             "I can provide information, answer questions, and assist you with various tasks."
         ),
     )
+    debug_mode = True
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")

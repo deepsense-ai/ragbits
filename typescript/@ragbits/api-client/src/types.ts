@@ -173,6 +173,7 @@ export interface ConfigResponse {
         }
     }
     customization: UICustomization | null
+    debug_mode: boolean
 }
 
 /**
