@@ -8,9 +8,25 @@ from hotel_agent import server as hotel_agent_server
 from pydantic import BaseModel
 from uvicorn import Server
 
-from ragbits.agents import Agent, AgentResult, ToolCallResult
+from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
+
+AGENTS_CARDS = {}
+
+
+def fetch_agent(host: str, port: int, protocol: str = "http") -> dict:
+    url = f"{protocol}://{host}:{port}"
+    return requests.get(f"{url}/.well-known/agent.json", timeout=10).json()
+
+
+for url, port in [("127.0.0.1", "8000"), ("127.0.0.1", "8001")]:
+    agent_card = fetch_agent(url, port)
+    AGENTS_CARDS[agent_card["name"]] = agent_card
+
+AGENTS_INFO = "\n".join(
+    [f"NAME - {name}: {card['description']} DOCS: {card['skills']}" for name, card in AGENTS_CARDS.items()]
+)
 
 
 class OrchestratorPromptInput(BaseModel):
@@ -34,28 +50,24 @@ class OrchestratorPrompt(Prompt[OrchestratorPromptInput]):
     To help the user plan their trip, you will need to use the following agents:
     {{ agents }}
 
-    you can use `execute_agent` tool to interact with remote agents to take action. You must provide agent name that will be prefixed with NAME and parameters as a dictionary to this function
-    
+    you can use `execute_agent` tool to interact with remote agents to take action. You must provide agent name that
+    will be prefixed with NAME and parameters as a dictionary to this function
+
     """
     user_prompt = "{{ message }}"
 
 
-def fetch_agent(host: str, port: int, protocol: str = "http") -> dict:
-    url = f"{protocol}://{host}:{port}"
-    return requests.get(f"{url}/.well-known/agent.json", timeout=10).json()
-
-
 def execute_agent(agent_name: str, parameters: dict) -> str:
     """
-    Executes a specific task from the current task list.
+    Executes a specified agent with the given parameters.
 
     Args:
-        task_index: Index of the task to execute
+        agent_name: Name of the agent to execute
+        parameters: Parameters to pass to the agent
 
     Returns:
         JSON string of the execution result
     """
-    # print(f"Executing agent {agent_name} with parameters {parameters}")
     payload = {"params": parameters}
     raw_response = requests.post(AGENTS_CARDS[agent_name]["url"], json=payload, timeout=10)
     raw_response.raise_for_status()
@@ -63,24 +75,20 @@ def execute_agent(agent_name: str, parameters: dict) -> str:
     response = raw_response.json()
     result_data = response["result"]
 
-    result = AgentResult(
-        content=result_data["content"],
-        metadata=result_data.get("metadata", {}),
-        history=result_data["history"],
-        tool_calls=[ToolCallResult(**call) for call in result_data.get("tool_calls", [])] or None,
-    )
-
-    tool_calls = None
-    if result.tool_calls:
-        tool_calls = [
-            {"name": tc.name, "arguments": tc.arguments, "output": str(tc.result)} for tc in result.tool_calls
-        ]
+    tool_calls = [
+        {"name": call["name"], "arguments": call["arguments"], "output": call["result"]}
+        for call in result_data.get("tool_calls", [])
+    ] or None
 
     return json.dumps(
         {
             "status": "success",
             "agent_name": agent_name,
-            "result": {"content": result.content, "metadata": result.metadata, "tool_calls": tool_calls},
+            "result": {
+                "content": result_data["content"],
+                "metadata": result_data.get("metadata", {}),
+                "tool_calls": tool_calls,
+            },
         }
     )
 
@@ -102,9 +110,6 @@ async def wait_for_server_to_start(server: Server, check_interval: float = 0.001
         await asyncio.sleep(check_interval)
 
 
-AGENTS_CARDS = {}
-
-
 async def main() -> None:
     """
     Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
@@ -117,22 +122,11 @@ async def main() -> None:
         use_structured_output=True,
     )
 
-    for url, port in [("127.0.0.1", "8000"), ("127.0.0.1", "8001")]:
-        agent_card = fetch_agent(url, port)
-        AGENTS_CARDS[agent_card["name"]] = agent_card
-
-    # print(AGENTS_CARDS)
-    agent_text = "\n".join(
-        [f"NAME - {name}: {card['description']} DOCS: {card['skills']}" for name, card in AGENTS_CARDS.items()]
-    )
-
-    # print(agent_text)
-
     agent = Agent(llm=llm, prompt=OrchestratorPrompt, tools=[execute_agent], keep_history=True)
 
     while True:
-        user_input = input("Enter your message: ")
-        result = await agent.run(OrchestratorPromptInput(message=user_input, agents=agent_text))
+        user_input = input("USER: ")
+        result = await agent.run(OrchestratorPromptInput(message=user_input, agents=AGENTS_INFO))
         print("ASSISTANT:", result.content)
 
 
