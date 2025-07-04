@@ -11,7 +11,7 @@ Before running the script, make sure you have Node.js installed on your machine.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/mcp.py
+    uv run examples/agents/filesystem_mcp.py
     ```
 """
 
