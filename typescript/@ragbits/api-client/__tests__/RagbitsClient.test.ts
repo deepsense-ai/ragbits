@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RagbitsClient } from '../index'
+import { RagbitsClient, FeedbackType } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
-import type { FeedbackRequest } from '../types'
-import { FeedbackType } from '../types'
+import type { FeedbackRequest } from '../src'
 import { defaultConfigResponse } from './utils'
 
 describe('RagbitsClient', () => {
