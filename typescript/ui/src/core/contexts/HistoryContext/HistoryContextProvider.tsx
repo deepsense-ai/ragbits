@@ -152,7 +152,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   );
 
   const sendMessage = useCallback(
-    (text: string, options?: Record<string, any>): void => {
+    (text: string, options?: Record<string, unknown>): void => {
       if (!text) return;
 
       // Add user message to history

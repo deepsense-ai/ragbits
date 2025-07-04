@@ -22,7 +22,7 @@ import PluginWrapper from "../../utils/plugins/PluginWrapper";
 import { ChatOptionsPlugin } from "../../../plugins/ChatOptionsPlugin";
 
 interface PromptInputProps {
-  submit: (text: string, options?: Record<string, any>) => void;
+  submit: (text: string, options?: Record<string, unknown>) => void;
   stopAnswering: () => void;
   onArrowUp?: (isFirstLine: boolean) => void;
   onArrowDown?: (isLastLine: boolean) => void;
@@ -50,7 +50,7 @@ const PromptInput = ({
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
-  const [chatOptions, setChatOptions] = useState<Record<string, any>>({});
+  const [chatOptions, setChatOptions] = useState<Record<string, unknown>>({});
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
@@ -204,7 +204,7 @@ const PromptInput = ({
             component="ChatOptionsForm"
             componentProps={{
               chatOptions,
-              onOptionsChange: (data: Record<string, any>) => {
+              onOptionsChange: (data: Record<string, unknown>) => {
                 setChatOptions(data);
               },
             }}

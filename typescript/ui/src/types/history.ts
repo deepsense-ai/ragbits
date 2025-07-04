@@ -28,7 +28,7 @@ export interface HistoryContext {
   /**
    * Sends a message to the chat window with animations and delayed rendering.
    */
-  sendMessage: (text: string, options?: Record<string, any>) => void;
+  sendMessage: (text: string, options?: Record<string, unknown>) => void;
   /**
    * Primitive used for adding a message to the history and get its ID.
    */
