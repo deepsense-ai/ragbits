@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Modal,
   ModalContent,
@@ -15,12 +14,14 @@ import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 
 interface ChatOptionsFormProps {
-  onOptionsChange: (data: Record<string, any>) => void;
+  onOptionsChange: (data: Record<string, unknown>) => void;
+  chatOptions: Record<string, unknown>;
   isVisible?: boolean;
 }
 
 export default function ChatOptionsForm({
   onOptionsChange,
+  chatOptions,
   isVisible = true,
 }: ChatOptionsFormProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -35,7 +36,8 @@ export default function ChatOptionsForm({
   };
 
   const handleFormSubmit = (data: IChangeEvent) => {
-    onOptionsChange(data.formData);
+    const newOptions = data.formData;
+    onOptionsChange(newOptions);
     onClose();
   };
 
@@ -44,7 +46,6 @@ export default function ChatOptionsForm({
   if (!schema || !isVisible) {
     return null;
   }
-
 
   return (
     <>
@@ -72,6 +73,7 @@ export default function ChatOptionsForm({
                   <FormTheme
                     schema={schema}
                     validator={validator}
+                    formData={chatOptions}
                     onSubmit={handleFormSubmit}
                     transformErrors={transformErrors}
                     liveValidate

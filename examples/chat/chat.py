@@ -62,7 +62,7 @@ class ChatFormExample(BaseModel):
 
     model_config = ConfigDict(title="Chat Form", json_schema_serialization_defaults_required=True)
 
-    language: Literal["English", "Polish"] = Field(description="Please select the language")
+    language: Literal["English", "Polish"] = Field(description="Please select the language", default="English")
 
 
 class MyChat(ChatInterface):

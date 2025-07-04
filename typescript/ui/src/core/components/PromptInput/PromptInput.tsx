@@ -203,6 +203,7 @@ const PromptInput = ({
             plugin={ChatOptionsPlugin}
             component="ChatOptionsForm"
             componentProps={{
+              chatOptions,
               onOptionsChange: (data: Record<string, any>) => {
                 setChatOptions(data);
               },
