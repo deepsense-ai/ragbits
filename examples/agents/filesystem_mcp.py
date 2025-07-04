@@ -1,5 +1,5 @@
 """
-Ragbits Agents Example: MCP Integration
+Ragbits Agents Example: Filesystem MCP
 
 This example demonstrates how to integrate Model Context Protocol (MCP) servers
 with ragbits agents to provide dynamic tool capabilities. The agent connects to
@@ -25,7 +25,7 @@ To run the script, execute the following command:
 import asyncio
 
 from ragbits.agents import Agent
-from ragbits.agents.mcp.server import MCPServerStdio
+from ragbits.agents.mcp import MCPServerStdio
 from ragbits.core.llms import LiteLLM
 
 
