@@ -12,3 +12,4 @@ pytest-postgresql
 python-bidi
 griffe
 types-requests
+lazy_import
