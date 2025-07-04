@@ -1,6 +1,6 @@
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
-import litellm
+import lazy_import
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -14,6 +14,11 @@ from ragbits.core.embeddings.exceptions import (
 )
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
+
+litellm = lazy_import.lazy_module("litellm")
+
+if TYPE_CHECKING:
+    from litellm import Router
 
 
 class LiteLLMEmbedderOptions(Options):
@@ -44,7 +49,7 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
         base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         api_version: str | None = None,
-        router: litellm.Router | None = None,
+        router: Optional["Router"] = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.

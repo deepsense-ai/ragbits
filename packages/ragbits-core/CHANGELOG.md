@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Lazy-load litellm module (#665)
 - Integrate Weaviate vector store (#347)
 - Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)

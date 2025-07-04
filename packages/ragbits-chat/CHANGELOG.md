@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Improve import time of CLI (#665)
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
