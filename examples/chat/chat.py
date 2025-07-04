@@ -26,7 +26,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig, ChatConfig
+from ragbits.chat.interface.forms import ChatConfig, FeedbackConfig
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM

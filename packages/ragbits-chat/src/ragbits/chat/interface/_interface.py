@@ -14,7 +14,7 @@ from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
 from ..persistence import HistoryPersistenceStrategy
-from .forms import FeedbackConfig, ChatConfig
+from .forms import ChatConfig, FeedbackConfig
 from .types import (
     ChatContext,
     ChatResponse,
