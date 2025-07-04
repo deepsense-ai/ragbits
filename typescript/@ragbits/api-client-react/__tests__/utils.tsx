@@ -6,7 +6,7 @@ import {
     RenderHookOptions,
     RenderResult,
 } from '@testing-library/react'
-import { RagbitsProvider } from '../RagbitsProvider'
+import { RagbitsProvider } from '../src'
 import type { ConfigResponse } from '@ragbits/api-client'
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -96,5 +96,19 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
-    debug_mode: false,
+    chat: {
+        form: {
+            title: 'Chat Form',
+            type: 'object',
+            required: ['language'],
+            properties: {
+                language: {
+                    title: 'Language',
+                    description: 'Please select the language',
+                    type: 'string',
+                    enum: ['English', 'Polish'],
+                },
+            },
+        },
+    },
 }

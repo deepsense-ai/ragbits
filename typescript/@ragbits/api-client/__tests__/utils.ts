@@ -1,4 +1,4 @@
-import type { ConfigResponse } from '../types'
+import type { ConfigResponse } from '../src'
 
 // Shared config response for tests
 export const defaultConfigResponse: ConfigResponse = {
@@ -25,5 +25,19 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
-    debug_mode: false,
+    chat: {
+        form: {
+            title: 'Chat Form',
+            type: 'object',
+            required: ['language'],
+            properties: {
+                language: {
+                    title: 'Language',
+                    description: 'Please select the language',
+                    type: 'string',
+                    enum: ['English', 'Polish'],
+                },
+            },
+        },
+    },
 }
