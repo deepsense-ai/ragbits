@@ -6,6 +6,10 @@ on:
     branches:
       - 'release/**'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   examples:
     name: Check examples job
@@ -18,7 +22,7 @@ jobs:
 
     services:
       postgres:
-        image: pgvector/pgvector:0.8.0-pg17
+        image: pgvector/pgvector:${{ vars.PGVECTOR_IMAGE_TAG || '0.8.0-pg17' }}
         env:
           POSTGRES_USER: ragbits_example
           POSTGRES_PASSWORD: ragbits_example
@@ -32,7 +36,7 @@ jobs:
           --health-retries 5
 
       weaviate:
-        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
+        image: cr.weaviate.io/semitechnologies/weaviate:${{ vars.WEAVIATE_IMAGE_TAG || '1.30.6' }}
         env:
           QUERY_DEFAULTS_LIMIT: 25
           AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
