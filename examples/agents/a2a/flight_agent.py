@@ -30,19 +30,8 @@ def get_flight_info(departure: str, arrival: str) -> str:
                 ],
             }
         )
-    elif "los angeles" in departure.lower() and "tokyo" in arrival.lower():
-        return json.dumps(
-            {
-                "from": "Los Angeles",
-                "to": "Tokyo",
-                "flights": [
-                    {"airline": "ANA", "departure": "8:00 AM", "arrival": "12:00 PM"},
-                    {"airline": "JAL", "departure": "4:00 PM", "arrival": "8:00 AM"},
-                ],
-            }
-        )
-    else:
-        return json.dumps({"from": departure, "to": arrival, "flights": "No flight data available"})
+
+    return json.dumps({"from": departure, "to": arrival, "flights": "No flight data available"})
 
 
 class FlightPromptInput(BaseModel):
@@ -68,11 +57,13 @@ llm = LiteLLM(
     model_name="gpt-4o-2024-08-06",
     use_structured_output=True,
 )
-agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
-agent_card = agent.get_agent_card(
+flight_agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
+
+flight_agent_card = flight_agent.get_agent_card(
     name="Flight Info Agent",
     description="Provides available flight information between two cities.",
 )
+flight_server = create_agent_server(flight_agent, flight_agent_card, FlightPromptInput)
 
-app = create_agent_app(agent, agent_card, FlightPromptInput)
-server = create_agent_server(agent, agent_card, FlightPromptInput)
+if __name__ == "__main__":
+    flight_server.run()
