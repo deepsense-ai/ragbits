@@ -1,19 +1,24 @@
+import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from dataclasses import dataclass
-from inspect import getdoc, iscoroutinefunction
+from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, cast, overload
+from typing import ClassVar, Generic, cast, overload
 
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentToolDuplicateError,
     AgentToolExecutionError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
+from ragbits.agents.mcp.server import MCPServer
+from ragbits.agents.mcp.utils import get_tools
+from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
 from ragbits.core.options import Options
@@ -24,31 +29,19 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 
 
 @dataclass
-class ToolCallResult:
-    """
-    Result of the tool call.
-    """
-
-    id: str
-    name: str
-    arguments: dict
-    result: Any
-
-
-@dataclass
 class AgentResult(Generic[PromptOutputT]):
     """
     Result of the agent run.
     """
 
     content: PromptOutputT
-    """The output content of the LLM."""
+    """The output content of the agent."""
     metadata: dict
-    """The additional data returned by the LLM."""
+    """The additional data returned by the agent."""
     history: ChatFormat
     """The history of the agent."""
     tool_calls: list[ToolCallResult] | None = None
-    """Tool calls run by the Agent."""
+    """Tool calls run by the agent."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -128,6 +121,7 @@ class Agent(
         history: ChatFormat | None = None,
         keep_history: bool = False,
         tools: list[Callable] | None = None,
+        mcp_servers: list[MCPServer] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -144,12 +138,14 @@ class Agent(
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
             tools: The tools available to the agent.
+            mcp_servers: The MCP servers available to the agent.
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
-        self.tools_mapping = {} if not tools else {f.__name__: f for f in tools}
+        self.tools = [Tool.from_callable(tool) for tool in tools or []]
+        self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
 
@@ -184,6 +180,7 @@ class Agent(
             The result of the agent run.
 
         Raises:
+            AgentToolDuplicateError: If the tool names are duplicated.
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
@@ -194,6 +191,7 @@ class Agent(
         llm_options = merged_options.llm_options or None
 
         prompt_with_history = self._get_prompt_with_history(input)
+        tools_mapping = await self._get_all_tools()
         tool_calls = []
 
         with trace(input=input, options=merged_options) as outputs:
@@ -202,7 +200,7 @@ class Agent(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
-                        tools=list(self.tools_mapping.values()),
+                        tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                         options=llm_options,
                     ),
                 )
@@ -210,7 +208,7 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call)
+                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
                     tool_calls.append(result)
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
@@ -262,6 +260,7 @@ class Agent(
             A `StreamingResult` object for iteration and collection.
 
         Raises:
+            AgentToolDuplicateError: If the tool names are duplicated.
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
@@ -277,18 +276,20 @@ class Agent(
         llm_options = merged_options.llm_options or None
 
         prompt_with_history = self._get_prompt_with_history(input)
+        tools_mapping = await self._get_all_tools()
+
         with trace(input=input, options=merged_options) as outputs:
             while True:
                 returned_tool_call = False
                 async for chunk in self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=list(self.tools_mapping.values()),
+                    tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                     options=llm_options,
                 ):
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(chunk)
+                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
@@ -335,18 +336,36 @@ class Agent(
 
         return SimplePrompt(curr_history)
 
-    async def _execute_tool(self, tool_call: ToolCall) -> ToolCallResult:
+    async def _get_all_tools(self) -> dict[str, Tool]:
+        tools_mapping = {}
+        all_tools = list(self.tools)
+
+        server_tools = await asyncio.gather(*[get_tools(server) for server in self.mcp_servers])
+        for tools in server_tools:
+            all_tools.extend(tools)
+
+        for tool in all_tools:
+            if tool.name in tools_mapping:
+                raise AgentToolDuplicateError(tool.name)
+            tools_mapping[tool.name] = tool
+
+        return tools_mapping
+
+    @staticmethod
+    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Tool]) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
-        if tool_call.name not in self.tools_mapping:
+        if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
-        tool = self.tools_mapping[tool_call.name]
+        tool = tools_mapping[tool_call.name]
 
         try:
             tool_output = (
-                await tool(**tool_call.arguments) if iscoroutinefunction(tool) else tool(**tool_call.arguments)
+                await tool.on_tool_call(**tool_call.arguments)
+                if iscoroutinefunction(tool.on_tool_call)
+                else tool.on_tool_call(**tool_call.arguments)
             )
         except Exception as e:
             raise AgentToolExecutionError(tool_call.name, e) from e
@@ -358,13 +377,13 @@ class Agent(
             result=tool_output,
         )
 
-    def get_agent_card(
+    async def get_agent_card(
         self,
         name: str,
         description: str,
         version: str = "0.0.0",
         host: str = "127.0.0.1",
-        port: str = "8000",
+        port: int = 8000,
         protocol: str = "http",
         default_input_modes: list[str] | None = None,
         default_output_modes: list[str] | None = None,
@@ -372,7 +391,7 @@ class Agent(
         skills: list[AgentSkill] | None = None,
     ) -> AgentCard:
         """
-        Creates an AgentCard that encapsulates metadata about the agent,
+        Create an AgentCard that encapsulates metadata about the agent,
         such as its name, version, description, network location, supported input/output modes,
         capabilities, and skills.
 
@@ -381,7 +400,7 @@ class Agent(
             description: A brief description of the agent.
             version: Version string of the agent. Defaults to "0.0.0".
             host: Hostname or IP where the agent will be served. Defaults to "0.0.0.0".
-            port: Port number on which the agent listens. Defaults to "8000".
+            port: Port number on which the agent listens. Defaults to 8000.
             protocol: URL scheme (e.g. "http" or "https"). Defaults to "http".
             default_input_modes: List of input content modes supported by the agent. Defaults to ["text"].
             default_output_modes: List of output content modes supported. Defaults to ["text"].
@@ -399,21 +418,24 @@ class Agent(
             url=f"{protocol}://{host}:{port}",
             defaultInputModes=default_input_modes or ["text"],
             defaultOutputModes=default_output_modes or ["text"],
-            skills=skills or [self._extract_agent_skill(f) for f in self.tools_mapping.values()],
+            skills=skills or await self._extract_agent_skills(),
             capabilities=capabilities or AgentCapabilities(),
         )
 
-    @staticmethod
-    def _extract_agent_skill(func: Callable) -> AgentSkill:
+    async def _extract_agent_skills(self) -> list[AgentSkill]:
         """
-        Extracts an AgentSkill description from a given callable.
-        Uses the function name and its docstring to populate the skill's metadata.
-
-        Args:
-            func: The function to extract skill information from.
+        Extract agent skills from all available tools.
 
         Returns:
             The skill representation with name, id, description, and tags.
         """
-        doc = getdoc(func) or ""
-        return AgentSkill(name=func.__name__.replace("_", " ").title(), id=func.__name__, description=doc, tags=[])
+        all_tools = await self._get_all_tools()
+        return [
+            AgentSkill(
+                name=tool.name.replace("_", " ").title(),
+                id=tool.name,
+                description=f"{tool.description}\n\nParameters:\n{tool.parameters}",
+                tags=[],
+            )
+            for tool in all_tools.values()
+        ]

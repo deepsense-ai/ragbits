@@ -3,7 +3,6 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents.a2a.server import create_agent_app, create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -73,10 +72,3 @@ llm = LiteLLM(
 )
 
 agent = Agent(llm=llm, prompt=HotelPrompt, tools=[get_hotel_recommendations])
-
-agent_card = agent.get_agent_card(
-    name="Hotel Recommendation Agent", description="Recommends hotels for a given city and travel dates.", port="8001"
-)
-
-app = create_agent_app(agent, agent_card, HotelPromptInput)
-server = create_agent_server(agent, agent_card, HotelPromptInput)
