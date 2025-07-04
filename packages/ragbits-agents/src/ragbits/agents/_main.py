@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from dataclasses import dataclass
@@ -337,16 +338,17 @@ class Agent(
 
     async def _get_all_tools(self) -> dict[str, Tool]:
         tools_mapping = {}
-        for tool in self.tools:
+        all_tools = list(self.tools)
+
+        server_tools = await asyncio.gather(*[get_tools(server) for server in self.mcp_servers])
+        for tools in server_tools:
+            all_tools.extend(tools)
+
+        for tool in all_tools:
             if tool.name in tools_mapping:
                 raise AgentToolDuplicateError(tool.name)
             tools_mapping[tool.name] = tool
 
-        for server in self.mcp_servers:
-            for tool in await get_tools(server):
-                if tool.name in tools_mapping:
-                    raise AgentToolDuplicateError(tool.name)
-                tools_mapping[tool.name] = tool
         return tools_mapping
 
     @staticmethod
