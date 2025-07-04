@@ -9,9 +9,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
+from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
-from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
