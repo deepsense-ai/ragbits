@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import * as RagbitsReact from '../index'
+import * as RagbitsReact from '../src'
 
 describe('Package Exports', () => {
     it('should export all hooks', () => {

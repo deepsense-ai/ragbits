@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import * as RagbitsApiClient from '../index'
+import * as RagbitsApiClient from '../src'
 
 describe('Package Exports', () => {
     it('should export RagbitsClient class', () => {

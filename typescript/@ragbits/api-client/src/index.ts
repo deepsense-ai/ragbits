@@ -1,12 +1,12 @@
 import type {
     ClientConfig,
     StreamCallbacks,
-    ApiEndpointPath,
-    ApiEndpointResponse,
-    TypedApiRequestOptions,
-    StreamingEndpointPath,
-    StreamingEndpointRequest,
-    StreamingEndpointStream,
+    BaseApiEndpoints,
+    EndpointDefinition,
+    EndpointResponse,
+    RequestOptions,
+    BaseStreamingEndpoints,
+    EndpointRequest,
 } from './types'
 
 /**
@@ -73,13 +73,18 @@ export class RagbitsClient {
 
     /**
      * Method to make API requests to known endpoints only
-     * @param endpoint - API endpoint path (must be predefined)
+     * @param endpoint - API endpoint path
      * @param options - Typed request options for the specific endpoint
      */
-    async makeRequest<T extends ApiEndpointPath>(
-        endpoint: T,
-        options?: TypedApiRequestOptions<T>
-    ): Promise<ApiEndpointResponse<T>> {
+    async makeRequest<
+        Endpoints extends {
+            [K in keyof Endpoints]: EndpointDefinition
+        } = BaseApiEndpoints,
+        URL extends keyof Endpoints = keyof Endpoints,
+    >(
+        endpoint: URL,
+        options?: RequestOptions<URL, Endpoints>
+    ): Promise<EndpointResponse<URL, Endpoints>> {
         const {
             method = 'GET',
             body,
@@ -99,7 +104,7 @@ export class RagbitsClient {
         }
 
         const response = await this._makeRequest(
-            this._buildApiUrl(endpoint),
+            this._buildApiUrl(endpoint.toString()),
             requestOptions
         )
         return response.json()
@@ -107,15 +112,20 @@ export class RagbitsClient {
 
     /**
      * Method for streaming requests to known endpoints only
-     * @param endpoint - Streaming endpoint path (must be predefined)
+     * @param endpoint - Streaming endpoint path
      * @param data - Request data
      * @param callbacks - Stream callbacks
      * @param signal - Optional AbortSignal for cancelling the request
      */
-    makeStreamRequest<T extends StreamingEndpointPath>(
-        endpoint: T,
-        data: StreamingEndpointRequest<T>,
-        callbacks: StreamCallbacks<StreamingEndpointStream<T>>,
+    makeStreamRequest<
+        Endpoints extends {
+            [K in keyof Endpoints]: EndpointDefinition
+        } = BaseStreamingEndpoints,
+        URL extends keyof Endpoints = keyof Endpoints,
+    >(
+        endpoint: URL,
+        data: EndpointRequest<URL, Endpoints>,
+        callbacks: StreamCallbacks<EndpointResponse<URL, Endpoints>>,
         signal?: AbortSignal
     ): () => void {
         let isCancelled = false
@@ -145,7 +155,7 @@ export class RagbitsClient {
                             const jsonString = line.replace('data: ', '').trim()
                             const parsedData = JSON.parse(
                                 jsonString
-                            ) as StreamingEndpointStream<T>
+                            ) as EndpointResponse<URL, Endpoints>
                             await callbacks.onMessage(parsedData)
                         } catch (parseError) {
                             console.error('Error parsing JSON:', parseError)
@@ -164,15 +174,18 @@ export class RagbitsClient {
 
         const startStream = async (): Promise<void> => {
             try {
-                const response = await fetch(this._buildApiUrl(endpoint), {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Accept: 'text/event-stream',
-                    },
-                    body: JSON.stringify(data),
-                    signal,
-                })
+                const response = await fetch(
+                    this._buildApiUrl(endpoint.toString()),
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'text/event-stream',
+                        },
+                        body: JSON.stringify(data),
+                        signal,
+                    }
+                )
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`)

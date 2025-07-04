@@ -14,7 +14,7 @@
         }
     },
     "scripts": {
-        "build": "npm run clean && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --declarationDir dist --project tsconfig.json",
+        "build": "npm run clean && tsup src/index.ts --format cjs,esm && tsc --emitDeclarationOnly --declaration --project tsconfig.json",
         "dev": "tsc -b . --watch",
         "test": "vitest",
         "test:run": "vitest run",
@@ -22,7 +22,7 @@
         "lint": "eslint .",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "clean": "rm -rf ./dist"
+        "clean": "rm -rf ./dist && rm -f ./tsconfig.tsbuildinfo"
     },
     "peerDependencies": {
         "react": ">=16.8.0",
