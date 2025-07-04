@@ -10,32 +10,6 @@ with suppress(ImportError):
     from mcp.types import CallToolResult
 
 
-async def get_all_tools(servers: list[MCPServer]) -> list[Tool]:
-    """
-    Get all function tools from a list of MCP servers.
-
-    Args:
-        servers: List of MCP servers to retrieve tools from.
-
-    Returns:
-        Combined list of all tools from all servers.
-
-    Raises:
-        RuntimeError: If duplicate tool names are found across different servers.
-    """
-    tools = []
-    tool_names: set[str] = set()
-    for server in servers:
-        server_tools = await get_tools(server)
-        server_tool_names = {tool.name for tool in server_tools}
-        if len(server_tool_names & tool_names) > 0:
-            raise RuntimeError(f"Duplicate tool names found across MCP servers: " f"{server_tool_names & tool_names}")
-        tool_names.update(server_tool_names)
-        tools.extend(server_tools)
-
-    return tools
-
-
 async def get_tools(server: MCPServer) -> list[Tool]:
     """
     Get all function tools from a single MCP server.
@@ -61,11 +35,11 @@ async def get_tools(server: MCPServer) -> list[Tool]:
 
 async def call_mcp_tool(server: MCPServer, tool: "MCPTool", **arguments: Any) -> "CallToolResult":  # noqa: ANN401
     """
-    Invoke an MCP tool.
+    Call an MCP tool.
 
     Args:
         server: The MCP server containing the tool.
-        tool: The MCP tool to invoke.
+        tool: The MCP tool to call.
         **arguments: Keyword arguments to pass to the tool.
 
     Returns:

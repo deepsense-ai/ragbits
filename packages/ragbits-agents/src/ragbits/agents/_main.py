@@ -10,12 +10,13 @@ from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentToolDuplicateError,
     AgentToolExecutionError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
 from ragbits.agents.mcp.server import MCPServer
-from ragbits.agents.mcp.utils import get_all_tools
+from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
@@ -142,8 +143,8 @@ class Agent(
         super().__init__(default_options)
         self.llm = llm
         self.prompt = prompt
-        self.tools = tools
-        self.mcp_servers = mcp_servers
+        self.tools = [Tool.from_callable(tool) for tool in tools or []]
+        self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
 
@@ -178,6 +179,7 @@ class Agent(
             The result of the agent run.
 
         Raises:
+            AgentToolDuplicateError: If the tool names are duplicated.
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
@@ -257,6 +259,7 @@ class Agent(
             A `StreamingResult` object for iteration and collection.
 
         Raises:
+            AgentToolDuplicateError: If the tool names are duplicated.
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
@@ -333,10 +336,18 @@ class Agent(
         return SimplePrompt(curr_history)
 
     async def _get_all_tools(self) -> dict[str, Tool]:
-        all_tools = [Tool.from_callable(tool) for tool in self.tools or []]
-        if self.mcp_servers:
-            all_tools.extend(await get_all_tools(self.mcp_servers))
-        return {tool.name: tool for tool in all_tools}
+        tools_mapping = {}
+        for tool in self.tools:
+            if tool.name in tools_mapping:
+                raise AgentToolDuplicateError(tool.name)
+            tools_mapping[tool.name] = tool
+
+        for server in self.mcp_servers:
+            for tool in await get_tools(server):
+                if tool.name in tools_mapping:
+                    raise AgentToolDuplicateError(tool.name)
+                tools_mapping[tool.name] = tool
+        return tools_mapping
 
     @staticmethod
     async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Tool]) -> ToolCallResult:
