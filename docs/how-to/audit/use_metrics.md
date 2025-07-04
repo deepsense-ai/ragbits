@@ -4,39 +4,84 @@ Similar to [traces](./use_tracing.md), Ragbits also collects metrics. These metr
 
 ## Default metrics
 
-By default, the SDK tracks only histogram metrics for LLMs:
+By default, the SDK tracks histogram metrics for LLMs:
 
 - `input_tokens`: the number of input tokens sent to the model
-- `prompt_throughput`the time taken to process a prompt and receive a response
+- `prompt_throughput`: the time taken to process a prompt and receive a response
 - `token_throughput`: the number of tokens processed per second
 - `time_to_first_token`: the time taken (in seconds) to receive the first token in a streaming response
 
-!!! info
-    For now Ragbits support only histogram metrics, in the future we plan to extend the API for counter and gauge metrics.
+## Supported metric types
 
-## Collecting custom metrics
+Ragbits supports three types of metrics:
 
-The Histogram metric is particularly useful when you want to measure the distribution of a set of values.
+1. **Histogram metrics**: For tracking the distribution of values (like durations, sizes)
+2. **Counter metrics**: For tracking counts of events (like requests, errors)
+3. **Gauge metrics**: For tracking current values that can increase or decrease (like memory usage)
 
-You can use this metric for measuring things like:
+## Registering custom metrics
 
-- The duration of a request.
-- The size of a file.
-- The number of items in a list.
-
-To create a histogram metric, use the [`create_histogram`][ragbits.core.audit.metrics.create_histogram] function.
+To register a custom metric, use the [`register_metric`][ragbits.core.audit.metrics.register_metric] function:
 
 ```python
-from ragbits.core.audit import create_histogram, record
+from enum import Enum
+from ragbits.core.audit.metrics import register_metric
+from ragbits.core.audit.metrics.base import Metric, MetricType
 
-request_duration = create_histogram(
-    name="request_duration",
-    unit="ms",
-    description="Duration of requests",
+# You can define metrics as enums for type safety
+class MyHistogramMetrics(str, Enum):
+    REQUEST_DURATION = "request_duration"
+
+class MyCounterMetrics(str, Enum):
+    REQUEST_COUNT = "request_count"
+
+# Register a histogram metric
+register_metric(
+    MyHistogramMetrics.REQUEST_DURATION,
+    Metric(
+        name="request_duration",
+        description="Duration of requests in milliseconds",
+        unit="ms",
+        type=MetricType.HISTOGRAM,
+    ),
 )
 
-for duration in [10, 20, 30, 40, 50]:
-    record(request_duration, duration)
+# Register a counter metric
+register_metric(
+    MyCounterMetrics.REQUEST_COUNT,
+    Metric(
+        name="request_count",
+        description="Number of requests processed",
+        unit="requests",
+        type=MetricType.COUNTER,
+    ),
+)
+```
+
+## Recording metrics
+
+To record metric values, use the [`record_metric`][ragbits.core.audit.metrics.record_metric] function:
+
+```python
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import MetricType
+
+# Record a histogram value
+record_metric(
+    MyHistogramMetrics.REQUEST_DURATION,
+    150,  # 150ms duration
+    metric_type=MetricType.HISTOGRAM,
+    endpoint="/api/search"  # Additional attributes
+)
+
+# Record a counter increment
+record_metric(
+    MyCounterMetrics.REQUEST_COUNT,
+    1,  # Increment by 1
+    metric_type=MetricType.COUNTER,
+    endpoint="/api/search",
+    status_code=200
+)
 ```
 
 ## Using OpenTelemetry meter

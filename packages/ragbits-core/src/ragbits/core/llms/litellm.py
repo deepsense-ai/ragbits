@@ -8,7 +8,8 @@ from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit.metrics import HistogramMetric, record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -198,22 +199,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
             results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
             results["total_tokens"] = response.usage.total_tokens  # type: ignore
 
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
                 value=response.usage.prompt_tokens,  # type: ignore
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
                 value=response.usage.total_tokens / prompt_throughput,  # type: ignore
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
 
-        record(
-            metric=HistogramMetric.PROMPT_THROUGHPUT,
+        record_metric(
+            metric=LLMMetric.PROMPT_THROUGHPUT,
             value=prompt_throughput,
+            metric_type=MetricType.HISTOGRAM,
             model=self.model_name,
             prompt=prompt.__class__.__name__,
         )
@@ -278,9 +282,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 if content := item.choices[0].delta.content:
                     output_tokens += 1
                     if output_tokens == 1:
-                        record(
-                            metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                        record_metric(
+                            metric=LLMMetric.TIME_TO_FIRST_TOKEN,
                             value=time.perf_counter() - start_time,
+                            metric_type=MetricType.HISTOGRAM,
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
@@ -306,21 +311,24 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             total_time = time.perf_counter() - start_time
 
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
                 value=input_tokens,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
                 value=output_tokens / total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.PROMPT_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.PROMPT_THROUGHPUT,
                 value=total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )

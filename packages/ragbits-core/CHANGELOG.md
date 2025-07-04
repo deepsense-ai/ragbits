@@ -13,6 +13,7 @@
 - Add message update functions to BasePrompt (#648)
 - Add Logfire integration to handle traces and metrics (#642)
 - Clean up Overloads for Prompt (#650)
+- support all metric types
 
 ## 1.0.0 (2025-06-04)
 
@@ -205,4 +206,3 @@
 - ChromaDB integration.
 - Prompts lab.
 - Prompts autodiscovery.
-
