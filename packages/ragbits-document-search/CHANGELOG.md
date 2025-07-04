@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: allow to pass custom configuration into docling parser (#690)
+
 ## 1.0.0 (2025-06-04)
 
 ### Changed

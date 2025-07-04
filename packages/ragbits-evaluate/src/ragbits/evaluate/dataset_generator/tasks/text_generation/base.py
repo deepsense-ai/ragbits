@@ -2,7 +2,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import Any
 
-from distilabel.llms.base import LLM
+from distilabel.models import LLM
 from distilabel.steps.tasks import TextGeneration
 
 from ragbits.core.prompt import ChatFormat, Prompt

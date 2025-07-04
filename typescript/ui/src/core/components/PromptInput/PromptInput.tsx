@@ -74,7 +74,7 @@ const PromptInput = ({
 
   const handleSubmit = useCallback(
     (text?: string) => {
-      if (!message && !isLoading && text) return;
+      if (!message && !isLoading && !text) return;
 
       submit(text ?? message);
       setQuickMessages((quickMessages) => {

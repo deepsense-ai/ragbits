@@ -1,0 +1,82 @@
+name: Check examples
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'release/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  examples:
+    name: Check examples job
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+
+    services:
+      postgres:
+        image: pgvector/pgvector:${{ vars.PGVECTOR_IMAGE_TAG || '0.8.0-pg17' }}
+        env:
+          POSTGRES_USER: ragbits_example
+          POSTGRES_PASSWORD: ragbits_example
+          POSTGRES_DB: ragbits_example
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      weaviate:
+        image: cr.weaviate.io/semitechnologies/weaviate:${{ vars.WEAVIATE_IMAGE_TAG || '1.30.6' }}
+        env:
+          QUERY_DEFAULTS_LIMIT: 25
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
+          PERSISTENCE_DATA_PATH: /var/lib/weaviate
+          ENABLE_API_BASED_MODULES: true
+          CLUSTER_HOSTNAME: node1
+        ports:
+          - 8080:8080
+          - 50051:50051
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      grafana:
+        image: grafana/otel-lgtm
+        ports:
+          - 3000:3000
+          - 4317:4317
+          - 4318:4318
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Run examples
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+          GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+          GCP_KEY: ${{ secrets.GCP_KEY }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp_key.json
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
+        run: |
+          echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS"
+          ./.github/scripts/run_examples.sh

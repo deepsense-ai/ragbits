@@ -10,6 +10,5 @@ mirakuru
 psycopg
 pytest-postgresql
 python-bidi
-psycopg-binary
-psycopg-pool
 griffe
+types-requests

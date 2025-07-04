@@ -1,10 +1,12 @@
 import json
+from collections.abc import Callable
+from typing import cast
 
 import pytest
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents._main import AgentResult, ToolCallResult
+from ragbits.agents._main import AgentResult, AgentResultStreaming, ToolCallResult
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
     AgentToolNotAvailableError,
@@ -82,43 +84,60 @@ def llm_wrong_tool_type() -> MockLLM:
     return MockLLM(default_options=options)
 
 
-async def test_agent_run_no_tools(llm_without_tool_call: MockLLM):
+async def _run(agent: Agent, input: str | BaseModel | None = None) -> AgentResult:
+    return await agent.run(input)
+
+
+async def _run_streaming(agent: Agent, input: str | BaseModel | None = None) -> AgentResultStreaming:
+    result = agent.run_streaming(input)
+    async for _chunk in result:
+        pass
+    return result
+
+
+@pytest.mark.parametrize(("method", "result_type"), [(_run, AgentResult), (_run_streaming, AgentResultStreaming)])
+async def test_agent_run_no_tools(llm_without_tool_call: MockLLM, method: Callable, result_type: type):
     """Test a simple run of the agent without tools."""
     agent = Agent(
         llm=llm_without_tool_call,
         prompt=CustomPrompt,
         tools=[get_weather],
     )
-    result = await agent.run()
+    result = await method(agent)
 
-    assert isinstance(result, AgentResult)
+    assert isinstance(result, result_type)
+    result = cast(AgentResult, result)
     assert result.content == "Test LLM output"
     assert result.tool_calls is None
 
 
-async def test_agent_run_tools(llm_with_tool_call: MockLLM):
+@pytest.mark.parametrize(("method", "result_type"), [(_run, AgentResult), (_run_streaming, AgentResultStreaming)])
+async def test_agent_run_tools(llm_with_tool_call: MockLLM, method: Callable, result_type: type):
     """Test a simple run of the agent without tools."""
     agent = Agent(
         llm=llm_with_tool_call,
         prompt=CustomPrompt,
         tools=[get_weather],
     )
-    result = await agent.run()
+    result = await method(agent)
 
-    assert isinstance(result, AgentResult)
+    assert isinstance(result, result_type)
+    result = cast(AgentResult, result)
     assert result.content == "Temperature is 72 fahrenheit"
     assert result.tool_calls == [
         ToolCallResult(
+            id="test",
             name="get_weather",
             arguments={
                 "location": "San Francisco",
             },
-            output='{"location": "San Francisco", "temperature": "72", "unit": ' '"fahrenheit"}',
+            result='{"location": "San Francisco", "temperature": "72", "unit": ' '"fahrenheit"}',
         ),
     ]
 
 
-async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM, method: Callable):
     def fake_func() -> None: ...
 
     agent = Agent(
@@ -128,10 +147,11 @@ async def test_raises_when_wrong_tool_returned(llm_with_tool_call: MockLLM):
     )
 
     with pytest.raises(AgentToolNotAvailableError):
-        await agent.run()
+        await method(agent)
 
 
-async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM, method: Callable):
     agent = Agent(
         llm=llm_wrong_tool_type,
         prompt=CustomPrompt,
@@ -139,43 +159,49 @@ async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM):
     )
 
     with pytest.raises(AgentToolNotSupportedError):
-        await agent.run()
+        await method(agent)
 
 
-async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_raises_invalid_prompt_input_error_with_none_prompt_and_none_input(
+    llm_without_tool_call: MockLLM, method: Callable
+):
     agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
-        await agent.run(input=None)
+        await method(agent)
 
     assert exc_info.value.prompt_type is None
     assert exc_info.value.input_type is None
     assert "Invalid prompt/input combination: prompt=None, input=None" in str(exc_info.value)
 
 
-async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_raises_invalid_prompt_input_error_with_invalid_types(llm_without_tool_call: MockLLM, method: Callable):
     agent = Agent(llm=llm_without_tool_call, prompt=123)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
-        await agent.run(input={"key": "value"})
+        await method(agent, input={"key": "value"})
 
     assert exc_info.value.prompt_type == 123
     assert exc_info.value.input_type == {"key": "value"}
     assert "Invalid prompt/input combination" in str(exc_info.value)
 
 
-async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_raises_invalid_prompt_input_error_with_list_input(llm_without_tool_call: MockLLM, method: Callable):
     agent = Agent(llm=llm_without_tool_call, prompt=None)  # type: ignore
 
     with pytest.raises(AgentInvalidPromptInputError) as exc_info:
-        await agent.run(input=["item1", "item2"])
+        await method(agent, input=["item1", "item2"])
 
     assert exc_info.value.prompt_type is None
     assert exc_info.value.input_type == ["item1", "item2"]
     assert "Invalid prompt/input combination" in str(exc_info.value)
 
 
-async def test_agent_with_initial_history(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_with_initial_history(llm_without_tool_call: MockLLM, method: Callable):
     """Test agent with initial history."""
     initial_history = [
         {"role": "system", "content": "You are a helpful assistant"},
@@ -190,11 +216,11 @@ async def test_agent_with_initial_history(llm_without_tool_call: MockLLM):
         keep_history=True,
     )
 
-    await agent.run("What's the weather like?")
+    await method(agent, input="What's the weather like?")
 
     assert agent.history
-    assert len(agent.history) == 5  # system + initial user + assistant + new user + new assistant
 
+    assert len(agent.history) == 5  # system + initial user + assistant + new user + new assistant
     assert agent.history[0]["role"] == "system"
     assert agent.history[0]["content"] == "You are a weather assistant"  #! Updated system prompt
     assert agent.history[1]["role"] == "user"
@@ -207,7 +233,8 @@ async def test_agent_with_initial_history(llm_without_tool_call: MockLLM):
     assert agent.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_without_keep_history(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_without_keep_history(llm_without_tool_call: MockLLM, method: Callable):
     """Test agent without history preservation."""
     initial_history = [
         {"role": "user", "content": "Previous message"},
@@ -221,7 +248,7 @@ async def test_agent_without_keep_history(llm_without_tool_call: MockLLM):
         keep_history=False,
     )
 
-    result = await agent.run("New message")
+    result = await method(agent, input="New message")
 
     # Agent history should not be updated
     assert agent.history == initial_history
@@ -239,7 +266,8 @@ async def test_agent_without_keep_history(llm_without_tool_call: MockLLM):
     assert result.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call: MockLLM, method: Callable):
     """Test history handling with string prompt and string input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -247,7 +275,7 @@ async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call:
         keep_history=True,
     )
 
-    await agent.run("Hello")
+    await method(agent, input="Hello")
 
     assert agent.history is not None
     assert len(agent.history) == 3  # system + user + assistant
@@ -259,7 +287,8 @@ async def test_agent_history_with_string_prompt_and_input(llm_without_tool_call:
     assert agent.history[2]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: MockLLM, method: Callable):
     """Test history handling with string prompt and no input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -267,7 +296,7 @@ async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: 
         keep_history=True,
     )
 
-    await agent.run()
+    await method(agent)
 
     assert agent.history is not None
     assert len(agent.history) == 2  # user (prompt) + assistant
@@ -277,7 +306,10 @@ async def test_agent_history_with_string_prompt_no_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_weather_prompt_with_history_multiple_runs(
+    llm_without_tool_call: MockLLM, method: Callable
+):
     """Test history handling with custom prompt class with input type."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -286,13 +318,12 @@ async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_
     )
 
     input_data = WeatherInput(location="London", date="today")
-    await agent.run(input_data)
+    await method(agent, input=input_data)
 
     input_data2 = WeatherInput(location="Paris", date="tomorrow")
-    await agent.run(input_data2)
+    await method(agent, input=input_data2)
 
     assert agent.history is not None
-    print(agent.history)
     assert len(agent.history) == 5
     assert agent.history[0]["role"] == "system"
     assert agent.history[0]["content"] == "You are a weather assistant"
@@ -306,7 +337,10 @@ async def test_agent_history_with_weather_prompt_with_history_multiple_runs(llm_
     assert agent.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_weather_prompt_no_history_multiple_runs(
+    llm_without_tool_call: MockLLM, method: Callable
+):
     """Test history handling with custom prompt class with input type."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -315,7 +349,7 @@ async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_wi
     )
 
     input_data = WeatherInput(location="London", date="today")
-    result = await agent.run(input_data)
+    result = await method(agent, input=input_data)
     assert agent.history == []
     assert result.history[0]["role"] == "system"
     assert result.history[0]["content"] == "You are a weather assistant"
@@ -325,7 +359,7 @@ async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_wi
     assert result.history[2]["content"] == "Test LLM output"
 
     input_data2 = WeatherInput(location="Paris", date="tomorrow")
-    result2 = await agent.run(input_data2)
+    result2 = await method(agent, input=input_data2)
     assert agent.history == []
     assert result2.history[0]["role"] == "system"
     assert result2.history[0]["content"] == "You are a weather assistant"
@@ -335,7 +369,8 @@ async def test_agent_history_with_weather_prompt_no_history_multiple_runs(llm_wi
     assert result2.history[2]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: MockLLM, method: Callable):
     """Test history handling with no prompt and string input."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -343,7 +378,7 @@ async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: 
         keep_history=True,
     )
 
-    await agent.run("Direct message")
+    await method(agent, input="Direct message")
 
     assert agent.history is not None
     assert len(agent.history) == 2  # user + assistant
@@ -353,7 +388,8 @@ async def test_agent_history_with_no_prompt_string_input(llm_without_tool_call: 
     assert agent.history[1]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_call: MockLLM, method: Callable):
     """Test history accumulation across multiple runs."""
     agent: Agent = Agent(
         llm=llm_without_tool_call,
@@ -361,11 +397,11 @@ async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_c
         keep_history=True,
     )
 
-    result1 = await agent.run("First message")
+    result1 = await method(agent, input="First message")
     assert result1.history is not None
     assert len(result1.history) == 3  # system + user + assistant
 
-    result2 = await agent.run("Second message")
+    result2 = await method(agent, input="Second message")
     assert result2.history is not None
     assert len(result2.history) == 5  # system + user1 + assistant1 + user2 + assistant2
 
@@ -381,7 +417,8 @@ async def test_agent_history_with_string_prompt_multiple_runs(llm_without_tool_c
     assert result2.history[4]["content"] == "Test LLM output"
 
 
-async def test_agent_history_with_tools(llm_with_tool_call: MockLLM):
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_history_with_tools(llm_with_tool_call: MockLLM, method: Callable):
     """Test history handling with tool calls."""
     agent: Agent = Agent(
         llm=llm_with_tool_call,
@@ -390,7 +427,7 @@ async def test_agent_history_with_tools(llm_with_tool_call: MockLLM):
         keep_history=True,
     )
 
-    await agent.run("What's the weather in San Francisco?")
+    await method(agent, input="What's the weather in San Francisco?")
 
     assert len(agent.history) == 5
 

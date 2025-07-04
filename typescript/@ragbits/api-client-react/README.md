@@ -128,6 +128,56 @@ function ChatComponent() {
 }
 ```
 
+#### Custom Route Call Example
+
+```tsx
+import { useRagbitsCall } from '@ragbits/api-client-react'
+
+type MyEndpoints = {
+    '/api/my-endpoint': {
+        method: 'GET'
+        request: never
+        response: string
+    }
+}
+
+function MyComponent() {
+    // In case of usage of custom Endpoints, we have to specify the URL as generic parameter
+    const custom = useRagbitsCall<MyEndpoints, '/api/my-endpoint'>(
+        '/api/my-endpoint'
+    )
+
+    const handleLoadCustom = async () => {
+        try {
+            await custom.call()
+            console.log('Custom loaded:', custom.data)
+        } catch (error) {
+            console.error('Failed to load custom:', error)
+        }
+    }
+
+    return (
+        <div>
+            <button onClick={handleLoadCustom} disabled={custom.isLoading}>
+                {custom.isLoading
+                    ? 'Loading...'
+                    : custom.data
+                      ? 'Reload custom'
+                      : 'Load custom'}
+            </button>
+
+            {custom.data && (
+                <div>
+                    <h3>Custom loaded successfully</h3>
+                </div>
+            )}
+
+            {custom.error && <p>Error: {custom.error.message}</p>}
+        </div>
+    )
+}
+```
+
 ## API Reference
 
 ### `RagbitsProvider`
@@ -143,13 +193,14 @@ interface RagbitsProviderProps {
 }
 ```
 
-### `useRagbitsCall<T>(endpoint, defaultOptions?)`
+### `useRagbitsCall<Endpoints, URL>(endpoint, defaultOptions?)`
 
-React hook for making type-safe API calls with automatic state management.
+React hook for making type-safe API calls with automatic state management. `endpoint` must be one of the key of `Endpoints` type
+that define schema of the available endpoints. All default Ragbits routes are supported out of the box.
 
 **Parameters:**
 
-- `endpoint`: Predefined API endpoint path (e.g., '/api/config', '/api/feedback')
+- `endpoint`: API endpoint path (e.g., '/api/config', '/api/feedback')
 - `defaultOptions` (optional): Default request options
 
 **Returns:**
@@ -165,13 +216,14 @@ interface RagbitsCallResult<T, E = Error> {
 }
 ```
 
-### `useRagbitsStream<T>(endpoint)`
+### `useRagbitsStream<Endpoints, URL>(endpoint)`
 
-React hook for handling streaming responses with automatic state management.
+React hook for handling streaming responses with automatic state management. `endpoint` must be one of the key of `Endpoints` type
+that define schema of the available endpoints. All default Ragbits routes are supported out of the box.
 
 **Parameters:**
 
-- `endpoint`: Predefined streaming endpoint path (e.g., '/api/chat')
+- `endpoint`: Streaming endpoint path (e.g., '/api/chat')
 
 **Returns:**
 
@@ -194,43 +246,6 @@ Access the underlying `RagbitsClient` instance directly.
 interface RagbitsContextValue {
     client: RagbitsClient
 }
-```
-
-## Types
-
-All types from `@ragbits/api-client` are re-exported:
-
-```typescript
-import type {
-    // Core types
-    RagbitsClient,
-    ClientConfig,
-
-    // Request/Response types
-    ChatRequest,
-    FeedbackRequest,
-    ConfigResponse,
-    FeedbackResponse,
-
-    // Message types
-    Message,
-    MessageRole,
-    TypedChatResponse,
-    ChatResponseType,
-
-    // Feedback types
-    FeedbackType,
-
-    // Stream types
-    StreamCallbacks,
-
-    // Endpoint types
-    ApiEndpointPath,
-    StreamingEndpointPath,
-    ApiEndpointResponse,
-    StreamingEndpointStream,
-    TypedApiRequestOptions,
-} from '@ragbits/api-client-react'
 ```
 
 ## Browser Support
