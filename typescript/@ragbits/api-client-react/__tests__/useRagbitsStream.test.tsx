@@ -3,8 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { act } from 'react'
 import { waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
-import { useRagbitsStream } from '../hooks'
-import { RagbitsProvider } from '../RagbitsProvider'
+import { useRagbitsStream, RagbitsProvider } from '../src'
 import { ChatResponseType, type TypedChatResponse } from '@ragbits/api-client'
 
 function createWrapper() {

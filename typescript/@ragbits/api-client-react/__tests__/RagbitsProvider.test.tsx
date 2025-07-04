@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { RagbitsProvider, useRagbitsContext } from '../RagbitsProvider'
+import { RagbitsProvider, useRagbitsContext } from '../src'
 
 function TestComponent() {
     const { client } = useRagbitsContext()
