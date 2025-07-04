@@ -4,7 +4,6 @@ import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import PromptInput from "./core/components/PromptInput/PromptInput";
 import { useHistoryContext } from "./core/contexts/HistoryContext/useHistoryContext";
-import { useThemeContext } from "./core/contexts/ThemeContext/useThemeContext";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react";
@@ -22,7 +21,6 @@ export default function App() {
     sendMessage,
     stopAnswering,
   } = useHistoryContext();
-  const { theme } = useThemeContext();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
@@ -136,7 +134,6 @@ export default function App() {
     <div
       className={cn(
         "flex h-screen w-screen items-start justify-center bg-background",
-        theme,
       )}
     >
       <div className="h-full w-full max-w-full">
@@ -164,6 +161,7 @@ export default function App() {
                 submit={handleSubmit}
                 stopAnswering={stopAnswering}
                 followupMessages={followupMessages}
+                history={history}
               />
             </div>
           </div>

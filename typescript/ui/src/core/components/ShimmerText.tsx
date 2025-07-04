@@ -1,3 +1,8 @@
+/**
+ * Note: Children components should have `text-transparent` class applied for
+ * the shimmer effect to be displayed correctly.
+ */
+
 import { cn } from "@heroui/react";
 import { motion } from "framer-motion";
 import { PropsWithChildren } from "react";
