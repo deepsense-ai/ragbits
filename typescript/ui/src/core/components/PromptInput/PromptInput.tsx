@@ -18,9 +18,11 @@ import HorizontalActions from "./HorizontalActions";
 import { useCaretLogicalLineDetection } from "../../utils/useTextAreaCaretDetection";
 import { ChatMessage } from "../../../types/history";
 import { MessageRole } from "@ragbits/api-client-react";
+import PluginWrapper from "../../utils/plugins/PluginWrapper";
+import { ChatOptionsPlugin } from "../../../plugins/ChatOptionsPlugin";
 
 interface PromptInputProps {
-  submit: (text: string) => void;
+  submit: (text: string, options?: Record<string, any>) => void;
   stopAnswering: () => void;
   onArrowUp?: (isFirstLine: boolean) => void;
   onArrowDown?: (isLastLine: boolean) => void;
@@ -48,6 +50,7 @@ const PromptInput = ({
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
+  const [chatOptions, setChatOptions] = useState<Record<string, any>>({});
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
@@ -76,7 +79,7 @@ const PromptInput = ({
     (text?: string) => {
       if (!message && !isLoading && !text) return;
 
-      submit(text ?? message);
+      submit(text ?? message, chatOptions);
       setQuickMessages((quickMessages) => {
         const newQuickMessages = quickMessages.slice(0, -1);
         newQuickMessages.push(text ?? message);
@@ -85,7 +88,7 @@ const PromptInput = ({
       setMessage("");
       textAreaRef?.current?.focus();
     },
-    [isLoading, submit, message],
+    [isLoading, submit, message, chatOptions],
   );
 
   const onSubmit = useCallback(
@@ -168,7 +171,7 @@ const PromptInput = ({
       <HorizontalActions
         isVisible={!!followupMessages}
         actions={followupMessages ?? []}
-        sendMessage={handleSubmit}
+        sendMessage={(text: string) => handleSubmit(text)}
       />
 
       <Form
@@ -195,36 +198,53 @@ const PromptInput = ({
           onValueChange={handleValueChange}
           {...inputProps}
         />
-        <Button
-          isIconOnly
-          aria-label={isLoading ? "Stop answering" : "Send message to the chat"}
-          color={!isLoading && !message ? "default" : "primary"}
-          isDisabled={!isLoading && !message}
-          radius="full"
-          size="sm"
-          type={isLoading ? "button" : "submit"}
-          onPress={isLoading ? handleStopAnswering : undefined}
-          {...sendButtonProps}
-        >
-          {!isLoading &&
-            (customSendIcon ?? (
-              <Icon
-                className={cn(
-                  !message ? "text-default-600" : "text-primary-foreground",
-                )}
-                icon="heroicons:arrow-up"
-                width={20}
-              />
-            ))}
-          {isLoading &&
-            (customStopIcon ?? (
-              <Icon
-                className="text-primary-foreground"
-                icon="heroicons:stop"
-                width={20}
-              />
-            ))}
-        </Button>
+        <div className="flex items-center gap-2">
+          <PluginWrapper
+            plugin={ChatOptionsPlugin}
+            component="ChatOptionsForm"
+            componentProps={{
+              onOptionsChange: (data: Record<string, any>) => {
+                setChatOptions(data);
+              },
+            }}
+            skeletonSize={{
+              width: "40px",
+              height: "40px",
+            }}
+          />
+          <Button
+            isIconOnly
+            aria-label={
+              isLoading ? "Stop answering" : "Send message to the chat"
+            }
+            color={!isLoading && !message ? "default" : "primary"}
+            isDisabled={!isLoading && !message}
+            radius="full"
+            size="sm"
+            type={isLoading ? "button" : "submit"}
+            onPress={isLoading ? handleStopAnswering : undefined}
+            {...sendButtonProps}
+          >
+            {!isLoading &&
+              (customSendIcon ?? (
+                <Icon
+                  className={cn(
+                    !message ? "text-default-600" : "text-primary-foreground",
+                  )}
+                  icon="heroicons:arrow-up"
+                  width={20}
+                />
+              ))}
+            {isLoading &&
+              (customStopIcon ?? (
+                <Icon
+                  className="text-primary-foreground"
+                  icon="heroicons:stop"
+                  width={20}
+                />
+              ))}
+          </Button>
+        </div>
       </Form>
     </div>
   );

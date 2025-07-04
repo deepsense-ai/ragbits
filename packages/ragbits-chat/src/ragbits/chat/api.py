@@ -133,6 +133,7 @@ class RagbitsAPI:
                     )
                 # Remove the signature from context after verification (it's already parsed into ChatContext)
 
+
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
                 message=request.message,
@@ -164,6 +165,7 @@ class RagbitsAPI:
         async def config() -> JSONResponse:
             like_config = self.chat_interface.feedback_config.like_form
             dislike_config = self.chat_interface.feedback_config.dislike_form
+            chat_config = self.chat_interface.chat_config.chat_form
 
             config_dict = {
                 "feedback": {
@@ -179,6 +181,9 @@ class RagbitsAPI:
                 "customization": self.chat_interface.ui_customization.model_dump()
                 if self.chat_interface.ui_customization
                 else None,
+                "chat": {
+                    "form": chat_config
+                },
             }
 
             return JSONResponse(content=config_dict)
