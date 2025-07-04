@@ -84,7 +84,7 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const handleSubmit = (text: string, options?: Record<string, any>) => {
+  const handleSubmit = (text: string, options?: Record<string, unknown>) => {
     sendMessage(text, options);
   };
 
