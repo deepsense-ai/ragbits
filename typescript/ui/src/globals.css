@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-.markdown-container pre {
-  overflow: auto;
-  max-width: 100%;
+.markdown-container code::before,
+.markdown-container code::after {
+  content: none;
 }
 
 .prose {

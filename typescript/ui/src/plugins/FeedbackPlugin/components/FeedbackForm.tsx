@@ -5,14 +5,12 @@ import {
   ModalHeader,
   ModalBody,
   Button,
-  cn,
   useDisclosure,
 } from "@heroui/react";
-import { useThemeContext } from "../../core/contexts/ThemeContext/useThemeContext";
 import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
-import DelayedTooltip from "../../core/components/DelayedTooltip";
-import { useConfigContext } from "../../core/contexts/ConfigContext/useConfigContext";
+import DelayedTooltip from "../../../core/components/DelayedTooltip";
+import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import FormTheme from "./FormTheme";
 import validator from "@rjsf/validator-ajv8";
 import { RJSFValidationError } from "@rjsf/utils";
@@ -30,7 +28,6 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(
     FeedbackType.LIKE,
   );
-  const { theme } = useThemeContext();
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
@@ -115,7 +112,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
           </Button>
         </DelayedTooltip>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className={cn(theme)}>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>

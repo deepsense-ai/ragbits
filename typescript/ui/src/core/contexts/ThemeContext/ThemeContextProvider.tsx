@@ -2,6 +2,7 @@ import {
   FC,
   ReactNode,
   useCallback,
+  useEffect,
   useMemo,
   useSyncExternalStore,
 } from "react";
@@ -30,6 +31,13 @@ export const ThemeContextProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const themeValue = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "dark",
+      themeValue === Theme.DARK,
+    );
+  }, [themeValue]);
 
   const setTheme = useCallback((newTheme: Theme) => {
     window.localStorage.setItem("theme", newTheme);
