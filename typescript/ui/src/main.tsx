@@ -9,10 +9,12 @@ import { RagbitsProvider } from "@ragbits/api-client-react";
 import { loadIcons } from "@iconify/react";
 import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
 import { FeedbackFormPlugin } from "./plugins/FeedbackPlugin/index.tsx";
+import { ChatOptionsPlugin } from "./plugins/ChatOptionsPlugin/index.tsx";
 import { ConfigContextProvider } from "./core/contexts/ConfigContext/ConfigContextProvider.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
+pluginManager.register(ChatOptionsPlugin);
 
 // Preload icons
 loadIcons([
@@ -24,6 +26,7 @@ loadIcons([
   "heroicons:arrow-down",
   "heroicons:arrow-up",
   "heroicons:chevron-down",
+  "heroicons:cog-6-tooth",
 ]);
 
 createRoot(document.getElementById("root")!).render(

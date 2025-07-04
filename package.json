@@ -12,6 +12,7 @@
     "build:clean": "npm run clean && npm run build",
     "clean": "npm run clean --workspaces --if-present",
     "dev": "npm run dev --workspaces --if-present",
+    "dev:ui": "npm run dev --workspace=ui",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "format": "npm run format --workspaces --if-present"

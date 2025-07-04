@@ -96,4 +96,19 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
+    chat: {
+        form: {
+            title: 'Chat Form',
+            type: 'object',
+            required: ['language'],
+            properties: {
+                language: {
+                    title: 'Language',
+                    description: 'Please select the language',
+                    type: 'string',
+                    enum: ['English', 'Polish'],
+                },
+            },
+        },
+    },
 }

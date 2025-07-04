@@ -31,6 +31,7 @@ export default function SelectWidget({
       isDisabled={disabled || readonly}
       errorMessage={rawErrors}
       isInvalid={hasError}
+      selectedKeys={value ? [value] : []}
       onChange={(e) => onChange(e.target.value)}
       onBlur={() => onBlur?.(id, value)}
       onFocus={() => onFocus?.(id, value)}
