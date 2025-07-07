@@ -50,6 +50,7 @@ class RagbitsAPI:
         chat_interface: type[ChatInterface] | str,
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
+        debug_mode: bool = False,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -59,10 +60,12 @@ class RagbitsAPI:
                                 in format "module.path:ClassName" (legacy support)
             cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
             ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
+            debug_mode: Flag enabling debug tools in the default UI
         """
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
+        self.debug_mode = debug_mode
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -179,6 +182,7 @@ class RagbitsAPI:
                 "customization": self.chat_interface.ui_customization.model_dump()
                 if self.chat_interface.ui_customization
                 else None,
+                "debug_mode": self.debug_mode,
             }
 
             return JSONResponse(content=config_dict)

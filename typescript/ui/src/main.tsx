@@ -24,6 +24,7 @@ loadIcons([
   "heroicons:arrow-down",
   "heroicons:arrow-up",
   "heroicons:chevron-down",
+  "heroicons:bug-ant",
 ]);
 
 createRoot(document.getElementById("root")!).render(
