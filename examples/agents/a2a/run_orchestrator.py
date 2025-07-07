@@ -24,7 +24,6 @@ import asyncio
 import threading
 
 from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
-<<<<<<< HEAD
 from flight_agent import FlightPromptInput
 from flight_agent import agent as flight_agent
 from hotel_agent import HotelPromptInput
@@ -32,12 +31,6 @@ from hotel_agent import agent as hotel_agent
 from uvicorn import Server
 
 from ragbits.agents.a2a.server import create_agent_server
-=======
-from hotel_agent import server as hotel_agent_server
-from uvicorn import Server
-
-from flight_agent import server as flight_agent_server
->>>>>>> 505a0d31 (add how-to)
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 

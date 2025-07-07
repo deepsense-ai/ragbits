@@ -3,10 +3,6 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-<<<<<<< HEAD
-=======
-from ragbits.agents.a2a.server import create_agent_server
->>>>>>> 505a0d31 (add how-to)
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
