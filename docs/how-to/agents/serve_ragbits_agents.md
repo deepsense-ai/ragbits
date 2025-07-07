@@ -7,6 +7,8 @@ This guide walks through serving a Ragbits agent using FastAPI and Uvicorn, maki
 Start by creating a simple weather agent using a structured prompt and tool function:
 
 ```python
+import json
+
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
@@ -14,13 +16,16 @@ from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
 --8<-- "examples/agents/tool_use.py:31:70"
+
+llm = LiteLLM(model_name="gpt-4o-2024-08-06" use_structured_output=True)
+agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
 ```
 
 ## Generate the agent card
 The Agent Card defines the agent’s name, description, and endpoint. It’s automatically served at `/.well-known/agent.json` and is required for A2A discovery. You can generate the Agent Card using the [`get_agent_card`][ragbits.agents.Agent.get_agent_card] method:
 
 ```python
-agent_card = agent.get_agent_card(
+agent_card = await agent.get_agent_card(
     name="Weather Agent",
     description="Provides current weather for a given location.",
     port="8000",
@@ -41,6 +46,8 @@ To serve the agent over HTTP with A2A-compliant endpoints, use the built-in [`cr
 
 To launch the agent as an A2A-compatible HTTP server, run the following code:
 ```python
+import asyncio
+
 from ragbits.agents.a2a.server import create_agent_server
 
 async def main():
