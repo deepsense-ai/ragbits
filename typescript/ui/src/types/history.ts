@@ -25,6 +25,8 @@ export interface HistoryContext {
   history: ChatMessage[];
   followupMessages: string[] | null;
   isLoading: boolean;
+  eventsLog: ChatResponse[][];
+  context: Record<string, unknown>;
   /**
    * Sends a message to the chat window with animations and delayed rendering.
    */

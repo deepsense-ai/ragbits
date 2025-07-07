@@ -96,4 +96,5 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
+    debug_mode: false,
 }

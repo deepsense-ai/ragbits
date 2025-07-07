@@ -1,4 +1,10 @@
-import { PropsWithChildren, useCallback, useMemo, useState } from "react";
+import {
+  PropsWithChildren,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { HistoryContext } from "./HistoryContext.ts";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -17,12 +23,24 @@ import { noop } from "lodash";
 
 export function HistoryProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
+  /**
+   * Gather log of all events in the chat.
+   * Using ref instead of state to avoid copying
+   */
+  const eventsLogRef = useRef<ChatResponse[][]>([]);
   const [followupMessages, setFollowupMessages] = useState<string[] | null>(
     null,
   );
   const [serverState, setServerState] = useState<ServerState | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const chatFactory = useRagbitsStream("/api/chat");
+  const context = useMemo(
+    () => ({
+      ...(serverState ?? {}),
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+    }),
+    [conversationId, serverState],
+  );
 
   const updateHistoryState = (
     updater: (prev: HistoryState) => HistoryState,
@@ -54,6 +72,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
     setHistory(new Map());
     setServerState(null);
     setConversationId(null);
+    eventsLogRef.current = [];
   }, []);
 
   const _handleNonHistoryResponse = useCallback(
@@ -147,6 +166,9 @@ export function HistoryProvider({ children }: PropsWithChildren) {
       } else {
         _handleHistoryResponse(response, messageId);
       }
+
+      const eventsLog = eventsLogRef.current;
+      eventsLog[eventsLog.length - 1].push(response);
     },
     [_handleNonHistoryResponse, _handleHistoryResponse],
   );
@@ -167,17 +189,14 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         content: "",
       });
 
-      // Prepare chat request with conversation context
-      const context = {
-        ...(serverState ?? {}),
-        ...(conversationId ? { conversation_id: conversationId } : {}),
-      };
-
       const chatRequest: ChatRequest = {
         message: text,
         history: mapHistoryToMessages(history),
         context,
       };
+
+      // Add new entry for events
+      eventsLogRef.current.push([]);
 
       // Send message using the new streaming hook
       chatFactory.stream(chatRequest, {
@@ -195,38 +214,34 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         onClose: noop,
       });
     },
-    [
-      history,
-      serverState,
-      conversationId,
-      addMessage,
-      chatFactory,
-      handleResponse,
-    ],
+    [addMessage, history, context, chatFactory, handleResponse],
   );
 
   const value = useMemo(
     () => ({
       history: Array.from(history.values()),
+      followupMessages,
+      isLoading: chatFactory.isStreaming,
+      eventsLog: eventsLogRef.current,
+      context,
       addMessage,
       handleResponse,
       deleteMessage,
       clearHistory,
       sendMessage,
       stopAnswering: chatFactory.cancel,
-      followupMessages,
-      isLoading: chatFactory.isStreaming,
     }),
     [
       history,
+      followupMessages,
+      chatFactory.isStreaming,
+      chatFactory.cancel,
+      context,
       addMessage,
       handleResponse,
       deleteMessage,
       clearHistory,
       sendMessage,
-      chatFactory.cancel,
-      chatFactory.isStreaming,
-      followupMessages,
     ],
   );
 
