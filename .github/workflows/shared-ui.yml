@@ -4,8 +4,8 @@ on:
   workflow_call:
 
 jobs:
-  lints:
-    name: Run linters
+  checks:
+    name: Run linters & tests
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -60,5 +60,5 @@ jobs:
             exit 1
           }
       - name: Run integration tests
-        run: npm run tests:integration
+        run: npm run test:integration
         working-directory: typescript/ui
