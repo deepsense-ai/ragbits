@@ -28,7 +28,7 @@ agent_card = agent.get_agent_card(
 ```
 
 ## Serve the Agent
-To serve the agent over HTTP with A2A-compliant endpoints, use the built-in [`create_agent_server`][ragbits.agents.a2a.server.create_agent_server] utility. The agent server exposes two endpoints: 
+To serve the agent over HTTP with A2A-compliant endpoints, use the built-in [`create_agent_server`][ragbits.agents.a2a.server.create_agent_server] utility. The agent server exposes two endpoints:
 
 | Endpoint                  | Method | Description                                                                          |
 | ------------------------- | ------ | ------------------------------------------------------------------------------------ |
@@ -37,7 +37,7 @@ To serve the agent over HTTP with A2A-compliant endpoints, use the built-in [`cr
 
 !!! note
 
-    By default, the server runs on port `8000`. This can be customized by setting the `port` parameter when generating the agent card. 
+    By default, the server runs on port `8000`. This can be customized by setting the `port` parameter when generating the agent card.
 
 To launch the agent as an A2A-compatible HTTP server, run the following code:
 ```python
