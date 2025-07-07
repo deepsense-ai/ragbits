@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { HeroUIProvider } from "@heroui/react";
 import App from "./App.tsx";
 import "./globals.css";
-import { HistoryProvider } from "./core/contexts/HistoryContext/HistoryContextProvider.tsx";
+import { HistoryContextProvider } from "./core/contexts/HistoryContext/HistoryContextProvider.tsx";
 import { ThemeContextProvider } from "./core/contexts/ThemeContext/ThemeContextProvider.tsx";
 import { RagbitsProvider } from "@ragbits/api-client-react";
 import { loadIcons } from "@iconify/react";
@@ -40,9 +40,9 @@ createRoot(document.getElementById("root")!).render(
       <ThemeContextProvider>
         <RagbitsProvider baseUrl={API_URL}>
           <ConfigContextProvider>
-            <HistoryProvider>
+            <HistoryContextProvider>
               <App />
-            </HistoryProvider>
+            </HistoryContextProvider>
           </ConfigContextProvider>
         </RagbitsProvider>
       </ThemeContextProvider>

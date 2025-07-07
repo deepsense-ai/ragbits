@@ -111,5 +111,5 @@ export const defaultConfigResponse: ConfigResponse = {
             },
         },
     },
-    debug_mode: true,
+    debug_mode: false,
 }

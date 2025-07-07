@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd ../../ && uv sync && ragbits api run examples.chat.offline_chat:MyChat --debug",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "wait:backend": "wait-on http-get://127.0.0.1:8000/",
+    "test:integration": "concurrently -k -s first \"npm run dev:backend\" \"npm run wait:backend && vitest --config vitest.config.ts\""
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -35,21 +38,28 @@
     "@eslint/js": "^9.17.0",
     "@iconify/react": "^5.2.0",
     "@tailwindcss/typography": "^0.5.16",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/lodash": "^4.17.19",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.5.1",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^3.4.17",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "vitest": "^3.2.4",
+    "wait-on": "^8.0.3"
   }
 }
