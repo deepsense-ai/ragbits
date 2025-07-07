@@ -21,6 +21,12 @@ jobs:
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
 
+      - name: Sync Python packages
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv sync
+
       - name: Install Ragbits API Client dependencies
         run: npm ci
         working-directory: typescript/@ragbits/api-client
