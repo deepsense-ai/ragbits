@@ -18,6 +18,7 @@
 - Fix followup messages not sending (#680)
 - Improve typing of TypeScript libraries (#681)
 - Add debug panel with debug_mode field in config (#689)
+- Restore relative URL handling for UI build (#699)
 
 ## 1.0.0 (2025-06-04)
 
