@@ -1,8 +1,8 @@
 import os # Import os for path joining and potential directory checks
 from collections.abc import Iterable
-from contextlib import suppress, contextmanager
+from contextlib import suppress
 from pathlib import Path
-from typing import ClassVar, Generator, Dict, Any
+from typing import ClassVar, Dict, Any
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace, traceable
@@ -16,7 +16,7 @@ with suppress(ImportError):
     from googleapiclient.errors import HttpError
     from googleapiclient.discovery import Resource as GoogleAPIResource
     from googleapiclient.http import MediaIoBaseDownload
-    import io # Needed for downloading file content
+    import io 
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -198,8 +198,7 @@ class GoogleDriveSource(Source):
                     downloader = MediaIoBaseDownload(fh, request)
                     done = False
                     while not done:
-                        status, done = downloader.next_chunk()
-                        # print(f"Download {int(status.progress() * 100)}%.") # Optional progress print
+                        _, done = downloader.next_chunk()
 
                     fh.seek(0)
                     with open(path, mode="wb") as file_object:
@@ -409,70 +408,3 @@ class GoogleDriveSource(Source):
 
         else:
             raise ValueError(f"Unsupported Google Drive URI pattern: {path}")
-
-if __name__ == "__main__":
-    import asyncio
-
-    async def main_example():
-        # Set your service account credentials file path
-        # IMPORTANT: Replace 'google-token-json.json' with the actual path to your service account key file.
-        GoogleDriveSource.set_credentials_file_path('google-token-json.json')
-
-        # --- Listing files recursively in the 'prod' folder and downloading them ---
-        print("\n--- Listing files recursively in 'prod' folder and downloading ---")
-        try:
-            prod_folder_id = '13gWkN6NiYx1pTBROV9qlOLSbj_HXzMzk'
-            print(f"Attempting recursive listing for ID: {prod_folder_id}")
-            sources_to_download = await GoogleDriveSource.from_uri(f"{prod_folder_id}/**")
-            
-            if sources_to_download:
-                print(f"Found {len(sources_to_download)} items recursively in prod folder. Attempting to download files...")
-                downloaded_count = 0
-                for source in sources_to_download:
-                    if not source.is_folder: # Only attempt to fetch files, not folders
-                        try:
-                            local_path = await source.fetch()
-                            print(f"    Downloaded: {source.file_name} (ID: {source.file_id}) to {local_path}")
-                            downloaded_count += 1
-                        except Exception as e:
-                            print(f"    Failed to download {source.file_name} (ID: {source.file_id}): {e}")
-                print(f"\n--- Successfully downloaded {downloaded_count} files from '{prod_folder_id}' ---")
-            else:
-                print(f"No files found in {prod_folder_id} to download.")
-        except Exception as e:
-            print(f"An error occurred during recursive listing/download from prod folder: {e}")
-
-
-		# --- Listing files recursively in the 'prod' folder and downloading them ---
-        print("\n--- Listing files recursively in 'prod' folder and downloading ---")
-        try:
-            prod_folder_id = '1R9LzfTpa5jkmQ6mZsEEpBfzpXBOgqKjL'
-            print(f"Attempting recursive listing for ID: {prod_folder_id}")
-            sources_to_download = await GoogleDriveSource.from_uri(f"{prod_folder_id}/**")
-            
-            if sources_to_download:
-                print(f"Found {len(sources_to_download)} items recursively in prod folder. Attempting to download files...")
-                downloaded_count = 0
-                for source in sources_to_download:
-                    if not source.is_folder: # Only attempt to fetch files, not folders
-                        try:
-                            local_path = await source.fetch()
-                            print(f"    Downloaded: {source.file_name} (ID: {source.file_id}) to {local_path}")
-                            downloaded_count += 1
-                        except Exception as e:
-                            print(f"    Failed to download {source.file_name} (ID: {source.file_id}): {e}")
-                print(f"\n--- Successfully downloaded {downloaded_count} files from '{prod_folder_id}' ---")
-            else:
-                print(f"No files found in {prod_folder_id} to download.")
-        except Exception as e:
-            print(f"An error occurred during recursive listing/download from prod folder: {e}")
-
-
-
-		# 1R9LzfTpa5jkmQ6mZsEEpBfzpXBOgqKjL
-       
-
-        # --- Removed the specific invalid single file ID example ---
-        print("\n--- Skipping single file fetch example with placeholder ID as requested ---")
-
-    asyncio.run(main_example())
