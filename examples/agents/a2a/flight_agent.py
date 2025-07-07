@@ -3,7 +3,6 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents.a2a.server import create_agent_app, create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -59,11 +58,11 @@ llm = LiteLLM(
 )
 flight_agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
 
-flight_agent_card = flight_agent.get_agent_card(
-    name="Flight Info Agent",
-    description="Provides available flight information between two cities.",
-)
-flight_server = create_agent_server(flight_agent, flight_agent_card, FlightPromptInput)
+
+async def main() -> None:
+    result = await flight_agent.run(FlightPromptInput(departure="New York", arrival="Paris"))
+    print(result.content)
 
 if __name__ == "__main__":
-    flight_server.run()
+    import asyncio
+    asyncio.run(main())

@@ -24,10 +24,13 @@ import asyncio
 import threading
 
 from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
-from flight_agent import server as flight_agent_server
-from hotel_agent import server as hotel_agent_server
+from flight_agent import FlightPromptInput
+from flight_agent import agent as flight_agent
+from hotel_agent import HotelPromptInput
+from hotel_agent import agent as hotel_agent
 from uvicorn import Server
 
+from ragbits.agents.a2a.server import create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -118,6 +121,16 @@ async def main() -> None:
     Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
+    flight_agent_card = await flight_agent.get_agent_card(
+        name="Flight Info Agent", description="Provides available flight information between two cities.", port=8000
+    )
+    flight_agent_server = create_agent_server(flight_agent, flight_agent_card, FlightPromptInput)
+
+    hotel_agent_card = await hotel_agent.get_agent_card(
+        name="Hotel Recommendation Agent", description="Recommends hotels for a given city and travel dates.", port=8001
+    )
+    hotel_agent_server = create_agent_server(hotel_agent, hotel_agent_card, HotelPromptInput)
+
     await asyncio.gather(*(wait_for_server_to_start(server) for server in [hotel_agent_server, flight_agent_server]))
 
     llm = LiteLLM(
@@ -128,8 +141,8 @@ async def main() -> None:
     host = AgentOrchestrator(
         llm=llm, routing_prompt=RoutingPrompt, results_summarization_prompt=SummarizeAgentResultsPrompt
     )
-    host.add_remote_agent("127.0.0.1", "8000")
-    host.add_remote_agent("127.0.0.1", "8001")
+    host.add_remote_agent("127.0.0.1", 8000)
+    host.add_remote_agent("127.0.0.1", 8001)
 
     response = await host.run("I want to travel from New York to Paris. Find me hotel and flight please.")
     print(response.content)

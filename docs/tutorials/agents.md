@@ -2,10 +2,10 @@
 
 Let's build a multi-agent system for automated trip planning with Ragbits. In this tutorial, we'll:
 
-1. Build Flight Finder Agent that searches and recommends available flights between destinations with tools
-1. Create City Explorer Agent that uses Model-Content-Provider (MCP) to gather and synthesize city information from the internet
-1. Expose these agents through Agent-to-Agent (A2A) Protocol
-1. Build an orchestrator with memory management that coordinates these specialized agents to create comprehensive trip plans
+1. Build Flight Finder Agent that searches and recommends available flights between destinations with tools.
+2. Create City Explorer Agent that uses Model-Content-Provider (MCP) to gather and synthesize city information from the internet.
+3. Expose these agents through Agent-to-Agent (A2A) Protocol.
+4. Build an orchestrator with memory management that coordinates these specialized agents to create comprehensive trip plans.
 
 ## Configuring the environment
 
@@ -20,8 +20,7 @@ During development, we will use OpenAI's `gpt-4o-2024-08-06` model. To authentic
 
 We start by defining the prompt that will lead this agent. The prompt needs to handle structured input for departure and arrival cities:
 
-```python
-# In flight_agent.py
+```py title="flight_agent.py"
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 
@@ -30,8 +29,7 @@ from ragbits.core.prompt import Prompt
 
 Next, we define tool that will provide flight information:
 
-```python
-# In flight_agent.py
+```py title="flight_agent.py"
 import json
 
 --8<-- "examples/agents/a2a/flight_agent.py:11:34"
@@ -39,8 +37,7 @@ import json
 
 Now let's create the agent and test it:
 
-```python
-#In flight_agent.py
+```py title="flight_agent.py"
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
 
@@ -55,7 +52,7 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Go and run
+Run it:
 
 ```bash
 python flight_agent.py
@@ -73,29 +70,43 @@ Here are some available flights from New York to Paris:
    - **Arrival:** 1:00 AM
 ```
 
+A typical response looks like this:
+```text
+Here are some available flights from New York to Paris:
+
+1. **British Airways**
+   - **Departure:** 10:00 AM
+   - **Arrival:** 10:00 PM
+
+2. **Delta**
+   - **Departure:** 1:00 PM
+   - **Arrival:** 1:00 AM
+```
+
+Please note that the results may differ among the runs due to undeterministic nature of LLM.
+
+
 ## Building the City Explorer Agent
 
 
-We will not [build an MCP server from scratch](https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#quickstart), but run an already existing one - [Web Fetcher](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) and make it available to one of our agents. Please install it with
+We will not [build an MCP server from scratch](https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#quickstart), but run an already existing one - [Web Fetcher](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) and make it available to one of our agents. Please install it with:
 
 ```bash
 pip install mcp-server-fetch
 ```
 
-Now, let's create a City Explorer Agent that gather and synthesize city information from the internet. Again we start with the prompt
+Now, let's create a City Explorer Agent that gather and synthesize city information from the internet. Again we start with the prompt:
 
-```python
-# In city_explorer_agent.py
+```py title="city_explorer_agent.py"
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 
 --8<-- "examples/agents/a2a/city_explorer_agent.py:9:30"
 ```
 
-Now define the agent
+Now define the agent:
 
-```python
-# In city_explorer_agent.py
+```py title="city_explorer_agent.py"
 --8<-- "examples/agents/a2a/city_explorer_agent.py:36:47"
         result = await city_explorer_agent.run(CityExplorerPromptInput(city="Paris"))
         print(result.content)
@@ -103,8 +114,7 @@ Now define the agent
 --8<-- "examples/agents/a2a/city_explorer_agent.py:56:58"
 ```
 
-Test this agent by running
-
+Test this agent by running:
 ```bash
 python city_explorer_agent.py
 ```
