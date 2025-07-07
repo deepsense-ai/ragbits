@@ -61,10 +61,14 @@ jobs:
 
       - name: Check Ragbits Chat UI build sync
         run: |
-          git diff --quiet || {
+          git diff --quiet * || {
             echo "ragbits-chat package ui build not synced"
             exit 1
           }
-      - name: Run integration tests
-        run: npm run test:integration
         working-directory: typescript/ui
+
+      - name: Run integration tests
+        run: |
+          source .venv/bin/activate
+          cd typescript/ui
+          npm run test:integration
