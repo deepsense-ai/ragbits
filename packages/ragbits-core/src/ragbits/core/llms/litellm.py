@@ -194,9 +194,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
             results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
         if response.usage:  # type: ignore
-            results["completion_tokens"] = response.usage.completion_tokens  # type: ignore
-            results["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
-            results["total_tokens"] = response.usage.total_tokens  # type: ignore
+            results["usage"] = {
+                "completion_tokens": response.usage.completion_tokens,  # type: ignore
+                "prompt_tokens": response.usage.prompt_tokens,  # type: ignore
+                "total_tokens": response.usage.total_tokens,  # type: ignore
+            }
 
             record(
                 metric=HistogramMetric.INPUT_TOKENS,

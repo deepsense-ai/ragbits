@@ -284,11 +284,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             # Extract usage information from response
             usage = None
-            if any(key in response for key in ["prompt_tokens", "completion_tokens", "total_tokens"]):
+            if usage_data := response.pop("usage", None):
                 usage = Usage(
-                    prompt_tokens=response.pop("prompt_tokens", None),
-                    completion_tokens=response.pop("completion_tokens", None),
-                    total_tokens=response.pop("total_tokens", None),
+                    prompt_tokens=usage_data.get("prompt_tokens"),
+                    completion_tokens=usage_data.get("completion_tokens"),
+                    total_tokens=usage_data.get("total_tokens"),
                 )
 
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore

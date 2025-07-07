@@ -149,9 +149,11 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
         return {
             "response": decoded_response,
-            "prompt_tokens": input_tokens,
-            "completion_tokens": output_tokens,
-            "total_tokens": total_tokens,
+            "usage": {
+                "prompt_tokens": input_tokens,
+                "completion_tokens": output_tokens,
+                "total_tokens": total_tokens,
+            },
         }
 
     async def _call_streaming(
