@@ -258,6 +258,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
         input_tokens = self.count_tokens(prompt)
 
+        provider_calculated_usage = None
+
         start_time = time.perf_counter()
         response = await self._get_litellm_response(
             conversation=prompt.chat,
@@ -271,6 +273,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMEmptyResponseError()
 
         async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[dict, None]:
+            nonlocal input_tokens, provider_calculated_usage
             output_tokens = 0
             tool_calls: list[dict] = []
 
@@ -301,10 +304,29 @@ class LiteLLM(LLM[LiteLLMOptions]):
                         tool_calls[tool_call_chunk.index]["name"] += tool_call_chunk.function.name or ""
                         tool_calls[tool_call_chunk.index]["arguments"] += tool_call_chunk.function.arguments or ""
 
+                if usage := getattr(item, "usage", None):
+                    provider_calculated_usage = usage
+
+            total_tokens = input_tokens + output_tokens
+
+            if provider_calculated_usage:
+                input_tokens = provider_calculated_usage.prompt_tokens
+                output_tokens = provider_calculated_usage.completion_tokens
+                total_tokens = provider_calculated_usage.total_tokens
+
             if tool_calls:
                 yield {"tool_calls": tool_calls}
 
             total_time = time.perf_counter() - start_time
+
+            # Yield usage information at the end
+            yield {
+                "usage": {
+                    "prompt_tokens": input_tokens,
+                    "completion_tokens": output_tokens,
+                    "total_tokens": total_tokens,
+                }
+            }
 
             record(
                 metric=HistogramMetric.INPUT_TOKENS,
@@ -334,6 +356,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format: type[BaseModel] | dict | None,
         tools: list[dict] | None = None,
         stream: bool = False,
+        stream_options: dict | None = None,
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or litellm
 
@@ -346,6 +369,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "stream": stream,
             **options.dict(),
         }
+
+        if stream_options is not None:
+            completion_kwargs["stream_options"] = stream_options
 
         # Only add these parameters if we're not using a router
         # Router instances have these configured at initialization time

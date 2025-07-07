@@ -53,6 +53,16 @@ class ToolCall(BaseModel):
         return pased_arguments
 
 
+class Usage(BaseModel):
+    """
+    A schema of token usage data
+    """
+
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+
+
 class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
     A schema of output with metadata
@@ -61,6 +71,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     content: PromptOutputT
     metadata: dict = {}
     tool_calls: list[ToolCall] | None = None
+    usage: Usage | None = None
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -271,9 +282,19 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
 
+            # Extract usage information from response
+            usage = None
+            if any(key in response for key in ["prompt_tokens", "completion_tokens", "total_tokens"]):
+                usage = Usage(
+                    prompt_tokens=response.pop("prompt_tokens", None),
+                    completion_tokens=response.pop("completion_tokens", None),
+                    total_tokens=response.pop("total_tokens", None),
+                )
+
             outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
                 content=content,
                 tool_calls=tool_calls,
+                usage=usage,
                 metadata=response,
             )
             return outputs.response
@@ -335,6 +356,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             content = ""
             tool_calls = []
+            usage_data = {}
             async for chunk in response:
                 if text := chunk.get("response"):
                     content += text
@@ -346,9 +368,23 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                         tool_calls.append(parsed_tool_call)
                         yield parsed_tool_call
 
+                # Collect usage information from chunks
+                if usage_chunk := chunk.get("usage"):
+                    usage_data = usage_chunk
+
+            # Create usage object if we have usage data
+            usage = None
+            if usage_data:
+                usage = Usage(
+                    prompt_tokens=usage_data.get("prompt_tokens"),
+                    completion_tokens=usage_data.get("completion_tokens"),
+                    total_tokens=usage_data.get("total_tokens"),
+                )
+
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore
                 content=content or None,
                 tool_calls=tool_calls or None,
+                usage=usage,
             )
 
     @abstractmethod
