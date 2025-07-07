@@ -15,7 +15,8 @@ from ragbits.core.prompt import Prompt
 AGENTS_CARDS = {}
 
 
-def fetch_agent(host: str, port: int, protocol: str = "http") -> dict:
+def fetch_agent(host: str, port: int, protocol: str = "http") -> dict:  # type: ignore
+    """Fetches the agent card from the given host and port."""
     url = f"{protocol}://{host}:{port}"
     return requests.get(f"{url}/.well-known/agent.json", timeout=10).json()
 
@@ -25,7 +26,10 @@ for url, port in [("127.0.0.1", "8000"), ("127.0.0.1", "8001")]:
     AGENTS_CARDS[agent_card["name"]] = agent_card
 
 AGENTS_INFO = "\n".join(
-    [f"NAME - {name}: {card['description']} DOCS: {card['skills']}" for name, card in AGENTS_CARDS.items()]
+    [
+        f"name: {name}, description: {card['description']}, skills: {card['skills']}"
+        for name, card in AGENTS_CARDS.items()
+    ]
 )
 
 
@@ -45,31 +49,30 @@ class OrchestratorPrompt(Prompt[OrchestratorPromptInput]):
     """
 
     system_prompt = """
-    You are a Trip Planning Agnent.
+    You are a Trip Planning Agent.
 
     To help the user plan their trip, you will need to use the following agents:
     {{ agents }}
 
-    you can use `execute_agent` tool to interact with remote agents to take action. You must provide agent name that
-    will be prefixed with NAME and parameters as a dictionary to this function
+    you can use `execute_agent` tool to interact with remote agents to take action.
 
     """
     user_prompt = "{{ message }}"
 
 
-def execute_agent(agent_name: str, parameters: dict) -> str:
+def execute_agent(agent_name: str, query: str) -> str:
     """
     Executes a specified agent with the given parameters.
 
     Args:
         agent_name: Name of the agent to execute
-        parameters: Parameters to pass to the agent
+        query: The query to pass to the agent
 
     Returns:
         JSON string of the execution result
     """
-    payload = {"params": parameters}
-    raw_response = requests.post(AGENTS_CARDS[agent_name]["url"], json=payload, timeout=10)
+    payload = {"params": {"input": query}}
+    raw_response = requests.post(AGENTS_CARDS[agent_name]["url"], json=payload, timeout=60)
     raw_response.raise_for_status()
 
     response = raw_response.json()

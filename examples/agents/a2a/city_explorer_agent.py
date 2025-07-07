@@ -2,14 +2,15 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.a2a.server import create_agent_server
-from ragbits.core.llms import LiteLLM
 from ragbits.agents.mcp import MCPServerStdio
+from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
+
 
 class CityExplorerPromptInput(BaseModel):
     """Defines the structured input schema for the city explorer prompt."""
 
-    city: str
+    input: str
 
 
 class CityExplorerPrompt(Prompt[CityExplorerPromptInput]):
@@ -26,18 +27,19 @@ class CityExplorerPrompt(Prompt[CityExplorerPromptInput]):
     """
 
     user_prompt = """
-    Tell me about {{ city }}.
+    {{ input }}.
     """
 
 
 async def main() -> None:
+    """Runs the city explorer agent."""
     async with MCPServerStdio(
-            params={
-                "command": "uvx",
-                "args": ["mcp-server-fetch"],
-            },
-            client_session_timeout_seconds=10
-        ) as server:
+        params={
+            "command": "uvx",
+            "args": ["mcp-server-fetch"],
+        },
+        client_session_timeout_seconds=60,
+    ) as server:
         llm = LiteLLM(
             model_name="gpt-4o-2024-08-06",
             use_structured_output=True,
@@ -47,10 +49,15 @@ async def main() -> None:
         city_explorer_agent_card = await city_explorer_agent.get_agent_card(
             name="City Explorer Agent",
             description="Provides information about a city.",
+            port=8001,
         )
-        city_explorer_server = create_agent_server(city_explorer_agent, city_explorer_agent_card, CityExplorerPromptInput)
+        city_explorer_server = create_agent_server(
+            city_explorer_agent, city_explorer_agent_card, CityExplorerPromptInput
+        )
         await city_explorer_server.serve()
+
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())

@@ -3,6 +3,7 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
+from ragbits.agents.a2a.server import create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -36,8 +37,7 @@ def get_flight_info(departure: str, arrival: str) -> str:
 class FlightPromptInput(BaseModel):
     """Defines the structured input schema for the flight search prompt."""
 
-    departure: str
-    arrival: str
+    input: str
 
 
 class FlightPrompt(Prompt[FlightPromptInput]):
@@ -48,7 +48,7 @@ class FlightPrompt(Prompt[FlightPromptInput]):
     """
 
     user_prompt = """
-    I need to fly from {{ departure }} to {{ arrival }}. What flights are available?
+    {{ input }}
     """
 
 
@@ -60,9 +60,15 @@ flight_agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
 
 
 async def main() -> None:
-    result = await flight_agent.run(FlightPromptInput(departure="New York", arrival="Paris"))
-    print(result.content)
+    """Runs the flight agent."""
+    flight_agent_card = await flight_agent.get_agent_card(
+        name="Flight Info Agent", description="Provides available flight information between two cities.", port=8000
+    )
+    flight_agent_server = create_agent_server(flight_agent, flight_agent_card, FlightPromptInput)
+    await flight_agent_server.serve()
+
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
