@@ -123,7 +123,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         prompt_throughput = time.perf_counter() - start_time
 
-        # Calculate token counts
         input_tokens = input_ids.shape[-1]
         output_tokens = len(response)
         total_tokens = input_tokens + output_tokens
@@ -210,7 +209,6 @@ class LocalLLM(LLM[LocalLLMOptions]):
             generation_thread.join()
             total_time = time.perf_counter() - start_time
 
-            # Yield usage information at the end
             yield {
                 "usage": {
                     "prompt_tokens": input_tokens,

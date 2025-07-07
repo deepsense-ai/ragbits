@@ -321,7 +321,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             total_time = time.perf_counter() - start_time
 
-            # Yield usage information at the end
             yield {
                 "usage": {
                     "prompt_tokens": input_tokens,

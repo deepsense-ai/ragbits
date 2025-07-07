@@ -282,7 +282,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             if isinstance(prompt, BasePromptWithParser) and content:
                 content = await prompt.parse_response(content)
 
-            # Extract usage information from response
             usage = None
             if usage_data := response.pop("usage", None):
                 usage = Usage(
@@ -368,11 +367,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                         tool_calls.append(parsed_tool_call)
                         yield parsed_tool_call
 
-                # Collect usage information from chunks
                 if usage_chunk := chunk.get("usage"):
                     usage_data = usage_chunk
 
-            # Create usage object if we have usage data
             usage = None
             if usage_data:
                 usage = Usage(
