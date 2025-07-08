@@ -4,12 +4,14 @@ from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOption
 from docling.document_converter import (
     DocumentConverter,
     ExcelFormatOption,
+    FormatOption,
     HTMLFormatOption,
     MarkdownFormatOption,
     PdfFormatOption,
     PowerpointFormatOption,
     WordFormatOption,
 )
+from docling_core.transforms.chunker.base import BaseChunker
 from docling_core.types.doc import DocItem, DoclingDocument
 
 from ragbits.document_search.documents.document import Document, DocumentType
@@ -34,16 +36,27 @@ class DoclingDocumentParser(DocumentParser):
         DocumentType.PDF,
     }
 
-    def __init__(self, ignore_images: bool = False, num_threads: int = 1) -> None:
+    def __init__(
+        self,
+        ignore_images: bool = False,
+        num_threads: int = 1,
+        chunker: BaseChunker | None = None,
+        format_options: dict[InputFormat, FormatOption] | None = None,
+    ) -> None:
         """
         Initialize the DoclingDocumentParser instance.
 
         Args:
             ignore_images: If True images will be skipped.
             num_threads: The number of threads for parsing parallelism on CPU.
+            chunker: Custom chunker instance. If None, HierarchicalChunker will be used.
+            format_options: Full format options configuration for DocumentConverter.
+                If None, default format options will be used.
         """
         self.ignore_images = ignore_images
         self.num_threads = num_threads
+        self.chunker = chunker
+        self.format_options = format_options
 
     async def parse(self, document: Document) -> list[Element]:
         """
@@ -72,25 +85,32 @@ class DoclingDocumentParser(DocumentParser):
         Raises:
             ConversionError: If converting the document to the Docling format fails.
         """
-        accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
-        pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
-        pdf_pipeline_options = PdfPipelineOptions(
-            images_scale=2,
-            generate_page_images=True,
-            ocr_options=EasyOcrOptions(),
-            accelerator_options=accelerator_options,
-        )
-        converter = DocumentConverter(
-            format_options={
-                InputFormat.XLSX: ExcelFormatOption(pipeline_options=pipeline_options),
-                InputFormat.DOCX: WordFormatOption(pipeline_options=pipeline_options),
-                InputFormat.PPTX: PowerpointFormatOption(pipeline_options=pipeline_options),
-                InputFormat.HTML: HTMLFormatOption(pipeline_options=pipeline_options),
-                InputFormat.MD: MarkdownFormatOption(pipeline_options=pipeline_options),
-                InputFormat.IMAGE: PdfFormatOption(pipeline_options=pdf_pipeline_options),
-                InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
-            },
-        )
+        # Use provided format_options or create default ones
+        if self.format_options is not None:
+            converter = DocumentConverter(format_options=self.format_options)
+        else:
+            # Build default format options
+            accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
+            pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
+            pdf_pipeline_options = PdfPipelineOptions(
+                images_scale=2,
+                generate_page_images=True,
+                accelerator_options=accelerator_options,
+                ocr_options=EasyOcrOptions(),
+            )
+
+            converter = DocumentConverter(
+                format_options={
+                    InputFormat.XLSX: ExcelFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.DOCX: WordFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.PPTX: PowerpointFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.HTML: HTMLFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.MD: MarkdownFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.IMAGE: PdfFormatOption(pipeline_options=pdf_pipeline_options),
+                    InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
+                },
+            )
+
         # For txt files, temporarily rename to .md extension. Docling doesn't support text files natively.
         if document.metadata.document_type == DocumentType.TXT:
             original_suffix = document.local_path.suffix
@@ -115,7 +135,9 @@ class DoclingDocumentParser(DocumentParser):
         Returns:
             The list of chunked elements.
         """
-        chunker = HierarchicalChunker()
+        # Use provided chunker or create default HierarchicalChunker
+        chunker = self.chunker or HierarchicalChunker()
+
         text_elements: list[Element] = [
             TextElement(
                 document_meta=document.metadata,
