@@ -14,7 +14,8 @@ try:
 except ImportError:
     HAS_LOCAL_LLM = False
 
-from ragbits.core.audit.metrics import HistogramMetric, record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.llms.base import LLM
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt
@@ -123,21 +124,24 @@ class LocalLLM(LLM[LocalLLMOptions]):
         decoded_response = self.tokenizer.decode(response, skip_special_tokens=True)
         prompt_throughput = time.perf_counter() - start_time
 
-        record(
-            metric=HistogramMetric.INPUT_TOKENS,
+        record_metric(
+            metric=LLMMetric.INPUT_TOKENS,
             value=input_ids.shape[-1],
+            metric_type=MetricType.HISTOGRAM,
             model=self.model_name,
             prompt=prompt.__class__.__name__,
         )
-        record(
-            metric=HistogramMetric.PROMPT_THROUGHPUT,
+        record_metric(
+            metric=LLMMetric.PROMPT_THROUGHPUT,
             value=prompt_throughput,
+            metric_type=MetricType.HISTOGRAM,
             model=self.model_name,
             prompt=prompt.__class__.__name__,
         )
-        record(
-            metric=HistogramMetric.TOKEN_THROUGHPUT,
+        record_metric(
+            metric=LLMMetric.TOKEN_THROUGHPUT,
             value=outputs.total_tokens / prompt_throughput,
+            metric_type=MetricType.HISTOGRAM,
             model=self.model_name,
             prompt=prompt.__class__.__name__,
         )
@@ -185,9 +189,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
                 if text:
                     output_tokens += 1
                     if output_tokens == 1:
-                        record(
-                            metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                        record_metric(
+                            metric=LLMMetric.TIME_TO_FIRST_TOKEN,
                             value=time.perf_counter() - start_time,
+                            metric_type=MetricType.HISTOGRAM,
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
@@ -198,21 +203,24 @@ class LocalLLM(LLM[LocalLLMOptions]):
             generation_thread.join()
             total_time = time.perf_counter() - start_time
 
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
                 value=input_tokens,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.PROMPT_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.PROMPT_THROUGHPUT,
                 value=total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
                 value=output_tokens / total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
