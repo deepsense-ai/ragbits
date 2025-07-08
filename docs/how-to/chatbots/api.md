@@ -322,24 +322,24 @@ from ragbits.chat.clients import AsyncRagbitsChatClient
 async def handle_responses() -> None:
     async with AsyncRagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
         conv = client.new_conversation()
-        
+
         async for chunk in conv.run_streaming("Tell me about Python"):
             # Handle text content
             if text := chunk.as_text():
                 print(text, end="")
-            
+
             # Handle references
             elif ref := chunk.as_reference():
                 print(f"\n📖 Reference: {ref.title}")
                 if ref.url:
                     print(f"   URL: {ref.url}")
-            
+
             # Handle live updates (for agent actions)
             elif live_update := chunk.as_live_update():
                 print(f"\n🔄 {live_update.content.label}")
                 if live_update.content.description:
                     print(f"   {live_update.content.description}")
-            
+
             # Handle followup messages
             elif followup := chunk.as_followup_messages():
                 print(f"\n💡 Suggested follow-ups:")
