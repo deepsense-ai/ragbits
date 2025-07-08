@@ -62,7 +62,15 @@ src/
 npm install
 ```
 
-2. Start the development server:
+2. (Optional) create env file:
+
+```bash
+cp .env.example .env.development
+```
+
+and edit `VITE_API_URL` to point to your local server.
+
+3. Start the development server:
 
 ```bash
 npm run dev

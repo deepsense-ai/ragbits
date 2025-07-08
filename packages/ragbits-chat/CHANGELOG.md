@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- added synchronous and asynchronous Python api client
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
@@ -18,6 +19,8 @@
 - Improve typing of TypeScript libraries (#681)
 - fix: fixed tracing in ragbits-chat
 - feat: support all metric types
+- Add debug panel with debug_mode field in config (#689)
+- Restore relative URL handling for UI build (#699)
 
 ## 1.0.0 (2025-06-04)
 
