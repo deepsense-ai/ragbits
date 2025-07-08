@@ -19,19 +19,23 @@ export class RagbitsClient {
      * @param config - Configuration object
      */
     constructor(config: ClientConfig = {}) {
-        this.baseUrl = config.baseUrl || 'http://127.0.0.1:8000'
+        this.baseUrl = config.baseUrl ?? ''
 
-        // Validate the base URL
+        if (this.baseUrl.endsWith('/')) {
+            this.baseUrl = this.baseUrl.slice(0, -1)
+        }
+
+        if (!this.baseUrl) {
+            return
+        }
+
+        // Validate the base URL if given
         try {
             new URL(this.baseUrl)
         } catch {
             throw new Error(
                 `Invalid base URL: ${this.baseUrl}. Please provide a valid URL.`
             )
-        }
-
-        if (this.baseUrl.endsWith('/')) {
-            this.baseUrl = this.baseUrl.slice(0, -1)
         }
     }
 
