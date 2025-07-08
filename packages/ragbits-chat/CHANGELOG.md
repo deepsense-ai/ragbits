@@ -17,8 +17,7 @@
 - Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
 - Fix followup messages not sending (#680)
 - Improve typing of TypeScript libraries (#681)
-- fix: fixed tracing in ragbits-chat
-- feat: support all metric types
+- New metrics in for RagbitsAPI (#615)
 - Add debug panel with debug_mode field in config (#689)
 - Restore relative URL handling for UI build (#699)
 
