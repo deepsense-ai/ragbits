@@ -17,7 +17,7 @@ uv run examples/agents/a2a/orchestrator_client.py
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-core",
-#     "ragbits-agents",
+#     "ragbits-agents[a2a]",
 # ]
 # ///
 import asyncio

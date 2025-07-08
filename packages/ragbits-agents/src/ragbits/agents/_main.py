@@ -1,12 +1,11 @@
 import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
-
-from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
@@ -26,6 +25,10 @@ from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
+from ragbits.core.utils.decorators import requires_dependencies
+
+with suppress(ImportError):
+    from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 
 @dataclass
@@ -377,6 +380,7 @@ class Agent(
             result=tool_output,
         )
 
+    @requires_dependencies(["a2a.types"], "a2a")
     async def get_agent_card(
         self,
         name: str,
@@ -387,9 +391,9 @@ class Agent(
         protocol: str = "http",
         default_input_modes: list[str] | None = None,
         default_output_modes: list[str] | None = None,
-        capabilities: AgentCapabilities | None = None,
-        skills: list[AgentSkill] | None = None,
-    ) -> AgentCard:
+        capabilities: "AgentCapabilities | None" = None,
+        skills: list["AgentSkill"] | None = None,
+    ) -> "AgentCard":
         """
         Create an AgentCard that encapsulates metadata about the agent,
         such as its name, version, description, network location, supported input/output modes,
@@ -422,7 +426,7 @@ class Agent(
             capabilities=capabilities or AgentCapabilities(),
         )
 
-    async def _extract_agent_skills(self) -> list[AgentSkill]:
+    async def _extract_agent_skills(self) -> list["AgentSkill"]:
         """
         Extract agent skills from all available tools.
 
