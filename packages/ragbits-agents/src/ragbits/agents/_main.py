@@ -11,6 +11,7 @@ from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentMaxToolCallsExceededError,
     AgentToolDuplicateError,
     AgentToolExecutionError,
     AgentToolNotAvailableError,
@@ -51,6 +52,8 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
     """The options for the LLM."""
+    max_tool_calls: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of tool calls that can be made."""
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
@@ -184,15 +187,17 @@ class Agent(
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
+            AgentMaxToolCallsExceededError: If the maximum number of tool calls is exceeded.
         """
         input = cast(PromptInputT, input)
-
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
+        max_tool_calls = merged_options.max_tool_calls
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
         tool_calls = []
+        tool_call_count = 0
 
         with trace(input=input, options=merged_options) as outputs:
             while True:
@@ -208,8 +213,12 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
+                    if max_tool_calls and tool_call_count >= max_tool_calls:
+                        raise AgentMaxToolCallsExceededError(max_tool_calls, tool_call_count)
+
                     result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
                     tool_calls.append(result)
+                    tool_call_count += 1
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
 
@@ -264,6 +273,7 @@ class Agent(
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
+            AgentMaxToolCallsExceededError: If the maximum number of tool calls is exceeded.
         """
         generator = self._stream_internal(input, options)
         return AgentResultStreaming(generator)
@@ -274,9 +284,11 @@ class Agent(
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
+        max_tool_calls = merged_options.max_tool_calls
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
+        tool_call_count = 0
 
         with trace(input=input, options=merged_options) as outputs:
             while True:
@@ -289,10 +301,14 @@ class Agent(
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
+                        if max_tool_calls and tool_call_count >= max_tool_calls:
+                            raise AgentMaxToolCallsExceededError(max_tool_calls, tool_call_count)
+
                         result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
+                        tool_call_count += 1
 
                 if not returned_tool_call:
                     break

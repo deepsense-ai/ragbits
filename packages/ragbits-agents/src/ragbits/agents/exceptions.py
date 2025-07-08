@@ -61,3 +61,14 @@ class AgentInvalidPromptInputError(AgentError):
         super().__init__(f"Invalid prompt/input combination: prompt={prompt}, input={input}")
         self.prompt_type = prompt
         self.input_type = input
+
+
+class AgentMaxToolCallsExceededError(AgentError):
+    """
+    Raised when the maximum number of tool calls is exceeded.
+    """
+
+    def __init__(self, max_tool_calls: int, actual_tool_calls: int) -> None:
+        super().__init__(f"Maximum number of tool calls exceeded: {actual_tool_calls} > {max_tool_calls}")
+        self.max_tool_calls = max_tool_calls
+        self.actual_tool_calls = actual_tool_calls

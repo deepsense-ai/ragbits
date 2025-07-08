@@ -6,9 +6,10 @@ import pytest
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents._main import AgentResult, AgentResultStreaming, ToolCallResult
+from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentMaxToolCallsExceededError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
@@ -84,12 +85,36 @@ def llm_wrong_tool_type() -> MockLLM:
     return MockLLM(default_options=options)
 
 
-async def _run(agent: Agent, input: str | BaseModel | None = None) -> AgentResult:
-    return await agent.run(input)
+@pytest.fixture
+def llm_multiple_tool_calls() -> MockLLM:
+    options = MockLLMOptions(
+        response="Final response after multiple tool calls",
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "id": "test1",
+                "type": "function",
+            },
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "New York"}',
+                "id": "test2",
+                "type": "function",
+            },
+        ],
+    )
+    return MockLLM(default_options=options)
 
 
-async def _run_streaming(agent: Agent, input: str | BaseModel | None = None) -> AgentResultStreaming:
-    result = agent.run_streaming(input)
+async def _run(agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None) -> AgentResult:
+    return await agent.run(input, options)
+
+
+async def _run_streaming(
+    agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None
+) -> AgentResultStreaming:
+    result = agent.run_streaming(input, options)
     async for _chunk in result:
         pass
     return result
@@ -439,3 +464,22 @@ async def test_agent_history_with_tools(llm_with_tool_call: MockLLM, method: Cal
     assert agent.history[3]["role"] == "tool"
     assert agent.history[4]["role"] == "assistant"
     assert agent.history[4]["content"] == "Temperature is 72 fahrenheit"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_max_tool_calls_exceeded(llm_multiple_tool_calls: MockLLM, method: Callable):
+    """Test that AgentMaxToolCallsExceededError is raised when max_tool_calls is exceeded in a single response."""
+    agent = Agent(
+        llm=llm_multiple_tool_calls,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+    )
+
+    options: AgentOptions = AgentOptions(max_tool_calls=1)
+
+    with pytest.raises(AgentMaxToolCallsExceededError) as exc_info:
+        await method(agent, options=options)
+
+    assert exc_info.value.max_tool_calls == 1
+    assert exc_info.value.actual_tool_calls == 1
+    assert "Maximum number of tool calls exceeded: 1 > 1" in str(exc_info.value)
