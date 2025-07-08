@@ -35,6 +35,15 @@ mcp = FastMCP()
 
 @mcp.tool()
 async def get_current_weather(city: str) -> str:
+    """
+    Returns the current weather for a given city.
+
+    Args:
+        city: The city to get the weather for.
+
+    Returns:
+        The current weather for the given city.
+    """
     endpoint = "https://wttr.in"
     async with ClientSession() as session, session.get(f"{endpoint}/{city}") as response:
         return await response.text()
