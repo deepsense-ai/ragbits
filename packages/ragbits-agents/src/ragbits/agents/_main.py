@@ -25,6 +25,7 @@ from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
+from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill
@@ -379,6 +380,7 @@ class Agent(
             result=tool_output,
         )
 
+    @requires_dependencies(["a2a.types"], "a2a")
     async def get_agent_card(
         self,
         name: str,

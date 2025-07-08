@@ -1,14 +1,11 @@
-from contextlib import suppress
 from urllib.parse import urlparse
 
+import uvicorn
+from a2a.types import AgentCard
+from fastapi import FastAPI
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentResult
-
-with suppress(ImportError):
-    import uvicorn
-    from a2a.types import AgentCard
-    from fastapi import FastAPI
 
 
 class Request(BaseModel):
