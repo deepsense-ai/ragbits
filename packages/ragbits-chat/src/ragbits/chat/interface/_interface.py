@@ -10,9 +10,12 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any, Literal
 
 from ragbits.chat.interface.ui_customization import UICustomization
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
+from ..metrics import ChatCounterMetric, ChatHistogramMetric
 from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig
 from .types import (
@@ -42,9 +45,20 @@ def with_chat_metadata(
     async def wrapper(
         self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponse, None]:
+        start_time = time.time()
+
         # Initialize context if None
         if context is None:
             context = ChatContext()
+
+        # Track history length
+        history_length = len(history) if history else 0
+        record_metric(
+            ChatHistogramMetric.CHAT_HISTORY_LENGTH,
+            history_length,
+            metric_type=MetricType.HISTOGRAM,
+            interface_class=self.__class__.__name__,
+        )
 
         # Generate message_id if not present
         if not context.message_id:
@@ -52,24 +66,90 @@ def with_chat_metadata(
             yield ChatResponse(type=ChatResponseType.MESSAGE_ID, content=context.message_id)
 
         # Generate conversation_id if this is the first message
+        is_new_conversation = False
         if not context.conversation_id and (not history or len(history) == 0):
             context.conversation_id = str(uuid.uuid4())
+            is_new_conversation = True
             yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
+
+            # Track new conversation
+            record_metric(
+                ChatCounterMetric.CHAT_CONVERSATION_COUNT,
+                1,
+                metric_type=MetricType.COUNTER,
+                interface_class=self.__class__.__name__,
+            )
 
         responses = []
         main_response = ""
         extra_responses = []
         timestamp = time.time()
+        response_token_count = 0.0
+        first_token_time = None
 
         try:
             async for response in func(self, message, history, context):
                 responses.append(response)
                 if response.type == ChatResponseType.TEXT and isinstance(response.content, str):
+                    # Record time to first token on the first TEXT response
+                    if first_token_time is None and response.content:
+                        first_token_time = time.time() - start_time
+                        record_metric(
+                            ChatHistogramMetric.CHAT_TIME_TO_FIRST_TOKEN,
+                            first_token_time,
+                            metric_type=MetricType.HISTOGRAM,
+                            interface_class=self.__class__.__name__,
+                            is_new_conversation=str(is_new_conversation),
+                            history_length=str(history_length),
+                        )
+
                     main_response = main_response + response.content
+                    # Rough token estimation (words * 1.3 for subword tokens)
+                    response_token_count += len(response.content.split()) * 1.3
                 else:
                     extra_responses.append(response)
                 yield response
+
+            # Track successful message processing
+            record_metric(
+                ChatCounterMetric.CHAT_MESSAGE_COUNT,
+                1,
+                metric_type=MetricType.COUNTER,
+                interface_class=self.__class__.__name__,
+                is_new_conversation=str(is_new_conversation),
+            )
+
+            # Track response tokens
+            if response_token_count > 0:
+                record_metric(
+                    ChatHistogramMetric.CHAT_RESPONSE_TOKENS,
+                    response_token_count,
+                    metric_type=MetricType.HISTOGRAM,
+                    interface_class=self.__class__.__name__,
+                )
+
+        except Exception as e:
+            # Track errors
+            record_metric(
+                ChatCounterMetric.CHAT_ERROR_COUNT,
+                1,
+                metric_type=MetricType.COUNTER,
+                interface_class=self.__class__.__name__,
+                error_type=type(e).__name__,
+            )
+            raise
         finally:
+            # Track request duration
+            duration = time.time() - start_time
+            record_metric(
+                ChatHistogramMetric.CHAT_REQUEST_DURATION,
+                duration,
+                metric_type=MetricType.HISTOGRAM,
+                interface_class=self.__class__.__name__,
+                is_new_conversation=str(is_new_conversation),
+                history_length=str(history_length),
+            )
+
             if self.history_persistence:
                 await self.history_persistence.save_interaction(
                     message=message,
@@ -176,14 +256,24 @@ class ChatInterface(ABC):
             True if the signature is valid, False otherwise
         """
         expected_signature = ChatInterface._sign_state(state)
-        return hmac.compare_digest(expected_signature, signature)
+        is_valid = hmac.compare_digest(expected_signature, signature)
+
+        # Track state verification
+        record_metric(
+            ChatCounterMetric.CHAT_STATE_VERIFICATION_COUNT,
+            1,
+            metric_type=MetricType.COUNTER,
+            verification_result="success" if is_valid else "failure",
+        )
+
+        return is_valid
 
     async def setup(self) -> None:  # noqa: B027
         """
-        Setup the chat interface.
+        Set up the chat interface.
 
         This method is called after the chat interface is initialized and before the chat method is called.
-        It is used to setup the chat interface, such as loading the model or initializing the vector store.
+        It is used to set up the chat interface, such as loading the model or initializing the vector store.
 
         This method is optional and can be overridden by subclasses.
         """
@@ -242,4 +332,13 @@ class ChatInterface(ABC):
             feedback: The type of feedback
             payload: The payload of the feedback
         """
+        # Track feedback submission
+        record_metric(
+            ChatCounterMetric.CHAT_FEEDBACK_COUNT,
+            1,
+            metric_type=MetricType.COUNTER,
+            interface_class=self.__class__.__name__,
+            feedback_type=feedback,
+        )
+
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
