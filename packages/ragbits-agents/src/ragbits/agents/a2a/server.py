@@ -10,6 +10,7 @@ with suppress(ImportError):
     from a2a.types import AgentCard
     from fastapi import FastAPI
 
+
 class Request(BaseModel):
     """
     Represents a request to the agent server.
