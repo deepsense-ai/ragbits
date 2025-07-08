@@ -16,7 +16,7 @@ Currently, the MCP spec defines three kinds of servers, based on the transport m
 
 You can use the [`MCPServerStdio`][ragbits.agents.mcp.server.MCPServerStdio], [`MCPServerSse`][ragbits.agents.mcp.server.MCPServerSse], and [`MCPServerStreamableHttp`][ragbits.agents.mcp.server.MCPServerStreamableHttp] classes to connect to these servers.
 
-For example, this is how you'd use the [official MCP filesystem server](https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem).
+For example, this is how you'd use the [official MCP filesystem server](https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem) (before running, make sure you have Node.js installed on your machine).
 
 ```python
 from ragbits.agents.mcp import MCPServerStdio
@@ -36,14 +36,20 @@ MCP servers can be added to Agents. Ragbits will call `list_tools()` on the MCP 
 
 ```python
 from ragbits.agents import Agent
+from ragbits.agents.mcp import MCPServerStdio
 from ragbits.core.llms import LiteLLM
 
-agent = Agent(
-    llm=LiteLLM(model_name="gpt-4.1-nano"),
-    prompt="Use the tools to achieve the task",
-    mcp_servers=[mcp_server_1, mcp_server_2]
-)
+async with MCPServerStdio(
+    params={
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+    }
+) as server:
+    agent = Agent(llm=LiteLLM(model_name="gpt-4.1-nano"), mcp_servers=[server])
+    await agent.run("List all files in a current directory.")
 ```
+
+A complete working example is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/filesystem_mcp.py).
 
 ## Caching
 
