@@ -1,5 +1,5 @@
 """
-Ragbits Agents Example: Streamable HTTP MCP
+Ragbits Agents Example: MCP SSE
 
 This example demonstrates how to integrate Model Context Protocol (MCP) servers
 with ragbits agents to provide dynamic tool capabilities. The agent connects to
@@ -9,7 +9,7 @@ current weather conditions through natural language requests.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/sse.py
+    uv run examples/agents/mcp/sse.py
     ```
 """
 

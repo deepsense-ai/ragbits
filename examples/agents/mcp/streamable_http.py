@@ -1,5 +1,5 @@
 """
-Ragbits Agents Example: Streamable HTTP MCP
+Ragbits Agents Example: MCP Streamable HTTP
 
 This example demonstrates how to integrate Model Context Protocol (MCP) servers
 with ragbits agents to provide dynamic tool capabilities. The agent connects to
