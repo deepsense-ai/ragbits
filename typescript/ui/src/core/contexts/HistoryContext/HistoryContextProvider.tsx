@@ -174,7 +174,7 @@ export function HistoryProvider({ children }: PropsWithChildren) {
   );
 
   const sendMessage = useCallback(
-    (text?: string): void => {
+    (text: string, options?: Record<string, unknown>): void => {
       if (!text) return;
 
       // Add user message to history
@@ -188,6 +188,13 @@ export function HistoryProvider({ children }: PropsWithChildren) {
         role: MessageRole.ASSISTANT,
         content: "",
       });
+
+      // Prepare chat request with conversation context
+      const context = {
+        ...(serverState ?? {}),
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+        ...(options ?? {}), // Include chat options in context
+      };
 
       const chatRequest: ChatRequest = {
         message: text,

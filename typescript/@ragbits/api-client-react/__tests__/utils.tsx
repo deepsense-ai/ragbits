@@ -96,7 +96,7 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
-    chat: {
+    user_settings: {
         form: {
             title: 'Chat Form',
             type: 'object',
@@ -111,4 +111,5 @@ export const defaultConfigResponse: ConfigResponse = {
             },
         },
     },
+    debug_mode: true,
 }

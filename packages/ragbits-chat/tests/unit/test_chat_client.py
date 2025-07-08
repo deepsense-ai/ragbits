@@ -108,9 +108,11 @@ def test_sync_conversation_run_and_state_update(sse_lines: list[str]) -> None:
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = Conversation(base_url="http://testserver", http_client=http_client)
-        result = conv.run("Hello")
+        responses = conv.run("Hello")
 
-    assert result == "Hello world"
+    aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
+
+    assert aggregated == "Hello world"
     assert len(conv.history) == 2
     assert conv.history[0].role.value == "user"
     assert conv.history[0].content == "Hello"
@@ -159,9 +161,11 @@ async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> 
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         conv = AsyncConversation(base_url="http://testserver", http_client=http_client)
-        result = await conv.run("Hello")
+        responses = await conv.run("Hello")
 
-    assert result == "Hello world"
+    aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
+
+    assert aggregated == "Hello world"
     assert len(conv.history) == 2
     assert conv.conversation_id == "conv123"
     assert conv.conversation_state is not None

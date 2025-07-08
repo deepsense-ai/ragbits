@@ -27,8 +27,8 @@ class SyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:
-        """Send *message* and return the final assistant reply."""
+    ) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks."""
 
     @abstractmethod
     def run_streaming(
@@ -53,8 +53,8 @@ class AsyncChatClientBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:
-        """Send *message* and return the final assistant reply."""
+    ) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks."""
 
     @abstractmethod
     def run_streaming(
@@ -81,8 +81,8 @@ class SyncConversationBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:
-        """Send *message* and return the assistant reply as a fully-formed string."""
+    ) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks."""
 
     @abstractmethod
     def run_streaming(
@@ -107,8 +107,8 @@ class AsyncConversationBase(ABC):
         message: str,
         *,
         context: dict[str, Any] | None = None,
-    ) -> str:
-        """Send *message* and return the assistant reply as a fully-formed string."""
+    ) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks."""
 
     @abstractmethod
     def run_streaming(
