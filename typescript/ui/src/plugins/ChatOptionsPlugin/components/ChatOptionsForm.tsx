@@ -26,10 +26,10 @@ export default function ChatOptionsForm({
 }: ChatOptionsFormProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
-    config: { chat },
+    config: { user_settings: userSettings },
   } = useConfigContext();
 
-  const schema = chat.form;
+  const schema = userSettings?.form;
 
   const onOpenChange = () => {
     onClose();

@@ -173,7 +173,7 @@ export interface ConfigResponse {
         }
     }
     customization: UICustomization | null
-    chat: {
+    user_settings: {
         form: RJSFSchema | null
     }
 }

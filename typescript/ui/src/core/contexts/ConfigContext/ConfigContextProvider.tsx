@@ -24,11 +24,11 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const { feedback, chat } = config.data;
+    const { feedback, user_settings: userSettings } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
     }
-    if (chat.form) {
+    if (userSettings.form) {
       pluginManager.activate(ChatOptionsPluginName);
     }
   }, [config.data]);
