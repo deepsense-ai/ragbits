@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- added synchronous and asynchronous Python api client
+- Live updates support for Python api client(#683)
+- Synchronous and asynchronous Python api client (#647)
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
