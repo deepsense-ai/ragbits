@@ -22,7 +22,7 @@ By the end of this tutorial, our system will be able to handle conversation like
 
 ## Configuring the environment
 
-Install the latest Ragbits via `pip install -U ragbits` and `pip install ragbits-agents[mcp]` to follow along.
+Install the latest Ragbits via `pip install -U ragbits` and `pip install ragbits-agents[mcp, a2a]` to follow along.
 
 During development, we will use OpenAI's `gpt-4o-2024-08-06` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
 
