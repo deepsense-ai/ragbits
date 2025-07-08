@@ -36,13 +36,17 @@ class Conversation(SyncConversationBase):
         self.conversation_state: StateUpdate | None = None
         self._streaming_response: httpx.Response | None = None
 
-    def run(self, message: str, *, context: dict[str, Any] | None = None) -> str:
-        """Send *message* and return the final assistant reply as a string."""
-        parts: list[str] = []
+    def run(self, message: str, *, context: dict[str, Any] | None = None) -> list[ChatResponse]:
+        """Send *message* and return **all** response chunks.
+
+        The returned list preserves the exact order of :class:`ChatResponse` chunks
+        received from the server, allowing callers to post-process text, tool
+        calls, references, etc. as they see fit.
+        """
+        responses: list[ChatResponse] = []
         for chunk in self.run_streaming(message, context=context):
-            if chunk.type is ChatResponseType.TEXT:
-                parts.append(str(chunk.content))
-        return "".join(parts)
+            responses.append(chunk)
+        return responses
 
     def run_streaming(
         self,
@@ -106,16 +110,19 @@ class Conversation(SyncConversationBase):
             self._streaming_response = None
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
-        """Update our local state based on *resp*."""
+        """Update local state based on *resp*."""
         if resp.as_state_update() is not None:
             self.conversation_state = resp.as_state_update()
         elif resp.as_conversation_id() is not None:
             self.conversation_id = resp.as_conversation_id()
         elif resp.type is ChatResponseType.MESSAGE_ID:
-            pass
-        text_content = resp.as_text()
-        if text_content is not None:
-            assistant_msg = self.history[assistant_index]
-            assistant_msg.content += text_content
+            return
+
+        assistant_msg = self.history[assistant_index]
+
+        if resp.type is ChatResponseType.LIVE_UPDATE:
+            assistant_msg.content += f"\n[LIVE_UPDATE]: {resp.content}\n"
         elif resp.as_reference() is not None:
-            pass
+            assistant_msg.content += f"\n[REFERENCE]: {resp.content}\n"
+        elif (text_content := resp.as_text()) is not None:
+            assistant_msg.content += text_content

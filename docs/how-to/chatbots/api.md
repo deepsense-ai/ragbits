@@ -273,34 +273,78 @@ class MyChat(ChatInterface):
 
 The Ragbits ecosystem provides an official Python client that makes it easy to integrate your application with the chat API without dealing with low-level HTTP details.
 
+### Basic Usage
+
 ```python
 import asyncio
 from ragbits.chat.clients import AsyncRagbitsChatClient, RagbitsChatClient
 
 async def main() -> None:
     async with AsyncRagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
-        # One-shot request
-        reply = await client.run("What's the weather like in Paris?")
-        print(reply)
+        # One-shot request - collect all text responses
+        responses = await client.run("What's the weather like in Paris?")
+        text_content = "".join(chunk.as_text() or "" for chunk in responses)
+        print(text_content)
 
-        # Streaming conversation
+        # Streaming conversation - print text as it arrives
         conv = client.new_conversation()
         async for chunk in conv.run_streaming("Give me three movie recommendations"):
             if text := chunk.as_text():
                 print(text, end="")
+        print()
 
-
+    # Synchronous client
     sync_client = RagbitsChatClient(base_url="http://127.0.0.1:8000")
 
     # Simple one-off request
-    response = sync_client.run("Hello, Ragbits!")
-    print(response)
+    responses = sync_client.run("Hello, Ragbits!")
+    text_content = "".join(chunk.as_text() or "" for chunk in responses)
+    print(text_content)
 
-    # Stateful conversation
+    # Synchronous conversation
     conversation = sync_client.new_conversation()
     for chunk in conversation.run_streaming("Tell me a joke"):
         if text := chunk.as_text():
             print(text, end="")
+    print()
 
 asyncio.run(main())
+```
+
+### Handling Different Response Types
+
+The client returns `ChatResponse` objects that can contain different types of content. Use the appropriate methods to extract the content you need:
+
+```python
+import asyncio
+from ragbits.chat.clients import AsyncRagbitsChatClient
+
+async def handle_responses() -> None:
+    async with AsyncRagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
+        conv = client.new_conversation()
+        
+        async for chunk in conv.run_streaming("Tell me about Python"):
+            # Handle text content
+            if text := chunk.as_text():
+                print(text, end="")
+            
+            # Handle references
+            elif ref := chunk.as_reference():
+                print(f"\n📖 Reference: {ref.title}")
+                if ref.url:
+                    print(f"   URL: {ref.url}")
+            
+            # Handle live updates (for agent actions)
+            elif live_update := chunk.as_live_update():
+                print(f"\n🔄 {live_update.content.label}")
+                if live_update.content.description:
+                    print(f"   {live_update.content.description}")
+            
+            # Handle followup messages
+            elif followup := chunk.as_followup_messages():
+                print(f"\n💡 Suggested follow-ups:")
+                for msg in followup:
+                    print(f"   • {msg}")
+
+asyncio.run(handle_responses())
 ```
