@@ -42,6 +42,16 @@ class AgentToolExecutionError(AgentError):
         self.error = error
 
 
+class AgentToolDuplicateError(AgentError):
+    """
+    Raised when agent tool names are duplicated.
+    """
+
+    def __init__(self, tool_name: str) -> None:
+        super().__init__(f"Duplicate tool name found: {tool_name}")
+        self.tool_name = tool_name
+
+
 class AgentInvalidPromptInputError(AgentError):
     """
     Raised when the prompt/input combination is invalid.
