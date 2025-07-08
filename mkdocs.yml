@@ -39,6 +39,7 @@ nav:
         - "Setup API & UI": how-to/chatbots/api.md
       - Agents:
         - "Define and use agents": how-to/agents/define_and_use_agents.md
+        - "Provide tools with MCP": how-to/agents/provide_mcp_tools.md
         - "Serve Ragbits agents for A2A communication": how-to/agents/serve_ragbits_agents.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
@@ -74,6 +75,8 @@ nav:
             - api_reference/document_search/retrieval/rerankers.md
       - Agents:
         - api_reference/agents/index.md
+        - MCP:
+          - api_reference/agents/mcp.md
       - Evaluate:
         - api_reference/evaluate/index.md
         - api_reference/evaluate/dataloaders.md
