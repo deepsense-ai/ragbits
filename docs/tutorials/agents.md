@@ -231,12 +231,12 @@ import json
 Now let's put it all together:
 
 ```python title="orchestrator.py"
-from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.agents import Agent, ToolCallResult
+from ragbits.core.llms import LiteLLM, ToolCall
 import asyncio
 
 async def main() -> None:
---8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:123:137"
+--8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:123:144"
 ```
 
 Now you can test the complete system by running (assuming city and flight agents are running in another terminals):
@@ -250,7 +250,7 @@ Then interact with the orchestrator with `I want to visit Paris from New York. P
 1. The orchestrator calls city explorer and flight finder agents. 
 1. The city explorer agent fetches Paris information via MCP
 1. The flight finder agent searches for New York → Paris flights
-1. The orchestrator combines everything into a comprehensive trip plan
+1. The orchestrator combines everything into a comprehensive trip plan and streams the response
 
 
 **Good job, you've done it!**

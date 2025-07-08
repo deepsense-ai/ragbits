@@ -8,8 +8,8 @@ from hotel_agent import server as hotel_agent_server
 from pydantic import BaseModel
 from uvicorn import Server
 
-from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.agents import Agent, ToolCallResult
+from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import Prompt
 
 AGENTS_CARDS = {}
@@ -128,9 +128,16 @@ async def main() -> None:
     agent = Agent(llm=llm, prompt=OrchestratorPrompt, tools=[execute_agent], keep_history=True)
 
     while True:
-        user_input = input("USER: ")
-        result = await agent.run(OrchestratorPromptInput(message=user_input, agents=AGENTS_INFO))
-        print("ASSISTANT:", result.content)
+        user_input = input("\nUSER: ")
+        print("ASSISTANT:")
+        async for chunk in agent.run_streaming(OrchestratorPromptInput(message=user_input, agents=AGENTS_INFO)):
+            match chunk:
+                case ToolCall():
+                    print(f"Tool call: {chunk.name} with arguments {chunk.arguments}")
+                case ToolCallResult():
+                    print(f"Tool call result: {chunk.result[:100]}...")
+                case _:
+                    print(chunk, end="", flush=True)
 
 
 if __name__ == "__main__":
