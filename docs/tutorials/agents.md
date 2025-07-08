@@ -13,18 +13,11 @@ Let's build a multi-agent system for automated trip planning with Ragbits. In th
 - How to expose agents through [Agent-to-Agent (A2A)](https://github.com/a2aproject/A2A) protocol
 - How to build an orchestrator that manages conversation context
 
-By the end of this tutorial, our system will be able to handle conversation like this:
-
-**USER**:  I'm from New York and want to explore Europe. What is interesting in Paris? <br>
-**ASSISTANT**: (Orchestrator + City Finder Agent + MCP): Paris is a very interesting... <br>
-**USER**: Are there any flights available? <br>
-**ASSISTANT** (history + Flight Agents + Tools): Here are some available flight from New York to Paris... <br>
-
 ## Configuring the environment
 
-Install the latest Ragbits via `pip install -U ragbits` and `pip install ragbits-agents[mcp, a2a]` to follow along.
+Install the latest Ragbits via `pip install -U ragbits[a2a,mcp]` to follow along.
 
-During development, we will use OpenAI's `gpt-4o-2024-08-06` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
+During development, we will use OpenAI's `gpt-4.1-nano` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
 
 !!! tip "Recommended: Set up OpenTelemetry tracing to understand what's happening under the hood."
     OpenTelemetry is an LLMOps tool that natively integrates with Ragbits and offer explainability and experiment tracking. In this tutorial, you can use OpenTelemetry to visualize prompts and optimization progress as traces to understand the Ragbits' behavior better. Check the full setup guide [here](../how-to/audit/use_tracing.md/#using-opentelemetry-tracer).
@@ -40,8 +33,11 @@ from ragbits.core.prompt import Prompt
 --8<-- "examples/agents/a2a/flight_agent.py:37:53"
 
 print(FlightPrompt(FlightPromptInput(input="I need to fly from New York to Paris. What flights are available?")).chat)
-# [{'role': 'system', 'content': 'You are a helpful travel assistant that finds available flights between two cities.'}, 
-# {'role': 'user', 'content': 'I need to fly from New York to Paris. What flights are available?'}]
+```
+
+```json
+[{'role': 'system', 'content': 'You are a helpful travel assistant that finds available flights between two cities.'}, 
+{'role': 'user', 'content': 'I need to fly from New York to Paris. What flights are available?'}]
 ```
 
 Next, we [define a tool](../how-to/llms/use_tools_with_llms.md) that will provide flight information. **Note**: in a real application, you'd connect to the actual flight APIs:
@@ -261,8 +257,4 @@ Then interact with the orchestrator with `I want to visit Paris from New York. P
 Feel free to extend this system with additional agents for activities, restaurants, weather information, or any other travel-related services.
 
 !!! tip
-    Full working example of this code can be found at:
-
-    * `examples/agents/a2a/agent_orchestrator_with_tools.py`
-    * `examples/agents/a2a/flight_agent.py`
-    * `examples/agents/a2a/city_explorer_agent.py`
+    Full working example of this code can be found at: `examples/agents/a2a`
