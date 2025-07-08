@@ -176,6 +176,7 @@ export interface ConfigResponse {
     user_settings: {
         form: RJSFSchema | null
     }
+    debug_mode: boolean
 }
 
 /**

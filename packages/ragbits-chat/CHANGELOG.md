@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Chat options (#692)
+- added synchronous and asynchronous Python api client
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
@@ -17,6 +18,8 @@
 - Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
 - Fix followup messages not sending (#680)
 - Improve typing of TypeScript libraries (#681)
+- Add debug panel with debug_mode field in config (#689)
+- Restore relative URL handling for UI build (#699)
 
 ## 1.0.0 (2025-06-04)
 

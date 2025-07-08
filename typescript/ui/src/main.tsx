@@ -27,13 +27,18 @@ loadIcons([
   "heroicons:arrow-up",
   "heroicons:chevron-down",
   "heroicons:cog-6-tooth",
+  "heroicons:bug-ant",
 ]);
+
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.DEV ? "http://127.0.0.1:8000" : "");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HeroUIProvider>
       <ThemeContextProvider>
-        <RagbitsProvider>
+        <RagbitsProvider baseUrl={API_URL}>
           <ConfigContextProvider>
             <HistoryProvider>
               <App />
