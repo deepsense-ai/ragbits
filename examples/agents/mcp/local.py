@@ -1,5 +1,5 @@
 """
-Ragbits Agents Example: Filesystem MCP
+Ragbits Agents Example: Local MCP
 
 This example demonstrates how to integrate Model Context Protocol (MCP) servers
 with ragbits agents to provide dynamic tool capabilities. The agent connects to
@@ -11,7 +11,7 @@ Before running the script, make sure you have Node.js installed on your machine.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/filesystem_mcp.py
+    uv run examples/agents/mcp/local.py
     ```
 """
 

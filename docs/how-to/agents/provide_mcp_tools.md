@@ -30,6 +30,8 @@ async with MCPServerStdio(
     tools = await server.list_tools()
 ```
 
+A complete list of working examples is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp).
+
 ## Using MCP servers
 
 MCP servers can be added to Agents. Ragbits will call `list_tools()` on the MCP servers each time the Agent is run. This makes the LLM aware of the MCP server's tools. When the LLM calls a tool from an MCP server, Ragbits calls `call_tool()` on that server.
@@ -49,7 +51,7 @@ async with MCPServerStdio(
     await agent.run("List all files in a current directory.")
 ```
 
-A complete working example is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/filesystem_mcp.py).
+A complete example for local MCP integration is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp/local.py).
 
 ## Caching
 
