@@ -121,7 +121,7 @@ class Conversation(SyncConversationBase):
         assistant_msg = self.history[assistant_index]
 
         if resp.type is ChatResponseType.LIVE_UPDATE:
-            assistant_msg.content += f"\n[TOOL_CALL]: {resp.content}\n"
+            assistant_msg.content += f"\n[LIVE_UPDATE]: {resp.content}\n"
         elif resp.as_reference() is not None:
             assistant_msg.content += f"\n[REFERENCE]: {resp.content}\n"
         elif (text_content := resp.as_text()) is not None:
