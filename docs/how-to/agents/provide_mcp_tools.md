@@ -36,8 +36,10 @@ MCP servers can be added to Agents. Ragbits will call `list_tools()` on the MCP 
 
 ```python
 from ragbits.agents import Agent
+from ragbits.core.llms import LiteLLM
 
 agent = Agent(
+    llm=LiteLLM(model_name="gpt-4.1-nano"),
     prompt="Use the tools to achieve the task",
     mcp_servers=[mcp_server_1, mcp_server_2]
 )
