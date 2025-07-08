@@ -1,12 +1,14 @@
+from contextlib import suppress
 from urllib.parse import urlparse
 
-import uvicorn
-from a2a.types import AgentCard
-from fastapi import FastAPI
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentResult
 
+with suppress(ImportError):
+    import uvicorn
+    from a2a.types import AgentCard
+    from fastapi import FastAPI
 
 class Request(BaseModel):
     """
@@ -34,7 +36,7 @@ def _format_response(result: AgentResult) -> dict:
     }
 
 
-def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[BaseModel]) -> FastAPI:
+def create_agent_app(agent: Agent, agent_card: "AgentCard", input_model: type[BaseModel]) -> "FastAPI":
     """
     Create a FastAPI server for the given agent and input schema.
     The server exposes:
@@ -71,9 +73,9 @@ def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[Base
 
 def create_agent_server(
     agent: Agent,
-    agent_card: AgentCard,
+    agent_card: "AgentCard",
     input_model: type[BaseModel],
-) -> uvicorn.Server:
+) -> "uvicorn.Server":
     """
     Create a Uvicorn server instance that serves the specified agent over HTTP.
 

@@ -11,8 +11,7 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
-    "ragbits-agents[mcp]",
-    "httpx>=0.27.2,<=1.0.0",
+    "ragbits-agents[mcp,a2a]",
 ]
 
 [tool.uv]
