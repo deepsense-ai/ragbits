@@ -115,7 +115,9 @@ def test_send_message_yields_responses_sync(sse_lines: list[str]) -> None:
     assert conv.conversation_id == "cid"
     assert conv.conversation_state is not None
     assert conv.conversation_state.state == {"x": 1}
-    assert conv.history[-1].content == "foo bar"
+    assert "foo" in conv.history[-1].content
+    assert "bar" in conv.history[-1].content
+    assert "[REFERENCE]:" in conv.history[-1].content
 
 
 def test_history_excludes_system_messages() -> None:
@@ -176,7 +178,9 @@ async def test_send_message_yields_responses_async(sse_lines: list[str]) -> None
             collected.append(chunk)
     assert collected[0].type is ChatResponseType.CONVERSATION_ID
     assert collected[-1].type is ChatResponseType.TEXT
-    assert conv.history[-1].content == "foo bar"
+    assert "foo" in conv.history[-1].content
+    assert "bar" in conv.history[-1].content
+    assert "[REFERENCE]:" in conv.history[-1].content
 
 
 @pytest.mark.asyncio
