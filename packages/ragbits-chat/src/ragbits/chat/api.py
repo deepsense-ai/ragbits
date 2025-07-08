@@ -134,6 +134,7 @@ class RagbitsAPI:
         async def config() -> JSONResponse:
             like_config = self.chat_interface.feedback_config.like_form
             dislike_config = self.chat_interface.feedback_config.dislike_form
+            user_settings_config = self.chat_interface.user_settings.form
 
             config_dict = {
                 "feedback": {
@@ -149,6 +150,7 @@ class RagbitsAPI:
                 "customization": self.chat_interface.ui_customization.model_dump()
                 if self.chat_interface.ui_customization
                 else None,
+                "user_settings": {"form": user_settings_config},
                 "debug_mode": self.debug_mode,
             }
 

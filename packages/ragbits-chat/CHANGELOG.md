@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add configurable user setting in Ragbits UI (#692)
 - Live updates support for Python api client(#683)
 - Synchronous and asynchronous Python api client (#647)
 - Live updates support markdown (#684)

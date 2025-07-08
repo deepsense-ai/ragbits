@@ -17,7 +17,7 @@ from ragbits.core.utils import get_secret_key
 
 from ..metrics import ChatCounterMetric, ChatHistogramMetric
 from ..persistence import HistoryPersistenceStrategy
-from .forms import FeedbackConfig
+from .forms import FeedbackConfig, UserSettings
 from .types import (
     ChatContext,
     ChatResponse,
@@ -175,6 +175,7 @@ class ChatInterface(ABC):
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
+    user_settings: UserSettings = UserSettings()
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
 

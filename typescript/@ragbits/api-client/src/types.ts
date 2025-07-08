@@ -173,6 +173,9 @@ export interface ConfigResponse {
         }
     }
     customization: UICustomization | null
+    user_settings: {
+        form: RJSFSchema | null
+    }
     debug_mode: boolean
 }
 

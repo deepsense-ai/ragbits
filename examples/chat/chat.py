@@ -26,7 +26,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig
+from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
@@ -57,6 +57,14 @@ class DislikeFormExample(BaseModel):
     feedback: str = Field(description="Please provide more details", min_length=1)
 
 
+class UserSettingsFormExample(BaseModel):
+    """A simple example implementation of the chat form that demonstrates how to use Pydantic for form definition."""
+
+    model_config = ConfigDict(title="Chat Form", json_schema_serialization_defaults_required=True)
+
+    language: Literal["English", "Polish"] = Field(description="Please select the language", default="English")
+
+
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface that demonstrates different response types."""
 
@@ -66,6 +74,7 @@ class MyChat(ChatInterface):
         dislike_enabled=True,
         dislike_form=DislikeFormExample,
     )
+    user_settings = UserSettings(form=UserSettingsFormExample)
 
     ui_customization = UICustomization(
         header=HeaderCustomization(title="Example Ragbits Chat", subtitle="by deepsense.ai", logo="🐰"),
