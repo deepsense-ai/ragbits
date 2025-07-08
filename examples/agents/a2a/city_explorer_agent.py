@@ -35,8 +35,8 @@ async def main() -> None:
     """Runs the city explorer agent."""
     async with MCPServerStdio(
         params={
-            "command": "uvx",
-            "args": ["mcp-server-fetch"],
+            "command": "python",
+            "args": ["-m", "mcp_server_fetch"],
         },
         client_session_timeout_seconds=60,
     ) as server:

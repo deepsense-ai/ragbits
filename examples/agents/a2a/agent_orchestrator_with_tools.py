@@ -1,12 +1,8 @@
 import asyncio
 import json
-import threading
 
 import requests
-from flight_agent import server as flight_agent_server
-from hotel_agent import server as hotel_agent_server
 from pydantic import BaseModel
-from uvicorn import Server
 
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.core.llms import LiteLLM, ToolCall
@@ -96,30 +92,11 @@ def execute_agent(agent_name: str, query: str) -> str:
     )
 
 
-async def wait_for_server_to_start(server: Server, check_interval: float = 0.001) -> None:
-    """
-    Starts the given server in a background thread and asynchronously waits until it signals readiness.
-
-    Args:
-        server: The server instance to run. Expected to have a `.run()` method and `.started` attribute.
-        check_interval: Time in seconds between readiness checks (default: 0.001).
-
-    Returns:
-        None
-    """
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    while not server.started:
-        await asyncio.sleep(check_interval)
-
-
 async def main() -> None:
     """
     Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
-    await asyncio.gather(*(wait_for_server_to_start(server) for server in [hotel_agent_server, flight_agent_server]))
-
     llm = LiteLLM(
         model_name="gpt-4o-2024-08-06",
         use_structured_output=True,

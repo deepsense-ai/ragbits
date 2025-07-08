@@ -22,7 +22,7 @@ By the end of this tutorial, our system will be able to handle conversation like
 
 ## Configuring the environment
 
-Install the latest Ragbits via `pip install -U ragbits` and follow along.
+Install the latest Ragbits via `pip install -U ragbits` and `pip install ragbits-agents[mcp]` to follow along.
 
 During development, we will use OpenAI's `gpt-4o-2024-08-06` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
 
@@ -31,7 +31,7 @@ During development, we will use OpenAI's `gpt-4o-2024-08-06` model. To authentic
 
 ## Building the Flight Finder Agent
 
-We start by defining the [prompt](../how-to/prompts/use_prompting.md) that will lead this agent. The prompt expects [structured input](../how-to/prompts/use_prompting.md#extending-the-prompt-with-an-input-model) for departure and arrival cities:
+We start by defining the [prompt](../how-to/prompts/use_prompting.md) that will lead this agent.
 
 ```py title="flight_agent.py"
 from pydantic import BaseModel
@@ -44,7 +44,7 @@ print(FlightPrompt(FlightPromptInput(input="I need to fly from New York to Paris
 # {'role': 'user', 'content': 'I need to fly from New York to Paris. What flights are available?'}]
 ```
 
-Next, we [define a tool](../how-to/llms/use_tools_with_llms.md) that will provide flight information. **Note**: In a real application, you'd connect to the actual flight APIs:
+Next, we [define a tool](../how-to/llms/use_tools_with_llms.md) that will provide flight information. **Note**: in a real application, you'd connect to the actual flight APIs:
 
 ```py title="flight_agent.py"
 import json
@@ -104,7 +104,11 @@ from ragbits.core.prompt import Prompt
 --8<-- "examples/agents/a2a/city_explorer_agent.py:9:31"
 ```
 
-Now define the agent, We will not [build an MCP server from scratch](https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#quickstart), but run an already existing one - [Web Fetcher](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch):
+Now define the agent, We will not [build an MCP server from scratch](https://github.com/modelcontextprotocol/python-sdk?tab=readme-ov-file#quickstart), but run an already existing one - [Web Fetcher](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch). Start by installing it with:
+
+```bash
+pip install mcp-server-fetch
+```
 
 ```py title="city_explorer_agent.py"
 from ragbits.agents import Agent
@@ -133,7 +137,7 @@ Paris is a hub for art, fashion, gastronomy, and culture, drawing millions of vi
 
 **Notice** that we didn't have to write any tool, just reuse already existing one. This is the magic of MCP protocol.
 
-## Exposing Agents Through A2A
+## Exposing Agents through A2A
 
 Now we need to expose our agents through the Agent-to-Agent (A2A) protocol so they can be called remotely. We'll create [agent cards](https://a2aproject.github.io/A2A/v0.2.5/specification/#55-agentcard-object-structure) and servers for both agents. Let's start with the flight agent. **Update the main function with**:
 
@@ -202,7 +206,7 @@ First we need to gather information about all of our available agents
 ```python title="orchestrator.py"
 import requests
 
---8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:15:33"
+--8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:11:29"
 print(AGENTS_INFO)
 ```
 
@@ -218,14 +222,14 @@ from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 
 
---8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:36:60"
+--8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:32:56"
 ```
 
 To finally create a tool that will call agents 
 ```python title="orchestrator.py"
 import json
 
---8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:63:96"
+--8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:59:92"
 ```
 
 Now let's put it all together:
@@ -235,8 +239,7 @@ from ragbits.agents import Agent, ToolCallResult
 from ragbits.core.llms import LiteLLM, ToolCall
 import asyncio
 
-async def main() -> None:
---8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:123:144"
+--8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:95:121"
 ```
 
 Now you can test the complete system by running (assuming city and flight agents are running in another terminals):
@@ -247,7 +250,7 @@ python orchestrator.py
 
 Then interact with the orchestrator with `I want to visit Paris from New York. Please give me some info about it and suggest recommended flights`:
 
-1. The orchestrator calls city explorer and flight finder agents. 
+1. The orchestrator calls city explorer and flight finder agents
 1. The city explorer agent fetches Paris information via MCP
 1. The flight finder agent searches for New York → Paris flights
 1. The orchestrator combines everything into a comprehensive trip plan and streams the response
