@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:backend": "cd ../../ && uv sync && ragbits api run examples.chat.offline_chat:MyChat --debug",
+    "dev:backend": "cd ../../ && uv sync && ragbits api run --debug",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "wait:backend": "wait-on http-get://127.0.0.1:8000/",
-    "test:integration": "concurrently -k -s first \"npm run dev:backend\" \"npm run wait:backend && vitest --config vitest.config.ts\""
+    "test:integration": "concurrently -k -s first \"npm run dev:backend -- examples.chat.offline_chat:MyChat\" \"npm run wait:backend && vitest --config vitest.config.ts\""
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
