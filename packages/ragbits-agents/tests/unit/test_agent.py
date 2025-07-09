@@ -481,5 +481,4 @@ async def test_max_tool_calls_exceeded(llm_multiple_tool_calls: MockLLM, method:
         await method(agent, options=options)
 
     assert exc_info.value.max_tool_calls == 1
-    assert exc_info.value.actual_tool_calls == 1
-    assert "Maximum number of tool calls exceeded: 1 > 1" in str(exc_info.value)
+    assert "The number of tool calls exceeded the limit of 1" in str(exc_info.value)

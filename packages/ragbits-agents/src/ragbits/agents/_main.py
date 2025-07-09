@@ -52,7 +52,7 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
     """The options for the LLM."""
-    max_tool_calls: int | None | NotGiven = NOT_GIVEN
+    max_tool_calls: int | None = 15
     """The maximum number of tool calls that can be made."""
 
 
@@ -214,7 +214,7 @@ class Agent(
 
                 for tool_call in response.tool_calls:
                     if max_tool_calls and tool_call_count >= max_tool_calls:
-                        raise AgentMaxToolCallsExceededError(max_tool_calls, tool_call_count)
+                        raise AgentMaxToolCallsExceededError(max_tool_calls)
 
                     result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
                     tool_calls.append(result)
@@ -302,7 +302,7 @@ class Agent(
 
                     if isinstance(chunk, ToolCall):
                         if max_tool_calls and tool_call_count >= max_tool_calls:
-                            raise AgentMaxToolCallsExceededError(max_tool_calls, tool_call_count)
+                            raise AgentMaxToolCallsExceededError(max_tool_calls)
 
                         result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
                         yield result
