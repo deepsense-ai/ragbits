@@ -54,6 +54,12 @@ hide:
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
 - **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
+### 🤖 Build Multi-Agent Workflows with Ease
+
+- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/tutorials/agents/) for interoperability.
+- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
+- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/how-to/agents/define_and_use_agents/#conversation-history/).
+
 ### 🚀 Deploy & Monitor with Confidence
 
 - **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/project/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/project/use_tracing/#cli-trace-handler).

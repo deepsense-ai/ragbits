@@ -19,12 +19,6 @@
 
 ## Features
 
-### 🤖 Build Multi-Agent Workflows with Ease
-
-- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/tutorials/agents/) for interoperability.
-- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
-- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/how-to/agents/define_and_use_agents/#conversation-history/).
-
 ### 🔨 Build Reliable & Scalable GenAI Apps
 
 - **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
@@ -39,6 +33,12 @@
 - **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
 - **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
+
+### 🤖 Build Multi-Agent Workflows with Ease
+
+- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/tutorials/agents/) for interoperability.
+- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
+- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/how-to/agents/define_and_use_agents/#conversation-history/).
 
 ### 🚀 Deploy & Monitor with Confidence
 
@@ -238,7 +238,7 @@ Explore `create-ragbits-app` repo [here](https://github.com/deepsense-ai/create-
 
 ## Documentation
 
-- [Quickstart](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/) - Get started with Ragbits in a few minutes
+- [Tutorials](https://ragbits.deepsense.ai/tutorials/intro) - Get started with Ragbits in a few minutes
 - [How-to](https://ragbits.deepsense.ai/how-to/prompts/use_prompting) - Learn how to use Ragbits in your projects
 - [CLI](https://ragbits.deepsense.ai/cli/main) - Learn how to run Ragbits in your terminal
 - [API reference](https://ragbits.deepsense.ai/api_reference/core/prompt) - Explore the underlying Ragbits API
