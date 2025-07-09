@@ -56,15 +56,15 @@ llm = LiteLLM(
     model_name="gpt-4.1",
     use_structured_output=True,
 )
-flight_agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
+agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])
 
 
 async def main() -> None:
     """Runs the flight agent."""
-    flight_agent_card = await flight_agent.get_agent_card(
+    flight_agent_card = await agent.get_agent_card(
         name="Flight Info Agent", description="Provides available flight information between two cities.", port=8000
     )
-    flight_agent_server = create_agent_server(flight_agent, flight_agent_card, FlightPromptInput)
+    flight_agent_server = create_agent_server(agent, flight_agent_card, FlightPromptInput)
     await flight_agent_server.serve()
 
 

@@ -9,7 +9,7 @@ The orchestrator automatically routes sub-tasks to the correct agent based on th
 
 To execute this script simply run:
 ```bash
-uv run examples/agents/a2a/orchestrator_client.py
+uv run examples/agents/a2a/run_orchestrator.py
 ```
 """
 
