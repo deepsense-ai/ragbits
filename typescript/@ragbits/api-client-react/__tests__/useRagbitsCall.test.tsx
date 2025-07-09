@@ -2,16 +2,16 @@ import { describe, it, expect } from 'vitest'
 import React from 'react'
 import { act } from 'react'
 import { renderHook } from '@testing-library/react'
-import { useRagbitsCall, RagbitsProvider } from '../src'
+import { useRagbitsCall, RagbitsContextProvider } from '../src'
 import { type ConfigResponse, FeedbackType } from '@ragbits/api-client'
 import { defaultConfigResponse } from './utils'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
         return (
-            <RagbitsProvider baseUrl="http://127.0.0.1:8000">
+            <RagbitsContextProvider baseUrl="http://127.0.0.1:8000">
                 {children}
-            </RagbitsProvider>
+            </RagbitsContextProvider>
         )
     }
 }
@@ -130,9 +130,9 @@ describe('useRagbitsCall', () => {
         // Use a fresh wrapper to avoid test isolation issues
         function FreshWrapper({ children }: { children: React.ReactNode }) {
             return (
-                <RagbitsProvider baseUrl="http://127.0.0.1:8000">
+                <RagbitsContextProvider baseUrl="http://127.0.0.1:8000">
                     {children}
-                </RagbitsProvider>
+                </RagbitsContextProvider>
             )
         }
 

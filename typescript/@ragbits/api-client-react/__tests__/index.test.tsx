@@ -12,7 +12,7 @@ describe('Package Exports', () => {
     })
 
     it('should export RagbitsProvider', () => {
-        expect(RagbitsReact.RagbitsProvider).toBeDefined()
-        expect(typeof RagbitsReact.RagbitsProvider).toBe('function')
+        expect(RagbitsReact.RagbitsContextProvider).toBeDefined()
+        expect(typeof RagbitsReact.RagbitsContextProvider).toBe('function')
     })
 })

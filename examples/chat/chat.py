@@ -84,7 +84,6 @@ class MyChat(ChatInterface):
             "I can provide information, answer questions, and assist you with various tasks."
         ),
     )
-    debug_mode = True
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
@@ -112,6 +111,10 @@ class MyChat(ChatInterface):
             title="Example Reference",
             content="This is an example reference document that might be relevant to your query.",
             url="https://example.com/reference1",
+        )
+
+        yield self.create_state_update(
+            {"example_state_key": "example_state_value", "example_state_key_2": "example_state_value_2"}
         )
 
         example_live_updates = [
