@@ -7,34 +7,38 @@ import {
   RenderHookResult,
   waitFor,
   screen,
+  fireEvent,
 } from "@testing-library/react";
 import {
   ChatResponseType,
   MessageRole,
   RagbitsClient,
-  RagbitsProvider,
+  RagbitsContextProvider,
   StreamCallbacks,
   TypedChatResponse,
 } from "@ragbits/api-client-react";
-import { useConfigContext } from "../core/contexts/ConfigContext/useConfigContext";
-import { ConfigContextProvider } from "../core/contexts/ConfigContext/ConfigContextProvider";
-import { HistoryContextProvider } from "../core/contexts/HistoryContext/HistoryContextProvider";
-import { useHistoryContext } from "../core/contexts/HistoryContext/useHistoryContext";
-import { HistoryContext } from "../types/history";
-import FeedbackForm from "../plugins/FeedbackPlugin/components/FeedbackForm";
+import { useConfigContext } from "../src/core/contexts/ConfigContext/useConfigContext";
+import { ConfigContextProvider } from "../src/core/contexts/ConfigContext/ConfigContextProvider";
+import { HistoryContextProvider } from "../src/core/contexts/HistoryContext/HistoryContextProvider";
+import { useHistoryContext } from "../src/core/contexts/HistoryContext/useHistoryContext";
+import { HistoryContext } from "../src/types/history";
+import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import userEvent from "@testing-library/user-event";
+import PromptInput from "../src/core/components/PromptInput/PromptInput";
+import { pluginManager } from "../src/core/utils/plugins/PluginManager";
+import { ChatOptionsPlugin } from "../src/plugins/ChatOptionsPlugin";
 
 describe("Integration tests", () => {
-  const baseUrl = "http://127.0.0.1:8000";
+  const BASE_URL = "http://127.0.0.1:8000";
   const renderWithHook = <R,>(hook: () => R) => {
     return renderHook(() => hook(), {
       wrapper: ({ children }: { children: React.ReactNode }) => {
         return (
-          <RagbitsProvider baseUrl={baseUrl}>
+          <RagbitsContextProvider baseUrl={BASE_URL}>
             <ConfigContextProvider>
               <HistoryContextProvider>{children}</HistoryContextProvider>
             </ConfigContextProvider>
-          </RagbitsProvider>
+          </RagbitsContextProvider>
         );
       },
     });
@@ -164,6 +168,56 @@ describe("Integration tests", () => {
           },
         );
       });
+
+      it("should call chat endpoint with selected options", async () => {
+        const historyRender = renderWithHook(() => useHistoryContext());
+
+        await waitFor(() => {
+          expect(historyRender.result.current).not.toBeFalsy();
+        });
+
+        const historyContext = historyRender.result;
+        const submitSpy = vi.spyOn(historyContext.current, "sendMessage");
+
+        pluginManager.register(ChatOptionsPlugin);
+        const WrappedInput = () => (
+          <RagbitsContextProvider baseUrl={BASE_URL}>
+            <ConfigContextProvider>
+              <HistoryContextProvider>
+                <PromptInput
+                  isLoading={false}
+                  submit={historyContext.current.sendMessage}
+                  stopAnswering={historyContext.current.stopAnswering}
+                  followupMessages={historyContext.current.followupMessages}
+                  history={historyContext.current.history}
+                />
+              </HistoryContextProvider>
+            </ConfigContextProvider>
+          </RagbitsContextProvider>
+        );
+
+        render(<WrappedInput />);
+        const user = userEvent.setup();
+        const chatOptionsButton =
+          await screen.findByTestId("open-chat-options");
+        await user.click(chatOptionsButton);
+        const selectTrigger = await screen.findByLabelText("Language", {
+          selector: "select",
+        });
+        await user.selectOptions(selectTrigger, ["Polish"]);
+        const submitButton = await screen.findByText("Save");
+        await user.click(submitButton);
+
+        const input = await screen.findByRole("textbox");
+        fireEvent.change(input, { target: { value: "Example message" } });
+
+        const sendButton = await screen.findByTestId("send-message");
+        await user.click(sendButton);
+
+        expect(submitSpy).toHaveBeenCalledWith("Example message", {
+          language: "Polish",
+        });
+      });
     });
     it("should recieve stream of known events", async () => {
       const originalMakeStreamRequest =
@@ -214,11 +268,11 @@ describe("Integration tests", () => {
         const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
           wrapper: ({ children }: { children: React.ReactNode }) => {
             return (
-              <RagbitsProvider baseUrl={baseUrl}>
+              <RagbitsContextProvider baseUrl={BASE_URL}>
                 <ConfigContextProvider>
                   <HistoryContextProvider>{children}</HistoryContextProvider>
                 </ConfigContextProvider>
-              </RagbitsProvider>
+              </RagbitsContextProvider>
             );
           },
         });
@@ -252,11 +306,11 @@ describe("Integration tests", () => {
         const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
           wrapper: ({ children }: { children: React.ReactNode }) => {
             return (
-              <RagbitsProvider baseUrl={baseUrl}>
+              <RagbitsContextProvider baseUrl={BASE_URL}>
                 <ConfigContextProvider>
                   <HistoryContextProvider>{children}</HistoryContextProvider>
                 </ConfigContextProvider>
-              </RagbitsProvider>
+              </RagbitsContextProvider>
             );
           },
         });

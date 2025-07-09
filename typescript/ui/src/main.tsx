@@ -5,7 +5,7 @@ import App from "./App.tsx";
 import "./globals.css";
 import { HistoryContextProvider } from "./core/contexts/HistoryContext/HistoryContextProvider.tsx";
 import { ThemeContextProvider } from "./core/contexts/ThemeContext/ThemeContextProvider.tsx";
-import { RagbitsProvider } from "@ragbits/api-client-react";
+import { RagbitsContextProvider } from "@ragbits/api-client-react";
 import { loadIcons } from "@iconify/react";
 import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
 import { FeedbackFormPlugin } from "./plugins/FeedbackPlugin/index.tsx";
@@ -38,13 +38,13 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HeroUIProvider>
       <ThemeContextProvider>
-        <RagbitsProvider baseUrl={API_URL}>
+        <RagbitsContextProvider baseUrl={API_URL}>
           <ConfigContextProvider>
             <HistoryContextProvider>
               <App />
             </HistoryContextProvider>
           </ConfigContextProvider>
-        </RagbitsProvider>
+        </RagbitsContextProvider>
       </ThemeContextProvider>
     </HeroUIProvider>
   </StrictMode>,

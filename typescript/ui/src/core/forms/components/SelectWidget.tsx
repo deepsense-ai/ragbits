@@ -36,7 +36,6 @@ export default function SelectWidget({
       onBlur={() => onBlur?.(id, value)}
       onFocus={() => onFocus?.(id, value)}
       className="mb-2"
-      selectedKeys={[value]}
     >
       {enumOptions.map((option) => (
         <SelectItem key={option.value}>{option.label}</SelectItem>

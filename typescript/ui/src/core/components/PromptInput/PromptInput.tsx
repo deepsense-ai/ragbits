@@ -224,6 +224,7 @@ const PromptInput = ({
             size="sm"
             type={isLoading ? "button" : "submit"}
             onPress={isLoading ? handleStopAnswering : undefined}
+            data-testid="send-message"
             {...sendButtonProps}
           >
             {!isLoading &&
