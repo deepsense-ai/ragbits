@@ -15,13 +15,13 @@ import {
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
-import { useCaretLogicalLineDetection } from "../../utils/useTextAreaCaretDetection";
-import { ChatMessage } from "../../../types/history";
+import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
+import { ChatMessage } from "../../../../types/history";
 import { MessageRole } from "@ragbits/api-client-react";
-import PluginWrapper from "../../utils/plugins/PluginWrapper";
-import { ChatOptionsPlugin } from "../../../plugins/ChatOptionsPlugin";
+import PluginWrapper from "../../../utils/plugins/PluginWrapper";
+import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
 
-export interface PromptInputProps {
+interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
   onArrowUp?: (isFirstLine: boolean) => void;

@@ -1,10 +1,9 @@
 import React from "react";
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { describe, it, expect, afterAll, vi } from "vitest";
 import {
   act,
   render,
   renderHook,
-  RenderHookResult,
   waitFor,
   screen,
   fireEvent,
@@ -15,29 +14,27 @@ import {
   RagbitsClient,
   RagbitsContextProvider,
   StreamCallbacks,
-  TypedChatResponse,
+  ChatResponse,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../src/core/contexts/ConfigContext/ConfigContextProvider";
-import { HistoryContextProvider } from "../src/core/contexts/HistoryContext/HistoryContextProvider";
-import { useHistoryContext } from "../src/core/contexts/HistoryContext/useHistoryContext";
-import { HistoryContext } from "../src/types/history";
-import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import userEvent from "@testing-library/user-event";
-import PromptInput from "../src/core/components/PromptInput/PromptInput";
+import PromptInput from "../src/core/components/inputs/PromptInput/PromptInput";
 import { pluginManager } from "../src/core/utils/plugins/PluginManager";
 import { ChatOptionsPlugin } from "../src/plugins/ChatOptionsPlugin";
+import { useHistoryStore } from "../src/core/stores/historyStore";
+import { enableMapSet } from "immer";
+import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
 
 describe("Integration tests", () => {
+  enableMapSet();
   const BASE_URL = "http://127.0.0.1:8000";
   const renderWithHook = <R,>(hook: () => R) => {
     return renderHook(() => hook(), {
       wrapper: ({ children }: { children: React.ReactNode }) => {
         return (
           <RagbitsContextProvider baseUrl={BASE_URL}>
-            <ConfigContextProvider>
-              <HistoryContextProvider>{children}</HistoryContextProvider>
-            </ConfigContextProvider>
+            <ConfigContextProvider>{children}</ConfigContextProvider>
           </RagbitsContextProvider>
         );
       },
@@ -86,30 +83,18 @@ describe("Integration tests", () => {
 
   describe("/api/chat", { timeout: 30000 }, () => {
     describe("should call chat endpoint with correct data", () => {
-      let renderedHistory: RenderHookResult<HistoryContext, null>;
       const makeStreamRequestSpy = vi.spyOn(
         RagbitsClient.prototype,
         "makeStreamRequest",
       );
 
-      beforeAll(() => {
-        const rendered = renderWithHook(() => useHistoryContext());
-        renderedHistory = rendered;
-      });
-
       afterAll(() => {
-        renderedHistory.unmount();
+        useHistoryStore.getState().actions.clearHistory();
       });
 
       it("should call chat endpoint with empty request", async () => {
-        // Send example message to get context from the server
-        const historyContext = renderedHistory.result;
-        await waitFor(() => {
-          expect(historyContext.current).not.toBeNull();
-        });
-
         await act(() => {
-          historyContext.current.sendMessage("Test message");
+          useHistoryStore.getState().actions.sendMessage("Test message");
         });
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
           "/api/chat",
@@ -124,7 +109,7 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyContext.current.isLoading).toBe(false);
+            expect(useHistoryStore.getState().isLoading).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -133,9 +118,8 @@ describe("Integration tests", () => {
       });
 
       it("should call chat endpoint with correct request", async () => {
-        const historyContext = renderedHistory.result;
         await act(() => {
-          historyContext.current.sendMessage("Test message 2");
+          useHistoryStore.getState().actions.sendMessage("Test message 2");
         });
 
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
@@ -161,7 +145,7 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyContext.current.isLoading).toBe(false);
+            expect(useHistoryStore.getState().isLoading).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -170,28 +154,20 @@ describe("Integration tests", () => {
       });
 
       it("should call chat endpoint with selected options", async () => {
-        const historyRender = renderWithHook(() => useHistoryContext());
-
-        await waitFor(() => {
-          expect(historyRender.result.current).not.toBeFalsy();
-        });
-
-        const historyContext = historyRender.result;
-        const submitSpy = vi.spyOn(historyContext.current, "sendMessage");
-
         pluginManager.register(ChatOptionsPlugin);
+        const {
+          actions: { sendMessage, stopAnswering },
+          followupMessages,
+        } = useHistoryStore.getState();
         const WrappedInput = () => (
           <RagbitsContextProvider baseUrl={BASE_URL}>
             <ConfigContextProvider>
-              <HistoryContextProvider>
-                <PromptInput
-                  isLoading={false}
-                  submit={historyContext.current.sendMessage}
-                  stopAnswering={historyContext.current.stopAnswering}
-                  followupMessages={historyContext.current.followupMessages}
-                  history={historyContext.current.history}
-                />
-              </HistoryContextProvider>
+              <PromptInput
+                isLoading={false}
+                submit={sendMessage}
+                stopAnswering={stopAnswering}
+                followupMessages={followupMessages}
+              />
             </ConfigContextProvider>
           </RagbitsContextProvider>
         );
@@ -209,14 +185,42 @@ describe("Integration tests", () => {
         await user.click(submitButton);
 
         const input = await screen.findByRole("textbox");
-        fireEvent.change(input, { target: { value: "Example message" } });
+        fireEvent.change(input, { target: { value: "Test message 3" } });
 
         const sendButton = await screen.findByTestId("send-message");
         await user.click(sendButton);
 
-        expect(submitSpy).toHaveBeenCalledWith("Example message", {
-          language: "Polish",
-        });
+        expect(makeStreamRequestSpy).toHaveBeenCalledWith(
+          "/api/chat",
+          {
+            context: {
+              conversation_id: expect.any(String),
+              signature: expect.any(String),
+              state: expect.any(Object),
+              language: "Polish",
+            },
+            history: [
+              {
+                content: "Test message",
+                role: MessageRole.USER,
+              },
+              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: "Test message 2", role: MessageRole.USER },
+              { content: expect.any(String), role: MessageRole.ASSISTANT },
+            ],
+            message: "Test message 3",
+          },
+          expect.anything(), // We don't care about callbacks
+          expect.anything(), // We don't care about AbortSignal
+        );
+        await waitFor(
+          () => {
+            expect(useHistoryStore.getState().isLoading).toBe(false);
+          },
+          {
+            timeout: 20000, // Long timeout because of the sleep between live updates
+          },
+        );
       });
     });
     it("should recieve stream of known events", async () => {
@@ -226,7 +230,7 @@ describe("Integration tests", () => {
         function (this: RagbitsClient, endpoint, data, callbacks, signal) {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
-            onMessage: (event: TypedChatResponse) => {
+            onMessage: (event: ChatResponse) => {
               expect(event.type).toBeOneOf(Object.values(ChatResponseType));
             },
           };
@@ -241,19 +245,13 @@ describe("Integration tests", () => {
         },
       );
 
-      const renderedHistory = renderWithHook(() => useHistoryContext());
-      const historyContext = renderedHistory.result;
-      await waitFor(() => {
-        expect(historyContext.current).not.toBeNull();
-      });
-
       await act(() => {
-        historyContext.current.sendMessage("Test message");
+        useHistoryStore.getState().actions.sendMessage("Test message");
       });
 
       await waitFor(
         () => {
-          expect(historyContext.current.isLoading).toBe(false);
+          expect(useHistoryStore.getState().isLoading).toBe(false);
         },
         {
           timeout: 20000, // Long timeout because of the sleep between live updates
@@ -269,9 +267,7 @@ describe("Integration tests", () => {
           wrapper: ({ children }: { children: React.ReactNode }) => {
             return (
               <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>
-                  <HistoryContextProvider>{children}</HistoryContextProvider>
-                </ConfigContextProvider>
+                <ConfigContextProvider>{children}</ConfigContextProvider>
               </RagbitsContextProvider>
             );
           },
@@ -307,9 +303,7 @@ describe("Integration tests", () => {
           wrapper: ({ children }: { children: React.ReactNode }) => {
             return (
               <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>
-                  <HistoryContextProvider>{children}</HistoryContextProvider>
-                </ConfigContextProvider>
+                <ConfigContextProvider>{children}</ConfigContextProvider>
               </RagbitsContextProvider>
             );
           },

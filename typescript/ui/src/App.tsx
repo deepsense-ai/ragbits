@@ -12,7 +12,7 @@ import {
   useHistoryStore,
   useMessageIds,
 } from "./core/stores/historyStore";
-import QuickMessageInput from "./core/components/QuickMessageInput";
+import QuickMessageInput from "./core/components/inputs/QuickMessageInput";
 
 export default function App() {
   const {

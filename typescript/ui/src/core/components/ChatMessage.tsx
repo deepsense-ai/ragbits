@@ -34,7 +34,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const { serverId, content, role, references, liveUpdates } = message;
     const rightAlign = role === MessageRole.USER;
     const isLoading =
-      isHistoryLoading && role === "assistant" && messageId === lastMessageId;
+      isHistoryLoading &&
+      role === MessageRole.ASSISTANT &&
+      messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
