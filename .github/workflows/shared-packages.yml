@@ -197,7 +197,10 @@ jobs:
           uv run coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
           uv run coverage report
           uv run coverage xml
-
+        env:
+          GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
+          GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
+          
       - name: Test Report
         uses: mikepenz/action-junit-report@v4
         continue-on-error: true
