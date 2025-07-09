@@ -3,7 +3,7 @@
 Let's build a multi-agent system for automated trip planning with Ragbits. In this tutorial, we'll create:
 
 1. A Flight Finder Agent that searches for available flights
-2. A City Explorer Agent that gathers information about destinations  
+2. A City Explorer Agent that gathers information about destinations
 3. An Orchestrator Agent that coordinates both agents to create comprehensive trip plans
 
 **What you'll learn:**
@@ -36,7 +36,7 @@ print(FlightPrompt(FlightPromptInput(input="I need to fly from New York to Paris
 ```
 
 ```json
-[{'role': 'system', 'content': 'You are a helpful travel assistant that finds available flights between two cities.'}, 
+[{'role': 'system', 'content': 'You are a helpful travel assistant that finds available flights between two cities.'},
 {'role': 'user', 'content': 'I need to fly from New York to Paris. What flights are available?'}]
 ```
 
@@ -221,7 +221,7 @@ from ragbits.core.prompt import Prompt
 --8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:32:56"
 ```
 
-To finally create a tool that will call agents 
+To finally create a tool that will call agents
 ```python title="orchestrator.py"
 import json
 
