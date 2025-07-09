@@ -19,6 +19,12 @@
 
 ## Features
 
+### 🤖 Build Multi-Agent Workflows with Ease
+
+- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/tutorials/agents/) for interoperability.
+- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
+- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/how-to/agents/define_and_use_agents/#conversation-history/).
+
 ### 🔨 Build Reliable & Scalable GenAI Apps
 
 - **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
