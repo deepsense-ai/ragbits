@@ -63,15 +63,15 @@ class AgentInvalidPromptInputError(AgentError):
         self.input_type = input
 
 
-class AgentMaxToolCallsExceededError(AgentError):
+class AgentMaxTurnsExceededError(AgentError):
     """
-    Raised when the maximum number of tool calls is exceeded.
+    Raised when the maximum number of turns is exceeded.
     """
 
-    def __init__(self, max_tool_calls: int) -> None:
+    def __init__(self, max_turns: int) -> None:
         super().__init__(
-            f"The number of tool calls exceeded the limit of {max_tool_calls}."
-            "To change this limit, pass ragbits.agents.AgentOptions with max_tool_calls when initializing the Agent."
-            "agent = Agent(options=AgentOptions(max_tool_calls=x))"
+            f"The number of Agent turns exceeded the limit of {max_turns}."
+            "To change this limit, pass ragbits.agents.AgentOptions with max_turns when initializing the Agent."
+            "agent = Agent(options=AgentOptions(max_turns=x))"
         )
-        self.max_tool_calls = max_tool_calls
+        self.max_turns = max_turns

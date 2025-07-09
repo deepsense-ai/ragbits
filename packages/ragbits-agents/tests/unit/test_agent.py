@@ -9,7 +9,7 @@ from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
-    AgentMaxToolCallsExceededError,
+    AgentMaxTurnsExceededError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
@@ -80,28 +80,6 @@ def llm_wrong_tool_type() -> MockLLM:
                 "id": "test",
                 "type": "tool",
             }
-        ],
-    )
-    return MockLLM(default_options=options)
-
-
-@pytest.fixture
-def llm_multiple_tool_calls() -> MockLLM:
-    options = MockLLMOptions(
-        response="Final response after multiple tool calls",
-        tool_calls=[
-            {
-                "name": "get_weather",
-                "arguments": '{"location": "San Francisco"}',
-                "id": "test1",
-                "type": "function",
-            },
-            {
-                "name": "get_weather",
-                "arguments": '{"location": "New York"}',
-                "id": "test2",
-                "type": "function",
-            },
         ],
     )
     return MockLLM(default_options=options)
@@ -467,18 +445,19 @@ async def test_agent_history_with_tools(llm_with_tool_call: MockLLM, method: Cal
 
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
-async def test_max_tool_calls_exceeded(llm_multiple_tool_calls: MockLLM, method: Callable):
+async def test_max_turns_exceeded(llm_with_tool_call: MockLLM, method: Callable):
     """Test that AgentMaxToolCallsExceededError is raised when max_tool_calls is exceeded in a single response."""
     agent = Agent(
-        llm=llm_multiple_tool_calls,
+        llm=llm_with_tool_call,
         prompt=CustomPrompt,
         tools=[get_weather],
+        default_options=AgentOptions(max_turns=1),
     )
 
-    options: AgentOptions = AgentOptions(max_tool_calls=1)
+    options: AgentOptions = AgentOptions(llm_options=None)
 
-    with pytest.raises(AgentMaxToolCallsExceededError) as exc_info:
+    with pytest.raises(AgentMaxTurnsExceededError) as exc_info:
         await method(agent, options=options)
 
-    assert exc_info.value.max_tool_calls == 1
-    assert "The number of tool calls exceeded the limit of 1" in str(exc_info.value)
+    assert exc_info.value.max_turns == 1
+    assert "The number of Agent turns exceeded the limit of 1" in str(exc_info.value)
