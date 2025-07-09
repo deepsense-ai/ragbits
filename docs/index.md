@@ -194,6 +194,34 @@ if __name__ == "__main__":
     asyncio.run(run())
 ```
 
+### Agentic RAG
+
+To build an agentic RAG pipeline:
+
+```python
+import asyncio
+from ragbits.agents import Agent
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.vector_stores import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
+
+llm = LiteLLM(model_name="gpt-4.1-nano")
+agent = Agent(llm=llm, tools=[document_search.search])
+
+async def main() -> None:
+    await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+    response = await agent.run("What are the key findings presented in this paper?")
+    print(response.content)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
 ### Chat UI
 
 To expose your RAG application through Ragbits UI:
