@@ -264,20 +264,31 @@ class MyChat(ChatInterface):
         async for result in agent.run_streaming(message):
             match result:
                 case str():
+                    yield self.create_live_update(
+                        update_id="1",
+                        type=LiveUpdateType.START,
+                        label="Answering...",
+                    )
                     yield self.create_text_response(result)
                 case ToolCall():
                     yield self.create_live_update(
-                        update_id="1",
+                        update_id="2",
                         type=LiveUpdateType.START,
                         label="Searching...",
                     )
                 case ToolCallResult():
                     yield self.create_live_update(
-                        update_id="1",
+                        update_id="2",
                         type=LiveUpdateType.FINISH,
                         label="Search",
                         description=f"Found {len(result.result)} relevant chunks.",
                     )
+
+        yield self.create_live_update(
+            update_id="1",
+            type=LiveUpdateType.FINISH,
+            label="Answer",
+        )
 
 if __name__ == "__main__":
     api = RagbitsAPI(MyChat)
