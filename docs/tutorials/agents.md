@@ -112,7 +112,7 @@ from ragbits.agents.mcp import MCPServerStdio
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 --8<-- "examples/agents/a2a/city_explorer_agent.py:34:47"
-        result = await city_explorer_agent.run(CityExplorerPromptInput(city="Paris"))
+        result = await city_explorer_agent.run(CityExplorerPromptInput(input="Tell me something interesting about Paris."))
         print(result.content)
 
 --8<-- "examples/agents/a2a/city_explorer_agent.py:59:63"
