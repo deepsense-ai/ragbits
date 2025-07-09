@@ -33,14 +33,14 @@ nav:
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md
         - "Search documents": how-to/document_search/search-documents.md
+      - Agents:
+        - "Define and use agents": how-to/agents/define_and_use_agents.md
+        - "Provide tools with MCP": how-to/agents/provide_mcp_tools.md
+        - "Serve agents with A2A": how-to/agents/serve_ragbits_agents.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Chatbots:
         - "Setup API & UI": how-to/chatbots/api.md
-      - Agents:
-        - "Define and use agents": how-to/agents/define_and_use_agents.md
-        - "Provide tools with MCP": how-to/agents/provide_mcp_tools.md
-        - "Serve Ragbits agents for A2A communication": how-to/agents/serve_ragbits_agents.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
           - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
