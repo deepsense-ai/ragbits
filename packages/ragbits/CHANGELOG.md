@@ -4,14 +4,42 @@
 
 ## 1.1.0 (2025-07-09)
 
-### Changed
 
-- ragbits-chat updated to version v1.1.0
-- ragbits-cli updated to version v1.1.0
-- ragbits-document-search updated to version v1.1.0
-- ragbits-evaluate updated to version v1.1.0
-- ragbits-guardrails updated to version v1.1.0
-- ragbits-core updated to version v1.1.0
+### 🤖 Agent Release
+
+This release brings agentic capabilities to Ragbits, together with major user interface enhancements, expanded observability, new integrations, and core improvements.
+
+### ✨ Key Features & Highlights
+
+#### Agents: Easily build agentic systems that proactively interact with their environment.
+
+- **Agent Interface:** Define agents by combining LLMs, prompts, and tools using the `ragbits-agents` package. Tool creation is streamlined—simply annotate Python functions, and Ragbits automatically handles type hints and docstrings for agent consumption.
+- **MCP Server Integration:** Connect your agents to hundreds of off-the-shelf tools by running or connecting to an MCP Server, instantly expanding agent capabilities.
+- **A2A Protocol Support:** Enable inter-agent communication with the new A2A Protocol. The `Agent.to_a2a()` method makes it seamless to register an agent as an A2A Card, share, and communicate via the bundled A2A Server.
+- **Streaming Responses:** All agents now support streaming by default—use `Agent.run_streaming()` to send results as they’re generated, improving responsiveness and UX.
+- **Tracing & Observability:** Built-in agent tracing support with multiple backends including OpenTelemetry, CLI, and Logfire, making it easy to monitor and debug agent reasoning and tool use.
+
+#### Ragbits UI Improvements
+- **User Interface Improvements:** Richer, more interactive and customizable chat experiences.
+- **Live Updates:** Real-time notifications from the backend keep users in the loop—see searches, tool calls, and step-by-step reasoning as they happen.
+- **Message History Navigation:** Use up/down arrows to effortlessly navigate and edit previous messages, streamlining user interactions.
+- **Follow-up Message Suggestions:** Applications can now suggest contextual follow-up questions. Show follow-up buttons in the UI by simply calling a backend method.
+- **TypeScript SDK:** Faster custom integrations! Access Ragbits API from your own interfaces using the new TypeScript SDK, available standalone or as React hooks.
+- **User Settings:** Define a Pydantic model to automatically generate a user settings form in the UI. These settings can customize chatbot behavior per-user—making it simple to add personalizable controls.
+- **Debug Mode:** Activate debug mode in the chat UI to view internal chat state, events, and other chatbot internals, greatly aiding development and troubleshooting.
+
+#### Observability
+- **Comprehensive OpenTelemetry Metrics:** Now supporting all OpenTelemetry metric types for robust, expressive monitoring.
+- **Server Observability:** Improved observability into servers registered or available through RagbitsAPI, surfacing infrastructure insights.
+- **Grafana Dashboards:** New, ready-to-use Grafana dashboards are now bundled with `create-ragbits-app` for instant monitoring out of the box.
+- **Logfire Integration:** One-line setup to send traces and metrics directly to Pydantic Logfire, enabling comprehensive observability with minimal configuration.
+
+#### Integrations
+- **Weaviate VectorStore:** Use Weaviate as a fully compatible VectorStore backend across Ragbits components such as document-search.
+
+#### Developer Experience & Other Improvements
+- **RagbitsChatClient:** Introduced a new `RagbitsChatClient` for seamless interaction with RagbitsAPI from Python. Makes building custom python clients and integrations easier than ever.
+
 
 ## 1.0.0 (2025-06-04)
 
