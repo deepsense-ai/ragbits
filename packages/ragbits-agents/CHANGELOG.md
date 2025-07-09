@@ -10,7 +10,7 @@
 - Support history handling in Agent (#648)
 - Support run_streaming in Agent (#650)
 - Support A2A protocol (#649)
-- Add max tool calls limit to AgentOptions (#705)
+- Add max turns to AgentOptions (#705)
 
 ## 1.0.0 (2025-06-04)
 
