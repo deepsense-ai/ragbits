@@ -6,9 +6,12 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from ragbits.chat.clients.conversation.async_conversation import AsyncConversation
-from ragbits.chat.clients.conversation.sync_conversation import Conversation
-from ragbits.chat.clients.exceptions import ChatClientRequestError, ChatClientResponseError
+from ragbits.chat.client.conversation import RagbitsConversation, SyncRagbitsConversation
+from ragbits.chat.client.exceptions import ChatClientRequestError, ChatClientResponseError
+
+# Aliases for backward compatibility in this test file
+Conversation = SyncRagbitsConversation
+AsyncConversation = RagbitsConversation
 
 
 class _DummyStreamResponse:
