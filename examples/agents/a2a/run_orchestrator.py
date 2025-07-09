@@ -24,10 +24,8 @@ import asyncio
 import threading
 
 from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
-from flight_agent import FlightPromptInput
-from flight_agent import agent as flight_agent
-from hotel_agent import HotelPromptInput
-from hotel_agent import agent as hotel_agent
+from flight_agent import FlightPromptInput, flight_agent
+from hotel_agent import HotelPromptInput, hotel_agent
 from uvicorn import Server
 
 from ragbits.agents.a2a.server import create_agent_server
@@ -49,7 +47,7 @@ class RoutingPrompt(Prompt[RoutingPromptInput]):
     Each task must include:
     - agent_url: The base URL of the agent that should handle the task.
     - tool: The name of the skill/tool to call on that agent.
-    - parameters: A dictionary of arguments needed for that tool.
+    - parameters: A dictionary with input argument which is just the task for the agent to answer.
 
     Currently available agents and their tools:
     {{ agents }}
@@ -66,12 +64,12 @@ class RoutingPrompt(Prompt[RoutingPromptInput]):
     {
         "agent_url": "http://weather-agent:8000",
         "tool": "get_weather",
-        "parameters": { "location": "Paris" }
+        "parameters": { "input": "What is the weather in Paris?" }
     },
     {
         "agent_url": "http://news-agent:8001",
         "tool": "get_news_summary",
-        "parameters": { "region": "France" }
+        "parameters": { "input": "What are the news in France?" }
     }
     ]
     """
