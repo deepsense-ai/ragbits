@@ -6,9 +6,10 @@ import pytest
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents._main import AgentResult, AgentResultStreaming, ToolCallResult
+from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentMaxTurnsExceededError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
@@ -84,12 +85,42 @@ def llm_wrong_tool_type() -> MockLLM:
     return MockLLM(default_options=options)
 
 
-async def _run(agent: Agent, input: str | BaseModel | None = None) -> AgentResult:
-    return await agent.run(input)
+@pytest.fixture
+def llm_multiple_tool_calls() -> MockLLM:
+    options = MockLLMOptions(
+        response="Final response after multiple tool calls",
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "San Francisco"}',
+                "id": "test1",
+                "type": "function",
+            },
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "New York"}',
+                "id": "test2",
+                "type": "function",
+            },
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "London"}',
+                "id": "test3",
+                "type": "function",
+            },
+        ],
+    )
+    return MockLLM(default_options=options)
 
 
-async def _run_streaming(agent: Agent, input: str | BaseModel | None = None) -> AgentResultStreaming:
-    result = agent.run_streaming(input)
+async def _run(agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None) -> AgentResult:
+    return await agent.run(input, options)
+
+
+async def _run_streaming(
+    agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None
+) -> AgentResultStreaming:
+    result = agent.run_streaming(input, options)
     async for _chunk in result:
         pass
     return result
@@ -439,3 +470,40 @@ async def test_agent_history_with_tools(llm_with_tool_call: MockLLM, method: Cal
     assert agent.history[3]["role"] == "tool"
     assert agent.history[4]["role"] == "assistant"
     assert agent.history[4]["content"] == "Temperature is 72 fahrenheit"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_max_turns_exceeded(llm_with_tool_call: MockLLM, method: Callable):
+    """Test that AgentMaxToolCallsExceededError is raised when max_tool_calls is exceeded in a single response."""
+    agent = Agent(
+        llm=llm_with_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+        default_options=AgentOptions(max_turns=1),
+    )
+
+    options: AgentOptions = AgentOptions(llm_options=None)
+
+    with pytest.raises(AgentMaxTurnsExceededError) as exc_info:
+        await method(agent, options=options)
+
+    assert exc_info.value.max_turns == 1
+    assert "The number of Agent turns exceeded the limit of 1" in str(exc_info.value)
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_max_turns_not_exeeded_with_many_tool_calls(llm_multiple_tool_calls: MockLLM, method: Callable):
+    """Test that AgentMaxToolCallsExceededError is raised when max_tool_calls is exceeded in a single response."""
+    agent = Agent(
+        llm=llm_multiple_tool_calls,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+        default_options=AgentOptions(max_turns=2),
+    )
+
+    options: AgentOptions = AgentOptions(llm_options=None)
+
+    result = await method(agent, options=options)
+
+    assert result.content == "Final response after multiple tool calls"
+    assert len(result.tool_calls) == 3

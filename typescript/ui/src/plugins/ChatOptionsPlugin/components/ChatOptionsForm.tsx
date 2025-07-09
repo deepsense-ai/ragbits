@@ -56,6 +56,7 @@ export default function ChatOptionsForm({
           className="p-0"
           aria-label="Open chat options"
           onPress={onOpen}
+          data-testid="open-chat-options"
         >
           <Icon icon="heroicons:cog-6-tooth" />
         </Button>
@@ -91,6 +92,7 @@ export default function ChatOptionsForm({
                         color="primary"
                         type="submit"
                         aria-label="Save chat options"
+                        data-testid="chat-options-submit"
                       >
                         Save
                       </Button>
