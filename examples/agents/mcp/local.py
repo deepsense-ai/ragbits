@@ -37,11 +37,12 @@ async def main() -> None:
         params={
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
-        }
+        },
+        client_session_timeout_seconds=20,
     ) as server:
         llm = LiteLLM(model_name="gpt-4o-2024-08-06")
         agent = Agent(llm=llm, mcp_servers=[server])
-        response = await agent.run("List all files in a current directory.")
+        response = await agent.run("List all files in the current directory.")
         print(response)
 
 
