@@ -3,12 +3,16 @@ import { describe, it, expect } from 'vitest'
 import { act } from 'react'
 import { waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
-import { useRagbitsStream, RagbitsProvider } from '../src'
+import { useRagbitsStream, RagbitsContextProvider } from '../src'
 import { ChatResponseType, type TypedChatResponse } from '@ragbits/api-client'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
-        return <RagbitsProvider>{children}</RagbitsProvider>
+        return (
+            <RagbitsContextProvider baseUrl="http://127.0.0.1:8000">
+                {children}
+            </RagbitsContextProvider>
+        )
     }
 }
 

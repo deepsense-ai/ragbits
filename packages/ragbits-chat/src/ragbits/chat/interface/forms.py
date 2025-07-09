@@ -96,3 +96,24 @@ class FeedbackConfig(BaseModel):
         properties = {field.name: map_field(field) for field in feedback_config.fields}
 
         return {"title": feedback_config.title, "type": "object", "required": required_fields, "properties": properties}
+
+
+class UserSettings(BaseModel):
+    """Configuration for chat options."""
+
+    form: dict[str, Any] | None = Field(
+        default=None,
+        description="The form to use for chat options. Use Pydantic models to define form objects, "
+        "that would get converted to JSONSchema and rendered in the UI.",
+    )
+
+    def __init__(
+        self,
+        form: type[BaseModel] | None = None,
+    ) -> None:
+        form_json_schema = None
+
+        if form:
+            form_json_schema = form.model_json_schema()
+
+        super().__init__(form=form_json_schema)

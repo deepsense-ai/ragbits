@@ -25,6 +25,12 @@ describe('Package Exports', () => {
         expect(RagbitsApiClient.ChatResponseType.CONVERSATION_ID).toBe(
             'conversation_id'
         )
+        expect(RagbitsApiClient.ChatResponseType.LIVE_UPDATE).toBe(
+            'live_update'
+        )
+        expect(RagbitsApiClient.ChatResponseType.FOLLOWUP_MESSAGES).toBe(
+            'followup_messages'
+        )
     })
 
     it('should export FeedbackType enum with correct values', () => {

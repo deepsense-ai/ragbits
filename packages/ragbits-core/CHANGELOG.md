@@ -14,6 +14,8 @@
 - Add Logfire integration to handle traces and metrics (#642)
 - Clean up Overloads for Prompt (#650)
 - Added GoogleSource as a source (#686)
+- Make ToolCall importable from ragbits.core.llms (#688)
+- Support all metric types (#615)
 
 ## 1.0.0 (2025-06-04)
 
@@ -206,4 +208,3 @@
 - ChromaDB integration.
 - Prompts lab.
 - Prompts autodiscovery.
-

@@ -15,9 +15,11 @@ import {
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
-import { useCaretLogicalLineDetection } from "../../utils/useTextAreaCaretDetection";
-import { ChatMessage } from "../../../types/history";
+import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
+import { ChatMessage } from "../../../../types/history";
 import { MessageRole } from "@ragbits/api-client-react";
+import PluginWrapper from "../../../utils/plugins/PluginWrapper";
+import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
 
 interface PromptInputProps {
   submit: (text: string) => void;
@@ -168,7 +170,7 @@ const PromptInput = ({
       <HorizontalActions
         isVisible={!!followupMessages}
         actions={followupMessages ?? []}
-        sendMessage={handleSubmit}
+        sendMessage={(text: string) => handleSubmit(text)}
       />
 
       <Form
@@ -195,36 +197,50 @@ const PromptInput = ({
           onValueChange={handleValueChange}
           {...inputProps}
         />
-        <Button
-          isIconOnly
-          aria-label={isLoading ? "Stop answering" : "Send message to the chat"}
-          color={!isLoading && !message ? "default" : "primary"}
-          isDisabled={!isLoading && !message}
-          radius="full"
-          size="sm"
-          type={isLoading ? "button" : "submit"}
-          onPress={isLoading ? handleStopAnswering : undefined}
-          {...sendButtonProps}
-        >
-          {!isLoading &&
-            (customSendIcon ?? (
-              <Icon
-                className={cn(
-                  !message ? "text-default-600" : "text-primary-foreground",
-                )}
-                icon="heroicons:arrow-up"
-                width={20}
-              />
-            ))}
-          {isLoading &&
-            (customStopIcon ?? (
-              <Icon
-                className="text-primary-foreground"
-                icon="heroicons:stop"
-                width={20}
-              />
-            ))}
-        </Button>
+        <div className="flex items-center gap-2">
+          <PluginWrapper
+            plugin={ChatOptionsPlugin}
+            component="ChatOptionsForm"
+            componentProps={undefined}
+            skeletonSize={{
+              width: "40px",
+              height: "40px",
+            }}
+          />
+          <Button
+            isIconOnly
+            aria-label={
+              isLoading ? "Stop answering" : "Send message to the chat"
+            }
+            color={!isLoading && !message ? "default" : "primary"}
+            isDisabled={!isLoading && !message}
+            radius="full"
+            size="sm"
+            type={isLoading ? "button" : "submit"}
+            onPress={isLoading ? handleStopAnswering : undefined}
+            data-testid="send-message"
+            {...sendButtonProps}
+          >
+            {!isLoading &&
+              (customSendIcon ?? (
+                <Icon
+                  className={cn(
+                    !message ? "text-default-600" : "text-primary-foreground",
+                  )}
+                  icon="heroicons:arrow-up"
+                  width={20}
+                />
+              ))}
+            {isLoading &&
+              (customStopIcon ?? (
+                <Icon
+                  className="text-primary-foreground"
+                  icon="heroicons:stop"
+                  width={20}
+                />
+              ))}
+          </Button>
+        </div>
       </Form>
     </div>
   );

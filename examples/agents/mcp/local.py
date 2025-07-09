@@ -1,5 +1,5 @@
 """
-Ragbits Agents Example: Filesystem MCP
+Ragbits Agents Example: MCP Local
 
 This example demonstrates how to integrate Model Context Protocol (MCP) servers
 with ragbits agents to provide dynamic tool capabilities. The agent connects to
@@ -11,7 +11,7 @@ Before running the script, make sure you have Node.js installed on your machine.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/filesystem_mcp.py
+    uv run examples/agents/mcp/local.py
     ```
 """
 
@@ -37,11 +37,12 @@ async def main() -> None:
         params={
             "command": "npx",
             "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
-        }
+        },
+        client_session_timeout_seconds=20,
     ) as server:
         llm = LiteLLM(model_name="gpt-4o-2024-08-06")
         agent = Agent(llm=llm, mcp_servers=[server])
-        response = await agent.run("List all files in a current directory.")
+        response = await agent.run("List all files in the current directory.")
         print(response)
 
 
