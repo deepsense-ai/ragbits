@@ -277,10 +277,10 @@ The Ragbits ecosystem provides an official Python client that makes it easy to i
 
 ```python
 import asyncio
-from ragbits.chat.clients import AsyncRagbitsChatClient, RagbitsChatClient
+from ragbits.chat.client import RagbitsChatClient, SyncRagbitsChatClient
 
 async def main() -> None:
-    async with AsyncRagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
+    async with RagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
         # One-shot request - collect all text responses
         responses = await client.run("What's the weather like in Paris?")
         text_content = "".join(chunk.as_text() or "" for chunk in responses)
@@ -294,7 +294,7 @@ async def main() -> None:
         print()
 
     # Synchronous client
-    sync_client = RagbitsChatClient(base_url="http://127.0.0.1:8000")
+    sync_client = SyncRagbitsChatClient(base_url="http://127.0.0.1:8000")
 
     # Simple one-off request
     responses = sync_client.run("Hello, Ragbits!")
@@ -317,10 +317,10 @@ The client returns `ChatResponse` objects that can contain different types of co
 
 ```python
 import asyncio
-from ragbits.chat.clients import AsyncRagbitsChatClient
+from ragbits.chat.client import RagbitsChatClient
 
 async def handle_responses() -> None:
-    async with AsyncRagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
+    async with RagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
         conv = client.new_conversation()
 
         async for chunk in conv.run_streaming("Tell me about Python"):
