@@ -1,8 +1,9 @@
-import os # Import os for path joining and potential directory checks
+import os  # Import os for path joining and potential directory checks
 from collections.abc import Iterable
 from contextlib import suppress
 from pathlib import Path
-from typing import ClassVar, Dict, Any
+from typing import Any, ClassVar
+
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace, traceable
@@ -10,13 +11,14 @@ from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
+    import io
+
     from google.auth import exceptions
     from google.oauth2 import service_account
+    from googleapiclient.discovery import Resource as GoogleAPIResource
     from googleapiclient.discovery import build
     from googleapiclient.errors import HttpError
-    from googleapiclient.discovery import Resource as GoogleAPIResource
     from googleapiclient.http import MediaIoBaseDownload
-    import io 
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -175,11 +177,10 @@ class GoogleDriveSource(Source):
         if self.mime_type.startswith("application/vnd.google-apps"):
             export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
             file_extension = EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
+        elif '.' in self.file_name:
+            file_extension = Path(self.file_name).suffix
         else:
-            if '.' in self.file_name:
-                file_extension = Path(self.file_name).suffix
-            else:
-                file_extension = EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
+            file_extension = EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
 
         local_file_name = f"{self.file_name}{file_extension}"
         path = file_local_dir / local_file_name
@@ -229,7 +230,7 @@ class GoogleDriveSource(Source):
         """
         with trace(drive_id=drive_id, recursive=recursive) as outputs:
             client = cls._get_client()
-            all_files_info: Dict[str, Any] = {}
+            all_files_info: dict[str, Any] = {}
 
             is_root_folder = False
             is_root_shared_drive = False
@@ -303,17 +304,16 @@ class GoogleDriveSource(Source):
                                     next_root_shared_drive_id = current_root_shared_drive_id
                                     if not next_root_shared_drive_id and is_root_shared_drive and current_folder_id == drive_id:
                                         next_root_shared_drive_id = drive_id
-                                    
+
                                     await _recursive_list(item["id"], full_local_name, next_root_shared_drive_id)
-                            else:
-                                if item['id'] not in all_files_info:
-                                    all_files_info[item['id']] = {
-                                        "id": item["id"],
-                                        "name": item["name"],
-                                        "mimeType": item["mimeType"],
-                                        "is_folder": False,
-                                        "path_in_drive": full_local_name
-                                    }
+                            elif item['id'] not in all_files_info:
+                                all_files_info[item['id']] = {
+                                    "id": item["id"],
+                                    "name": item["name"],
+                                    "mimeType": item["mimeType"],
+                                    "is_folder": False,
+                                    "path_in_drive": full_local_name
+                                }
 
                         page_token = results.get('nextPageToken', None)
                         if not page_token:
@@ -326,7 +326,7 @@ class GoogleDriveSource(Source):
                     except Exception as e:
                         print(f"An unexpected error occurred while listing folder {current_folder_id}: {e}")
                         break
-            
+
             if is_root_folder:
                 await _recursive_list(drive_id, current_root_shared_drive_id=(drive_id if is_root_shared_drive else None))
             else:

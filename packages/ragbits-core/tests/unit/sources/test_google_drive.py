@@ -1,10 +1,11 @@
-import asyncio
+import json  # Import json for potential validation or pretty printing
 import os
-import json # Import json for potential validation or pretty printing
 
 import pytest
 from googleapiclient.errors import HttpError
+
 from ragbits.core.sources.google_drive import GoogleDriveSource
+
 
 @pytest.fixture(autouse=True)
 def setup_clientid_json():
@@ -12,19 +13,19 @@ def setup_clientid_json():
     Saves the content of the GOOGLE_DRIVE_CLIENTID_JSON environment variable
     to a test JSON file, without modifying the environment variable itself.
     """
-    clientid_json_content = os.environ.get("GOOGLE_DRIVE_CLIENTID_JSON")    
+    clientid_json_content = os.environ.get("GOOGLE_DRIVE_CLIENTID_JSON")
     test_clientid_json_filename = "test_clientid.json"
-    
+
     if clientid_json_content is not None:
         try:
-            json.loads(clientid_json_content) 
-            
+            json.loads(clientid_json_content)
+
             with open(test_clientid_json_filename, "w") as f:
                 f.write(clientid_json_content)
             print(f"Saved GOOGLE_DRIVE_CLIENTID_JSON content to '{test_clientid_json_filename}'.")
         except json.JSONDecodeError:
-            print(f"Warning: GOOGLE_DRIVE_CLIENTID_JSON content is not valid JSON. Not saving to file.")
-        except IOError as e:
+            print("Warning: GOOGLE_DRIVE_CLIENTID_JSON content is not valid JSON. Not saving to file.")
+        except OSError as e:
             print(f"Error writing test_clientid.json file: {e}")
     else:
         print(f"Warning: GOOGLE_DRIVE_CLIENTID_JSON was not set. '{test_clientid_json_filename}' will not be created.")
@@ -93,7 +94,6 @@ async def test_google_drive_source_fetch_file():
     of each download. It also tracks the total number of successfully
     downloaded files.
     """
-
     unit_test_folder_id = os.environ.get("GOOGLE_SOURCE_UNIT_TEST_FOLDER")
 
     # Initialize a counter for successfully downloaded files
@@ -105,7 +105,7 @@ async def test_google_drive_source_fetch_file():
         # Create a GoogleDriveSource instance to fetch all items within the specified folder.
         # The "**" pattern indicates a recursive search within the folder.
         sources_to_download = await GoogleDriveSource.from_uri(f"{unit_test_folder_id}/**")
-        
+
         if not sources_to_download:
             print(f"No sources found in folder ID: {unit_test_folder_id}. Please check the folder ID and permissions.")
             return # Exit if no sources are found
@@ -113,7 +113,7 @@ async def test_google_drive_source_fetch_file():
         # Iterate through each source (file or folder) found
         for source in sources_to_download:
             # Only attempt to fetch files, as folders cannot be "downloaded" in the same way
-            if not source.is_folder: 
+            if not source.is_folder:
                 try:
                     # Attempt to fetch (download) the file.
                     local_path = await source.fetch()

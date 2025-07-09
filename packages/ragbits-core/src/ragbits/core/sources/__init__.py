@@ -12,10 +12,10 @@ __all__ = [
     "AzureBlobStorageSource",
     "GCSSource",
     "GitSource",
+    "GoogleDriveSource",
     "HuggingFaceSource",
     "LocalFileSource",
     "S3Source",
     "Source",
     "WebSource",
-    "GoogleDriveSource",
 ]
