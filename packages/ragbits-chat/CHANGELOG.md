@@ -23,6 +23,7 @@
 - Add debug panel with debug_mode field in config (#689)
 - Restore relative URL handling for UI build (#699)
 - Add integration tests for UI (#697)
+- Use external store instead of context for history (#706)
 
 ## 1.0.0 (2025-06-04)
 
