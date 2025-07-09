@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
 - Add configurable user setting in Ragbits UI (#692)
 - Live updates support for Python api client(#683)
 - Synchronous and asynchronous Python api client (#647)

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
 - Move a2a to extra dependencies (#703)
 - Add support for MCP servers (#632)
 - Add agent support for string prompts (#631)
