@@ -4,11 +4,14 @@ import type { ClientConfig, RagbitsContextValue } from './index'
 
 const RagbitsContext = createContext<RagbitsContextValue | null>(null)
 
-export interface RagbitsProviderProps extends ClientConfig {
+export interface RagbitsContextProviderProps extends ClientConfig {
     children: ReactNode
 }
 
-export function RagbitsProvider({ children, ...config }: RagbitsProviderProps) {
+export function RagbitsContextProvider({
+    children,
+    ...config
+}: RagbitsContextProviderProps) {
     const client = useMemo(() => new RagbitsClient(config), [config])
 
     const contextValue = useMemo(

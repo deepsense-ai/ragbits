@@ -22,6 +22,7 @@
 - New metrics in for RagbitsAPI (#615)
 - Add debug panel with debug_mode field in config (#689)
 - Restore relative URL handling for UI build (#699)
+- Add integration tests for UI (#697)
 
 ## 1.0.0 (2025-06-04)
 

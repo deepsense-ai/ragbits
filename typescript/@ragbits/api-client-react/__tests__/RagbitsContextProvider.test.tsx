@@ -1,7 +1,7 @@
 import React from 'react'
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { RagbitsProvider, useRagbitsContext } from '../src'
+import { RagbitsContextProvider, useRagbitsContext } from '../src'
 
 function TestComponent() {
     const { client } = useRagbitsContext()
@@ -26,9 +26,9 @@ function TestComponentOutsideProvider() {
 describe('RagbitsProvider', () => {
     it('should provide client context to children', () => {
         render(
-            <RagbitsProvider>
+            <RagbitsContextProvider baseUrl="http://127.0.0.1:8000">
                 <TestComponent />
-            </RagbitsProvider>
+            </RagbitsContextProvider>
         )
 
         expect(screen.getByTestId('client-available')).toHaveTextContent(
@@ -38,9 +38,9 @@ describe('RagbitsProvider', () => {
 
     it('should provide client with custom baseUrl', () => {
         render(
-            <RagbitsProvider baseUrl="https://api.example.com">
+            <RagbitsContextProvider baseUrl="https://api.example.com">
                 <TestComponent />
-            </RagbitsProvider>
+            </RagbitsContextProvider>
         )
 
         expect(screen.getByTestId('client-available')).toHaveTextContent(

@@ -85,6 +85,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             className="p-0"
             aria-label="Rate message as helpful"
             onPress={() => onOpenFeedbackForm(FeedbackType.LIKE)}
+            data-testid="feedback-like"
           >
             <Icon icon="heroicons:hand-thumb-up" />
           </Button>
@@ -98,6 +99,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             className="p-0"
             aria-label="Rate message as unhelpful"
             onPress={() => onOpenFeedbackForm(FeedbackType.DISLIKE)}
+            data-testid="feedback-dislike"
           >
             <Icon icon="heroicons:hand-thumb-down" />
           </Button>
@@ -132,6 +134,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
                         color="primary"
                         type="submit"
                         aria-label="Submit feedback"
+                        data-testid="feedback-submit"
                       >
                         Submit
                       </Button>

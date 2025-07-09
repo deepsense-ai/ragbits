@@ -4,8 +4,8 @@ on:
   workflow_call:
 
 jobs:
-  lints:
-    name: Run linters
+  checks:
+    name: Run linters & tests
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -16,12 +16,23 @@ jobs:
         with:
           node-version: "lts/*"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Sync Python packages
+        run: |
+          uv venv
+          source .venv/bin/activate
+          uv sync
+
       - name: Install Ragbits API Client dependencies
-        run: npm i
+        run: npm ci
         working-directory: typescript/@ragbits/api-client
 
       - name: Install Ragbits API Client React dependencies
-        run: npm i
+        run: npm ci
         working-directory: typescript/@ragbits/api-client-react
 
       - name: Build Ragbits API Client
@@ -33,7 +44,7 @@ jobs:
         working-directory: typescript/@ragbits/api-client-react
 
       - name: Install UI dependencies
-        run: npm i
+        run: npm ci
         working-directory: typescript/ui
 
       - name: Run ESLint
@@ -50,7 +61,14 @@ jobs:
 
       - name: Check Ragbits Chat UI build sync
         run: |
-          git diff --quiet || {
+          git diff --quiet * || {
             echo "ragbits-chat package ui build not synced"
             exit 1
           }
+        working-directory: typescript/ui
+
+      - name: Run integration tests
+        run: |
+          source .venv/bin/activate
+          cd typescript/ui
+          npm run test:integration

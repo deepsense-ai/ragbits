@@ -21,7 +21,7 @@ import { ChatMessage, HistoryState } from "../../../types/history.ts";
 import { mapHistoryToMessages } from "../../utils/messageMapper.ts";
 import { noop } from "lodash";
 
-export function HistoryProvider({ children }: PropsWithChildren) {
+export function HistoryContextProvider({ children }: PropsWithChildren) {
   const [history, setHistory] = useState<HistoryState>(new Map());
   /**
    * Gather log of all events in the chat.
