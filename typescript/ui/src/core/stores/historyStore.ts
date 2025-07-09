@@ -32,10 +32,21 @@ const initialValues = () => ({
   abortController: null,
   lastMessageId: null,
   context: undefined,
+  chatOptions: undefined,
 });
 
 export const useHistoryStore = create<HistoryStore>((set, get) => ({
   ...initialValues(),
+  computed: {
+    getContext: () => {
+      const { serverState, conversationId, chatOptions } = get();
+      return {
+        ...(serverState ?? {}),
+        ...(conversationId ? { conversation_id: conversationId } : {}),
+        ...(chatOptions ?? {}),
+      };
+    },
+  },
   _internal: {
     handleResponse: (response, messageId) => {
       const _handleLiveUpdate = (
@@ -61,19 +72,9 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
             switch (response.type) {
               case ChatResponseType.STATE_UPDATE:
                 draft.serverState = response.content;
-                draft.context = {
-                  ...response.content,
-                  ...(draft.conversationId
-                    ? { conversation_id: draft.conversationId }
-                    : {}),
-                };
                 break;
               case ChatResponseType.CONVERSATION_ID:
                 draft.conversationId = response.content;
-                draft.context = {
-                  ...draft.serverState,
-                  conversation_id: response.content,
-                };
                 break;
               case ChatResponseType.FOLLOWUP_MESSAGES:
                 draft.followupMessages = response.content;
@@ -159,6 +160,13 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
   },
 
   actions: {
+    setChatOptions: (options) => {
+      set(
+        produce((draft: HistoryStore) => {
+          draft.chatOptions = options;
+        }),
+      );
+    },
     stopAnswering: () => get().abortController?.abort(),
 
     clearHistory: () => {
@@ -172,8 +180,8 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
       const {
         _internal: { handleResponse },
         primitives: { addMessage },
+        computed: { getContext },
         history,
-        context,
       } = get();
 
       addMessage({
@@ -190,7 +198,7 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
       const chatRequest: ChatRequest = {
         message: text,
         history: mapHistoryToMessages(history),
-        context: context,
+        context: getContext(),
       };
 
       // Add new entry for events
@@ -243,6 +251,7 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 
 export const useHistoryActions = () => useHistoryStore((s) => s.actions);
 export const useHistoryPrimitives = () => useHistoryStore((s) => s.primitives);
+export const useHistoryComputed = () => useHistoryStore((s) => s.computed);
 export const useMessage = (messageId: string) =>
   useHistoryStore((s) => s.history.get(messageId));
 export const useMessageIds = () =>

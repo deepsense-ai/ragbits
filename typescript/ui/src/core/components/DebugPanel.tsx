@@ -30,7 +30,7 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
   const history = useHistoryStore((s) => s.history);
   const followupMessages = useHistoryStore((s) => s.followupMessages);
   const eventsLog = useHistoryStore((s) => s.eventsLog);
-  const context = useHistoryStore(useShallow((s) => s.context));
+  const context = useHistoryStore(useShallow((s) => s.computed.getContext()));
 
   return (
     <AnimatePresence>

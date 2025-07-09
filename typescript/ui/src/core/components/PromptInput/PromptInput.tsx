@@ -21,8 +21,8 @@ import { MessageRole } from "@ragbits/api-client-react";
 import PluginWrapper from "../../utils/plugins/PluginWrapper";
 import { ChatOptionsPlugin } from "../../../plugins/ChatOptionsPlugin";
 
-interface PromptInputProps {
-  submit: (text: string, options?: Record<string, unknown>) => void;
+export interface PromptInputProps {
+  submit: (text: string) => void;
   stopAnswering: () => void;
   onArrowUp?: (isFirstLine: boolean) => void;
   onArrowDown?: (isLastLine: boolean) => void;
@@ -50,7 +50,6 @@ const PromptInput = ({
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
-  const [chatOptions, setChatOptions] = useState<Record<string, unknown>>({});
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
@@ -79,7 +78,7 @@ const PromptInput = ({
     (text?: string) => {
       if (!message && !isLoading && !text) return;
 
-      submit(text ?? message, chatOptions);
+      submit(text ?? message);
       setQuickMessages((quickMessages) => {
         const newQuickMessages = quickMessages.slice(0, -1);
         newQuickMessages.push(text ?? message);
@@ -88,7 +87,7 @@ const PromptInput = ({
       setMessage("");
       textAreaRef?.current?.focus();
     },
-    [isLoading, submit, message, chatOptions],
+    [isLoading, submit, message],
   );
 
   const onSubmit = useCallback(
@@ -202,12 +201,7 @@ const PromptInput = ({
           <PluginWrapper
             plugin={ChatOptionsPlugin}
             component="ChatOptionsForm"
-            componentProps={{
-              chatOptions,
-              onOptionsChange: (data: Record<string, unknown>) => {
-                setChatOptions(data);
-              },
-            }}
+            componentProps={undefined}
             skeletonSize={{
               width: "40px",
               height: "40px",

@@ -12,19 +12,18 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
+import {
+  useHistoryActions,
+  useHistoryStore,
+} from "../../../core/stores/historyStore";
+import { useEffect } from "react";
+import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
 
-interface ChatOptionsFormProps {
-  onOptionsChange: (data: Record<string, unknown>) => void;
-  chatOptions: Record<string, unknown>;
-  isVisible?: boolean;
-}
-
-export default function ChatOptionsForm({
-  onOptionsChange,
-  chatOptions,
-  isVisible = true,
-}: ChatOptionsFormProps) {
+export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const chatOptions = useHistoryStore((s) => s.chatOptions);
+  const { setChatOptions } = useHistoryActions();
+
   const {
     config: { user_settings: userSettings },
   } = useConfigContext();
@@ -36,14 +35,22 @@ export default function ChatOptionsForm({
   };
 
   const handleFormSubmit = (data: IChangeEvent) => {
-    const newOptions = data.formData;
-    onOptionsChange(newOptions);
+    setChatOptions(data.formData);
     onClose();
   };
 
   const transformErrors = useTransformErrors();
 
-  if (!schema || !isVisible) {
+  useEffect(() => {
+    if (!schema) {
+      return;
+    }
+
+    const defaultState = getDefaultBasedOnSchemaType(validator, schema);
+    setChatOptions(defaultState);
+  }, [schema, setChatOptions]);
+
+  if (!schema) {
     return null;
   }
 

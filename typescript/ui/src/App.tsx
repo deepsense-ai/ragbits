@@ -85,10 +85,6 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const handleSubmit = (text: string, options?: Record<string, unknown>) => {
-    sendMessage(text, options);
-  };
-
   const historyComponent = (
     <ScrollShadow
       className="relative flex h-full flex-col gap-6 pb-8"
@@ -156,7 +152,7 @@ export default function App() {
               </Button>
               <QuickMessageInput
                 isLoading={historyIsLoading}
-                submit={handleSubmit}
+                submit={sendMessage}
                 stopAnswering={stopAnswering}
                 followupMessages={followupMessages}
               />

@@ -30,13 +30,18 @@ export interface HistoryStore {
   eventsLog: ChatResponse[][];
   isLoading: boolean;
   abortController: AbortController | null;
-  context: Record<string, unknown> | undefined;
   lastMessageId: string | null;
+  chatOptions: Record<string, unknown> | undefined;
+
+  computed: {
+    getContext: () => Record<string, unknown>;
+  };
 
   actions: {
     clearHistory: () => void;
-    sendMessage: (text: string, options?: Record<string, unknown>) => void;
+    sendMessage: (text: string) => void;
     stopAnswering: () => void;
+    setChatOptions: (options: Record<string, unknown>) => void;
   };
 
   primitives: {
