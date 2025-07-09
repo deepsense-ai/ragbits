@@ -48,7 +48,7 @@ async with MCPServerStdio(
     }
 ) as server:
     agent = Agent(llm=LiteLLM(model_name="gpt-4.1-nano"), mcp_servers=[server])
-    await agent.run("List all files in a current directory.")
+    await agent.run("List all files in the current directory.")
 ```
 
 A complete example for local MCP integration is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp/local.py).
