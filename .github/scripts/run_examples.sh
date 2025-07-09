@@ -13,6 +13,11 @@ export LOGFIRE_TOKEN
 GIT_URL_TEMPLATE="git+https://github.com/deepsense-ai/ragbits.git@%s#subdirectory=packages/%s"
 PR_BRANCH="${PR_BRANCH:-main}"
 
+has_script_section() {
+  local file="$1"
+  grep -q "^# /// script" "$file"
+}
+
 patch_dependencies() {
   local file="$1"
   local branch="$2"
@@ -51,8 +56,14 @@ patch_dependencies() {
 }
 
 export -f patch_dependencies
+export -f has_script_section
 
 find examples -name '*.py' | while read -r file; do
+  if ! has_script_section "$file"; then
+    echo "Skipping $file (no script section found)"
+    continue
+  fi
+
   echo "Running the script: $file"
   patch_dependencies "$file" "$PR_BRANCH"
 
