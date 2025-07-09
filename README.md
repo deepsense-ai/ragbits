@@ -201,53 +201,54 @@ if __name__ == "__main__":
 
 ### Chat UI
 
-To expose your RAG application through Ragbits UI:
+To expose your GenAI application through Ragbits API:
 
 ```python
-from collections.abc import AsyncGenerator, Iterable
-from pydantic import BaseModel
+from collections.abc import AsyncGenerator
+from ragbits.agents import Agent, ToolCallResult
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM
-from ragbits.core.prompt import Prompt, ChatFormat
+from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.prompt import ChatFormat
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.element import Element
 
-class QuestionAnswerPromptInput(BaseModel):
-    question: str
-    context: Iterable[Element]
+embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+vector_store = InMemoryVectorStore(embedder=embedder)
+document_search = DocumentSearch(vector_store=vector_store)
 
-class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
-    system_prompt = """
-    You are a question answering agent. Answer the question that will be provided using context.
-    If in the given context there is not enough information refuse to answer.
-    """
-    user_prompt = """
-    Question: {{ question }}
-    Context: {% for chunk in context %}{{ chunk.text_representation }}{%- endfor %}
-    """
+llm = LiteLLM(model_name="gpt-4.1-nano")
+agent = Agent(llm=llm, tools=[document_search.search])
 
 class MyChat(ChatInterface):
     async def setup(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4.1-nano")
-        self.embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
-        self.vector_store = InMemoryVectorStore(embedder=self.embedder)
-        self.document_search = DocumentSearch(vector_store=self.vector_store)
-        await self.document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
+        await document_search.ingest("web://https://arxiv.org/pdf/1706.03762")
 
     async def chat(
         self,
         message: str,
         history: ChatFormat | None = None,
         context: ChatContext | None = None,
-    ) -> AsyncGenerator[ChatResponse, None]:
-        chunks = await self.document_search.search(message)
-        prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question=message, context=chunks))
-        async for text in self.llm.generate_streaming(prompt):
-            yield self.create_text_response(text)
+    ) -> AsyncGenerator[ChatResponse]:
+        async for result in agent.run_streaming(message):
+            match result:
+                case str():
+                    yield self.create_text_response(result)
+                case ToolCall():
+                    yield self.create_live_update(
+                        update_id="1",
+                        type=LiveUpdateType.START,
+                        label="Searching...",
+                    )
+                case ToolCallResult():
+                    yield self.create_live_update(
+                        update_id="1",
+                        type=LiveUpdateType.FINISH,
+                        label="Search",
+                        description=f"Found {len(result.result)} relevant chunks.",
+                    )
 
 if __name__ == "__main__":
     api = RagbitsAPI(MyChat)
