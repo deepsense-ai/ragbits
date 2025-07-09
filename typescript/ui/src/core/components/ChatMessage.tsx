@@ -5,11 +5,11 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MessageRole } from "@ragbits/api-client-react";
 
-import { ChatMessage as ChatMessageType } from "../../types/history.ts";
 import DelayedTooltip from "./DelayedTooltip.tsx";
 import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../plugins/FeedbackPlugin/index.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
+import { useHistoryStore, useMessage } from "../stores/historyStore.ts";
 
 export type ChatMessageProps = {
   classNames?: {
@@ -18,20 +18,23 @@ export type ChatMessageProps = {
     content?: string;
     liveUpdates?: string;
   };
-  chatMessage: ChatMessageType;
-  isLoading: boolean;
+  messageId: string;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  (
-    {
-      chatMessage: { serverId, content, role, references, liveUpdates },
-      classNames,
-      isLoading,
-    },
-    ref,
-  ) => {
+  ({ messageId, classNames }, ref) => {
+    const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+    const isHistoryLoading = useHistoryStore((s) => s.isLoading);
+    const message = useMessage(messageId);
+
+    if (!message) {
+      throw new Error("Tried to render non-existent message");
+    }
+
+    const { serverId, content, role, references, liveUpdates } = message;
     const rightAlign = role === MessageRole.USER;
+    const isLoading =
+      isHistoryLoading && role === "assistant" && messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");

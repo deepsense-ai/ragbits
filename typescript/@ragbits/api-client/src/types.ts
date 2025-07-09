@@ -112,7 +112,7 @@ interface FollowupMessagesChatResponse {
 /**
  * Typed chat response union
  */
-export type TypedChatResponse =
+export type ChatResponse =
     | TextChatResponse
     | ReferenceChatResponse
     | MessageIdChatResponse
@@ -214,7 +214,7 @@ export interface BaseApiEndpoints {
  * Streaming API endpoint definitions with their request/stream response types
  */
 export interface BaseStreamingEndpoints {
-    '/api/chat': EndpointDefinition<ChatRequest, TypedChatResponse>
+    '/api/chat': EndpointDefinition<ChatRequest, ChatResponse>
 }
 
 /**

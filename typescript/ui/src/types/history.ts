@@ -1,8 +1,9 @@
 import {
-  TypedChatResponse as ChatResponse,
+  ChatResponse,
   LiveUpdate,
   MessageRole,
   Reference,
+  ServerState,
 } from "@ragbits/api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
@@ -21,24 +22,29 @@ export interface ChatMessage {
   liveUpdates?: Map<string, LiveUpdate["content"]>;
 }
 
-export interface HistoryContext {
-  history: ChatMessage[];
+export interface HistoryStore {
+  history: Map<string, ChatMessage>;
   followupMessages: string[] | null;
-  isLoading: boolean;
+  serverState: ServerState | null;
+  conversationId: string | null;
   eventsLog: ChatResponse[][];
-  context: Record<string, unknown>;
-  /**
-   * Sends a message to the chat window with animations and delayed rendering.
-   */
-  sendMessage: (text: string, options?: Record<string, unknown>) => void;
-  /**
-   * Primitive used for adding a message to the history and get its ID.
-   */
-  addMessage: (message: Omit<ChatMessage, "id">) => string;
-  /**
-   * Primitive used for updating a message in the history based on the passed response.
-   */
-  handleResponse: (chatResponse: ChatResponse, messageId: string) => void;
-  clearHistory: () => void;
-  stopAnswering: () => void;
+  isLoading: boolean;
+  abortController: AbortController | null;
+  context: Record<string, unknown> | undefined;
+  lastMessageId: string | null;
+
+  actions: {
+    clearHistory: () => void;
+    sendMessage: (text: string, options?: Record<string, unknown>) => void;
+    stopAnswering: () => void;
+  };
+
+  primitives: {
+    addMessage: (message: Omit<ChatMessage, "id">) => string;
+    deleteMessage: (messageId: string) => void;
+  };
+
+  _internal: {
+    handleResponse: (response: ChatResponse, messageId: string) => void;
+  };
 }

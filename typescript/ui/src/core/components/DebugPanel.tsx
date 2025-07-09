@@ -1,9 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { useHistoryContext } from "../contexts/HistoryContext/useHistoryContext";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { allExpanded, defaultStyles, JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { toJSONSafe } from "../utils/json";
+import { useHistoryStore } from "../stores/historyStore";
+import { useShallow } from "zustand/shallow";
 
 const DEFAULT_STYLES = {
   container:
@@ -26,7 +27,10 @@ interface DebugPanelProps {
 }
 
 export default function DebugPanel({ isOpen }: DebugPanelProps) {
-  const { history, followupMessages, eventsLog, context } = useHistoryContext();
+  const history = useHistoryStore((s) => s.history);
+  const followupMessages = useHistoryStore((s) => s.followupMessages);
+  const eventsLog = useHistoryStore((s) => s.eventsLog);
+  const context = useHistoryStore(useShallow((s) => s.context));
 
   return (
     <AnimatePresence>

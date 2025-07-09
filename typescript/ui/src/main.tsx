@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client";
 import { HeroUIProvider } from "@heroui/react";
 import App from "./App.tsx";
 import "./globals.css";
-import { HistoryContextProvider } from "./core/contexts/HistoryContext/HistoryContextProvider.tsx";
 import { ThemeContextProvider } from "./core/contexts/ThemeContext/ThemeContextProvider.tsx";
 import { RagbitsContextProvider } from "@ragbits/api-client-react";
 import { loadIcons } from "@iconify/react";
@@ -11,6 +10,8 @@ import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
 import { FeedbackFormPlugin } from "./plugins/FeedbackPlugin/index.tsx";
 import { ChatOptionsPlugin } from "./plugins/ChatOptionsPlugin/index.tsx";
 import { ConfigContextProvider } from "./core/contexts/ConfigContext/ConfigContextProvider.tsx";
+import { API_URL } from "./config.ts";
+import { enableMapSet } from "immer";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -30,9 +31,7 @@ loadIcons([
   "heroicons:bug-ant",
 ]);
 
-const API_URL =
-  import.meta.env.VITE_API_URL ??
-  (import.meta.env.DEV ? "http://127.0.0.1:8000" : "");
+enableMapSet();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -40,9 +39,7 @@ createRoot(document.getElementById("root")!).render(
       <ThemeContextProvider>
         <RagbitsContextProvider baseUrl={API_URL}>
           <ConfigContextProvider>
-            <HistoryContextProvider>
-              <App />
-            </HistoryContextProvider>
+            <App />
           </ConfigContextProvider>
         </RagbitsContextProvider>
       </ThemeContextProvider>
