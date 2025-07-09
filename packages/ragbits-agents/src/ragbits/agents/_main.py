@@ -307,7 +307,7 @@ class Agent(
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
-                        turn_count += 1
+                turn_count += 1
 
                 if not returned_tool_call:
                     break
