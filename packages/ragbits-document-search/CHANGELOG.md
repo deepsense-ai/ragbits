@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
 - feat: allow to pass custom configuration into docling parser (#690)
 
 ## 1.0.0 (2025-06-04)
