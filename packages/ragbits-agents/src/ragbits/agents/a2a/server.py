@@ -34,7 +34,7 @@ def _format_response(result: AgentResult) -> dict:
     }
 
 
-def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[BaseModel]) -> FastAPI:
+def create_agent_app(agent: Agent, agent_card: "AgentCard", input_model: type[BaseModel]) -> "FastAPI":
     """
     Create a FastAPI server for the given agent and input schema.
     The server exposes:
@@ -71,9 +71,9 @@ def create_agent_app(agent: Agent, agent_card: AgentCard, input_model: type[Base
 
 def create_agent_server(
     agent: Agent,
-    agent_card: AgentCard,
+    agent_card: "AgentCard",
     input_model: type[BaseModel],
-) -> uvicorn.Server:
+) -> "uvicorn.Server":
     """
     Create a Uvicorn server instance that serves the specified agent over HTTP.
 

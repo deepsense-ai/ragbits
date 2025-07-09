@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- added synchronous and asynchronous Python api client
+- Add configurable user setting in Ragbits UI (#692)
+- Live updates support for Python api client(#683)
+- Synchronous and asynchronous Python api client (#647)
 - Live updates support markdown (#684)
 - Added custom styling for multiline and inline-code (#668)
 - Changed toggling darkmode for tailwind class selector (#668)
@@ -17,6 +19,7 @@
 - Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
 - Fix followup messages not sending (#680)
 - Improve typing of TypeScript libraries (#681)
+- New metrics in for RagbitsAPI (#615)
 - Add debug panel with debug_mode field in config (#689)
 - Restore relative URL handling for UI build (#699)
 

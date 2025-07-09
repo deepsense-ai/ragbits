@@ -84,8 +84,8 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const handleSubmit = (text: string) => {
-    sendMessage(text);
+  const handleSubmit = (text: string, options?: Record<string, unknown>) => {
+    sendMessage(text, options);
   };
 
   const historyComponent = (
