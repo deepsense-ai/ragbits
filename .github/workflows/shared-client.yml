@@ -36,6 +36,10 @@ jobs:
         run: npm run build
         working-directory: typescript/@ragbits/api-client
 
+      - name: Run @ragbits/api-client tests
+        run: npm run test:run
+        working-directory: typescript/@ragbits/api-client
+
       - name: Run @ragbits/api-client-react ESLint
         run: npm run lint
         working-directory: typescript/@ragbits/api-client-react
@@ -46,4 +50,8 @@ jobs:
 
       - name: Build @ragbits/api-client-react
         run: npm run build
+        working-directory: typescript/@ragbits/api-client-react
+
+      - name: Run @ragbits/api-client-react tests
+        run: npm run test:run
         working-directory: typescript/@ragbits/api-client-react
