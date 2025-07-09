@@ -53,7 +53,7 @@ class FlightPrompt(Prompt[FlightPromptInput]):
 
 
 llm = LiteLLM(
-    model_name="gpt-4.1-nano",
+    model_name="gpt-4.1",
     use_structured_output=True,
 )
 flight_agent = Agent(llm=llm, prompt=FlightPrompt, tools=[get_flight_info])

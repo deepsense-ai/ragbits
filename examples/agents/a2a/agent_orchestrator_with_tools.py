@@ -98,7 +98,7 @@ async def main() -> None:
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
     llm = LiteLLM(
-        model_name="gpt-4.1-nano",
+        model_name="gpt-4.1",
         use_structured_output=True,
     )
 

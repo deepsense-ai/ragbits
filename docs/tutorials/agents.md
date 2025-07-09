@@ -17,7 +17,7 @@ Let's build a multi-agent system for automated trip planning with Ragbits. In th
 
 Install the latest Ragbits via `pip install -U ragbits[a2a,mcp]` to follow along.
 
-During development, we will use OpenAI's `gpt-4.1-nano` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
+During development, we will use OpenAI's `gpt-4.1` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this with [other providers](../how-to/llms/use_llms.md).
 
 !!! tip "Recommended: Set up OpenTelemetry tracing to understand what's happening under the hood."
     OpenTelemetry is an LLMOps tool that natively integrates with Ragbits and offer explainability and experiment tracking. In this tutorial, you can use OpenTelemetry to visualize prompts and optimization progress as traces to understand the Ragbits' behavior better. Check the full setup guide [here](../how-to/audit/use_tracing.md/#using-opentelemetry-tracer).

@@ -41,7 +41,7 @@ async def main() -> None:
         client_session_timeout_seconds=60,
     ) as server:
         llm = LiteLLM(
-            model_name="gpt-4.1-nano",
+            model_name="gpt-4.1",
             use_structured_output=True,
         )
         city_explorer_agent = Agent(llm=llm, prompt=CityExplorerPrompt, mcp_servers=[server])
