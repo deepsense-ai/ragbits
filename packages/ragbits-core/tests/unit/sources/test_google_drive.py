@@ -36,6 +36,7 @@ def setup_clientid_json():
         os.remove(test_clientid_json_filename)
         print(f"Cleaned up test file: '{test_clientid_json_filename}'")
 
+
 @pytest.fixture(autouse=True)
 def setup_local_storage_dir(tmp_path):
     """Set up a temporary local storage directory for tests."""
@@ -46,6 +47,7 @@ def setup_local_storage_dir(tmp_path):
         os.environ["LOCAL_STORAGE_DIR"] = original_local_storage_dir
     else:
         del os.environ["LOCAL_STORAGE_DIR"]
+
 
 @pytest.mark.asyncio
 async def test_google_drive_source_fetch_file_not_found():
@@ -108,7 +110,7 @@ async def test_google_drive_source_fetch_file():
 
         if not sources_to_download:
             print(f"No sources found in folder ID: {unit_test_folder_id}. Please check the folder ID and permissions.")
-            return # Exit if no sources are found
+            return  # Exit if no sources are found
 
         # Iterate through each source (file or folder) found
         for source in sources_to_download:
@@ -138,4 +140,3 @@ async def test_google_drive_source_fetch_file():
         # Assert that at least one file was downloaded if that's an expectation for the test
         # If no files are expected, or it's acceptable for 0 files to be downloaded, remove or adjust this assertion.
         assert downloaded_count > 0, "Expected to download at least one file, but downloaded 0."
-

@@ -48,6 +48,7 @@ EXPORT_EXTENSION_MAP = {
 
 LRO_EXPORT_SIZE_THRESHOLD = 9 * 1024 * 1024  # 9MB
 
+
 class GoogleDriveSource(Source):
     """
     Handles source connection for Google Drive and provides methods to fetch files.
@@ -84,10 +85,8 @@ class GoogleDriveSource(Source):
                     "Use GoogleDriveSource.set_credentials_file_path('/path/to/your/key.json')."
                 )
             try:
-                creds = service_account.Credentials.from_service_account_file(
-                    cls._credentials_file_path, scopes=SCOPES
-                )
-                cls._google_drive_client = build('drive', 'v3', credentials=creds)
+                creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=SCOPES)
+                cls._google_drive_client = build("drive", "v3", credentials=creds)
                 cls._google_drive_client.files().list(
                     pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
                 ).execute()
@@ -97,13 +96,15 @@ class GoogleDriveSource(Source):
                 error_content = e.content.decode() if hasattr(e, "content") else ""
                 lower_error = error_content.lower()
                 if "drive api" in lower_error and ("not enabled" in lower_error or "not been used" in lower_error):
-                     raise RuntimeError(
+                    raise RuntimeError(
                         "Google Drive API is not enabled for your project. "
                         "Please enable it in the Google Cloud Console."
                     ) from e
                 raise RuntimeError(f"Failed to initialize Google Drive client: {e}") from e
             except Exception as e:
-                raise RuntimeError(f"An unexpected error occurred during Google Drive client initialization: {e}") from e
+                raise RuntimeError(
+                    f"An unexpected error occurred during Google Drive client initialization: {e}"
+                ) from e
         return cls._google_drive_client
 
     @property
@@ -111,7 +112,9 @@ class GoogleDriveSource(Source):
         """
         Get the source identifier.
         """
-        return f"{self.protocol}:{self.file_id}/{self.file_name}" if self.file_name else f"{self.protocol}:{self.file_id}"
+        return (
+            f"{self.protocol}:{self.file_id}/{self.file_name}" if self.file_name else f"{self.protocol}:{self.file_id}"
+        )
 
     @classmethod
     @requires_dependencies(["googleapiclient"], "google_drive")
@@ -132,18 +135,14 @@ class GoogleDriveSource(Source):
         except HttpError as e:
             error_content = e.content.decode() if hasattr(e, "content") else ""
             lower_error = error_content.lower()
-            if "drive api" in lower_error and (
-                    "not enabled" in lower_error or "not been used" in lower_error
-            ):
+            if "drive api" in lower_error and ("not enabled" in lower_error or "not been used" in lower_error):
                 raise Exception(
-                        "Google Drive API is not enabled for your project. "
-                        "Please enable it in the Google Cloud Console."
+                    "Google Drive API is not enabled for your project. " "Please enable it in the Google Cloud Console."
                 )
             else:
                 raise Exception(f"Google Drive API unreachable for an unknown reason: {e}")
         except Exception as e:
             raise Exception(f"An unexpected error occurred during API verification: {e}")
-
 
     @traceable
     @requires_dependencies(["googleapiclient"], "google_drive")
@@ -177,7 +176,7 @@ class GoogleDriveSource(Source):
         if self.mime_type.startswith("application/vnd.google-apps"):
             export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
             file_extension = EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
-        elif '.' in self.file_name:
+        elif "." in self.file_name:
             file_extension = Path(self.file_name).suffix
         else:
             file_extension = EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
@@ -209,10 +208,11 @@ class GoogleDriveSource(Source):
                         raise FileNotFoundError(f"File with ID {self.file_id} not found on Google Drive.") from e
                     raise RuntimeError(f"Error downloading file {self.file_id}: {e}") from e
                 except Exception as e:
-                    raise RuntimeError(f"An unexpected error occurred during file download for {self.file_id}: {e}") from e
+                    raise RuntimeError(
+                        f"An unexpected error occurred during file download for {self.file_id}: {e}"
+                    ) from e
             outputs.path = path
         return path
-
 
     @classmethod
     @requires_dependencies(["googleapiclient"], "google_drive")
@@ -237,14 +237,18 @@ class GoogleDriveSource(Source):
             root_file_name = ""
 
             try:
-                file_meta = client.files().get(
-                    fileId=drive_id,
-                    fields="id, name, mimeType, capabilities/canListChildren",
-                    supportsAllDrives=True
-                ).execute()
+                file_meta = (
+                    client.files()
+                    .get(
+                        fileId=drive_id,
+                        fields="id, name, mimeType, capabilities/canListChildren",
+                        supportsAllDrives=True,
+                    )
+                    .execute()
+                )
 
-                root_file_name = file_meta['name']
-                if file_meta['mimeType'] == "application/vnd.google-apps.folder":
+                root_file_name = file_meta["name"]
+                if file_meta["mimeType"] == "application/vnd.google-apps.folder":
                     is_root_folder = True
                     try:
                         client.drives().get(driveId=drive_id, fields="id").execute()
@@ -260,7 +264,14 @@ class GoogleDriveSource(Source):
                         print(f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
                         print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
                 else:
-                    outputs.results = [cls(file_id=file_meta['id'], file_name=file_meta['name'], mime_type=file_meta['mimeType'], is_folder=False)]
+                    outputs.results = [
+                        cls(
+                            file_id=file_meta["id"],
+                            file_name=file_meta["name"],
+                            mime_type=file_meta["mimeType"],
+                            is_folder=False,
+                        )
+                    ]
                     return outputs.results
             except HttpError as e:
                 if e.resp.status == 404:
@@ -274,48 +285,54 @@ class GoogleDriveSource(Source):
                 outputs.results = []
                 return outputs.results
 
-            async def _recursive_list(current_folder_id: str, current_path_prefix: str = "", current_root_shared_drive_id: str | None = None):
+            async def _recursive_list(
+                current_folder_id: str, current_path_prefix: str = "", current_root_shared_drive_id: str | None = None
+            ):
                 page_token = None
                 query = f"'{current_folder_id}' in parents and trashed = false"
 
                 while True:
                     try:
                         list_params = {
-                            'q': query,
-                            'fields': "nextPageToken, files(id, name, mimeType)",
-                            'pageSize': 1000,
-                            'pageToken': page_token,
-                            'supportsAllDrives': True,
-                            'includeItemsFromAllDrives': True,
+                            "q": query,
+                            "fields": "nextPageToken, files(id, name, mimeType)",
+                            "pageSize": 1000,
+                            "pageToken": page_token,
+                            "supportsAllDrives": True,
+                            "includeItemsFromAllDrives": True,
                         }
 
                         if current_root_shared_drive_id:
-                            list_params['corpora'] = 'drive'
-                            list_params['driveId'] = current_root_shared_drive_id
+                            list_params["corpora"] = "drive"
+                            list_params["driveId"] = current_root_shared_drive_id
 
                         results = client.files().list(**list_params).execute()
 
-                        items = results.get('files', [])
+                        items = results.get("files", [])
                         for item in items:
                             full_local_name = os.path.join(current_path_prefix, item["name"])
 
                             if item["mimeType"] == "application/vnd.google-apps.folder":
                                 if recursive:
                                     next_root_shared_drive_id = current_root_shared_drive_id
-                                    if not next_root_shared_drive_id and is_root_shared_drive and current_folder_id == drive_id:
+                                    if (
+                                        not next_root_shared_drive_id
+                                        and is_root_shared_drive
+                                        and current_folder_id == drive_id
+                                    ):
                                         next_root_shared_drive_id = drive_id
 
                                     await _recursive_list(item["id"], full_local_name, next_root_shared_drive_id)
-                            elif item['id'] not in all_files_info:
-                                all_files_info[item['id']] = {
+                            elif item["id"] not in all_files_info:
+                                all_files_info[item["id"]] = {
                                     "id": item["id"],
                                     "name": item["name"],
                                     "mimeType": item["mimeType"],
                                     "is_folder": False,
-                                    "path_in_drive": full_local_name
+                                    "path_in_drive": full_local_name,
                                 }
 
-                        page_token = results.get('nextPageToken', None)
+                        page_token = results.get("nextPageToken", None)
                         if not page_token:
                             break
                     except HttpError as e:
@@ -328,7 +345,9 @@ class GoogleDriveSource(Source):
                         break
 
             if is_root_folder:
-                await _recursive_list(drive_id, current_root_shared_drive_id=(drive_id if is_root_shared_drive else None))
+                await _recursive_list(
+                    drive_id, current_root_shared_drive_id=(drive_id if is_root_shared_drive else None)
+                )
             else:
                 outputs.results = []
                 return outputs.results
@@ -361,19 +380,24 @@ class GoogleDriveSource(Source):
         Raises:
             ValueError: If an unsupported pattern is used or path format is incorrect.
         """
-        parts = path.split('/')
+        parts = path.split("/")
         drive_id = parts[0]
 
         if len(parts) == 1:
             client = cls._get_client()
             try:
-                file_meta = client.files().get(
-                    fileId=drive_id,
-                    fields="id, name, mimeType",
-                    supportsAllDrives=True
-                ).execute()
-                is_folder = file_meta['mimeType'] == "application/vnd.google-apps.folder"
-                return [cls(file_id=file_meta['id'], file_name=file_meta['name'], mime_type=file_meta['mimeType'], is_folder=is_folder)]
+                file_meta = (
+                    client.files().get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True).execute()
+                )
+                is_folder = file_meta["mimeType"] == "application/vnd.google-apps.folder"
+                return [
+                    cls(
+                        file_id=file_meta["id"],
+                        file_name=file_meta["name"],
+                        mime_type=file_meta["mimeType"],
+                        is_folder=is_folder,
+                    )
+                ]
             except HttpError as e:
                 if e.resp.status == 404:
                     raise FileNotFoundError(f"Google Drive item with ID '{drive_id}' not found.") from e
@@ -394,10 +418,7 @@ class GoogleDriveSource(Source):
                 raise ValueError("Folder ID cannot be empty for prefix listing.")
 
             all_direct_files = await cls.list_sources(drive_id=folder_id, recursive=False)
-            filtered_sources = [
-                source for source in all_direct_files
-                if source.file_name.startswith(prefix_pattern)
-            ]
+            filtered_sources = [source for source in all_direct_files if source.file_name.startswith(prefix_pattern)]
             return filtered_sources
 
         elif len(parts) > 1 and parts[-1] == "*":
