@@ -17,7 +17,7 @@
 - Clean up Overloads for Prompt (#650)
 - Make ToolCall importable from ragbits.core.llms (#688)
 - Support all metric types (#615)
-- Added GoogleSource as a source (#686)
+- Added GoogleDrive support (#686)
 
 ## 1.0.0 (2025-06-04)
 
