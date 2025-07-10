@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
-from ragbits.core.audit.metrics.base import LLMMetric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
 from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
@@ -296,17 +296,20 @@ async def test_generate_with_metadata_tracing_and_metrics(
         "generate", model_name=llm.model_name, prompt=prompts, options="None"
     )
 
-    metric_calls = mock_metric_handler.record_histogram.call_args_list
+    metric_calls = mock_metric_handler.record_metric.call_args_list
     assert len(metric_calls) == 3
-
-    assert metric_calls[0][1]["metric"] == LLMMetric.INPUT_TOKENS
+    print(metric_calls)
+    assert metric_calls[0][1]["metric_key"] == LLMMetric.INPUT_TOKENS
     assert metric_calls[0][1]["value"] == 30
     assert metric_calls[0][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[0][1]["metric_type"] == MetricType.HISTOGRAM
 
-    assert metric_calls[1][1]["metric"] == LLMMetric.PROMPT_THROUGHPUT
+    assert metric_calls[1][1]["metric_key"] == LLMMetric.PROMPT_THROUGHPUT
     assert metric_calls[1][1]["value"] == 1.0
     assert metric_calls[1][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[1][1]["metric_type"] == MetricType.HISTOGRAM
 
-    assert metric_calls[2][1]["metric"] == LLMMetric.TOKEN_THROUGHPUT
+    assert metric_calls[2][1]["metric_key"] == LLMMetric.TOKEN_THROUGHPUT
     assert metric_calls[2][1]["value"] == 90.0  # total_tokens / throughput
     assert metric_calls[2][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[2][1]["metric_type"] == MetricType.HISTOGRAM
