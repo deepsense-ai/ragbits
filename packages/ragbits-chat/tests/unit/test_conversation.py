@@ -6,9 +6,8 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from ragbits.chat.clients.conversation.async_conversation import AsyncConversation
-from ragbits.chat.clients.conversation.sync_conversation import Conversation
-from ragbits.chat.clients.exceptions import ChatClientResponseError
+from ragbits.chat.client.conversation import RagbitsConversation, SyncRagbitsConversation
+from ragbits.chat.client.exceptions import ChatClientResponseError
 from ragbits.chat.interface.types import ChatResponseType, Message, MessageRole, StateUpdate
 
 
@@ -102,7 +101,7 @@ def test_send_message_yields_responses_sync(sse_lines: list[str]) -> None:
     """send_message must yield ChatResponse instances in order and update state."""
     http_client = httpx.Client()
     with patch.object(http_client, "stream", return_value=_DummyStreamResponse(sse_lines)):
-        conv = Conversation(base_url="http://host", http_client=http_client)
+        conv = SyncRagbitsConversation(base_url="http://host", http_client=http_client)
         responses = list(conv.run_streaming("hi"))
     assert [r.type for r in responses] == [
         ChatResponseType.CONVERSATION_ID,
@@ -130,7 +129,7 @@ def test_history_excludes_system_messages() -> None:
         return _DummyStreamResponse([])
 
     http_client = httpx.Client()
-    conv = Conversation(base_url="x", http_client=http_client)
+    conv = SyncRagbitsConversation(base_url="x", http_client=http_client)
     conv.history.append(Message(role=MessageRole.SYSTEM, content="sys"))
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         list(conv.run_streaming("hello"))
@@ -147,7 +146,7 @@ def test_context_merging() -> None:
         return _DummyStreamResponse([])
 
     http_client = httpx.Client()
-    conv = Conversation(base_url="x", http_client=http_client)
+    conv = SyncRagbitsConversation(base_url="x", http_client=http_client)
     conv.conversation_state = StateUpdate(state={"a": 1}, signature="sig")
     conv.conversation_id = "c1"
     with patch.object(http_client, "stream", side_effect=_mock_stream):
@@ -162,17 +161,17 @@ def test_sync_send_message_raises_on_status_error(sse_lines: list[str]) -> None:
     """HTTP error codes should raise ChatClientResponseError."""
     http_client = httpx.Client()
     with patch.object(http_client, "stream", return_value=_DummyStreamResponse(sse_lines, status_code=502)):
-        conv = Conversation(base_url="u", http_client=http_client)
+        conv = SyncRagbitsConversation(base_url="u", http_client=http_client)
         with pytest.raises(ChatClientResponseError):
             list(conv.run_streaming("boom"))
 
 
 @pytest.mark.asyncio
 async def test_send_message_yields_responses_async(sse_lines: list[str]) -> None:
-    """AsyncConversation must behave equivalently to its synchronous counterpart."""
+    """RagbitsConversation must behave equivalently to its synchronous counterpart."""
     http_client = httpx.AsyncClient()
     with patch.object(http_client, "stream", return_value=_DummyAsyncStreamResponse(sse_lines)):
-        conv = AsyncConversation(base_url="h", http_client=http_client)
+        conv = RagbitsConversation(base_url="h", http_client=http_client)
         collected = []
         async for chunk in conv.run_streaming("q"):
             collected.append(chunk)
@@ -185,9 +184,9 @@ async def test_send_message_yields_responses_async(sse_lines: list[str]) -> None
 
 @pytest.mark.asyncio
 async def test_async_stop_closes_stream(sse_lines: list[str]) -> None:
-    """Stop must close an active stream in AsyncConversation."""
+    """Stop must close an active stream in RagbitsConversation."""
     resp = _DummyAsyncStreamResponse(sse_lines)
-    conv = AsyncConversation(base_url="h", http_client=httpx.AsyncClient())
+    conv = RagbitsConversation(base_url="h", http_client=httpx.AsyncClient())
     conv._streaming_response = cast(httpx.Response, resp)
     await conv.stop()
     assert resp.is_closed is True
@@ -195,9 +194,9 @@ async def test_async_stop_closes_stream(sse_lines: list[str]) -> None:
 
 
 def test_sync_stop_closes_stream(sse_lines: list[str]) -> None:
-    """Stop must close an active stream in Conversation."""
+    """Stop must close an active stream in SyncRagbitsConversation."""
     resp = _DummyStreamResponse(sse_lines)
-    conv = Conversation(base_url="h", http_client=httpx.Client())
+    conv = SyncRagbitsConversation(base_url="h", http_client=httpx.Client())
     conv._streaming_response = cast(httpx.Response, resp)
     conv.stop()
     assert resp.is_closed is True

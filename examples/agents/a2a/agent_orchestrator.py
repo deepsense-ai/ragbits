@@ -195,10 +195,6 @@ class AgentOrchestrator(Agent):
                 "name": data.get("name"),
                 "agent_url": url,
                 "description": data.get("description"),
-                "skills": [
-                    {"id": skill.get("id"), "name": skill.get("name"), "description": skill.get("description")}
-                    for skill in data.get("skills", [])
-                ],
             }
             for url, data in self._remote_agents.items()
         ]

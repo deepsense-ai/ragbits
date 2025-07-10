@@ -6,9 +6,8 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from ragbits.chat.clients.conversation.async_conversation import AsyncConversation
-from ragbits.chat.clients.conversation.sync_conversation import Conversation
-from ragbits.chat.clients.exceptions import ChatClientRequestError, ChatClientResponseError
+from ragbits.chat.client.conversation import RagbitsConversation, SyncRagbitsConversation
+from ragbits.chat.client.exceptions import ChatClientRequestError, ChatClientResponseError
 
 
 class _DummyStreamResponse:
@@ -100,14 +99,14 @@ def sse_lines() -> list[str]:
 
 
 def test_sync_conversation_run_and_state_update(sse_lines: list[str]) -> None:
-    """Ensure :pyclass:`Conversation.run` correctly aggregates text and updates state."""
+    """Ensure :pyclass:`SyncRagbitsConversation.run` correctly aggregates text and updates state."""
     http_client = httpx.Client()
 
     def _mock_stream(method: str, url: str, json: dict[str, Any]) -> _DummyStreamResponse:
         return _DummyStreamResponse(sse_lines)
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        conv = Conversation(base_url="http://testserver", http_client=http_client)
+        conv = SyncRagbitsConversation(base_url="http://testserver", http_client=http_client)
         responses = conv.run("Hello")
 
     aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
@@ -133,7 +132,7 @@ def test_sync_conversation_error_handling_response_error(sse_lines: list[str]) -
         return failing_resp
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        conv = Conversation(base_url="http://testserver", http_client=http_client)
+        conv = SyncRagbitsConversation(base_url="http://testserver", http_client=http_client)
         with pytest.raises(ChatClientResponseError):
             conv.run("Hello")
 
@@ -146,21 +145,21 @@ def test_sync_conversation_error_handling_request_error() -> None:
         raise httpx.RequestError("boom", request=httpx.Request("POST", url))
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        conv = Conversation(base_url="http://testserver", http_client=http_client)
+        conv = SyncRagbitsConversation(base_url="http://testserver", http_client=http_client)
         with pytest.raises(ChatClientRequestError):
             next(conv.run_streaming("Hello"))
 
 
 @pytest.mark.asyncio
 async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> None:
-    """Same assertions as the sync variant but for *AsyncConversation*."""
+    """Same assertions as the sync variant but for *RagbitsConversation*."""
     http_client = httpx.AsyncClient()
 
     def _mock_stream(method: str, url: str, json: dict[str, Any]) -> _DummyAsyncStreamResponse:
         return _DummyAsyncStreamResponse(sse_lines)
 
     with patch.object(http_client, "stream", side_effect=_mock_stream):
-        conv = AsyncConversation(base_url="http://testserver", http_client=http_client)
+        conv = RagbitsConversation(base_url="http://testserver", http_client=http_client)
         responses = await conv.run("Hello")
 
     aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
@@ -175,7 +174,7 @@ async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> 
 def test_conversation_stop_closes_stream(sse_lines: list[str]) -> None:
     """Calling *stop* must close the active streaming response and reset state."""
     response = _DummyStreamResponse(sse_lines)
-    conv = Conversation(base_url="http://testserver", http_client=httpx.Client())
+    conv = SyncRagbitsConversation(base_url="http://testserver", http_client=httpx.Client())
     conv._streaming_response = cast(httpx.Response, response)
 
     conv.stop()

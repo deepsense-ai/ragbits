@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
 - Update qa data loader docstring (#565)
 - Fix deadlock on qa metrics compute (#609)
 - Upgrade distilabel version to 1.5.0 (#682)

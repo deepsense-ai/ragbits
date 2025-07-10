@@ -1,8 +1,8 @@
-from .clients import (
-    AsyncConversation,
-    AsyncRagbitsChatClient,
-    Conversation,
+from .client import (
     RagbitsChatClient,
+    RagbitsConversation,
+    SyncRagbitsChatClient,
+    SyncRagbitsConversation,
 )
 from .interface.types import (
     ChatResponse,
@@ -14,14 +14,14 @@ from .interface.types import (
 )
 
 __all__ = [
-    "AsyncConversation",
-    "AsyncRagbitsChatClient",
     "ChatResponse",
     "ChatResponseType",
-    "Conversation",
     "Message",
     "MessageRole",
     "RagbitsChatClient",
+    "RagbitsConversation",
     "Reference",
     "StateUpdate",
+    "SyncRagbitsChatClient",
+    "SyncRagbitsConversation",
 ]

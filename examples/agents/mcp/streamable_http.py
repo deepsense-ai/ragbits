@@ -57,6 +57,7 @@ async def main() -> None:
         params={
             "url": "http://localhost:8000/mcp",
         },
+        client_session_timeout_seconds=20,
     ) as server:
         llm = LiteLLM(model_name="gpt-4o-2024-08-06")
         agent = Agent(llm=llm, mcp_servers=[server])
