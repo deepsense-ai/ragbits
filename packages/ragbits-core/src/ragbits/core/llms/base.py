@@ -8,7 +8,8 @@ from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
 
 from ragbits.core import llms
-from ragbits.core.audit.metrics import HistogramMetric, record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
@@ -374,26 +375,28 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             prompt_tokens = sum(r["prompt_tokens"] for r in results if "prompt_tokens" in r)
             outputs.prompt_tokens_batch = prompt_tokens
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
                 value=prompt_tokens,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
             )
 
-            print(results)
             total_throughput = sum(r["throughput"] for r in results if "throughput" in r)
             outputs.throughput_batch = total_throughput
-            record(
-                metric=HistogramMetric.PROMPT_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.PROMPT_THROUGHPUT,
                 value=total_throughput,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
             )
 
             total_tokens = sum(r["total_tokens"] for r in results if "total_tokens" in r)
             outputs.total_tokens_batch = total_tokens
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
                 value=total_tokens / total_throughput,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
             )
 
