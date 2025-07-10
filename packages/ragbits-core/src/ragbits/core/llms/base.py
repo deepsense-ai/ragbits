@@ -1,7 +1,7 @@
 import enum
 import json
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from typing import ClassVar, Generic, TypeVar, overload
 
 from pydantic import BaseModel, field_validator
@@ -72,6 +72,38 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     metadata: dict = {}
     tool_calls: list[ToolCall] | None = None
     usage: Usage | None = None
+
+
+class LLMResultStreaming(AsyncIterator[str | ToolCall]):
+    """
+    An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
+    by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
+    metadata is available as `metadata` attribute.
+    """
+
+    def __init__(self, generator: AsyncGenerator[str | ToolCall | LLMResponseWithMetadata]):
+        self._generator = generator
+        self.metadata: LLMResponseWithMetadata | None = None
+
+    def __aiter__(self) -> AsyncIterator[str | ToolCall]:
+        return self
+
+    async def __anext__(self) -> str | ToolCall:
+        try:
+            item = await self._generator.__anext__()
+            match item:
+                case str():
+                    pass
+                case ToolCall():
+                    pass
+                case LLMResponseWithMetadata():
+                    self.metadata = item
+                    raise StopAsyncIteration
+                case _:
+                    raise ValueError(f"Unexpected item: {item}")
+            return item
+        except StopAsyncIteration:
+            raise
 
 
 class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
@@ -316,7 +348,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str | ToolCall, None]: ...
 
-    async def generate_streaming(
+    def generate_streaming(
         self,
         prompt: str | ChatFormat | BasePrompt,
         *,
@@ -324,7 +356,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str | ToolCall, None]:
         """
-        Prepares and sends a prompt to the LLM and streams the results.
+        This method returns an `LLMResultStreaming` object that can be asynchronously
+        iterated over. After the loop completes, metadata is available as `metadata` attribute.
 
         Args:
             prompt: Formatted prompt template with conversation.
@@ -334,6 +367,15 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Returns:
             Response stream from LLM or list of tool calls.
         """
+        return LLMResultStreaming(self._stream_internal(prompt, tools=tools, options=options))
+
+    async def _stream_internal(
+        self,
+        prompt: str | ChatFormat | BasePrompt,
+        *,
+        tools: list[Tool] | None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> AsyncGenerator[str | ToolCall | LLMResponseWithMetadata, None]:
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             merged_options = (self.default_options | options) if options else self.default_options
 
@@ -383,6 +425,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 tool_calls=tool_calls or None,
                 usage=usage,
             )
+
+            yield outputs.response
 
     @abstractmethod
     async def _call(
