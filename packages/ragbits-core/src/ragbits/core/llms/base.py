@@ -62,6 +62,8 @@ class Usage(BaseModel):
     completion_tokens: int | None = None
     total_tokens: int | None = None
 
+    n_requests: int = 1
+
 
 class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
