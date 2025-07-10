@@ -31,6 +31,27 @@ class AgentToolNotAvailableError(AgentError):
         self.tool_name = tool_name
 
 
+class AgentToolExecutionError(AgentError):
+    """
+    Raised when the tool execution fails.
+    """
+
+    def __init__(self, tool_name: str, error: Exception) -> None:
+        super().__init__(f"Tool execution failed: {tool_name}, error: {error}")
+        self.tool_name = tool_name
+        self.error = error
+
+
+class AgentToolDuplicateError(AgentError):
+    """
+    Raised when agent tool names are duplicated.
+    """
+
+    def __init__(self, tool_name: str) -> None:
+        super().__init__(f"Duplicate tool name found: {tool_name}")
+        self.tool_name = tool_name
+
+
 class AgentInvalidPromptInputError(AgentError):
     """
     Raised when the prompt/input combination is invalid.
@@ -40,3 +61,17 @@ class AgentInvalidPromptInputError(AgentError):
         super().__init__(f"Invalid prompt/input combination: prompt={prompt}, input={input}")
         self.prompt_type = prompt
         self.input_type = input
+
+
+class AgentMaxTurnsExceededError(AgentError):
+    """
+    Raised when the maximum number of turns is exceeded.
+    """
+
+    def __init__(self, max_turns: int) -> None:
+        super().__init__(
+            f"The number of Agent turns exceeded the limit of {max_turns}."
+            "To change this limit, pass ragbits.agents.AgentOptions with max_turns when initializing the Agent."
+            "agent = Agent(options=AgentOptions(max_turns=x))"
+        )
+        self.max_turns = max_turns

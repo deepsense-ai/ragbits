@@ -22,7 +22,7 @@
         "lint": "eslint .",
         "format": "prettier --write .",
         "format:check": "prettier --check .",
-        "clean": "rm -rf ./dist"
+        "clean": "rm -rf ./dist && rm -f ./tsconfig.tsbuildinfo"
     },
     "keywords": [
         "ragbits",

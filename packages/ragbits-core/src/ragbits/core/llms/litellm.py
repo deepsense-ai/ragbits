@@ -10,7 +10,8 @@ from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from ragbits.core.audit.metrics import HistogramMetric, record
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.llms.base import LLM
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
@@ -265,9 +266,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 if content := item.choices[0].delta.content:
                     output_tokens += 1
                     if output_tokens == 1:
-                        record(
-                            metric=HistogramMetric.TIME_TO_FIRST_TOKEN,
+                        record_metric(
+                            metric=LLMMetric.TIME_TO_FIRST_TOKEN,
                             value=time.perf_counter() - start_time,
+                            metric_type=MetricType.HISTOGRAM,
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
@@ -293,21 +295,24 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             total_time = time.perf_counter() - start_time
 
-            record(
-                metric=HistogramMetric.INPUT_TOKENS,
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
                 value=input_tokens,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.TOKEN_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
                 value=output_tokens / total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
-            record(
-                metric=HistogramMetric.PROMPT_THROUGHPUT,
+            record_metric(
+                metric=LLMMetric.PROMPT_THROUGHPUT,
                 value=total_time,
+                metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
@@ -342,6 +347,26 @@ class LiteLLM(LLM[LiteLLMOptions]):
         stream: bool = False,
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or self._create_router_from_self_and_options(options)
+
+        # Prepare kwargs for the completion call
+        completion_kwargs = {
+            "messages": conversation,
+            "model": self.model_name,
+            "response_format": response_format,
+            "tools": tools,
+            "stream": stream,
+            **options.dict(),
+        }
+
+        # Only add these parameters if we're not using a router
+        # Router instances have these configured at initialization time
+        if self.router is None:
+            if self.api_base is not None:
+                completion_kwargs["base_url"] = self.api_base
+            if self.api_key is not None:
+                completion_kwargs["api_key"] = self.api_key
+            if self.api_version is not None:
+                completion_kwargs["api_version"] = self.api_version
 
         try:
             response = await entrypoint.acompletion(

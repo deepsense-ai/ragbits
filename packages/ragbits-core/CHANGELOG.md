@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+- Integrate Weaviate vector store (#347)
 - Remove numpy dependency (#666)
 - Fix typing in LLM generate_streaming (#628)
 - Fix typing in LLM generate (#568)
@@ -12,6 +15,9 @@
 - Add support for batch generation (#608)
 - Add message update functions to BasePrompt (#648)
 - Add Logfire integration to handle traces and metrics (#642)
+- Clean up Overloads for Prompt (#650)
+- Make ToolCall importable from ragbits.core.llms (#688)
+- Support all metric types (#615)
 
 ## 1.0.0 (2025-06-04)
 
@@ -204,4 +210,3 @@
 - ChromaDB integration.
 - Prompts lab.
 - Prompts autodiscovery.
-

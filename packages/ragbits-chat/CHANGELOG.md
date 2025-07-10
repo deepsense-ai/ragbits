@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
+- Add configurable user setting in Ragbits UI (#692)
+- Live updates support for Python api client(#683)
+- Synchronous and asynchronous Python api client (#647)
+- Live updates support markdown (#684)
+- Added custom styling for multiline and inline-code (#668)
+- Changed toggling darkmode for tailwind class selector (#668)
 - Loading indicator, delayed message buttons, integrated abort controller (#641)
 - Added Eslint, Prettier & CI/CD for Ragbits API Clients (#604)
 - Excluded API connection logic to 2 modules: ragbits-api-client and ragbits-api-client-react which implements hooks for ragbits-api-client (#582)
@@ -10,6 +22,14 @@
 - Allow UI cutomization using config endpoint (#643)
 - Add support for live updates and followup messages (#654)
 - Fix invalid context structure in requests from FE (#663)
+- Arrow Up and Arrow Down now cycle through sent messages in a terminal-like style (#667)
+- Fix followup messages not sending (#680)
+- Improve typing of TypeScript libraries (#681)
+- New metrics in for RagbitsAPI (#615)
+- Add debug panel with debug_mode field in config (#689)
+- Restore relative URL handling for UI build (#699)
+- Add integration tests for UI (#697)
+- Use external store instead of context for history (#706)
 
 ## 1.0.0 (2025-06-04)
 
@@ -135,7 +155,6 @@
 
 ## 0.9.0 (2025-02-25)
 
-
 ### Changed
 
 - ragbits-core updated to version v0.9.0
@@ -157,4 +176,3 @@
 
 - Initial release of the package (#271).
 - Added last message recontextualization (#271).
-

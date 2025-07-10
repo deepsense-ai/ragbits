@@ -5,40 +5,43 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MessageRole } from "@ragbits/api-client-react";
 
-import { ChatMessage as ChatMessageType } from "../../types/history.ts";
-import { useThemeContext } from "../contexts/ThemeContext/useThemeContext.ts";
-import { Theme } from "../contexts/ThemeContext/ThemeContext.ts";
 import DelayedTooltip from "./DelayedTooltip.tsx";
 import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../plugins/FeedbackPlugin/index.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
+import { useHistoryStore, useMessage } from "../stores/historyStore.ts";
 
 export type ChatMessageProps = {
   classNames?: {
     wrapper?: string;
     innerWrapper?: string;
     content?: string;
+    liveUpdates?: string;
   };
-  chatMessage: ChatMessageType;
-  isLoading: boolean;
+  messageId: string;
 };
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
-  (
-    {
-      chatMessage: { serverId, content, role, references, liveUpdates },
-      classNames,
-      isLoading,
-    },
-    ref,
-  ) => {
+  ({ messageId, classNames }, ref) => {
+    const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+    const isHistoryLoading = useHistoryStore((s) => s.isLoading);
+    const message = useMessage(messageId);
+
+    if (!message) {
+      throw new Error("Tried to render non-existent message");
+    }
+
+    const { serverId, content, role, references, liveUpdates } = message;
     const rightAlign = role === MessageRole.USER;
+    const isLoading =
+      isHistoryLoading &&
+      role === MessageRole.ASSISTANT &&
+      messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
 
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const { theme } = useThemeContext();
 
     const onCopyClick = () => {
       navigator.clipboard.writeText(content);
@@ -79,8 +82,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             {rightAlign ? (
               <div
                 className={cn(
-                  "prose whitespace-pre-line",
-                  theme === Theme.DARK && "dark:prose-invert",
+                  "prose whitespace-pre-line dark:prose-invert",
                   classNames?.content,
                 )}
               >
@@ -92,6 +94,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   <LiveUpdates
                     isLoading={isLoading}
                     liveUpdates={liveUpdates}
+                    classNames={{ liveUpdates: classNames?.liveUpdates }}
                   />
                   {isLoading && !liveUpdates && (
                     <>
@@ -99,17 +102,30 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                         icon="heroicons:arrow-path"
                         className="animate-spin"
                       />
-                      <span>Thinking...</span>
+                      <span>
+                        {content.length > 0 ? "Generating..." : "Thinking..."}
+                      </span>
                     </>
                   )}
                 </div>
                 <Markdown
                   className={cn(
-                    "markdown-container prose max-w-full",
-                    theme === Theme.DARK && "dark:prose-invert",
+                    "markdown-container prose max-w-full dark:prose-invert",
                     classNames?.content,
                   )}
                   remarkPlugins={[remarkGfm]}
+                  components={{
+                    pre: ({ children }) => (
+                      <pre className="max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                        {children}
+                      </pre>
+                    ),
+                    code: ({ children }) => (
+                      <code className="rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+                        {children}
+                      </code>
+                    ),
+                  }}
                 >
                   {content}
                 </Markdown>
