@@ -257,6 +257,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             response_format=response_format,
             tools=tools,
             stream=True,
+            stream_options={"include_usage": True},
         )
 
         if not response.completion_stream and not response.choices:  # type: ignore
