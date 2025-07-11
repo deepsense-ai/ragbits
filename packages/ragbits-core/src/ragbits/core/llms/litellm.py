@@ -12,7 +12,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
@@ -21,12 +21,11 @@ from ragbits.core.llms.exceptions import (
     LLMResponseError,
     LLMStatusError,
 )
-from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LiteLLMOptions(Options):
+class LiteLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).

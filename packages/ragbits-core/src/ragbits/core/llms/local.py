@@ -14,13 +14,12 @@ except ImportError:
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM
-from ragbits.core.options import Options
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LocalLLMOptions(Options):
+class LocalLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]
