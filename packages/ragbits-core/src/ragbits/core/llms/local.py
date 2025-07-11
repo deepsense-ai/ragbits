@@ -140,9 +140,13 @@ class LocalLLM(LLM[LocalLLMOptions]):
         for i, response in enumerate(responses):
             result = {}
             result["response"] = self.tokenizer.decode(response, skip_special_tokens=True)
-            result["prompt_tokens"] = tokens_in[i]
-            result["completion_tokens"] = sum(response != self.tokenizer._pad_token_type_id)
-            result["total_tokens"] = result["prompt_tokens"] + result["completion_tokens"]
+            prompt_tokens = tokens_in[i]
+            completion_tokens = sum(response != self.tokenizer._pad_token_type_id)
+            result["usage"] = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": prompt_tokens + completion_tokens,
+            }
             result["throughput"] = throughput_batch / float(len(responses))
             results.append(result)  # type: ignore
 
@@ -206,6 +210,14 @@ class LocalLLM(LLM[LocalLLMOptions]):
 
             generation_thread.join()
             total_time = time.perf_counter() - start_time
+
+            yield {
+                "usage": {
+                    "prompt_tokens": input_tokens,
+                    "completion_tokens": output_tokens,
+                    "total_tokens": input_tokens + output_tokens,
+                }
+            }
 
             record_metric(
                 metric=LLMMetric.INPUT_TOKENS,

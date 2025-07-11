@@ -291,10 +291,10 @@ async def test_generation_with_metadata():
     options = LiteLLMOptions(mock_response="I'm fine, thank you.")
     output = await llm.generate_with_metadata(prompt, options=options)
     assert output.content == "I'm fine, thank you."
-    assert output.metadata["completion_tokens"] == 20
-    assert output.metadata["prompt_tokens"] == 10
-    assert output.metadata["total_tokens"] == 30
-    assert "throughput" in output.metadata
+    assert output.usage is not None
+    assert output.usage.completion_tokens == 20
+    assert output.usage.prompt_tokens == 10
+    assert output.usage.total_tokens == 30
 
 
 @patch("litellm.supports_function_calling")
@@ -313,10 +313,10 @@ async def test_generation_with_metadata_and_tools(mock_supports_function_calling
             type="function",
         )
     ]
-    assert output.metadata["completion_tokens"] == 10
-    assert output.metadata["prompt_tokens"] == 20
-    assert output.metadata["total_tokens"] == 30
-    assert "throughput" in output.metadata
+    assert output.usage is not None
+    assert output.usage.completion_tokens == 10
+    assert output.usage.prompt_tokens == 20
+    assert output.usage.total_tokens == 30
 
 
 @patch("litellm.supports_function_calling")
@@ -328,10 +328,10 @@ async def test_generation_with_metadata_and_tools_no_tool_used(mock_supports_fun
     mock_llm_responses_with_tool_no_tool_used(llm)
     output = await llm.generate_with_metadata(prompt, tools=[get_weather])
     assert output.content == "I'm fine."
-    assert output.metadata["completion_tokens"] == 10
-    assert output.metadata["prompt_tokens"] == 20
-    assert output.metadata["total_tokens"] == 30
-    assert "throughput" in output.metadata
+    assert output.usage is not None
+    assert output.usage.completion_tokens == 10
+    assert output.usage.prompt_tokens == 20
+    assert output.usage.total_tokens == 30
 
 
 async def test_generation_without_image_support():
