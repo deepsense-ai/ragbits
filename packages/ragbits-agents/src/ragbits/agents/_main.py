@@ -91,7 +91,9 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
     all items are available under the same names as in AgentResult class.
     """
 
-    def __init__(self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]):
+    def __init__(
+        self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]
+    ):
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
@@ -108,12 +110,14 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
             match item:
                 case str():
                     self.content += item
+                    return item
                 case ToolCall():
                     pass
                 case ToolCallResult():
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                    return item
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
@@ -129,7 +133,6 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
                     self.usage = item
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-            return item
         except StopAsyncIteration:
             raise
 
@@ -231,7 +234,7 @@ class Agent(
 
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or None
+        llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -334,13 +337,13 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]:
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
 
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or None
+        llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -365,7 +368,8 @@ class Agent(
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
                 turn_count += 1
-                context.usage += streaming_result.metadata.usage
+                if streaming_result.metadata.usage:
+                    context.usage += streaming_result.metadata.usage
 
                 if not returned_tool_call:
                     break
@@ -400,19 +404,19 @@ class Agent(
 
     @staticmethod
     def _get_llm_options(
-        llm_options: LLMClientOptionsT | None, options: AgentOptions[LLMClientOptionsT], usage: Usage
-    ) -> Options:
-        actual_limits = [
+        llm_options: LLMClientOptionsT, options: AgentOptions[LLMClientOptionsT], usage: Usage
+    ) -> LLMClientOptionsT:
+        actual_limits: list[int] = [
             limit
             for limit in (options.max_total_tokens, options.max_prompt_tokens, options.max_completion_tokens)
-            if limit is not NOT_GIVEN
+            if isinstance(limit, int)
         ]
 
-        limit_options = Options(max_tokens=min(actual_limits) - usage.total_tokens if actual_limits else NOT_GIVEN)
+        if not actual_limits:
+            return llm_options
 
-        if llm_options:
-            return llm_options | limit_options
-        return limit_options
+        llm_options.max_tokens = min(actual_limits) - usage.total_tokens
+        return llm_options
 
     def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         curr_history = deepcopy(self.history)

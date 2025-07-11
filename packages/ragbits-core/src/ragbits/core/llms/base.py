@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, MutableSequence
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
+from litellm import NotGiven
 from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
 
@@ -19,10 +20,21 @@ from ragbits.core.prompt.base import (
     PromptOutputT,
     SimplePrompt,
 )
+from ragbits.core.types import NOT_GIVEN
 from ragbits.core.utils.config_handling import ConfigurableComponent
 from ragbits.core.utils.function_schema import convert_function_to_function_schema
 
-LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
+
+class LLMOptions(Options):
+    """
+    Options for the LLM.
+    """
+
+    max_tokens: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of tokens the LLM can use, if None, LLM will run forever"""
+
+
+LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=LLMOptions)
 Tool = Callable | dict
 
 
