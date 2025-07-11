@@ -162,7 +162,7 @@ async def test_agent_run_tools(llm_with_tool_call: MockLLM, method: Callable, re
             arguments={
                 "location": "San Francisco",
             },
-            result='{"location": "San Francisco", "temperature": "72", "unit": ' '"fahrenheit"}',
+            result='{"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"}',
         ),
     ]
 

@@ -1,11 +1,15 @@
 import json
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import BaseModel
 
+from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
+from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
 from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
-from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, SimplePrompt
+from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, SimplePrompt
 
 
 class CustomOutputType(BaseModel):
@@ -91,26 +95,53 @@ async def test_generate_with_parser_prompt(llm: MockLLM):
 
 async def test_generate_raw_with_str(llm: MockLLM):
     response = await llm.generate_raw("Hello")
-    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
+    assert response == {
+        "response": "test response",
+        "tool_calls": None,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_raw_with_chat_format(llm: MockLLM):
     chat = [{"role": "system", "content": "You are a helpful assistant"}, {"role": "user", "content": "Hello"}]
     response = await llm.generate_raw(chat)
-    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
+    assert response == {
+        "response": "test response",
+        "tool_calls": None,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_raw_with_base_prompt(llm: MockLLM):
     prompt = SimplePrompt("Hello")
     response = await llm.generate_raw(prompt)
-    assert response == {"response": "test response", "tool_calls": None, "is_mocked": True}
+    assert response == {
+        "response": "test response",
+        "tool_calls": None,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_metadata_with_str(llm: MockLLM):
     response = await llm.generate_with_metadata("Hello")
     assert isinstance(response, LLMResponseWithMetadata)
     assert response.content == "test response"
-    assert response.metadata == {"is_mocked": True}
+    assert response.metadata == {
+        "is_mocked": True,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_metadata_with_chat_format(llm: MockLLM):
@@ -118,7 +149,13 @@ async def test_generate_metadata_with_chat_format(llm: MockLLM):
     response = await llm.generate_with_metadata(chat)
     assert isinstance(response, LLMResponseWithMetadata)
     assert response.content == "test response"
-    assert response.metadata == {"is_mocked": True}
+    assert response.metadata == {
+        "is_mocked": True,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_metadata_with_base_prompt(llm: MockLLM):
@@ -126,7 +163,28 @@ async def test_generate_metadata_with_base_prompt(llm: MockLLM):
     response = await llm.generate_with_metadata(prompt)
     assert isinstance(response, LLMResponseWithMetadata)
     assert response.content == "test response"
-    assert response.metadata == {"is_mocked": True}
+    assert response.metadata == {
+        "is_mocked": True,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
+
+
+async def test_generate_metadata_with_base_prompt_list(llm: MockLLM):
+    prompt: list[BasePrompt] = [SimplePrompt("Hello"), SimplePrompt("Hello")]
+    responses = await llm.generate_with_metadata(prompt)
+    for i, response in enumerate(responses):
+        assert isinstance(response, LLMResponseWithMetadata)
+        assert response.content == "test response"
+        assert response.metadata == {
+            "is_mocked": True,
+            "prompt_tokens": 10 * (i + 1),
+            "total_tokens": 30 * (i + 1),
+            "completion_tokens": 20 * (i + 1),
+            "throughput": 0.5,
+        }
 
 
 async def test_generate_metadata_with_parser_prompt(llm: MockLLM):
@@ -135,7 +193,13 @@ async def test_generate_metadata_with_parser_prompt(llm: MockLLM):
     assert isinstance(response, LLMResponseWithMetadata)
     assert isinstance(response.content, CustomOutputType)
     assert response.content.message == "test response"
-    assert response.metadata == {"is_mocked": True}
+    assert response.metadata == {
+        "is_mocked": True,
+        "prompt_tokens": 10,
+        "total_tokens": 30,
+        "completion_tokens": 20,
+        "throughput": 1,
+    }
 
 
 async def test_generate_stream_with_str(llm: MockLLM):
@@ -201,3 +265,51 @@ def test_has_images():
 def test_get_token_id(llm: MockLLM):
     with pytest.raises(NotImplementedError):
         llm.get_token_id("example_token")
+
+
+@pytest.fixture
+def mock_metric_handler():
+    handler = MagicMock(spec=MetricHandler)
+    handler.create_histogram = MagicMock()
+    handler.record = MagicMock()
+    return handler
+
+
+@pytest.fixture
+def mock_trace_handler():
+    handler = MagicMock(spec=TraceHandler)
+    handler.start = MagicMock(return_value=MagicMock())
+    handler.stop = MagicMock()
+    return handler
+
+
+async def test_generate_with_metadata_tracing_and_metrics(
+    llm: MockLLM, mock_metric_handler: MagicMock, mock_trace_handler: MagicMock
+):
+    set_metric_handlers(mock_metric_handler)
+    set_trace_handlers(mock_trace_handler)
+
+    prompts: list[BasePrompt] = [SimplePrompt("Hello"), SimplePrompt("Hello")]
+    await llm.generate_with_metadata(prompts)
+
+    mock_trace_handler.trace.assert_called_once_with(
+        "generate", model_name=llm.model_name, prompt=prompts, options="None"
+    )
+
+    metric_calls = mock_metric_handler.record_metric.call_args_list
+    assert len(metric_calls) == 3
+    print(metric_calls)
+    assert metric_calls[0][1]["metric_key"] == LLMMetric.INPUT_TOKENS
+    assert metric_calls[0][1]["value"] == 30
+    assert metric_calls[0][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[0][1]["metric_type"] == MetricType.HISTOGRAM
+
+    assert metric_calls[1][1]["metric_key"] == LLMMetric.PROMPT_THROUGHPUT
+    assert metric_calls[1][1]["value"] == 1.0
+    assert metric_calls[1][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[1][1]["metric_type"] == MetricType.HISTOGRAM
+
+    assert metric_calls[2][1]["metric_key"] == LLMMetric.TOKEN_THROUGHPUT
+    assert metric_calls[2][1]["value"] == 90.0  # total_tokens / throughput
+    assert metric_calls[2][1]["attributes"]["model"] == llm.model_name
+    assert metric_calls[2][1]["metric_type"] == MetricType.HISTOGRAM

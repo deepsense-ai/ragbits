@@ -1,9 +1,11 @@
+import asyncio
 import time
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Callable, Iterable
 from typing import Any
 
 import litellm
 import tiktoken
+from litellm import Router
 from litellm.utils import CustomStreamWrapper, ModelResponse
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -42,6 +44,8 @@ class LiteLLMOptions(Options):
     top_logprobs: int | None | NotGiven = NOT_GIVEN
     logit_bias: dict | None | NotGiven = NOT_GIVEN
     mock_response: str | None | NotGiven = NOT_GIVEN
+    tpm: int | None | NotGiven = NOT_GIVEN
+    rpm: int | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
@@ -128,25 +132,20 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
     async def _call(
         self,
-        prompt: BasePrompt,
+        prompt: Iterable[BasePrompt],
         options: LiteLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> dict:
+    ) -> list[dict]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
 
         Args:
-            prompt: BasePrompt object containing the conversation
+            prompt: Iterable of BasePrompt objects containing conversations
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Output schema for requesting a specific response format.
-                Only used if the client has been initialized with `use_structured_output=True`.
             tools: Functions to be used as tools by the LLM.
 
         Returns:
-            Response string from LLM.
+            list of dictionaries with responses from the LLM and metadata.
 
         Raises:
             LLMConnectionError: If there is a connection error with the LLM API.
@@ -155,74 +154,63 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMNotSupportingImagesError: If the model does not support images.
             LLMNotSupportingToolUseError: If the model does not support tool use.
         """
-        if prompt.list_images() and not litellm.supports_vision(self.model_name):
+        if any(p.list_images() for p in prompt) and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
-        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
-
         start_time = time.perf_counter()
-        response = await self._get_litellm_response(
-            conversation=prompt.chat,
-            options=options,
-            response_format=response_format,
-            tools=tools,
+        raw_responses = await asyncio.gather(
+            *(
+                self._get_litellm_response(
+                    conversation=single_prompt.chat,
+                    options=options,
+                    response_format=self._get_response_format(
+                        output_schema=single_prompt.output_schema(), json_mode=single_prompt.json_mode
+                    ),
+                    tools=tools,
+                )
+                for single_prompt in prompt
+            )
         )
-        prompt_throughput = time.perf_counter() - start_time
 
-        if not response.choices:  # type: ignore
-            raise LLMEmptyResponseError()
+        results: list[dict] = []
+        throughput_batch = time.perf_counter() - start_time
 
-        results = {}
-        results["tool_calls"] = (
-            [
-                {
-                    "name": tool_call.function.name,
-                    "arguments": tool_call.function.arguments,
-                    "type": tool_call.type,
-                    "id": tool_call.id,
+        for response in raw_responses:
+            if not response.choices:  # type: ignore
+                raise LLMEmptyResponseError()
+
+            result = {}
+            result["response"] = response.choices[0].message.content  # type: ignore
+            result["throughput"] = throughput_batch / float(len(raw_responses))
+
+            result["tool_calls"] = (
+                [
+                    {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                        "type": tool_call.type,
+                        "id": tool_call.id,
+                    }
+                    for tool_call in tool_calls
+                ]
+                if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
+                else None
+            )
+
+            if options.logprobs:
+                result["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
+
+            if response.usage:  # type: ignore
+                result["usage"] = {
+                    "completion_tokens": response.usage.completion_tokens,  # type: ignore
+                    "prompt_tokens": response.usage.prompt_tokens,  # type: ignore
+                    "total_tokens": response.usage.total_tokens,  # type: ignore
                 }
-                for tool_call in tool_calls
-            ]
-            if tools and (tool_calls := response.choices[0].message.tool_calls)  # type: ignore
-            else None
-        )
-        results["response"] = response.choices[0].message.content  # type: ignore
 
-        if options.logprobs:
-            results["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
-
-        if response.usage:  # type: ignore
-            results["usage"] = {
-                "completion_tokens": response.usage.completion_tokens,  # type: ignore
-                "prompt_tokens": response.usage.prompt_tokens,  # type: ignore
-                "total_tokens": response.usage.total_tokens,  # type: ignore
-            }
-
-            record_metric(
-                metric=LLMMetric.INPUT_TOKENS,
-                value=response.usage.prompt_tokens,  # type: ignore
-                metric_type=MetricType.HISTOGRAM,
-                model=self.model_name,
-                prompt=prompt.__class__.__name__,
-            )
-            record_metric(
-                metric=LLMMetric.TOKEN_THROUGHPUT,
-                value=response.usage.total_tokens / prompt_throughput,  # type: ignore
-                metric_type=MetricType.HISTOGRAM,
-                model=self.model_name,
-                prompt=prompt.__class__.__name__,
-            )
-
-        record_metric(
-            metric=LLMMetric.PROMPT_THROUGHPUT,
-            value=prompt_throughput,
-            metric_type=MetricType.HISTOGRAM,
-            model=self.model_name,
-            prompt=prompt.__class__.__name__,
-        )
+            results.append(result)
 
         return results
 
@@ -230,8 +218,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self,
         prompt: BasePrompt,
         options: LiteLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
@@ -240,9 +226,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Output schema for requesting a specific response format.
-                Only used if the client has been initialized with `use_structured_output=True`.
+
             tools: Functions to be used as tools by the LLM.
 
         Returns:
@@ -261,7 +245,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
-        response_format = self._get_response_format(output_schema=output_schema, json_mode=json_mode)
+        response_format = self._get_response_format(output_schema=prompt.output_schema(), json_mode=prompt.json_mode)
         input_tokens = self.count_tokens(prompt)
 
         provider_calculated_usage = None
@@ -358,6 +342,25 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         return response_to_async_generator(response)  # type: ignore
 
+    def _create_router_from_self_and_options(self, options: LiteLLMOptions) -> Router:
+        params: dict[str, Any] = {
+            "model": self.model_name,
+            "api_key": self.api_key,
+            "api_version": self.api_version,
+            "base_url": self.api_base,
+        }
+
+        if options.tpm:
+            params["tpm"] = options.tpm
+        if options.rpm:
+            params["rpm"] = options.rpm
+
+        return Router(
+            model_list=[{"model_name": self.model_name, "litellm_params": params}],
+            routing_strategy="usage-based-routing-v2",
+            enable_pre_call_checks=True,
+        )
+
     async def _get_litellm_response(
         self,
         conversation: ChatFormat,
@@ -367,7 +370,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         stream: bool = False,
         stream_options: dict | None = None,
     ) -> ModelResponse | CustomStreamWrapper:
-        entrypoint = self.router or litellm
+        entrypoint = self.router or self._create_router_from_self_and_options(options)
 
         # Prepare kwargs for the completion call
         completion_kwargs = {
@@ -381,16 +384,6 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         if stream_options is not None:
             completion_kwargs["stream_options"] = stream_options
-
-        # Only add these parameters if we're not using a router
-        # Router instances have these configured at initialization time
-        if self.router is None:
-            if self.api_base is not None:
-                completion_kwargs["base_url"] = self.api_base
-            if self.api_key is not None:
-                completion_kwargs["api_key"] = self.api_key
-            if self.api_version is not None:
-                completion_kwargs["api_version"] = self.api_version
 
         try:
             response = await entrypoint.acompletion(**completion_kwargs)

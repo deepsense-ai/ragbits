@@ -429,3 +429,35 @@ def test_get_token_id():
     llm = LiteLLM(model_name="gpt-4o")
     token_id = llm.get_token_id("Yes")
     assert token_id == 13022
+
+
+async def test_create_router_from_self_and_options():
+    """Test that _create_router_from_self_and_options creates a Router with correct configuration."""
+    llm = LiteLLM(
+        model_name="gpt-3.5-turbo",
+        api_key="test_key",
+        api_base="https://test-api.openai.azure.com",
+        api_version="2024-07-19-test",
+    )
+
+    router = llm._create_router_from_self_and_options(LiteLLMOptions())
+
+    assert router.routing_strategy == "usage-based-routing-v2"
+    assert router.enable_pre_call_checks is True
+    assert len(router.model_list) == 1
+
+    model_config = router.model_list[0]
+    assert model_config["model_name"] == "gpt-3.5-turbo"
+    assert model_config["litellm_params"]["model"] == "gpt-3.5-turbo"
+    assert model_config["litellm_params"]["api_key"] == "test_key"
+    assert model_config["litellm_params"]["api_version"] == "2024-07-19-test"
+    assert model_config["litellm_params"]["base_url"] == "https://test-api.openai.azure.com"
+    assert "tpm" not in model_config["litellm_params"]
+    assert "rpm" not in model_config["litellm_params"]
+
+    # Test with TPM/RPM limits
+    router_with_limits = llm._create_router_from_self_and_options(LiteLLMOptions(tpm=1000, rpm=60))
+
+    model_config_with_limits = router_with_limits.model_list[0]
+    assert model_config_with_limits["litellm_params"]["tpm"] == 1000
+    assert model_config_with_limits["litellm_params"]["rpm"] == 60

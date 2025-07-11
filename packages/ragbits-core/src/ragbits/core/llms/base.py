@@ -1,13 +1,15 @@
 import enum
 import json
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, MutableSequence
 from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
 
 from ragbits.core import llms
+from ragbits.core.audit.metrics import record_metric
+from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import trace
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import (
@@ -187,30 +189,22 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         if isinstance(prompt, str | list):
             prompt = SimplePrompt(prompt)
 
-        return await self._call(
-            prompt=prompt,
-            options=merged_options,
-            json_mode=prompt.json_mode,
-            output_schema=prompt.output_schema(),
-        )
+        response = (
+            await self._call(
+                prompt=[prompt],
+                options=merged_options,
+            )
+        )[0]
 
-    @overload
-    async def generate(
-        self,
-        prompt: str | ChatFormat,
-        *,
-        tools: None = None,
-        options: LLMClientOptionsT | None = None,
-    ) -> str: ...
+        returned = {
+            "response": response["response"],
+            "throughput": response["throughput"],
+        }
+        for opt in ["prompt_tokens", "completion_tokens", "total_tokens", "tool_calls"]:
+            if opt in response:
+                returned[opt] = response[opt]
 
-    @overload
-    async def generate(
-        self,
-        prompt: str | ChatFormat,
-        *,
-        tools: list[Tool],
-        options: LLMClientOptionsT | None = None,
-    ) -> str | list[ToolCall]: ...
+        return returned
 
     @overload
     async def generate(
@@ -224,19 +218,78 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> list[PromptOutputT]: ...
+
+    @overload
+    async def generate(
+        self,
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
     ) -> PromptOutputT | list[ToolCall]: ...
 
+    @overload
     async def generate(
         self,
-        prompt: str | ChatFormat | BasePrompt | BasePromptWithParser[PromptOutputT],
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
+        *,
+        tools: list[Tool],
+        options: LLMClientOptionsT | None = None,
+    ) -> list[PromptOutputT | list[ToolCall]]: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: str | ChatFormat,
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> str: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: MutableSequence[str | ChatFormat],
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> list[str]: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: str | ChatFormat,
+        *,
+        tools: list[Tool],
+        options: LLMClientOptionsT | None = None,
+    ) -> str | list[ToolCall]: ...
+
+    @overload
+    async def generate(
+        self,
+        prompt: MutableSequence[str | ChatFormat],
+        *,
+        tools: list[Tool],
+        options: LLMClientOptionsT | None = None,
+    ) -> list[str | list[ToolCall]]: ...
+
+    async def generate(
+        self,
+        prompt: str
+        | ChatFormat
+        | BasePrompt
+        | BasePromptWithParser[PromptOutputT]
+        | MutableSequence[ChatFormat | str]
+        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> str | PromptOutputT | list[ToolCall]:
+    ) -> str | PromptOutputT | list[ToolCall] | list[list[ToolCall] | str] | list[str | PromptOutputT | list[ToolCall]]:
         """
         Prepares and sends a prompt to the LLM and returns the parsed response.
 
@@ -245,14 +298,36 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - BasePrompt instance: Formatted prompt template with conversation
                 - str: Simple text prompt that will be sent as a user message
                 - ChatFormat: List of message dictionaries in OpenAI chat format
+                - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
             options: Options to use for the LLM client.
 
         Returns:
-            Parsed response from LLM or list of tool calls.
+            Parsed response(s) from LLM or list of tool calls.
         """
         response = await self.generate_with_metadata(prompt, tools=tools, options=options)
-        return response.tool_calls if tools and response.tool_calls else response.content
+        if isinstance(response, list):
+            return [r.tool_calls if tools and r.tool_calls else r.content for r in response]
+        else:
+            return response.tool_calls if tools and response.tool_calls else response.content
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        *,
+        tools: list[Tool] | None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+
+    @overload
+    async def generate_with_metadata(
+        self,
+        prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
+        *,
+        tools: list[Tool] | None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> list[LLMResponseWithMetadata[PromptOutputT]]: ...
 
     @overload
     async def generate_with_metadata(
@@ -266,74 +341,126 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate_with_metadata(
         self,
-        prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
+        prompt: MutableSequence[str | ChatFormat],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResponseWithMetadata[PromptOutputT]: ...
+    ) -> list[LLMResponseWithMetadata[str]]: ...
 
     async def generate_with_metadata(
         self,
-        prompt: str | ChatFormat | BasePrompt | BasePromptWithParser[PromptOutputT],
+        prompt: str
+        | ChatFormat
+        | MutableSequence[str | ChatFormat]
+        | BasePrompt
+        | BasePromptWithParser[PromptOutputT]
+        | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResponseWithMetadata[str] | LLMResponseWithMetadata[PromptOutputT]:
+    ) -> (
+        LLMResponseWithMetadata[str]
+        | list[LLMResponseWithMetadata[str]]
+        | LLMResponseWithMetadata[PromptOutputT]
+        | list[LLMResponseWithMetadata[PromptOutputT]]
+    ):
         """
         Prepares and sends a prompt to the LLM and returns response parsed to the
         output type of the prompt (if available).
 
         Args:
-            prompt: Formatted prompt template with conversation and optional response parsing configuration.
+            prompt: Can be one of:
+                - BasePrompt instance: Formatted prompt template with conversation
+                - str: Simple text prompt that will be sent as a user message
+                - ChatFormat: List of message dictionaries in OpenAI chat format
+                - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
             options: Options to use for the LLM client.
 
         Returns:
-            Text response from LLM with metadata and list of tool calls.
+            ResponseWithMetadata object(s) with text response, list of tool calls and metadata information.
         """
-        with trace(name="generate", model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
-            merged_options = (self.default_options | options) if options else self.default_options
+        single_prompt = False
+        if isinstance(prompt, BasePrompt | str) or isinstance(prompt[0], dict):
+            single_prompt = True
+            prompt = [prompt]  # type: ignore
 
-            if isinstance(prompt, str | list):
-                prompt = SimplePrompt(prompt)
+        parsed_tools = (
+            [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools] if tools else None
+        )
 
-            parsed_tools = (
-                [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools]
-                if tools
-                else None
-            )
-            response = await self._call(
-                prompt=prompt,
+        prompts: list[BasePrompt] = [SimplePrompt(p) if isinstance(p, str | list) else p for p in prompt]  # type: ignore
+
+        merged_options = (self.default_options | options) if options else self.default_options
+
+        with trace(name="generate", model_name=self.model_name, prompt=prompts, options=repr(options)) as outputs:
+            results = await self._call(
+                prompt=prompts,
                 options=merged_options,
-                json_mode=prompt.json_mode,
-                output_schema=prompt.output_schema(),
                 tools=parsed_tools,
             )
 
-            tool_calls = (
-                [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
-                if (_tool_calls := response.pop("tool_calls", None)) and tools
-                else None
-            )
-            content = response.pop("response", None)
-            if isinstance(prompt, BasePromptWithParser) and content:
-                content = await prompt.parse_response(content)
-
-            usage = None
-            if usage_data := response.pop("usage", None):
-                usage = Usage(
-                    prompt_tokens=usage_data.get("prompt_tokens"),
-                    completion_tokens=usage_data.get("completion_tokens"),
-                    total_tokens=usage_data.get("total_tokens"),
+            parsed_responses = []
+            for prompt, response in zip(prompts, results, strict=True):
+                tool_calls = (
+                    [ToolCall.model_validate(tool_call) for tool_call in _tool_calls]
+                    if (_tool_calls := response.pop("tool_calls", None)) and tools
+                    else None
                 )
 
-            outputs.response = LLMResponseWithMetadata[type(content)](  # type: ignore
-                content=content,
-                tool_calls=tool_calls,
-                usage=usage,
-                metadata=response,
+                usage = None
+                if usage_data := response.pop("usage", None):
+                    usage = Usage(
+                        prompt_tokens=usage_data.get("prompt_tokens"),
+                        completion_tokens=usage_data.get("completion_tokens"),
+                        total_tokens=usage_data.get("total_tokens"),
+                    )
+
+                content = response.pop("response")
+
+                if isinstance(prompt, BasePromptWithParser) and content:
+                    content = await prompt.parse_response(content)
+
+                response_with_metadata = LLMResponseWithMetadata[type(content)](  # type: ignore
+                    content=content,
+                    tool_calls=tool_calls,
+                    metadata=response,
+                    usage=usage,
+                )
+                parsed_responses.append(response_with_metadata)
+            outputs.response = parsed_responses
+
+            prompt_tokens = sum(r["prompt_tokens"] for r in results if "prompt_tokens" in r)
+            outputs.prompt_tokens_batch = prompt_tokens
+            record_metric(
+                metric=LLMMetric.INPUT_TOKENS,
+                value=prompt_tokens,
+                metric_type=MetricType.HISTOGRAM,
+                model=self.model_name,
             )
-            return outputs.response
+
+            total_throughput = sum(r["throughput"] for r in results if "throughput" in r)
+            outputs.throughput_batch = total_throughput
+            record_metric(
+                metric=LLMMetric.PROMPT_THROUGHPUT,
+                value=total_throughput,
+                metric_type=MetricType.HISTOGRAM,
+                model=self.model_name,
+            )
+
+            total_tokens = sum(r["total_tokens"] for r in results if "total_tokens" in r)
+            outputs.total_tokens_batch = total_tokens
+            record_metric(
+                metric=LLMMetric.TOKEN_THROUGHPUT,
+                value=total_tokens / total_throughput,
+                metric_type=MetricType.HISTOGRAM,
+                model=self.model_name,
+            )
+
+        if single_prompt:
+            return parsed_responses[0]
+
+        return parsed_responses
 
     @overload
     def generate_streaming(
@@ -395,8 +522,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             response = await self._call_streaming(
                 prompt=prompt,
                 options=merged_options,
-                json_mode=prompt.json_mode,
-                output_schema=prompt.output_schema(),
                 tools=parsed_tools,
             )
 
@@ -436,20 +561,16 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @abstractmethod
     async def _call(
         self,
-        prompt: BasePrompt,
+        prompt: MutableSequence[BasePrompt],
         options: LLMClientOptionsT,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> dict:
+    ) -> list[dict]:
         """
         Calls LLM inference API.
 
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Schema for structured response (either Pydantic model or a JSON schema).
             tools: Functions to be used as tools by the LLM.
 
         Returns:
@@ -461,8 +582,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         self,
         prompt: BasePrompt,
         options: LLMClientOptionsT,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
@@ -471,8 +590,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format.
-            output_schema: Schema for structured response (either Pydantic model or a JSON schema).
             tools: Functions to be used as tools by the LLM.
 
         Returns:

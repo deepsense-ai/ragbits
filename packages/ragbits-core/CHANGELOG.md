@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add LLM Usage to LLMResponseWithMetadata (#700)
+- Add support for batch generation (#608)
 
 ## 1.1.0 (2025-07-09)
 
