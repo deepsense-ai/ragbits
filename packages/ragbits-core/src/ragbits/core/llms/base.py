@@ -2,7 +2,7 @@ import enum
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
-from typing import ClassVar, Generic, TypeVar, overload
+from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel, field_validator
 from typing_extensions import deprecated
@@ -76,21 +76,24 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     usage: Usage | None = None
 
 
-class LLMResultStreaming(AsyncIterator[str | ToolCall]):
+T = TypeVar("T")
+
+
+class LLMResultStreaming(AsyncIterator[T]):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
     metadata is available as `metadata` attribute.
     """
 
-    def __init__(self, generator: AsyncGenerator[str | ToolCall | LLMResponseWithMetadata]):
+    def __init__(self, generator: AsyncGenerator[T | LLMResponseWithMetadata]):
         self._generator = generator
         self.metadata: LLMResponseWithMetadata | None = None
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall]:
+    def __aiter__(self) -> AsyncIterator[T]:
         return self
 
-    async def __anext__(self) -> str | ToolCall:
+    async def __anext__(self) -> T:
         try:
             item = await self._generator.__anext__()
             match item:
@@ -103,7 +106,7 @@ class LLMResultStreaming(AsyncIterator[str | ToolCall]):
                     raise StopAsyncIteration
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-            return item
+            return cast(T, item)
         except StopAsyncIteration:
             raise
 
@@ -339,7 +342,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         *,
         tools: None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str, None]: ...
+    ) -> LLMResultStreaming[str]: ...
 
     @overload
     def generate_streaming(
@@ -348,7 +351,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         *,
         tools: list[Tool],
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str | ToolCall, None]: ...
+    ) -> LLMResultStreaming[str | ToolCall]: ...
 
     def generate_streaming(
         self,
@@ -356,7 +359,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         *,
         tools: list[Tool] | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str | ToolCall, None]:
+    ) -> LLMResultStreaming:
         """
         This method returns an `LLMResultStreaming` object that can be asynchronously
         iterated over. After the loop completes, metadata is available as `metadata` attribute.
