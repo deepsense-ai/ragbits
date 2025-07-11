@@ -245,9 +245,7 @@ class GoogleDriveSource(Source):
                     return outputs.results
 
                 file_meta = (
-                    client.files()
-                    .get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True)
-                    .execute()
+                    client.files().get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True).execute()
                 )
                 outputs.results = [
                     cls(
@@ -262,9 +260,7 @@ class GoogleDriveSource(Source):
             # Process folder contents
             all_files_info: dict[str, Any] = {}
 
-            await cls._recursive_list_files(
-                client, drive_id, all_files_info, recursive, is_shared_drive
-            )
+            await cls._recursive_list_files(client, drive_id, all_files_info, recursive, is_shared_drive)
 
             sources = [
                 cls(file_id=info["id"], file_name=info["name"], mime_type=info["mimeType"], is_folder=info["is_folder"])
@@ -283,6 +279,7 @@ class GoogleDriveSource(Source):
         is_shared_drive: bool,
     ) -> None:
         """Helper method to recursively list files in a drive/folder."""
+
         async def _recursive_list(
             current_folder_id: str, current_path_prefix: str = "", current_root_shared_drive_id: str | None = None
         ) -> None:
@@ -313,11 +310,7 @@ class GoogleDriveSource(Source):
                         if item["mimeType"] == "application/vnd.google-apps.folder":
                             if recursive:
                                 next_root_shared_drive_id = current_root_shared_drive_id
-                                if (
-                                    not next_root_shared_drive_id
-                                    and is_shared_drive
-                                    and current_folder_id == drive_id
-                                ):
+                                if not next_root_shared_drive_id and is_shared_drive and current_folder_id == drive_id:
                                     next_root_shared_drive_id = drive_id
 
                                 await _recursive_list(item["id"], full_local_name, next_root_shared_drive_id)
@@ -342,9 +335,7 @@ class GoogleDriveSource(Source):
                     print(f"An unexpected error occurred while listing folder {current_folder_id}: {e}")
                     break
 
-        await _recursive_list(
-            drive_id, current_root_shared_drive_id=(drive_id if is_shared_drive else None)
-        )
+        await _recursive_list(drive_id, current_root_shared_drive_id=(drive_id if is_shared_drive else None))
 
     @classmethod
     async def _check_drive_type(cls, client: "GoogleAPIResource", drive_id: str) -> tuple[bool, bool, str]:
