@@ -110,14 +110,12 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
             match item:
                 case str():
                     self.content += item
-                    return item
                 case ToolCall():
                     pass
                 case ToolCallResult():
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
-                    return item
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
@@ -131,8 +129,10 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
                     raise StopAsyncIteration
                 case Usage():
                     self.usage = item
+                    return await self.__anext__()
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
+            return item
         except StopAsyncIteration:
             raise
 
