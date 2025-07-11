@@ -234,16 +234,16 @@ class GoogleDriveSource(Source):
         """
         with trace(drive_id=drive_id, recursive=recursive) as outputs:
             client = cls._get_client()
-            
+
             # Check if the drive_id is a folder, shared drive, or file
             is_folder, is_shared_drive, root_file_name = await cls._check_drive_type(client, drive_id)
-            
+
             # If it's not a folder, return the single file
             if not is_folder:
                 if not root_file_name:  # Error occurred in _check_drive_type
                     outputs.results = []
                     return outputs.results
-                    
+
                 file_meta = (
                     client.files()
                     .get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True)
@@ -261,7 +261,7 @@ class GoogleDriveSource(Source):
 
             # Process folder contents
             all_files_info: dict[str, Any] = {}
-            
+
             await cls._recursive_list_files(
                 client, drive_id, all_files_info, recursive, is_shared_drive
             )
