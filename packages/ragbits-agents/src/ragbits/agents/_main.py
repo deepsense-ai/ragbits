@@ -7,6 +7,8 @@ from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
+from pydantic import BaseModel, Field
+
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
@@ -20,7 +22,7 @@ from ragbits.agents.mcp.server import MCPServer
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -58,6 +60,15 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_turns: int | None | NotGiven = NOT_GIVEN
     """The maximum number of turns the agent can take, if NOT_GIVEN,
     it defaults to 10, if None, agent will run forever"""
+
+
+class AgentRunContext(BaseModel):
+    """
+    Context for the agent run.
+    """
+
+    usage: Usage = Field(default_factory=Usage)
+    """The usage of the agent."""
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
@@ -161,6 +172,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -168,10 +180,14 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -182,6 +198,7 @@ class Agent(
                 - PromptInputT: Structured input for use with structured prompt classes.
                 - None: No input. Only valid when a string prompt was provided during initialization.
             options: The options for the agent run.
+            context: The context for the agent run.
 
         Returns:
             The result of the agent run.
@@ -214,11 +231,14 @@ class Agent(
                         options=llm_options,
                     ),
                 )
+                if context is not None:
+                    context.usage += response.usage or Usage()
+
                 if not response.tool_calls:
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
+                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context)
                     tool_calls.append(result)
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
@@ -250,6 +270,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -257,10 +278,14 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -269,6 +294,7 @@ class Agent(
         Args:
             input: The input for the agent run.
             options: The options for the agent run.
+            context: The context for the agent run.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -280,11 +306,14 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
-        generator = self._stream_internal(input, options)
+        generator = self._stream_internal(input, options, context)
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]:
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
@@ -298,19 +327,22 @@ class Agent(
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
-                async for chunk in self.llm.generate_streaming(
+                streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                     options=llm_options,
-                ):
+                )
+                async for chunk in streaming_result:
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
+                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping, context=context)
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
                 turn_count += 1
+                if context is not None:
+                    context.usage += streaming_result.metadata.usage or Usage()
 
                 if not returned_tool_call:
                     break
@@ -373,7 +405,9 @@ class Agent(
         return tools_mapping
 
     @staticmethod
-    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Tool]) -> ToolCallResult:
+    async def _execute_tool(
+        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+    ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
@@ -383,10 +417,14 @@ class Agent(
         tool = tools_mapping[tool_call.name]
 
         try:
+            call_args = tool_call.arguments.copy()
+            if tool.context_var_name:
+                call_args[tool.context_var_name] = context
+
             tool_output = (
-                await tool.on_tool_call(**tool_call.arguments)
+                await tool.on_tool_call(**call_args)
                 if iscoroutinefunction(tool.on_tool_call)
-                else tool.on_tool_call(**tool_call.arguments)
+                else tool.on_tool_call(**call_args)
             )
         except Exception as e:
             raise AgentToolExecutionError(tool_call.name, e) from e

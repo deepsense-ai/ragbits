@@ -5,7 +5,7 @@ from typing import cast
 import pytest
 from pydantic import BaseModel
 
-from ragbits.agents import Agent
+from ragbits.agents import Agent, AgentRunContext
 from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
@@ -13,6 +13,7 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
+from ragbits.core.llms.base import Usage
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
 
@@ -45,6 +46,19 @@ def get_weather(location: str) -> str:
         return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
     else:
         return json.dumps({"location": location, "temperature": "unknown"})
+
+
+def get_weather_context(location: str, context: AgentRunContext | None) -> AgentRunContext | None:  # noqa: D417
+    """
+    Returns the current weather for a given location.
+
+    Args:
+        location: The location to get the weather for.
+
+    Returns:
+        The current weather for the given location.
+    """
+    return context
 
 
 @pytest.fixture
@@ -113,14 +127,38 @@ def llm_multiple_tool_calls() -> MockLLM:
     return MockLLM(default_options=options)
 
 
-async def _run(agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None) -> AgentResult:
-    return await agent.run(input, options)
+@pytest.fixture
+def llm_with_tool_call_context() -> MockLLM:
+    options = MockLLMOptions(
+        response="Temperature is 72 fahrenheit",
+        tool_calls=[
+            {
+                "name": "get_weather_context",
+                "arguments": '{"location": "San Francisco"}',
+                "id": "test",
+                "type": "function",
+            }
+        ],
+    )
+    return MockLLM(default_options=options)
+
+
+async def _run(
+    agent: Agent,
+    input: str | BaseModel | None = None,
+    options: AgentOptions | None = None,
+    context: AgentRunContext | None = None,
+) -> AgentResult:
+    return await agent.run(input, options=options, context=context)
 
 
 async def _run_streaming(
-    agent: Agent, input: str | BaseModel | None = None, options: AgentOptions | None = None
+    agent: Agent,
+    input: str | BaseModel | None = None,
+    options: AgentOptions | None = None,
+    context: AgentRunContext | None = None,
 ) -> AgentResultStreaming:
-    result = agent.run_streaming(input, options)
+    result = agent.run_streaming(input, options=options, context=context)
     async for _chunk in result:
         pass
     return result
@@ -191,6 +229,48 @@ async def test_raises_when_wrong_tool_type(llm_wrong_tool_type: MockLLM, method:
 
     with pytest.raises(AgentToolNotSupportedError):
         await method(agent)
+
+
+@pytest.mark.parametrize(
+    ("method", "context"),
+    [(_run, None), (_run, AgentRunContext()), (_run_streaming, None), (_run_streaming, AgentRunContext())],
+)
+async def test_agent_run_tools_with_context(
+    llm_with_tool_call_context: MockLLM, method: Callable, context: AgentRunContext | None
+):
+    agent = Agent(
+        llm=llm_with_tool_call_context,
+        prompt=CustomPrompt,
+        tools=[get_weather_context],
+    )
+    result = await method(agent, context=context)
+    assert result.content == "Temperature is 72 fahrenheit"
+    assert result.tool_calls == [
+        ToolCallResult(
+            id="test",
+            name="get_weather_context",
+            arguments={
+                "location": "San Francisco",
+            },
+            result=context,
+        ),
+    ]
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_context_is_updated(llm_without_tool_call: MockLLM, method: Callable):
+    context = AgentRunContext()
+    agent: Agent = Agent(
+        llm=llm_without_tool_call,
+        prompt="NOT IMPORTANT",
+    )
+    _ = await method(agent, context=context)
+    assert context.usage == Usage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        n_requests=1,
+    )
 
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])

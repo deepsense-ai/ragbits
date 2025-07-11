@@ -92,4 +92,12 @@ class MockLLM(LLM[MockLLMOptions]):
             else:
                 yield {"response": "mocked response"}
 
+            yield {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                }
+            }
+
         return generator()

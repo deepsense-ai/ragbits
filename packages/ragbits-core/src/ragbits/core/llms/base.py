@@ -117,7 +117,6 @@ class LLMResultStreaming(AsyncIterator[T]):
 
     def __init__(self, generator: AsyncGenerator[T | LLMResponseWithMetadata]):
         self._generator = generator
-        self.metadata: LLMResponseWithMetadata | None = None
 
     def __aiter__(self) -> AsyncIterator[T]:
         return self
@@ -131,7 +130,7 @@ class LLMResultStreaming(AsyncIterator[T]):
                 case ToolCall():
                     pass
                 case LLMResponseWithMetadata():
-                    self.metadata = item
+                    self.metadata: LLMResponseWithMetadata = item
                     raise StopAsyncIteration
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
