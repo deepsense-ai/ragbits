@@ -9,7 +9,7 @@ import type {
     BaseStreamingEndpoints,
 } from '@ragbits/api-client'
 import type { RagbitsCallResult, RagbitsStreamResult } from './types'
-import { useRagbitsContext } from './RagbitsProvider'
+import { useRagbitsContext } from './RagbitsContextProvider'
 
 /**
  * Hook for making API calls to Ragbits endpoints

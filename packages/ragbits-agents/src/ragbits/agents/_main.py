@@ -1,16 +1,16 @@
 import asyncio
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
-from a2a.types import AgentCapabilities, AgentCard, AgentSkill
-
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentMaxTurnsExceededError,
     AgentToolDuplicateError,
     AgentToolExecutionError,
     AgentToolNotAvailableError,
@@ -26,6 +26,10 @@ from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
+from ragbits.core.utils.decorators import requires_dependencies
+
+with suppress(ImportError):
+    from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
 
 @dataclass
@@ -51,6 +55,9 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
 
     llm_options: LLMClientOptionsT | None | NotGiven = NOT_GIVEN
     """The options for the LLM."""
+    max_turns: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of turns the agent can take, if NOT_GIVEN,
+    it defaults to 10, if None, agent will run forever"""
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
@@ -184,9 +191,9 @@ class Agent(
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
+            AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
         input = cast(PromptInputT, input)
-
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or None
 
@@ -194,8 +201,11 @@ class Agent(
         tools_mapping = await self._get_all_tools()
         tool_calls = []
 
+        turn_count = 0
+        max_turns = merged_options.max_turns
+        max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         with trace(input=input, options=merged_options) as outputs:
-            while True:
+            while not max_turns or turn_count < max_turns:
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
@@ -212,6 +222,10 @@ class Agent(
                     tool_calls.append(result)
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+
+                turn_count += 1
+            else:
+                raise AgentMaxTurnsExceededError(cast(int, max_turns))
 
             outputs.result = {
                 "content": response.content,
@@ -264,6 +278,7 @@ class Agent(
             AgentToolNotSupportedError: If the selected tool type is not supported.
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
+            AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
         generator = self._stream_internal(input, options)
         return AgentResultStreaming(generator)
@@ -277,9 +292,11 @@ class Agent(
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
-
+        turn_count = 0
+        max_turns = merged_options.max_turns
+        max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         with trace(input=input, options=merged_options) as outputs:
-            while True:
+            while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 async for chunk in self.llm.generate_streaming(
                     prompt=prompt_with_history,
@@ -293,9 +310,13 @@ class Agent(
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
+                turn_count += 1
 
                 if not returned_tool_call:
                     break
+            else:
+                raise AgentMaxTurnsExceededError(cast(int, max_turns))
+
             yield prompt_with_history
             if self.keep_history:
                 self.history = prompt_with_history.chat
@@ -377,6 +398,7 @@ class Agent(
             result=tool_output,
         )
 
+    @requires_dependencies(["a2a.types"], "a2a")
     async def get_agent_card(
         self,
         name: str,
@@ -387,9 +409,9 @@ class Agent(
         protocol: str = "http",
         default_input_modes: list[str] | None = None,
         default_output_modes: list[str] | None = None,
-        capabilities: AgentCapabilities | None = None,
-        skills: list[AgentSkill] | None = None,
-    ) -> AgentCard:
+        capabilities: "AgentCapabilities | None" = None,
+        skills: list["AgentSkill"] | None = None,
+    ) -> "AgentCard":
         """
         Create an AgentCard that encapsulates metadata about the agent,
         such as its name, version, description, network location, supported input/output modes,
@@ -422,7 +444,7 @@ class Agent(
             capabilities=capabilities or AgentCapabilities(),
         )
 
-    async def _extract_agent_skills(self) -> list[AgentSkill]:
+    async def _extract_agent_skills(self) -> list["AgentSkill"]:
         """
         Extract agent skills from all available tools.
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   Modal,
   ModalContent,
@@ -11,9 +11,8 @@ import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
-import FormTheme from "./FormTheme";
+import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
-import { RJSFValidationError } from "@rjsf/utils";
 import { IChangeEvent } from "@rjsf/core";
 
 interface FeedbackFormProps {
@@ -70,15 +69,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
     onOpen();
   };
 
-  const transformErrors = useCallback((errors: RJSFValidationError[]) => {
-    return errors.map((error) => {
-      if (error.name === "minLength" || error.name === "required") {
-        return { ...error, message: "Field must not be empty" };
-      }
-
-      return error;
-    });
-  }, []);
+  const transformErrors = useTransformErrors();
 
   if (!schema) {
     return null;
@@ -94,6 +85,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             className="p-0"
             aria-label="Rate message as helpful"
             onPress={() => onOpenFeedbackForm(FeedbackType.LIKE)}
+            data-testid="feedback-like"
           >
             <Icon icon="heroicons:hand-thumb-up" />
           </Button>
@@ -107,6 +99,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             className="p-0"
             aria-label="Rate message as unhelpful"
             onPress={() => onOpenFeedbackForm(FeedbackType.DISLIKE)}
+            data-testid="feedback-dislike"
           >
             <Icon icon="heroicons:hand-thumb-down" />
           </Button>
@@ -141,6 +134,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
                         color="primary"
                         type="submit"
                         aria-label="Submit feedback"
+                        data-testid="feedback-submit"
                       >
                         Submit
                       </Button>

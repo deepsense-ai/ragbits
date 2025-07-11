@@ -51,7 +51,7 @@ def get_hotel_recommendations(city: str) -> str:
 class HotelPromptInput(BaseModel):
     """Defines the structured input for the hotel recommendation prompt."""
 
-    city: str
+    input: str
 
 
 class HotelPrompt(Prompt[HotelPromptInput]):
@@ -62,7 +62,7 @@ class HotelPrompt(Prompt[HotelPromptInput]):
     """
 
     user_prompt = """
-    I'm planning a trip to {{ city }}. Can you recommend some hotels?
+    {{ input }}
     """
 
 
@@ -71,4 +71,4 @@ llm = LiteLLM(
     use_structured_output=True,
 )
 
-agent = Agent(llm=llm, prompt=HotelPrompt, tools=[get_hotel_recommendations])
+hotel_agent = Agent(llm=llm, prompt=HotelPrompt, tools=[get_hotel_recommendations])

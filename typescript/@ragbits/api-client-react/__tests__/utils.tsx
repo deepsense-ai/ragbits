@@ -6,7 +6,7 @@ import {
     RenderHookOptions,
     RenderResult,
 } from '@testing-library/react'
-import { RagbitsProvider } from '../src'
+import { RagbitsContextProvider } from '../src'
 import type { ConfigResponse } from '@ragbits/api-client'
 
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -20,7 +20,11 @@ interface CustomRenderHookOptions<TProps>
 
 function createWrapper(baseUrl?: string) {
     return function Wrapper({ children }: { children: React.ReactNode }) {
-        return <RagbitsProvider baseUrl={baseUrl}>{children}</RagbitsProvider>
+        return (
+            <RagbitsContextProvider baseUrl={baseUrl}>
+                {children}
+            </RagbitsContextProvider>
+        )
     }
 }
 
@@ -96,7 +100,7 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     customization: null,
-    chat: {
+    user_settings: {
         form: {
             title: 'Chat Form',
             type: 'object',
@@ -111,4 +115,5 @@ export const defaultConfigResponse: ConfigResponse = {
             },
         },
     },
+    debug_mode: false,
 }

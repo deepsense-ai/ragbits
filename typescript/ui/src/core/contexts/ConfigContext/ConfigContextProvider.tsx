@@ -3,6 +3,7 @@ import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
 import { CircularProgress, cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
+import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
@@ -23,9 +24,12 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const { feedback } = config.data;
+    const { feedback, user_settings: userSettings } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
+    }
+    if (userSettings.form) {
+      pluginManager.activate(ChatOptionsPluginName);
     }
   }, [config.data]);
 

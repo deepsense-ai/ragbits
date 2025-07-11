@@ -1,15 +1,14 @@
 import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { useHistoryContext } from "../contexts/HistoryContext/useHistoryContext";
 import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
 import { Theme } from "../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
-import { ReactNode, useState } from "react";
+import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
+import { useHistoryActions } from "../stores/historyStore";
 
 interface LayoutProps {
-  children: ReactNode;
   title: string;
   subTitle?: string;
   logo: string;
@@ -27,9 +26,9 @@ export default function Layout({
   subTitle,
   logo,
   classNames,
-}: LayoutProps) {
+}: PropsWithChildren<LayoutProps>) {
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryContext();
+  const { clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
@@ -37,10 +36,10 @@ export default function Layout({
     setTheme(theme === Theme.DARK ? Theme.LIGHT : Theme.DARK);
   };
 
-  const resetChat = () => {
+  const resetChat = useCallback(() => {
     stopAnswering();
     clearHistory();
-  };
+  }, [clearHistory, stopAnswering]);
 
   function isURL(input: string): boolean {
     if (isAbsoluteURL(input)) {
