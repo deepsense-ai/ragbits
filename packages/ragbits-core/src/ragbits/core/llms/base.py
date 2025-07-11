@@ -227,7 +227,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             "response": response["response"],
             "throughput": response["throughput"],
         }
-        for opt in ["prompt_tokens", "completion_tokens", "total_tokens", "tool_calls"]:
+        for opt in ["tool_calls", "usage"]:
             if opt in response:
                 returned[opt] = response[opt]
 
@@ -441,6 +441,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                         prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                         completion_tokens=cast(int, usage_data.get("completion_tokens")),
                         total_tokens=cast(int, usage_data.get("total_tokens")),
+                        n_requests=1,
                     )
 
                 content = response.pop("response")
@@ -457,7 +458,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 parsed_responses.append(response_with_metadata)
             outputs.response = parsed_responses
 
-            prompt_tokens = sum(r["prompt_tokens"] for r in results if "prompt_tokens" in r)
+            prompt_tokens = sum(r.usage.prompt_tokens for r in parsed_responses if r.usage)
             outputs.prompt_tokens_batch = prompt_tokens
             record_metric(
                 metric=LLMMetric.INPUT_TOKENS,
@@ -475,7 +476,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 model=self.model_name,
             )
 
-            total_tokens = sum(r["total_tokens"] for r in results if "total_tokens" in r)
+            total_tokens = sum(r.usage.total_tokens for r in parsed_responses if r.usage)
             outputs.total_tokens_batch = total_tokens
             record_metric(
                 metric=LLMMetric.TOKEN_THROUGHPUT,
@@ -575,6 +576,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                     completion_tokens=cast(int, usage_data.get("completion_tokens")),
                     total_tokens=cast(int, usage_data.get("total_tokens")),
+                    n_requests=1,
                 )
 
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore

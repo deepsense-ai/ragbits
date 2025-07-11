@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
-from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall
+from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -98,9 +98,11 @@ async def test_generate_raw_with_str(llm: MockLLM):
     assert response == {
         "response": "test response",
         "tool_calls": None,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
+        "usage": {
+            "prompt_tokens": 10,
+            "total_tokens": 30,
+            "completion_tokens": 20,
+        },
         "throughput": 1,
     }
 
@@ -111,9 +113,11 @@ async def test_generate_raw_with_chat_format(llm: MockLLM):
     assert response == {
         "response": "test response",
         "tool_calls": None,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
+        "usage": {
+            "prompt_tokens": 10,
+            "total_tokens": 30,
+            "completion_tokens": 20,
+        },
         "throughput": 1,
     }
 
@@ -124,9 +128,11 @@ async def test_generate_raw_with_base_prompt(llm: MockLLM):
     assert response == {
         "response": "test response",
         "tool_calls": None,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
+        "usage": {
+            "prompt_tokens": 10,
+            "total_tokens": 30,
+            "completion_tokens": 20,
+        },
         "throughput": 1,
     }
 
@@ -137,11 +143,14 @@ async def test_generate_metadata_with_str(llm: MockLLM):
     assert response.content == "test response"
     assert response.metadata == {
         "is_mocked": True,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
         "throughput": 1,
     }
+    assert response.usage == Usage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        n_requests=1,
+    )
 
 
 async def test_generate_metadata_with_chat_format(llm: MockLLM):
@@ -151,11 +160,14 @@ async def test_generate_metadata_with_chat_format(llm: MockLLM):
     assert response.content == "test response"
     assert response.metadata == {
         "is_mocked": True,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
         "throughput": 1,
     }
+    assert response.usage == Usage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        n_requests=1,
+    )
 
 
 async def test_generate_metadata_with_base_prompt(llm: MockLLM):
@@ -165,11 +177,14 @@ async def test_generate_metadata_with_base_prompt(llm: MockLLM):
     assert response.content == "test response"
     assert response.metadata == {
         "is_mocked": True,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
         "throughput": 1,
     }
+    assert response.usage == Usage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        n_requests=1,
+    )
 
 
 async def test_generate_metadata_with_base_prompt_list(llm: MockLLM):
@@ -180,11 +195,14 @@ async def test_generate_metadata_with_base_prompt_list(llm: MockLLM):
         assert response.content == "test response"
         assert response.metadata == {
             "is_mocked": True,
-            "prompt_tokens": 10 * (i + 1),
-            "total_tokens": 30 * (i + 1),
-            "completion_tokens": 20 * (i + 1),
             "throughput": 0.5,
         }
+        assert response.usage == Usage(
+            prompt_tokens=10 * (i + 1),
+            completion_tokens=20 * (i + 1),
+            total_tokens=30 * (i + 1),
+            n_requests=1,
+        )
 
 
 async def test_generate_metadata_with_parser_prompt(llm: MockLLM):
@@ -195,11 +213,14 @@ async def test_generate_metadata_with_parser_prompt(llm: MockLLM):
     assert response.content.message == "test response"
     assert response.metadata == {
         "is_mocked": True,
-        "prompt_tokens": 10,
-        "total_tokens": 30,
-        "completion_tokens": 20,
         "throughput": 1,
     }
+    assert response.usage == Usage(
+        prompt_tokens=10,
+        completion_tokens=20,
+        total_tokens=30,
+        n_requests=1,
+    )
 
 
 async def test_generate_stream_with_str(llm: MockLLM):
