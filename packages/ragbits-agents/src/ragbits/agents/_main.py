@@ -378,8 +378,9 @@ class Agent(
                 self.history = prompt_with_history.chat
             yield outputs
 
+    @staticmethod
     def _check_token_limits(
-        self, options: AgentOptions[LLMClientOptionsT], usage: Usage, prompt: BasePrompt, llm: LLM[LLMClientOptionsT]
+        options: AgentOptions[LLMClientOptionsT], usage: Usage, prompt: BasePrompt, llm: LLM[LLMClientOptionsT]
     ) -> None:
         if options.max_prompt_tokens or options.max_total_tokens:
             next_prompt_tokens = llm.count_tokens(prompt)
@@ -397,8 +398,9 @@ class Agent(
         if options.max_completion_tokens and usage.completion_tokens > options.max_completion_tokens:
             raise AgentMaxTokensExceededError("completion", options.max_completion_tokens, usage.completion_tokens)
 
+    @staticmethod
     def _get_llm_options(
-        self, llm_options: LLMClientOptionsT | None, options: AgentOptions[LLMClientOptionsT], usage: Usage
+        llm_options: LLMClientOptionsT | None, options: AgentOptions[LLMClientOptionsT], usage: Usage
     ) -> Options:
         actual_limits = [
             limit
