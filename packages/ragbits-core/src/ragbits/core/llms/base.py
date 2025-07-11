@@ -60,11 +60,38 @@ class Usage(BaseModel):
     A schema of token usage data
     """
 
-    prompt_tokens: int | None = None
-    completion_tokens: int | None = None
-    total_tokens: int | None = None
+    n_requests: int = 0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
 
-    n_requests: int = 1
+    def __add__(self, other: "Usage") -> "Usage":
+        if isinstance(other, Usage):
+            return Usage(
+                prompt_tokens=self.prompt_tokens + other.prompt_tokens,
+                completion_tokens=self.completion_tokens + other.completion_tokens,
+                total_tokens=self.total_tokens + other.total_tokens,
+                n_requests=self.n_requests + other.n_requests,
+            )
+
+        return NotImplemented
+
+    def __iadd__(self, other: "Usage") -> "Usage":
+        if isinstance(other, Usage):
+            self.prompt_tokens += other.prompt_tokens
+            self.completion_tokens += other.completion_tokens
+            self.total_tokens += other.total_tokens
+            self.n_requests += other.n_requests
+            return self
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        return (
+            f"Usage(n_requests={self.n_requests}, "
+            f"prompt_tokens={self.prompt_tokens}, "
+            f"completion_tokens={self.completion_tokens}, "
+            f"total_tokens={self.total_tokens})"
+        )
 
 
 class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
@@ -411,9 +438,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 usage = None
                 if usage_data := response.pop("usage", None):
                     usage = Usage(
-                        prompt_tokens=usage_data.get("prompt_tokens"),
-                        completion_tokens=usage_data.get("completion_tokens"),
-                        total_tokens=usage_data.get("total_tokens"),
+                        prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
+                        completion_tokens=cast(int, usage_data.get("completion_tokens")),
+                        total_tokens=cast(int, usage_data.get("total_tokens")),
                     )
 
                 content = response.pop("response")
@@ -545,9 +572,9 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             usage = None
             if usage_data:
                 usage = Usage(
-                    prompt_tokens=usage_data.get("prompt_tokens"),
-                    completion_tokens=usage_data.get("completion_tokens"),
-                    total_tokens=usage_data.get("total_tokens"),
+                    prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
+                    completion_tokens=cast(int, usage_data.get("completion_tokens")),
+                    total_tokens=cast(int, usage_data.get("total_tokens")),
                 )
 
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore
