@@ -1,5 +1,6 @@
 import json  # Import json for potential validation or pretty printing
 import os
+from pathlib import Path
 
 import pytest
 from googleapiclient.errors import HttpError
@@ -38,7 +39,7 @@ def setup_clientid_json():
 
 
 @pytest.fixture(autouse=True)
-def setup_local_storage_dir(tmp_path):
+def setup_local_storage_dir(tmp_path: Path):
     """Set up a temporary local storage directory for tests."""
     original_local_storage_dir = os.environ.get("LOCAL_STORAGE_DIR")
     os.environ["LOCAL_STORAGE_DIR"] = str(tmp_path)

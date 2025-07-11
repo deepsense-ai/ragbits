@@ -22,6 +22,10 @@ with suppress(ImportError):
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
+# HTTP status codes
+HTTP_NOT_FOUND = 404
+HTTP_FORBIDDEN = 403
+
 # Maps Google-native Drive MIME types → export MIME types
 GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
@@ -138,11 +142,11 @@ class GoogleDriveSource(Source):
             if "drive api" in lower_error and ("not enabled" in lower_error or "not been used" in lower_error):
                 raise Exception(
                     "Google Drive API is not enabled for your project. " "Please enable it in the Google Cloud Console."
-                )
+                ) from e
             else:
-                raise Exception(f"Google Drive API unreachable for an unknown reason: {e}")
+                raise Exception(f"Google Drive API unreachable for an unknown reason: {e}") from e
         except Exception as e:
-            raise Exception(f"An unexpected error occurred during API verification: {e}")
+            raise Exception(f"An unexpected error occurred during API verification: {e}") from e
 
     @traceable
     @requires_dependencies(["googleapiclient"], "google_drive")
@@ -204,7 +208,7 @@ class GoogleDriveSource(Source):
                     with open(path, mode="wb") as file_object:
                         file_object.write(fh.read())
                 except HttpError as e:
-                    if e.resp.status == 404:
+                    if e.resp.status == HTTP_NOT_FOUND:
                         raise FileNotFoundError(f"File with ID {self.file_id} not found on Google Drive.") from e
                     raise RuntimeError(f"Error downloading file {self.file_id}: {e}") from e
                 except Exception as e:
@@ -230,127 +234,37 @@ class GoogleDriveSource(Source):
         """
         with trace(drive_id=drive_id, recursive=recursive) as outputs:
             client = cls._get_client()
-            all_files_info: dict[str, Any] = {}
-
-            is_root_folder = False
-            is_root_shared_drive = False
-            root_file_name = ""
-
-            try:
+            
+            # Check if the drive_id is a folder, shared drive, or file
+            is_folder, is_shared_drive, root_file_name = await cls._check_drive_type(client, drive_id)
+            
+            # If it's not a folder, return the single file
+            if not is_folder:
+                if not root_file_name:  # Error occurred in _check_drive_type
+                    outputs.results = []
+                    return outputs.results
+                    
                 file_meta = (
                     client.files()
-                    .get(
-                        fileId=drive_id,
-                        fields="id, name, mimeType, capabilities/canListChildren",
-                        supportsAllDrives=True,
-                    )
+                    .get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True)
                     .execute()
                 )
-
-                root_file_name = file_meta["name"]
-                if file_meta["mimeType"] == "application/vnd.google-apps.folder":
-                    is_root_folder = True
-                    try:
-                        client.drives().get(driveId=drive_id, fields="id").execute()
-                        is_root_shared_drive = True
-                        print(f"Identified '{root_file_name}' (ID: {drive_id}) as a Shared Drive.")
-                    except HttpError as e:
-                        if e.resp.status == 404:
-                            print(f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder.")
-                        else:
-                            print(f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
-                            print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
-                    except Exception as e:
-                        print(f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
-                        print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
-                else:
-                    outputs.results = [
-                        cls(
-                            file_id=file_meta["id"],
-                            file_name=file_meta["name"],
-                            mime_type=file_meta["mimeType"],
-                            is_folder=False,
-                        )
-                    ]
-                    return outputs.results
-            except HttpError as e:
-                if e.resp.status == 404:
-                    print(f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue.")
-                else:
-                    print(f"Error fetching initial Drive ID '{drive_id}' metadata: {e}")
-                outputs.results = []
-                return outputs.results
-            except Exception as e:
-                print(f"An unexpected error occurred checking initial Drive ID '{drive_id}': {e}")
-                outputs.results = []
+                outputs.results = [
+                    cls(
+                        file_id=file_meta["id"],
+                        file_name=file_meta["name"],
+                        mime_type=file_meta["mimeType"],
+                        is_folder=False,
+                    )
+                ]
                 return outputs.results
 
-            async def _recursive_list(
-                current_folder_id: str, current_path_prefix: str = "", current_root_shared_drive_id: str | None = None
-            ):
-                page_token = None
-                query = f"'{current_folder_id}' in parents and trashed = false"
-
-                while True:
-                    try:
-                        list_params = {
-                            "q": query,
-                            "fields": "nextPageToken, files(id, name, mimeType)",
-                            "pageSize": 1000,
-                            "pageToken": page_token,
-                            "supportsAllDrives": True,
-                            "includeItemsFromAllDrives": True,
-                        }
-
-                        if current_root_shared_drive_id:
-                            list_params["corpora"] = "drive"
-                            list_params["driveId"] = current_root_shared_drive_id
-
-                        results = client.files().list(**list_params).execute()
-
-                        items = results.get("files", [])
-                        for item in items:
-                            full_local_name = os.path.join(current_path_prefix, item["name"])
-
-                            if item["mimeType"] == "application/vnd.google-apps.folder":
-                                if recursive:
-                                    next_root_shared_drive_id = current_root_shared_drive_id
-                                    if (
-                                        not next_root_shared_drive_id
-                                        and is_root_shared_drive
-                                        and current_folder_id == drive_id
-                                    ):
-                                        next_root_shared_drive_id = drive_id
-
-                                    await _recursive_list(item["id"], full_local_name, next_root_shared_drive_id)
-                            elif item["id"] not in all_files_info:
-                                all_files_info[item["id"]] = {
-                                    "id": item["id"],
-                                    "name": item["name"],
-                                    "mimeType": item["mimeType"],
-                                    "is_folder": False,
-                                    "path_in_drive": full_local_name,
-                                }
-
-                        page_token = results.get("nextPageToken", None)
-                        if not page_token:
-                            break
-                    except HttpError as e:
-                        print(f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}")
-                        if e.resp.status == 403:
-                            print(f"Permission denied for folder ID: {current_folder_id}. Skipping this folder.")
-                        break
-                    except Exception as e:
-                        print(f"An unexpected error occurred while listing folder {current_folder_id}: {e}")
-                        break
-
-            if is_root_folder:
-                await _recursive_list(
-                    drive_id, current_root_shared_drive_id=(drive_id if is_root_shared_drive else None)
-                )
-            else:
-                outputs.results = []
-                return outputs.results
+            # Process folder contents
+            all_files_info: dict[str, Any] = {}
+            
+            await cls._recursive_list_files(
+                client, drive_id, all_files_info, recursive, is_shared_drive
+            )
 
             sources = [
                 cls(file_id=info["id"], file_name=info["name"], mime_type=info["mimeType"], is_folder=info["is_folder"])
@@ -358,6 +272,129 @@ class GoogleDriveSource(Source):
             ]
             outputs.results = sources
             return outputs.results
+
+    @classmethod
+    async def _recursive_list_files(
+        cls,
+        client: "GoogleAPIResource",
+        drive_id: str,
+        all_files_info: dict[str, Any],
+        recursive: bool,
+        is_shared_drive: bool,
+    ) -> None:
+        """Helper method to recursively list files in a drive/folder."""
+        async def _recursive_list(
+            current_folder_id: str, current_path_prefix: str = "", current_root_shared_drive_id: str | None = None
+        ) -> None:
+            page_token = None
+            query = f"'{current_folder_id}' in parents and trashed = false"
+
+            while True:
+                try:
+                    list_params = {
+                        "q": query,
+                        "fields": "nextPageToken, files(id, name, mimeType)",
+                        "pageSize": 1000,
+                        "pageToken": page_token,
+                        "supportsAllDrives": True,
+                        "includeItemsFromAllDrives": True,
+                    }
+
+                    if current_root_shared_drive_id:
+                        list_params["corpora"] = "drive"
+                        list_params["driveId"] = current_root_shared_drive_id
+
+                    results = client.files().list(**list_params).execute()
+
+                    items = results.get("files", [])
+                    for item in items:
+                        full_local_name = os.path.join(current_path_prefix, item["name"])
+
+                        if item["mimeType"] == "application/vnd.google-apps.folder":
+                            if recursive:
+                                next_root_shared_drive_id = current_root_shared_drive_id
+                                if (
+                                    not next_root_shared_drive_id
+                                    and is_shared_drive
+                                    and current_folder_id == drive_id
+                                ):
+                                    next_root_shared_drive_id = drive_id
+
+                                await _recursive_list(item["id"], full_local_name, next_root_shared_drive_id)
+                        elif item["id"] not in all_files_info:
+                            all_files_info[item["id"]] = {
+                                "id": item["id"],
+                                "name": item["name"],
+                                "mimeType": item["mimeType"],
+                                "is_folder": False,
+                                "path_in_drive": full_local_name,
+                            }
+
+                    page_token = results.get("nextPageToken", None)
+                    if not page_token:
+                        break
+                except HttpError as e:
+                    print(f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}")
+                    if e.resp.status == HTTP_FORBIDDEN:
+                        print(f"Permission denied for folder ID: {current_folder_id}. Skipping this folder.")
+                    break
+                except Exception as e:
+                    print(f"An unexpected error occurred while listing folder {current_folder_id}: {e}")
+                    break
+
+        await _recursive_list(
+            drive_id, current_root_shared_drive_id=(drive_id if is_shared_drive else None)
+        )
+
+    @classmethod
+    async def _check_drive_type(cls, client: "GoogleAPIResource", drive_id: str) -> tuple[bool, bool, str]:
+        """
+        Check if the drive ID is a folder, shared drive, or regular file.
+
+        Returns:
+            Tuple of (is_folder, is_shared_drive, file_name)
+        """
+        try:
+            file_meta = (
+                client.files()
+                .get(
+                    fileId=drive_id,
+                    fields="id, name, mimeType, capabilities/canListChildren",
+                    supportsAllDrives=True,
+                )
+                .execute()
+            )
+
+            root_file_name = file_meta["name"]
+            is_folder = file_meta["mimeType"] == "application/vnd.google-apps.folder"
+            is_shared_drive = False
+
+            if is_folder:
+                try:
+                    client.drives().get(driveId=drive_id, fields="id").execute()
+                    is_shared_drive = True
+                    print(f"Identified '{root_file_name}' (ID: {drive_id}) as a Shared Drive.")
+                except HttpError as e:
+                    if e.resp.status == HTTP_NOT_FOUND:
+                        print(f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder.")
+                    else:
+                        print(f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
+                        print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
+                except Exception as e:
+                    print(f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
+                    print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
+
+            return is_folder, is_shared_drive, root_file_name
+
+        except HttpError as e:
+            if e.resp.status == HTTP_NOT_FOUND:
+                print(f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue.")
+            else:
+                print(f"Error fetching initial Drive ID '{drive_id}' metadata: {e}")
+            return False, False, ""
+        except Exception as e:
+            print(f"An unexpected error occurred checking initial Drive ID '{drive_id}': {e}")
+            return False, False, ""
 
     @classmethod
     @traceable
@@ -399,7 +436,7 @@ class GoogleDriveSource(Source):
                     )
                 ]
             except HttpError as e:
-                if e.resp.status == 404:
+                if e.resp.status == HTTP_NOT_FOUND:
                     raise FileNotFoundError(f"Google Drive item with ID '{drive_id}' not found.") from e
                 raise RuntimeError(f"Error fetching metadata for ID '{drive_id}': {e}") from e
             except Exception as e:
