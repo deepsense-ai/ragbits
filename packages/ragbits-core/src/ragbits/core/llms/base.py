@@ -19,10 +19,21 @@ from ragbits.core.prompt.base import (
     PromptOutputT,
     SimplePrompt,
 )
+from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.core.utils.config_handling import ConfigurableComponent
 from ragbits.core.utils.function_schema import convert_function_to_function_schema
 
-LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=Options)
+
+class LLMOptions(Options):
+    """
+    Options for the LLM.
+    """
+
+    max_tokens: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of tokens the LLM can use, if None, LLM will run forever"""
+
+
+LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=LLMOptions)
 Tool = Callable | dict
 
 
@@ -117,7 +128,7 @@ class LLMResultStreaming(AsyncIterator[T]):
 
     def __init__(self, generator: AsyncGenerator[T | LLMResponseWithMetadata]):
         self._generator = generator
-        self.metadata: LLMResponseWithMetadata | None = None
+        self.usage = Usage()
 
     def __aiter__(self) -> AsyncIterator[T]:
         return self
@@ -131,8 +142,10 @@ class LLMResultStreaming(AsyncIterator[T]):
                 case ToolCall():
                     pass
                 case LLMResponseWithMetadata():
-                    self.metadata = item
+                    self.metadata: LLMResponseWithMetadata = item
                     raise StopAsyncIteration
+                case Usage():
+                    self.usage += item
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
             return cast(T, item)
@@ -538,7 +551,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     ) -> AsyncGenerator[str | ToolCall | LLMResponseWithMetadata, None]:
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             merged_options = (self.default_options | options) if options else self.default_options
-
             if isinstance(prompt, str | list):
                 prompt = SimplePrompt(prompt)
 

@@ -4,7 +4,7 @@ from typing import Any
 
 from typing_extensions import Self
 
-from ragbits.core.utils.function_schema import convert_function_to_function_schema
+from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
 
 
 @dataclass
@@ -37,6 +37,8 @@ class Tool:
     """Dictionary containing the parameters JSON schema."""
     on_tool_call: Callable
     """The actual callable function to execute when the tool is called."""
+    context_var_name: str | None = None
+    """The name of the context variable that this tool accepts."""
 
     @classmethod
     def from_callable(cls, callable: Callable) -> Self:
@@ -50,11 +52,13 @@ class Tool:
             A new Tool instance representing the callable function.
         """
         schema = convert_function_to_function_schema(callable)
+
         return cls(
             name=schema["function"]["name"],
             description=schema["function"]["description"],
             parameters=schema["function"]["parameters"],
             on_tool_call=callable,
+            context_var_name=get_context_variable_name(callable),
         )
 
     def to_function_schema(self) -> dict[str, Any]:

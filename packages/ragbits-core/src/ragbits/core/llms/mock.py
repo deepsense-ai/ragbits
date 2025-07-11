@@ -1,13 +1,12 @@
 from collections.abc import AsyncGenerator, Iterable
 
-from ragbits.core.llms.base import LLM
-from ragbits.core.options import Options
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class MockLLMOptions(Options):
+class MockLLMOptions(LLMOptions):
     """
     Options for the MockLLM class.
     """
@@ -91,5 +90,13 @@ class MockLLM(LLM[MockLLMOptions]):
                 yield {"response": options.response}
             else:
                 yield {"response": "mocked response"}
+
+            yield {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                }
+            }
 
         return generator()

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 
 class AgentError(Exception):
@@ -75,3 +75,34 @@ class AgentMaxTurnsExceededError(AgentError):
             "agent = Agent(options=AgentOptions(max_turns=x))"
         )
         self.max_turns = max_turns
+
+
+class AgentMaxTokensExceededError(AgentError):
+    """
+    Raised when the maximum number of total tokens is exceeded.
+    """
+
+    def __init__(self, limit_type: Literal["total", "prompt", "completion"], limit: int, actual: int) -> None:
+        super().__init__(f"The number of {limit_type} tokens exceeded the limit of {limit}, actual: {actual}.")
+        self.limit_type = limit_type
+        self.limit = limit
+        self.actual = actual
+
+
+class AgentNextPromptOverLimitError(AgentError):
+    """
+    Raised when the next prompt won't fit under the limit.
+    """
+
+    def __init__(
+        self, limit_type: Literal["total", "prompt"], limit: int, actual: int, next_prompt_tokens: int
+    ) -> None:
+        super().__init__(
+            f"The next prompt won't fit under the limit of {limit} {limit_type} tokens, "
+            f"actual: {actual}, next_prompt_tokens: {next_prompt_tokens}.",
+        )
+
+        self.limit_type = limit_type
+        self.limit = limit
+        self.actual = actual
+        self.next_prompt_tokens = next_prompt_tokens
