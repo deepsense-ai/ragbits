@@ -10,6 +10,7 @@ This is the list of currently supported sources by Ragbits.
 |-|-|-|
 | Azure Blob Storage | `azure://https://<account-name>.blob.core.windows.net/<container-name>/<blob-name>` | [`AzureBlobStorageSource`][ragbits.core.sources.AzureBlobStorageSource] |
 | Google Cloud Storage | `gcs://<bucket-name>/<prefix>` | [`GCSSource`][ragbits.core.sources.GCSSource] |
+| Google Drive | <drive-id> | ragbits.core.sources.GoogleDriveSource |
 | Git | `git://<https-url>|<ssh-url>` | [`GitSource`][ragbits.core.sources.GitSource] |
 | Hugging Face | `hf://<dataset-path>/<split>/<row>` | [`HuggingFaceSource`][ragbits.core.sources.HuggingFaceSource] |
 | Local file | `local://<file-path>|<blob-pattern>` | [`LocalFileSource`][ragbits.core.sources.LocalFileSource] |

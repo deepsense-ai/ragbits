@@ -6,6 +6,8 @@
 
 ::: ragbits.core.sources.gcs.GCSSource
 
+::: ragbits.core.sources.google_drive.GoogleDriveSource
+
 ::: ragbits.core.sources.git.GitSource
 
 ::: ragbits.core.sources.hf.HuggingFaceSource
