@@ -169,17 +169,7 @@ class GoogleDriveSource(Source):
         file_local_dir = local_dir / self.file_id
         file_local_dir.mkdir(parents=True, exist_ok=True)
 
-        file_extension = ""
-        export_mime_type = self.mime_type
-
-        if self.mime_type.startswith("application/vnd.google-apps"):
-            export_mime_type = _GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
-            file_extension = _EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
-        elif "." in self.file_name:
-            file_extension = Path(self.file_name).suffix
-        else:
-            file_extension = _EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
-
+        export_mime_type, file_extension = self._determine_file_extension()
         local_file_name = f"{self.file_name}{file_extension}"
         path = file_local_dir / local_file_name
 
@@ -459,3 +449,23 @@ class GoogleDriveSource(Source):
 
         else:
             raise ValueError(f"Unsupported Google Drive URI pattern: {path}")
+
+    def _determine_file_extension(self) -> tuple[str, str]:
+        """
+        Determine the appropriate file extension and export MIME type for the file.
+        
+        Returns:
+            A tuple of (export_mime_type, file_extension)
+        """
+        export_mime_type = self.mime_type
+        file_extension = ""
+
+        if self.mime_type.startswith("application/vnd.google-apps"):
+            export_mime_type = _GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
+            file_extension = _EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
+        elif "." in self.file_name:
+            file_extension = Path(self.file_name).suffix
+        else:
+            file_extension = _EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
+
+        return export_mime_type, file_extension
