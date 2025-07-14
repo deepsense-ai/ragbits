@@ -547,7 +547,7 @@ class Agent(
         )
 
     async def _extract_agent_skills(self) -> list["AgentSkill"]:
-        """Usage
+        """
         The skill representation with name, id, description, and tags.
         """
         all_tools = await self._get_all_tools()
