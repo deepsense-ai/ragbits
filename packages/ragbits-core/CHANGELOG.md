@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Added GoogleDrive support (#686)
+- Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Add support for batch generation (#608)
 
