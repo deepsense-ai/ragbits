@@ -319,12 +319,15 @@ class GoogleDriveSource(Source):
                     if not page_token:
                         break
                 except HttpError as e:
-                    print(f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}")
+                    with trace("folder_listing_error") as outputs:
+                        outputs.error = f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}"
                     if e.resp.status == _HTTP_FORBIDDEN:
-                        print(f"Permission denied for folder ID: {current_folder_id}. Skipping this folder.")
+                        with trace("folder_permission_denied") as outputs:
+                            outputs.message = f"Permission denied for folder ID: {current_folder_id}. Skipping this folder."
                     break
                 except Exception as e:
-                    print(f"An unexpected error occurred while listing folder {current_folder_id}: {e}")
+                    with trace("folder_listing_unexpected_error") as outputs:
+                        outputs.error = f"An unexpected error occurred while listing folder {current_folder_id}: {e}"
                     break
 
         await _recursive_list(drive_id, current_root_shared_drive_id=(drive_id if is_shared_drive else None))
@@ -356,27 +359,34 @@ class GoogleDriveSource(Source):
                 try:
                     client.drives().get(driveId=drive_id, fields="id").execute()
                     is_shared_drive = True
-                    print(f"Identified '{root_file_name}' (ID: {drive_id}) as a Shared Drive.")
+                    with trace("drive_type_identification") as outputs:
+                        outputs.message = f"Identified '{root_file_name}' (ID: {drive_id}) as a Shared Drive."
                 except HttpError as e:
                     if e.resp.status == _HTTP_NOT_FOUND:
-                        print(f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder.")
+                        with trace("drive_type_identification") as outputs:
+                            outputs.message = f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder."
                     else:
-                        print(f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
-                        print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
+                        with trace("drive_type_identification_error") as outputs:
+                            outputs.error = f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}"
+                            outputs.fallback = f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
                 except Exception as e:
-                    print(f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
-                    print(f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder.")
+                    with trace("drive_type_identification_error") as outputs:
+                        outputs.error = f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}"
+                        outputs.fallback = f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
 
             return is_folder, is_shared_drive, root_file_name
 
         except HttpError as e:
             if e.resp.status == _HTTP_NOT_FOUND:
-                print(f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue.")
+                with trace("drive_not_found") as outputs:
+                    outputs.error = f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue."
             else:
-                print(f"Error fetching initial Drive ID '{drive_id}' metadata: {e}")
+                with trace("drive_metadata_error") as outputs:
+                    outputs.error = f"Error fetching initial Drive ID '{drive_id}' metadata: {e}"
             return False, False, ""
         except Exception as e:
-            print(f"An unexpected error occurred checking initial Drive ID '{drive_id}': {e}")
+            with trace("drive_check_error") as outputs:
+                outputs.error = f"An unexpected error occurred checking initial Drive ID '{drive_id}': {e}"
             return False, False, ""
 
     @classmethod
