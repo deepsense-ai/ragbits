@@ -48,6 +48,7 @@ _EXPORT_EXTENSION_MAP = {
     "application/json": ".json",
 }
 
+
 class GoogleDriveSource(Source):
     """
     Handles source connection for Google Drive and provides methods to fetch files.
@@ -84,7 +85,9 @@ class GoogleDriveSource(Source):
                     "Use GoogleDriveSource.set_credentials_file_path('/path/to/your/key.json')."
                 )
             try:
-                creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=_SCOPES)
+                creds = service_account.Credentials.from_service_account_file(
+                    cls._credentials_file_path, scopes=_SCOPES
+                )
                 cls._google_drive_client = build("drive", "v3", credentials=creds)
                 cls._google_drive_client.files().list(
                     pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
@@ -313,7 +316,9 @@ class GoogleDriveSource(Source):
                         outputs.error = f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}"
                     if e.resp.status == _HTTP_FORBIDDEN:
                         with trace("folder_permission_denied") as outputs:
-                            outputs.message = f"Permission denied for folder ID: {current_folder_id}. Skipping this folder."
+                            outputs.message = (
+                                f"Permission denied for folder ID: {current_folder_id}. Skipping this folder."
+                            )
                     break
                 except Exception as e:
                     with trace("folder_listing_unexpected_error") as outputs:
@@ -354,22 +359,32 @@ class GoogleDriveSource(Source):
                 except HttpError as e:
                     if e.resp.status == _HTTP_NOT_FOUND:
                         with trace("drive_type_identification") as outputs:
-                            outputs.message = f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder."
+                            outputs.message = (
+                                f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder."
+                            )
                     else:
                         with trace("drive_type_identification_error") as outputs:
                             outputs.error = f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}"
-                            outputs.fallback = f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
+                            outputs.fallback = (
+                                f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
+                            )
                 except Exception as e:
                     with trace("drive_type_identification_error") as outputs:
-                        outputs.error = f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}"
-                        outputs.fallback = f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
+                        outputs.error = (
+                            f"Unexpected error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}"
+                        )
+                        outputs.fallback = (
+                            f"Assuming '{root_file_name}' (ID: {drive_id}) is a standard Google Drive folder."
+                        )
 
             return is_folder, is_shared_drive, root_file_name
 
         except HttpError as e:
             if e.resp.status == _HTTP_NOT_FOUND:
                 with trace("drive_not_found") as outputs:
-                    outputs.error = f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue."
+                    outputs.error = (
+                        f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue."
+                    )
             else:
                 with trace("drive_metadata_error") as outputs:
                     outputs.error = f"Error fetching initial Drive ID '{drive_id}' metadata: {e}"
