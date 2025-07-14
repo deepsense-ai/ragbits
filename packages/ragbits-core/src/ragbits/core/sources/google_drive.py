@@ -11,8 +11,6 @@ from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
-    import io
-
     from google.auth import exceptions
     from google.oauth2 import service_account
     from googleapiclient.discovery import Resource as GoogleAPIResource
@@ -20,14 +18,14 @@ with suppress(ImportError):
     from googleapiclient.errors import HttpError
     from googleapiclient.http import MediaIoBaseDownload
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
+_SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 # HTTP status codes
-HTTP_NOT_FOUND = 404
-HTTP_FORBIDDEN = 403
+_HTTP_NOT_FOUND = 404
+_HTTP_FORBIDDEN = 403
 
 # Maps Google-native Drive MIME types → export MIME types
-GOOGLE_EXPORT_MIME_MAP = {
+_GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
     "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
     "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
@@ -39,7 +37,7 @@ GOOGLE_EXPORT_MIME_MAP = {
 }
 
 # Maps export MIME types → file extensions
-EXPORT_EXTENSION_MAP = {
+_EXPORT_EXTENSION_MAP = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
@@ -49,9 +47,6 @@ EXPORT_EXTENSION_MAP = {
     "text/plain": ".txt",
     "application/json": ".json",
 }
-
-LRO_EXPORT_SIZE_THRESHOLD = 9 * 1024 * 1024  # 9MB
-
 
 class GoogleDriveSource(Source):
     """
@@ -89,7 +84,7 @@ class GoogleDriveSource(Source):
                     "Use GoogleDriveSource.set_credentials_file_path('/path/to/your/key.json')."
                 )
             try:
-                creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=SCOPES)
+                creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=_SCOPES)
                 cls._google_drive_client = build("drive", "v3", credentials=creds)
                 cls._google_drive_client.files().list(
                     pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
@@ -178,12 +173,12 @@ class GoogleDriveSource(Source):
         export_mime_type = self.mime_type
 
         if self.mime_type.startswith("application/vnd.google-apps"):
-            export_mime_type = GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
-            file_extension = EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
+            export_mime_type = _GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
+            file_extension = _EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
         elif "." in self.file_name:
             file_extension = Path(self.file_name).suffix
         else:
-            file_extension = EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
+            file_extension = _EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
 
         local_file_name = f"{self.file_name}{file_extension}"
         path = file_local_dir / local_file_name
@@ -205,7 +200,7 @@ class GoogleDriveSource(Source):
                             _, done = downloader.next_chunk()
 
                 except HttpError as e:
-                    if e.resp.status == HTTP_NOT_FOUND:
+                    if e.resp.status == _HTTP_NOT_FOUND:
                         raise FileNotFoundError(f"File with ID {self.file_id} not found on Google Drive.") from e
                     raise RuntimeError(f"Error downloading file {self.file_id}: {e}") from e
                 except Exception as e:
@@ -325,7 +320,7 @@ class GoogleDriveSource(Source):
                         break
                 except HttpError as e:
                     print(f"Error listing folder {current_folder_id} (path: {current_path_prefix}): {e}")
-                    if e.resp.status == HTTP_FORBIDDEN:
+                    if e.resp.status == _HTTP_FORBIDDEN:
                         print(f"Permission denied for folder ID: {current_folder_id}. Skipping this folder.")
                     break
                 except Exception as e:
@@ -363,7 +358,7 @@ class GoogleDriveSource(Source):
                     is_shared_drive = True
                     print(f"Identified '{root_file_name}' (ID: {drive_id}) as a Shared Drive.")
                 except HttpError as e:
-                    if e.resp.status == HTTP_NOT_FOUND:
+                    if e.resp.status == _HTTP_NOT_FOUND:
                         print(f"Identified '{root_file_name}' (ID: {drive_id}) as a standard Google Drive folder.")
                     else:
                         print(f"Error checking if ID '{drive_id}' is a Shared Drive (ignoring): {e}")
@@ -375,7 +370,7 @@ class GoogleDriveSource(Source):
             return is_folder, is_shared_drive, root_file_name
 
         except HttpError as e:
-            if e.resp.status == HTTP_NOT_FOUND:
+            if e.resp.status == _HTTP_NOT_FOUND:
                 print(f"Initial Drive ID '{drive_id}' not found. It might be non-existent or a permission issue.")
             else:
                 print(f"Error fetching initial Drive ID '{drive_id}' metadata: {e}")
@@ -424,7 +419,7 @@ class GoogleDriveSource(Source):
                     )
                 ]
             except HttpError as e:
-                if e.resp.status == HTTP_NOT_FOUND:
+                if e.resp.status == _HTTP_NOT_FOUND:
                     raise FileNotFoundError(f"Google Drive item with ID '{drive_id}' not found.") from e
                 raise RuntimeError(f"Error fetching metadata for ID '{drive_id}': {e}") from e
             except Exception as e:
