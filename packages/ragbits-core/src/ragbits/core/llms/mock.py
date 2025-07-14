@@ -37,6 +37,8 @@ class MockLLM(LLM[MockLLMOptions]):
         Args:
             model_name: Name of the model to be used.
             default_options: Default options to be used.
+            price_per_prompt_token: The price per prompt token.
+            price_per_completion_token: The price per completion token.
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
