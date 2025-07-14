@@ -252,7 +252,9 @@ async def test_agent_run_tools_with_context(
             arguments={
                 "location": "San Francisco",
             },
-            result=context,
+            result=AgentRunContext(
+                usage=Usage(n_requests=2, prompt_tokens=20, completion_tokens=40, total_tokens=60, estimated_cost=0.0)
+            ),
         ),
     ]
 
