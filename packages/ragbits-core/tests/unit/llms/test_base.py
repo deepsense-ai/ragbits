@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
-from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall, Usage
+from ragbits.core.llms.base import LLMResponseWithMetadata, ToolCall, Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -146,10 +146,15 @@ async def test_generate_metadata_with_str(llm: MockLLM):
         "throughput": 1,
     }
     assert response.usage == Usage(
-        prompt_tokens=10,
-        completion_tokens=20,
-        total_tokens=30,
-        n_requests=1,
+        requests=[
+            UsageItem(
+                model="mock:mock",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                estimated_cost=0.0,
+            )
+        ]
     )
 
 
@@ -163,10 +168,15 @@ async def test_generate_metadata_with_chat_format(llm: MockLLM):
         "throughput": 1,
     }
     assert response.usage == Usage(
-        prompt_tokens=10,
-        completion_tokens=20,
-        total_tokens=30,
-        n_requests=1,
+        requests=[
+            UsageItem(
+                model="mock:mock",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                estimated_cost=0.0,
+            )
+        ]
     )
 
 
@@ -180,10 +190,15 @@ async def test_generate_metadata_with_base_prompt(llm: MockLLM):
         "throughput": 1,
     }
     assert response.usage == Usage(
-        prompt_tokens=10,
-        completion_tokens=20,
-        total_tokens=30,
-        n_requests=1,
+        requests=[
+            UsageItem(
+                model="mock:mock",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                estimated_cost=0.0,
+            )
+        ]
     )
 
 
@@ -198,10 +213,15 @@ async def test_generate_metadata_with_base_prompt_list(llm: MockLLM):
             "throughput": 0.5,
         }
         assert response.usage == Usage(
-            prompt_tokens=10 * (i + 1),
-            completion_tokens=20 * (i + 1),
-            total_tokens=30 * (i + 1),
-            n_requests=1,
+            requests=[
+                UsageItem(
+                    model="mock:mock",
+                    prompt_tokens=10 * (i + 1),
+                    completion_tokens=20 * (i + 1),
+                    total_tokens=30 * (i + 1),
+                    estimated_cost=0.0,
+                )
+            ]
         )
 
 
@@ -216,10 +236,15 @@ async def test_generate_metadata_with_parser_prompt(llm: MockLLM):
         "throughput": 1,
     }
     assert response.usage == Usage(
-        prompt_tokens=10,
-        completion_tokens=20,
-        total_tokens=30,
-        n_requests=1,
+        requests=[
+            UsageItem(
+                model="mock:mock",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                estimated_cost=0.0,
+            )
+        ]
     )
 
 
