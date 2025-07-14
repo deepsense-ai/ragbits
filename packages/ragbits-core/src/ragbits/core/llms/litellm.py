@@ -99,6 +99,28 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if custom_model_cost_config:
             litellm.register_model(custom_model_cost_config)
 
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "litellm:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+
+        Args:
+            prompt_tokens: The number of tokens in the prompt.
+            completion_tokens: The number of tokens in the completion.
+
+        Returns:
+            The estimated cost of the LLM call.
+        """
+        response_cost = litellm.model_cost[self.model_name]
+        response_cost_input = prompt_tokens * response_cost["input_cost_per_token"]
+        response_cost_output = completion_tokens * response_cost["output_cost_per_token"]
+        return response_cost_input + response_cost_output
+
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the prompt.

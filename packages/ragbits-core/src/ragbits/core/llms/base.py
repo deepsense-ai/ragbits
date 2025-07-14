@@ -2,9 +2,9 @@ import enum
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, MutableSequence
-from typing import ClassVar, Generic, TypeVar, cast, overload
+from typing import ClassVar, Generic, TypeVar, Union, cast, overload
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from typing_extensions import deprecated
 
 from ragbits.core import llms
@@ -66,34 +66,125 @@ class ToolCall(BaseModel):
         return pased_arguments
 
 
+class UsageItem(BaseModel):
+    """
+    A schema of token usage data
+    """
+
+    model: str
+
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+    estimated_cost: float
+
+
 class Usage(BaseModel):
     """
     A schema of token usage data
     """
 
-    n_requests: int = 0
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
+    requests: list[UsageItem] = Field(default_factory=list)
 
-    def __add__(self, other: "Usage") -> "Usage":
+    @classmethod
+    def new(
+        cls,
+        llm: "LLM",
+        prompt_tokens: int,
+        completion_tokens: int,
+        total_tokens: int,
+    ) -> "Usage":
+        """
+        Creates a new Usage object.
+
+        Args:
+            llm: The LLM instance.
+            prompt_tokens: The number of tokens in the prompt.
+            completion_tokens: The number of tokens in the completion.
+            total_tokens: The total number of tokens.
+        """
+        return cls(
+            requests=[
+                UsageItem(
+                    model=llm.get_model_id(),
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
+                    total_tokens=total_tokens,
+                    estimated_cost=llm.get_estimated_cost(prompt_tokens, completion_tokens),
+                )
+            ]
+        )
+
+    @property
+    def n_requests(self) -> int:
+        """
+        Returns the number of requests.
+        """
+        return len(self.requests)
+
+    @property
+    def estimated_cost(self) -> float:
+        """
+        Returns the estimated cost.
+        """
+        return sum(request.estimated_cost for request in self.requests)
+
+    @property
+    def prompt_tokens(self) -> int:
+        """
+        Returns the number of prompt tokens.
+        """
+        return sum(request.prompt_tokens for request in self.requests)
+
+    @property
+    def completion_tokens(self) -> int:
+        """
+        Returns the number of completion tokens.
+        """
+        return sum(request.completion_tokens for request in self.requests)
+
+    @property
+    def total_tokens(self) -> int:
+        """
+        Returns the total number of tokens.
+        """
+        return sum(request.total_tokens for request in self.requests)
+
+    @property
+    def model_breakdown(self) -> dict[str, "Usage"]:
+        """
+        Returns the model breakdown.
+        """
+        breakdown = {}
+        for request in self.requests:
+            if request.model not in breakdown:
+                breakdown[request.model] = Usage(requests=[request])
+            else:
+                breakdown[request.model] += request
+
+        return breakdown
+
+    def __add__(self, other: Union["Usage", "UsageItem"]) -> "Usage":
         if isinstance(other, Usage):
             return Usage(
-                prompt_tokens=self.prompt_tokens + other.prompt_tokens,
-                completion_tokens=self.completion_tokens + other.completion_tokens,
-                total_tokens=self.total_tokens + other.total_tokens,
-                n_requests=self.n_requests + other.n_requests,
+                requests=self.requests + other.requests,
             )
+
+        if isinstance(other, UsageItem):
+            return Usage(requests=self.requests + [other])
 
         return NotImplemented
 
-    def __iadd__(self, other: "Usage") -> "Usage":
+    def __iadd__(self, other: Union["Usage", "UsageItem"]) -> "Usage":
         if isinstance(other, Usage):
-            self.prompt_tokens += other.prompt_tokens
-            self.completion_tokens += other.completion_tokens
-            self.total_tokens += other.total_tokens
-            self.n_requests += other.n_requests
+            self.requests += other.requests
             return self
+
+        if isinstance(other, UsageItem):
+            self.requests.append(other)
+            return self
+
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -101,7 +192,8 @@ class Usage(BaseModel):
             f"Usage(n_requests={self.n_requests}, "
             f"prompt_tokens={self.prompt_tokens}, "
             f"completion_tokens={self.completion_tokens}, "
-            f"total_tokens={self.total_tokens})"
+            f"total_tokens={self.total_tokens}, "
+            f"estimated_cost={self.estimated_cost})"
         )
 
 
@@ -143,6 +235,8 @@ class LLMResultStreaming(AsyncIterator[T]):
                     pass
                 case LLMResponseWithMetadata():
                     self.metadata: LLMResponseWithMetadata = item
+                    if item.usage:
+                        self.usage += item.usage
                     raise StopAsyncIteration
                 case Usage():
                     self.usage += item
@@ -179,6 +273,25 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     def __init_subclass__(cls) -> None:
         if not hasattr(cls, "options_cls"):
             raise TypeError(f"Class {cls.__name__} is missing the 'options_cls' attribute")
+
+    @abstractmethod
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+
+    @abstractmethod
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+
+        Args:
+            prompt_tokens: The number of tokens in the prompt.
+            completion_tokens: The number of tokens in the completion.
+
+        Returns:
+            The estimated cost of the LLM call.
+        """
 
     def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
         """
@@ -450,11 +563,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
                 usage = None
                 if usage_data := response.pop("usage", None):
-                    usage = Usage(
+                    usage = Usage.new(
+                        llm=self,
                         prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                         completion_tokens=cast(int, usage_data.get("completion_tokens")),
                         total_tokens=cast(int, usage_data.get("total_tokens")),
-                        n_requests=1,
                     )
 
                 content = response.pop("response")
@@ -584,11 +697,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             usage = None
             if usage_data:
-                usage = Usage(
+                usage = Usage.new(
+                    llm=self,
                     prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                     completion_tokens=cast(int, usage_data.get("completion_tokens")),
                     total_tokens=cast(int, usage_data.get("total_tokens")),
-                    n_requests=1,
                 )
 
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore

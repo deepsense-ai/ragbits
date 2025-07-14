@@ -34,6 +34,18 @@ class MockLLM(LLM[MockLLMOptions]):
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
 
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "mock:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+        """
+        return 0.0
+
     async def _call(  # noqa: PLR6301
         self,
         prompt: Iterable[BasePrompt],

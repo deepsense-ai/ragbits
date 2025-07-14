@@ -81,6 +81,18 @@ class LocalLLM(LLM[LocalLLMOptions]):
             ) from e
         self.api_key = api_key
 
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "local:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+        """
+        return 0.0
+
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the messages.

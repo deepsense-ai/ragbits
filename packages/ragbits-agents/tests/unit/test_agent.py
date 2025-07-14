@@ -13,7 +13,7 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
-from ragbits.core.llms.base import Usage
+from ragbits.core.llms.base import Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
 
@@ -266,10 +266,15 @@ async def test_agent_run_context_is_updated(llm_without_tool_call: MockLLM, meth
     )
     _ = await method(agent, context=context)
     assert context.usage == Usage(
-        prompt_tokens=10,
-        completion_tokens=20,
-        total_tokens=30,
-        n_requests=1,
+        requests=[
+            UsageItem(
+                model="mock:mock",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                estimated_cost=0.0,
+            )
+        ]
     )
 
 

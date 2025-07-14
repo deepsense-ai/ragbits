@@ -368,8 +368,8 @@ class Agent(
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
                 turn_count += 1
-                if streaming_result.metadata.usage:
-                    context.usage += streaming_result.metadata.usage
+                if streaming_result.usage:
+                    context.usage += streaming_result.usage
 
                 if not returned_tool_call:
                     break
