@@ -1,7 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
-- Add persistent user settings (#718)
+- Add persistent user settings (#719)
+- Send chat options under `user_settings` key (#720)
 
 ## 1.1.0 (2025-07-09)
 

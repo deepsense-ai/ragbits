@@ -1,13 +1,12 @@
 from collections.abc import AsyncGenerator, Iterable
 
-from ragbits.core.llms.base import LLM
-from ragbits.core.options import Options
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class MockLLMOptions(Options):
+class MockLLMOptions(LLMOptions):
     """
     Options for the MockLLM class.
     """
@@ -24,16 +23,39 @@ class MockLLM(LLM[MockLLMOptions]):
 
     options_cls = MockLLMOptions
 
-    def __init__(self, model_name: str = "mock", default_options: MockLLMOptions | None = None) -> None:
+    def __init__(
+        self,
+        model_name: str = "mock",
+        default_options: MockLLMOptions | None = None,
+        *,
+        price_per_prompt_token: float = 0.0,
+        price_per_completion_token: float = 0.0,
+    ) -> None:
         """
         Constructs a new MockLLM instance.
 
         Args:
             model_name: Name of the model to be used.
             default_options: Default options to be used.
+            price_per_prompt_token: The price per prompt token.
+            price_per_completion_token: The price per completion token.
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
+        self._price_per_prompt_token = price_per_prompt_token
+        self._price_per_completion_token = price_per_completion_token
+
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "mock:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+        """
+        return self._price_per_prompt_token * prompt_tokens + self._price_per_completion_token * completion_tokens
 
     async def _call(  # noqa: PLR6301
         self,
@@ -91,5 +113,13 @@ class MockLLM(LLM[MockLLMOptions]):
                 yield {"response": options.response}
             else:
                 yield {"response": "mocked response"}
+
+            yield {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                }
+            }
 
         return generator()

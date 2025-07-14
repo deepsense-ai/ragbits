@@ -7,10 +7,14 @@ from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
+from pydantic import BaseModel, Field
+
 from ragbits import agents
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
+    AgentMaxTokensExceededError,
     AgentMaxTurnsExceededError,
+    AgentNextPromptOverLimitError,
     AgentToolDuplicateError,
     AgentToolExecutionError,
     AgentToolNotAvailableError,
@@ -20,7 +24,7 @@ from ragbits.agents.mcp.server import MCPServer
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -46,6 +50,8 @@ class AgentResult(Generic[PromptOutputT]):
     """The history of the agent."""
     tool_calls: list[ToolCallResult] | None = None
     """Tool calls run by the agent."""
+    usage: Usage = Field(default_factory=Usage)
+    """The token usage of the agent run."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -58,6 +64,24 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_turns: int | None | NotGiven = NOT_GIVEN
     """The maximum number of turns the agent can take, if NOT_GIVEN,
     it defaults to 10, if None, agent will run forever"""
+    max_total_tokens: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
+    max_prompt_tokens: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of prompt tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
+    max_completion_tokens: int | None | NotGiven = NOT_GIVEN
+    """The maximum number of completion tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
+
+
+class AgentRunContext(BaseModel):
+    """
+    Context for the agent run.
+    """
+
+    usage: Usage = Field(default_factory=Usage)
+    """The usage of the agent."""
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
@@ -67,12 +91,15 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
     all items are available under the same names as in AgentResult class.
     """
 
-    def __init__(self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]):
+    def __init__(
+        self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]
+    ):
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
         self.metadata: dict = {}
         self.history: ChatFormat
+        self.usage: Usage = Usage()
 
     def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
         return self
@@ -100,6 +127,9 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
                         "tool_calls": self.tool_calls,
                     }
                     raise StopAsyncIteration
+                case Usage():
+                    self.usage = item
+                    return await self.__anext__()
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
             return item
@@ -161,6 +191,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -168,10 +199,14 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -182,6 +217,7 @@ class Agent(
                 - PromptInputT: Structured input for use with structured prompt classes.
                 - None: No input. Only valid when a string prompt was provided during initialization.
             options: The options for the agent run.
+            context: The context for the agent run.
 
         Returns:
             The result of the agent run.
@@ -193,9 +229,12 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
+        if context is None:
+            context = AgentRunContext()
+
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or None
+        llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -206,19 +245,22 @@ class Agent(
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
+                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
                         tools=[tool.to_function_schema() for tool in tools_mapping.values()],
-                        options=llm_options,
+                        options=self._get_llm_options(llm_options, merged_options, context.usage),
                     ),
                 )
+                context.usage += response.usage or Usage()
+
                 if not response.tool_calls:
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping)
+                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context)
                     tool_calls.append(result)
 
                     prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
@@ -243,6 +285,7 @@ class Agent(
                 metadata=response.metadata,
                 tool_calls=tool_calls or None,
                 history=prompt_with_history.chat,
+                usage=context.usage,
             )
 
     @overload
@@ -250,6 +293,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -257,10 +301,14 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -269,6 +317,7 @@ class Agent(
         Args:
             input: The input for the agent run.
             options: The options for the agent run.
+            context: The context for the agent run.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -280,15 +329,21 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
-        generator = self._stream_internal(input, options)
+        generator = self._stream_internal(input, options, context)
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
-        self, input: str | PromptInputT | None = None, options: AgentOptions[LLMClientOptionsT] | None = None
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt]:
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
+        if context is None:
+            context = AgentRunContext()
+
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or None
+        llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -298,29 +353,70 @@ class Agent(
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
-                async for chunk in self.llm.generate_streaming(
+                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+                streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
-                    options=llm_options,
-                ):
+                    options=self._get_llm_options(llm_options, merged_options, context.usage),
+                )
+                async for chunk in streaming_result:
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping)
+                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping, context=context)
                         yield result
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
                 turn_count += 1
+                if streaming_result.usage:
+                    context.usage += streaming_result.usage
 
                 if not returned_tool_call:
                     break
             else:
                 raise AgentMaxTurnsExceededError(cast(int, max_turns))
 
+            yield context.usage
             yield prompt_with_history
             if self.keep_history:
                 self.history = prompt_with_history.chat
             yield outputs
+
+    @staticmethod
+    def _check_token_limits(
+        options: AgentOptions[LLMClientOptionsT], usage: Usage, prompt: BasePrompt, llm: LLM[LLMClientOptionsT]
+    ) -> None:
+        if options.max_prompt_tokens or options.max_total_tokens:
+            next_prompt_tokens = llm.count_tokens(prompt)
+            if options.max_prompt_tokens and next_prompt_tokens > options.max_prompt_tokens - usage.prompt_tokens:
+                raise AgentMaxTokensExceededError("prompt", options.max_prompt_tokens, next_prompt_tokens)
+            if options.max_total_tokens and next_prompt_tokens > options.max_total_tokens - usage.total_tokens:
+                raise AgentNextPromptOverLimitError(
+                    "total", options.max_total_tokens, usage.total_tokens, next_prompt_tokens
+                )
+
+        if options.max_total_tokens and usage.total_tokens > options.max_total_tokens:
+            raise AgentMaxTokensExceededError("total", options.max_total_tokens, usage.total_tokens)
+        if options.max_prompt_tokens and usage.prompt_tokens > options.max_prompt_tokens:
+            raise AgentMaxTokensExceededError("prompt", options.max_prompt_tokens, usage.prompt_tokens)
+        if options.max_completion_tokens and usage.completion_tokens > options.max_completion_tokens:
+            raise AgentMaxTokensExceededError("completion", options.max_completion_tokens, usage.completion_tokens)
+
+    @staticmethod
+    def _get_llm_options(
+        llm_options: LLMClientOptionsT, options: AgentOptions[LLMClientOptionsT], usage: Usage
+    ) -> LLMClientOptionsT:
+        actual_limits: list[int] = [
+            limit
+            for limit in (options.max_total_tokens, options.max_prompt_tokens, options.max_completion_tokens)
+            if isinstance(limit, int)
+        ]
+
+        if not actual_limits:
+            return llm_options
+
+        llm_options.max_tokens = min(actual_limits) - usage.total_tokens
+        return llm_options
 
     def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
         curr_history = deepcopy(self.history)
@@ -373,7 +469,9 @@ class Agent(
         return tools_mapping
 
     @staticmethod
-    async def _execute_tool(tool_call: ToolCall, tools_mapping: dict[str, Tool]) -> ToolCallResult:
+    async def _execute_tool(
+        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+    ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
@@ -383,10 +481,14 @@ class Agent(
         tool = tools_mapping[tool_call.name]
 
         try:
+            call_args = tool_call.arguments.copy()
+            if tool.context_var_name:
+                call_args[tool.context_var_name] = context
+
             tool_output = (
-                await tool.on_tool_call(**tool_call.arguments)
+                await tool.on_tool_call(**call_args)
                 if iscoroutinefunction(tool.on_tool_call)
-                else tool.on_tool_call(**tool_call.arguments)
+                else tool.on_tool_call(**call_args)
             )
         except Exception as e:
             raise AgentToolExecutionError(tool_call.name, e) from e
@@ -446,10 +548,7 @@ class Agent(
 
     async def _extract_agent_skills(self) -> list["AgentSkill"]:
         """
-        Extract agent skills from all available tools.
-
-        Returns:
-            The skill representation with name, id, description, and tags.
+        The skill representation with name, id, description, and tags.
         """
         all_tools = await self._get_all_tools()
         return [

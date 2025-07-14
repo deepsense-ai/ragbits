@@ -14,13 +14,12 @@ except ImportError:
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM
-from ragbits.core.options import Options
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LocalLLMOptions(Options):
+class LocalLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
     Each of them is described in the [HuggingFace documentation]
@@ -53,6 +52,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         default_options: LocalLLMOptions | None = None,
         *,
         api_key: str | None = None,
+        price_per_prompt_token: float = 0.0,
+        price_per_completion_token: float = 0.0,
     ) -> None:
         """
         Constructs a new local LLM instance.
@@ -61,6 +62,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
             model_name: Name of the model to use. This should be a model from the CausalLM class.
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
+            price_per_prompt_token: The price per prompt token.
+            price_per_completion_token: The price per completion token.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -81,6 +84,20 @@ class LocalLLM(LLM[LocalLLMOptions]):
                 f"{model_name} was not trained as a chat model - it doesn't support chat template. Select another model"
             ) from e
         self.api_key = api_key
+        self._price_per_prompt_token = price_per_prompt_token
+        self._price_per_completion_token = price_per_completion_token
+
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "local:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+        """
+        return self._price_per_prompt_token * prompt_tokens + self._price_per_completion_token * completion_tokens
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """

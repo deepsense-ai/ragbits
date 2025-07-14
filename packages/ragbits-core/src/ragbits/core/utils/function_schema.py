@@ -5,6 +5,7 @@ import contextlib
 import inspect
 import logging
 from collections.abc import Callable, Generator
+from types import UnionType
 from typing import Any, get_args, get_origin, get_type_hints
 
 from griffe import Docstring, DocstringSectionKind
@@ -85,15 +86,10 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
     params = list(sig.parameters.items())
     filtered_params = []
 
-    if params:
-        first_name, first_param = params[0]
-        # Prefer the evaluated type hint if available
-        ann = type_hints.get(first_name, first_param.annotation)
-        filtered_params.append((first_name, first_param))
-
-    # For parameters other than the first, raise error if any use RunContextWrapper.
-    for name, param in params[1:]:
+    for name, param in params:
         ann = type_hints.get(name, param.annotation)
+        if _is_context_variable(ann):
+            continue
         filtered_params.append((name, param))
 
     # We will collect field definitions for create_model as a dict:
@@ -184,3 +180,31 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
             },
         },
     }
+
+
+def get_context_variable_name(func: Callable[..., Any]) -> str | None:
+    """
+    Check if a function accepts AgentRunContext as a parameter.
+    """
+    sig = inspect.signature(func)
+    type_hints = get_type_hints(func)
+
+    for name, param in sig.parameters.items():
+        ann = type_hints.get(name, param.annotation)
+        if _is_context_variable(ann):
+            return name
+
+    return None
+
+
+def _is_context_variable(ann: Any) -> bool:  # noqa: ANN401
+    """
+    Check if a type annotation is AgentRunContext.
+    """
+    if hasattr(ann, "__name__") and ann.__name__ == "AgentRunContext":
+        return True
+
+    if get_origin(ann) is UnionType:
+        return any(_is_context_variable(arg) for arg in get_args(ann))
+
+    return isinstance(ann, str) and "AgentRunContext" in ann
