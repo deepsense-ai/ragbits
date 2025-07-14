@@ -18,12 +18,12 @@ import {
 } from "../../../core/stores/historyStore";
 import { useEffect } from "react";
 import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
+import { useShallow } from "zustand/shallow";
 
 export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const chatOptions = useHistoryStore((s) => s.chatOptions);
-  const { setChatOptions } = useHistoryActions();
-
+  const chatOptions = useHistoryStore(useShallow((s) => s.chatOptions));
+  const { setChatOptions, initializeChatOptions } = useHistoryActions();
   const {
     config: { user_settings: userSettings },
   } = useConfigContext();
@@ -47,8 +47,8 @@ export default function ChatOptionsForm() {
     }
 
     const defaultState = getDefaultBasedOnSchemaType(validator, schema);
-    setChatOptions(defaultState);
-  }, [schema, setChatOptions]);
+    initializeChatOptions(defaultState);
+  }, [initializeChatOptions, schema]);
 
   if (!schema) {
     return null;
