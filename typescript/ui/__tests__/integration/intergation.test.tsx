@@ -24,16 +24,18 @@ import {
   StreamCallbacks,
   ChatResponse,
 } from "@ragbits/api-client-react";
-import { useConfigContext } from "../src/core/contexts/ConfigContext/useConfigContext";
-import { ConfigContextProvider } from "../src/core/contexts/ConfigContext/ConfigContextProvider";
+import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
+import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
 import userEvent from "@testing-library/user-event";
-import PromptInput from "../src/core/components/inputs/PromptInput/PromptInput";
-import { pluginManager } from "../src/core/utils/plugins/PluginManager";
-import { ChatOptionsPlugin } from "../src/plugins/ChatOptionsPlugin";
-import { useHistoryStore } from "../src/core/stores/historyStore";
-import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
+import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
+import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
+import { ChatOptionsPlugin } from "../../src/plugins/ChatOptionsPlugin";
+import { useHistoryStore } from "../../src/core/stores/historyStore";
+import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackForm";
+import { enableMapSet } from "immer";
 
 describe("Integration tests", () => {
+  enableMapSet();
   const BASE_URL = "http://127.0.0.1:8000";
   const renderWithHook = <R,>(hook: () => R) => {
     return renderHook(() => hook(), {
