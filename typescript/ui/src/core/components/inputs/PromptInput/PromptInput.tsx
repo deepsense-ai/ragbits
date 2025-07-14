@@ -76,7 +76,8 @@ const PromptInput = ({
 
   const handleSubmit = useCallback(
     (text?: string) => {
-      if (!message && !isLoading && !text) return;
+      if (!message && !text) return;
+      stopAnswering();
 
       submit(text ?? message);
       setQuickMessages((quickMessages) => {
@@ -87,7 +88,7 @@ const PromptInput = ({
       setMessage("");
       textAreaRef?.current?.focus();
     },
-    [isLoading, submit, message],
+    [message, stopAnswering, submit],
   );
 
   const onSubmit = useCallback(
