@@ -107,7 +107,12 @@ export default function LiveUpdates({
           )}
         </div>
         {hasMultipleUpdates && (
-          <Button variant="light" isIconOnly onPress={toggleExpanded}>
+          <Button
+            variant="light"
+            isIconOnly
+            onPress={toggleExpanded}
+            data-testid="live-updates-expand"
+          >
             <motion.div
               initial={{ rotate: 0 }}
               animate={{ rotate: isExpanded ? 180 : 0 }}

@@ -24,8 +24,6 @@ import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
 interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
-  onArrowUp?: (isFirstLine: boolean) => void;
-  onArrowDown?: (isLastLine: boolean) => void;
   isLoading: boolean;
   followupMessages?: string[] | null;
   history?: ChatMessage[];
@@ -196,6 +194,8 @@ const PromptInput = ({
           value={message}
           onKeyDown={handleKeyDown}
           onValueChange={handleValueChange}
+          data-testid="prompt-input-input"
+          data-value={message}
           {...inputProps}
         />
         <div className="flex items-center gap-2">
@@ -229,6 +229,7 @@ const PromptInput = ({
                     !message ? "text-default-600" : "text-primary-foreground",
                   )}
                   icon="heroicons:arrow-up"
+                  data-testid="prompt-input-send-icon"
                   width={20}
                 />
               ))}
@@ -237,6 +238,7 @@ const PromptInput = ({
                 <Icon
                   className="text-primary-foreground"
                   icon="heroicons:stop"
+                  data-testid="prompt-input-stop-icon"
                   width={20}
                 />
               ))}
