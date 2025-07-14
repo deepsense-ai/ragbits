@@ -25,7 +25,7 @@ nav:
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Data Sources:
         - "Load data from sources": how-to/sources/load-dataset.md
-        - "Use google drive as a data source": how-to/sources/use_google_drive.md
+        - "Use google drive as a data source": how-to/sources/google-drive.md
       - Observability:
         - "Trace code execution": how-to/audit/use_tracing.md
         - "Track metrics": how-to/audit/use_metrics.md
