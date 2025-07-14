@@ -18,6 +18,14 @@ PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
 FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
 
 
+class Attachment(BaseModel):
+    """Represents an image attachment that can be passed to a LLM."""
+
+    url: str | None = None
+    data: bytes | None = None
+    mime_type: str | None = None
+
+
 class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOutputT], metaclass=ABCMeta):
     """
     Generic class for prompts. It contains the system and user prompts, and additional messages.
@@ -81,8 +89,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return template.render(**context)
 
     @classmethod
-    def _get_images_from_input_data(cls, input_data: PromptInputT | None | str) -> list[bytes | str]:
-        images: list[bytes | str] = []
+    def _get_images_from_input_data(cls, input_data: PromptInputT | None | str) -> list[Attachment | bytes | str]:
+        images: list[bytes | str | Attachment] = []
         if isinstance(input_data, BaseModel):
             image_input_fields = cls.image_input_fields or []
             for field in image_input_fields:
@@ -286,14 +294,24 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         ]
 
     @staticmethod
-    def _create_message_with_image(image: str | bytes) -> dict:
-        if isinstance(image, bytes):
-            detected_type = filetype.guess(image)
-            if not detected_type or not detected_type.mime.startswith("image/"):
+    def _create_message_with_image(image: str | bytes | Attachment) -> dict:
+        def _encode_image_bytes_to_url(img_bytes: bytes) -> str:
+            detected = filetype.guess(img_bytes)
+            if not detected or not detected.mime.startswith("image/"):
                 raise PromptWithImagesOfInvalidFormat()
-            image_url = f"data:{detected_type.mime};base64,{base64.b64encode(image).decode('utf-8')}"
+            return f"data:{detected.mime};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+
+        if isinstance(image, Attachment):
+            if isinstance(image.data, bytes):
+                image_url = _encode_image_bytes_to_url(image.data)
+            elif image.url is not None:
+                return {"type": "image_url", "image_url": {"url": image.url, "format": f"image/{image.mime_type}"}}
+            else:
+                raise ValueError("Attachment must have either 'data' or 'url'.")
+
         else:
-            image_url = image
+            image_url = _encode_image_bytes_to_url(image) if isinstance(image, bytes) else image
+
         return {
             "type": "image_url",
             "image_url": {
