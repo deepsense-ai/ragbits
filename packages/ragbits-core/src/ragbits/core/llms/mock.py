@@ -58,10 +58,12 @@ class MockLLM(LLM[MockLLMOptions]):
                 "response": response,
                 "tool_calls": tool_calls,
                 "is_mocked": True,
-                "prompt_tokens": 10 * (i + 1),
-                "total_tokens": 30 * (i + 1),
-                "completion_tokens": 20 * (i + 1),
                 "throughput": 1 / len(prompt),
+                "usage": {
+                    "prompt_tokens": 10 * (i + 1),
+                    "completion_tokens": 20 * (i + 1),
+                    "total_tokens": 30 * (i + 1),
+                },
             }
             for i in range(len(prompt))
         ]

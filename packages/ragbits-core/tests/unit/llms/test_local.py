@@ -88,19 +88,19 @@ async def test_call(local_llm: LocalLLM):
 
     assert len(result) == 3
     assert result[0]["response"] == ["VAL", "PAD", "PAD"]
-    assert result[0]["prompt_tokens"] == 1
-    assert result[0]["completion_tokens"] == 1
-    assert result[0]["total_tokens"] == 2
+    assert result[0]["usage"]["prompt_tokens"] == 1
+    assert result[0]["usage"]["completion_tokens"] == 1
+    assert result[0]["usage"]["total_tokens"] == 2
     assert "throughput" in result[0]
 
     assert result[1]["response"] == ["VAL", "VAL", "PAD"]
-    assert result[1]["prompt_tokens"] == 2
-    assert result[1]["completion_tokens"] == 2
-    assert result[1]["total_tokens"] == 4
+    assert result[1]["usage"]["prompt_tokens"] == 2
+    assert result[1]["usage"]["completion_tokens"] == 2
+    assert result[1]["usage"]["total_tokens"] == 4
     assert "throughput" in result[1]
 
     assert result[2]["response"] == ["VAL", "VAL", "VAL"]
-    assert result[2]["prompt_tokens"] == 3
-    assert result[2]["completion_tokens"] == 3
-    assert result[2]["total_tokens"] == 6
+    assert result[2]["usage"]["prompt_tokens"] == 3
+    assert result[2]["usage"]["completion_tokens"] == 3
+    assert result[2]["usage"]["total_tokens"] == 6
     assert "throughput" in result[2]

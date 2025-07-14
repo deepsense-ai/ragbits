@@ -204,9 +204,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 result["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
             if response.usage:  # type: ignore
-                result["completion_tokens"] = response.usage.completion_tokens  # type: ignore
-                result["prompt_tokens"] = response.usage.prompt_tokens  # type: ignore
-                result["total_tokens"] = response.usage.total_tokens  # type: ignore
+                result["usage"] = {
+                    "completion_tokens": response.usage.completion_tokens,  # type: ignore
+                    "prompt_tokens": response.usage.prompt_tokens,  # type: ignore
+                    "total_tokens": response.usage.total_tokens,  # type: ignore
+                }
 
             results.append(result)
 
@@ -246,6 +248,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format = self._get_response_format(output_schema=prompt.output_schema(), json_mode=prompt.json_mode)
         input_tokens = self.count_tokens(prompt)
 
+        provider_calculated_usage = None
+
         start_time = time.perf_counter()
         response = await self._get_litellm_response(
             conversation=prompt.chat,
@@ -259,6 +263,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             raise LLMEmptyResponseError()
 
         async def response_to_async_generator(response: CustomStreamWrapper) -> AsyncGenerator[dict, None]:
+            nonlocal input_tokens, provider_calculated_usage
             output_tokens = 0
             tool_calls: list[dict] = []
 
@@ -290,10 +295,28 @@ class LiteLLM(LLM[LiteLLMOptions]):
                         tool_calls[tool_call_chunk.index]["name"] += tool_call_chunk.function.name or ""
                         tool_calls[tool_call_chunk.index]["arguments"] += tool_call_chunk.function.arguments or ""
 
+                if usage := getattr(item, "usage", None):
+                    provider_calculated_usage = usage
+
+            total_tokens = input_tokens + output_tokens
+
+            if provider_calculated_usage:
+                input_tokens = provider_calculated_usage.prompt_tokens
+                output_tokens = provider_calculated_usage.completion_tokens
+                total_tokens = provider_calculated_usage.total_tokens
+
             if tool_calls:
                 yield {"tool_calls": tool_calls}
 
             total_time = time.perf_counter() - start_time
+
+            yield {
+                "usage": {
+                    "prompt_tokens": input_tokens,
+                    "completion_tokens": output_tokens,
+                    "total_tokens": total_tokens,
+                }
+            }
 
             record_metric(
                 metric=LLMMetric.INPUT_TOKENS,
@@ -345,6 +368,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         response_format: type[BaseModel] | dict | None,
         tools: list[dict] | None = None,
         stream: bool = False,
+        stream_options: dict | None = None,
     ) -> ModelResponse | CustomStreamWrapper:
         entrypoint = self.router or self._create_router_from_self_and_options(options)
 
@@ -357,6 +381,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "stream": stream,
             **options.dict(),
         }
+
+        if stream_options is not None:
+            completion_kwargs["stream_options"] = stream_options
+
         try:
             response = await entrypoint.acompletion(**completion_kwargs)
         except litellm.openai.APIConnectionError as exc:
