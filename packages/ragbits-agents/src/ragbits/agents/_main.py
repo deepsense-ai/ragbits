@@ -65,14 +65,14 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     """The maximum number of turns the agent can take, if NOT_GIVEN,
     it defaults to 10, if None, agent will run forever"""
     max_total_tokens: int | None | NotGiven = NOT_GIVEN
-    """The maximum number of tokens the agent can use, if NOT_GIVEN,
-    if None, agent will run forever"""
+    """The maximum number of tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
     max_prompt_tokens: int | None | NotGiven = NOT_GIVEN
-    """The maximum number of prompt tokens the agent can use, if NOT_GIVEN,
-    if None, agent will run forever"""
+    """The maximum number of prompt tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
     max_completion_tokens: int | None | NotGiven = NOT_GIVEN
-    """The maximum number of completion tokens the agent can use, if NOT_GIVEN,
-    if None, agent will run forever"""
+    """The maximum number of completion tokens the agent can use, if NOT_GIVEN
+    or None, agent will run forever"""
 
 
 class AgentRunContext(BaseModel):
