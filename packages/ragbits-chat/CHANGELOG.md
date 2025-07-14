@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add persistent user settings (#718)
 
 ## 1.1.0 (2025-07-09)
 
