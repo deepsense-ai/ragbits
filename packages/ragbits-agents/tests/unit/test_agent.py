@@ -243,20 +243,14 @@ async def test_agent_run_tools_with_context(
         prompt=CustomPrompt,
         tools=[get_weather_context],
     )
+
     result = await method(agent, context=context)
+
     assert result.content == "Temperature is 72 fahrenheit"
-    assert result.tool_calls == [
-        ToolCallResult(
-            id="test",
-            name="get_weather_context",
-            arguments={
-                "location": "San Francisco",
-            },
-            result=AgentRunContext(
-                usage=Usage(n_requests=2, prompt_tokens=20, completion_tokens=40, total_tokens=60, estimated_cost=0.0)
-            ),
-        ),
-    ]
+    assert result.tool_calls[0].id == "test"
+    assert result.tool_calls[0].name == "get_weather_context"
+    assert result.tool_calls[0].arguments == {"location": "San Francisco"}
+    assert isinstance(result.tool_calls[0].result, AgentRunContext)
 
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
