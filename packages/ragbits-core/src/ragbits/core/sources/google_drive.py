@@ -453,7 +453,7 @@ class GoogleDriveSource(Source):
     def _determine_file_extension(self) -> tuple[str, str]:
         """
         Determine the appropriate file extension and export MIME type for the file.
-        
+
         Returns:
             A tuple of (export_mime_type, file_extension)
         """
