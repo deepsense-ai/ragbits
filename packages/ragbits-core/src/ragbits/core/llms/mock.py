@@ -23,7 +23,14 @@ class MockLLM(LLM[MockLLMOptions]):
 
     options_cls = MockLLMOptions
 
-    def __init__(self, model_name: str = "mock", default_options: MockLLMOptions | None = None) -> None:
+    def __init__(
+        self,
+        model_name: str = "mock",
+        default_options: MockLLMOptions | None = None,
+        *,
+        price_per_prompt_token: float = 0.0,
+        price_per_completion_token: float = 0.0,
+    ) -> None:
         """
         Constructs a new MockLLM instance.
 
@@ -33,6 +40,8 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
+        self._price_per_prompt_token = price_per_prompt_token
+        self._price_per_completion_token = price_per_completion_token
 
     def get_model_id(self) -> str:
         """
@@ -44,7 +53,7 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         Returns the estimated cost of the LLM call.
         """
-        return 0.0
+        return self._price_per_prompt_token * prompt_tokens + self._price_per_completion_token * completion_tokens
 
     async def _call(  # noqa: PLR6301
         self,

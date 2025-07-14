@@ -52,6 +52,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         default_options: LocalLLMOptions | None = None,
         *,
         api_key: str | None = None,
+        price_per_prompt_token: float = 0.0,
+        price_per_completion_token: float = 0.0,
     ) -> None:
         """
         Constructs a new local LLM instance.
@@ -60,6 +62,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
             model_name: Name of the model to use. This should be a model from the CausalLM class.
             default_options: Default options for the LLM.
             api_key: The API key for Hugging Face authentication.
+            price_per_prompt_token: The price per prompt token.
+            price_per_completion_token: The price per completion token.
 
         Raises:
             ImportError: If the 'local' extra requirements are not installed.
@@ -80,6 +84,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
                 f"{model_name} was not trained as a chat model - it doesn't support chat template. Select another model"
             ) from e
         self.api_key = api_key
+        self._price_per_prompt_token = price_per_prompt_token
+        self._price_per_completion_token = price_per_completion_token
 
     def get_model_id(self) -> str:
         """
@@ -91,7 +97,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         """
         Returns the estimated cost of the LLM call.
         """
-        return 0.0
+        return self._price_per_prompt_token * prompt_tokens + self._price_per_completion_token * completion_tokens
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
