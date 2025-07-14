@@ -4,6 +4,7 @@
 
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Add support for batch generation (#608)
+- Introduce new API for attachments in prompts (#711)
 
 ## 1.1.0 (2025-07-09)
 
