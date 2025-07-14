@@ -198,15 +198,12 @@ class GoogleDriveSource(Source):
                     else:
                         request = client.files().get_media(fileId=self.file_id)
 
-                    fh = io.BytesIO()
-                    downloader = MediaIoBaseDownload(fh, request)
-                    done = False
-                    while not done:
-                        _, done = downloader.next_chunk()
+                    with open(path, "wb") as fh:
+                        downloader = MediaIoBaseDownload(fh, request)
+                        done = False
+                        while not done:
+                            _, done = downloader.next_chunk()
 
-                    fh.seek(0)
-                    with open(path, mode="wb") as file_object:
-                        file_object.write(fh.read())
                 except HttpError as e:
                     if e.resp.status == HTTP_NOT_FOUND:
                         raise FileNotFoundError(f"File with ID {self.file_id} not found on Google Drive.") from e
