@@ -39,6 +39,16 @@ export default function ChatOptionsForm() {
     onClose();
   };
 
+  const onRestoreDefaults = () => {
+    if (!schema) {
+      return;
+    }
+
+    const defaultState = getDefaultBasedOnSchemaType(validator, schema);
+    setChatOptions(defaultState);
+    onClose();
+  };
+
   const transformErrors = useTransformErrors();
 
   useEffect(() => {
@@ -87,6 +97,15 @@ export default function ChatOptionsForm() {
                     liveValidate
                   >
                     <div className="flex justify-end gap-4 py-4">
+                      <Button
+                        className="mr-auto"
+                        color="primary"
+                        variant="light"
+                        onPress={onRestoreDefaults}
+                        aria-label="Restore default user settings"
+                      >
+                        Restore defaults
+                      </Button>
                       <Button
                         color="danger"
                         variant="light"
