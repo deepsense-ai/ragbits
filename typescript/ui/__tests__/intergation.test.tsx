@@ -197,7 +197,9 @@ describe("Integration tests", () => {
               conversation_id: expect.any(String),
               signature: expect.any(String),
               state: expect.any(Object),
-              language: "Polish",
+              user_settings: {
+                language: "Polish",
+              },
             },
             history: [
               {

@@ -47,7 +47,7 @@ export const useHistoryStore = create<HistoryStore>()(
           return {
             ...(serverState ?? {}),
             ...(conversationId ? { conversation_id: conversationId } : {}),
-            ...(chatOptions ?? {}),
+            ...(chatOptions ? { user_settings: chatOptions } : {}),
           };
         },
       },
@@ -185,6 +185,8 @@ export const useHistoryStore = create<HistoryStore>()(
                   currentOptions[key] = defaultOptions[key];
                 }
               });
+
+              draft.chatOptions = currentOptions;
             }),
           );
         },
