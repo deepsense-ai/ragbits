@@ -1,4 +1,4 @@
-from ragbits.agents._main import Agent, AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
+from ragbits.agents._main import Agent, AgentOptions, AgentResult, AgentResultStreaming, AgentRunContext, ToolCallResult
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -6,6 +6,7 @@ __all__ = [
     "AgentOptions",
     "AgentResult",
     "AgentResultStreaming",
+    "AgentRunContext",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",

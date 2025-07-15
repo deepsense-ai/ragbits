@@ -41,6 +41,7 @@ export interface HistoryStore {
     clearHistory: () => void;
     sendMessage: (text: string) => void;
     stopAnswering: () => void;
+    initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
   };
 
