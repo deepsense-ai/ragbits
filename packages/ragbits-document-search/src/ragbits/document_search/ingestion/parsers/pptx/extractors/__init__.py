@@ -1,12 +1,12 @@
 from .extractors import (
     DEFAULT_EXTRACTORS,
     BasePptxExtractor,
-    HyperlinkExtractor,
-    ImageExtractor,
-    MetadataExtractor,
-    ShapeExtractor,
-    SpeakerNotesExtractor,
-    TextExtractor,
+    PptxHyperlinkExtractor,
+    PptxImageExtractor,
+    PptxMetadataExtractor,
+    PptxShapeExtractor,
+    PptxSpeakerNotesExtractor,
+    PptxTextExtractor,
 )
 
 __all__ = [
