@@ -89,9 +89,17 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return template.render(**context)
 
     @classmethod
+    def _get_files_from_input_data(cls, input_data: PromptInputT | None | str) -> list[Attachment]:
+        files: list[Attachment] = []
+        if isinstance(input_data, BaseModel):
+            return getattr(input_data, "files", files)
+        return files
+
+    @classmethod
     def _get_images_from_input_data(cls, input_data: PromptInputT | None | str) -> list[Attachment | bytes | str]:
         images: list[bytes | str | Attachment] = []
         if isinstance(input_data, BaseModel):
+            images.extend(getattr(input_data, "images", images))
             image_input_fields = cls.image_input_fields or []
             for field in image_input_fields:
                 images_for_field = getattr(input_data, field)
@@ -265,12 +273,16 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
             # Render the message using the template if it's an input model
             rendered_text = self._render_template(self.user_prompt_template, input_model)
-            images_in_input = self._get_images_from_input_data(input_model)
 
-            if images_in_input:
-                content = [{"type": "text", "text": rendered_text}] + [
-                    self._create_message_with_image(image) for image in images_in_input
-                ]
+            images_in_input = self._get_images_from_input_data(input_model)
+            files_in_input = self._get_files_from_input_data(input_model)
+
+            if images_in_input or files_in_input:
+                content_list = [{"type": "text", "text": rendered_text}]
+                content_list.extend(self._create_message_with_image(img) for img in images_in_input)
+                content_list.extend(self._create_message_with_file(f) for f in files_in_input)
+                content = content_list
+
             else:
                 content = rendered_text
         else:
@@ -292,6 +304,26 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             for content in message["content"]
             if isinstance(message["content"], list) and content["type"] == "image_url"
         ]
+
+    @staticmethod
+    def _create_message_with_file(file: Attachment) -> dict:
+        def _encode_file_bytes_to_url(file_bytes: bytes) -> str:
+            detected = filetype.guess(file_bytes)
+            if not detected or not detected.mime.startswith("application/"):
+                raise PromptWithImagesOfInvalidFormat()
+            return f"data:{detected.mime};base64,{base64.b64encode(file_bytes).decode('utf-8')}"
+
+        if isinstance(file.data, bytes):
+            file_data = _encode_file_bytes_to_url(file.data)
+            return {
+                "type": "file",
+                "file": {
+                    "file_data": file_data,
+                },
+            }
+        elif file.url is not None:
+            return {"type": "file", "file": {"file_id": file.url}}
+        raise ValueError("Attachment must have either 'data' or 'url'.")
 
     @staticmethod
     def _create_message_with_image(image: str | bytes | Attachment) -> dict:
