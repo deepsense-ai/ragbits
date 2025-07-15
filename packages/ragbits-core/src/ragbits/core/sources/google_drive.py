@@ -69,6 +69,26 @@ class GoogleDriveSource(Source):
         cls._credentials_file_path = path
 
     @classmethod
+    def _initialize_client_from_creds(cls) -> None:
+        """
+        Initialize the Google Drive API client using service account credentials.
+
+        This method creates and configures the Google Drive API client using the service account
+        credentials file path that was previously set. It also performs a lightweight API call
+        to verify that the client is properly configured and can access the Google Drive API.
+
+        Raises:
+            GoogleAuthError: If the service account credentials are invalid or incomplete.
+            HttpError: If the Google Drive API is not enabled or accessible.
+            Exception: If any other error occurs during client initialization.
+        """
+        creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=_SCOPES)
+        cls._google_drive_client = build("drive", "v3", credentials=creds)
+        cls._google_drive_client.files().list(
+            pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
+        ).execute()
+
+    @classmethod
     @requires_dependencies(["googleapiclient", "google.oauth2"], "google_drive")
     def _get_client(cls) -> "GoogleAPIResource":
         """
@@ -85,13 +105,7 @@ class GoogleDriveSource(Source):
                     "Use GoogleDriveSource.set_credentials_file_path('/path/to/your/key.json')."
                 )
             try:
-                creds = service_account.Credentials.from_service_account_file(
-                    cls._credentials_file_path, scopes=_SCOPES
-                )
-                cls._google_drive_client = build("drive", "v3", credentials=creds)
-                cls._google_drive_client.files().list(
-                    pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
-                ).execute()
+                cls._initialize_client_from_creds()
             except exceptions.GoogleAuthError as e:
                 raise ValueError("Google Drive credentials are missing or incomplete. Please configure them.") from e
             except HttpError as e:
@@ -395,6 +409,42 @@ class GoogleDriveSource(Source):
             return False, False, ""
 
     @classmethod
+    async def _handle_single_id(cls, drive_id: str) -> Iterable[Self]:
+        """
+        Handle a single Google Drive ID, returning a source for the file or folder.
+
+        Args:
+            drive_id: The Google Drive file or folder ID.
+
+        Returns:
+            An iterable containing a single GoogleDriveSource instance.
+
+        Raises:
+            FileNotFoundError: If the Google Drive item with the given ID is not found.
+            RuntimeError: If an error occurs during metadata fetching.
+        """
+        client = cls._get_client()
+        try:
+            file_meta = (
+                client.files().get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True).execute()
+            )
+            is_folder = file_meta["mimeType"] == "application/vnd.google-apps.folder"
+            return [
+                cls(
+                    file_id=file_meta["id"],
+                    file_name=file_meta["name"],
+                    mime_type=file_meta["mimeType"],
+                    is_folder=is_folder,
+                )
+            ]
+        except HttpError as e:
+            if e.resp.status == _HTTP_NOT_FOUND:
+                raise FileNotFoundError(f"Google Drive item with ID '{drive_id}' not found.") from e
+            raise RuntimeError(f"Error fetching metadata for ID '{drive_id}': {e}") from e
+        except Exception as e:
+            raise RuntimeError(f"An unexpected error occurred for ID '{drive_id}': {e}") from e
+
+    @classmethod
     @traceable
     async def from_uri(cls, path: str) -> Iterable[Self]:
         """
@@ -419,26 +469,7 @@ class GoogleDriveSource(Source):
         drive_id = parts[0]
 
         if len(parts) == 1:
-            client = cls._get_client()
-            try:
-                file_meta = (
-                    client.files().get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True).execute()
-                )
-                is_folder = file_meta["mimeType"] == "application/vnd.google-apps.folder"
-                return [
-                    cls(
-                        file_id=file_meta["id"],
-                        file_name=file_meta["name"],
-                        mime_type=file_meta["mimeType"],
-                        is_folder=is_folder,
-                    )
-                ]
-            except HttpError as e:
-                if e.resp.status == _HTTP_NOT_FOUND:
-                    raise FileNotFoundError(f"Google Drive item with ID '{drive_id}' not found.") from e
-                raise RuntimeError(f"Error fetching metadata for ID '{drive_id}': {e}") from e
-            except Exception as e:
-                raise RuntimeError(f"An unexpected error occurred for ID '{drive_id}': {e}") from e
+            return await cls._handle_single_id(drive_id)
 
         elif len(parts) > 1 and parts[-1] == "**":
             folder_id = parts[0]
