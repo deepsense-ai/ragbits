@@ -100,7 +100,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         images: list[bytes | str | Attachment] = []
         if isinstance(input_data, BaseModel):
             images.extend(getattr(input_data, "images", images))
-            image_input_fields = cls.image_input_fields or []
+            image_input_fields = [f for f in (cls.image_input_fields or []) if f != "images"]
             for field in image_input_fields:
                 images_for_field = getattr(input_data, field)
                 if images_for_field:
