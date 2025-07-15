@@ -6,9 +6,11 @@ from __future__ import annotations
 import asyncio
 import os
 from pathlib import Path
+from typing import cast
 
 from pptx import Presentation
 from pptx.util import Inches
+from pptx.shapes.autoshape import Shape
 
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
@@ -27,7 +29,8 @@ async def create_dummy_pptx(file_path: str):
     if title and title.has_text_frame:
         title.text_frame.text = "Test Presentation"
     if subtitle and subtitle.has_text_frame:
-        subtitle.text_frame.text = "A presentation for testing the PPTX parser."
+        shape = cast(Shape, subtitle)
+        shape.text_frame.text = "A presentation for testing the PPTX parser."
 
     # Slide 2: Text, Shape, and Hyperlink
     bullet_slide_layout = prs.slide_layouts[1]
@@ -39,7 +42,7 @@ async def create_dummy_pptx(file_path: str):
 
     body_shape = shapes.placeholders[1]
     if body_shape and body_shape.has_text_frame:
-        tf = body_shape.text_frame
+        tf = cast(Shape, body_shape).text_frame
         tf.text = "This is a bullet point."
 
         p = tf.add_paragraph()
