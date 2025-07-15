@@ -1,15 +1,12 @@
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Iterable
 
-from pydantic import BaseModel
-
-from ragbits.core.llms.base import LLM
-from ragbits.core.options import Options
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class MockLLMOptions(Options):
+class MockLLMOptions(LLMOptions):
     """
     Options for the MockLLM class.
     """
@@ -26,44 +23,77 @@ class MockLLM(LLM[MockLLMOptions]):
 
     options_cls = MockLLMOptions
 
-    def __init__(self, model_name: str = "mock", default_options: MockLLMOptions | None = None) -> None:
+    def __init__(
+        self,
+        model_name: str = "mock",
+        default_options: MockLLMOptions | None = None,
+        *,
+        price_per_prompt_token: float = 0.0,
+        price_per_completion_token: float = 0.0,
+    ) -> None:
         """
         Constructs a new MockLLM instance.
 
         Args:
             model_name: Name of the model to be used.
             default_options: Default options to be used.
+            price_per_prompt_token: The price per prompt token.
+            price_per_completion_token: The price per completion token.
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
+        self._price_per_prompt_token = price_per_prompt_token
+        self._price_per_completion_token = price_per_completion_token
+
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "mock:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+        """
+        return self._price_per_prompt_token * prompt_tokens + self._price_per_completion_token * completion_tokens
 
     async def _call(  # noqa: PLR6301
         self,
-        prompt: BasePrompt,
+        prompt: Iterable[BasePrompt],
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
-    ) -> dict:
+    ) -> list[dict]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
-        self.calls.append(prompt.chat)
+        prompt = list(prompt)
+        self.calls.extend([p.chat for p in prompt])
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
-
         tool_calls = (
             None
-            if isinstance(options.tool_calls, NotGiven) or any(message["role"] == "tool" for message in prompt.chat)
+            if isinstance(options.tool_calls, NotGiven)
+            or any(message["role"] == "tool" for p in prompt for message in p.chat)
             else options.tool_calls
         )
-        return {"response": response, "tool_calls": tool_calls, "is_mocked": True}
+        return [
+            {
+                "response": response,
+                "tool_calls": tool_calls,
+                "is_mocked": True,
+                "throughput": 1 / len(prompt),
+                "usage": {
+                    "prompt_tokens": 10 * (i + 1),
+                    "completion_tokens": 20 * (i + 1),
+                    "total_tokens": 30 * (i + 1),
+                },
+            }
+            for i in range(len(prompt))
+        ]
 
     async def _call_streaming(  # noqa: PLR6301
         self,
         prompt: BasePrompt,
         options: MockLLMOptions,
-        json_mode: bool = False,
-        output_schema: type[BaseModel] | dict | None = None,
         tools: list[dict] | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
@@ -83,5 +113,13 @@ class MockLLM(LLM[MockLLMOptions]):
                 yield {"response": options.response}
             else:
                 yield {"response": "mocked response"}
+
+            yield {
+                "usage": {
+                    "prompt_tokens": 10,
+                    "completion_tokens": 20,
+                    "total_tokens": 30,
+                }
+            }
 
         return generator()
