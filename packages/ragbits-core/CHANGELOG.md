@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
