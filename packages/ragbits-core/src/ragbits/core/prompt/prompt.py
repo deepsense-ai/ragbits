@@ -248,12 +248,18 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             if not isinstance(user_message, str):
                 rendered_text_message = self._render_template(self.user_prompt_template, user_message)
                 images_in_input_data = self._get_images_from_input_data(user_message)
-                if images_in_input_data:
-                    user_content = [{"type": "text", "text": rendered_text_message}] + [
-                        self._create_message_with_image(image) for image in images_in_input_data
-                    ]
-                else:
-                    user_content = rendered_text_message
+                attachments_in_input_data = self._get_attachments_from_input_data(user_message)
+
+                user_parts: list[dict[str, Any]] = [{"type": "text", "text": rendered_text_message}]
+
+                for image in images_in_input_data:
+                    user_parts.append(self._create_message_with_image(image))
+
+                for attachment in attachments_in_input_data:
+                    user_parts.append(self._create_message_with_attachment(attachment))
+
+                user_content = user_parts if len(user_parts) > 1 else rendered_text_message
+
             else:
                 user_content = user_message
 

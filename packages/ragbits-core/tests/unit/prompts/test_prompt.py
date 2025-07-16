@@ -6,6 +6,7 @@ import pytest
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePromptWithParser
 from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.prompt import Attachment
 
 
 class _PromptInput(pydantic.BaseModel):
@@ -47,6 +48,19 @@ def _get_image_bytes() -> bytes:
     """Get the test image as bytes."""
     with open(Path(__file__).parent.parent.parent / "assets" / "img" / "test.png", "rb") as f:
         return f.read()
+
+
+def _get_pdf_bytes() -> bytes:
+    """Get the test PDF as bytes."""
+    return b"%PDF-1.4\n%fake PDF content\n"
+
+
+def get_image_attachment() -> Attachment:
+    return Attachment(data=_get_image_bytes())
+
+
+def get_url_attachment() -> Attachment:
+    return Attachment(url="http://example.com/image.jpg", mime_type="image/jpeg")
 
 
 def test_raises_when_no_user_message():
@@ -682,3 +696,72 @@ def test_base_prompt_with_parser_add_tool_use_message_no_history():
     assert prompt.chat[1]["content"] == "tool result"
 
     assert result is prompt
+
+
+@pytest.mark.parametrize(
+    ("attachment", "attachment_present"),
+    [
+        (get_image_attachment(), True),
+        (get_url_attachment(), True),
+        (None, False),
+    ],
+)
+def test_attachment_prompt(attachment: Attachment | None, attachment_present: bool):
+    """Tests the prompt creation using an attachment"""
+
+    class AttachmentPrompt(Prompt):
+        user_prompt = "What is in this attachment?"
+
+    class _AttachmentInput(pydantic.BaseModel):
+        attachment: Attachment | None
+
+    prompt = AttachmentPrompt(_AttachmentInput(attachment=attachment))
+    chat = prompt.chat
+    assert len(chat) == 1
+    content = chat[0]["content"]
+
+    if attachment_present:
+        assert isinstance(content, list)
+        assert len(content) == 2
+        assert content[0]["type"] == "text"
+        assert content[1]["type"] in ["image_url", "file"]
+    else:
+        assert isinstance(content, str)
+
+
+@pytest.mark.parametrize(
+    ("attachments", "expected_number"),
+    [
+        ([get_image_attachment(), get_url_attachment()], 2),
+    ],
+)
+def test_multiple_attachments_prompt(attachments: list[Attachment], expected_number: int):
+    """Tests the prompt creation with multiple attachments"""
+
+    class MultipleAttachmentsPrompt(Prompt):
+        user_prompt = "Analyze these attachments"
+
+    class _MultipleAttachmentsInput(pydantic.BaseModel):
+        attachments: list[Attachment]
+
+    prompt = MultipleAttachmentsPrompt(_MultipleAttachmentsInput(attachments=attachments))
+    chat = prompt.chat
+    assert len(chat) == 1
+    content = chat[0]["content"]
+
+    assert len(content) == 1 + expected_number
+
+
+def test_attachment_with_invalid_mime_type():
+    """Tests attachment with invalid MIME type"""
+
+    class InvalidAttachmentPrompt(Prompt):
+        user_prompt = "This should fail"
+
+    class _InvalidAttachmentInput(pydantic.BaseModel):
+        attachment: Attachment
+
+    invalid_attachment = Attachment(data=b"random data", mime_type="invalid/type")
+
+    with pytest.raises(ValueError):
+        InvalidAttachmentPrompt(_InvalidAttachmentInput(attachment=invalid_attachment))
