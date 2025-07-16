@@ -20,6 +20,7 @@ export interface ChatMessage {
   content: string;
   references?: Reference[];
   liveUpdates?: Map<string, LiveUpdate["content"]>;
+  extensions?: Record<string, unknown>;
 }
 
 export interface HistoryStore {
@@ -41,6 +42,13 @@ export interface HistoryStore {
     clearHistory: () => void;
     sendMessage: (text: string) => void;
     stopAnswering: () => void;
+    /** Merge passed extensions with existing object for a given message. New values in the passed extensions
+     * overwrite previous ones.
+     */
+    mergeExtensions: (
+      messageId: string,
+      extensions: Record<string, unknown>,
+    ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
   };

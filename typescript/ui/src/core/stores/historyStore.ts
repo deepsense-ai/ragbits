@@ -166,6 +166,24 @@ export const useHistoryStore = create<HistoryStore>()(
       },
 
       actions: {
+        mergeExtensions: (messageId, extensions) => {
+          set(
+            produce((draft: HistoryStore) => {
+              if (!draft.history.has(messageId)) {
+                throw new Error(
+                  "Attempted to set extensions for a message that does not exist.",
+                );
+              }
+
+              const existingMessage = draft.history.get(messageId)!;
+              existingMessage.extensions = {
+                ...existingMessage.extensions,
+                ...extensions,
+              };
+              draft.history.set(messageId, existingMessage);
+            }),
+          );
+        },
         initializeChatOptions: (defaultOptions) => {
           set(
             produce((draft: HistoryStore) => {
