@@ -2,7 +2,8 @@
 
 ## Unreleased
 - Add persistent user settings (#719)
-- Send chat options under `user_settings` key (#720)
+- Send chat options under `user_settings` key (#721)
+- Add feedback indicator to messages, allow `extensions` in chat messages (#722)
 
 ## 1.1.0 (2025-07-09)
 

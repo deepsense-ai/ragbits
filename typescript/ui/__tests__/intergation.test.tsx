@@ -1,5 +1,13 @@
 import React from "react";
-import { describe, it, expect, afterAll, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  afterAll,
+  vi,
+  beforeEach,
+  afterEach,
+} from "vitest";
 import {
   act,
   render,
@@ -264,16 +272,32 @@ describe("Integration tests", () => {
 
   describe("/api/feedback", () => {
     describe("should send correct request based on config", async () => {
-      it("handles like form", async () => {
-        const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
-          wrapper: ({ children }: { children: React.ReactNode }) => {
-            return (
-              <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>{children}</ConfigContextProvider>
-              </RagbitsContextProvider>
-            );
-          },
+      let messageId: string = "";
+      beforeEach(() => {
+        messageId = useHistoryStore.getState().primitives.addMessage({
+          content: "Mock content",
+          role: MessageRole.ASSISTANT,
+          serverId: "msg-123",
         });
+      });
+      afterEach(() => {
+        useHistoryStore.getState().actions.clearHistory();
+      });
+      it("handles like form", async () => {
+        const feedback = render(
+          <FeedbackForm
+            message={useHistoryStore.getState().history.get(messageId)!}
+          />,
+          {
+            wrapper: ({ children }: { children: React.ReactNode }) => {
+              return (
+                <RagbitsContextProvider baseUrl={BASE_URL}>
+                  <ConfigContextProvider>{children}</ConfigContextProvider>
+                </RagbitsContextProvider>
+              );
+            },
+          },
+        );
 
         const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
         const user = userEvent.setup();
@@ -301,15 +325,20 @@ describe("Integration tests", () => {
       });
 
       it("handles dislike form", async () => {
-        const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
-          wrapper: ({ children }: { children: React.ReactNode }) => {
-            return (
-              <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>{children}</ConfigContextProvider>
-              </RagbitsContextProvider>
-            );
+        const feedback = render(
+          <FeedbackForm
+            message={useHistoryStore.getState().history.get(messageId)!}
+          />,
+          {
+            wrapper: ({ children }: { children: React.ReactNode }) => {
+              return (
+                <RagbitsContextProvider baseUrl={BASE_URL}>
+                  <ConfigContextProvider>{children}</ConfigContextProvider>
+                </RagbitsContextProvider>
+              );
+            },
           },
-        });
+        );
         const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
 
         const user = userEvent.setup();
