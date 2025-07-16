@@ -298,10 +298,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             for attachment in attachments_in_input:
                 content_list.append(self._create_message_with_attachment(attachment))
 
-            if len(content_list) > 1:
-                content = content_list
-            else:
-                content = rendered_text
+            content = content_list if len(content_list) > 1 else rendered_text
         else:
             content = cast(str | dict[str, Any], message)
 
