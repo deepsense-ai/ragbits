@@ -112,7 +112,7 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
         """Extract hyperlink content from a shape."""
         if not hasattr(shape, "click_action") or isinstance(shape, GroupShape):
             return None
-        if not shape.click_action.hyperlink.address:
+        if not shape.click_action.hyperlink or not shape.click_action.hyperlink.address:
             return None
         return shape.click_action.hyperlink.address
 
@@ -237,9 +237,10 @@ class PptxSpeakerNotesExtractor(BasePptxExtractor):
             if sld.has_notes_slide and sld.notes_slide.notes_text_frame is not None:
                 notes_slide = sld.notes_slide
                 notes_text_frame = notes_slide.notes_text_frame
-                text = notes_text_frame.text.strip() if notes_text_frame is not None else None
+                text = getattr(notes_text_frame, "text", None)
+                text = text.strip() if text else None
 
-                if text and notes_text_frame is not None:
+                if text:
                     coordinates = {
                         "left": notes_text_frame.margin_left,
                         "right": notes_text_frame.margin_right,
