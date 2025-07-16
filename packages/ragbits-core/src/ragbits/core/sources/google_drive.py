@@ -28,7 +28,7 @@ _HTTP_FORBIDDEN = 403
 _GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
     "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
-    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
+    "application/vnd.google-apps.presentation": "application/pdf", 
     "application/vnd.google-apps.drawing": "image/png",
     "application/vnd.google-apps.script": "application/vnd.google-apps.script+json",
     "application/vnd.google-apps.site": "text/html",
