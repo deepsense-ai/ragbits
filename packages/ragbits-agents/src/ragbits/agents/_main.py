@@ -52,8 +52,6 @@ class AgentResult(Generic[PromptOutputT]):
     """Tool calls run by the agent."""
     usage: Usage = Field(default_factory=Usage)
     """The token usage of the agent run."""
-    context: "AgentRunContext"
-    """The context of the agent run."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -82,7 +80,7 @@ class AgentRunContext(BaseModel):
     Context for the agent run.
     """
 
-    inputs: list[str | BaseModel] = Field(default_factory=list)
+    inputs: list[str | BaseModel | None] = Field(default_factory=list)
     """The inputs to the agent runs."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
