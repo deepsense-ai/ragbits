@@ -25,12 +25,14 @@ logger = logging.getLogger(__name__)
 class BasePptxExtractor(ABC):
     """Base class for all PPTX content extractors."""
 
-    def _get_slides(self, presentation: Presentation, slide: Slide | None = None) -> list[tuple[int, Slide]]:
+    @staticmethod
+    def _get_slides(presentation: Presentation, slide: Slide | None = None) -> list[tuple[int, Slide]]:
         """Get slides with their indices."""
         slides = [slide] if slide else list(presentation.slides)
         return list(enumerate(slides, start=1))
 
-    def _get_shape_info(self, shape: BaseShape) -> str:
+    @staticmethod
+    def _get_shape_info(shape: BaseShape) -> str:
         """Get descriptive information about a shape for logging purposes."""
         try:
             shape_type = getattr(shape, "shape_type", "unknown")
@@ -40,8 +42,8 @@ class BasePptxExtractor(ABC):
         except Exception:
             return "unknown_shape"
 
+    @staticmethod
     def _create_text_element(
-        self,
         element_type: str,
         document_meta: DocumentMeta,
         content: str,
@@ -177,7 +179,8 @@ class BasePptxExtractor(ABC):
 class PptxTextExtractor(BasePptxExtractor):
     """Extracts text content from text frames."""
 
-    def _extract_text_content(self, shape: BaseShape) -> str | None:
+    @staticmethod
+    def _extract_text_content(shape: BaseShape) -> str | None:
         """Extract text content from a shape."""
         if not isinstance(shape, Shape):
             return None
@@ -201,7 +204,8 @@ class PptxTextExtractor(BasePptxExtractor):
             logger.error("Text extraction failed: %s", str(e), exc_info=True)
             raise PptxExtractorError(self.get_extractor_name(), e) from e
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_text_extractor"
 
@@ -209,7 +213,8 @@ class PptxTextExtractor(BasePptxExtractor):
 class PptxHyperlinkExtractor(BasePptxExtractor):
     """Extracts hyperlink addresses from shapes."""
 
-    def _extract_hyperlink_content(self, shape: BaseShape) -> str | None:
+    @staticmethod
+    def _extract_hyperlink_content(shape: BaseShape) -> str | None:
         """Extract hyperlink content from a shape."""
         if not hasattr(shape, "click_action") or isinstance(shape, GroupShape):
             return None
@@ -229,7 +234,8 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
             element_type="hyperlink",
         )
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_hyperlink_extractor"
 
@@ -237,7 +243,8 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
 class PptxImageExtractor(BasePptxExtractor):
     """Extracts image information from shapes."""
 
-    def _extract_image_content(self, shape: BaseShape) -> str | None:
+    @staticmethod
+    def _extract_image_content(shape: BaseShape) -> str | None:
         """Extract image content from a shape."""
         if not isinstance(shape, Picture):
             return None
@@ -258,7 +265,8 @@ class PptxImageExtractor(BasePptxExtractor):
             element_type="image",
         )
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_image_extractor"
 
@@ -266,7 +274,8 @@ class PptxImageExtractor(BasePptxExtractor):
 class PptxShapeExtractor(BasePptxExtractor):
     """Extracts shape information and metadata."""
 
-    def _extract_shape_content(self, shape: BaseShape) -> str | None:
+    @staticmethod
+    def _extract_shape_content(shape: BaseShape) -> str | None:
         """Extract shape metadata from a shape."""
         if not hasattr(shape, "shape_type"):
             return None
@@ -284,7 +293,8 @@ class PptxShapeExtractor(BasePptxExtractor):
             element_type="shape",
         )
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_shape_extractor"
 
@@ -327,7 +337,8 @@ class PptxMetadataExtractor(BasePptxExtractor):
             logger.error("Metadata extraction failed: %s", str(e), exc_info=True)
             raise PptxExtractorError(self.get_extractor_name(), e) from e
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_metadata_extractor"
 
@@ -389,7 +400,8 @@ class PptxSpeakerNotesExtractor(BasePptxExtractor):
             logger.error("Speaker notes extraction failed: %s", str(e), exc_info=True)
             raise PptxExtractorError(self.get_extractor_name(), e) from e
 
-    def get_extractor_name(self) -> str:
+    @staticmethod
+    def get_extractor_name() -> str:
         """Get the name of this extractor."""
         return "pptx_speaker_notes_extractor"
 
