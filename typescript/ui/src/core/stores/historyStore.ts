@@ -136,6 +136,39 @@ export const useHistoryStore = create<HistoryStore>()(
       },
 
       primitives: {
+        restore: (
+          history: Array<
+            HistoryStore["history"] extends Map<unknown, infer V> ? V : never
+          >,
+          followupMessages: HistoryStore["followupMessages"],
+          chatOptions: HistoryStore["chatOptions"],
+          serverState: HistoryStore["serverState"],
+          conversationId: HistoryStore["conversationId"],
+        ) => {
+          set(
+            produce((draft: HistoryStore) => {
+              draft.followupMessages = followupMessages;
+              draft.chatOptions = chatOptions;
+              draft.serverState = serverState;
+              draft.conversationId = conversationId;
+
+              // Rebuild the history and populate event's log with empty entries
+              draft.history = new Map();
+              history.forEach((m) =>
+                draft.history.set(m.id, {
+                  ...m,
+                  liveUpdates: Array.from(
+                    Object.entries(m.liveUpdates ?? {}),
+                  ).reduce((acc, [uId, u]) => acc.set(uId, u), new Map()),
+                }),
+              );
+              const nonUserMessages = history.filter(
+                (m) => m.role !== MessageRole.USER,
+              );
+              draft.eventsLog = nonUserMessages.map(() => []);
+            }),
+          );
+        },
         addMessage: (message) => {
           const id = uuidv4();
           const newMessage: ChatMessage = { ...message, id };

@@ -56,6 +56,15 @@ export interface HistoryStore {
   primitives: {
     addMessage: (message: Omit<ChatMessage, "id">) => string;
     deleteMessage: (messageId: string) => void;
+    restore: (
+      history: Array<
+        HistoryStore["history"] extends Map<unknown, infer V> ? V : never
+      >,
+      followupMessages: HistoryStore["followupMessages"],
+      chatOptions: HistoryStore["chatOptions"],
+      serverState: HistoryStore["serverState"],
+      conversationId: HistoryStore["conversationId"],
+    ) => void;
   };
 
   _internal: {
