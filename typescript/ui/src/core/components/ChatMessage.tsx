@@ -167,7 +167,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                           plugin={FeedbackFormPlugin}
                           component="FeedbackForm"
                           componentProps={{
-                            messageServerId: serverId,
+                            message,
                           }}
                           skeletonSize={{
                             width: "88px",
