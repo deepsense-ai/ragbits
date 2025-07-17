@@ -116,6 +116,7 @@ export default function Layout({
                 aria-label="Clear chat"
                 variant="ghost"
                 onPress={resetChat}
+                data-testid="layout-clear-chat-button"
               >
                 <Icon icon="heroicons:arrow-path" />
               </Button>
@@ -126,6 +127,7 @@ export default function Layout({
                 aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
                 variant="ghost"
                 onPress={toggleTheme}
+                data-testid="layout-toggle-theme-button"
               >
                 {theme === Theme.DARK ? (
                   <Icon icon="heroicons:sun" />
@@ -141,6 +143,7 @@ export default function Layout({
                   aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
                   variant="ghost"
                   onPress={() => setDebugOpened((o) => !o)}
+                  data-testid="layout-debug-button"
                 >
                   <Icon icon="heroicons:bug-ant" />
                   {isDebugOpened && (

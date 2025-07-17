@@ -21,12 +21,43 @@ export type ChatMessageProps = {
   messageId: string;
 };
 
+const MarkdownContent = ({
+  content,
+  classNames,
+}: {
+  content: string;
+  classNames?: string;
+}) => {
+  return (
+    <Markdown
+      className={cn(
+        "markdown-container prose max-w-full dark:prose-invert",
+        classNames,
+      )}
+      remarkPlugins={[remarkGfm]}
+      components={{
+        pre: ({ children }) => (
+          <pre className="max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+            {children}
+          </pre>
+        ),
+        code: ({ children }) => (
+          <code className="rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+            {children}
+          </code>
+        ),
+      }}
+    >
+      {content}
+    </Markdown>
+  );
+};
+
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ messageId, classNames }, ref) => {
     const lastMessageId = useHistoryStore((s) => s.lastMessageId);
     const isHistoryLoading = useHistoryStore((s) => s.isLoading);
     const message = useMessage(messageId);
-
     if (!message) {
       throw new Error("Tried to render non-existent message");
     }
@@ -43,8 +74,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const onCopyClick = () => {
-      navigator.clipboard.writeText(content);
+    const onCopyClick = async () => {
+      await navigator.clipboard.writeText(content);
       setCopyIcon("heroicons:check");
       if (copyIconTimerRef.current) {
         clearTimeout(copyIconTimerRef.current);
@@ -57,6 +88,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     return (
       <div
         ref={ref}
+        data-testid="chat-message-wrapper"
         className={cn(
           "flex gap-3",
           { "flex-row-reverse": rightAlign },
@@ -80,14 +112,10 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             )}
           >
             {rightAlign ? (
-              <div
-                className={cn(
-                  "prose whitespace-pre-line dark:prose-invert",
-                  classNames?.content,
-                )}
-              >
-                {content}
-              </div>
+              <MarkdownContent
+                content={content}
+                classNames={classNames?.content}
+              />
             ) : (
               <>
                 <div className="flex items-center gap-2 text-default-500">
@@ -108,27 +136,10 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     </>
                   )}
                 </div>
-                <Markdown
-                  className={cn(
-                    "markdown-container prose max-w-full dark:prose-invert",
-                    classNames?.content,
-                  )}
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    pre: ({ children }) => (
-                      <pre className="max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                        {children}
-                      </pre>
-                    ),
-                    code: ({ children }) => (
-                      <code className="rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
-                        {children}
-                      </code>
-                    ),
-                  }}
-                >
-                  {content}
-                </Markdown>
+                <MarkdownContent
+                  content={content}
+                  classNames={classNames?.content}
+                />
                 {references && references.length > 0 && !isLoading && (
                   <div className="text-xs italic text-default-500">
                     <ul className="list-disc pl-4">
@@ -158,7 +169,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                           aria-label="Copy message"
                           onPress={onCopyClick}
                         >
-                          <Icon icon={copyIcon} />
+                          <Icon
+                            icon={copyIcon}
+                            data-testid="chat-message-copy-icon"
+                            data-icon={copyIcon}
+                          />
                         </Button>
                       </DelayedTooltip>
 

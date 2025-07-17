@@ -309,8 +309,8 @@ export const useHistoryStore = create<HistoryStore>()(
 export const useHistoryActions = () => useHistoryStore((s) => s.actions);
 export const useHistoryPrimitives = () => useHistoryStore((s) => s.primitives);
 export const useHistoryComputed = () => useHistoryStore((s) => s.computed);
-export const useMessage = (messageId: string) =>
-  useHistoryStore((s) => s.history.get(messageId));
+export const useMessage = (messageId: string | undefined | null) =>
+  useHistoryStore((s) => (messageId ? s.history.get(messageId) : undefined));
 export const useMessageIds = () =>
   useHistoryStore(useShallow((s) => Array.from(s.history.keys())));
 export const useMessages = () =>
