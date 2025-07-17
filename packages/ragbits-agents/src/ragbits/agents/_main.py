@@ -52,6 +52,8 @@ class AgentResult(Generic[PromptOutputT]):
     """Tool calls run by the agent."""
     usage: Usage = Field(default_factory=Usage)
     """The token usage of the agent run."""
+    context: "AgentRunContext"
+    """The context of the agent run."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -80,6 +82,8 @@ class AgentRunContext(BaseModel):
     Context for the agent run.
     """
 
+    inputs: list[str | BaseModel] = Field(default_factory=list)
+    """The inputs to the agent runs."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
 
@@ -233,6 +237,8 @@ class Agent(
             context = AgentRunContext()
 
         input = cast(PromptInputT, input)
+        context.inputs.append(input)
+
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or self.llm.default_options
 
@@ -342,6 +348,8 @@ class Agent(
             context = AgentRunContext()
 
         input = cast(PromptInputT, input)
+        context.inputs.append(input)
+
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or self.llm.default_options
 
