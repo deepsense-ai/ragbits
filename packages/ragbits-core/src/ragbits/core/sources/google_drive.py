@@ -59,6 +59,9 @@ _EXPORT_EXTENSION_MAP = {
 class GoogleDriveSource(Source):
     """
     Handles source connection for Google Drive and provides methods to fetch files.
+
+    NOTE(Do not define variables at class level that you pass to google client, define them at instance level, or else
+    google client will complain.):
     """
 
     file_id: str
