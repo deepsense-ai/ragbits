@@ -61,6 +61,38 @@ async def test_google_drive_impersonate():
     unit_test_folder_id = os.environ.get("GOOGLE_SOURCE_UNIT_TEST_FOLDER")
 
     sources_to_download = await GoogleDriveSource.from_uri(f"{unit_test_folder_id}/**")
+    downloaded_count = 0
+    
+    try: 
+        # Iterate through each source (file or folder) found
+        for source in sources_to_download:
+            # Only attempt to fetch files, as folders cannot be "downloaded" in the same way
+            if not source.is_folder:
+                try:
+                    # Attempt to fetch (download) the file.
+                    local_path = await source.fetch()
+                    print(f"    Downloaded: '{source.file_name}' (ID: {source.file_id}) to '{local_path}'")
+                    downloaded_count += 1
+                except HttpError as e:
+                    # Catch Google API specific HTTP errors (e.g., permission denied, file not found)
+                    print(f"    Google API Error downloading '{source.file_name}' (ID: {source.file_id}): {e}")
+                except Exception as e:
+                    # Catch any other general exceptions during the download process
+                    print(f"    Failed to download '{source.file_name}' (ID: {source.file_id}): {e}")
+            else:
+                print(f"    Skipping folder: '{source.file_name}' (ID: {source.file_id})")
+
+    except Exception as e:
+        # Catch any exceptions that occur during the initial setup or `from_uri` call
+        print(f"An error occurred during test setup or source retrieval: {e}")
+
+    finally:
+        # This block ensures the final summary is printed regardless of errors
+        print(f"\n--- Successfully downloaded {downloaded_count} files from '{unit_test_folder_id}' ---")
+        # Assert that at least one file was downloaded if that's an expectation for the test
+        # If no files are expected, or it's acceptable for 0 files to be downloaded, remove or adjust this assertion.
+        assert downloaded_count > 0, "Expected to download at least one file, but downloaded 0."
+
 
 @pytest.mark.asyncio
 async def test_google_drive_source_fetch_file_not_found():
