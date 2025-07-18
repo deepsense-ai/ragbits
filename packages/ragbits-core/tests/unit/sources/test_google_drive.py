@@ -49,6 +49,7 @@ def setup_local_storage_dir(tmp_path: Path):
     else:
         del os.environ["LOCAL_STORAGE_DIR"]
 
+
 @pytest.mark.asnycio
 async def test_google_drive_impersonate():
     """Test service account impersonation with better error handling."""
@@ -129,6 +130,7 @@ async def test_google_drive_source_unsupported_uri_pattern():
 
     with pytest.raises(ValueError, match="Unsupported Google Drive URI pattern:"):
         await GoogleDriveSource.from_uri("just_a_path/to/a/file.txt")
+
 
 @pytest.mark.asyncio
 async def test_google_drive_source_fetch_file():
