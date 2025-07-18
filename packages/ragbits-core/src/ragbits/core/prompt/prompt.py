@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import mimetypes
 import textwrap
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
@@ -16,6 +17,14 @@ from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
 PromptInputT = TypeVar("PromptInputT", bound=BaseModel | None)
 FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
+
+
+class Attachment(BaseModel):
+    """Represents an image attachment that can be passed to a LLM."""
+
+    url: str | None = None
+    data: bytes | None = None
+    mime_type: str | None = None
 
 
 class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOutputT], metaclass=ABCMeta):
@@ -81,6 +90,13 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         return template.render(**context)
 
     @classmethod
+    def _get_files_from_input_data(cls, input_data: PromptInputT | None | str) -> list[Attachment]:
+        files: list[Attachment] = []
+        if isinstance(input_data, BaseModel):
+            return getattr(input_data, "files", files)
+        return files
+
+    @classmethod
     def _get_images_from_input_data(cls, input_data: PromptInputT | None | str) -> list[bytes | str]:
         images: list[bytes | str] = []
         if isinstance(input_data, BaseModel):
@@ -93,6 +109,19 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                     else:
                         images.append(images_for_field)
         return images
+
+    @classmethod
+    def _get_attachments_from_input_data(cls, input_data: PromptInputT | None | str) -> list[Attachment]:
+        attachments: list[Attachment] = []
+
+        if isinstance(input_data, BaseModel):
+            for value in input_data.__dict__.values():
+                if isinstance(value, Attachment):
+                    attachments.append(value)
+                elif isinstance(value, list):
+                    attachments.extend([item for item in value if isinstance(item, Attachment)])
+
+        return attachments
 
     @classmethod
     def _format_message(cls, message: str) -> str:
@@ -158,6 +187,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         )
         self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
         self.images = self._get_images_from_input_data(input_data)
+        self.attachments = self._get_attachments_from_input_data(input_data)
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
@@ -218,12 +248,18 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             if not isinstance(user_message, str):
                 rendered_text_message = self._render_template(self.user_prompt_template, user_message)
                 images_in_input_data = self._get_images_from_input_data(user_message)
-                if images_in_input_data:
-                    user_content = [{"type": "text", "text": rendered_text_message}] + [
-                        self._create_message_with_image(image) for image in images_in_input_data
-                    ]
-                else:
-                    user_content = rendered_text_message
+                attachments_in_input_data = self._get_attachments_from_input_data(user_message)
+
+                user_parts: list[dict[str, Any]] = [{"type": "text", "text": rendered_text_message}]
+
+                for image in images_in_input_data:
+                    user_parts.append(self._create_message_with_image(image))
+
+                for attachment in attachments_in_input_data:
+                    user_parts.append(self._create_message_with_attachment(attachment))
+
+                user_content = user_parts if len(user_parts) > 1 else rendered_text_message
+
             else:
                 user_content = user_message
 
@@ -258,13 +294,17 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             # Render the message using the template if it's an input model
             rendered_text = self._render_template(self.user_prompt_template, input_model)
             images_in_input = self._get_images_from_input_data(input_model)
+            attachments_in_input = self._get_attachments_from_input_data(input_model)
 
-            if images_in_input:
-                content = [{"type": "text", "text": rendered_text}] + [
-                    self._create_message_with_image(image) for image in images_in_input
-                ]
-            else:
-                content = rendered_text
+            content_list: list[dict[str, Any]] = [{"type": "text", "text": rendered_text}]
+
+            for image in images_in_input:
+                content_list.append(self._create_message_with_image(image))
+
+            for attachment in attachments_in_input:
+                content_list.append(self._create_message_with_attachment(attachment))
+
+            content = content_list if len(content_list) > 1 else rendered_text
         else:
             content = cast(str | dict[str, Any], message)
 
@@ -286,14 +326,78 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         ]
 
     @staticmethod
-    def _create_message_with_image(image: str | bytes) -> dict:
-        if isinstance(image, bytes):
-            detected_type = filetype.guess(image)
-            if not detected_type or not detected_type.mime.startswith("image/"):
+    def _create_message_with_attachment(attachment: Attachment) -> dict:
+        if not (attachment.data or attachment.url):
+            raise ValueError("Attachment must have either data or URL.")
+
+        def get_mime_type() -> str:
+            if attachment.mime_type:
+                return attachment.mime_type
+            if attachment.data:
+                detected = filetype.guess(attachment.data)
+                if detected:
+                    return detected.mime
+            if attachment.url:
+                guessed_type, _ = mimetypes.guess_type(attachment.url)
+                if guessed_type:
+                    return guessed_type
+            raise ValueError("Could not determine MIME type for attachment.")
+
+        def encode_data_url(data: bytes, mime: str) -> str:
+            return f"data:{mime};base64,{base64.b64encode(data).decode('utf-8')}"
+
+        mime_type = get_mime_type()
+
+        if mime_type.startswith("image/"):
+            image_url = (
+                encode_data_url(attachment.data, mime_type) if isinstance(attachment.data, bytes) else attachment.url
+            )
+            if not image_url:
+                raise ValueError("Image attachment must have data or URL.")
+            return {
+                "type": "image_url",
+                "image_url": {
+                    "url": image_url,
+                },
+            }
+
+        if mime_type.startswith("application/"):
+            if isinstance(attachment.data, bytes):
+                return {
+                    "type": "file",
+                    "file": {
+                        "file_data": encode_data_url(attachment.data, mime_type),
+                    },
+                }
+            elif attachment.url:
+                return {
+                    "type": "file",
+                    "file": {
+                        "file_id": attachment.url,
+                    },
+                }
+
+        raise ValueError(f"Unsupported MIME type: {mime_type}")
+
+    @staticmethod
+    def _create_message_with_image(image: str | bytes | Attachment) -> dict:
+        def _encode_image_bytes_to_url(img_bytes: bytes) -> str:
+            detected = filetype.guess(img_bytes)
+            if not detected or not detected.mime.startswith("image/"):
                 raise PromptWithImagesOfInvalidFormat()
-            image_url = f"data:{detected_type.mime};base64,{base64.b64encode(image).decode('utf-8')}"
+            return f"data:{detected.mime};base64,{base64.b64encode(img_bytes).decode('utf-8')}"
+
+        if isinstance(image, Attachment):
+            if isinstance(image.data, bytes):
+                image_url = _encode_image_bytes_to_url(image.data)
+            elif image.url is not None:
+                return {"type": "image_url", "image_url": {"url": image.url, "format": f"image/{image.mime_type}"}}
+            else:
+                raise ValueError("Attachment must have either 'data' or 'url'.")
+
         else:
-            image_url = image
+            image_url = _encode_image_bytes_to_url(image) if isinstance(image, bytes) else image
+
         return {
             "type": "image_url",
             "image_url": {
