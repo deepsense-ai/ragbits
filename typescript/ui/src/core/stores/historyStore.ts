@@ -136,6 +136,39 @@ export const useHistoryStore = create<HistoryStore>()(
       },
 
       primitives: {
+        restore: (
+          history: Array<
+            HistoryStore["history"] extends Map<unknown, infer V> ? V : never
+          >,
+          followupMessages: HistoryStore["followupMessages"],
+          chatOptions: HistoryStore["chatOptions"],
+          serverState: HistoryStore["serverState"],
+          conversationId: HistoryStore["conversationId"],
+        ) => {
+          set(
+            produce((draft: HistoryStore) => {
+              draft.followupMessages = followupMessages;
+              draft.chatOptions = chatOptions;
+              draft.serverState = serverState;
+              draft.conversationId = conversationId;
+
+              // Rebuild the history and populate event's log with empty entries
+              draft.history = new Map();
+              history.forEach((m) =>
+                draft.history.set(m.id, {
+                  ...m,
+                  liveUpdates: Array.from(
+                    Object.entries(m.liveUpdates ?? {}),
+                  ).reduce((acc, [uId, u]) => acc.set(uId, u), new Map()),
+                }),
+              );
+              const nonUserMessages = history.filter(
+                (m) => m.role !== MessageRole.USER,
+              );
+              draft.eventsLog = nonUserMessages.map(() => []);
+            }),
+          );
+        },
         addMessage: (message) => {
           const id = uuidv4();
           const newMessage: ChatMessage = { ...message, id };
@@ -166,6 +199,24 @@ export const useHistoryStore = create<HistoryStore>()(
       },
 
       actions: {
+        mergeExtensions: (messageId, extensions) => {
+          set(
+            produce((draft: HistoryStore) => {
+              if (!draft.history.has(messageId)) {
+                throw new Error(
+                  "Attempted to set extensions for a message that does not exist.",
+                );
+              }
+
+              const existingMessage = draft.history.get(messageId)!;
+              existingMessage.extensions = {
+                ...existingMessage.extensions,
+                ...extensions,
+              };
+              draft.history.set(messageId, existingMessage);
+            }),
+          );
+        },
         initializeChatOptions: (defaultOptions) => {
           set(
             produce((draft: HistoryStore) => {
@@ -291,8 +342,8 @@ export const useHistoryStore = create<HistoryStore>()(
 export const useHistoryActions = () => useHistoryStore((s) => s.actions);
 export const useHistoryPrimitives = () => useHistoryStore((s) => s.primitives);
 export const useHistoryComputed = () => useHistoryStore((s) => s.computed);
-export const useMessage = (messageId: string) =>
-  useHistoryStore((s) => s.history.get(messageId));
+export const useMessage = (messageId: string | undefined | null) =>
+  useHistoryStore((s) => (messageId ? s.history.get(messageId) : undefined));
 export const useMessageIds = () =>
   useHistoryStore(useShallow((s) => Array.from(s.history.keys())));
 export const useMessages = () =>

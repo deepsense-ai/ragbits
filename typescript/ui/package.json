@@ -12,8 +12,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "wait:backend": "wait-on http-get://127.0.0.1:8000/",
-    "test:integration": "concurrently -k -s first \"npm run dev:backend -- examples.chat.offline_chat:MyChat\" \"npm run wait:backend && vitest --config vitest.config.ts\"",
-    "test:integration:dev": "vitest --config vitest.config.ts"
+    "test": "vitest --config vitest.config.ts unit",
+    "test:run": "vitest run --config vitest.config.ts unit",
+    "test:integration": "concurrently -k -s first \"npm run dev:backend -- examples.chat.offline_chat:MyChat\" \"npm run wait:backend && vitest --config vitest.config.ts integration\"",
+    "test:integration:dev": "vitest --config vitest.config.ts integration"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -23,6 +25,7 @@
     "@rjsf/core": "^5.24.11",
     "@rjsf/utils": "^5.24.11",
     "@rjsf/validator-ajv8": "^5.24.11",
+    "fflate": "^0.8.2",
     "framer-motion": "^12.2.0",
     "github-markdown-css": "^5.8.1",
     "immer": "^10.1.1",
@@ -42,6 +45,7 @@
     "@iconify/react": "^5.2.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/lodash": "^4.17.19",

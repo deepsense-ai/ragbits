@@ -14,13 +14,16 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
+import { useHistoryActions } from "../../../core/stores/historyStore";
+import { ChatMessage } from "../../../types/history";
 
 interface FeedbackFormProps {
-  messageServerId: string;
+  message: ChatMessage;
 }
 
-export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
+export default function FeedbackForm({ message }: FeedbackFormProps) {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { mergeExtensions } = useHistoryActions();
   const {
     config: { feedback },
   } = useConfigContext();
@@ -40,10 +43,16 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
   };
 
   const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
+    if (!message.serverId) {
+      throw new Error(
+        'Feedback is only available for messages with "serverId" set',
+      );
+    }
+
     try {
       await feedbackCallFactory.call({
         body: {
-          message_id: messageServerId,
+          message_id: message.serverId,
           feedback: feedbackType,
           payload: data,
         },
@@ -55,6 +64,9 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
   };
 
   const handleFormSubmit = (data: IChangeEvent) => {
+    mergeExtensions(message.id, {
+      feedbackType,
+    });
     onFeedbackFormSubmit(data.formData);
     onClose();
   };
@@ -75,6 +87,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
     return null;
   }
 
+  const selectedFeedback = message.extensions?.feedbackType;
   return (
     <>
       {feedback.like.enabled && (
@@ -87,7 +100,13 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             onPress={() => onOpenFeedbackForm(FeedbackType.LIKE)}
             data-testid="feedback-like"
           >
-            <Icon icon="heroicons:hand-thumb-up" />
+            <Icon
+              icon={
+                selectedFeedback === FeedbackType.LIKE
+                  ? "heroicons:hand-thumb-up-solid"
+                  : "heroicons:hand-thumb-up"
+              }
+            />
           </Button>
         </DelayedTooltip>
       )}
@@ -101,7 +120,13 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             onPress={() => onOpenFeedbackForm(FeedbackType.DISLIKE)}
             data-testid="feedback-dislike"
           >
-            <Icon icon="heroicons:hand-thumb-down" />
+            <Icon
+              icon={
+                selectedFeedback === FeedbackType.DISLIKE
+                  ? "heroicons:hand-thumb-down-solid"
+                  : "heroicons:hand-thumb-down"
+              }
+            />
           </Button>
         </DelayedTooltip>
       )}

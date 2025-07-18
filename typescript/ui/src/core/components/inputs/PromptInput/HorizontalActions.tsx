@@ -32,6 +32,7 @@ export default function HorizontalActions({
             role="group"
             aria-label="Predefined message actions"
             aria-roledescription="Horizontal scrollable list"
+            data-testid="horizontal-actions"
           >
             <div className="m-auto flex gap-2">
               {actions.map((text, index) => (
