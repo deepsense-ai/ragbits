@@ -79,7 +79,7 @@ class GoogleDriveSource(Source):
         cls._credentials_file_path = path
 
     @classmethod
-    def set_impersonation_target(cls, target_mail: str):
+    def set_impersonation_target(cls, target_mail: str) -> None:
         """
         Sets the email address to impersonate when accessing Google Drive resources.
 
@@ -109,14 +109,13 @@ class GoogleDriveSource(Source):
             HttpError: If the Google Drive API is not enabled or accessible.
             Exception: If any other error occurs during client initialization.
         """
-
         cred_kwargs = {
             "filename": cls._credentials_file_path,
             "scopes": _SCOPES,
         }
 
         # handle impersonation
-        if not (cls.impersonate is None) and cls.impersonate:
+        if cls.impersonate is not None and cls.impersonate:
             if not cls.impersonate_target_email:
                 raise ValueError("Impersonation target email must be set when impersonation is enabled.")
             cred_kwargs["subject"] = cls.impersonate_target_email
