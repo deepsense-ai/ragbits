@@ -35,7 +35,7 @@ _HTTP_FORBIDDEN = 403
 _GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
     "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
-    "application/vnd.google-apps.presentation": "application/pdf", 
+    "application/vnd.google-apps.presentation": "application/pdf",
     "application/vnd.google-apps.drawing": "image/png",
     "application/vnd.google-apps.script": "application/vnd.google-apps.script+json",
     "application/vnd.google-apps.site": "text/html",
@@ -79,17 +79,17 @@ class GoogleDriveSource(Source):
         cls._credentials_file_path = path
 
     @classmethod
-    def set_impersonation_target(cls, target_mail: str): 
+    def set_impersonation_target(cls, target_mail: str):
         """
         Sets the email address to impersonate when accessing Google Drive resources.
-    
+
         Args:
             target_mail (str): The email address to impersonate.
 
         Raises:
             ValueError: If the provided email address is invalid (empty or missing '@').
         """
-        # check if email is a valid email. 
+        # check if email is a valid email.
         if not target_mail or "@" not in target_mail:
             raise ValueError("Invalid email address provided for impersonation.")
         cls.impersonate = True
@@ -110,13 +110,12 @@ class GoogleDriveSource(Source):
             Exception: If any other error occurs during client initialization.
         """
 
-
         cred_kwargs = {
             "filename": cls._credentials_file_path,
             "scopes": _SCOPES,
         }
 
-        # handle impersonation 
+        # handle impersonation
         if not (cls.impersonate is None) and cls.impersonate:
             if not cls.impersonate_target_email:
                 raise ValueError("Impersonation target email must be set when impersonation is enabled.")

@@ -62,8 +62,8 @@ async def test_google_drive_impersonate():
 
     sources_to_download = await GoogleDriveSource.from_uri(f"{unit_test_folder_id}/**")
     downloaded_count = 0
-    
-    try: 
+
+    try:
         # Iterate through each source (file or folder) found
         for source in sources_to_download:
             # Only attempt to fetch files, as folders cannot be "downloaded" in the same way
