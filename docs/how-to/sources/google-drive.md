@@ -187,6 +187,43 @@ async def process_drive_documents():
 asyncio.run(process_drive_documents())
 ```
 
+## Impersonating Google Accounts
+
+You can configure your Google service account to impersonate other users in your Google Workspace domain. This is useful when you need to access files or perform actions on behalf of specific users.
+
+### Step 1: Enable Domain-Wide Delegation
+
+1. **Sign in to the [Google Admin Console](https://admin.google.com/) as a Super Admin.**
+2. Navigate to:
+    **Security > Access and data control > API controls > MANAGE DOMAIN WIDE DELEGATION**
+3. Add a new API client or edit an existing one, and include the following OAuth scopes:
+     - `https://www.googleapis.com/auth/cloud-platform`
+     - `https://www.googleapis.com/auth/drive`
+4. Click **Authorize** or **Save** to apply the changes.
+
+### Step 2: Impersonate a User in Your Code
+
+After configuring domain-wide delegation, you can specify a target user to impersonate when using the `GoogleDriveSource` in your code.
+
+```python
+from ragbits.core.sources.google_drive import GoogleDriveSource
+
+target_email = "johnDoe@yourdomain.com"
+credentials_file = "service-account-key.json"
+
+# Set the path to your service account key file
+GoogleDriveSource.set_credentials_file_path(credentials_file)
+
+# Set the email address of the user to impersonate
+GoogleDriveSource.set_impersonation_target(target_email)
+```
+
+**Note:**
+- The `target_email` must be a valid user in your Google Workspace domain.
+- Ensure your service account has been granted domain-wide delegation as described above.
+
+This setup allows your service account to act on behalf of the specified user, enabling access to their Google Drive files and resources as permitted by the assigned scopes.
+
 ## Troubleshooting
 
 ### Common Issues
