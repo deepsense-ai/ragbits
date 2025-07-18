@@ -1,3 +1,4 @@
+import json
 from abc import ABCMeta, abstractmethod
 from typing import Any, Generic
 
@@ -99,7 +100,7 @@ class BasePrompt(metaclass=ABCMeta):
                             "type": "function",
                             "function": {
                                 "name": name,
-                                "arguments": str(arguments),
+                                "arguments": json.dumps(arguments),
                             },
                         }
                     ],
