@@ -67,9 +67,6 @@ class GoogleDriveSource(Source):
     is_folder: bool = False
     protocol: ClassVar[str] = "google_drive"
 
-    _impersonate: bool = False
-    _impersonate_target_email: str | None = None
-
     _google_drive_client: ClassVar["GoogleAPIResource | None"] = None
     _credentials_file_path: ClassVar[str | None] = None
 
@@ -92,8 +89,8 @@ class GoogleDriveSource(Source):
         # check if email is a valid email. 
         if not target_mail or "@" not in target_mail:
             raise ValueError("Invalid email address provided for impersonation.")
-        cls._impersonate = True
-        cls._impersonate_target_email = target_mail
+        cls.impersonate = True
+        cls.impersonate_target_email = target_mail
 
     @classmethod
     def _initialize_client_from_creds(cls) -> None:
@@ -117,10 +114,10 @@ class GoogleDriveSource(Source):
         }
 
         # handle impersonation 
-        if cls._impersonate:
-            if not cls._impersonate_target_email:
+        if not (cls.impersonate is None) and cls.impersonate:
+            if not cls.impersonate_target_email:
                 raise ValueError("Impersonation target email must be set when impersonation is enabled.")
-            cred_kwargs["subject"] = cls._impersonate_target_email
+            cred_kwargs["subject"] = cls.impersonate_target_email
             cred_kwargs["scopes"] = _IMPERSONATION_SCOPES
 
         creds = service_account.Credentials.from_service_account_file(**cred_kwargs)
