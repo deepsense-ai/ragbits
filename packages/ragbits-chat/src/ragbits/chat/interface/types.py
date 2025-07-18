@@ -3,6 +3,9 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
+from ragbits.chat.interface.ui_customization import UICustomization
+
 
 class MessageRole(str, Enum):
     """Defines the role of the message sender in a conversation."""
@@ -17,6 +20,7 @@ class Message(BaseModel):
 
     role: MessageRole
     content: str
+    id: str | None = Field(default=None, description="Optional message ID")
 
 
 class Reference(BaseModel):
@@ -138,3 +142,33 @@ class ChatContext(BaseModel):
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)
     model_config = ConfigDict(extra="allow")
+
+
+class FeedbackType(str, Enum):
+    """Feedback types for user feedback."""
+
+    LIKE = "like"
+    DISLIKE = "dislike"
+
+
+class FeedbackResponse(BaseModel):
+    """Response from feedback submission."""
+
+    status: str = Field(..., description="Status of the feedback submission")
+
+
+class ChatRequest(BaseModel):
+    """Client-side chat request interface."""
+
+    message: str = Field(..., description="The current user message")
+    history: list["Message"] = Field(default_factory=list, description="Previous message history")
+    context: dict[str, Any] = Field(default_factory=dict, description="User context information")
+
+
+class ConfigResponse(BaseModel):
+    """Configuration response from the API."""
+
+    feedback: FeedbackConfig = Field(..., description="Feedback configuration")
+    customization: UICustomization | None = Field(default=None, description="UI customization")
+    user_settings: UserSettings = Field(..., description="User settings")
+    debug_mode: bool = Field(default=False, description="Debug mode flag")
