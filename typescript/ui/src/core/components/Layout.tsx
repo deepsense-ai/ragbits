@@ -7,6 +7,8 @@ import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
 import { useHistoryActions } from "../stores/historyStore";
+import PluginWrapper from "../utils/plugins/PluginWrapper";
+import { SharePlugin } from "../../plugins/SharePlugin";
 
 interface LayoutProps {
   title: string;
@@ -110,6 +112,15 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PluginWrapper
+              plugin={SharePlugin}
+              component="ShareButton"
+              componentProps={undefined}
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
             <DelayedTooltip content="Clear chat" placement="bottom">
               <Button
                 isIconOnly

@@ -1,6 +1,11 @@
 import "@testing-library/jest-dom";
-import { vi } from "vitest";
+import { afterEach, vi } from "vitest";
 Object.defineProperty(window, "scrollTo", {
   value: vi.fn(),
   writable: true,
+});
+
+afterEach(() => {
+  vi.clearAllTimers();
+  vi.useRealTimers();
 });
