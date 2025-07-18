@@ -3,7 +3,14 @@ import {
   useHistoryPrimitives,
   useHistoryStore,
 } from "../../../core/stores/historyStore";
-import { Button } from "@heroui/react";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  useDisclosure,
+} from "@heroui/react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
@@ -49,10 +56,11 @@ function isSharedState(value: unknown): value is SharedState {
 
 export default function ShareButton() {
   const { restore } = useHistoryPrimitives();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const [icon, setIcon] = useState(DEFAULT_ICON);
   const iconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const onClick = () => {
+  const onShare = () => {
     const {
       chatOptions,
       history,
@@ -75,12 +83,18 @@ export default function ShareButton() {
 
     navigator.clipboard.writeText(encodedState);
     setIcon(SUCCESS_ICON);
+    onClose();
+
     if (iconTimerRef.current) {
       clearTimeout(iconTimerRef.current);
     }
     iconTimerRef.current = setTimeout(() => {
       setIcon(DEFAULT_ICON);
     }, 2000);
+  };
+
+  const onOpenChange = () => {
+    onClose();
   };
 
   useEffect(() => {
@@ -144,16 +158,58 @@ export default function ShareButton() {
   });
 
   return (
-    <DelayedTooltip content="Share conversation" placement="bottom">
-      <Button
-        isIconOnly
-        variant="ghost"
-        className="p-0"
-        aria-label="Share conversation"
-        onPress={onClick}
-      >
-        <Icon icon={icon} />
-      </Button>
-    </DelayedTooltip>
+    <>
+      <DelayedTooltip content="Share conversation" placement="bottom">
+        <Button
+          isIconOnly
+          variant="ghost"
+          className="p-0"
+          aria-label="Share conversation"
+          onPress={onOpen}
+        >
+          <Icon icon={icon} />
+        </Button>
+      </DelayedTooltip>
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1 text-default-900">
+                Share conversation
+              </ModalHeader>
+              <ModalBody>
+                <div className="flex flex-col gap-4">
+                  <p className="text-medium text-default-500">
+                    You are about to copy a code that allows sharing and storing
+                    your current app state. Once copied, you can paste this code
+                    anywhere on the site to instantly return to this exact
+                    setup. It’s a quick way to save your progress or share it
+                    with others.
+                  </p>
+                  <div className="flex justify-end gap-4 py-4">
+                    <Button
+                      color="danger"
+                      variant="light"
+                      onPress={onClose}
+                      aria-label="Close share modal"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      color="primary"
+                      onPress={onShare}
+                      aria-label="Copy to clipboard to share the conversation"
+                    >
+                      Copy to clipboard
+                    </Button>
+                  </div>
+                </div>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 }
