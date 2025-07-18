@@ -169,6 +169,9 @@ export class RagbitsClient {
                         }
                     }
                 } catch (streamError) {
+                    if (signal?.aborted) {
+                        return
+                    }
                     console.error('Stream error:', streamError)
                     await callbacks.onError(new Error('Error reading stream'))
                     break

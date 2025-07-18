@@ -67,6 +67,10 @@ jobs:
           }
         working-directory: typescript/ui
 
+      - name: Run unit tests
+        run: npm run test:run
+        working-directory: typescript/ui
+
       - name: Run integration tests
         run: |
           source .venv/bin/activate
