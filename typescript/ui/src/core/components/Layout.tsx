@@ -9,6 +9,7 @@ import DebugPanel from "./DebugPanel";
 import { useHistoryActions } from "../stores/historyStore";
 import PluginWrapper from "../utils/plugins/PluginWrapper";
 import { SharePlugin } from "../../plugins/SharePlugin";
+import ChatHistory from "./ChatHistory";
 
 interface LayoutProps {
   title: string;
@@ -77,10 +78,10 @@ export default function Layout({
 
   return (
     <div className="flex h-full min-h-[48rem] justify-center py-4">
-      <div className="flex w-full flex-col px-4 sm:max-w-[1200px]">
+      <div className="flex flex-col">
         <header
           className={cn(
-            "flex h-16 min-h-16 items-center justify-between gap-2 rounded-none rounded-t-medium border-small border-divider px-4 py-3",
+            "flex h-16 min-h-16 items-center justify-between gap-2 rounded-none rounded-tl-medium border-small border-r-0 border-divider px-4 py-3",
             classNames?.header,
           )}
         >
@@ -111,64 +112,75 @@ export default function Layout({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <PluginWrapper
-              plugin={SharePlugin}
-              component="ShareButton"
-              componentProps={undefined}
-              skeletonSize={{
-                width: "40px",
-                height: "40px",
-              }}
-            />
-            <DelayedTooltip content="Clear chat" placement="bottom">
-              <Button
-                isIconOnly
-                aria-label="Clear chat"
-                variant="ghost"
-                onPress={resetChat}
-                data-testid="layout-clear-chat-button"
-              >
-                <Icon icon="heroicons:arrow-path" />
-              </Button>
-            </DelayedTooltip>
-            <DelayedTooltip content="Change theme" placement="bottom">
-              <Button
-                isIconOnly
-                aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
-                variant="ghost"
-                onPress={toggleTheme}
-                data-testid="layout-toggle-theme-button"
-              >
-                {theme === Theme.DARK ? (
-                  <Icon icon="heroicons:sun" />
-                ) : (
-                  <Icon icon="heroicons:moon" />
-                )}
-              </Button>
-            </DelayedTooltip>
-            {config.debug_mode && (
-              <DelayedTooltip content="Toggle debug panel" placement="bottom">
-                <Button
-                  isIconOnly
-                  aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
-                  variant="ghost"
-                  onPress={() => setDebugOpened((o) => !o)}
-                  data-testid="layout-debug-button"
-                >
-                  <Icon icon="heroicons:bug-ant" />
-                  {isDebugOpened && (
-                    <div className="absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500" />
-                  )}
-                </Button>
-              </DelayedTooltip>
-            )}
-          </div>
         </header>
+        <ChatHistory />
+      </div>
+      <div className="flex w-full flex-col sm:max-w-[1000px]">
+        <div
+          className={cn(
+            "flex h-16 min-h-16 items-center justify-end gap-2 rounded-none rounded-tr-medium border-small border-l-0 border-divider px-4 py-3",
+            classNames?.header,
+          )}
+        >
+          <PluginWrapper
+            plugin={SharePlugin}
+            component="ShareButton"
+            componentProps={undefined}
+            skeletonSize={{
+              width: "40px",
+              height: "40px",
+            }}
+          />
+          <DelayedTooltip content="Clear chat" placement="bottom">
+            <Button
+              isIconOnly
+              aria-label="Clear chat"
+              variant="ghost"
+              onPress={resetChat}
+              data-testid="layout-clear-chat-button"
+            >
+              <Icon icon="heroicons:arrow-path" />
+            </Button>
+          </DelayedTooltip>
+          <DelayedTooltip content="Change theme" placement="bottom">
+            <Button
+              isIconOnly
+              aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
+              variant="ghost"
+              onPress={toggleTheme}
+              data-testid="layout-toggle-theme-button"
+            >
+              {theme === Theme.DARK ? (
+                <Icon icon="heroicons:sun" />
+              ) : (
+                <Icon icon="heroicons:moon" />
+              )}
+            </Button>
+          </DelayedTooltip>
+          {config.debug_mode && (
+            <DelayedTooltip content="Toggle debug panel" placement="bottom">
+              <Button
+                isIconOnly
+                aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
+                variant="ghost"
+                onPress={() => setDebugOpened((o) => !o)}
+                data-testid="layout-debug-button"
+              >
+                <Icon icon="heroicons:bug-ant" />
+                <div
+                  className={cn(
+                    "absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500 transition-all",
+                    isDebugOpened ? "opacity-100" : "opacity-0",
+                  )}
+                />
+              </Button>
+            </DelayedTooltip>
+          )}
+        </div>
         <main className="flex h-full overflow-hidden">
           <div
             className={cn(
-              "flex h-full w-full flex-col gap-4 rounded-none rounded-b-medium border-0 border-b border-l border-r border-divider py-3",
+              "flex h-full w-full flex-col gap-4 rounded-none rounded-br-medium border-0 border-b border-l border-r border-divider py-3",
               classNames?.container,
             )}
           >

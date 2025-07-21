@@ -26,6 +26,10 @@ vi.mock("../../src/core/stores/historyStore", () => {
   };
 });
 
+vi.mock("../../src/core/components/ChatHistory", () => ({
+  default: () => <div>ChatHistory</div>,
+}));
+
 import { useHistoryActions } from "../../src/core/stores/historyStore";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
@@ -71,6 +75,7 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
 
     expect(screen.getByTestId("layout-clear-chat-button")).toBeInTheDocument();
     expect(

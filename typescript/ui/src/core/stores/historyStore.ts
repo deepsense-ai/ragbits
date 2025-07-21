@@ -60,13 +60,14 @@ const initialConversationValues = () => ({
   chatOptions: undefined,
 });
 
-const conversationKey = (conversationId: string | null) => `${conversationId}`;
+export const getConversationKey = (conversationId: string | null) =>
+  `${conversationId}`;
 const updateConversation = (mutator: (draft: ConversationHistory) => void) => {
   return (draft: HistoryStore) => {
     // `null` is a speciall key for conversations that don't have server assigned id yet
     // There could only be one conversation without an id at any given time as they have the same key
     const conversation =
-      draft.conversations[conversationKey(draft.currentConversation)];
+      draft.conversations[getConversationKey(draft.currentConversation)];
 
     if (!conversation) {
       throw new Error(
@@ -147,10 +148,10 @@ export const useHistoryStore = create<HistoryStore>()(
               );
 
               if (type === ChatResponseType.CONVERSATION_ID) {
-                const newKey = conversationKey(content);
+                const newKey = getConversationKey(content);
 
                 set((draft) => {
-                  const oldKey = conversationKey(draft.currentConversation);
+                  const oldKey = getConversationKey(draft.currentConversation);
                   const oldConversation = draft.conversations[oldKey];
 
                   if (!oldConversation) {
@@ -219,7 +220,7 @@ export const useHistoryStore = create<HistoryStore>()(
         primitives: {
           getCurrentConversation: () => {
             set((draft) => {
-              const key = conversationKey(draft.currentConversation);
+              const key = getConversationKey(draft.currentConversation);
 
               if (key in draft.conversations) {
                 return;
@@ -231,7 +232,7 @@ export const useHistoryStore = create<HistoryStore>()(
             });
 
             const { currentConversation, conversations } = get();
-            const key = conversationKey(currentConversation);
+            const key = getConversationKey(currentConversation);
             const conversation = conversations[key];
 
             if (!conversation) {
@@ -245,23 +246,24 @@ export const useHistoryStore = create<HistoryStore>()(
             followupMessages: ConversationHistory["followupMessages"],
             chatOptions: ConversationHistory["chatOptions"],
             serverState: ConversationHistory["serverState"],
-            conversationId: ConversationHistory["conversationId"],
           ) => {
+            // Copied conversation should be treated as a new one, it would get it's own
+            // id after first message
+            const conversationId = null;
             const conversation: ConversationHistory = {
               ...initialConversationValues(),
               followupMessages,
               chatOptions,
               serverState,
-              conversationId,
               history,
+              conversationId,
             };
             const nonUserMessages = Object.values(history).filter(
               (m) => m.role !== MessageRole.USER,
             );
             conversation.eventsLog = nonUserMessages.map(() => []);
-
             set((draft: HistoryStore) => {
-              draft.conversations[conversationKey(conversationId)] =
+              draft.conversations[getConversationKey(conversationId)] =
                 conversation;
               draft.currentConversation = conversationId;
             });
@@ -297,6 +299,36 @@ export const useHistoryStore = create<HistoryStore>()(
         },
 
         actions: {
+          selectConversation: (conversationKey) => {
+            const {
+              actions: { stopAnswering },
+            } = get();
+
+            stopAnswering();
+
+            set((draft) => {
+              if (!(conversationKey in draft.conversations)) {
+                throw new Error(
+                  `Tried to select conversation that doesn't exist, id: ${conversationKey}`,
+                );
+              }
+
+              draft.currentConversation = conversationKey;
+            });
+          },
+          deleteConversation: (convKey) => {
+            set((draft) => {
+              if (convKey === getConversationKey(draft.currentConversation)) {
+                const {
+                  actions: { stopAnswering },
+                } = get();
+
+                stopAnswering();
+                draft.currentConversation = null;
+              }
+              delete draft.conversations[getConversationKey(convKey)];
+            });
+          },
           mergeExtensions: (messageId, extensions) => {
             set(
               updateConversation((draft) => {
@@ -355,10 +387,11 @@ export const useHistoryStore = create<HistoryStore>()(
           clearHistory: () => {
             set((draft) => {
               draft.currentConversation = null;
-              draft.conversations[conversationKey(draft.currentConversation)] =
-                {
-                  ...initialConversationValues(),
-                };
+              draft.conversations[
+                getConversationKey(draft.currentConversation)
+              ] = {
+                ...initialConversationValues(),
+              };
             });
           },
 

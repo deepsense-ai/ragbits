@@ -55,6 +55,8 @@ export interface HistoryStore {
     ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
+    selectConversation: (conversationKey: string) => void;
+    deleteConversation: (conversationKey: string) => void;
   };
 
   primitives: {

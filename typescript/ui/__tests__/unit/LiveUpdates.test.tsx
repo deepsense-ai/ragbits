@@ -13,15 +13,16 @@ vi.mock("../../src/core/components/ShimmerText", () => ({
 }));
 
 describe("LiveUpdates", () => {
-  const liveUpdates: ChatMessage["liveUpdates"] = new Map();
-  liveUpdates.set("1", {
-    label: "Live update 1",
-    description: "Live update 1 description",
-  });
-  liveUpdates.set("2", {
-    label: "Live update 2",
-    description: "Live update 2 description",
-  });
+  const liveUpdates: ChatMessage["liveUpdates"] = {
+    "1": {
+      label: "Live update 1",
+      description: "Live update 1 description",
+    },
+    "2": {
+      label: "Live update 2",
+      description: "Live update 2 description",
+    },
+  };
 
   it("renders latest update", () => {
     render(<LiveUpdates shouldShimmer={false} liveUpdates={liveUpdates} />);
@@ -37,17 +38,12 @@ describe("LiveUpdates", () => {
     render(
       <LiveUpdates
         shouldShimmer={false}
-        liveUpdates={
-          new Map([
-            [
-              "1",
-              {
-                label: "Live update 1",
-                description: "Live update 1 description",
-              },
-            ],
-          ])
-        }
+        liveUpdates={{
+          "1": {
+            label: "Live update 1",
+            description: "Live update 1 description",
+          },
+        }}
       />,
     );
     expect(screen.queryByTestId("live-updates-expand")).not.toBeInTheDocument();

@@ -54,7 +54,7 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
             opacity: 0,
             width: 0,
           }}
-          className="w-full max-w-[33%] overflow-hidden"
+          className="w-full max-w-[33%] overflow-hidden px-4"
         >
           <div
             className="mr-4 h-full overflow-auto rounded-medium border-small border-divider"
