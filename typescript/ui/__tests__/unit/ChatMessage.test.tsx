@@ -1,10 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
-import ChatMessage from "../../src/core/components/ChatMessage/ChatMessage";
+import { ChatMessage } from "../../src/core/components/ChatMessage";
 import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps, PropsWithChildren } from "react";
+
+vi.mock("@iconify/react/dist/iconify.js", () => ({
+  Icon: ({ icon, ...props }: { icon: string; [key: string]: any }) => (
+    <span data-testid={props["data-testid"]} data-icon={icon} {...props} />
+  ),
+}));
 
 vi.mock("../../src/core/stores/historyStore", () => {
   return {
@@ -62,7 +68,7 @@ vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
   ),
 }));
 
-vi.mock("./DelayedTooltip.tsx", () => ({
+vi.mock("../DelayedTooltip.tsx", () => ({
   DelayedTooltip: ({ children }: PropsWithChildren) => children,
 }));
 

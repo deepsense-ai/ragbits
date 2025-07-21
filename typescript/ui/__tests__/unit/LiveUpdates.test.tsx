@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
-import LiveUpdates from "../../src/core/components/LiveUpdates";
+import { LiveUpdates } from "../../src/core/components/ChatMessage";
 import { ChatMessage } from "../../src/types/history";
 import ShimmerText from "../../src/core/components/ShimmerText";
 
@@ -24,12 +24,20 @@ describe("LiveUpdates", () => {
   });
 
   it("renders latest update", () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(
+      <LiveUpdates isLoading={false} liveUpdates={liveUpdates} content="" />,
+    );
     expect(screen.getByText("Live update 2")).toBeInTheDocument();
   });
 
   it("renders open button", () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(
+      <LiveUpdates
+        isLoading={false}
+        liveUpdates={liveUpdates}
+        content="Live update 1 description"
+      />,
+    );
     expect(screen.getByTestId("live-updates-expand")).toBeInTheDocument();
   });
 
@@ -48,13 +56,16 @@ describe("LiveUpdates", () => {
             ],
           ])
         }
+        content=""
       />,
     );
     expect(screen.queryByTestId("live-updates-expand")).not.toBeInTheDocument();
   });
 
   it("shows rest of the updates when expanded", async () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(
+      <LiveUpdates isLoading={false} liveUpdates={liveUpdates} content="" />,
+    );
     const user = userEvent.setup();
     const expandButton = screen.getByTestId("live-updates-expand");
     await user.click(expandButton);
@@ -64,7 +75,9 @@ describe("LiveUpdates", () => {
   });
 
   it("uses shimmer text when loading", () => {
-    render(<LiveUpdates isLoading={true} liveUpdates={liveUpdates} />);
+    render(
+      <LiveUpdates isLoading={true} liveUpdates={liveUpdates} content="" />,
+    );
     expect(screen.getByTestId("shimmer-text")).toBeInTheDocument();
   });
 });
