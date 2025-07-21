@@ -7,6 +7,8 @@ import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
 import { useHistoryActions } from "../stores/historyStore";
+import PluginWrapper from "../utils/plugins/PluginWrapper";
+import { SharePlugin } from "../../plugins/SharePlugin";
 
 interface LayoutProps {
   title: string;
@@ -110,12 +112,22 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PluginWrapper
+              plugin={SharePlugin}
+              component="ShareButton"
+              componentProps={undefined}
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
             <DelayedTooltip content="Clear chat" placement="bottom">
               <Button
                 isIconOnly
                 aria-label="Clear chat"
                 variant="ghost"
                 onPress={resetChat}
+                data-testid="layout-clear-chat-button"
               >
                 <Icon icon="heroicons:arrow-path" />
               </Button>
@@ -126,6 +138,7 @@ export default function Layout({
                 aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
                 variant="ghost"
                 onPress={toggleTheme}
+                data-testid="layout-toggle-theme-button"
               >
                 {theme === Theme.DARK ? (
                   <Icon icon="heroicons:sun" />
@@ -141,6 +154,7 @@ export default function Layout({
                   aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
                   variant="ghost"
                   onPress={() => setDebugOpened((o) => !o)}
+                  data-testid="layout-debug-button"
                 >
                   <Icon icon="heroicons:bug-ant" />
                   {isDebugOpened && (

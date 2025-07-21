@@ -10,6 +10,7 @@ import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
 import {
   useHistoryActions,
   useHistoryStore,
+  useMessage,
   useMessageIds,
 } from "./core/stores/historyStore";
 import QuickMessageInput from "./core/components/inputs/QuickMessageInput";
@@ -19,6 +20,8 @@ export default function App() {
     config: { customization },
   } = useConfigContext();
   const messageIds = useMessageIds();
+  const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+  const lastMessage = useMessage(lastMessageId);
   const historyIsLoading = useHistoryStore((s) => s.isLoading);
   const followupMessages = useHistoryStore((s) => s.followupMessages);
   const { sendMessage, stopAnswering } = useHistoryActions();
@@ -63,7 +66,7 @@ export default function App() {
       const container = scrollContainerRef.current;
       container.scrollTop = container.scrollHeight;
     }
-  }, [handleScroll, messageIds, shouldAutoScroll]);
+  }, [handleScroll, lastMessage, shouldAutoScroll]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -85,15 +88,18 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const historyComponent = (
-    <ScrollShadow
-      className="relative flex h-full flex-col gap-6 pb-8"
-      ref={scrollContainerRef}
-    >
-      {messageIds.map((m) => (
-        <ChatMessage key={m} messageId={m} />
-      ))}
-    </ScrollShadow>
+  const historyComponent = useMemo(
+    () => (
+      <ScrollShadow
+        className="relative flex h-full flex-col gap-6 pb-8"
+        ref={scrollContainerRef}
+      >
+        {messageIds.map((m) => (
+          <ChatMessage key={m} messageId={m} />
+        ))}
+      </ScrollShadow>
+    ),
+    [messageIds],
   );
 
   const heroComponent = (
