@@ -7,6 +7,7 @@
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
+- Added Google Drive support for impersonation and presentation-to-pdf (#724)
 
 ## 1.1.0 (2025-07-09)
 

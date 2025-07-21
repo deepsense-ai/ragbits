@@ -20,15 +20,22 @@ with suppress(ImportError):
 
 _SCOPES = ["https://www.googleapis.com/auth/drive"]
 
+# Scopes that the service account is delegated for in the Google Workspace Admin Console.
+_IMPERSONATION_SCOPES = [
+    "https://www.googleapis.com/auth/cloud-platform",  # General Cloud access (if needed)
+    "https://www.googleapis.com/auth/drive",  # Example: For Google Drive API
+]
+
 # HTTP status codes
 _HTTP_NOT_FOUND = 404
 _HTTP_FORBIDDEN = 403
+
 
 # Maps Google-native Drive MIME types → export MIME types
 _GOOGLE_EXPORT_MIME_MAP = {
     "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
     "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
-    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
+    "application/vnd.google-apps.presentation": "application/pdf",
     "application/vnd.google-apps.drawing": "image/png",
     "application/vnd.google-apps.script": "application/vnd.google-apps.script+json",
     "application/vnd.google-apps.site": "text/html",
@@ -52,6 +59,9 @@ _EXPORT_EXTENSION_MAP = {
 class GoogleDriveSource(Source):
     """
     Handles source connection for Google Drive and provides methods to fetch files.
+
+    NOTE(Do not define variables at class level that you pass to google client, define them at instance level, or else
+    google client will complain.):
     """
 
     file_id: str
@@ -62,11 +72,30 @@ class GoogleDriveSource(Source):
 
     _google_drive_client: ClassVar["GoogleAPIResource | None"] = None
     _credentials_file_path: ClassVar[str | None] = None
+    impersonate: ClassVar[bool | None] = None
+    impersonate_target_email: ClassVar[str | None] = None
 
     @classmethod
     def set_credentials_file_path(cls, path: str) -> None:
         """Set the path to the service account credentials file."""
         cls._credentials_file_path = path
+
+    @classmethod
+    def set_impersonation_target(cls, target_mail: str) -> None:
+        """
+        Sets the email address to impersonate when accessing Google Drive resources.
+
+        Args:
+            target_mail (str): The email address to impersonate.
+
+        Raises:
+            ValueError: If the provided email address is invalid (empty or missing '@').
+        """
+        # check if email is a valid email.
+        if not target_mail or "@" not in target_mail:
+            raise ValueError("Invalid email address provided for impersonation.")
+        cls.impersonate = True
+        cls.impersonate_target_email = target_mail
 
     @classmethod
     def _initialize_client_from_creds(cls) -> None:
@@ -82,7 +111,20 @@ class GoogleDriveSource(Source):
             HttpError: If the Google Drive API is not enabled or accessible.
             Exception: If any other error occurs during client initialization.
         """
-        creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=_SCOPES)
+        cred_kwargs = {
+            "filename": cls._credentials_file_path,
+            "scopes": _SCOPES,
+        }
+
+        # handle impersonation
+        if cls.impersonate is not None and cls.impersonate:
+            if not cls.impersonate_target_email:
+                raise ValueError("Impersonation target email must be set when impersonation is enabled.")
+            cred_kwargs["subject"] = cls.impersonate_target_email
+            cred_kwargs["scopes"] = _IMPERSONATION_SCOPES
+
+        creds = service_account.Credentials.from_service_account_file(**cred_kwargs)
+
         cls._google_drive_client = build("drive", "v3", credentials=creds)
         cls._google_drive_client.files().list(
             pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
