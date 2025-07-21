@@ -64,9 +64,7 @@ describe("LiveUpdates", () => {
   });
 
   it("uses shimmer text when loading", () => {
-    render(
-      <LiveUpdates isLoading={true} liveUpdates={liveUpdates} content="" />,
-    );
+    render(<LiveUpdates isLoading={true} liveUpdates={liveUpdates} />);
     expect(screen.getByTestId("shimmer-text")).toBeInTheDocument();
   });
 });
