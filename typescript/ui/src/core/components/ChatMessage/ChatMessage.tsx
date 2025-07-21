@@ -74,14 +74,14 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               />
             ) : (
               <div className="flex flex-col gap-2">
+                {isLoading && !liveUpdates && !content.length && (
+                  <LoadingIndicator />
+                )}
                 <LiveUpdates
                   isLoading={isLoading}
                   liveUpdates={liveUpdates}
                   classNames={{ liveUpdates: classNames?.liveUpdates }}
                 />
-                {isLoading && !liveUpdates && (
-                  <LoadingIndicator content={content} />
-                )}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
