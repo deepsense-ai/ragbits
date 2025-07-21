@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Button } from "@heroui/react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 
 import DelayedTooltip from "../DelayedTooltip.tsx";
 import PluginWrapper from "../../utils/plugins/PluginWrapper.tsx";
@@ -35,7 +35,7 @@ const MessageActions = ({
   };
 
   return (
-    <div className="mt-2 flex items-center gap-2">
+    <div className="flex items-center gap-2">
       {!isLoading && (
         <>
           <DelayedTooltip content="Copy" placement="bottom">

@@ -11,7 +11,7 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";

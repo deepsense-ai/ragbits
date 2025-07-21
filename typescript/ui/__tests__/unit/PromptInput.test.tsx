@@ -8,12 +8,6 @@ import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInpu
 import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "../../src/types/history";
 
-vi.mock("@iconify/react/dist/iconify.js", () => ({
-  Icon: ({ icon, ...props }: { icon: string; [key: string]: any }) => (
-    <span data-testid={props["data-testid"]} data-icon={icon} {...props} />
-  ),
-}));
-
 vi.mock(
   "../../src/core/components/inputs/PromptInput/HorizontalActions.tsx",
   () => ({

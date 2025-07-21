@@ -8,7 +8,7 @@ import {
   Image,
   useDisclosure,
 } from "@heroui/react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 
 type ImageGalleryProps = {
   images: Map<string, string>;
@@ -64,7 +64,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
   return (
     <>
       {/* Thumbnail Grid */}
-      <div className="mt-2 grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
+      <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
         {imageArray.map((image, index) => (
           <div
             key={image.alt}

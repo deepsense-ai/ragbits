@@ -123,31 +123,6 @@ class MyChat(ChatInterface):
             "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
         )
 
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),
             self.create_live_update(

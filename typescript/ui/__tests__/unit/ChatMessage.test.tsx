@@ -6,12 +6,6 @@ import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps, PropsWithChildren } from "react";
 
-vi.mock("@iconify/react/dist/iconify.js", () => ({
-  Icon: ({ icon, ...props }: { icon: string; [key: string]: any }) => (
-    <span data-testid={props["data-testid"]} data-icon={icon} {...props} />
-  ),
-}));
-
 vi.mock("../../src/core/stores/historyStore", () => {
   return {
     useMessage: vi.fn(),

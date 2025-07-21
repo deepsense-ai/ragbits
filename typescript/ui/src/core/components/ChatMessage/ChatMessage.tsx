@@ -9,6 +9,7 @@ import LiveUpdates from "./LiveUpdates.tsx";
 import ImageGallery from "./ImageGallery.tsx";
 import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
+import LoadingIndicator from "./LoadingIndicator.tsx";
 
 type ChatMessageProps = {
   classNames?: {
@@ -72,13 +73,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 classNames={classNames?.content}
               />
             ) : (
-              <>
+              <div className="flex flex-col gap-2">
                 <LiveUpdates
                   isLoading={isLoading}
                   liveUpdates={liveUpdates}
-                  content={content}
                   classNames={{ liveUpdates: classNames?.liveUpdates }}
                 />
+                {isLoading && <LoadingIndicator content={content} />}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
@@ -95,7 +96,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   message={message}
                   isLoading={isLoading}
                 />
-              </>
+              </div>
             )}
           </div>
         </div>

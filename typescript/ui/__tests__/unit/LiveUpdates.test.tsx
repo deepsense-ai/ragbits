@@ -24,20 +24,12 @@ describe("LiveUpdates", () => {
   });
 
   it("renders latest update", () => {
-    render(
-      <LiveUpdates isLoading={false} liveUpdates={liveUpdates} content="" />,
-    );
+    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
     expect(screen.getByText("Live update 2")).toBeInTheDocument();
   });
 
   it("renders open button", () => {
-    render(
-      <LiveUpdates
-        isLoading={false}
-        liveUpdates={liveUpdates}
-        content="Live update 1 description"
-      />,
-    );
+    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
     expect(screen.getByTestId("live-updates-expand")).toBeInTheDocument();
   });
 
@@ -56,16 +48,13 @@ describe("LiveUpdates", () => {
             ],
           ])
         }
-        content=""
       />,
     );
     expect(screen.queryByTestId("live-updates-expand")).not.toBeInTheDocument();
   });
 
   it("shows rest of the updates when expanded", async () => {
-    render(
-      <LiveUpdates isLoading={false} liveUpdates={liveUpdates} content="" />,
-    );
+    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
     const user = userEvent.setup();
     const expandButton = screen.getByTestId("live-updates-expand");
     await user.click(expandButton);
