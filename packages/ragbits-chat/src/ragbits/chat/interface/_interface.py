@@ -68,7 +68,7 @@ def with_chat_metadata(
 
         # Generate conversation_id if this is the first message
         is_new_conversation = False
-        if not context.conversation_id and (not history or len(history) == 0):
+        if not context.conversation_id:
             context.conversation_id = str(uuid.uuid4())
             is_new_conversation = True
             yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
