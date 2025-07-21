@@ -20,9 +20,9 @@ To run the script, execute the following command:
 #
 
 import asyncio
+import uuid
 from collections.abc import AsyncGenerator
 from typing import Literal
-import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
