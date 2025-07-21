@@ -1,6 +1,6 @@
 import { Button, cn, ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
-import ChatMessage from "./core/components/ChatMessage";
+import ChatMessage from "./core/components/ChatMessage/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";

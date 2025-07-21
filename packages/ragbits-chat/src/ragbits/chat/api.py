@@ -234,6 +234,8 @@ class RagbitsAPI:
                                 outputs.message_id = content
                             case ChatResponseType.CONVERSATION_ID:
                                 outputs.conversation_id = content
+                            case ChatResponseType.IMAGE:
+                                outputs.image_url = content
 
                         yield chunk
 

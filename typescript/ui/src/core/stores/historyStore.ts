@@ -6,6 +6,7 @@ import {
   LiveUpdateType,
   MessageRole,
   RagbitsClient,
+  Image,
 } from "@ragbits/api-client-react";
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
@@ -70,6 +71,18 @@ export const useHistoryStore = create<HistoryStore>()(
             });
           };
 
+          const _handleImage = (image: Image, message: ChatMessage) => {
+            return produce(message.images ?? new Map(), (draft) => {
+              if (draft.has(image.id)) {
+                console.error(
+                  `Got duplicate image event for image_id: ${image.id}. Ignoring the event.`,
+                );
+              }
+
+              draft.set(image.id, image.url);
+            });
+          };
+
           const _handleNonMessageEvent = () => {
             set(
               produce((draft: HistoryStore) => {
@@ -115,6 +128,9 @@ export const useHistoryStore = create<HistoryStore>()(
                       response.content,
                       message,
                     );
+                    break;
+                  case ChatResponseType.IMAGE:
+                    message.images = _handleImage(response.content, message);
                     break;
                 }
               }),

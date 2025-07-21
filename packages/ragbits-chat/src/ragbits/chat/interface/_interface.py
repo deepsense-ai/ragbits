@@ -22,6 +22,7 @@ from .types import (
     ChatContext,
     ChatResponse,
     ChatResponseType,
+    Image,
     LiveUpdate,
     LiveUpdateContent,
     LiveUpdateType,
@@ -227,6 +228,11 @@ class ChatInterface(ABC):
     def create_followup_messages(messages: list[str]) -> ChatResponse:
         """Helper method to create a live update response."""
         return ChatResponse(type=ChatResponseType.FOLLOWUP_MESSAGES, content=messages)
+
+    @staticmethod
+    def create_image_response(image_id: str, image_url: str) -> ChatResponse:
+        """Helper method to create an image response."""
+        return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

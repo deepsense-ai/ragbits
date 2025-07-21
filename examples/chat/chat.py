@@ -22,6 +22,7 @@ To run the script, execute the following command:
 import asyncio
 from collections.abc import AsyncGenerator
 from typing import Literal
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -115,6 +116,36 @@ class MyChat(ChatInterface):
 
         yield self.create_state_update(
             {"example_state_key": "example_state_value", "example_state_key_2": "example_state_value_2"}
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
+        )
+
+        yield self.create_image_response(
+            str(uuid.uuid4()),
+            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI="
         )
 
         example_live_updates = [

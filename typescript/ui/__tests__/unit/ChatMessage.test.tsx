@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
-import ChatMessage from "../../src/core/components/ChatMessage";
+import ChatMessage from "../../src/core/components/ChatMessage/ChatMessage";
 import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
