@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add images support in chat message, images gallery (#731)
 - Add persistent user settings (#719)
 - Send chat options under `user_settings` key (#721)
 - Add feedback indicator to messages, allow `extensions` in chat messages (#722)
