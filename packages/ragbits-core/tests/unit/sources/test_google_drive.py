@@ -57,9 +57,16 @@ async def test_google_drive_impersonate():
     credentials_file = "test_clientid.json"
 
     GoogleDriveSource.set_credentials_file_path(credentials_file)
+
+    if target_email is None:
+        pytest.skip("GOOGLE_DRIVE_TARGET_EMAIL environment variable not set")
+
     GoogleDriveSource.set_impersonation_target(target_email)
 
     unit_test_folder_id = os.environ.get("GOOGLE_SOURCE_UNIT_TEST_FOLDER")
+
+    if unit_test_folder_id is None:
+        pytest.skip("GOOGLE_SOURCE_UNIT_TEST_FOLDER environment variable not set")
 
     sources_to_download = await GoogleDriveSource.from_uri(f"{unit_test_folder_id}/**")
     downloaded_count = 0
@@ -143,6 +150,9 @@ async def test_google_drive_source_fetch_file():
     downloaded files.
     """
     unit_test_folder_id = os.environ.get("GOOGLE_SOURCE_UNIT_TEST_FOLDER")
+
+    if unit_test_folder_id is None:
+        pytest.skip("GOOGLE_SOURCE_UNIT_TEST_FOLDER environment variable not set")
 
     # Initialize a counter for successfully downloaded files
     downloaded_count = 0

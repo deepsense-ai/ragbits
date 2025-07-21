@@ -72,6 +72,8 @@ class GoogleDriveSource(Source):
 
     _google_drive_client: ClassVar["GoogleAPIResource | None"] = None
     _credentials_file_path: ClassVar[str | None] = None
+    impersonate: ClassVar[bool | None] = None
+    impersonate_target_email: ClassVar[str | None] = None
 
     @classmethod
     def set_credentials_file_path(cls, path: str) -> None:
