@@ -11,14 +11,12 @@ type MessageActionsProps = {
   content: string;
   serverId?: string;
   message: ChatMessage;
-  isLoading: boolean;
 };
 
 const MessageActions = ({
   content,
   serverId,
   message,
-  isLoading,
 }: MessageActionsProps) => {
   const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
   const copyIconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -36,38 +34,34 @@ const MessageActions = ({
 
   return (
     <div className="flex items-center gap-2">
-      {!isLoading && (
-        <>
-          <DelayedTooltip content="Copy" placement="bottom">
-            <Button
-              isIconOnly
-              variant="ghost"
-              className="p-0"
-              aria-label="Copy message"
-              onPress={onCopyClick}
-            >
-              <Icon
-                icon={copyIcon}
-                data-testid="chat-message-copy-icon"
-                data-icon={copyIcon}
-              />
-            </Button>
-          </DelayedTooltip>
+      <DelayedTooltip content="Copy" placement="bottom">
+        <Button
+          isIconOnly
+          variant="ghost"
+          className="p-0"
+          aria-label="Copy message"
+          onPress={onCopyClick}
+        >
+          <Icon
+            icon={copyIcon}
+            data-testid="chat-message-copy-icon"
+            data-icon={copyIcon}
+          />
+        </Button>
+      </DelayedTooltip>
 
-          {serverId && (
-            <PluginWrapper
-              plugin={FeedbackFormPlugin}
-              component="FeedbackForm"
-              componentProps={{
-                message,
-              }}
-              skeletonSize={{
-                width: "88px",
-                height: "40px",
-              }}
-            />
-          )}
-        </>
+      {serverId && (
+        <PluginWrapper
+          plugin={FeedbackFormPlugin}
+          component="FeedbackForm"
+          componentProps={{
+            message,
+          }}
+          skeletonSize={{
+            width: "88px",
+            height: "40px",
+          }}
+        />
       )}
     </div>
   );

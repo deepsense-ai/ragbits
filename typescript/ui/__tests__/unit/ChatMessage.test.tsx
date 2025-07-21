@@ -122,16 +122,10 @@ describe("ChatMessage", () => {
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
     });
 
-    it("displays loading state for assistant message with content", () => {
-      mockStore(MessageRole.ASSISTANT, true);
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
-      expect(screen.getByText("Generating...")).toBeInTheDocument();
-    });
-
     it("displays loading state for assistant message without content", () => {
       mockStore(MessageRole.ASSISTANT, true, "");
       render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
-      expect(screen.getByText("Thinking...")).toBeInTheDocument();
+      expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     });
 
     it("copies content to clipboard when copy button is clicked", async () => {

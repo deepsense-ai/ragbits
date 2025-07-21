@@ -41,6 +41,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     const [didAnimate, setDidAnimate] = useState(false);
 
+    const showLoadingIndicator = isLoading && !liveUpdates && !content.length;
+    const showMessageActions = !isLoading;
+    const showImageGallery =
+      !isLoading && images && Object.keys(images).length > 0;
+    const showMessageReferences = references && references.length > 0;
+    const showLiveUpdates = !isLoading && liveUpdates;
+
     return (
       <div
         ref={ref}
@@ -74,30 +81,29 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               />
             ) : (
               <div className="flex flex-col gap-2">
-                {isLoading && !liveUpdates && !content.length && (
-                  <LoadingIndicator />
+                {showLoadingIndicator && <LoadingIndicator />}
+                {showLiveUpdates && (
+                  <LiveUpdates
+                    shouldShimmer={isLoading}
+                    liveUpdates={liveUpdates}
+                    classNames={{ liveUpdates: classNames?.liveUpdates }}
+                  />
                 )}
-                <LiveUpdates
-                  isLoading={isLoading}
-                  liveUpdates={liveUpdates}
-                  classNames={{ liveUpdates: classNames?.liveUpdates }}
-                />
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
                 />
-                {images && images.size > 0 && !isLoading && (
-                  <ImageGallery images={images} />
-                )}
-                {references && references.length > 0 && !isLoading && (
+                {showImageGallery && <ImageGallery images={images} />}
+                {showMessageReferences && (
                   <MessageReferences references={references} />
                 )}
-                <MessageActions
-                  content={content}
-                  serverId={serverId}
-                  message={message}
-                  isLoading={isLoading}
-                />
+                {showMessageActions && (
+                  <MessageActions
+                    content={content}
+                    serverId={serverId}
+                    message={message}
+                  />
+                )}
               </div>
             )}
           </div>

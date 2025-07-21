@@ -72,14 +72,14 @@ export const useHistoryStore = create<HistoryStore>()(
           };
 
           const _handleImage = (image: Image, message: ChatMessage) => {
-            return produce(message.images ?? new Map(), (draft) => {
-              if (draft.has(image.id)) {
+            return produce(message.images ?? {}, (draft) => {
+              if (draft[image.id]) {
                 console.error(
                   `Got duplicate image event for image_id: ${image.id}. Ignoring the event.`,
                 );
               }
 
-              draft.set(image.id, image.url);
+              draft[image.id] = image.url;
             });
           };
 

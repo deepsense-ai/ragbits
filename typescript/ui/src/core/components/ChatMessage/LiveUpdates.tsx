@@ -5,33 +5,28 @@ import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { ChatMessage } from "../../../types/history";
 import ShimmerText from "../ShimmerText";
+import { LiveUpdate } from "@ragbits/api-client-react";
 
 type LiveUpdatesProps = {
-  isLoading: boolean;
-  liveUpdates: ChatMessage["liveUpdates"];
+  shouldShimmer: boolean;
+  liveUpdates: Map<string, LiveUpdate["content"]>;
   classNames?: {
     liveUpdates?: string;
   };
 };
 
 export default function LiveUpdates({
-  isLoading,
+  shouldShimmer,
   liveUpdates,
   classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const updates = liveUpdates ? Array.from(liveUpdates.values()) : null;
+  const updates = Array.from(liveUpdates.values());
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
-  // If there are no live updates and we're not loading, don't render anything
-  if (!updates) {
-    return null;
-  }
-
-  const hasMultipleUpdates = updates?.length > 1;
+  const hasMultipleUpdates = updates.length > 1;
   const lastUpdate = updates[updates.length - 1];
   const earlierUpdates = updates.slice(0, -1);
   const shimmerDuration =
@@ -82,7 +77,7 @@ export default function LiveUpdates({
 
       <div className="flex items-center justify-between gap-4">
         <div className="relative overflow-hidden bg-transparent">
-          {isLoading ? (
+          {shouldShimmer ? (
             <ShimmerText duration={shimmerDuration}>
               <div>{lastUpdate.label}</div>
               <Markdown

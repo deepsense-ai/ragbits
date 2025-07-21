@@ -24,19 +24,19 @@ describe("LiveUpdates", () => {
   });
 
   it("renders latest update", () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(<LiveUpdates shouldShimmer={false} liveUpdates={liveUpdates} />);
     expect(screen.getByText("Live update 2")).toBeInTheDocument();
   });
 
   it("renders open button", () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(<LiveUpdates shouldShimmer={false} liveUpdates={liveUpdates} />);
     expect(screen.getByTestId("live-updates-expand")).toBeInTheDocument();
   });
 
   it("doesn't render open button if there's only one update", () => {
     render(
       <LiveUpdates
-        isLoading={false}
+        shouldShimmer={false}
         liveUpdates={
           new Map([
             [
@@ -54,7 +54,7 @@ describe("LiveUpdates", () => {
   });
 
   it("shows rest of the updates when expanded", async () => {
-    render(<LiveUpdates isLoading={false} liveUpdates={liveUpdates} />);
+    render(<LiveUpdates shouldShimmer={false} liveUpdates={liveUpdates} />);
     const user = userEvent.setup();
     const expandButton = screen.getByTestId("live-updates-expand");
     await user.click(expandButton);
@@ -64,7 +64,7 @@ describe("LiveUpdates", () => {
   });
 
   it("uses shimmer text when loading", () => {
-    render(<LiveUpdates isLoading={true} liveUpdates={liveUpdates} />);
+    render(<LiveUpdates shouldShimmer={true} liveUpdates={liveUpdates} />);
     expect(screen.getByTestId("shimmer-text")).toBeInTheDocument();
   });
 });

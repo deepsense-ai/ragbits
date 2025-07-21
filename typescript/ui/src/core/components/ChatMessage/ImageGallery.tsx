@@ -9,16 +9,17 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import { Image as ImageType } from "@ragbits/api-client-react";
 
 type ImageGalleryProps = {
-  images: Map<string, string>;
+  images: Record<string, ImageType["url"]>;
 };
 
 const ImageGallery = ({ images }: ImageGalleryProps) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const imageArray = Array.from(images.entries()).map(([id, url]) => ({
+  const imageArray = Object.entries(images).map(([id, url]) => ({
     src: url,
     alt: id,
   }));
@@ -64,7 +65,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
   return (
     <>
       {/* Thumbnail Grid */}
-      <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
+      <div className="xs:grid-cols-4 grid grid-cols-3 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
         {imageArray.map((image, index) => (
           <div
             key={image.alt}

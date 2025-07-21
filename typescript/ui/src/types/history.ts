@@ -22,7 +22,7 @@ export interface ChatMessage {
   references?: Reference[];
   liveUpdates?: Map<string, LiveUpdate["content"]>;
   extensions?: Record<string, unknown>;
-  images?: Map<string, Image["url"]>;
+  images?: Record<string, Image["url"]>;
 }
 
 export interface HistoryStore {
