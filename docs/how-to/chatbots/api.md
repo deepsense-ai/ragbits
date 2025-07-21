@@ -9,8 +9,8 @@ First, create a chat implementation by subclassing `ChatInterface`. Here's a min
 ```python
 from collections.abc import AsyncGenerator
 
-from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.types import ChatResponse, Message
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
 class MyChat(ChatInterface):
@@ -34,7 +34,7 @@ Save this to a file, for example `chat.py`.
 You can enable user feedback by adding a feedback configuration:
 
 ```python
-from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
+from ragbits.chat.interface.forms import FeedbackConfig
 
 class LikeFormExample(BaseModel):
     model_config = ConfigDict(
@@ -56,7 +56,7 @@ class DislikeFormExample(BaseModel):
     feedback: str = Field(description="Please provide more details", min_length=1)
 
 # Add this to your ChatInterface class
-feedback_config = JSONSchemaFeedbackConfig.from_models(
+feedback_config = FeedbackConfig.from_models(
     like_enabled=True,
     like_form=LikeFormExample,
     dislike_enabled=True,
@@ -85,10 +85,12 @@ You can start the API server using the Ragbits CLI:
 ragbits api run path.to.your.module:MyChat
 ```
 
+> **Note**: `path.to.your.module` should be the dotted Python *module path* **without** the `.py` extension.
+
 Or programmatically:
 
 ```python
-from ragbits.api._main import RagbitsAPI
+from ragbits.chat.api import RagbitsAPI
 
 api = RagbitsAPI(
     chat_interface="path.to.your.module:MyChat",
@@ -102,7 +104,7 @@ api.run(host="127.0.0.1", port=8000)
 
 Open your browser and navigate to:
 
-```
+```bash
 http://127.0.0.1:8000
 ```
 
@@ -211,9 +213,10 @@ Here's a complete example of a chat implementation:
 ```python
 from collections.abc import AsyncGenerator
 
-from ragbits.api.interface import ChatInterface
-from ragbits.api.interface.forms import JSONSchemaFeedbackConfig
-from ragbits.api.interface.types import ChatResponse, Message
+
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.forms import FeedbackConfig
+from ragbits.chat.interface.types import ChatResponse, Message
 from ragbits.core.llms import LiteLLM
 
 class LikeFormExample(BaseModel):
@@ -238,7 +241,7 @@ class DislikeFormExample(BaseModel):
 class MyChat(ChatInterface):
     """A simple example implementation of the ChatInterface."""
 
-    feedback_config = JSONSchemaFeedbackConfig.from_models(
+    feedback_config = FeedbackConfig.from_models(
         like_enabled=True,
         like_form=LikeFormExample,
         dislike_enabled=True,
@@ -264,4 +267,84 @@ class MyChat(ChatInterface):
         # Stream the response from the LLM
         async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
             yield self.create_text_response(chunk)
+```
+
+## Using the Ragbits Python Client
+
+The Ragbits ecosystem provides an official Python client that makes it easy to integrate your application with the chat API without dealing with low-level HTTP details.
+
+### Basic Usage
+
+```python
+import asyncio
+from ragbits.chat.client import RagbitsChatClient, SyncRagbitsChatClient
+
+async def main() -> None:
+    async with RagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
+        # One-shot request - collect all text responses
+        responses = await client.run("What's the weather like in Paris?")
+        text_content = "".join(chunk.as_text() or "" for chunk in responses)
+        print(text_content)
+
+        # Streaming conversation - print text as it arrives
+        conv = client.new_conversation()
+        async for chunk in conv.run_streaming("Give me three movie recommendations"):
+            if text := chunk.as_text():
+                print(text, end="")
+        print()
+
+    # Synchronous client
+    sync_client = SyncRagbitsChatClient(base_url="http://127.0.0.1:8000")
+
+    # Simple one-off request
+    responses = sync_client.run("Hello, Ragbits!")
+    text_content = "".join(chunk.as_text() or "" for chunk in responses)
+    print(text_content)
+
+    # Synchronous conversation
+    conversation = sync_client.new_conversation()
+    for chunk in conversation.run_streaming("Tell me a joke"):
+        if text := chunk.as_text():
+            print(text, end="")
+    print()
+
+asyncio.run(main())
+```
+
+### Handling Different Response Types
+
+The client returns `ChatResponse` objects that can contain different types of content. Use the appropriate methods to extract the content you need:
+
+```python
+import asyncio
+from ragbits.chat.client import RagbitsChatClient
+
+async def handle_responses() -> None:
+    async with RagbitsChatClient(base_url="http://127.0.0.1:8000") as client:
+        conv = client.new_conversation()
+
+        async for chunk in conv.run_streaming("Tell me about Python"):
+            # Handle text content
+            if text := chunk.as_text():
+                print(text, end="")
+
+            # Handle references
+            elif ref := chunk.as_reference():
+                print(f"\n📖 Reference: {ref.title}")
+                if ref.url:
+                    print(f"   URL: {ref.url}")
+
+            # Handle live updates (for agent actions)
+            elif live_update := chunk.as_live_update():
+                print(f"\n🔄 {live_update.content.label}")
+                if live_update.content.description:
+                    print(f"   {live_update.content.description}")
+
+            # Handle followup messages
+            elif followup := chunk.as_followup_messages():
+                print(f"\n💡 Suggested follow-ups:")
+                for msg in followup:
+                    print(f"   • {msg}")
+
+asyncio.run(handle_responses())
 ```

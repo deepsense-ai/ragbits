@@ -2,32 +2,34 @@ import { Button, cn, ScrollShadow } from "@heroui/react";
 import Layout from "./core/components/Layout";
 import ChatMessage from "./core/components/ChatMessage";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import PromptInput from "./core/components/PromptInput/PromptInput";
-import { useHistoryContext } from "./core/contexts/HistoryContext/useHistoryContext";
-import { useThemeContext } from "./core/contexts/ThemeContext/useThemeContext";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react";
 import { useConfigContext } from "./core/contexts/ConfigContext/useConfigContext";
 import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
+import {
+  useHistoryActions,
+  useHistoryStore,
+  useMessage,
+  useMessageIds,
+} from "./core/stores/historyStore";
+import QuickMessageInput from "./core/components/inputs/QuickMessageInput";
 
 export default function App() {
   const {
     config: { customization },
   } = useConfigContext();
-  const {
-    history,
-    isLoading: historyIsLoading,
-    followupMessages,
-    sendMessage,
-    stopAnswering,
-  } = useHistoryContext();
-  const { theme } = useThemeContext();
+  const messageIds = useMessageIds();
+  const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+  const lastMessage = useMessage(lastMessageId);
+  const historyIsLoading = useHistoryStore((s) => s.isLoading);
+  const followupMessages = useHistoryStore((s) => s.followupMessages);
+  const { sendMessage, stopAnswering } = useHistoryActions();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const showHistory = useMemo(() => history.length > 0, [history.length]);
+  const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -52,10 +54,10 @@ export default function App() {
   useEffect(() => {
     setShouldAutoScroll(true);
 
-    if (history.length === 0) {
+    if (messageIds.length === 0) {
       setShowScrollDownButton(false);
     }
-  }, [history.length]);
+  }, [messageIds.length]);
 
   useEffect(() => {
     if (!scrollContainerRef.current) return;
@@ -64,7 +66,7 @@ export default function App() {
       const container = scrollContainerRef.current;
       container.scrollTop = container.scrollHeight;
     }
-  }, [handleScroll, history, shouldAutoScroll]);
+  }, [handleScroll, lastMessage, shouldAutoScroll]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -86,27 +88,18 @@ export default function App() {
     setShouldAutoScroll(true);
   }, []);
 
-  const handleSubmit = (text: string) => {
-    sendMessage(text);
-  };
-
-  const historyComponent = (
-    <ScrollShadow
-      className="relative flex h-full flex-col gap-6 pb-8"
-      ref={scrollContainerRef}
-    >
-      {history.map((m) => (
-        <ChatMessage
-          key={m.id}
-          chatMessage={m}
-          isLoading={
-            historyIsLoading &&
-            m.role === "assistant" &&
-            m.id === history[history.length - 1].id
-          }
-        />
-      ))}
-    </ScrollShadow>
+  const historyComponent = useMemo(
+    () => (
+      <ScrollShadow
+        className="relative flex h-full flex-col gap-6 pb-8"
+        ref={scrollContainerRef}
+      >
+        {messageIds.map((m) => (
+          <ChatMessage key={m} messageId={m} />
+        ))}
+      </ScrollShadow>
+    ),
+    [messageIds],
   );
 
   const heroComponent = (
@@ -128,17 +121,21 @@ export default function App() {
   );
 
   const content = showHistory ? historyComponent : heroComponent;
-  const logo = customization?.header?.logo ?? DEFAULT_LOGO;
-  const title = customization?.header?.title ?? DEFAULT_TITLE;
-  const subTitle = customization?.header?.subtitle ?? DEFAULT_SUBTITLE;
+  const logo = useMemo(
+    () => customization?.header?.logo ?? DEFAULT_LOGO,
+    [customization?.header?.logo],
+  );
+  const title = useMemo(
+    () => customization?.header?.title ?? DEFAULT_TITLE,
+    [customization?.header?.title],
+  );
+  const subTitle = useMemo(
+    () => customization?.header?.subtitle ?? DEFAULT_SUBTITLE,
+    [customization?.header?.subtitle],
+  );
 
   return (
-    <div
-      className={cn(
-        "flex h-screen w-screen items-start justify-center bg-background",
-        theme,
-      )}
-    >
+    <div className="flex h-screen w-screen items-start justify-center bg-background">
       <div className="h-full w-full max-w-full">
         <Layout subTitle={subTitle} title={title} logo={logo}>
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
@@ -159,9 +156,9 @@ export default function App() {
               >
                 Scroll to bottom
               </Button>
-              <PromptInput
+              <QuickMessageInput
                 isLoading={historyIsLoading}
-                submit={handleSubmit}
+                submit={sendMessage}
                 stopAnswering={stopAnswering}
                 followupMessages={followupMessages}
               />

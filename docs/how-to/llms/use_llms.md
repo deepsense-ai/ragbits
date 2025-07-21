@@ -20,6 +20,9 @@ asyncio.run(main())
 
 With LiteLLM, you can switch between different LLM providers by changing the `model_name` parameter and configuring authentication accordingly. See the [LiteLLM documentation](https://docs.litellm.ai/docs/providers) for details on calling models from different providers.
 
+!!! tip
+    For batch generation just provide list of prompts `#!py await llm.generate(["Tell me a joke.", "Tell me another joke"])`
+
 ## Configuring LLM Options
 
 LLMs in Ragbits allow you to customize the behavior of the model using various options. These options are passed during initialization or when calling the [`generate`][ragbits.core.llms.LLM.generate] method.

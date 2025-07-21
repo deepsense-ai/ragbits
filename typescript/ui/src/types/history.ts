@@ -1,8 +1,9 @@
 import {
-  TypedChatResponse as ChatResponse,
+  ChatResponse,
   LiveUpdate,
   MessageRole,
   Reference,
+  ServerState,
 } from "@ragbits/api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
@@ -19,24 +20,54 @@ export interface ChatMessage {
   content: string;
   references?: Reference[];
   liveUpdates?: Map<string, LiveUpdate["content"]>;
+  extensions?: Record<string, unknown>;
 }
 
-export interface HistoryContext {
-  history: ChatMessage[];
+export interface HistoryStore {
+  history: Map<string, ChatMessage>;
   followupMessages: string[] | null;
+  serverState: ServerState | null;
+  conversationId: string | null;
+  eventsLog: ChatResponse[][];
   isLoading: boolean;
-  /**
-   * Sends a message to the chat window with animations and delayed rendering.
-   */
-  sendMessage: (text?: string) => void;
-  /**
-   * Primitive used for adding a message to the history and get its ID.
-   */
-  addMessage: (message: Omit<ChatMessage, "id">) => string;
-  /**
-   * Primitive used for updating a message in the history based on the passed response.
-   */
-  handleResponse: (chatResponse: ChatResponse, messageId: string) => void;
-  clearHistory: () => void;
-  stopAnswering: () => void;
+  abortController: AbortController | null;
+  lastMessageId: string | null;
+  chatOptions: Record<string, unknown> | undefined;
+
+  computed: {
+    getContext: () => Record<string, unknown>;
+  };
+
+  actions: {
+    clearHistory: () => void;
+    sendMessage: (text: string) => void;
+    stopAnswering: () => void;
+    /** Merge passed extensions with existing object for a given message. New values in the passed extensions
+     * overwrite previous ones.
+     */
+    mergeExtensions: (
+      messageId: string,
+      extensions: Record<string, unknown>,
+    ) => void;
+    initializeChatOptions: (defaults: Record<string, unknown>) => void;
+    setChatOptions: (options: Record<string, unknown>) => void;
+  };
+
+  primitives: {
+    addMessage: (message: Omit<ChatMessage, "id">) => string;
+    deleteMessage: (messageId: string) => void;
+    restore: (
+      history: Array<
+        HistoryStore["history"] extends Map<unknown, infer V> ? V : never
+      >,
+      followupMessages: HistoryStore["followupMessages"],
+      chatOptions: HistoryStore["chatOptions"],
+      serverState: HistoryStore["serverState"],
+      conversationId: HistoryStore["conversationId"],
+    ) => void;
+  };
+
+  _internal: {
+    handleResponse: (response: ChatResponse, messageId: string) => void;
+  };
 }

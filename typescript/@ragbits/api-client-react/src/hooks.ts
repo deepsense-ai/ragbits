@@ -1,32 +1,35 @@
 import { useState, useCallback, useRef } from 'react'
 import type {
     StreamCallbacks,
-    ApiEndpointPath,
-    ApiEndpointResponse,
-    TypedApiRequestOptions,
-    StreamingEndpointPath,
-    StreamingEndpointStream,
-    StreamingEndpointRequest,
+    EndpointResponse,
+    RequestOptions,
+    EndpointDefinition,
+    BaseApiEndpoints,
+    EndpointRequest,
+    BaseStreamingEndpoints,
 } from '@ragbits/api-client'
 import type { RagbitsCallResult, RagbitsStreamResult } from './types'
-import { useRagbitsContext } from './RagbitsProvider'
+import { useRagbitsContext } from './RagbitsContextProvider'
 
 /**
  * Hook for making API calls to Ragbits endpoints
- * - Only predefined routes are allowed
- * - Response type can be overridden with explicit type parameter
+ * - Supports any endpoints by providing `Endpoints` generic argument
  * @param endpoint - The predefined API endpoint
  * @param defaultOptions - Default options for the API call
  */
 export function useRagbitsCall<
-    TEndpoint extends ApiEndpointPath,
-    TResponse = ApiEndpointResponse<TEndpoint>,
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseApiEndpoints,
+    URL extends keyof Endpoints = keyof Endpoints,
 >(
-    endpoint: TEndpoint,
-    defaultOptions?: TypedApiRequestOptions<TEndpoint>
-): RagbitsCallResult<TResponse, Error, TEndpoint> {
+    endpoint: URL,
+    defaultOptions?: RequestOptions<URL, Endpoints>
+): RagbitsCallResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
-    const [data, setData] = useState<TResponse | null>(null)
+    const [data, setData] = useState<EndpointResponse<URL, Endpoints> | null>(
+        null
+    )
     const [error, setError] = useState<Error | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const abortControllerRef = useRef<AbortController | null>(null)
@@ -43,8 +46,8 @@ export function useRagbitsCall<
 
     const call = useCallback(
         async (
-            options: TypedApiRequestOptions<TEndpoint> = {}
-        ): Promise<TResponse> => {
+            options: RequestOptions<URL, Endpoints> = {}
+        ): Promise<EndpointResponse<URL, Endpoints>> => {
             // Abort any existing request only if there's one in progress
             if (abortControllerRef.current && isLoading) {
                 abortControllerRef.current.abort()
@@ -73,18 +76,18 @@ export function useRagbitsCall<
                 }
 
                 // Now we can use the properly typed makeRequest without casting
-                const result = await client.makeRequest(
+                const result = await client.makeRequest<Endpoints>(
                     endpoint,
                     requestOptions
                 )
 
                 // Only update state if request wasn't aborted
                 if (!abortController.signal.aborted) {
-                    setData(result as TResponse)
+                    setData(result)
                     abortControllerRef.current = null
                 }
 
-                return result as TResponse
+                return result
             } catch (err) {
                 // Only update error state if request wasn't aborted
                 if (!abortController.signal.aborted) {
@@ -126,13 +129,15 @@ export function useRagbitsCall<
 
 /**
  * Hook for handling streaming responses from Ragbits endpoints
- * - Only predefined streaming routes are allowed
- * - Response type can be overridden with explicit type parameter
+ * - Supports any streaming endpoints by providing `Endpoints` generic argument
  * @param endpoint - The predefined streaming endpoint
  */
-export function useRagbitsStream<TEndpoint extends StreamingEndpointPath>(
-    endpoint: TEndpoint
-): RagbitsStreamResult<Error, TEndpoint> {
+export function useRagbitsStream<
+    Endpoints extends {
+        [K in keyof Endpoints]: EndpointDefinition
+    } = BaseStreamingEndpoints,
+    URL extends keyof Endpoints = keyof Endpoints,
+>(endpoint: URL): RagbitsStreamResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [isStreaming, setIsStreaming] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -150,11 +155,8 @@ export function useRagbitsStream<TEndpoint extends StreamingEndpointPath>(
 
     const stream = useCallback(
         (
-            data: StreamingEndpointRequest<TEndpoint>,
-            callbacks: StreamCallbacks<
-                StreamingEndpointStream<TEndpoint>,
-                string
-            >
+            data: EndpointRequest<URL, Endpoints>,
+            callbacks: StreamCallbacks<EndpointResponse<URL, Endpoints>, string>
         ): (() => void) => {
             // Abort any existing stream only if there's one in progress
             if (abortControllerRef.current && isStreaming) {

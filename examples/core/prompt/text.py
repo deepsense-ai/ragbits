@@ -1,16 +1,8 @@
 """
 Ragbits Core Example: Text Prompt
 
-This example shows how to use the `Prompt` class to generate themed text using an LLM.
+This example demonstrates how to use the `Prompt` class to generate themed text using an LLM.
 We define an `AnimalPrompt` that generates names for a given animal type.
-
-The script performs the following steps:
-
-    1. Define input and output formats using Pydantic models.
-    2. Implement the `AnimalPrompt` class with a structured system prompt.
-    3. Initialize the `LiteLLM` class to generate text.
-    4. Generate a name based on the specified animal.
-    5. Print the generated name.
 
 To run the script, execute the following command:
 
@@ -25,6 +17,7 @@ To run the script, execute the following command:
 #     "ragbits-core",
 # ]
 # ///
+
 import asyncio
 
 from pydantic import BaseModel

@@ -91,13 +91,14 @@ Get the base URL used by this client.
 
 **Returns:** The configured base URL
 
-##### `makeRequest<T>(endpoint, options?): Promise<T>`
+##### `async makeRequest<Endpoints, URL>(endpoint, options?): Promise<Result>`
 
-Make a type-safe API request to predefined endpoints.
+Make a type-safe API request to any endpoint. `endpoint` must be one of the key of `Endpoints` type
+that define schema of the available endpoints. All default Ragbits routes are supported out of the box.
 
 **Parameters:**
 
-- `endpoint`: Predefined API endpoint path (e.g., '/api/config', '/api/feedback')
+- `endpoint`: API endpoint path (e.g., '/api/config', '/api/feedback')
 - `options` (optional): Request options
     - `method`: HTTP method (defaults to endpoint's predefined method)
     - `body`: Request body (typed based on endpoint)
@@ -121,15 +122,39 @@ const feedback = await client.makeRequest('/api/feedback', {
         payload: { rating: 5 },
     },
 })
+
+// Custom endpoints
+type MyEndpoints = {
+    '/api/my-endpoint': {
+        method: 'GET'
+        request: never
+        response: string
+    }
+}
+
+// or
+type ExtendedEndpoints = BaseApiEndpoints & {
+    '/api/my-endpoint': {
+        method: 'GET'
+        request: never
+        response: string
+    }
+}
+
+// In case of usage of custom Endpoints, we have to specify the URL as generic parameter
+const myResponse = await client.makeRequest<MyEndpoints, '/api/my-endpoint'>(
+    '/api/my-endpoint'
+)
 ```
 
-##### `makeStreamRequest<T>(endpoint, data, callbacks, signal?): () => void`
+##### `makeStreamRequest<Endpoints, URL>(endpoint, data, callbacks, signal?): () => void`
 
-Make a type-safe streaming request to predefined streaming endpoints.
+Make a type-safe streaming request to any streaming endpoints. `endpoint` must be one of the key of `Endpoints` type
+that define schema of the available endpoints. All default Ragbits routes are supported out of the box.
 
 **Parameters:**
 
-- `endpoint`: Predefined streaming endpoint path (e.g., '/api/chat')
+- `endpoint`: Streaming endpoint path (e.g., '/api/chat')
 - `data`: Request data (typed based on endpoint)
 - `callbacks`: Stream callbacks
     - `onMessage`: Called when a message chunk is received
@@ -177,104 +202,22 @@ const cleanup = client.makeStreamRequest(
 
 // Cancel stream
 cleanup()
-```
 
-## Types
-
-### Core Types
-
-#### `ClientConfig`
-
-```typescript
-interface ClientConfig {
-    baseUrl?: string
-}
-```
-
-#### `Message`
-
-```typescript
-interface Message {
-    role: MessageRole
-    content: string
-    id?: string
-}
-
-enum MessageRole {
-    USER = 'user',
-    ASSISTANT = 'assistant',
-    SYSTEM = 'system',
-}
-```
-
-#### `ChatRequest`
-
-```typescript
-interface ChatRequest {
-    message: string
-    history: Message[]
-    context?: Record<string, unknown>
-}
-```
-
-#### `TypedChatResponse`
-
-Union type for all possible chat response types:
-
-```typescript
-type TypedChatResponse =
-    | { type: 'text'; content: string }
-    | { type: 'reference'; content: Reference }
-    | { type: 'message_id'; content: string }
-    | { type: 'conversation_id'; content: string }
-    | { type: 'state_update'; content: ServerState }
-```
-
-#### `FeedbackRequest`
-
-```typescript
-interface FeedbackRequest {
-    message_id: string
-    feedback: FeedbackType
-    payload: Record<string, unknown> | null
-}
-
-enum FeedbackType {
-    LIKE = 'like',
-    DISLIKE = 'dislike',
-}
-```
-
-#### `ConfigResponse`
-
-```typescript
-interface ConfigResponse {
-    feedback: {
-        like: { enabled: boolean; form: RJSFSchema | null }
-        dislike: { enabled: boolean; form: RJSFSchema | null }
+// Custom endpoints
+type MyEndpoints = {
+    '/api/my-endpoint': {
+        method: 'GET'
+        request: never
+        response: string
     }
-    customization: UICustomization | null
 }
+
+// In case of usage of custom Endpoints, we have to specify the URL as generic parameter
+const cleanup = client.makeStreamRequest<MyEndpoints, '/api/my-endpoint'>(
+    '/api/my-endpoint',
+    ...
+)
 ```
-
-#### `StreamCallbacks<T, E>`
-
-```typescript
-interface StreamCallbacks<T, E = Error> {
-    onMessage: (data: T) => void | Promise<void>
-    onError: (error: E) => void | Promise<void>
-    onClose?: () => void | Promise<void>
-}
-```
-
-### Advanced Types
-
-The package provides extensive TypeScript support with predefined endpoint types:
-
-- `ApiEndpointPath` - Union of all available API endpoints
-- `StreamingEndpointPath` - Union of all available streaming endpoints
-- `ApiEndpointResponse<T>` - Response type for a specific endpoint
-- `StreamingEndpointStream<T>` - Stream response type for a specific endpoint
 
 ## Error Handling
 

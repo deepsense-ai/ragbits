@@ -1,7 +1,7 @@
 """
 Ragbits Agents Example: Tool use
 
-This example shows how to use agent with tools.
+This example demonstrates how to use agent with tools.
 We provide a single method as a tool to the agent and expect it to call it when answering query.
 
 To run the script, execute the following command:
@@ -24,6 +24,7 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
+from ragbits.agents._main import AgentOptions
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -75,7 +76,12 @@ async def main() -> None:
     Run the example.
     """
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
+    agent = Agent(
+        llm=llm,
+        prompt=WeatherPrompt,
+        tools=[get_weather],
+        default_options=AgentOptions(max_total_tokens=500, max_turns=5),
+    )
     response = await agent.run(WeatherPromptInput(location="Paris"))
     print(response)
 

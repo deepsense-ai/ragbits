@@ -1,3 +1,4 @@
+import json
 from abc import ABCMeta, abstractmethod
 from typing import Any, Generic
 
@@ -99,7 +100,7 @@ class BasePrompt(metaclass=ABCMeta):
                             "type": "function",
                             "function": {
                                 "name": name,
-                                "arguments": str(arguments),
+                                "arguments": json.dumps(arguments),
                             },
                         }
                     ],
@@ -148,7 +149,7 @@ class BasePromptWithParser(Generic[PromptOutputT], BasePrompt, metaclass=ABCMeta
             response (str): The response from the LLM.
 
         Returns:
-            PromptOutputT: The parsed response.
+            PromptOutputT_co: The parsed response.
 
         Raises:
             ResponseParsingError: If the response cannot be parsed.

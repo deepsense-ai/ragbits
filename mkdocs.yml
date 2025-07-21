@@ -9,6 +9,7 @@ nav:
   - Tutorials:
     - "Introduction": tutorials/intro.md
     - "Retrieval-Augmented Generation": tutorials/rag.md
+    - "Multi-Agent system with A2A and MCP": tutorials/agents.md
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md
@@ -24,6 +25,7 @@ nav:
         - "Use PostgreSQL as a vector store with pgvector": how-to/vector_stores/use_pgVector_store.md
       - Data Sources:
         - "Load data from sources": how-to/sources/load-dataset.md
+        - "Use google drive as a data source": how-to/sources/google-drive.md
       - Observability:
         - "Trace code execution": how-to/audit/use_tracing.md
         - "Track metrics": how-to/audit/use_metrics.md
@@ -33,6 +35,10 @@ nav:
       - Document Search:
         - "Ingest documents": how-to/document_search/ingest-documents.md
         - "Search documents": how-to/document_search/search-documents.md
+      - Agents:
+        - "Define and use agents": how-to/agents/define_and_use_agents.md
+        - "Provide tools with MCP": how-to/agents/provide_mcp_tools.md
+        - "Serve agents with A2A": how-to/agents/serve_ragbits_agents.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Chatbots:
@@ -71,6 +77,8 @@ nav:
             - api_reference/document_search/retrieval/rerankers.md
       - Agents:
         - api_reference/agents/index.md
+        - MCP:
+          - api_reference/agents/mcp.md
       - Evaluate:
         - api_reference/evaluate/index.md
         - api_reference/evaluate/dataloaders.md

@@ -42,6 +42,7 @@ class CLISpan:
 
     prompt_keyword = "prompt"
     response_keyword = "response"
+    response_color_keywords = ["content", "tool_calls"]
 
     def __init__(self, name: str, attributes: dict, parent: "CLISpan | None" = None) -> None:
         """
@@ -161,7 +162,7 @@ class CLISpan:
         response_attr = [k for k in self.attributes if self.response_keyword in k.split(".")]
         if len(response_attr) > 0:
             rendered_response = self.render_special_attribute(
-                response_attr, PrintColor.RESPONSE_COLOR.value, self.response_keyword, []
+                response_attr, PrintColor.RESPONSE_COLOR.value, "", self.response_color_keywords
             )
 
         rendered_prompts_done = False

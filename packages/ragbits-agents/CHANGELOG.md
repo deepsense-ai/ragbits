@@ -3,11 +3,25 @@
 ## Unreleased
 
 - Add native openai tools support (#621)
+- add Context to Agents (#715)
+
+## 1.1.0 (2025-07-09)
+
+### Changed
+
+- ragbits-core updated to version v1.1.0
+
+- Move a2a to extra dependencies (#703)
+- Add support for MCP servers (#632)
 - Add agent support for string prompts (#631)
 - Add tools to Agent interface (#568)
 - Update Agent run method docstring (#565)
 - Fix AgentResult typing (#600)
+- Add support for batch generation (#608)
 - Support history handling in Agent (#648)
+- Support run_streaming in Agent (#650)
+- Support A2A protocol (#649)
+- Add max turns to AgentOptions (#705)
 
 ## 1.0.0 (2025-06-04)
 

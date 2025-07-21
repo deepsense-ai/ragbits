@@ -1,13 +1,13 @@
 import { PropsWithChildren, useEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { useThemeContext } from "../ThemeContext/useThemeContext";
 import { CircularProgress, cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
+import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
+import { SharePluginName } from "../../../plugins/SharePlugin";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
-  const { theme } = useThemeContext();
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
 
   const value = useMemo(() => {
@@ -25,10 +25,15 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const { feedback } = config.data;
+    const { feedback, user_settings: userSettings } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
     }
+    if (userSettings.form) {
+      pluginManager.activate(ChatOptionsPluginName);
+    }
+
+    pluginManager.activate(SharePluginName);
   }, [config.data]);
 
   // Load config on mount
@@ -42,7 +47,6 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       <div
         className={cn(
           "flex h-screen w-screen items-start justify-center bg-background",
-          theme,
         )}
       >
         <div className="m-auto flex flex-col items-center gap-4 text-default-900">
@@ -58,7 +62,6 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       <div
         className={cn(
           "flex h-screen w-screen items-start justify-center bg-background",
-          theme,
         )}
       >
         <div className="m-auto flex flex-col items-center gap-4 text-default-900">

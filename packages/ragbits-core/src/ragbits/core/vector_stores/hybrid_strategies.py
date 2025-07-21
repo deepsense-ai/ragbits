@@ -2,8 +2,6 @@ import abc
 from operator import add
 from uuid import UUID
 
-import numpy as np
-
 from ragbits.core.vector_stores.base import VectorStoreResult
 
 
@@ -151,12 +149,27 @@ class DistributionBasedScoreFusion(HybridRetrivalStrategy):
         """
         score_operation = add if self._sum_scores else max
         end_results: dict[UUID, VectorStoreResult] = {}
-        scores = np.array([[result.score for result in result_list] for result_list in results])
-        mean = np.mean(scores, axis=1)
-        std = np.std(scores, axis=1)
-        three_std_above = mean + 3 * std
-        three_std_below = mean - 3 * std
-        normalized_scores = ((scores.T - three_std_below) / (three_std_above - three_std_below)).T
+        scores = [[result.score for result in result_list] for result_list in results]
+
+        # Calculate mean and standard deviation for each result list
+        mean = [sum(score_list) / len(score_list) if score_list else 0 for score_list in scores]
+        std = [
+            (sum((score - mean[i]) ** 2 for score in score_list) / len(score_list)) ** 0.5 if score_list else 0
+            for i, score_list in enumerate(scores)
+        ]
+
+        # Calculate normalization bounds
+        three_std_above = [mean[i] + 3 * std[i] for i in range(len(mean))]
+        three_std_below = [mean[i] - 3 * std[i] for i in range(len(mean))]
+
+        # Normalize scores
+        normalized_scores = []
+        for i, score_list in enumerate(scores):
+            denominator = three_std_above[i] - three_std_below[i]
+            normalized_list = [
+                (score - three_std_below[i]) / denominator if denominator != 0 else 0 for score in score_list
+            ]
+            normalized_scores.append(normalized_list)
 
         for i, result_list in enumerate(results):
             for j, result in enumerate(result_list):

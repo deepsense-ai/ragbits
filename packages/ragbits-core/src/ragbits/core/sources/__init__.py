@@ -6,11 +6,13 @@ from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.core.sources.local import LocalFileSource
 from ragbits.core.sources.s3 import S3Source
 from ragbits.core.sources.web import WebSource
+from ragbits.core.sources.google_drive import GoogleDriveSource
 
 __all__ = [
     "AzureBlobStorageSource",
     "GCSSource",
     "GitSource",
+    "GoogleDriveSource",
     "HuggingFaceSource",
     "LocalFileSource",
     "S3Source",

@@ -1,0 +1,27 @@
+txt:
+  type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser
+  config:
+    use_api: false
+    ignore_images: true
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters: 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0
+
+md:
+  type: ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser
+  config:
+    use_api: false
+    ignore_images: true
+    partition_kwargs:
+      strategy: hi_res
+    chunking_kwargs:
+      include_orig_elements: true
+      max_characters: 1000
+      new_after_n_chars: 1000
+      overlap: 0
+      overlap_all: 0
