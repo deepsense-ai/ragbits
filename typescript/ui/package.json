@@ -28,6 +28,7 @@
     "fflate": "^0.8.2",
     "framer-motion": "^12.2.0",
     "github-markdown-css": "^5.8.1",
+    "idb-keyval": "^6.2.2",
     "immer": "^10.1.1",
     "lodash": "^4.17.21",
     "react": "^18.3.1",

@@ -22,7 +22,7 @@ export default function LiveUpdates({
   classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const updates = liveUpdates ? Array.from(liveUpdates.values()) : null;
+  const updates = liveUpdates ? Object.values(liveUpdates) : null;
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 

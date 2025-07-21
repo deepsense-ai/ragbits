@@ -3,7 +3,10 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import { allExpanded, defaultStyles, JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { toJSONSafe } from "../utils/json";
-import { useHistoryStore } from "../stores/historyStore";
+import {
+  useConversationProperty,
+  useHistoryStore,
+} from "../stores/historyStore";
 import { useShallow } from "zustand/shallow";
 
 const DEFAULT_STYLES = {
@@ -27,9 +30,9 @@ interface DebugPanelProps {
 }
 
 export default function DebugPanel({ isOpen }: DebugPanelProps) {
-  const history = useHistoryStore((s) => s.history);
-  const followupMessages = useHistoryStore((s) => s.followupMessages);
-  const eventsLog = useHistoryStore((s) => s.eventsLog);
+  const history = useConversationProperty((s) => s.history);
+  const followupMessages = useConversationProperty((s) => s.followupMessages);
+  const eventsLog = useConversationProperty((s) => s.eventsLog);
   const context = useHistoryStore(useShallow((s) => s.computed.getContext()));
 
   return (

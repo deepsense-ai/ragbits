@@ -15,7 +15,7 @@ import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
-import { HistoryStore } from "../../../types/history";
+import { ConversationHistory } from "../../../types/history";
 
 const DEFAULT_ICON = "heroicons:share";
 const SUCCESS_ICON = "heroicons:check";
@@ -24,20 +24,18 @@ const SHARE_START_TAG = `<${SHARE_TAG}>`;
 const SHARE_END_TAG = `</${SHARE_TAG}>`;
 
 interface SharedState {
-  history: Array<
-    HistoryStore["history"] extends Map<unknown, infer V> ? V : never
-  >;
-  followupMessages: HistoryStore["followupMessages"];
-  chatOptions: HistoryStore["chatOptions"];
-  serverState: HistoryStore["serverState"];
-  conversationId: HistoryStore["conversationId"];
+  history: ConversationHistory["history"];
+  followupMessages: ConversationHistory["followupMessages"];
+  chatOptions: ConversationHistory["chatOptions"];
+  serverState: ConversationHistory["serverState"];
+  conversationId: ConversationHistory["conversationId"];
 }
 
 function isSharedState(value: unknown): value is SharedState {
   if (typeof value !== "object" || value === null) return false;
 
   const state = value as Partial<SharedState>;
-  if (!Array.isArray(state.history)) return false;
+  if (typeof state.history !== "object") return false;
   if ("followupMessages" in state && typeof state.followupMessages !== "object")
     return false;
   if ("chatOptions" in state && typeof state.chatOptions !== "object")
@@ -67,11 +65,11 @@ export default function ShareButton() {
       serverState,
       conversationId,
       followupMessages,
-    } = useHistoryStore.getState();
+    } = useHistoryStore.getState().primitives.getCurrentConversation();
 
     const state = toJSONSafe({
       chatOptions,
-      history: Array.from(history.values()),
+      history: history,
       serverState,
       conversationId,
       followupMessages,
