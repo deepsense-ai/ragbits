@@ -79,7 +79,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                   liveUpdates={liveUpdates}
                   classNames={{ liveUpdates: classNames?.liveUpdates }}
                 />
-                {isLoading && <LoadingIndicator content={content} />}
+                {isLoading && !liveUpdates && (
+                  <LoadingIndicator content={content} />
+                )}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
