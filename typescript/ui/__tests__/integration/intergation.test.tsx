@@ -34,6 +34,14 @@ import { useHistoryStore } from "../../src/core/stores/historyStore";
 import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import { enableMapSet } from "immer";
 
+vi.mock("idb-keyval", () => ({
+  get: vi.fn(),
+  set: vi.fn(),
+  del: vi.fn(),
+  clear: vi.fn(),
+  keys: vi.fn(),
+}));
+
 describe("Integration tests", () => {
   enableMapSet();
   const BASE_URL = "http://127.0.0.1:8000";
@@ -165,7 +173,7 @@ describe("Integration tests", () => {
         pluginManager.register(ChatOptionsPlugin);
         const {
           actions: { sendMessage, stopAnswering },
-          followupMessages,
+          primitives: { getCurrentConversation },
         } = useHistoryStore.getState();
         const WrappedInput = () => (
           <RagbitsContextProvider baseUrl={BASE_URL}>
@@ -174,7 +182,7 @@ describe("Integration tests", () => {
                 isLoading={false}
                 submit={sendMessage}
                 stopAnswering={stopAnswering}
-                followupMessages={followupMessages}
+                followupMessages={getCurrentConversation().followupMessages}
               />
             </ConfigContextProvider>
           </RagbitsContextProvider>
@@ -286,7 +294,10 @@ describe("Integration tests", () => {
       it("handles like form", async () => {
         const feedback = render(
           <FeedbackForm
-            message={useHistoryStore.getState().history.get(messageId)!}
+            message={
+              useHistoryStore.getState().primitives.getCurrentConversation()
+                .history[messageId]
+            }
           />,
           {
             wrapper: ({ children }: { children: React.ReactNode }) => {
@@ -327,7 +338,10 @@ describe("Integration tests", () => {
       it("handles dislike form", async () => {
         const feedback = render(
           <FeedbackForm
-            message={useHistoryStore.getState().history.get(messageId)!}
+            message={
+              useHistoryStore.getState().primitives.getCurrentConversation()
+                .history[messageId]!
+            }
           />,
           {
             wrapper: ({ children }: { children: React.ReactNode }) => {

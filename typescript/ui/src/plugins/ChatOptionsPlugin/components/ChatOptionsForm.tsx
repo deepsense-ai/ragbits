@@ -13,16 +13,15 @@ import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 import {
+  useConversationProperty,
   useHistoryActions,
-  useHistoryStore,
 } from "../../../core/stores/historyStore";
 import { useEffect } from "react";
 import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
-import { useShallow } from "zustand/shallow";
 
 export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const chatOptions = useHistoryStore(useShallow((s) => s.chatOptions));
+  const chatOptions = useConversationProperty((s) => s.chatOptions);
   const { setChatOptions, initializeChatOptions } = useHistoryActions();
   const {
     config: { user_settings: userSettings },

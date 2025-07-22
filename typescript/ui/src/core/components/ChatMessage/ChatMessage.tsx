@@ -2,7 +2,11 @@ import { forwardRef, useState } from "react";
 import { cn } from "@heroui/react";
 import { MessageRole } from "@ragbits/api-client-react";
 
-import { useHistoryStore, useMessage } from "../../stores/historyStore.ts";
+import {
+  useConversationProperty,
+  useHistoryStore,
+  useMessage,
+} from "../../stores/historyStore.ts";
 
 import MarkdownContent from "./MarkdownContent.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
@@ -23,7 +27,7 @@ type ChatMessageProps = {
 
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ messageId, classNames }, ref) => {
-    const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+    const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useHistoryStore((s) => s.isLoading);
     const message = useMessage(messageId);
 

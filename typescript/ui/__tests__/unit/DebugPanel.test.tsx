@@ -13,12 +13,17 @@ vi.mock("react-json-view-lite", async (importOriginal) => ({
 }));
 
 vi.mock("../../src/core/stores/historyStore", () => ({
-  useHistoryStore: (selector: (s: Record<string, unknown>) => unknown) =>
+  useConversationProperty: (
+    selector: (s: Record<string, unknown>) => unknown,
+  ) =>
     selector({
       history: ["History Section"],
       followupMessages: ["Followup messages Section"],
       eventsLog: [["Events Section"]],
       context: { context_section: "Context Section" },
+    }),
+  useHistoryStore: (selector: (s: Record<string, unknown>) => unknown) =>
+    selector({
       computed: {
         getContext: () => ({ context_section: "Context Section" }),
       },

@@ -7,8 +7,6 @@ import {
   Image,
 } from "@ragbits/api-client-react";
 
-export type HistoryState = Map<string, ChatMessage>;
-
 export type UnsubscribeFn = (() => void) | null;
 
 export interface ChatMessage {
@@ -20,21 +18,25 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   references?: Reference[];
-  liveUpdates?: Map<string, LiveUpdate["content"]>;
+  liveUpdates?: Record<string, LiveUpdate["content"]>;
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
 }
 
-export interface HistoryStore {
-  history: Map<string, ChatMessage>;
+export interface Conversation {
+  history: Record<string, ChatMessage>;
   followupMessages: string[] | null;
   serverState: ServerState | null;
   conversationId: string | null;
   eventsLog: ChatResponse[][];
-  isLoading: boolean;
-  abortController: AbortController | null;
   lastMessageId: string | null;
   chatOptions: Record<string, unknown> | undefined;
+}
+export interface HistoryStore {
+  conversations: Record<string, Conversation>;
+  currentConversation: string | null;
+  isLoading: boolean;
+  abortController: AbortController | null;
 
   computed: {
     getContext: () => Record<string, unknown>;
@@ -53,20 +55,21 @@ export interface HistoryStore {
     ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
+    selectConversation: (conversationKey: string) => void;
+    deleteConversation: (conversationKey: string) => void;
   };
 
   primitives: {
     addMessage: (message: Omit<ChatMessage, "id">) => string;
     deleteMessage: (messageId: string) => void;
     restore: (
-      history: Array<
-        HistoryStore["history"] extends Map<unknown, infer V> ? V : never
-      >,
-      followupMessages: HistoryStore["followupMessages"],
-      chatOptions: HistoryStore["chatOptions"],
-      serverState: HistoryStore["serverState"],
-      conversationId: HistoryStore["conversationId"],
+      history: Conversation["history"],
+      followupMessages: Conversation["followupMessages"],
+      chatOptions: Conversation["chatOptions"],
+      serverState: Conversation["serverState"],
+      conversationId: Conversation["conversationId"],
     ) => void;
+    getCurrentConversation: () => Conversation;
   };
 
   _internal: {

@@ -31,6 +31,7 @@ loadIcons([
   "heroicons:chevron-down",
   "heroicons:cog-6-tooth",
   "heroicons:bug-ant",
+  "heroicons:trash",
 ]);
 
 enableMapSet();
