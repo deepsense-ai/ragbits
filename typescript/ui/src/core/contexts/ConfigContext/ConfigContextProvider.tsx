@@ -5,6 +5,7 @@ import { CircularProgress, cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
+import { SharePluginName } from "../../../plugins/SharePlugin";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -31,6 +32,8 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     if (userSettings.form) {
       pluginManager.activate(ChatOptionsPluginName);
     }
+
+    pluginManager.activate(SharePluginName);
   }, [config.data]);
 
   // Load config on mount

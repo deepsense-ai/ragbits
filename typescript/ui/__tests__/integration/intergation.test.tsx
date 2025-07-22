@@ -1,5 +1,13 @@
 import React from "react";
-import { describe, it, expect, afterAll, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  afterAll,
+  vi,
+  beforeEach,
+  afterEach,
+} from "vitest";
 import {
   act,
   render,
@@ -16,15 +24,23 @@ import {
   StreamCallbacks,
   ChatResponse,
 } from "@ragbits/api-client-react";
-import { useConfigContext } from "../src/core/contexts/ConfigContext/useConfigContext";
-import { ConfigContextProvider } from "../src/core/contexts/ConfigContext/ConfigContextProvider";
+import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
+import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
 import userEvent from "@testing-library/user-event";
-import PromptInput from "../src/core/components/inputs/PromptInput/PromptInput";
-import { pluginManager } from "../src/core/utils/plugins/PluginManager";
-import { ChatOptionsPlugin } from "../src/plugins/ChatOptionsPlugin";
-import { useHistoryStore } from "../src/core/stores/historyStore";
+import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
+import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
+import { ChatOptionsPlugin } from "../../src/plugins/ChatOptionsPlugin";
+import { useHistoryStore } from "../../src/core/stores/historyStore";
+import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import { enableMapSet } from "immer";
-import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
+
+vi.mock("idb-keyval", () => ({
+  get: vi.fn(),
+  set: vi.fn(),
+  del: vi.fn(),
+  clear: vi.fn(),
+  keys: vi.fn(),
+}));
 
 describe("Integration tests", () => {
   enableMapSet();
@@ -157,7 +173,7 @@ describe("Integration tests", () => {
         pluginManager.register(ChatOptionsPlugin);
         const {
           actions: { sendMessage, stopAnswering },
-          followupMessages,
+          primitives: { getCurrentConversation },
         } = useHistoryStore.getState();
         const WrappedInput = () => (
           <RagbitsContextProvider baseUrl={BASE_URL}>
@@ -166,7 +182,7 @@ describe("Integration tests", () => {
                 isLoading={false}
                 submit={sendMessage}
                 stopAnswering={stopAnswering}
-                followupMessages={followupMessages}
+                followupMessages={getCurrentConversation().followupMessages}
               />
             </ConfigContextProvider>
           </RagbitsContextProvider>
@@ -197,7 +213,9 @@ describe("Integration tests", () => {
               conversation_id: expect.any(String),
               signature: expect.any(String),
               state: expect.any(Object),
-              language: "Polish",
+              user_settings: {
+                language: "Polish",
+              },
             },
             history: [
               {
@@ -262,16 +280,35 @@ describe("Integration tests", () => {
 
   describe("/api/feedback", () => {
     describe("should send correct request based on config", async () => {
-      it("handles like form", async () => {
-        const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
-          wrapper: ({ children }: { children: React.ReactNode }) => {
-            return (
-              <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>{children}</ConfigContextProvider>
-              </RagbitsContextProvider>
-            );
-          },
+      let messageId: string = "";
+      beforeEach(() => {
+        messageId = useHistoryStore.getState().primitives.addMessage({
+          content: "Mock content",
+          role: MessageRole.ASSISTANT,
+          serverId: "msg-123",
         });
+      });
+      afterEach(() => {
+        useHistoryStore.getState().actions.clearHistory();
+      });
+      it("handles like form", async () => {
+        const feedback = render(
+          <FeedbackForm
+            message={
+              useHistoryStore.getState().primitives.getCurrentConversation()
+                .history[messageId]
+            }
+          />,
+          {
+            wrapper: ({ children }: { children: React.ReactNode }) => {
+              return (
+                <RagbitsContextProvider baseUrl={BASE_URL}>
+                  <ConfigContextProvider>{children}</ConfigContextProvider>
+                </RagbitsContextProvider>
+              );
+            },
+          },
+        );
 
         const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
         const user = userEvent.setup();
@@ -299,15 +336,23 @@ describe("Integration tests", () => {
       });
 
       it("handles dislike form", async () => {
-        const feedback = render(<FeedbackForm messageServerId="msg-123" />, {
-          wrapper: ({ children }: { children: React.ReactNode }) => {
-            return (
-              <RagbitsContextProvider baseUrl={BASE_URL}>
-                <ConfigContextProvider>{children}</ConfigContextProvider>
-              </RagbitsContextProvider>
-            );
+        const feedback = render(
+          <FeedbackForm
+            message={
+              useHistoryStore.getState().primitives.getCurrentConversation()
+                .history[messageId]!
+            }
+          />,
+          {
+            wrapper: ({ children }: { children: React.ReactNode }) => {
+              return (
+                <RagbitsContextProvider baseUrl={BASE_URL}>
+                  <ConfigContextProvider>{children}</ConfigContextProvider>
+                </RagbitsContextProvider>
+              );
+            },
           },
-        });
+        );
         const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
 
         const user = userEvent.setup();

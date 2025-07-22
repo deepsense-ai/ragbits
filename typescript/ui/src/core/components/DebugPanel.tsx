@@ -3,7 +3,10 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import { allExpanded, defaultStyles, JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { toJSONSafe } from "../utils/json";
-import { useHistoryStore } from "../stores/historyStore";
+import {
+  useConversationProperty,
+  useHistoryStore,
+} from "../stores/historyStore";
 import { useShallow } from "zustand/shallow";
 
 const DEFAULT_STYLES = {
@@ -27,9 +30,9 @@ interface DebugPanelProps {
 }
 
 export default function DebugPanel({ isOpen }: DebugPanelProps) {
-  const history = useHistoryStore((s) => s.history);
-  const followupMessages = useHistoryStore((s) => s.followupMessages);
-  const eventsLog = useHistoryStore((s) => s.eventsLog);
+  const history = useConversationProperty((s) => s.history);
+  const followupMessages = useConversationProperty((s) => s.followupMessages);
+  const eventsLog = useConversationProperty((s) => s.eventsLog);
   const context = useHistoryStore(useShallow((s) => s.computed.getContext()));
 
   return (
@@ -51,9 +54,12 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
             opacity: 0,
             width: 0,
           }}
-          className="w-full max-w-[33%] overflow-hidden"
+          className="w-full max-w-[33%] overflow-hidden px-4"
         >
-          <div className="mr-4 h-full overflow-auto rounded-medium border-small border-divider">
+          <div
+            className="mr-4 h-full overflow-auto rounded-medium border-small border-divider"
+            data-testid="debug-panel"
+          >
             <div className="min-h-16 border-b-small border-divider p-4 text-lg font-bold">
               <span>Debug</span>
             </div>

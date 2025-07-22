@@ -22,7 +22,7 @@ export default function LiveUpdates({
   classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const updates = liveUpdates ? Array.from(liveUpdates.values()) : null;
+  const updates = liveUpdates ? Object.values(liveUpdates) : null;
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
@@ -107,7 +107,12 @@ export default function LiveUpdates({
           )}
         </div>
         {hasMultipleUpdates && (
-          <Button variant="light" isIconOnly onPress={toggleExpanded}>
+          <Button
+            variant="light"
+            isIconOnly
+            onPress={toggleExpanded}
+            data-testid="live-updates-expand"
+          >
             <motion.div
               initial={{ rotate: 0 }}
               animate={{ rotate: isExpanded ? 180 : 0 }}

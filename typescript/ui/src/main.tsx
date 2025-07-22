@@ -12,10 +12,12 @@ import { ChatOptionsPlugin } from "./plugins/ChatOptionsPlugin/index.tsx";
 import { ConfigContextProvider } from "./core/contexts/ConfigContext/ConfigContextProvider.tsx";
 import { API_URL } from "./config.ts";
 import { enableMapSet } from "immer";
+import { SharePlugin } from "./plugins/SharePlugin/index.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
 pluginManager.register(ChatOptionsPlugin);
+pluginManager.register(SharePlugin);
 
 // Preload icons
 loadIcons([
@@ -29,6 +31,7 @@ loadIcons([
   "heroicons:chevron-down",
   "heroicons:cog-6-tooth",
   "heroicons:bug-ant",
+  "heroicons:trash",
 ]);
 
 enableMapSet();

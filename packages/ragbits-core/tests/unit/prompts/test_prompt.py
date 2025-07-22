@@ -689,7 +689,7 @@ def test_base_prompt_with_parser_add_tool_use_message_no_history():
     assert prompt.chat[0]["tool_calls"][0]["id"] == "tool_123"
     assert prompt.chat[0]["tool_calls"][0]["type"] == "function"
     assert prompt.chat[0]["tool_calls"][0]["function"]["name"] == "test_function"
-    assert prompt.chat[0]["tool_calls"][0]["function"]["arguments"] == "{'param': 'value'}"
+    assert prompt.chat[0]["tool_calls"][0]["function"]["arguments"] == '{"param": "value"}'
 
     assert prompt.chat[1]["role"] == "tool"
     assert prompt.chat[1]["tool_call_id"] == "tool_123"

@@ -12,7 +12,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM
+from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
@@ -21,12 +21,11 @@ from ragbits.core.llms.exceptions import (
     LLMResponseError,
     LLMStatusError,
 )
-from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
 
-class LiteLLMOptions(Options):
+class LiteLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
@@ -99,6 +98,28 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.custom_model_cost_config = custom_model_cost_config
         if custom_model_cost_config:
             litellm.register_model(custom_model_cost_config)
+
+    def get_model_id(self) -> str:
+        """
+        Returns the model id.
+        """
+        return "litellm:" + self.model_name
+
+    def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:
+        """
+        Returns the estimated cost of the LLM call.
+
+        Args:
+            prompt_tokens: The number of tokens in the prompt.
+            completion_tokens: The number of tokens in the completion.
+
+        Returns:
+            The estimated cost of the LLM call.
+        """
+        response_cost = litellm.model_cost[self.model_name]
+        response_cost_input = prompt_tokens * response_cost["input_cost_per_token"]
+        response_cost_output = completion_tokens * response_cost["output_cost_per_token"]
+        return response_cost_input + response_cost_output
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
@@ -257,6 +278,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             response_format=response_format,
             tools=tools,
             stream=True,
+            stream_options={"include_usage": True},
         )
 
         if not response.completion_stream and not response.choices:  # type: ignore

@@ -23,6 +23,9 @@ export default {
       animation: {
         "pop-in": "pop-in 0.2s ease-out forwards",
       },
+      screens: {
+        xs: "440px",
+      },
     },
   },
   plugins: [
