@@ -13,9 +13,9 @@ from typing_extensions import TypeVar, get_original_bases
 
 from ragbits.core.prompt.base import BasePromptWithParser, ChatFormat, PromptOutputT
 from ragbits.core.prompt.exceptions import (
-    PromptWithEmptyAttachment,
     PromptWithAttachmentOfUnknownFormat,
     PromptWithAttachmentOfUnsupportedFormat,
+    PromptWithEmptyAttachment,
 )
 from ragbits.core.prompt.parsers import DEFAULT_PARSERS, build_pydantic_parser
 
@@ -314,7 +314,8 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             if attachment.mime_type:
                 return attachment.mime_type
             if attachment.data:
-                if detected := filetype.guess(attachment.data):
+                detected = filetype.guess(attachment.data)
+                if detected:
                     return detected.mime
             if attachment.url:
                 guessed_type, _ = mimetypes.guess_type(attachment.url)
