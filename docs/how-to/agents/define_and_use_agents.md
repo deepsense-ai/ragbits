@@ -111,5 +111,5 @@ tool_params = {
             "region": "London",
         }
     }
-web_search_tool = get_openai_tool("web_searach", "gpt-4o", tool_params)
+web_search_tool = get_openai_tool("searach_web", "gpt-4o", tool_params)
 ```
