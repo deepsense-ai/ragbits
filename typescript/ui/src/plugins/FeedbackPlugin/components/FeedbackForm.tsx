@@ -8,7 +8,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import { FormTheme, useTransformErrors } from "../../../core/forms";

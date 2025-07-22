@@ -1,5 +1,13 @@
+import { IconProps } from "@iconify/react";
 import "@testing-library/jest-dom";
 import { afterEach, vi } from "vitest";
+
+vi.mock("@iconify/react", () => ({
+  Icon: ({ icon, ...props }: IconProps) => (
+    <svg {...props}>{icon.toString()}</svg>
+  ),
+}));
+
 Object.defineProperty(window, "scrollTo", {
   value: vi.fn(),
   writable: true,

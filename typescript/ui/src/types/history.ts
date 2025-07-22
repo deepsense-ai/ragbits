@@ -4,6 +4,7 @@ import {
   MessageRole,
   Reference,
   ServerState,
+  Image,
 } from "@ragbits/api-client-react";
 
 export type HistoryState = Map<string, ChatMessage>;
@@ -21,6 +22,7 @@ export interface ChatMessage {
   references?: Reference[];
   liveUpdates?: Map<string, LiveUpdate["content"]>;
   extensions?: Record<string, unknown>;
+  images?: Record<string, Image["url"]>;
 }
 
 export interface HistoryStore {
