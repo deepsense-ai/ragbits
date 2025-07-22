@@ -42,7 +42,7 @@ class SearchPrompt(Prompt[SearchPromptInput]):
     """
 
     system_prompt = """
-    You are a helpful assistant that responds to user questions about weather.
+    You are a helpful assistant that responds to user questions.
     """
 
     user_prompt = """

@@ -78,12 +78,11 @@ class OpenAITools:
             LLM text output
         """
         response = await self._responses_llm.use_tool(query)
-        image_data = [output.result for output in response.output if output.type == "image_generation_call"]
+        image_data = next((output.result for output in response.output if output.type == "image_generation_call"), None)
 
-        if image_data and image_data[0]:
-            image_base64 = image_data[0]
+        if image_data:
             with open(save_path, "wb") as f:
-                f.write(base64.b64decode(image_base64))
+                f.write(base64.b64decode(image_data))
             text_prefix = f"Image saved to {save_path}\n"
         else:
             text_prefix = "No generated image was returned\n"
@@ -103,13 +102,14 @@ def get_openai_tool(tool_name: str, model_name: str, tool_param: ToolParam | Non
     Returns:
         Function using OpenAI tool
     """
-    if tool_name == "search_web":
-        tool_param = tool_param or {"type": "web_search_preview"}
-        return OpenAITools(model_name, tool_param).search_web
-    elif tool_name == "code_interpreter":
-        tool_param = tool_param or {"type": "code_interpreter", "container": {"type": "auto"}}
-        return OpenAITools(model_name, tool_param).code_interpreter
-    elif tool_name == "image_generation":
-        tool_param = tool_param or {"type": "image_generation"}
-        return OpenAITools(model_name, tool_param).image_generation
+    match tool_name:
+        case "search_web":
+            tool_param = tool_param or {"type": "web_search_preview"}
+            return OpenAITools(model_name, tool_param).search_web
+        case "code_interpreter":
+            tool_param = tool_param or {"type": "code_interpreter", "container": {"type": "auto"}}
+            return OpenAITools(model_name, tool_param).code_interpreter
+        case "image_generation":
+            tool_param = tool_param or {"type": "image_generation"}
+            return OpenAITools(model_name, tool_param).image_generation
     raise ValueError(f"Unknown openai tool {tool_name}")
