@@ -96,7 +96,7 @@ async def main() -> None:
     print(response)
 ```
 
-Tool descriptions are available [here](https://platform.openai.com/docs/guides/tools?api-mode=responses). For each of these you can see detailed 
+Tool descriptions are available [here](https://platform.openai.com/docs/guides/tools?api-mode=responses). For each of these you can see detailed
 information on the corresponding sub-pages (i.e. [here](https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses#user-location) for web search).
 You can use default parameters or specify your own as a dict. For web search this might look like that:
 ```python
