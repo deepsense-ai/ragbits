@@ -82,7 +82,7 @@ For use cases where you want to process partial outputs from the LLM as they arr
 This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and tool-related events in real time.
 
 ## Native OpenAI tools
-Ragbits supports selected native OpenAI tools (web_search, image_generation and code_interpreter). You can use them together with your tools.
+Ragbits supports selected native OpenAI tools (search_web, image_generation and code_interpreter). You can use them together with your tools.
 ```python
 from ragbits.agents.tools.openai import get_openai_tool
 
