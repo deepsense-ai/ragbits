@@ -23,7 +23,7 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
 }
 
-export interface ConversationHistory {
+export interface Conversation {
   history: Record<string, ChatMessage>;
   followupMessages: string[] | null;
   serverState: ServerState | null;
@@ -33,7 +33,7 @@ export interface ConversationHistory {
   chatOptions: Record<string, unknown> | undefined;
 }
 export interface HistoryStore {
-  conversations: Record<string, ConversationHistory>;
+  conversations: Record<string, Conversation>;
   currentConversation: string | null;
   isLoading: boolean;
   abortController: AbortController | null;
@@ -63,13 +63,13 @@ export interface HistoryStore {
     addMessage: (message: Omit<ChatMessage, "id">) => string;
     deleteMessage: (messageId: string) => void;
     restore: (
-      history: ConversationHistory["history"],
-      followupMessages: ConversationHistory["followupMessages"],
-      chatOptions: ConversationHistory["chatOptions"],
-      serverState: ConversationHistory["serverState"],
-      conversationId: ConversationHistory["conversationId"],
+      history: Conversation["history"],
+      followupMessages: Conversation["followupMessages"],
+      chatOptions: Conversation["chatOptions"],
+      serverState: Conversation["serverState"],
+      conversationId: Conversation["conversationId"],
     ) => void;
-    getCurrentConversation: () => ConversationHistory;
+    getCurrentConversation: () => Conversation;
   };
 
   _internal: {

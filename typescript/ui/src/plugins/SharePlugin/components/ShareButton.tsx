@@ -15,7 +15,7 @@ import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
-import { ConversationHistory } from "../../../types/history";
+import { Conversation } from "../../../types/history";
 
 const DEFAULT_ICON = "heroicons:share";
 const SUCCESS_ICON = "heroicons:check";
@@ -24,11 +24,11 @@ const SHARE_START_TAG = `<${SHARE_TAG}>`;
 const SHARE_END_TAG = `</${SHARE_TAG}>`;
 
 interface SharedState {
-  history: ConversationHistory["history"];
-  followupMessages: ConversationHistory["followupMessages"];
-  chatOptions: ConversationHistory["chatOptions"];
-  serverState: ConversationHistory["serverState"];
-  conversationId: ConversationHistory["conversationId"];
+  history: Conversation["history"];
+  followupMessages: Conversation["followupMessages"];
+  chatOptions: Conversation["chatOptions"];
+  serverState: Conversation["serverState"];
+  conversationId: Conversation["conversationId"];
 }
 
 function isSharedState(value: unknown): value is SharedState {

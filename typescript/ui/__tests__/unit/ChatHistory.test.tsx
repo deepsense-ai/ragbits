@@ -4,6 +4,8 @@ import { describe, it, expect, vi, Mock } from "vitest";
 vi.mock("../../src/core/stores/historyStore", async (importOriginal) => {
   const selectConversationMock = vi.fn();
   const deleteConversationMock = vi.fn();
+  const clearHistoryMock = vi.fn();
+  const stopAnsweringMock = vi.fn();
   const actual =
     await importOriginal<typeof import("../../src/core/stores/historyStore")>();
   return {
@@ -12,6 +14,8 @@ vi.mock("../../src/core/stores/historyStore", async (importOriginal) => {
     useHistoryActions: () => ({
       selectConversation: selectConversationMock,
       deleteConversation: deleteConversationMock,
+      clearHistory: clearHistoryMock,
+      stopAnswering: stopAnsweringMock,
     }),
   };
 });
@@ -137,5 +141,19 @@ describe("ChatHistory", () => {
 
     const deleteMock = useHistoryActions().deleteConversation;
     expect(deleteMock).toHaveBeenCalledWith(selectedKey);
+  });
+
+  it('calls clearHistory and stopAnswering when "clear chat" button is clicked', async () => {
+    mockStore(null);
+    render(<ChatHistory />);
+    const user = userEvent.setup();
+    const clearChatButton = screen.getByTestId(
+      "chat-history-clear-chat-button",
+    );
+    await user.click(clearChatButton);
+    const clearHistoryMock = useHistoryActions().clearHistory;
+    const stopAnsweringMock = useHistoryActions().stopAnswering;
+    expect(clearHistoryMock).toHaveBeenCalled();
+    expect(stopAnsweringMock).toHaveBeenCalled();
   });
 });

@@ -10,11 +10,7 @@ import {
 } from "@ragbits/api-client-react";
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
-import {
-  ChatMessage,
-  ConversationHistory,
-  HistoryStore,
-} from "../../types/history";
+import { ChatMessage, Conversation, HistoryStore } from "../../types/history";
 import { produce } from "immer";
 import { mapHistoryToMessages } from "../utils/messageMapper";
 import { API_URL } from "../../config";
@@ -62,7 +58,7 @@ const initialConversationValues = () => ({
 
 export const getConversationKey = (conversationId: string | null) =>
   `${conversationId}`;
-const updateConversation = (mutator: (draft: ConversationHistory) => void) => {
+const updateConversation = (mutator: (draft: Conversation) => void) => {
   return (draft: HistoryStore) => {
     // `null` is a speciall key for conversations that don't have server assigned id yet
     // There could only be one conversation without an id at any given time as they have the same key
@@ -242,15 +238,15 @@ export const useHistoryStore = create<HistoryStore>()(
             return conversation;
           },
           restore: (
-            history: ConversationHistory["history"],
-            followupMessages: ConversationHistory["followupMessages"],
-            chatOptions: ConversationHistory["chatOptions"],
-            serverState: ConversationHistory["serverState"],
+            history: Conversation["history"],
+            followupMessages: Conversation["followupMessages"],
+            chatOptions: Conversation["chatOptions"],
+            serverState: Conversation["serverState"],
           ) => {
             // Copied conversation should be treated as a new one, it would get it's own
             // id after first message
             const conversationId = null;
-            const conversation: ConversationHistory = {
+            const conversation: Conversation = {
               ...initialConversationValues(),
               followupMessages,
               chatOptions,
@@ -461,7 +457,6 @@ export const useHistoryStore = create<HistoryStore>()(
         name: "ragbits-history-store",
         partialize: (value) => ({
           conversations: value.conversations,
-          currentConversation: value.currentConversation,
         }),
         storage: createJSONStorage(() => IndexedDBStorage),
       },
@@ -473,7 +468,7 @@ export const useHistoryActions = () => useHistoryStore((s) => s.actions);
 export const useHistoryPrimitives = () => useHistoryStore((s) => s.primitives);
 export const useHistoryComputed = () => useHistoryStore((s) => s.computed);
 export const useConversationProperty = <T>(
-  selector: (s: ConversationHistory) => T,
+  selector: (s: Conversation) => T,
 ): T =>
   useHistoryStore(
     useShallow((s) => selector(s.primitives.getCurrentConversation())),

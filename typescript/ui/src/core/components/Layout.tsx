@@ -3,10 +3,9 @@ import { Icon } from "@iconify/react";
 import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
 import { Theme } from "../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
-import { PropsWithChildren, useCallback, useState } from "react";
+import { PropsWithChildren, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
-import { useHistoryActions } from "../stores/historyStore";
 import PluginWrapper from "../utils/plugins/PluginWrapper";
 import { SharePlugin } from "../../plugins/SharePlugin";
 import ChatHistory from "./ChatHistory";
@@ -31,18 +30,12 @@ export default function Layout({
   classNames,
 }: PropsWithChildren<LayoutProps>) {
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === Theme.DARK ? Theme.LIGHT : Theme.DARK);
   };
-
-  const resetChat = useCallback(() => {
-    stopAnswering();
-    clearHistory();
-  }, [clearHistory, stopAnswering]);
 
   function isURL(input: string): boolean {
     if (isAbsoluteURL(input)) {
@@ -131,17 +124,6 @@ export default function Layout({
               height: "40px",
             }}
           />
-          <DelayedTooltip content="Clear chat" placement="bottom">
-            <Button
-              isIconOnly
-              aria-label="Clear chat"
-              variant="ghost"
-              onPress={resetChat}
-              data-testid="layout-clear-chat-button"
-            >
-              <Icon icon="heroicons:arrow-path" />
-            </Button>
-          </DelayedTooltip>
           <DelayedTooltip content="Change theme" placement="bottom">
             <Button
               isIconOnly
