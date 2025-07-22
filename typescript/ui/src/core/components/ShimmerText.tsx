@@ -22,7 +22,7 @@ export default function ShimmerText({
   return (
     <motion.div
       className={cn(
-        "relative inline-block bg-gradient-to-r from-default-600 via-default-200 to-default-600 bg-clip-text text-transparent",
+        "relative inline-block bg-gradient-to-r from-neutral-600 via-neutral-200 to-neutral-600 bg-clip-text text-transparent",
         className,
       )}
       initial={{ backgroundPosition: "200% 0%" }}

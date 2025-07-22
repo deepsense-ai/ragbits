@@ -6,7 +6,7 @@ type MessageReferencesProps = {
 
 const MessageReferences = ({ references }: MessageReferencesProps) => {
   return (
-    <div className="text-xs italic text-default-500">
+    <div className="text-xs text-neutral-500 italic dark:text-neutral-400">
       <ul className="list-disc pl-4">
         {references.map((reference, index) => (
           <li key={index}>
