@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { afterEach, vi } from "vitest";
 
 vi.mock("@iconify/react", () => ({
-  Icon: ({ icon, ...props }: IconProps) => (
+  Icon: ({ icon, ref, ...props }: IconProps) => (
     <svg {...props}>{icon.toString()}</svg>
   ),
 }));

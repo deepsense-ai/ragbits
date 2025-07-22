@@ -54,10 +54,10 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
           className="w-full max-w-[33%] overflow-hidden"
         >
           <div
-            className="mr-4 h-full overflow-auto rounded-medium border-small border-divider"
+            className="rounded-medium border-small border-divider mr-4 h-full overflow-auto"
             data-testid="debug-panel"
           >
-            <div className="min-h-16 border-b-small border-divider p-4 text-lg font-bold">
+            <div className="border-b-small border-divider min-h-16 p-4 text-lg font-bold">
               <span>Debug</span>
             </div>
             <Accordion className="max-h-full">

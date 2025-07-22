@@ -65,7 +65,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
   return (
     <>
       {/* Thumbnail Grid */}
-      <div className="grid grid-cols-3 gap-2 xs:grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
+      <div className="xs:grid-cols-4 grid grid-cols-3 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-12">
         {imageArray.map((image, index) => (
           <div
             key={image.alt}
@@ -104,7 +104,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
             <Button
               isIconOnly
               variant="flat"
-              className="absolute right-4 top-4 z-50 bg-black/50 text-white"
+              className="absolute top-4 right-4 z-50 bg-black/50 text-white"
               onPress={onClose}
             >
               <Icon icon="heroicons:x-mark" className="h-6 w-6" />
@@ -116,7 +116,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
                 <Button
                   isIconOnly
                   variant="flat"
-                  className="absolute left-4 top-1/2 z-50 -translate-y-1/2 bg-black/50 text-white"
+                  className="absolute top-1/2 left-4 z-50 -translate-y-1/2 bg-black/50 text-white"
                   onPress={goToPrevious}
                 >
                   <Icon icon="heroicons:chevron-left" className="h-6 w-6" />
@@ -124,7 +124,7 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
                 <Button
                   isIconOnly
                   variant="flat"
-                  className="absolute right-4 top-1/2 z-50 -translate-y-1/2 bg-black/50 text-white"
+                  className="absolute top-1/2 right-4 z-50 -translate-y-1/2 bg-black/50 text-white"
                   onPress={goToNext}
                 >
                   <Icon icon="heroicons:chevron-right" className="h-6 w-6" />
