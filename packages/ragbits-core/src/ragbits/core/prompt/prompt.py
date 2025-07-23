@@ -242,7 +242,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
                 user_parts: list[dict[str, Any]] = [{"type": "text", "text": rendered_text_message}]
                 for attachment in input_attachments:
-                    user_parts.append(self._create_message_with_attachment(attachment))
+                    user_parts.append(self.create_message_with_attachment(attachment))
 
                 user_content = user_parts if len(user_parts) > 1 else rendered_text_message
 
@@ -283,7 +283,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
             content_list: list[dict[str, Any]] = [{"type": "text", "text": rendered_text}]
             for attachment in input_attachments:
-                content_list.append(self._create_message_with_attachment(attachment))
+                content_list.append(self.create_message_with_attachment(attachment))
 
             content = content_list if len(content_list) > 1 else rendered_text
         else:
@@ -322,7 +322,16 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         ]
 
     @staticmethod
-    def _create_message_with_attachment(attachment: Attachment) -> dict[str, Any]:
+    def create_message_with_attachment(attachment: Attachment) -> dict[str, Any]:
+        """
+        Create a message with an attachment in the OpenAI chat format.
+
+        Args:
+            attachment (Attachment): The attachment to include in the message.
+
+        Returns:
+            dict[str, Any]: A dictionary representing the message with the attachment.
+        """
         if not (attachment.data or attachment.url):
             raise PromptWithEmptyAttachment()
 
