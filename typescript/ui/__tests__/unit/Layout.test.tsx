@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, Mock, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import Layout from "../../src/core/components/Layout";
@@ -26,14 +26,22 @@ vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   };
 });
 
-vi.mock("../../src/core/components/ChatHistory", () => ({
-  default: () => <div>ChatHistory</div>,
-}));
+vi.mock(
+  "../../src/plugins/ChatHistoryPlugin/components/ChatHistory.tsx",
+  () => ({
+    default: () => <div>ChatHistory</div>,
+  }),
+);
 
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../src/core/contexts/ThemeContext/ThemeContext";
 import { useHistoryActions } from "../../src/core/stores/HistoryStore/selectors";
+import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
+import {
+  ChatHistoryPlugin,
+  ChatHistoryPluginName,
+} from "../../src/plugins/ChatHistoryPlugin";
 
 function mockConfig(
   isDebugEnabled: boolean = false,
@@ -63,7 +71,9 @@ const stopAnsweringMock = vi.fn();
 });
 
 describe("Layout", () => {
-  it("renders with chat history", () => {
+  it("renders with chat history", async () => {
+    pluginManager.register(ChatHistoryPlugin);
+    pluginManager.activate(ChatHistoryPluginName);
     mockConfig(false, true);
     mockTheme(Theme.LIGHT);
     render(
@@ -80,17 +90,20 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
     // Chat history
-    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("layout-clear-chat-button"),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("ChatHistory")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("layout-clear-chat-button"),
+      ).not.toBeInTheDocument();
+    });
 
     expect(
       screen.getByTestId("layout-toggle-theme-button"),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("layout-debug-button")).toBeNull();
   });
-  it("renders without chat history", () => {
+  it("renders without chat history", async () => {
+    pluginManager.deactivate(ChatHistoryPluginName);
     mockConfig(false, false);
     mockTheme(Theme.LIGHT);
     render(
@@ -107,8 +120,14 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
     // Chat history
-    expect(screen.queryByText("ChatHistory")).not.toBeInTheDocument();
-    expect(screen.getByTestId("layout-clear-chat-button")).toBeInTheDocument();
+
+    // Chat history
+    await waitFor(() => {
+      expect(screen.queryByText("ChatHistory")).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("layout-clear-chat-button"),
+      ).toBeInTheDocument();
+    });
 
     expect(
       screen.getByTestId("layout-toggle-theme-button"),

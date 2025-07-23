@@ -202,7 +202,6 @@ const PromptInput = ({
           <PluginWrapper
             plugin={ChatOptionsPlugin}
             component="ChatOptionsForm"
-            componentProps={undefined}
             skeletonSize={{
               width: "40px",
               height: "40px",

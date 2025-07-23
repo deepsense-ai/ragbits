@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, Mock } from "vitest";
 
-vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
+vi.mock("../../../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
     useHistoryStore: vi.fn(),
   };
 });
 
-vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
+vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => {
   const selectConversationMock = vi.fn();
   const deleteConversationMock = vi.fn();
   const clearHistoryMock = vi.fn();
@@ -23,11 +23,11 @@ vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
 });
 
 import userEvent from "@testing-library/user-event";
-import ChatHistory from "../../src/core/components/ChatHistory";
-import { HistoryStore } from "../../src/types/history";
-import { getConversationKey } from "../../src/core/stores/HistoryStore/historyStore";
-import { useHistoryActions } from "../../src/core/stores/HistoryStore/selectors";
-import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
+import { getConversationKey } from "../../../../src/core/stores/HistoryStore/historyStore";
+import { useHistoryActions } from "../../../../src/core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../../src/core/stores/HistoryStore/useHistoryStore";
+import ChatHistory from "../../../../src/plugins/ChatHistoryPlugin/components/ChatHistory";
+import { HistoryStore } from "../../../../src/types/history";
 
 const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
   "mock-id-1": {

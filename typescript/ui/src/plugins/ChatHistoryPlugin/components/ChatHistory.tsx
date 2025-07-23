@@ -1,11 +1,11 @@
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { getConversationKey } from "../stores/HistoryStore/historyStore";
-import DelayedTooltip from "./DelayedTooltip";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useHistoryActions } from "../stores/HistoryStore/selectors";
-import { useHistoryStore } from "../stores/HistoryStore/useHistoryStore";
+import DelayedTooltip from "../../../core/components/DelayedTooltip";
+import { getConversationKey } from "../../../core/stores/HistoryStore/historyStore";
+import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 
 export default function ChatHistory() {
   const {
@@ -31,7 +31,7 @@ export default function ChatHistory() {
       animate={{
         maxWidth: isCollapsed ? "4.5rem" : "16rem",
       }}
-      className="ml-4 flex h-full w-full min-w-[4.5rem] flex-grow flex-col space-y-2 overflow-hidden rounded-l-medium border-small border-r-0 border-divider p-4 py-3"
+      className="rounded-l-medium border-small border-divider ml-4 flex h-full w-full min-w-[4.5rem] flex-grow flex-col space-y-2 overflow-hidden border-r-0 p-4 py-3"
     >
       <AnimatePresence>
         <DelayedTooltip
@@ -69,9 +69,9 @@ export default function ChatHistory() {
               opacity: 0,
               width: 0,
               height: 0,
-              marginBottom: "-0.5rem",
+              marginBottom: 0,
             }}
-            className="truncate text-small font-semibold leading-5 text-foreground"
+            className="text-small text-foreground truncate leading-5 font-semibold"
           >
             Conversations
           </motion.p>
@@ -127,7 +127,7 @@ export default function ChatHistory() {
                       title={conversationKey}
                       data-testid={`select-conversation-${conversationKey}`}
                     >
-                      <div className="truncate text-small">
+                      <div className="text-small truncate">
                         {/* TODO: Change to some summary later? */}
                         {conversationKey}
                       </div>
