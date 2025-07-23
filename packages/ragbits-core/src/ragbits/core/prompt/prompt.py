@@ -178,6 +178,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )
         self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
+        self.attachments = self._get_attachments_from_input_data(input_data)
 
         # Additional few shot examples that can be added dynamically using methods
         # (in opposite to the static `few_shots` attribute which is defined in the class)
@@ -346,7 +347,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         if mime_type.startswith("image/"):
             return {
                 "type": "image_url",
-                "image_url": {"url": attachment.url or encode_data_url(attachment.data, mime_type)},
+                "image_url": {
+                    "url": attachment.url or encode_data_url(attachment.data, mime_type)  # type: ignore[arg-type]
+                },
             }
 
         if mime_type == "application/pdf":
@@ -354,7 +357,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
                 "type": "file",
                 "file": {"file_id": attachment.url}
                 if attachment.url
-                else {"file_data": encode_data_url(attachment.data, mime_type)},
+                else {"file_data": encode_data_url(attachment.data, mime_type)},  # type: ignore[arg-type]
             }
 
         raise PromptWithAttachmentOfUnsupportedFormat(mime_type)

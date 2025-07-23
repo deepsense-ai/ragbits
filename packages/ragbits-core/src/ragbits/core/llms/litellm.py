@@ -268,7 +268,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
-        if any(p.list_pdfs() for p in prompt) and not supports_pdf_input(self.model_name):
+        if prompt.list_pdfs() and not supports_pdf_input(self.model_name):
             raise LLMNotSupportingPdfsError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
