@@ -11,18 +11,18 @@ const MarkdownContent = ({ content, classNames }: MarkdownContentProps) => {
   return (
     <Markdown
       className={cn(
-        "markdown-container prose dark:prose-invert max-w-full",
+        "markdown-container prose dark:prose-invert text-default-900 max-w-full",
         classNames,
       )}
       remarkPlugins={[remarkGfm]}
       components={{
         pre: ({ children }) => (
-          <pre className="max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+          <pre className="bg-default text-default-900 mt-2 mb-2 max-w-full overflow-auto rounded p-2 font-mono text-[90%] font-normal">
             {children}
           </pre>
         ),
         code: ({ children }) => (
-          <code className="rounded bg-gray-200 px-2 py-1 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200">
+          <code className="bg-default text-default-900 rounded px-1 py-0.5 font-mono text-[85%] font-normal">
             {children}
           </code>
         ),

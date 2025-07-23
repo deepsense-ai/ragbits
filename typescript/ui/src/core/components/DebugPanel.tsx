@@ -8,18 +8,18 @@ import { useShallow } from "zustand/shallow";
 
 const DEFAULT_STYLES = {
   container:
-    "max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  label: `${defaultStyles.label} text-gray-800 dark:text-gray-200`,
-  collapseIcon: `${defaultStyles.collapseIcon} text-gray-800 dark:text-gray-200`,
-  expandIcon: `${defaultStyles.expandIcon} text-gray-800 dark:text-gray-200`,
-  collapsedContent: `${defaultStyles.collapsedContent} text-gray-800 dark:text-gray-200`,
-  punctuation: `text-gray-800 dark:text-gray-200`,
-  stringValue: `${defaultStyles.stringValue} text-gray-800 dark:text-gray-200`,
-  otherValue: `${defaultStyles.otherValue} text-gray-800 dark:text-gray-200`,
-  numberValue: `${defaultStyles.numberValue} text-gray-800 dark:text-gray-200`,
-  nullValue: `${defaultStyles.nullValue} text-gray-800 dark:text-gray-200`,
-  booleanValue: `${defaultStyles.booleanValue} text-gray-800 dark:text-gray-200`,
-  undefinedValue: `${defaultStyles.undefinedValue} text-gray-800 dark:text-gray-200`,
+    "max-w-full overflow-auto rounded bg-default p-2 font-mono font-normal",
+  label: `${defaultStyles.label} !text-default-900`,
+  collapseIcon: `${defaultStyles.collapseIcon} !text-default-900`,
+  expandIcon: `${defaultStyles.expandIcon} !text-default-900`,
+  collapsedContent: `${defaultStyles.collapsedContent} !text-default-900`,
+  punctuation: `!text-default-900`,
+  stringValue: `${defaultStyles.stringValue} !text-green-600`,
+  otherValue: `${defaultStyles.otherValue} !text-purple-500`,
+  numberValue: `${defaultStyles.numberValue}`,
+  nullValue: `${defaultStyles.nullValue}`,
+  booleanValue: `${defaultStyles.booleanValue} !text-yellow-600`,
+  undefinedValue: `${defaultStyles.undefinedValue}`,
 };
 
 interface DebugPanelProps {
@@ -64,7 +64,24 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
               <AccordionItem key="context" aria-label="Context" title="Context">
                 <div className="max-h-[664px] overflow-auto">
                   <JsonView
-                    data={toJSONSafe(context) ?? {}}
+                    data={{
+                      ...context,
+                      null: null,
+                      undefined: undefined,
+                      number: 123,
+                      string: "string",
+                      boolean: true,
+                      array: [1, 2, 3],
+                      object: { a: 1, b: 2, c: 3 },
+                      date: new Date(),
+                      function: () => {},
+                      symbol: Symbol("symbol"),
+                      bigint: BigInt(123),
+                      regex: /regex/,
+                      error: new Error("error"),
+                      map: new Map([["key", "value"]]),
+                      set: new Set([1, 2, 3]),
+                    }}
                     shouldExpandNode={allExpanded}
                     style={DEFAULT_STYLES}
                   />
