@@ -175,12 +175,12 @@ export default function ShareButton() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="text-default-900 flex flex-col gap-1">
+              <ModalHeader className="flex flex-col gap-1 text-neutral-950 dark:text-neutral-50">
                 Share conversation
               </ModalHeader>
               <ModalBody>
                 <div className="flex flex-col gap-4">
-                  <p className="text-medium text-default-500">
+                  <p className="text-medium text-neutral-500 dark:text-neutral-400">
                     You are about to copy a code that allows sharing and storing
                     your current app state. Once copied, you can paste this code
                     anywhere on the site to instantly return to this exact

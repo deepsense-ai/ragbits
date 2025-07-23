@@ -103,7 +103,7 @@ export default function Layout({
               </div>
               <div
                 className={cn(
-                  "text-small text-default-500 truncate leading-5 font-normal",
+                  "text-small truncate leading-5 font-normal text-neutral-500 dark:text-neutral-400",
                   classNames?.subTitle,
                 )}
               >

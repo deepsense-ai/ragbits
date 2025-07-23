@@ -61,10 +61,12 @@ export default function LiveUpdates({
               transition={{ duration: 0.3 }}
               style={{ pointerEvents: isExpanded ? "auto" : "none" }}
             >
-              <div className="text-default-500">{update.label}</div>
+              <div className="text-neutral-500 dark:text-neutral-400">
+                {update.label}
+              </div>
               <Markdown
                 className={cn(
-                  "markdown-container prose text-default-400 dark:prose-invert max-w-full text-sm",
+                  "markdown-container prose dark:prose-invert max-w-full text-sm text-neutral-500 dark:text-neutral-400",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -93,10 +95,12 @@ export default function LiveUpdates({
             </ShimmerText>
           ) : (
             <>
-              <div className="text-default-500">{lastUpdate.label}</div>
+              <div className="text-neutral-500 dark:text-neutral-400">
+                {lastUpdate.label}
+              </div>
               <Markdown
                 className={cn(
-                  "markdown-container prose text-default-400 dark:prose-invert max-w-full text-sm",
+                  "markdown-container prose dark:prose-invert max-w-full text-sm text-neutral-500 dark:text-neutral-400",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}

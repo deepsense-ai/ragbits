@@ -17,7 +17,7 @@ const MarkdownContent = ({ content, classNames }: MarkdownContentProps) => {
       remarkPlugins={[remarkGfm]}
       components={{
         pre: ({ children }) => (
-          <pre className="max-w-full overflow-auto rounded bg-neutral-200 p-2 font-mono font-normal text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
+          <pre className="mt-2 mb-2 max-w-full overflow-auto rounded bg-neutral-200 p-2 font-mono font-normal text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200">
             {children}
           </pre>
         ),

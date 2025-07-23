@@ -8,18 +8,18 @@ import { useShallow } from "zustand/shallow";
 
 const DEFAULT_STYLES = {
   container:
-    "max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  label: `${defaultStyles.label} text-gray-800 dark:text-gray-200`,
-  collapseIcon: `${defaultStyles.collapseIcon} text-gray-800 dark:text-gray-200`,
-  expandIcon: `${defaultStyles.expandIcon} text-gray-800 dark:text-gray-200`,
-  collapsedContent: `${defaultStyles.collapsedContent} text-gray-800 dark:text-gray-200`,
-  punctuation: `text-gray-800 dark:text-gray-200`,
-  stringValue: `${defaultStyles.stringValue} text-gray-800 dark:text-gray-200`,
-  otherValue: `${defaultStyles.otherValue} text-gray-800 dark:text-gray-200`,
-  numberValue: `${defaultStyles.numberValue} text-gray-800 dark:text-gray-200`,
-  nullValue: `${defaultStyles.nullValue} text-gray-800 dark:text-gray-200`,
-  booleanValue: `${defaultStyles.booleanValue} text-gray-800 dark:text-gray-200`,
-  undefinedValue: `${defaultStyles.undefinedValue} text-gray-800 dark:text-gray-200`,
+    "max-w-full overflow-auto rounded bg-neutral-200 p-2 font-mono font-normal text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200",
+  label: `${defaultStyles.label} !text-neutral-800 dark:!text-neutral-200`,
+  collapseIcon: `${defaultStyles.collapseIcon} !text-neutral-800 dark:!text-neutral-200`,
+  expandIcon: `${defaultStyles.expandIcon} !text-neutral-800 dark:!text-neutral-200`,
+  collapsedContent: `${defaultStyles.collapsedContent} !text-neutral-800 dark:!text-neutral-200`,
+  punctuation: `!text-neutral-800 dark:!text-neutral-200`,
+  stringValue: `${defaultStyles.stringValue} !text-green-600`,
+  otherValue: `${defaultStyles.otherValue} !text-amber-600`,
+  numberValue: `${defaultStyles.numberValue} !text-amber-600`,
+  nullValue: `${defaultStyles.nullValue} !text-amber-600`,
+  booleanValue: `${defaultStyles.booleanValue} !text-amber-600`,
+  undefinedValue: `${defaultStyles.undefinedValue} !text-amber-600`,
 };
 
 interface DebugPanelProps {
