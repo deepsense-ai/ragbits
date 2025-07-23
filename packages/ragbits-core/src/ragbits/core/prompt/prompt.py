@@ -314,7 +314,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             list of PDFs
         """
         return [
-            content["file"].get("file_id", content["file"]["file_data"])
+            content["file"].get("file_id") or content["file"]["file_data"]
             for message in self.chat
             if message["content"]
             for content in message["content"]
