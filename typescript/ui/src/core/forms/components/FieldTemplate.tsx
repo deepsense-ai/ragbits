@@ -11,16 +11,11 @@ export default function FieldTemplate({
 
   return (
     <div
-      className={cn(
-        "flex flex-col gap-1 text-neutral-950 dark:text-neutral-50",
-        isRoot && "gap-4",
-      )}
+      className={cn("text-default-900 flex flex-col gap-1", isRoot && "gap-4")}
     >
       {!isRoot && label}
       {schema.description && (
-        <div className="text-small text-neutral-500 dark:text-neutral-400">
-          {schema.description}
-        </div>
+        <div className="text-small text-default-500">{schema.description}</div>
       )}
       {children}
     </div>

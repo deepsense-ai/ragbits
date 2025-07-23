@@ -134,7 +134,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-neutral-950 dark:text-neutral-50">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 {schema.title}
               </ModalHeader>
               <ModalBody>

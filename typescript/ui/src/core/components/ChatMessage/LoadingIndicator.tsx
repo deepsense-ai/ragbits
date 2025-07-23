@@ -2,7 +2,7 @@ import { Icon } from "@iconify/react";
 
 const LoadingIndicator = () => {
   return (
-    <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+    <div className="text-default-500 flex items-center gap-2">
       <Icon
         icon="heroicons:arrow-path"
         className="animate-spin"

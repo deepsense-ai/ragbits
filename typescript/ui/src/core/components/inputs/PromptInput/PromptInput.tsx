@@ -182,7 +182,7 @@ const PromptInput = ({
           ref={textAreaRef}
           aria-label="Message to the chat"
           classNames={{
-            input: "text-medium text-neutral-950 dark:text-neutral-50",
+            input: "text-medium text-default-foreground",
             inputWrapper:
               "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
           }}
@@ -227,9 +227,7 @@ const PromptInput = ({
                 (customSendIcon ?? (
                   <Icon
                     className={cn(
-                      !message
-                        ? "text-neutral-500 dark:text-neutral-400"
-                        : "text-primary-foreground",
+                      !message ? "text-default-600" : "text-primary-foreground",
                     )}
                     icon="heroicons:arrow-up"
                     data-testid="prompt-input-send-icon"

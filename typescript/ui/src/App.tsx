@@ -107,13 +107,13 @@ export default function App() {
       <div className="flex w-full max-w-[600px] flex-col gap-4">
         {customization?.welcome_message && (
           <Markdown
-            className="text-large text-center text-neutral-950 dark:text-neutral-50"
+            className="text-large text-default-900 text-center"
             remarkPlugins={[remarkGfm]}
           >
             {customization?.welcome_message}
           </Markdown>
         )}
-        <div className="text-small text-center text-neutral-500 dark:text-neutral-400">
+        <div className="text-small text-default-500 text-center">
           You can start a conversation by typing in the input box below.
         </div>
       </div>
