@@ -82,7 +82,7 @@ export default function ChatOptionsForm() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-default-900">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 {schema.title || "Chat Options"}
               </ModalHeader>
               <ModalBody>

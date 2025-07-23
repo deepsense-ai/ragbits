@@ -173,7 +173,7 @@ const PromptInput = ({
       />
 
       <Form
-        className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
+        className="rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-row items-center pr-2 pl-0"
         validationBehavior="native"
         onSubmit={onSubmit}
         {...formProps}
@@ -222,26 +222,28 @@ const PromptInput = ({
             data-testid="send-message"
             {...sendButtonProps}
           >
-            {!isLoading &&
-              (customSendIcon ?? (
-                <Icon
-                  className={cn(
-                    !message ? "text-default-600" : "text-primary-foreground",
-                  )}
-                  icon="heroicons:arrow-up"
-                  data-testid="prompt-input-send-icon"
-                  width={20}
-                />
-              ))}
-            {isLoading &&
-              (customStopIcon ?? (
-                <Icon
-                  className="text-primary-foreground"
-                  icon="heroicons:stop"
-                  data-testid="prompt-input-stop-icon"
-                  width={20}
-                />
-              ))}
+            <>
+              {!isLoading &&
+                (customSendIcon ?? (
+                  <Icon
+                    className={cn(
+                      !message ? "text-default-600" : "text-primary-foreground",
+                    )}
+                    icon="heroicons:arrow-up"
+                    data-testid="prompt-input-send-icon"
+                    width={20}
+                  />
+                ))}
+              {isLoading &&
+                (customStopIcon ?? (
+                  <Icon
+                    className="text-primary-foreground"
+                    icon="heroicons:stop"
+                    data-testid="prompt-input-stop-icon"
+                    width={20}
+                  />
+                ))}
+            </>
           </Button>
         </div>
       </Form>

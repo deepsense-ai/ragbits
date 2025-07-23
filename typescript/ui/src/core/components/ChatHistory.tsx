@@ -23,9 +23,9 @@ export default function ChatHistory() {
   };
 
   return (
-    <div className="max-w-64 flex-grow space-y-2 overflow-auto rounded-bl-medium border-b-small border-l-small border-divider p-4">
+    <div className="rounded-bl-medium border-b-small border-l-small border-divider max-w-64 flex-grow space-y-2 overflow-auto p-4">
       <div className="flex items-center justify-between gap-4">
-        <p className="truncate text-small font-semibold leading-5 text-foreground">
+        <p className="text-small text-foreground truncate leading-5 font-semibold">
           Conversations
         </p>
         <DelayedTooltip content="New chat" placement="right">
@@ -61,7 +61,7 @@ export default function ChatHistory() {
                   title={conversationKey}
                   data-testid={`select-conversation-${conversationKey}`}
                 >
-                  <div className="truncate text-small">
+                  <div className="text-small truncate">
                     {/* TODO: Change to some summary later? */}
                     {conversationKey}
                   </div>

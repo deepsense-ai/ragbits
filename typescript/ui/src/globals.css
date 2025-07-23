@@ -1,6 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "../hero.ts";
+
+/* NOTE: This path might need to be updated
+if you are using a copy of the UI for your own project.
+*/
+@source "../../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --breakpoint-xs: 28rem;
+  --animate-pop-in: pop-in 0.2s ease-out forwards;
+  --color-primary: #1b54ff;
+
+  @keyframes pop-in {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
 
 .markdown-container code::before,
 .markdown-container code::after {

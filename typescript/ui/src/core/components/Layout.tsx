@@ -74,7 +74,7 @@ export default function Layout({
       <div className="flex flex-col">
         <header
           className={cn(
-            "flex h-16 min-h-16 items-center justify-between gap-2 rounded-none rounded-tl-medium border-small border-r-0 border-divider px-4 py-3",
+            "rounded-tl-medium border-small border-divider flex h-16 min-h-16 items-center justify-between gap-2 rounded-none border-r-0 px-4 py-3",
             classNames?.header,
           )}
         >
@@ -82,14 +82,14 @@ export default function Layout({
             {isURL(logo) ? (
               <img src={logo} className="h-8 w-8" width={32} height={32} />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
+              <div className="bg-foreground flex h-8 w-8 items-center justify-center rounded-full">
                 {logo}
               </div>
             )}
             <div className="w-full min-w-[120px] sm:w-auto">
               <div
                 className={cn(
-                  "truncate text-small font-semibold leading-5 text-foreground",
+                  "text-small text-foreground truncate leading-5 font-semibold",
                   classNames?.title,
                 )}
               >
@@ -97,7 +97,7 @@ export default function Layout({
               </div>
               <div
                 className={cn(
-                  "truncate text-small font-normal leading-5 text-default-500",
+                  "text-small text-default-500 truncate leading-5 font-normal",
                   classNames?.subTitle,
                 )}
               >
@@ -111,7 +111,7 @@ export default function Layout({
       <div className="flex w-full flex-col sm:max-w-[1000px]">
         <div
           className={cn(
-            "flex h-16 min-h-16 items-center justify-end gap-2 rounded-none rounded-tr-medium border-small border-l-0 border-divider px-4 py-3",
+            "rounded-tr-medium border-small border-divider flex h-16 min-h-16 items-center justify-end gap-2 rounded-none border-l-0 px-4 py-3",
             classNames?.header,
           )}
         >
@@ -151,7 +151,7 @@ export default function Layout({
                 <Icon icon="heroicons:bug-ant" />
                 <div
                   className={cn(
-                    "absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500 transition-all",
+                    "bg-default-500 absolute top-1/2 right-0 left-0 h-0.5 -rotate-45 transition-all",
                     isDebugOpened ? "opacity-100" : "opacity-0",
                   )}
                 />
@@ -162,7 +162,7 @@ export default function Layout({
         <main className="flex h-full overflow-hidden">
           <div
             className={cn(
-              "flex h-full w-full flex-col gap-4 rounded-none rounded-br-medium border-0 border-b border-l border-r border-divider py-3",
+              "rounded-br-medium border-divider flex h-full w-full flex-col gap-4 rounded-none border-0 border-r border-b border-l py-3",
               classNames?.container,
             )}
           >
