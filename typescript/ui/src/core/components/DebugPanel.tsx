@@ -64,24 +64,7 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
               <AccordionItem key="context" aria-label="Context" title="Context">
                 <div className="max-h-[664px] overflow-auto">
                   <JsonView
-                    data={{
-                      ...context,
-                      null: null,
-                      undefined: undefined,
-                      number: 123,
-                      string: "string",
-                      boolean: true,
-                      array: [1, 2, 3],
-                      object: { a: 1, b: 2, c: 3 },
-                      date: new Date(),
-                      function: () => {},
-                      symbol: Symbol("symbol"),
-                      bigint: BigInt(123),
-                      regex: /regex/,
-                      error: new Error("error"),
-                      map: new Map([["key", "value"]]),
-                      set: new Set([1, 2, 3]),
-                    }}
+                    data={toJSONSafe(context) ?? {}}
                     shouldExpandNode={allExpanded}
                     style={DEFAULT_STYLES}
                   />
