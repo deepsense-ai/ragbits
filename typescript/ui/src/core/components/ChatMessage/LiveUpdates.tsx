@@ -10,7 +10,7 @@ import { LiveUpdate } from "@ragbits/api-client-react";
 
 type LiveUpdatesProps = {
   shouldShimmer: boolean;
-  liveUpdates: Map<string, LiveUpdate["content"]>;
+  liveUpdates: Record<string, LiveUpdate["content"]>;
   classNames?: {
     liveUpdates?: string;
   };
@@ -22,7 +22,7 @@ export default function LiveUpdates({
   classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const updates = Array.from(liveUpdates.values());
+  const updates = Object.values(liveUpdates);
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
@@ -63,7 +63,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{update.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose dark:prose-invert max-w-full text-sm text-default-400",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -95,7 +95,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose dark:prose-invert max-w-full text-sm text-default-400",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}

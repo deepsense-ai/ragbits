@@ -8,12 +8,14 @@ import { ComponentProps, PropsWithChildren } from "react";
 
 vi.mock("../../src/core/stores/historyStore", () => {
   return {
+    useConversationProperty: vi.fn(),
     useMessage: vi.fn(),
     useHistoryStore: vi.fn(),
   };
 });
 
 import {
+  useConversationProperty,
   useHistoryStore,
   useMessage,
 } from "../../src/core/stores/historyStore";
@@ -24,6 +26,12 @@ function mockStore(
   isLoading: boolean = false,
   content?: string,
 ) {
+  (useConversationProperty as unknown as Mock).mockImplementation((selector) =>
+    selector({
+      lastMessageId: role,
+      history: {},
+    }),
+  );
   (useHistoryStore as unknown as Mock).mockImplementation((selector) =>
     selector({
       lastMessageId: role,

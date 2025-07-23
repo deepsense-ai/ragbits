@@ -3,6 +3,8 @@ import "@testing-library/jest-dom";
 import { afterEach, vi } from "vitest";
 
 vi.mock("@iconify/react", () => ({
+  // ref is not a part of IconProps so it cannot be done like { icon, ...props }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Icon: ({ icon, ref, ...props }: IconProps) => (
     <svg {...props}>{icon.toString()}</svg>
   ),

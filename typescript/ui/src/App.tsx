@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react";
 import { useConfigContext } from "./core/contexts/ConfigContext/useConfigContext";
 import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
 import {
+  useConversationProperty,
   useHistoryActions,
   useHistoryStore,
   useMessage,
@@ -20,10 +21,10 @@ export default function App() {
     config: { customization },
   } = useConfigContext();
   const messageIds = useMessageIds();
-  const lastMessageId = useHistoryStore((s) => s.lastMessageId);
+  const lastMessageId = useConversationProperty((s) => s.lastMessageId);
   const lastMessage = useMessage(lastMessageId);
   const historyIsLoading = useHistoryStore((s) => s.isLoading);
-  const followupMessages = useHistoryStore((s) => s.followupMessages);
+  const followupMessages = useConversationProperty((s) => s.followupMessages);
   const { sendMessage, stopAnswering } = useHistoryActions();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);

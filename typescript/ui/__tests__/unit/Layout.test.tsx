@@ -26,6 +26,10 @@ vi.mock("../../src/core/stores/historyStore", () => {
   };
 });
 
+vi.mock("../../src/core/components/ChatHistory", () => ({
+  default: () => <div>ChatHistory</div>,
+}));
+
 import { useHistoryActions } from "../../src/core/stores/historyStore";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
@@ -71,8 +75,8 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
 
-    expect(screen.getByTestId("layout-clear-chat-button")).toBeInTheDocument();
     expect(
       screen.getByTestId("layout-toggle-theme-button"),
     ).toBeInTheDocument();
@@ -96,31 +100,12 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
 
-    expect(screen.getByTestId("layout-clear-chat-button")).toBeInTheDocument();
     expect(
       screen.getByTestId("layout-toggle-theme-button"),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("layout-debug-button")).toBeDefined();
   });
 
-  it('calls clearHistory and stopAnswering when "clear chat" button is clicked', async () => {
-    mockConfig();
-    mockTheme(Theme.LIGHT);
-    render(
-      <Layout
-        title="Custom Title"
-        subTitle="Custom Subtitle"
-        logo="Custom Logo"
-      >
-        <div data-testid="children">Children</div>
-      </Layout>,
-    );
-    const user = userEvent.setup();
-    const clearChatButton = screen.getByTestId("layout-clear-chat-button");
-    await user.click(clearChatButton);
-    expect(clearHistoryMock).toHaveBeenCalled();
-    expect(stopAnsweringMock).toHaveBeenCalled();
-  });
   it('calls setTheme when "toggle theme" button is clicked', async () => {
     mockConfig();
     mockTheme(Theme.LIGHT);
