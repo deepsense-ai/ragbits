@@ -5,8 +5,7 @@ from typing import Any
 
 import litellm
 import tiktoken
-from litellm import Router
-from litellm.utils import CustomStreamWrapper, ModelResponse
+from litellm.utils import CustomStreamWrapper, ModelResponse, supports_pdf_input
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -17,6 +16,7 @@ from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
+    LLMNotSupportingPdfsError,
     LLMNotSupportingToolUseError,
     LLMResponseError,
     LLMStatusError,
@@ -173,10 +173,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingPdfsError: If the model does not support PDFs.
             LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if any(p.list_images() for p in prompt) and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+
+        if any(p.list_pdfs() for p in prompt) and not supports_pdf_input(self.model_name):
+            raise LLMNotSupportingPdfsError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
@@ -258,10 +262,14 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LLMStatusError: If the LLM API returns an error status code.
             LLMResponseError: If the LLM API response is invalid.
             LLMNotSupportingImagesError: If the model does not support images.
+            LLMNotSupportingPdfsError: If the model does not support PDFs.
             LLMNotSupportingToolUseError: If the model does not support tool use.
         """
         if prompt.list_images() and not litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
+
+        if any(p.list_pdfs() for p in prompt) and not supports_pdf_input(self.model_name):
+            raise LLMNotSupportingPdfsError()
 
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
@@ -364,7 +372,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
         return response_to_async_generator(response)  # type: ignore
 
-    def _create_router_from_self_and_options(self, options: LiteLLMOptions) -> Router:
+    def _create_router_from_self_and_options(self, options: LiteLLMOptions) -> litellm.Router:
         params: dict[str, Any] = {
             "model": self.model_name,
             "api_key": self.api_key,
@@ -377,7 +385,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if options.rpm:
             params["rpm"] = options.rpm
 
-        return Router(
+        return litellm.Router(
             model_list=[{"model_name": self.model_name, "litellm_params": params}],
             routing_strategy="usage-based-routing-v2",
             enable_pre_call_checks=True,
@@ -449,7 +457,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             LiteLLM: An initialized LiteLLM instance.
         """
         if "router" in config:
-            router = litellm.router.Router(model_list=config["router"])
+            router = litellm.Router(model_list=config["router"])
             config["router"] = router
 
         # Map base_url to api_base if present

@@ -305,6 +305,21 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             if isinstance(message["content"], list) and content["type"] == "image_url"
         ]
 
+    def list_pdfs(self) -> list[str]:  # noqa: PLR6301
+        """
+        Returns the PDFs in form of URLs or base64 encoded strings.
+
+        Returns:
+            list of PDFs
+        """
+        return [
+            content["file"].get("file_id", content["file"]["file_data"])
+            for message in self.chat
+            if message["content"]
+            for content in message["content"]
+            if isinstance(message["content"], list) and content["type"] == "file"
+        ]
+
     @staticmethod
     def _create_message_with_attachment(attachment: Attachment) -> dict[str, Any]:
         if not (attachment.data or attachment.url):
