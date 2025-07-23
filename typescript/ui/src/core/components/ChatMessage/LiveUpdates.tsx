@@ -63,7 +63,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{update.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm text-default-400 dark:prose-invert",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -82,7 +82,7 @@ export default function LiveUpdates({
               <div>{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm text-transparent dark:prose-invert",
+                  "markdown-container prose dark:prose-invert max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -95,7 +95,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose max-w-full text-sm text-default-400 dark:prose-invert",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}

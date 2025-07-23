@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Update TailwindCSS, React, Vite, tailwind config (#742)
 - Add images support in chat message, images gallery (#731)
 - Add persistent user settings (#719)
 - Send chat options under `user_settings` key (#721)

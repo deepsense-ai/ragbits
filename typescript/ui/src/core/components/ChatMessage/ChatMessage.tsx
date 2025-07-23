@@ -50,7 +50,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showImageGallery =
       !isLoading && images && Object.keys(images).length > 0;
     const showMessageReferences = references && references.length > 0;
-    const showLiveUpdates = !isLoading && liveUpdates;
+    const showLiveUpdates = liveUpdates;
 
     return (
       <div
@@ -73,7 +73,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         >
           <div
             className={cn(
-              "relative rounded-medium px-4 py-3 text-default",
+              "rounded-medium text-default relative px-4 py-3",
               rightAlign && "bg-default-100",
               classNames?.innerWrapper,
             )}

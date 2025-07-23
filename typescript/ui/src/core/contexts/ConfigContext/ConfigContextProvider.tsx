@@ -46,10 +46,10 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     return (
       <div
         className={cn(
-          "flex h-screen w-screen items-start justify-center bg-background",
+          "bg-background flex h-screen w-screen items-start justify-center",
         )}
       >
-        <div className="m-auto flex flex-col items-center gap-4 text-default-900">
+        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
           <CircularProgress size="lg" />
           <p>Initializing...</p>
         </div>
@@ -61,10 +61,10 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     return (
       <div
         className={cn(
-          "flex h-screen w-screen items-start justify-center bg-background",
+          "bg-background flex h-screen w-screen items-start justify-center",
         )}
       >
-        <div className="m-auto flex flex-col items-center gap-4 text-default-900">
+        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
           <p className="text-large">
             Something went wrong during chat initialization.
           </p>
