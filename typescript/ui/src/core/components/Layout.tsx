@@ -3,12 +3,13 @@ import { Icon } from "@iconify/react";
 import { useThemeContext } from "../contexts/ThemeContext/useThemeContext";
 import { Theme } from "../contexts/ThemeContext/ThemeContext";
 import DelayedTooltip from "./DelayedTooltip";
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
 import PluginWrapper from "../utils/plugins/PluginWrapper";
 import { SharePlugin } from "../../plugins/SharePlugin";
 import ChatHistory from "./ChatHistory";
+import { useHistoryActions } from "../stores/HistoryStore/selectors";
 
 interface LayoutProps {
   title: string;
@@ -30,12 +31,18 @@ export default function Layout({
   classNames,
 }: PropsWithChildren<LayoutProps>) {
   const { config } = useConfigContext();
+  const { clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === Theme.DARK ? Theme.LIGHT : Theme.DARK);
   };
+
+  const resetChat = useCallback(() => {
+    stopAnswering();
+    clearHistory();
+  }, [clearHistory, stopAnswering]);
 
   function isURL(input: string): boolean {
     if (isAbsoluteURL(input)) {
@@ -69,27 +76,36 @@ export default function Layout({
     return /^[./~\w%-][\w./~%-]*$/.test(str);
   }
 
+  const historyEnabled = config.client_side_history;
+
   return (
     <div className="flex h-full min-h-[48rem] justify-center py-4">
-      <div className="flex flex-col">
+      {historyEnabled && <ChatHistory />}
+      <div
+        className={cn(
+          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          historyEnabled && "pl-0",
+        )}
+      >
         <header
           className={cn(
-            "rounded-tl-medium border-small border-divider flex h-16 min-h-16 items-center justify-between gap-2 rounded-none border-r-0 px-4 py-3",
+            "flex h-16 min-h-16 items-center justify-between gap-2 rounded-none border-small border-divider px-4 py-3",
             classNames?.header,
+            historyEnabled ? "rounded-tr-medium" : "rounded-t-medium",
           )}
         >
           <div className="flex w-full items-center gap-2">
             {isURL(logo) ? (
               <img src={logo} className="h-8 w-8" width={32} height={32} />
             ) : (
-              <div className="bg-foreground flex h-8 w-8 items-center justify-center rounded-full">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
                 {logo}
               </div>
             )}
             <div className="w-full min-w-[120px] sm:w-auto">
               <div
                 className={cn(
-                  "text-small text-foreground truncate leading-5 font-semibold",
+                  "truncate text-small font-semibold leading-5 text-foreground",
                   classNames?.title,
                 )}
               >
@@ -97,7 +113,7 @@ export default function Layout({
               </div>
               <div
                 className={cn(
-                  "text-small text-default-500 truncate leading-5 font-normal",
+                  "truncate text-small font-normal leading-5 text-default-500",
                   classNames?.subTitle,
                 )}
               >
@@ -105,65 +121,68 @@ export default function Layout({
               </div>
             </div>
           </div>
-        </header>
-        <ChatHistory />
-      </div>
-      <div className="flex w-full flex-col sm:max-w-[1000px]">
-        <div
-          className={cn(
-            "rounded-tr-medium border-small border-divider flex h-16 min-h-16 items-center justify-end gap-2 rounded-none border-l-0 px-4 py-3",
-            classNames?.header,
-          )}
-        >
-          <PluginWrapper
-            plugin={SharePlugin}
-            component="ShareButton"
-            componentProps={undefined}
-            skeletonSize={{
-              width: "40px",
-              height: "40px",
-            }}
-          />
-          <DelayedTooltip content="Change theme" placement="bottom">
-            <Button
-              isIconOnly
-              aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
-              variant="ghost"
-              onPress={toggleTheme}
-              data-testid="layout-toggle-theme-button"
-            >
-              {theme === Theme.DARK ? (
-                <Icon icon="heroicons:sun" />
-              ) : (
-                <Icon icon="heroicons:moon" />
-              )}
-            </Button>
-          </DelayedTooltip>
-          {config.debug_mode && (
-            <DelayedTooltip content="Toggle debug panel" placement="bottom">
+          <div className="flex items-center gap-2">
+            <PluginWrapper
+              plugin={SharePlugin}
+              component="ShareButton"
+              componentProps={undefined}
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
+            {!config.client_side_history && (
+              <DelayedTooltip content="Clear chat" placement="bottom">
+                <Button
+                  isIconOnly
+                  aria-label="Clear chat"
+                  variant="ghost"
+                  onPress={resetChat}
+                  data-testid="layout-clear-chat-button"
+                >
+                  <Icon icon="heroicons:arrow-path" />
+                </Button>
+              </DelayedTooltip>
+            )}
+            <DelayedTooltip content="Change theme" placement="bottom">
               <Button
                 isIconOnly
-                aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
+                aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
                 variant="ghost"
-                onPress={() => setDebugOpened((o) => !o)}
-                data-testid="layout-debug-button"
+                onPress={toggleTheme}
+                data-testid="layout-toggle-theme-button"
               >
-                <Icon icon="heroicons:bug-ant" />
-                <div
-                  className={cn(
-                    "bg-default-500 absolute top-1/2 right-0 left-0 h-0.5 -rotate-45 transition-all",
-                    isDebugOpened ? "opacity-100" : "opacity-0",
-                  )}
-                />
+                {theme === Theme.DARK ? (
+                  <Icon icon="heroicons:sun" />
+                ) : (
+                  <Icon icon="heroicons:moon" />
+                )}
               </Button>
             </DelayedTooltip>
-          )}
-        </div>
+            {config.debug_mode && (
+              <DelayedTooltip content="Toggle debug panel" placement="bottom">
+                <Button
+                  isIconOnly
+                  aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
+                  variant="ghost"
+                  onPress={() => setDebugOpened((o) => !o)}
+                  data-testid="layout-debug-button"
+                >
+                  <Icon icon="heroicons:bug-ant" />
+                  {isDebugOpened && (
+                    <div className="absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500" />
+                  )}
+                </Button>
+              </DelayedTooltip>
+            )}
+          </div>
+        </header>
         <main className="flex h-full overflow-hidden">
           <div
             className={cn(
-              "rounded-br-medium border-divider flex h-full w-full flex-col gap-4 rounded-none border-0 border-r border-b border-l py-3",
+              "flex h-full w-full flex-col gap-4 rounded-none border-0 border-b border-l border-r border-divider py-3",
               classNames?.container,
+              historyEnabled ? "rounded-br-medium" : "rounded-b-medium",
             )}
           >
             {children}

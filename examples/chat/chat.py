@@ -86,6 +86,8 @@ class MyChat(ChatInterface):
         ),
     )
 
+    client_side_history = True
+
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
 

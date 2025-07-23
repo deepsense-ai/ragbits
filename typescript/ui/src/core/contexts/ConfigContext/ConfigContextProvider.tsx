@@ -6,6 +6,7 @@ import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
 import { SharePluginName } from "../../../plugins/SharePlugin";
+import { HistoryStoreContextProvider } from "../../stores/HistoryStore/HistoryStoreContextProvider";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -77,6 +78,12 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
   }
 
   return (
-    <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>
+    <ConfigContext.Provider value={value}>
+      <HistoryStoreContextProvider
+        shouldStoreHistory={value.config.client_side_history}
+      >
+        {children}
+      </HistoryStoreContextProvider>
+    </ConfigContext.Provider>
   );
 }

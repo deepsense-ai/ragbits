@@ -20,7 +20,7 @@ vi.mock("../../src/core/contexts/ThemeContext/useThemeContext", () => {
   };
 });
 
-vi.mock("../../src/core/stores/historyStore", () => {
+vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   return {
     useHistoryActions: vi.fn(),
   };
@@ -30,15 +30,19 @@ vi.mock("../../src/core/components/ChatHistory", () => ({
   default: () => <div>ChatHistory</div>,
 }));
 
-import { useHistoryActions } from "../../src/core/stores/historyStore";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../src/core/contexts/ThemeContext/ThemeContext";
+import { useHistoryActions } from "../../src/core/stores/HistoryStore/selectors";
 
-function mockConfig(isDebugEnabled: boolean = false) {
+function mockConfig(
+  isDebugEnabled: boolean = false,
+  withClientSideHistory: boolean = false,
+) {
   (useConfigContext as Mock).mockReturnValue({
     config: {
       debug_mode: isDebugEnabled,
+      client_side_history: withClientSideHistory,
     },
   });
 }
@@ -59,6 +63,58 @@ const stopAnsweringMock = vi.fn();
 });
 
 describe("Layout", () => {
+  it("renders with chat history", () => {
+    mockConfig(false, true);
+    mockTheme(Theme.LIGHT);
+    render(
+      <Layout
+        title="Custom Title"
+        subTitle="Custom Subtitle"
+        logo="Custom Logo"
+      >
+        <div data-testid="children">Children</div>
+      </Layout>,
+    );
+    expect(screen.getByTestId("children")).toBeInTheDocument();
+    expect(screen.getByText("Custom Title")).toBeInTheDocument();
+    expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
+    expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    // Chat history
+    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("layout-clear-chat-button"),
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByTestId("layout-toggle-theme-button"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("layout-debug-button")).toBeNull();
+  });
+  it("renders without chat history", () => {
+    mockConfig(false, false);
+    mockTheme(Theme.LIGHT);
+    render(
+      <Layout
+        title="Custom Title"
+        subTitle="Custom Subtitle"
+        logo="Custom Logo"
+      >
+        <div data-testid="children">Children</div>
+      </Layout>,
+    );
+    expect(screen.getByTestId("children")).toBeInTheDocument();
+    expect(screen.getByText("Custom Title")).toBeInTheDocument();
+    expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
+    expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    // Chat history
+    expect(screen.queryByText("ChatHistory")).not.toBeInTheDocument();
+    expect(screen.getByTestId("layout-clear-chat-button")).toBeInTheDocument();
+
+    expect(
+      screen.getByTestId("layout-toggle-theme-button"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("layout-debug-button")).toBeNull();
+  });
   it("renders without debug panel", () => {
     mockConfig();
     mockTheme(Theme.LIGHT);
@@ -75,7 +131,6 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
-    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
 
     expect(
       screen.getByTestId("layout-toggle-theme-button"),

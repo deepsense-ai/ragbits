@@ -12,23 +12,30 @@ vi.mock("react-json-view-lite", async (importOriginal) => ({
   ),
 }));
 
-vi.mock("../../src/core/stores/historyStore", () => ({
-  useConversationProperty: (
-    selector: (s: Record<string, unknown>) => unknown,
-  ) =>
-    selector({
-      history: ["History Section"],
-      followupMessages: ["Followup messages Section"],
-      eventsLog: [["Events Section"]],
-      context: { context_section: "Context Section" },
-    }),
-  useHistoryStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      computed: {
-        getContext: () => ({ context_section: "Context Section" }),
-      },
-    }),
-}));
+vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
+  return {
+    useHistoryStore: (selector: (s: Record<string, unknown>) => unknown) =>
+      selector({
+        computed: {
+          getContext: () => ({ context_section: "Context Section" }),
+        },
+      }),
+  };
+});
+
+vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
+  return {
+    useConversationProperty: (
+      selector: (s: Record<string, unknown>) => unknown,
+    ) =>
+      selector({
+        history: ["History Section"],
+        followupMessages: ["Followup messages Section"],
+        eventsLog: [["Events Section"]],
+        context: { context_section: "Context Section" },
+      }),
+  };
+});
 
 describe("DebugPanel", () => {
   const SECTIONS = ["Context", "History", "Followup messages", "Events"];

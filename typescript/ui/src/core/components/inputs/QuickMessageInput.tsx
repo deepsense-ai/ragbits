@@ -1,6 +1,6 @@
 import { ComponentProps } from "react";
-import { useMessages } from "../../stores/historyStore";
 import PromptInput from "./PromptInput/PromptInput";
+import { useMessages } from "../../stores/HistoryStore/selectors";
 
 type QuickMessageInputProps = Omit<
   ComponentProps<typeof PromptInput>,
