@@ -84,13 +84,13 @@ This method returns an `AgentResultStreaming` object — an async iterator that 
 ## Native OpenAI tools
 Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
 ```python
-from ragbits.agents.tools.openai import get_openai_tool
+from ragbits.agents.tools import get_web_search_tool
 
 async def main() -> None:
     """Run the weather agent with additional tool."""
     model_name = "gpt-4o-2024-08-06"
     llm = LiteLLM(model_name=model_name, use_structured_output=True)
-    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_openai_tool({"type": "web_search_preview"}, model_name)], keep_history=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_web_search_tool(model_name)], keep_history=True)
 
     response = await agent.run(WeatherPromptInput(location="Paris"))
     print(response)
@@ -100,16 +100,15 @@ Tool descriptions are available [here](https://platform.openai.com/docs/guides/t
 information on the corresponding sub-pages (i.e. [here](https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses#user-location) for web search).
 You can use default parameters or specify your own as a dict. For web search this might look like that:
 ```python
-from ragbits.agents.tools.openai import get_openai_tool
+from ragbits.agents.tools import get_web_search_tool
 
 tool_params = {
-        "type": "web_search_preview",
         "user_location": {
             "type": "approximate",
             "country": "GB",
             "city": "London",
             "region": "London",
         }
-    }
-web_search_tool = get_openai_tool(tool_params, "gpt-4o")
+}
+web_search_tool = get_web_search_tool("gpt-4o", tool_params)
 ```

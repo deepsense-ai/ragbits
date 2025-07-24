@@ -1,9 +1,58 @@
 import base64
 from collections.abc import Callable
+from typing import cast
 
 from openai import AsyncOpenAI
 from openai.types.responses import Response
-from openai.types.responses.tool_param import ToolParam
+from openai.types.responses.tool_param import CodeInterpreter, ToolParam
+
+
+def get_web_search_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+    """
+    Returns a native OpenAI web search tool as function
+
+    Args:
+        model_name: The name of the model
+        additional_params: The additional tool parameters
+
+    Returns:
+        web search function
+    """
+    params_to_pass = additional_params if additional_params else {}
+    tool_object = OpenAITools(model_name, {"type": "web_search_preview", **params_to_pass})
+    return tool_object.search_web
+
+
+def get_code_interpreter_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+    """
+    Returns a native OpenAI code interpreter tool as function
+
+    Args:
+        model_name: The name of the model
+        additional_params: The additional tool parameters
+
+    Returns:
+        code interpreter function
+    """
+    params_to_pass = additional_params if additional_params else {}
+    tool_object = OpenAITools(model_name, cast(CodeInterpreter, {"type": "code_interpreter", **params_to_pass}))
+    return tool_object.code_interpreter
+
+
+def get_image_generation_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+    """
+    Returns a native OpenAI image generation tool as function
+
+    Args:
+        model_name: The name of the model
+        additional_params: The additional tool parameters
+
+    Returns:
+        image generation function
+    """
+    params_to_pass = additional_params if additional_params else {}
+    tool_object = OpenAITools(model_name, {"type": "image_generation", **params_to_pass})
+    return tool_object.image_generation
 
 
 class OpenAIResponsesLLM:
@@ -90,25 +139,3 @@ class OpenAITools:
             text_prefix = "No generated image was returned\n"
 
         return text_prefix + response.output_text
-
-
-def get_openai_tool(tool_param: ToolParam, model_name: str) -> Callable:
-    """
-    Returns a native OpenAI tool as function
-
-    Args:
-        tool_param: The tool parameters
-        model_name: The name of the model
-
-    Returns:
-        Function using OpenAI tool
-    """
-    tool_type = tool_param.get("type")
-    match tool_type:
-        case "web_search_preview":
-            return OpenAITools(model_name, tool_param).search_web
-        case "code_interpreter":
-            return OpenAITools(model_name, tool_param).code_interpreter
-        case "image_generation":
-            return OpenAITools(model_name, tool_param).image_generation
-    raise ValueError(f"{tool_type} is not a valid tool type. You can use one of {OpenAITools.AVAILABLE_TOOLS}")

@@ -23,7 +23,7 @@ import asyncio
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.agents.tools.openai import get_openai_tool
+from ragbits.agents.tools import get_web_search_tool
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 
@@ -56,7 +56,7 @@ async def main() -> None:
     """
     model_name = "gpt-4o-2024-08-06"
     llm = LiteLLM(model_name=model_name, use_structured_output=True)
-    agent = Agent(llm=llm, prompt=SearchPrompt, tools=[get_openai_tool({"type": "web_search_preview"}, model_name)])
+    agent = Agent(llm=llm, prompt=SearchPrompt, tools=[get_web_search_tool(model_name)])
     response = await agent.run(SearchPromptInput(query="What date is today?"))
     print(response)
 
