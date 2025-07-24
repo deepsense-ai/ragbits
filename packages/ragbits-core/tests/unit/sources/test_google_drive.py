@@ -1,11 +1,11 @@
-import json  # Import json for potential validation or pretty printing
+import json
 import os
 from pathlib import Path
 
 import pytest
 from googleapiclient.errors import HttpError
 
-from ragbits.core.sources.google_drive import GoogleDriveSource
+from ragbits.core.sources.google_drive import GoogleDriveExportFormat, GoogleDriveSource
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +50,7 @@ def setup_local_storage_dir(tmp_path: Path):
         del os.environ["LOCAL_STORAGE_DIR"]
 
 
-@pytest.mark.asnycio
+@pytest.mark.asyncio
 async def test_google_drive_impersonate():
     """Test service account impersonation with better error handling."""
     target_email = os.environ.get("GOOGLE_DRIVE_TARGET_EMAIL")
@@ -196,3 +196,17 @@ async def test_google_drive_source_fetch_file():
         # Assert that at least one file was downloaded if that's an expectation for the test
         # If no files are expected, or it's acceptable for 0 files to be downloaded, remove or adjust this assertion.
         assert downloaded_count > 0, "Expected to download at least one file, but downloaded 0."
+
+
+def test_determine_file_extension_override():
+    """Ensure overriding export MIME type yields expected extension."""
+    src = GoogleDriveSource(
+        file_id="dummy",
+        file_name="MyDoc",
+        mime_type="application/vnd.google-apps.document",
+    )
+
+    export_mime, extension = src._determine_file_extension(override_mime=GoogleDriveExportFormat.PDF.value)
+
+    assert export_mime == GoogleDriveExportFormat.PDF.value
+    assert extension == ".pdf"
