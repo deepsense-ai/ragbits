@@ -88,8 +88,8 @@ describe("Integration tests", () => {
       expect(config).toHaveProperty("debug_mode");
       expect(typeof config.debug_mode).toBe("boolean");
       // History mode
-      expect(config).toHaveProperty("client_side_history");
-      expect(typeof config.client_side_history).toBe("boolean");
+      expect(config).toHaveProperty("conversation_history");
+      expect(typeof config.conversation_history).toBe("boolean");
       // Feedback
       expect(config).toHaveProperty("feedback");
 

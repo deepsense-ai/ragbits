@@ -50,7 +50,7 @@ function mockConfig(
   (useConfigContext as Mock).mockReturnValue({
     config: {
       debug_mode: isDebugEnabled,
-      client_side_history: withClientSideHistory,
+      conversationHistory: withClientSideHistory,
     },
   });
 }

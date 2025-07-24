@@ -116,5 +116,5 @@ export const defaultConfigResponse: ConfigResponse = {
         },
     },
     debug_mode: false,
-    client_side_history: false,
+    conversation_history: false,
 }

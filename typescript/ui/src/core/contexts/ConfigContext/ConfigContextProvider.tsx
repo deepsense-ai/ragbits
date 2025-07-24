@@ -30,7 +30,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     const {
       feedback,
       user_settings: userSettings,
-      client_side_history,
+      conversation_history,
     } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
@@ -38,7 +38,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     if (userSettings.form) {
       pluginManager.activate(ChatOptionsPluginName);
     }
-    if (client_side_history) {
+    if (conversation_history) {
       pluginManager.activate(ChatHistoryPluginName);
     }
 
@@ -88,7 +88,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
   return (
     <ConfigContext.Provider value={value}>
       <HistoryStoreContextProvider
-        shouldStoreHistory={value.config.client_side_history}
+        shouldStoreHistory={value.config.conversation_history}
       >
         {children}
       </HistoryStoreContextProvider>
