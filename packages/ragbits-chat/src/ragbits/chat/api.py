@@ -152,6 +152,7 @@ class RagbitsAPI:
                 else None,
                 "user_settings": {"form": user_settings_config},
                 "debug_mode": self.debug_mode,
+                "conversation_history": self.chat_interface.conversation_history,
             }
 
             return JSONResponse(content=config_dict)

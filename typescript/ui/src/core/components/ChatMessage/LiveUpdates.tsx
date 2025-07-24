@@ -75,7 +75,7 @@ export default function LiveUpdates({
         </div>
       </motion.div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center gap-4">
         <div className="relative overflow-hidden bg-transparent">
           {shouldShimmer ? (
             <ShimmerText duration={shimmerDuration}>
