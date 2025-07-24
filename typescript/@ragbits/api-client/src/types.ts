@@ -39,6 +39,7 @@ export enum ChatResponseType {
     CONVERSATION_ID = 'conversation_id',
     LIVE_UPDATE = 'live_update',
     FOLLOWUP_MESSAGES = 'followup_messages',
+    IMAGE = 'image',
 }
 
 /**
@@ -69,6 +70,11 @@ export interface LiveUpdate {
         label: string
         description?: string
     }
+}
+
+export interface Image {
+    id: string
+    url: string
 }
 
 /**
@@ -109,6 +115,11 @@ interface FollowupMessagesChatResponse {
     content: string[]
 }
 
+interface ImageChatResponse {
+    type: ChatResponseType.IMAGE
+    content: Image
+}
+
 /**
  * Typed chat response union
  */
@@ -120,7 +131,7 @@ export type ChatResponse =
     | StateUpdateChatResponse
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
-
+    | ImageChatResponse
 /**
  * Base chat request to the API
  */

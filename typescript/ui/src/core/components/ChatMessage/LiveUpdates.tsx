@@ -5,32 +5,28 @@ import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { ChatMessage } from "../../types/history";
-import ShimmerText from "./ShimmerText";
+import ShimmerText from "../ShimmerText";
+import { LiveUpdate } from "@ragbits/api-client-react";
 
-interface LiveUpdatesProps {
-  isLoading: boolean;
-  liveUpdates: ChatMessage["liveUpdates"];
+type LiveUpdatesProps = {
+  shouldShimmer: boolean;
+  liveUpdates: Record<string, LiveUpdate["content"]>;
   classNames?: {
     liveUpdates?: string;
   };
-}
+};
 
 export default function LiveUpdates({
-  isLoading,
+  shouldShimmer,
   liveUpdates,
   classNames,
 }: LiveUpdatesProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const updates = liveUpdates ? Object.values(liveUpdates) : null;
+  const updates = Object.values(liveUpdates);
 
   const toggleExpanded = useCallback(() => setIsExpanded((prev) => !prev), []);
 
-  if (!updates) {
-    return null;
-  }
-
-  const hasMultipleUpdates = updates?.length > 1;
+  const hasMultipleUpdates = updates.length > 1;
   const lastUpdate = updates[updates.length - 1];
   const earlierUpdates = updates.slice(0, -1);
   const shimmerDuration =
@@ -57,14 +53,17 @@ export default function LiveUpdates({
             <motion.div
               key={index}
               initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: isExpanded ? 1 : 0, y: isExpanded ? 0 : -10 }}
+              animate={{
+                opacity: isExpanded ? 1 : 0,
+                y: isExpanded ? 0 : -10,
+              }}
               transition={{ duration: 0.3 }}
               style={{ pointerEvents: isExpanded ? "auto" : "none" }}
             >
               <div className="text-default-500">{update.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose text-default-400 dark:prose-invert max-w-full text-sm",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -78,12 +77,12 @@ export default function LiveUpdates({
 
       <div className="flex items-center justify-between gap-4">
         <div className="relative overflow-hidden bg-transparent">
-          {isLoading ? (
+          {shouldShimmer ? (
             <ShimmerText duration={shimmerDuration}>
               <div>{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose dark:prose-invert max-w-full text-sm text-transparent",
+                  "markdown-container prose dark:prose-invert max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
@@ -96,7 +95,7 @@ export default function LiveUpdates({
               <div className="text-default-500">{lastUpdate.label}</div>
               <Markdown
                 className={cn(
-                  "markdown-container prose text-default-400 dark:prose-invert max-w-full text-sm",
+                  "markdown-container prose dark:prose-invert text-default-400 max-w-full text-sm",
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}

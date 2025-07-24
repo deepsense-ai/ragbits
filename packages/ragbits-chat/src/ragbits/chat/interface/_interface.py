@@ -22,6 +22,7 @@ from .types import (
     ChatContext,
     ChatResponse,
     ChatResponseType,
+    Image,
     LiveUpdate,
     LiveUpdateContent,
     LiveUpdateType,
@@ -67,7 +68,7 @@ def with_chat_metadata(
 
         # Generate conversation_id if this is the first message
         is_new_conversation = False
-        if not context.conversation_id and (not history or len(history) == 0):
+        if not context.conversation_id:
             context.conversation_id = str(uuid.uuid4())
             is_new_conversation = True
             yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
@@ -227,6 +228,11 @@ class ChatInterface(ABC):
     def create_followup_messages(messages: list[str]) -> ChatResponse:
         """Helper method to create a live update response."""
         return ChatResponse(type=ChatResponseType.FOLLOWUP_MESSAGES, content=messages)
+
+    @staticmethod
+    def create_image_response(image_id: str, image_url: str) -> ChatResponse:
+        """Helper method to create an image response."""
+        return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

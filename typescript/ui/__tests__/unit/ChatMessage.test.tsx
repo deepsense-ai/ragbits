@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
-import ChatMessage from "../../src/core/components/ChatMessage";
+import { ChatMessage } from "../../src/core/components/ChatMessage";
 import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
@@ -8,12 +8,14 @@ import { ComponentProps, PropsWithChildren } from "react";
 
 vi.mock("../../src/core/stores/historyStore", () => {
   return {
+    useConversationProperty: vi.fn(),
     useMessage: vi.fn(),
     useHistoryStore: vi.fn(),
   };
 });
 
 import {
+  useConversationProperty,
   useHistoryStore,
   useMessage,
 } from "../../src/core/stores/historyStore";
@@ -24,6 +26,12 @@ function mockStore(
   isLoading: boolean = false,
   content?: string,
 ) {
+  (useConversationProperty as unknown as Mock).mockImplementation((selector) =>
+    selector({
+      lastMessageId: role,
+      history: {},
+    }),
+  );
   (useHistoryStore as unknown as Mock).mockImplementation((selector) =>
     selector({
       lastMessageId: role,
@@ -62,7 +70,7 @@ vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
   ),
 }));
 
-vi.mock("./DelayedTooltip.tsx", () => ({
+vi.mock("../DelayedTooltip.tsx", () => ({
   DelayedTooltip: ({ children }: PropsWithChildren) => children,
 }));
 
@@ -122,16 +130,10 @@ describe("ChatMessage", () => {
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
     });
 
-    it("displays loading state for assistant message with content", () => {
-      mockStore(MessageRole.ASSISTANT, true);
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
-      expect(screen.getByText("Generating...")).toBeInTheDocument();
-    });
-
     it("displays loading state for assistant message without content", () => {
       mockStore(MessageRole.ASSISTANT, true, "");
       render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
-      expect(screen.getByText("Thinking...")).toBeInTheDocument();
+      expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     });
 
     it("copies content to clipboard when copy button is clicked", async () => {

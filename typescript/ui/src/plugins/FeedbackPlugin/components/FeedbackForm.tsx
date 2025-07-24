@@ -8,7 +8,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import { FormTheme, useTransformErrors } from "../../../core/forms";
@@ -134,7 +134,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-default-900">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 {schema.title}
               </ModalHeader>
               <ModalBody>
