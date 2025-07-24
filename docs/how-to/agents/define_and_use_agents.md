@@ -82,7 +82,7 @@ For use cases where you want to process partial outputs from the LLM as they arr
 This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and tool-related events in real time.
 
 ## Native OpenAI tools
-Ragbits supports selected native OpenAI tools (search_web, image_generation and code_interpreter). You can use them together with your tools.
+Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
 ```python
 from ragbits.agents.tools.openai import get_openai_tool
 
@@ -90,7 +90,7 @@ async def main() -> None:
     """Run the weather agent with additional tool."""
     model_name = "gpt-4o-2024-08-06"
     llm = LiteLLM(model_name=model_name, use_structured_output=True)
-    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_openai_tool("search_web", model_name)], keep_history=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_openai_tool({"type": "web_search_preview"}, model_name)], keep_history=True)
 
     response = await agent.run(WeatherPromptInput(location="Paris"))
     print(response)
@@ -111,5 +111,5 @@ tool_params = {
             "region": "London",
         }
     }
-web_search_tool = get_openai_tool("search_web", "gpt-4o", tool_params)
+web_search_tool = get_openai_tool(tool_params, "gpt-4o")
 ```

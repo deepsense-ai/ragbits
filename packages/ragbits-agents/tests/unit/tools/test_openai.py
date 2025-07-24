@@ -16,22 +16,22 @@ def mock_responses_llm() -> MagicMock:
 
 @patch("ragbits.agents.tools.openai.AsyncOpenAI")
 @pytest.mark.parametrize(
-    ("tool_name", "should_succeed"),
+    ("tool_param", "should_succeed"),
     [
-        ("search_web", True),
-        ("code_interpreter", True),
-        ("image_generation", True),
-        ("non_existing_tool", False),
+        ({"type": "web_search_preview"}, True),
+        ({"type": "code_interpreter"}, True),
+        ({"type": "image_generation"}, True),
+        ({"type": "non_existing_tool"}, False),
     ],
 )
-def test_get_openai_tool(mock_async_openai: MagicMock, tool_name: str, should_succeed: bool) -> None:
+def test_get_openai_tool(mock_async_openai: MagicMock, tool_param: dict[str, str], should_succeed: bool) -> None:
     """Test that get_openai_tool returns the correct tool."""
     if should_succeed:
-        tool = get_openai_tool(tool_name, "test_model")
+        tool = get_openai_tool(tool_param, "test_model")  # type: ignore
         assert callable(tool)
     else:
         with pytest.raises(ValueError):
-            get_openai_tool(tool_name, "test_model")
+            get_openai_tool(tool_param, "test_model")  # type: ignore
 
 
 @patch("ragbits.agents.tools.openai.AsyncOpenAI")

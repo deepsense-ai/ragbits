@@ -39,6 +39,8 @@ class OpenAITools:
     Class wrapping tool calls to responses API of OpenAI
     """
 
+    AVAILABLE_TOOLS = {"web_search_preview", "code_interpreter", "image_generation"}
+
     def __init__(self, model_name: str, tool_param: ToolParam):
         self._responses_llm = OpenAIResponsesLLM(model_name, tool_param)
 
@@ -90,26 +92,23 @@ class OpenAITools:
         return text_prefix + response.output_text
 
 
-def get_openai_tool(tool_name: str, model_name: str, tool_param: ToolParam | None = None) -> Callable:
+def get_openai_tool(tool_param: ToolParam, model_name: str) -> Callable:
     """
     Returns a native OpenAI tool as function
 
     Args:
-        tool_name: The name of the tool
-        model_name: The name of the model
         tool_param: The tool parameters
+        model_name: The name of the model
 
     Returns:
         Function using OpenAI tool
     """
-    match tool_name:
-        case "search_web":
-            tool_param = tool_param or {"type": "web_search_preview"}
+    tool_type = tool_param.get("type")
+    match tool_type:
+        case "web_search_preview":
             return OpenAITools(model_name, tool_param).search_web
         case "code_interpreter":
-            tool_param = tool_param or {"type": "code_interpreter", "container": {"type": "auto"}}
             return OpenAITools(model_name, tool_param).code_interpreter
         case "image_generation":
-            tool_param = tool_param or {"type": "image_generation"}
             return OpenAITools(model_name, tool_param).image_generation
-    raise ValueError(f"Unknown openai tool {tool_name}")
+    raise ValueError(f"{tool_type} is not a valid tool type. You can use one of {OpenAITools.AVAILABLE_TOOLS}")
