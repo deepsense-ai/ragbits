@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator, Iterable
 
-from ragbits.core.llms.base import LLM, LLMOptions
+from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -62,6 +62,7 @@ class MockLLM(LLM[MockLLMOptions]):
         prompt: Iterable[BasePrompt],
         options: MockLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
@@ -95,6 +96,7 @@ class MockLLM(LLM[MockLLMOptions]):
         prompt: BasePrompt,
         options: MockLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
