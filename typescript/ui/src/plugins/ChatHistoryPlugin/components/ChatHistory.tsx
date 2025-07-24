@@ -3,27 +3,18 @@ import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
-import { getConversationKey } from "../../../core/stores/HistoryStore/historyStore";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
+import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
 
 export default function ChatHistory() {
-  const {
-    selectConversation,
-    deleteConversation,
-    stopAnswering,
-    clearHistory,
-  } = useHistoryActions();
+  const { selectConversation, deleteConversation, newConversation } =
+    useHistoryActions();
   const conversations = useHistoryStore((s) => s.conversations);
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const [isCollapsed, setCollapsed] = useState(false);
   const collapseButtonTitle = isCollapsed ? "Open sidebar" : "Close sidebar";
   const newChatIcon = <Icon icon="heroicons:pencil-square" />;
-
-  const resetChat = () => {
-    stopAnswering();
-    clearHistory();
-  };
 
   return (
     <motion.div
@@ -85,7 +76,7 @@ export default function ChatHistory() {
           <Button
             aria-label="New conversation"
             variant="ghost"
-            onPress={resetChat}
+            onPress={newConversation}
             data-testid="chat-history-clear-chat-button"
             startContent={newChatIcon}
             isIconOnly={isCollapsed}
@@ -111,12 +102,11 @@ export default function ChatHistory() {
             {Object.entries(conversations)
               .reverse()
               .map(([conversationKey, conversation]) => {
-                if (!conversation.conversationId) {
+                if (isTemporaryConversation(conversation)) {
                   return null;
                 }
 
-                const isSelected =
-                  conversationKey === getConversationKey(currentConversation);
+                const isSelected = conversationKey === currentConversation;
                 return (
                   <div className="flex gap-2" key={conversationKey}>
                     <Button
@@ -129,7 +119,7 @@ export default function ChatHistory() {
                     >
                       <div className="text-small truncate">
                         {/* TODO: Change to some summary later? */}
-                        {conversationKey}
+                        {conversation.conversationId}
                       </div>
                     </Button>
                     <DelayedTooltip
