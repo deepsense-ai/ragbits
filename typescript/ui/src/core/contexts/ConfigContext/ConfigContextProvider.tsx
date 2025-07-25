@@ -6,6 +6,8 @@ import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
 import { SharePluginName } from "../../../plugins/SharePlugin";
+import { HistoryStoreContextProvider } from "../../stores/HistoryStore/HistoryStoreContextProvider";
+import { ChatHistoryPluginName } from "../../../plugins/ChatHistoryPlugin";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -25,12 +27,19 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       return;
     }
 
-    const { feedback, user_settings: userSettings } = config.data;
+    const {
+      feedback,
+      user_settings: userSettings,
+      conversation_history,
+    } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
     }
     if (userSettings.form) {
       pluginManager.activate(ChatOptionsPluginName);
+    }
+    if (conversation_history) {
+      pluginManager.activate(ChatHistoryPluginName);
     }
 
     pluginManager.activate(SharePluginName);
@@ -46,10 +55,10 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     return (
       <div
         className={cn(
-          "flex h-screen w-screen items-start justify-center bg-background",
+          "bg-background flex h-screen w-screen items-start justify-center",
         )}
       >
-        <div className="m-auto flex flex-col items-center gap-4 text-default-900">
+        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
           <CircularProgress size="lg" />
           <p>Initializing...</p>
         </div>
@@ -61,10 +70,10 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     return (
       <div
         className={cn(
-          "flex h-screen w-screen items-start justify-center bg-background",
+          "bg-background flex h-screen w-screen items-start justify-center",
         )}
       >
-        <div className="m-auto flex flex-col items-center gap-4 text-default-900">
+        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
           <p className="text-large">
             Something went wrong during chat initialization.
           </p>
@@ -77,6 +86,12 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
   }
 
   return (
-    <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>
+    <ConfigContext.Provider value={value}>
+      <HistoryStoreContextProvider
+        shouldStoreHistory={value.config.conversation_history}
+      >
+        {children}
+      </HistoryStoreContextProvider>
+    </ConfigContext.Provider>
   );
 }

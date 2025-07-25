@@ -1,9 +1,5 @@
 import { strToU8, zlibSync, strFromU8, unzlibSync } from "fflate";
 import {
-  useHistoryPrimitives,
-  useHistoryStore,
-} from "../../../core/stores/historyStore";
-import {
   Button,
   Modal,
   ModalBody,
@@ -11,11 +7,13 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
-import { HistoryStore } from "../../../types/history";
+import { Conversation } from "../../../types/history";
+import { useHistoryPrimitives } from "../../../core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 
 const DEFAULT_ICON = "heroicons:share";
 const SUCCESS_ICON = "heroicons:check";
@@ -24,20 +22,18 @@ const SHARE_START_TAG = `<${SHARE_TAG}>`;
 const SHARE_END_TAG = `</${SHARE_TAG}>`;
 
 interface SharedState {
-  history: Array<
-    HistoryStore["history"] extends Map<unknown, infer V> ? V : never
-  >;
-  followupMessages: HistoryStore["followupMessages"];
-  chatOptions: HistoryStore["chatOptions"];
-  serverState: HistoryStore["serverState"];
-  conversationId: HistoryStore["conversationId"];
+  history: Conversation["history"];
+  followupMessages: Conversation["followupMessages"];
+  chatOptions: Conversation["chatOptions"];
+  serverState: Conversation["serverState"];
+  conversationId: Conversation["conversationId"];
 }
 
 function isSharedState(value: unknown): value is SharedState {
   if (typeof value !== "object" || value === null) return false;
 
   const state = value as Partial<SharedState>;
-  if (!Array.isArray(state.history)) return false;
+  if (typeof state.history !== "object") return false;
   if ("followupMessages" in state && typeof state.followupMessages !== "object")
     return false;
   if ("chatOptions" in state && typeof state.chatOptions !== "object")
@@ -59,6 +55,7 @@ export default function ShareButton() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [icon, setIcon] = useState(DEFAULT_ICON);
   const iconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { getCurrentConversation } = useHistoryStore((s) => s.primitives);
 
   const onShare = () => {
     const {
@@ -67,11 +64,11 @@ export default function ShareButton() {
       serverState,
       conversationId,
       followupMessages,
-    } = useHistoryStore.getState();
+    } = getCurrentConversation();
 
     const state = toJSONSafe({
       chatOptions,
-      history: Array.from(history.values()),
+      history: history,
       serverState,
       conversationId,
       followupMessages,
@@ -175,7 +172,7 @@ export default function ShareButton() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-default-900">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 Share conversation
               </ModalHeader>
               <ModalBody>

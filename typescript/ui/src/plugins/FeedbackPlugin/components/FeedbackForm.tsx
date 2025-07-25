@@ -8,14 +8,14 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
-import { useHistoryActions } from "../../../core/stores/historyStore";
 import { ChatMessage } from "../../../types/history";
+import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 
 interface FeedbackFormProps {
   message: ChatMessage;
@@ -134,7 +134,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-default-900">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 {schema.title}
               </ModalHeader>
               <ModalBody>

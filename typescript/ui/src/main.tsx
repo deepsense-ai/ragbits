@@ -13,11 +13,13 @@ import { ConfigContextProvider } from "./core/contexts/ConfigContext/ConfigConte
 import { API_URL } from "./config.ts";
 import { enableMapSet } from "immer";
 import { SharePlugin } from "./plugins/SharePlugin/index.tsx";
+import { ChatHistoryPlugin } from "./plugins/ChatHistoryPlugin/index.ts";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
 pluginManager.register(ChatOptionsPlugin);
 pluginManager.register(SharePlugin);
+pluginManager.register(ChatHistoryPlugin);
 
 // Preload icons
 loadIcons([
@@ -31,6 +33,7 @@ loadIcons([
   "heroicons:chevron-down",
   "heroicons:cog-6-tooth",
   "heroicons:bug-ant",
+  "heroicons:trash",
 ]);
 
 enableMapSet();

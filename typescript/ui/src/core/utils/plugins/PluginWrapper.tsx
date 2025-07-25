@@ -3,17 +3,17 @@ import { Plugin } from "../../../types/plugins";
 import { Skeleton } from "@heroui/react";
 import { usePlugin } from "./usePlugin";
 import { PropsOf } from "../../../types/utility";
-
-interface PluginWrapperProps<
-  T extends Plugin,
-  C extends keyof T["components"],
-> {
+type ComponentProps<T> = T extends undefined
+  ? { componentProps?: never }
+  : {
+      componentProps: T;
+    };
+type PluginWrapperProps<T extends Plugin, C extends keyof T["components"]> = {
   plugin: T;
   component: C;
-  componentProps: PropsOf<T["components"][C]>;
   skeletonSize?: { width: string; height: string };
   disableSkeleton?: boolean;
-}
+} & ComponentProps<PropsOf<T["components"][C]>>;
 
 const PluginWrapper = <T extends Plugin, C extends keyof T["components"]>({
   plugin,
@@ -31,7 +31,7 @@ const PluginWrapper = <T extends Plugin, C extends keyof T["components"]>({
     return null;
   }
 
-  const Component = managedPlugin.components[component as string];
+  const Component = managedPlugin.config.components[component as string];
   try {
     return (
       <Suspense
