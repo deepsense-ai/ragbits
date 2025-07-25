@@ -8,7 +8,11 @@ from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function
 from pydantic import BaseModel
 
 from ragbits.core.llms.base import ToolCall
-from ragbits.core.llms.exceptions import LLMNotSupportingImagesError, LLMNotSupportingToolUseError
+from ragbits.core.llms.exceptions import (
+    LLMNotSupportingImagesError,
+    LLMNotSupportingReasoningEffortError,
+    LLMNotSupportingToolUseError,
+)
 from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
@@ -136,6 +140,23 @@ def mock_llm_responses_with_tool_no_tool_used(llm: LiteLLM):
     ]
 
 
+def mock_llm_responses_with_reasoning(llm: LiteLLM):
+    llm._get_litellm_response = AsyncMock()  # type: ignore
+    llm._get_litellm_response.side_effect = [
+        ModelResponse(
+            choices=[
+                Choices(
+                    message=Message(
+                        content="The answer is 42",
+                        role="assistant",
+                        reasoning_content="Let me think about this step by step.",
+                    ),
+                )
+            ],
+        ),
+    ]
+
+
 def get_weather(location: str) -> str:
     """
     Returns the current weather for a given location.
@@ -188,6 +209,17 @@ async def test_generation_with_tools(mock_supports_function_calling: MagicMock):
             type="function",
         )
     ]
+
+
+@patch("litellm.supports_reasoning")
+async def test_generation_with_reasoning_effort_not_supported_error_message(mock_supports_reasoning: MagicMock):
+    """Test that the error message includes the model name when reasoning is not supported."""
+    mock_supports_reasoning.return_value = False
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("What is 2+2?")
+    options = LiteLLMOptions(reasoning_effort="high")
+    with pytest.raises(LLMNotSupportingReasoningEffortError, match="does not support reasoning effort"):
+        await llm.generate(prompt, options=options)
 
 
 @patch("litellm.supports_function_calling")
@@ -295,6 +327,17 @@ async def test_generation_with_metadata():
     assert output.usage.completion_tokens == 20
     assert output.usage.prompt_tokens == 10
     assert output.usage.total_tokens == 30
+
+
+@patch("litellm.supports_reasoning")
+async def test_generation_with_metadata_reasoning_content(mock_supports_reasoning: MagicMock):
+    """Test generation with reasoning content in response."""
+    mock_supports_reasoning.return_value = True
+    llm = LiteLLM(api_key="test_key")
+    prompt = MockPrompt("What is 2+2?")
+    mock_llm_responses_with_reasoning(llm)
+    output = await llm.generate_with_metadata(prompt)
+    assert output.reasoning == "Let me think about this step by step."
 
 
 @patch("litellm.supports_function_calling")
