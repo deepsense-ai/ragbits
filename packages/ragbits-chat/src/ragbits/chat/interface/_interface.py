@@ -177,6 +177,7 @@ class ChatInterface(ABC):
 
     feedback_config: FeedbackConfig = FeedbackConfig()
     user_settings: UserSettings = UserSettings()
+    conversation_history: bool = False
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
 

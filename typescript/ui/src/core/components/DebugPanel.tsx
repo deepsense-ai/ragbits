@@ -3,11 +3,9 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import { allExpanded, defaultStyles, JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { toJSONSafe } from "../utils/json";
-import {
-  useConversationProperty,
-  useHistoryStore,
-} from "../stores/historyStore";
 import { useShallow } from "zustand/shallow";
+import { useConversationProperty } from "../stores/HistoryStore/selectors";
+import { useHistoryStore } from "../stores/HistoryStore/useHistoryStore";
 
 const DEFAULT_STYLES = {
   container:
