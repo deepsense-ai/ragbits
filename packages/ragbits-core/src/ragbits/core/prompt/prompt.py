@@ -102,11 +102,13 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             image_input_fields = cls.image_input_fields or []
             for field in image_input_fields:
                 if image_for_field := getattr(input_data, field):
-                    if isinstance(image_for_field, list | tuple):
-                        attachments.extend([Attachment(data=image) for image in image_for_field])
-                    else:
-                        attachments.append(Attachment(data=image_for_field))
-
+                    iter_image = [image_for_field] if isinstance(image_for_field, (str | bytes)) else image_for_field
+                    attachments.extend(
+                        [
+                            Attachment(url=image) if isinstance(image, str) else Attachment(data=image)
+                            for image in iter_image
+                        ]
+                    )
             for value in input_data.__dict__.values():
                 if isinstance(value, Attachment):
                     attachments.append(value)
