@@ -22,7 +22,7 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.tool import Tool, ToolCallResult
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
@@ -192,6 +192,7 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -200,6 +201,7 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -207,6 +209,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -218,6 +221,11 @@ class Agent(
                 - None: No input. Only valid when a string prompt was provided during initialization.
             options: The options for the agent run.
             context: The context for the agent run.
+            tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
+                - "auto": let model decide
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - Callable: one of provided tools
 
         Returns:
             The result of the agent run.
@@ -251,6 +259,7 @@ class Agent(
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
                         tools=[tool.to_function_schema() for tool in tools_mapping.values()],
+                        tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                         options=self._get_llm_options(llm_options, merged_options, context.usage),
                     ),
                 )
@@ -294,6 +303,7 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -302,6 +312,7 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -309,6 +320,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -318,6 +330,11 @@ class Agent(
             input: The input for the agent run.
             options: The options for the agent run.
             context: The context for the agent run.
+            tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
+                - "auto": let model decide
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - Callable: one of provided tools
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -329,7 +346,7 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
-        generator = self._stream_internal(input, options, context)
+        generator = self._stream_internal(input, options, context, tool_choice)
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
@@ -337,6 +354,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
@@ -357,6 +375,7 @@ class Agent(
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
+                    tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
                 async for chunk in streaming_result:
