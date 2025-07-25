@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add tool_choice parameter to LLM interface (#738)
 - Fix issue with improper convertion to json of tool call arguments (#737)
 - Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)

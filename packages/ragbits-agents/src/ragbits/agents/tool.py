@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -76,3 +76,6 @@ class Tool:
                 "parameters": self.parameters,
             },
         }
+
+
+ToolChoice = Literal["auto", "none", "required"] | Callable
