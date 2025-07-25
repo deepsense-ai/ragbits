@@ -397,9 +397,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     sendMessage: (text) => {
       const {
         _internal: { handleResponse },
-        primitives: { addMessage, getCurrentConversation },
+        primitives: { addMessage, getCurrentConversation, stopAnswering },
         computed: { getContext },
-        actions: { stopAnswering },
       } = get();
 
       const { history, conversationId } = getCurrentConversation();
@@ -436,23 +435,26 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       );
 
       const updateIdentifier = () => {
+        // While streaming, we use a temporary identifier as the key.
+        // When the stream finishes, we replace it with the final identifier stored in the object,
+        // which is then used as the key in the `conversations` record.
         set((draft) => {
-          // While streaming, we use a temporary identifier as the key.
-          // When the stream finishes, we replace it with the final identifier stored in the object,
-          // which is then used as the key in the `conversations` record.
           const conversation = draft.conversations[conversationId];
           if (!conversation) {
             // Silently ignore conversations that don't exist
             return;
           }
 
-          // We have to reset currentConversation if it's the active one
+          draft.conversations = Object.fromEntries(
+            Object.entries(draft.conversations).map(([k, v]) => [
+              k === conversationId ? conversation.conversationId : k,
+              v,
+            ]),
+          );
+
           if (draft.currentConversation === conversationId) {
             draft.currentConversation = conversation.conversationId;
           }
-
-          draft.conversations[conversation.conversationId] = conversation;
-          delete draft.conversations[conversationId];
         });
       };
 
@@ -467,11 +469,11 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               type: ChatResponseType.TEXT,
               content: error.message,
             });
-            stopAnswering();
+            stopAnswering(conversationId);
             updateIdentifier();
           },
           onClose: () => {
-            stopAnswering();
+            stopAnswering(conversationId);
             updateIdentifier();
           },
         },

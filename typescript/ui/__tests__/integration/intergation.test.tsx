@@ -116,7 +116,7 @@ describe("Integration tests", () => {
   describe("/api/chat", { timeout: 30000 }, () => {
     describe("should call chat endpoint with correct data", () => {
       afterAll(() => {
-        historyStore.getState().actions.clearHistory();
+        historyStore.getState().actions.newConversation();
       });
 
       it("should call chat endpoint with empty request", async () => {
@@ -141,7 +141,10 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -181,7 +184,10 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -257,7 +263,10 @@ describe("Integration tests", () => {
         );
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -293,7 +302,10 @@ describe("Integration tests", () => {
 
       await waitFor(
         () => {
-          expect(historyStore.getState().isLoading).toBe(false);
+          expect(
+            historyStore.getState().primitives.getCurrentConversation()
+              .isLoading,
+          ).toBe(false);
         },
         {
           timeout: 20000, // Long timeout because of the sleep between live updates
@@ -306,14 +318,16 @@ describe("Integration tests", () => {
     describe("should send correct request based on config", async () => {
       let messageId: string = "";
       beforeEach(() => {
-        messageId = historyStore.getState().primitives.addMessage({
-          content: "Mock content",
-          role: MessageRole.ASSISTANT,
-          serverId: "msg-123",
-        });
+        messageId = historyStore
+          .getState()
+          .primitives.addMessage(historyStore.getState().currentConversation, {
+            content: "Mock content",
+            role: MessageRole.ASSISTANT,
+            serverId: "msg-123",
+          });
       });
       afterEach(() => {
-        historyStore.getState().actions.clearHistory();
+        historyStore.getState().actions.newConversation();
       });
       it("handles like form", async () => {
         const feedback = render(

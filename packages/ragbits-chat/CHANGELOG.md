@@ -10,6 +10,7 @@
 - Added share functionality with informative modal (#726)
 - Added persisent chat history to the default UI using IndexedDB (#732)
 - Redesigned history UI, allowed enabling of client side history using config (#744)
+- Allow parallel conversations in the UI (#749)
 - Added missing typography plugin for TailwindCSS (#750)
 
 ## 1.1.0 (2025-07-09)
