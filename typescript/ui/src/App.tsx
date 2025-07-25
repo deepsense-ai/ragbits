@@ -14,7 +14,6 @@ import {
   useMessage,
   useHistoryActions,
 } from "./core/stores/HistoryStore/selectors";
-import { useHistoryStore } from "./core/stores/HistoryStore/useHistoryStore";
 
 export default function App() {
   const {
@@ -23,7 +22,7 @@ export default function App() {
   const messageIds = useMessageIds();
   const lastMessageId = useConversationProperty((s) => s.lastMessageId);
   const lastMessage = useMessage(lastMessageId);
-  const historyIsLoading = useHistoryStore((s) => s.isLoading);
+  const historyIsLoading = useConversationProperty((s) => s.isLoading);
   const followupMessages = useConversationProperty((s) => s.followupMessages);
   const { sendMessage, stopAnswering } = useHistoryActions();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);

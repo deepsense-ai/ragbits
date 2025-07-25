@@ -36,7 +36,7 @@ export default function Layout({
 }: PropsWithChildren<LayoutProps>) {
   const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryActions();
+  const { newConversation: clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
