@@ -116,7 +116,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Returns:
             The estimated cost of the LLM call.
         """
-        response_cost = litellm.model_cost[self.model_name]
+        response_cost = litellm.get_model_info(self.model_name)
         response_cost_input = prompt_tokens * response_cost["input_cost_per_token"]
         response_cost_output = completion_tokens * response_cost["output_cost_per_token"]
         return response_cost_input + response_cost_output
