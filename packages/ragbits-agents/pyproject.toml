@@ -42,6 +42,9 @@ a2a = [
 mcp = [
     "mcp>=1.9.4,<2.0.0",
 ]
+openai = [
+    "openai>=1.91.0,<2.0.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
