@@ -54,6 +54,15 @@ class LLMNotSupportingImagesError(LLMError):
         super().__init__(message)
 
 
+class LLMNotSupportingPdfsError(LLMError):
+    """
+    Raised when there are PDFs in the prompt, but LLM doesn't support them.
+    """
+
+    def __init__(self, message: str = "There are PDFs in the prompt, but given LLM doesn't support them.") -> None:
+        super().__init__(message)
+
+
 class LLMNotSupportingToolUseError(LLMError):
     """
     Raised when there are tools provided, but LLM doesn't support tool use.

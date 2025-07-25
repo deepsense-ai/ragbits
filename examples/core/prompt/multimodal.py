@@ -25,6 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.prompt import Attachment
 
 
 class ImagePromptInput(BaseModel):
@@ -33,7 +34,7 @@ class ImagePromptInput(BaseModel):
     """
 
     theme: str
-    image_url: str
+    image: Attachment
 
 
 class ImagePromptOutput(BaseModel):
@@ -57,18 +58,14 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
     Theme: {{ theme }}
     """
 
-    image_input_fields = ["image_url"]
-
 
 async def main() -> None:
     """
     Run the example.
     """
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    prompt_input = ImagePromptInput(
-        image_url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG",
-        theme="dramatic",
-    )
+    image = Attachment(url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG")
+    prompt_input = ImagePromptInput(image=image, theme="dramatic")
     prompt = ImagePrompt(prompt_input)
     response = await llm.generate(prompt)
     print(response.description)

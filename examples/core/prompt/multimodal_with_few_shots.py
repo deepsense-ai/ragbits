@@ -25,6 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.prompt import Attachment
 
 
 class ImagePromptInput(BaseModel):
@@ -33,7 +34,7 @@ class ImagePromptInput(BaseModel):
     """
 
     theme: str
-    image_url: str
+    image: Attachment
 
 
 class ImagePromptOutput(BaseModel):
@@ -57,20 +58,18 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
     Theme: {{ theme }}
     """
 
-    image_input_fields = ["image_url"]
-
     few_shots = [
         (
             ImagePromptInput(
                 theme="pirates",
-                image_url="https://upload.wikimedia.org/wikipedia/commons/5/55/Acd_a_frame.jpg",
+                image=Attachment(url="https://upload.wikimedia.org/wikipedia/commons/5/55/Acd_a_frame.jpg"),
             ),
             ImagePromptOutput(description="Arrr, that would be a dog!"),
         ),
         (
             ImagePromptInput(
                 theme="fairy tale",
-                image_url="https://upload.wikimedia.org/wikipedia/commons/6/62/Red_Wolf.jpg",
+                image=Attachment(url="https://upload.wikimedia.org/wikipedia/commons/6/62/Red_Wolf.jpg"),
             ),
             ImagePromptOutput(
                 description="Once upon a time, in an enchanted forest, a noble wolf roamed under the moonlit sky."
@@ -79,7 +78,9 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
         (
             ImagePromptInput(
                 theme="sci-fi",
-                image_url="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Bruce_McCandless_II_during_EVA_in_1984.jpg/2560px-Bruce_McCandless_II_during_EVA_in_1984.jpg",
+                image=Attachment(
+                    url="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Bruce_McCandless_II_during_EVA_in_1984.jpg/2560px-Bruce_McCandless_II_during_EVA_in_1984.jpg"
+                ),
             ),
             ImagePromptOutput(
                 description="A lone astronaut drifts through the void, bathed in the eerie glow of distant galaxies."
@@ -93,10 +94,8 @@ async def main() -> None:
     Run the example.
     """
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    prompt_input = ImagePromptInput(
-        image_url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG",
-        theme="dramatic",
-    )
+    image = Attachment(url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG")
+    prompt_input = ImagePromptInput(image=image, theme="dramatic")
     prompt = ImagePrompt(prompt_input)
     response = await llm.generate(prompt)
     print(response.description)
