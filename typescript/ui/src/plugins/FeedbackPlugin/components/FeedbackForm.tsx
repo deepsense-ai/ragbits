@@ -14,8 +14,8 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
-import { useHistoryActions } from "../../../core/stores/historyStore";
 import { ChatMessage } from "../../../types/history";
+import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 
 interface FeedbackFormProps {
   message: ChatMessage;

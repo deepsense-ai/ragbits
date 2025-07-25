@@ -1,9 +1,13 @@
 import { Plugin } from "../../../types/plugins";
 
-type PluginState = Record<string, { isActivated: boolean; config: Plugin }>;
+type PluginState = {
+  isActivated: boolean;
+  config: Plugin;
+};
+type Plugins = Record<string, PluginState>;
 
 class PluginManager {
-  private plugins: PluginState = {};
+  private plugins: Plugins = {};
   private listeners: Set<() => void> = new Set();
 
   register(plugin: Plugin) {
@@ -46,12 +50,12 @@ class PluginManager {
     return !!plugin && plugin.isActivated;
   }
 
-  getPlugin(name: string): Plugin | null {
+  getPlugin(name: string): PluginState | null {
     const plugin = this.plugins[name];
     if (!plugin || !plugin.isActivated) {
       return null;
     }
-    return plugin.config;
+    return plugin;
   }
 
   subscribe(listener: () => void) {

@@ -7,14 +7,14 @@ import remarkGfm from "remark-gfm";
 import { Icon } from "@iconify/react";
 import { useConfigContext } from "./core/contexts/ConfigContext/useConfigContext";
 import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
-import {
-  useConversationProperty,
-  useHistoryActions,
-  useHistoryStore,
-  useMessage,
-  useMessageIds,
-} from "./core/stores/historyStore";
 import QuickMessageInput from "./core/components/inputs/QuickMessageInput";
+import {
+  useMessageIds,
+  useConversationProperty,
+  useMessage,
+  useHistoryActions,
+} from "./core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "./core/stores/HistoryStore/useHistoryStore";
 
 export default function App() {
   const {

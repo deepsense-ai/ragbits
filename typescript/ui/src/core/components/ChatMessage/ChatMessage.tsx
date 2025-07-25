@@ -2,18 +2,17 @@ import { forwardRef, useState } from "react";
 import { cn } from "@heroui/react";
 import { MessageRole } from "@ragbits/api-client-react";
 
-import {
-  useConversationProperty,
-  useHistoryStore,
-  useMessage,
-} from "../../stores/historyStore.ts";
-
 import MarkdownContent from "./MarkdownContent.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
 import ImageGallery from "./ImageGallery.tsx";
 import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
+import {
+  useConversationProperty,
+  useMessage,
+} from "../../stores/HistoryStore/selectors.ts";
+import { useHistoryStore } from "../../stores/HistoryStore/useHistoryStore.ts";
 
 type ChatMessageProps = {
   classNames?: {
@@ -49,7 +48,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showMessageActions = !isLoading;
     const showImageGallery =
       !isLoading && images && Object.keys(images).length > 0;
-    const showMessageReferences = references && references.length > 0;
+    const showMessageReferences =
+      !isLoading && references && references.length > 0;
     const showLiveUpdates = liveUpdates;
 
     return (

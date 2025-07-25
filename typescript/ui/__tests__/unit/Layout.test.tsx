@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, Mock, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import Layout from "../../src/core/components/Layout";
@@ -20,25 +20,37 @@ vi.mock("../../src/core/contexts/ThemeContext/useThemeContext", () => {
   };
 });
 
-vi.mock("../../src/core/stores/historyStore", () => {
+vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   return {
     useHistoryActions: vi.fn(),
   };
 });
 
-vi.mock("../../src/core/components/ChatHistory", () => ({
-  default: () => <div>ChatHistory</div>,
-}));
+vi.mock(
+  "../../src/plugins/ChatHistoryPlugin/components/ChatHistory.tsx",
+  () => ({
+    default: () => <div>ChatHistory</div>,
+  }),
+);
 
-import { useHistoryActions } from "../../src/core/stores/historyStore";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../src/core/contexts/ThemeContext/ThemeContext";
+import { useHistoryActions } from "../../src/core/stores/HistoryStore/selectors";
+import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
+import {
+  ChatHistoryPlugin,
+  ChatHistoryPluginName,
+} from "../../src/plugins/ChatHistoryPlugin";
 
-function mockConfig(isDebugEnabled: boolean = false) {
+function mockConfig(
+  isDebugEnabled: boolean = false,
+  withClientSideHistory: boolean = false,
+) {
   (useConfigContext as Mock).mockReturnValue({
     config: {
       debug_mode: isDebugEnabled,
+      conversationHistory: withClientSideHistory,
     },
   });
 }
@@ -59,6 +71,69 @@ const stopAnsweringMock = vi.fn();
 });
 
 describe("Layout", () => {
+  it("renders with chat history", async () => {
+    pluginManager.register(ChatHistoryPlugin);
+    pluginManager.activate(ChatHistoryPluginName);
+    mockConfig(false, true);
+    mockTheme(Theme.LIGHT);
+    render(
+      <Layout
+        title="Custom Title"
+        subTitle="Custom Subtitle"
+        logo="Custom Logo"
+      >
+        <div data-testid="children">Children</div>
+      </Layout>,
+    );
+    expect(screen.getByTestId("children")).toBeInTheDocument();
+    expect(screen.getByText("Custom Title")).toBeInTheDocument();
+    expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
+    expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    // Chat history
+    await waitFor(() => {
+      expect(screen.getByText("ChatHistory")).toBeInTheDocument();
+      expect(
+        screen.queryByTestId("layout-clear-chat-button"),
+      ).not.toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByTestId("layout-toggle-theme-button"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("layout-debug-button")).toBeNull();
+  });
+  it("renders without chat history", async () => {
+    pluginManager.deactivate(ChatHistoryPluginName);
+    mockConfig(false, false);
+    mockTheme(Theme.LIGHT);
+    render(
+      <Layout
+        title="Custom Title"
+        subTitle="Custom Subtitle"
+        logo="Custom Logo"
+      >
+        <div data-testid="children">Children</div>
+      </Layout>,
+    );
+    expect(screen.getByTestId("children")).toBeInTheDocument();
+    expect(screen.getByText("Custom Title")).toBeInTheDocument();
+    expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
+    expect(screen.getByText("Custom Logo")).toBeInTheDocument();
+    // Chat history
+
+    // Chat history
+    await waitFor(() => {
+      expect(screen.queryByText("ChatHistory")).not.toBeInTheDocument();
+      expect(
+        screen.getByTestId("layout-clear-chat-button"),
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByTestId("layout-toggle-theme-button"),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("layout-debug-button")).toBeNull();
+  });
   it("renders without debug panel", () => {
     mockConfig();
     mockTheme(Theme.LIGHT);
@@ -75,7 +150,6 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
-    expect(screen.getByText("ChatHistory")).toBeInTheDocument();
 
     expect(
       screen.getByTestId("layout-toggle-theme-button"),

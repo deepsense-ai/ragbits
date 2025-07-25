@@ -6,20 +6,25 @@ import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps, PropsWithChildren } from "react";
 
-vi.mock("../../src/core/stores/historyStore", () => {
+vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
-    useConversationProperty: vi.fn(),
-    useMessage: vi.fn(),
     useHistoryStore: vi.fn(),
   };
 });
 
+vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
+  return {
+    useConversationProperty: vi.fn(),
+    useMessage: vi.fn(),
+  };
+});
+
+import userEvent from "@testing-library/user-event";
 import {
   useConversationProperty,
-  useHistoryStore,
   useMessage,
-} from "../../src/core/stores/historyStore";
-import userEvent from "@testing-library/user-event";
+} from "../../src/core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 
 function mockStore(
   role: MessageRole,

@@ -188,6 +188,7 @@ export interface ConfigResponse {
         form: RJSFSchema | null
     }
     debug_mode: boolean
+    conversation_history: boolean
 }
 
 /**

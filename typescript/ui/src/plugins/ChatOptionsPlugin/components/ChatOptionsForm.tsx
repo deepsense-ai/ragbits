@@ -12,12 +12,12 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
+import { useEffect } from "react";
+import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
 import {
   useConversationProperty,
   useHistoryActions,
-} from "../../../core/stores/historyStore";
-import { useEffect } from "react";
-import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
+} from "../../../core/stores/HistoryStore/selectors";
 
 export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();

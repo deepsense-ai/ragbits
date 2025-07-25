@@ -1,9 +1,5 @@
 import { strToU8, zlibSync, strFromU8, unzlibSync } from "fflate";
 import {
-  useHistoryPrimitives,
-  useHistoryStore,
-} from "../../../core/stores/historyStore";
-import {
   Button,
   Modal,
   ModalBody,
@@ -16,6 +12,8 @@ import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
 import { Conversation } from "../../../types/history";
+import { useHistoryPrimitives } from "../../../core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 
 const DEFAULT_ICON = "heroicons:share";
 const SUCCESS_ICON = "heroicons:check";
@@ -57,6 +55,7 @@ export default function ShareButton() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [icon, setIcon] = useState(DEFAULT_ICON);
   const iconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { getCurrentConversation } = useHistoryStore((s) => s.primitives);
 
   const onShare = () => {
     const {
@@ -65,7 +64,7 @@ export default function ShareButton() {
       serverState,
       conversationId,
       followupMessages,
-    } = useHistoryStore.getState().primitives.getCurrentConversation();
+    } = getCurrentConversation();
 
     const state = toJSONSafe({
       chatOptions,
