@@ -1,12 +1,12 @@
 # How-To: Use attachments in prompts with Ragbits
 
-This guide will walk you through defining and using prompts in Ragbits that accept attachments as input. 
+This guide will walk you through defining and using prompts in Ragbits that accept attachments as input.
 It covers handling single and multiple attachment inputs, incorporating conditionals in prompt templates based on the presence of attachments, and using such prompts with an LLM.
 Attachment types currently supported include standard image formats (such as JPEG, PNG) and PDF documents.
 
 ## How to define a prompt with an attachment input
 
-The attachment is represented by the `prompt.Attachment` class. 
+The attachment is represented by the `prompt.Attachment` class.
 It can be initialized in multiple ways depending on the source of the file data.
 The class supports both binary data and URLs, with optional MIME type specification.
 
@@ -88,7 +88,7 @@ class EmployeeOnboardingPrompt(Prompt):
 
 async def main():
     llm = LiteLLM("gpt-4o")
-    
+
     headshot = Attachment(data=b"<your_photo_here>")
     contract = Attachment(data=b"<your_contract_here>")
     documents = [
