@@ -2,6 +2,7 @@ import asyncio
 import base64
 import mimetypes
 import textwrap
+import warnings
 from abc import ABCMeta
 from collections.abc import Awaitable, Callable
 from typing import Any, Generic, cast, get_args, get_origin, overload
@@ -55,7 +56,13 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
     output_type: type[PromptOutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
-    image_input_fields: list[str] | None = None  # for the backward compatibility
+
+    warnings.warn(
+        "The 'image_input_fields' attribute is deprecated. Use 'Attachment' objects in the prompt input instead.",
+        category=UserWarning,
+        stacklevel=2,
+    )
+    image_input_fields: list[str] | None = None
 
     @classmethod
     def _get_io_types(cls) -> tuple:
