@@ -1,6 +1,7 @@
-import os  # Import os for path joining and potential directory checks
+import os
 from collections.abc import Iterable
 from contextlib import suppress
+from enum import Enum
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -20,38 +21,61 @@ with suppress(ImportError):
 
 _SCOPES = ["https://www.googleapis.com/auth/drive"]
 
+# Scopes that the service account is delegated for in the Google Workspace Admin Console.
+_IMPERSONATION_SCOPES = [
+    "https://www.googleapis.com/auth/cloud-platform",  # General Cloud access (if needed)
+    "https://www.googleapis.com/auth/drive",  # Example: For Google Drive API
+]
+
 # HTTP status codes
 _HTTP_NOT_FOUND = 404
 _HTTP_FORBIDDEN = 403
 
+
+class GoogleDriveExportFormat(str, Enum):
+    """Supported export MIME types for Google Drive downloads."""
+
+    DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    PDF = "application/pdf"
+    PNG = "image/png"
+    HTML = "text/html"
+    TXT = "text/plain"
+    JSON = "application/json"
+
+
 # Maps Google-native Drive MIME types → export MIME types
-_GOOGLE_EXPORT_MIME_MAP = {
-    "application/vnd.google-apps.document": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # noqa: E501
-    "application/vnd.google-apps.spreadsheet": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # noqa: E501
-    "application/vnd.google-apps.presentation": "application/vnd.openxmlformats-officedocument.presentationml.presentation",  # noqa: E501
-    "application/vnd.google-apps.drawing": "image/png",
-    "application/vnd.google-apps.script": "application/vnd.google-apps.script+json",
-    "application/vnd.google-apps.site": "text/html",
-    "application/vnd.google-apps.map": "application/json",
-    "application/vnd.google-apps.form": "application/pdf",
+_GOOGLE_EXPORT_MIME_MAP: dict[str, GoogleDriveExportFormat] = {
+    "application/vnd.google-apps.document": GoogleDriveExportFormat.DOCX,
+    "application/vnd.google-apps.spreadsheet": GoogleDriveExportFormat.XLSX,
+    "application/vnd.google-apps.presentation": GoogleDriveExportFormat.PDF,
+    "application/vnd.google-apps.drawing": GoogleDriveExportFormat.PNG,
+    "application/vnd.google-apps.script": GoogleDriveExportFormat.JSON,
+    "application/vnd.google-apps.site": GoogleDriveExportFormat.HTML,
+    "application/vnd.google-apps.map": GoogleDriveExportFormat.JSON,
+    "application/vnd.google-apps.form": GoogleDriveExportFormat.PDF,
 }
 
 # Maps export MIME types → file extensions
-_EXPORT_EXTENSION_MAP = {
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
-    "image/png": ".png",
-    "application/pdf": ".pdf",
-    "text/html": ".html",
-    "text/plain": ".txt",
-    "application/json": ".json",
+_EXPORT_EXTENSION_MAP: dict[GoogleDriveExportFormat, str] = {
+    GoogleDriveExportFormat.DOCX: ".docx",
+    GoogleDriveExportFormat.XLSX: ".xlsx",
+    GoogleDriveExportFormat.PPTX: ".pptx",
+    GoogleDriveExportFormat.PNG: ".png",
+    GoogleDriveExportFormat.PDF: ".pdf",
+    GoogleDriveExportFormat.HTML: ".html",
+    GoogleDriveExportFormat.TXT: ".txt",
+    GoogleDriveExportFormat.JSON: ".json",
 }
 
 
 class GoogleDriveSource(Source):
     """
     Handles source connection for Google Drive and provides methods to fetch files.
+
+    NOTE(Do not define variables at class level that you pass to google client, define them at instance level, or else
+    google client will complain.):
     """
 
     file_id: str
@@ -62,11 +86,30 @@ class GoogleDriveSource(Source):
 
     _google_drive_client: ClassVar["GoogleAPIResource | None"] = None
     _credentials_file_path: ClassVar[str | None] = None
+    impersonate: ClassVar[bool | None] = None
+    impersonate_target_email: ClassVar[str | None] = None
 
     @classmethod
     def set_credentials_file_path(cls, path: str) -> None:
         """Set the path to the service account credentials file."""
         cls._credentials_file_path = path
+
+    @classmethod
+    def set_impersonation_target(cls, target_mail: str) -> None:
+        """
+        Sets the email address to impersonate when accessing Google Drive resources.
+
+        Args:
+            target_mail (str): The email address to impersonate.
+
+        Raises:
+            ValueError: If the provided email address is invalid (empty or missing '@').
+        """
+        # check if email is a valid email.
+        if not target_mail or "@" not in target_mail:
+            raise ValueError("Invalid email address provided for impersonation.")
+        cls.impersonate = True
+        cls.impersonate_target_email = target_mail
 
     @classmethod
     def _initialize_client_from_creds(cls) -> None:
@@ -82,7 +125,20 @@ class GoogleDriveSource(Source):
             HttpError: If the Google Drive API is not enabled or accessible.
             Exception: If any other error occurs during client initialization.
         """
-        creds = service_account.Credentials.from_service_account_file(cls._credentials_file_path, scopes=_SCOPES)
+        cred_kwargs = {
+            "filename": cls._credentials_file_path,
+            "scopes": _SCOPES,
+        }
+
+        # handle impersonation
+        if cls.impersonate is not None and cls.impersonate:
+            if not cls.impersonate_target_email:
+                raise ValueError("Impersonation target email must be set when impersonation is enabled.")
+            cred_kwargs["subject"] = cls.impersonate_target_email
+            cred_kwargs["scopes"] = _IMPERSONATION_SCOPES
+
+        creds = service_account.Credentials.from_service_account_file(**cred_kwargs)
+
         cls._google_drive_client = build("drive", "v3", credentials=creds)
         cls._google_drive_client.files().list(
             pageSize=1, fields="files(id)", supportsAllDrives=True, includeItemsFromAllDrives=True
@@ -162,7 +218,11 @@ class GoogleDriveSource(Source):
 
     @traceable
     @requires_dependencies(["googleapiclient"], "google_drive")
-    async def fetch(self) -> Path:
+    async def fetch(
+        self,
+        *,
+        export_format: "GoogleDriveExportFormat | None" = None,
+    ) -> Path:
         """
         Fetch the file from Google Drive and store it locally.
 
@@ -170,6 +230,9 @@ class GoogleDriveSource(Source):
         it will not be downloaded again. If the file doesn't exist locally, it will be fetched from Google Drive.
         The local directory is determined by the environment variable `LOCAL_STORAGE_DIR`. If this environment
         variable is not set, a temporary directory is used.
+
+        Args:
+            export_format: Optional override for the export MIME type when downloading Google-native documents.
 
         Returns:
             The local path to the downloaded file.
@@ -186,7 +249,8 @@ class GoogleDriveSource(Source):
         file_local_dir = local_dir / self.file_id
         file_local_dir.mkdir(parents=True, exist_ok=True)
 
-        export_mime_type, file_extension = self._determine_file_extension()
+        override_mime = export_format.value if export_format else None
+        export_mime_type, file_extension = self._determine_file_extension(override_mime=override_mime)
         local_file_name = f"{self.file_name}{file_extension}"
         path = file_local_dir / local_file_name
 
@@ -496,22 +560,36 @@ class GoogleDriveSource(Source):
         else:
             raise ValueError(f"Unsupported Google Drive URI pattern: {path}")
 
-    def _determine_file_extension(self) -> tuple[str, str]:
+    def _determine_file_extension(self, override_mime: str | None = None) -> tuple[str, str]:
         """
         Determine the appropriate file extension and export MIME type for the file.
 
         Returns:
             A tuple of (export_mime_type, file_extension)
         """
+        if override_mime is not None:
+            export_mime_type = override_mime
+            try:
+                export_format = GoogleDriveExportFormat(override_mime)
+                file_extension = _EXPORT_EXTENSION_MAP.get(export_format, ".bin")
+            except ValueError:
+                file_extension = Path(self.file_name).suffix if "." in self.file_name else ".bin"
+            return export_mime_type, file_extension
+
         export_mime_type = self.mime_type
         file_extension = ""
 
         if self.mime_type.startswith("application/vnd.google-apps"):
-            export_mime_type = _GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, "application/pdf")
-            file_extension = _EXPORT_EXTENSION_MAP.get(export_mime_type, ".bin")
+            export_format = _GOOGLE_EXPORT_MIME_MAP.get(self.mime_type, GoogleDriveExportFormat.PDF)
+            export_mime_type = export_format.value
+            file_extension = _EXPORT_EXTENSION_MAP.get(export_format, ".bin")
         elif "." in self.file_name:
             file_extension = Path(self.file_name).suffix
         else:
-            file_extension = _EXPORT_EXTENSION_MAP.get(self.mime_type, ".bin")
+            try:
+                export_format = GoogleDriveExportFormat(self.mime_type)
+                file_extension = _EXPORT_EXTENSION_MAP.get(export_format, ".bin")
+            except ValueError:
+                file_extension = ".bin"
 
         return export_mime_type, file_extension
