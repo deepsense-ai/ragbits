@@ -42,6 +42,7 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
+        self.tool_choice: ToolChoice | None = None
         self._price_per_prompt_token = price_per_prompt_token
         self._price_per_completion_token = price_per_completion_token
 
@@ -69,6 +70,7 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         prompt = list(prompt)
         self.calls.extend([p.chat for p in prompt])
+        self.tool_choice = tool_choice
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
         tool_calls = (
             None
@@ -102,6 +104,7 @@ class MockLLM(LLM[MockLLMOptions]):
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(prompt.chat)
+        self.tool_choice = tool_choice
 
         async def generator() -> AsyncGenerator[dict, None]:
             if not isinstance(options.tool_calls, NotGiven) and not any(
