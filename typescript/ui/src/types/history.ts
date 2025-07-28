@@ -43,7 +43,7 @@ export interface HistoryStore {
   };
 
   actions: {
-    newConversation: () => void;
+    newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
     sendMessage: (text: string) => void;

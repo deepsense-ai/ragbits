@@ -6,15 +6,27 @@ import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
+import { useNavigate } from "react-router";
 
 export default function ChatHistory() {
   const { selectConversation, deleteConversation, newConversation } =
     useHistoryActions();
+  const navigate = useNavigate();
   const conversations = useHistoryStore((s) => s.conversations);
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const [isCollapsed, setCollapsed] = useState(false);
   const collapseButtonTitle = isCollapsed ? "Open sidebar" : "Close sidebar";
   const newChatIcon = <Icon icon="heroicons:pencil-square" />;
+
+  const handleNewConversation = () => {
+    const conversationId = newConversation();
+    navigate(`/history/${conversationId}`);
+  };
+
+  const handleNavigate = (conversationId: string) => {
+    selectConversation(conversationId);
+    navigate(`/history/${conversationId}`);
+  };
 
   return (
     <motion.div
@@ -76,7 +88,7 @@ export default function ChatHistory() {
           <Button
             aria-label="New conversation"
             variant="ghost"
-            onPress={newConversation}
+            onPress={handleNewConversation}
             data-testid="chat-history-clear-chat-button"
             startContent={newChatIcon}
             isIconOnly={isCollapsed}
@@ -113,7 +125,7 @@ export default function ChatHistory() {
                       variant={isSelected ? "solid" : "light"}
                       aria-label={`Select conversation ${conversationKey}`}
                       data-active={isSelected}
-                      onPress={() => selectConversation(conversationKey)}
+                      onPress={() => handleNavigate(conversationKey)}
                       title={conversationKey}
                       data-testid={`select-conversation-${conversationKey}`}
                     >
