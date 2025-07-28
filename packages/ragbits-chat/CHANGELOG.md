@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+
+- Autogenerate typescript types based on backend typing (#727)
 - Add persistent user settings (#719)
 - Send chat options under `user_settings` key (#720)
 

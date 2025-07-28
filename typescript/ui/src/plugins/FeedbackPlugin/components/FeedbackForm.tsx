@@ -14,6 +14,7 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
+import { RJSFSchema } from "@rjsf/utils";
 
 interface FeedbackFormProps {
   messageServerId: string;
@@ -24,9 +25,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
   const {
     config: { feedback },
   } = useConfigContext();
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>(
-    FeedbackType.LIKE,
-  );
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>("like");
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
@@ -34,7 +33,9 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
     method: "POST",
   });
 
-  const schema = feedback[feedbackType].form;
+  const schema = feedback[
+    `${feedbackType}_form` as keyof typeof feedback
+  ] as RJSFSchema;
   const onOpenChange = () => {
     onClose();
   };
@@ -61,7 +62,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
 
   const onOpenFeedbackForm = async (type: FeedbackType) => {
     setFeedbackType(type);
-    if (feedback[type].form === null) {
+    if (feedback[`${type}_form` as keyof typeof feedback] === null) {
       await onFeedbackFormSubmit(null);
       return;
     }
@@ -84,7 +85,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as helpful"
-            onPress={() => onOpenFeedbackForm(FeedbackType.LIKE)}
+            onPress={() => onOpenFeedbackForm("like")}
             data-testid="feedback-like"
           >
             <Icon icon="heroicons:hand-thumb-up" />
@@ -98,7 +99,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as unhelpful"
-            onPress={() => onOpenFeedbackForm(FeedbackType.DISLIKE)}
+            onPress={() => onOpenFeedbackForm("dislike")}
             data-testid="feedback-dislike"
           >
             <Icon icon="heroicons:hand-thumb-down" />
@@ -110,7 +111,7 @@ export default function FeedbackForm({ messageServerId }: FeedbackFormProps) {
           {(onClose) => (
             <>
               <ModalHeader className="flex flex-col gap-1 text-default-900">
-                {schema.title}
+                {schema.title ?? "Feedback"}
               </ModalHeader>
               <ModalBody>
                 <div className="flex flex-col gap-4">

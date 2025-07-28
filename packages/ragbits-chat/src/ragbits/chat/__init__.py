@@ -8,7 +8,7 @@ from .interface.types import (
     ChatResponse,
     ChatResponseType,
     Message,
-    MessageRole,
+    MessageRoleType,
     Reference,
     StateUpdate,
 )
@@ -17,7 +17,7 @@ __all__ = [
     "ChatResponse",
     "ChatResponseType",
     "Message",
-    "MessageRole",
+    "MessageRoleType",
     "RagbitsChatClient",
     "RagbitsConversation",
     "Reference",

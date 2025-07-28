@@ -9,12 +9,11 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import {
-  ChatResponseType,
-  MessageRole,
   RagbitsClient,
   RagbitsContextProvider,
   StreamCallbacks,
   ChatResponse,
+  ChatResponseType,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../src/core/contexts/ConfigContext/ConfigContextProvider";
@@ -25,6 +24,16 @@ import { ChatOptionsPlugin } from "../src/plugins/ChatOptionsPlugin";
 import { useHistoryStore } from "../src/core/stores/historyStore";
 import { enableMapSet } from "immer";
 import FeedbackForm from "../src/plugins/FeedbackPlugin/components/FeedbackForm";
+
+const chatResponseTypes: ChatResponseType[] = [
+  "text",
+  "reference",
+  "state_update",
+  "message_id",
+  "conversation_id",
+  "live_update",
+  "followup_messages",
+] as const;
 
 describe("Integration tests", () => {
   enableMapSet();
@@ -62,18 +71,16 @@ describe("Integration tests", () => {
       expect(config).toHaveProperty("feedback");
 
       expect(config.feedback).toHaveProperty("like");
-      expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
-      expect(config.feedback.like).toHaveProperty("form");
+      expect(config.feedback).toHaveProperty("like");
       expect(
         config.feedback.like.form === null ||
           config.feedback.like.form instanceof Object,
       ).toBe(true);
 
       expect(config.feedback).toHaveProperty("dislike");
-      expect(config.feedback.dislike).toHaveProperty("enabled");
       expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
-      expect(config.feedback.dislike).toHaveProperty("form");
+      expect(config.feedback).toHaveProperty("dislike");
       expect(
         config.feedback.dislike.form === null ||
           config.feedback.dislike.form instanceof Object,
@@ -133,9 +140,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: "user",
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: "assistant" },
             ],
             message: "Test message 2",
           },
@@ -204,11 +211,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: "user",
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
-              { content: "Test message 2", role: MessageRole.USER },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: "assistant" },
+              { content: "Test message 2", role: "user" },
+              { content: expect.any(String), role: "assistant" },
             ],
             message: "Test message 3",
           },
@@ -233,7 +240,7 @@ describe("Integration tests", () => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
             onMessage: (event: ChatResponse) => {
-              expect(event.type).toBeOneOf(Object.values(ChatResponseType));
+              expect(event.type).toBeOneOf(chatResponseTypes);
             },
           };
 

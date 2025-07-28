@@ -11,7 +11,6 @@ Requirements:
 - Or the script will use npx to auto-download if needed
 """
 
-import sys
 import json
 import re
 import subprocess
@@ -19,109 +18,89 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict
 
-from ragbits.chat.interface.types import StateUpdate
+from ragbits.chat.providers import RagbitsChatModelProvider
 
-# Add the packages directory to Python path so we can import ragbits modules
-sys.path.insert(0, str(Path(__file__).parent.parent / "packages" / "ragbits-chat" / "src"))
-
-
-def import_ragbits_models():
-    """Import core Pydantic models from ragbits-chat package."""
-    try:
-        from ragbits.chat.interface.types import (
-            ChatContext,
-            ChatRequest,
-            ChatResponseType,
-            ConfigResponse,
-            FeedbackResponse,
-            FeedbackType,
-            LiveUpdate,
-            LiveUpdateContent,
-            LiveUpdateType,
-            Message,
-            MessageRole,
-            Reference,
-        )
-        from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-        from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
-        from ragbits.chat.api import FeedbackRequest
-
-        return {
-            # Enums
-            "ChatResponseType": ChatResponseType,
-            "FeedbackType": FeedbackType,
-            "LiveUpdateType": LiveUpdateType,
-            "MessageRole": MessageRole,
-
-            # Core data models
-            "ChatContext": ChatContext,
-            "LiveUpdate": LiveUpdate,
-            "LiveUpdateContent": LiveUpdateContent,
-            "Message": Message,
-            "Reference": Reference,
-            "ServerState": StateUpdate,
-
-            # API request/response models
-            "ChatRequest": ChatRequest,
-            "ConfigResponse": ConfigResponse,
-            "FeedbackRequest": FeedbackRequest,
-            "FeedbackResponse": FeedbackResponse,
-
-            # Configuration models
-            "FeedbackConfig": FeedbackConfig,
-            "HeaderCustomization": HeaderCustomization,
-            "UICustomization": UICustomization,
-            "UserSettings": UserSettings,
-        }
-    except ImportError as e:
-        print(f"Error importing ragbits models: {e}")
-        print("Make sure you're running this from the project root and the ragbits-chat package is installed.")
-        sys.exit(1)
-
-
-def json_schema_to_typescript(schema: Dict[str, Any], type_name: str) -> str:
-    """Convert JSON Schema to TypeScript interface using json-schema-to-typescript."""
-
-    # Add missing fields for specific interfaces (custom logic)
-    if type_name == "Message" and schema.get("type") == "object":
-        properties = schema.get("properties", {})
-        if "id" not in properties:
-            schema = dict(schema)  # Make a copy
-            schema.setdefault("properties", {})["id"] = {
-                "type": "string",
-                "description": "Optional message ID"
-            }
-
-    # Use the Node.js tool for better schema conversion
-    return _generate_typescript_with_node(schema, type_name)
-
-
-def _clean_schema_titles(schema: Dict[str, Any]) -> Dict[str, Any]:
-    """Remove problematic title fields that cause false type references."""
-    if isinstance(schema, dict):
-        cleaned = {}
-        for key, value in schema.items():
-            if key == "title" and isinstance(value, str):
-                # Skip titles for primitive types that shouldn't become type references
-                continue
-            elif isinstance(value, dict):
-                cleaned[key] = _clean_schema_titles(value)
-            elif isinstance(value, list):
-                cleaned[key] = [_clean_schema_titles(item) if isinstance(item, dict) else item for item in value]
-            else:
-                cleaned[key] = value
-        return cleaned
+def _make_all_fields_required(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively modify a JSON schema so that all object properties are required."""
+    schema_type = schema.get("type")
+    if schema_type == "object" and "properties" in schema:
+        properties = schema["properties"]
+        # Set all property names as required
+        schema["required"] = list(properties.keys())
+        # Recursively apply to all properties
+        for prop_schema in properties.values():
+            _make_all_fields_required(prop_schema)
+        # Also handle additionalProperties if it's a schema
+        if isinstance(schema.get("additionalProperties"), dict):
+            _make_all_fields_required(schema["additionalProperties"])
+    elif schema_type == "array" and "items" in schema:
+        # Recursively apply to items
+        _make_all_fields_required(schema["items"])
+    # Recursively apply to allOf, anyOf, oneOf, not, if, then, else
+    for key in ["allOf", "anyOf", "oneOf"]:
+        if key in schema and isinstance(schema[key], list):
+            for subschema in schema[key]:
+                _make_all_fields_required(subschema)
+    for key in ["not", "if", "then", "else"]:
+        if key in schema and isinstance(schema[key], dict):
+            _make_all_fields_required(schema[key])
     return schema
 
 
-def _replace_schema_types(typescript_code: str) -> str:
+def _clean_schema_titles(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove title fields that cause false type references."""
+    cleaned = {}
+    for key, value in schema.items():
+        if key == "title" and isinstance(value, str):
+            # Skip titles for primitive types that shouldn't become type references
+            continue
+        elif isinstance(value, dict):
+            cleaned[key] = _clean_schema_titles(value)
+        elif isinstance(value, list):
+            cleaned[key] = [_clean_schema_titles(item) if isinstance(item, dict) else item for item in value]
+        else:
+            cleaned[key] = value
+    return cleaned
+
+
+def _normalize_refs(schema: Dict[str, Any], ref_map: Dict[str, str] = None) -> Dict[str, Any]:
+    """Normalize $ref values to prevent duplicate type generation."""
+    if ref_map is None:
+        ref_map = {}
+
+    if isinstance(schema, dict):
+        if "$ref" in schema:
+            ref_value = schema["$ref"]
+            # Extract the type name from the reference
+            if "#/$defs/" in ref_value:
+                type_name = ref_value.split("#/$defs/")[-1]
+                # Use the base type name without numbers
+                base_name = type_name.rstrip("0123456789")
+                if base_name != type_name:
+                    # Replace numbered ref with base ref
+                    schema["$ref"] = f"#/$defs/{base_name}"
+
+        # Recursively process nested objects
+        return {key: _normalize_refs(value, ref_map) for key, value in schema.items()}
+    elif isinstance(schema, list):
+        return [_normalize_refs(item, ref_map) for item in schema]
+    else:
+        return schema
+
+
+def _prepare_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """Wrapper function to prepare correct JSON schema for TypeScript generation."""
+    required = _make_all_fields_required(schema)
+    cleaned = _clean_schema_titles(required)
+    normalized = _normalize_refs(cleaned)
+    return normalized
+
+
+def _replace_schema_form_types(typescript_code: str) -> str:
     """Replace generic objects with RJSFSchema where appropriate."""
 
     # Replace form fields with RJSFSchema
     replacements = [
-        # Match like_form, dislike_form, form fields with generic objects
-        (r'(\w*_?form\??:\s*)\{\s*\[k:\s*string\]:\s*unknown;\s*\}(\s*\|\s*null)?', r'\1RJSFSchema\2'),
-
         # Match form properties in config structures
         (r'(form\??:\s*)\{\s*\[k:\s*string\]:\s*unknown;\s*\}(\s*\|\s*null)?', r'\1RJSFSchema\2'),
     ]
@@ -133,17 +112,31 @@ def _replace_schema_types(typescript_code: str) -> str:
     return result
 
 
+def _fix_duplicate_interface_names(typescript_content: str) -> str:
+    """Fix numbered interface names like FeedbackItem1 -> FeedbackItem."""
+    result = typescript_content
+
+    patterns_to_fix = [
+        (r'\bFeedbackItem\d+\b', 'FeedbackItem'),
+    ]
+
+    for pattern, replacement in patterns_to_fix:
+        result = re.sub(pattern, replacement, result)
+
+    return result
+
+
 def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> str:
     """Generate TypeScript interface using json-schema-to-typescript via subprocess."""
     try:
         # Clean up problematic title fields
-        cleaned_schema = _clean_schema_titles(schema)
+        prepared_schema = _prepare_schema(schema)
 
         # Create a complete JSON Schema document
         full_schema = {
             "$schema": "http://json-schema.org/draft-07/schema#",
             "title": type_name,
-            **cleaned_schema
+            **prepared_schema,
         }
 
         # Create temporary files for input and output
@@ -158,32 +151,18 @@ def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> st
                 temp_input_path,
                 '--bannerComment', '',  # Remove default banner
                 '--declareExternallyReferenced', 'false',
-                '--additionalProperties', 'false'
+                '--additionalProperties', 'false',
+                '--unknownAny', 'true',
             ],
             capture_output=True,
             text=True,
             check=True
             )
 
-            # Clean up the output
-            typescript_code = result.stdout.strip()
-
-            # Remove any remaining banner comments and clean up
-            lines = typescript_code.split('\n')
-            cleaned_lines = []
-            skip_banner = True
-
-            for line in lines:
-                if skip_banner and (line.startswith('/*') or line.startswith(' *') or line.startswith('*/')):
-                    continue
-                if skip_banner and line.strip() == '':
-                    continue
-                skip_banner = False
-                cleaned_lines.append(line)
-
-            # Apply post-processing to replace generic objects with RJSFSchema
-            typescript_result = '\n'.join(cleaned_lines)
-            return _replace_schema_types(typescript_result)
+            output = result.stdout.strip()
+            output = _replace_schema_form_types(output)
+            output = _fix_duplicate_interface_names(output)
+            return output
 
         finally:
             # Clean up temporary file
@@ -197,7 +176,7 @@ def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> st
         raise RuntimeError("json-schema-to-typescript is required but not installed")
 
 
-def generate_chat_response_union_type() -> str:
+def _generate_chat_response_union_type() -> str:
     """Generate ChatResponse union type and specific response interfaces."""
     lines = []
 
@@ -235,12 +214,19 @@ def generate_chat_response_union_type() -> str:
 
 def main():
     """Main function to generate TypeScript interfaces."""
-    # Import models
-    models = import_ragbits_models()
+    # Initialize model provider
+    provider = RagbitsChatModelProvider()
+
+    # Get enum and pydantic models separately
+    enum_models = provider.get_enum_models()
+    pydantic_models = provider.get_pydantic_models()
+
+    # Combine all models
+    all_models = {**enum_models, **pydantic_models}
 
     # Generate JSON Schema for all models
     schemas = {}
-    for name, model in models.items():
+    for name, model in all_models.items():
         try:
             # Handle Python Enums differently from Pydantic models
             if hasattr(model, '__members__') and hasattr(model, '__name__'):
@@ -275,38 +261,32 @@ def main():
     lines.append("")
 
     # Generate enums first (they might be referenced by interfaces)
-    enum_names = []
-    interface_names = []
-
-    for name, schema in schemas.items():
-        if schema.get("type") == "string" and "enum" in schema:
-            enum_names.append(name)
-        else:
-            interface_names.append(name)
+    enum_names = list(enum_models.keys())
+    pydantic_names = list(pydantic_models.keys())
 
     # Generate enums
-    for name in sorted(enum_names):
-        lines.append(json_schema_to_typescript(schemas[name], name))
+    for name in enum_names:
+        lines.append(_generate_typescript_with_node(schemas[name], name))
         lines.append("")
 
     # Generate interfaces
-    for name in sorted(interface_names):
-        lines.append(json_schema_to_typescript(schemas[name], name))
+    for name in pydantic_names:
+        lines.append(_generate_typescript_with_node(schemas[name], name))
         lines.append("")
 
     # Generate ChatResponse union type
-    lines.append(generate_chat_response_union_type())
+    lines.append(_generate_chat_response_union_type())
     lines.append("")
 
     # Write to output file
-    output_file = Path("typescript/@ragbits/api-client/src/autogentypes.ts")
+    output_file = Path("typescript/@ragbits/api-client/src/autogen.types.ts")
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_file, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     print(f"Generated TypeScript interfaces in: {output_file}")
-    print(f"Generated {len(enum_names)} enums and {len(interface_names)} interfaces")
+    print(f"Generated {len(enum_names)} enums and {len(pydantic_names)} interfaces")
 
 
 if __name__ == "__main__":

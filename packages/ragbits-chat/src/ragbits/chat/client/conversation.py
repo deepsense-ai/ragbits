@@ -10,7 +10,7 @@ from ..interface.types import (
     ChatResponse,
     ChatResponseType,
     Message,
-    MessageRole,
+    MessageRoleType,
     StateUpdate,
 )
 from .exceptions import ChatClientRequestError, ChatClientResponseError
@@ -49,9 +49,9 @@ class RagbitsConversation:
         context: dict[str, Any] | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """Asynchronous version of :py:meth:`Conversation.send_message`."""
-        user_msg = Message(role=MessageRole.USER, content=message)
+        user_msg = Message(role=MessageRoleType.USER, content=message)
         self.history.append(user_msg)
-        assistant_reply = Message(role=MessageRole.ASSISTANT, content="")
+        assistant_reply = Message(role=MessageRoleType.ASSISTANT, content="")
         self.history.append(assistant_reply)
         assistant_index = len(self.history) - 1
 
@@ -65,7 +65,7 @@ class RagbitsConversation:
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
+            "history": [m.model_dump() for m in self.history if m.role is not MessageRoleType.SYSTEM],
             "context": merged_context,
         }
 
@@ -156,10 +156,10 @@ class SyncRagbitsConversation:
         context: dict[str, Any] | None = None,
     ) -> Generator[ChatResponse, None, None]:
         """Send *message* and yield streaming :class:`ChatResponse` chunks."""
-        user_msg = Message(role=MessageRole.USER, content=message)
+        user_msg = Message(role=MessageRoleType.USER, content=message)
         self.history.append(user_msg)
 
-        assistant_reply = Message(role=MessageRole.ASSISTANT, content="")
+        assistant_reply = Message(role=MessageRoleType.ASSISTANT, content="")
         self.history.append(assistant_reply)
         assistant_index = len(self.history) - 1
 
@@ -173,7 +173,7 @@ class SyncRagbitsConversation:
 
         payload: dict[str, Any] = {
             "message": message,
-            "history": [m.model_dump() for m in self.history if m.role is not MessageRole.SYSTEM],
+            "history": [m.model_dump() for m in self.history if m.role is not MessageRoleType.SYSTEM],
             "context": merged_context,
         }
 

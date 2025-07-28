@@ -4,7 +4,9 @@ import {
     FeedbackResponse,
     ChatRequest,
     ChatResponse,
-} from './autogentypes'
+} from './autogen.types'
+
+export * from './autogen.types'
 
 /**
  * Configuration for the client

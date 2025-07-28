@@ -3,8 +3,6 @@ import {
   ChatResponse,
   ChatResponseType,
   LiveUpdate,
-  LiveUpdateType,
-  MessageRole,
   RagbitsClient,
 } from "@ragbits/api-client-react";
 import { create } from "zustand";
@@ -18,10 +16,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import { omit } from "lodash";
 
 const RAGBITS_CLIENT = new RagbitsClient({ baseUrl: API_URL });
-const NON_MESSAGE_EVENTS = new Set([
-  ChatResponseType.STATE_UPDATE,
-  ChatResponseType.CONVERSATION_ID,
-  ChatResponseType.FOLLOWUP_MESSAGES,
+const NON_MESSAGE_EVENTS: Set<ChatResponseType> = new Set([
+  "state_update",
+  "conversation_id",
+  "followup_messages",
 ]);
 
 const initialValues = () => ({
@@ -60,7 +58,7 @@ export const useHistoryStore = create<HistoryStore>()(
             const { update_id, content, type } = liveUpdate;
 
             return produce(message.liveUpdates ?? new Map(), (draft) => {
-              if (type === LiveUpdateType.START && draft.has(update_id)) {
+              if (type === "START" && draft.has(update_id)) {
                 console.error(
                   `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
                 );
@@ -74,13 +72,13 @@ export const useHistoryStore = create<HistoryStore>()(
             set(
               produce((draft: HistoryStore) => {
                 switch (response.type) {
-                  case ChatResponseType.STATE_UPDATE:
+                  case "state_update":
                     draft.serverState = response.content;
                     break;
-                  case ChatResponseType.CONVERSATION_ID:
+                  case "conversation_id":
                     draft.conversationId = response.content;
                     break;
-                  case ChatResponseType.FOLLOWUP_MESSAGES:
+                  case "followup_messages":
                     draft.followupMessages = response.content;
                     break;
                 }
@@ -98,19 +96,19 @@ export const useHistoryStore = create<HistoryStore>()(
                   );
 
                 switch (response.type) {
-                  case ChatResponseType.TEXT:
+                  case "text":
                     message.content += response.content;
                     break;
-                  case ChatResponseType.REFERENCE:
+                  case "reference":
                     message.references = [
                       ...(message.references ?? []),
                       response.content,
                     ];
                     break;
-                  case ChatResponseType.MESSAGE_ID:
+                  case "message_id":
                     message.serverId = response.content;
                     break;
-                  case ChatResponseType.LIVE_UPDATE:
+                  case "live_update":
                     message.liveUpdates = _handleLiveUpdate(
                       response.content,
                       message,
@@ -215,13 +213,13 @@ export const useHistoryStore = create<HistoryStore>()(
           } = get();
 
           addMessage({
-            role: MessageRole.USER,
+            role: "user",
             content: text,
           });
 
           // Add empty assistant message that will be filled with the response
           const assistantResponseId = addMessage({
-            role: MessageRole.ASSISTANT,
+            role: "assistant",
             content: "",
           });
 
@@ -264,7 +262,7 @@ export const useHistoryStore = create<HistoryStore>()(
               onError: (error: Error) => {
                 handleResponse(
                   {
-                    type: ChatResponseType.TEXT,
+                    type: "text",
                     content: error.message,
                   },
                   assistantResponseId,

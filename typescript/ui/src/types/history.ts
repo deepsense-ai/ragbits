@@ -1,7 +1,7 @@
 import {
   ChatResponse,
   LiveUpdate,
-  MessageRole,
+  MessageRoleType,
   Reference,
   ServerState,
 } from "@ragbits/api-client-react";
@@ -16,7 +16,7 @@ export interface ChatMessage {
    * Bot messages would have this set to the server ID (sent in the first event, with type of `message_id`)
    */
   serverId?: string;
-  role: MessageRole;
+  role: MessageRoleType;
   content: string;
   references?: Reference[];
   liveUpdates?: Map<string, LiveUpdate["content"]>;

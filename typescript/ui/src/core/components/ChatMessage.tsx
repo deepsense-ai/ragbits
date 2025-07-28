@@ -3,7 +3,6 @@ import { Button, cn } from "@heroui/react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { MessageRole } from "@ragbits/api-client-react";
 
 import DelayedTooltip from "./DelayedTooltip.tsx";
 import PluginWrapper from "../utils/plugins/PluginWrapper.tsx";
@@ -32,11 +31,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     }
 
     const { serverId, content, role, references, liveUpdates } = message;
-    const rightAlign = role === MessageRole.USER;
+    const rightAlign = role === "user";
     const isLoading =
-      isHistoryLoading &&
-      role === MessageRole.ASSISTANT &&
-      messageId === lastMessageId;
+      isHistoryLoading && role === "assistant" && messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);
     const [copyIcon, setCopyIcon] = useState("heroicons:clipboard");
@@ -135,7 +132,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       {references.map((reference, index) => (
                         <li key={index}>
                           <a
-                            href={reference.url}
+                            href={reference.url ?? undefined}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hover:underline"

@@ -17,7 +17,6 @@ import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
 import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
 import { ChatMessage } from "../../../../types/history";
-import { MessageRole } from "@ragbits/api-client-react";
 import PluginWrapper from "../../../utils/plugins/PluginWrapper";
 import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
 
@@ -153,7 +152,7 @@ const PromptInput = ({
 
   useEffect(() => {
     const newQuickMessages = (history ?? [])
-      .filter((m) => m.role === MessageRole.USER)
+      .filter((m) => m.role === "user")
       .map((m) => m.content);
 
     if (quickMessages.length - 1 === newQuickMessages.length) {
