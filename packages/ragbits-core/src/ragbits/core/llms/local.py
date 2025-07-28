@@ -86,10 +86,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
             import accelerate
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+
             return torch, AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
         except ImportError:
             return None
-
 
     def get_model_id(self) -> str:
         """
@@ -153,7 +153,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             **options.dict(),
         )
 
-        responses = [output[inputs_ids.shape[1]:] for output in outputs]
+        responses = [output[inputs_ids.shape[1] :] for output in outputs]
 
         results = []
         throughput_batch = time.perf_counter() - start_time
@@ -272,6 +272,7 @@ def __getattr__(name: str):
     if name in ("AutoModelForCausalLM", "AutoTokenizer", "TextIteratorStreamer"):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+
             if name == "AutoModelForCausalLM":
                 return AutoModelForCausalLM
             elif name == "AutoTokenizer":

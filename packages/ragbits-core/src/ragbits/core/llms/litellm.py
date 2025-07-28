@@ -100,6 +100,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if custom_model_cost_config:
             litellm.register_model(custom_model_cost_config)
         else:
+
             def download_and_register_model_cost():
                 litellm.register_model(
                     model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"

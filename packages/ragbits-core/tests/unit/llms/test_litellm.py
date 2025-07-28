@@ -398,6 +398,7 @@ async def test_init_registers_model_with_custom_cost_config():
 async def test_init_registers_default_model_cost_when_no_custom_config_provided():
     """Test that the default model cost config is registered when no custom config is provided."""
     import time
+
     with patch("litellm.register_model") as mock_register:
         LiteLLM(
             model_name="some_model",
