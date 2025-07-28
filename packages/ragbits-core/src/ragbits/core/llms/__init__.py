@@ -40,6 +40,7 @@ def __getattr__(name: str) -> type:
 # Dynamic __all__ to handle lazy-loaded LiteLLM imports
 __all__ = ["LLM", "LocalLLM", "LocalLLMOptions", "ToolCall", "Usage"]
 
+
 def __dir__() -> list[str]:
     """Return available module attributes including lazy-loaded ones."""
     return __all__ + ["LiteLLM", "LiteLLMOptions"]
