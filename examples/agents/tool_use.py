@@ -63,7 +63,7 @@ class WeatherPrompt(Prompt[WeatherPromptInput]):
     """
 
     system_prompt = """
-    You are a helpful assisstant that responds to user questions about weather.
+    You are a helpful assistant that responds to user questions about weather.
     """
 
     user_prompt = """
