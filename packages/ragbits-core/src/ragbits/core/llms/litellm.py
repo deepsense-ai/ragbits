@@ -104,7 +104,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                 litellm.register_model(
                     model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
                 )
-            
+
             thread = threading.Thread(target=download_and_register_model_cost, daemon=True)
             thread.start()
 
