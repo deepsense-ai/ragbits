@@ -1,5 +1,5 @@
 """
-Ragbits Core Example: Multimodal Prompt
+Ragbits Core Example: Multimodal Prompt with Image Input
 
 This example demonstrates how to use the `Prompt` class to generate themed text using an LLM
 with both text and image inputs. We define an `ImagePrompt` that generates a themed description
@@ -8,7 +8,7 @@ for a given image.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/core/prompt/multimodal.py
+    uv run examples/core/prompt/multimodal_with_image.py
     ```
 """
 
