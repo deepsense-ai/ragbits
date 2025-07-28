@@ -395,13 +395,18 @@ async def test_init_registers_model_with_custom_cost_config():
         mock_register.assert_called_once_with(custom_config)
 
 
-async def test_init_does_not_register_model_if_no_cost_config_is_provided():
-    """Test that the model is not registered if no cost config is provided."""
+async def test_init_registers_default_model_cost_when_no_custom_config_provided():
+    """Test that the default model cost config is registered when no custom config is provided."""
+    import time
     with patch("litellm.register_model") as mock_register:
         LiteLLM(
             model_name="some_model",
         )
-        mock_register.assert_not_called()
+        # Give the thread a moment to complete
+        time.sleep(0.1)
+        mock_register.assert_called_once_with(
+            model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
+        )
 
 
 async def test_pickling_registers_model_with_custom_cost_config():
