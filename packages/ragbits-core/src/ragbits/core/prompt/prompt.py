@@ -25,7 +25,7 @@ FewShotExample = tuple[str | PromptInputT, str | PromptOutputT]
 
 
 class Attachment(BaseModel):
-    """Represents an image attachment that can be passed to a LLM."""
+    """Represents an attachment that can be passed to a LLM."""
 
     url: str | None = None
     data: bytes | None = None
