@@ -24,10 +24,10 @@ import asyncio
 import threading
 
 from agent_orchestrator import AgentOrchestrator, ResultsSumarizationPromptInput, RoutingPromptInput
+from flight_agent import FlightPromptInput, flight_agent
 from hotel_agent import HotelPromptInput, hotel_agent
 from uvicorn import Server
 
-from flight_agent import FlightPromptInput, flight_agent
 from ragbits.agents.a2a.server import create_agent_server
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
