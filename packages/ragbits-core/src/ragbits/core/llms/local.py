@@ -2,7 +2,7 @@ import asyncio
 import threading
 import time
 from collections.abc import AsyncGenerator, Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
@@ -10,6 +10,8 @@ from ragbits.core.llms.base import LLM, LLMOptions
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
+if TYPE_CHECKING:
+    from transformers import TextIteratorStreamer
 
 class LocalLLMOptions(LLMOptions):
     """
@@ -82,7 +84,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         self._price_per_completion_token = price_per_completion_token
 
     @staticmethod
-    def _lazy_import_local_deps() -> tuple[Any, type, type, type] | None:
+    def _lazy_import_local_deps() -> tuple[Any, Any, Any, Any] | None:
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
@@ -209,14 +211,12 @@ class LocalLLM(LLM[LocalLLMOptions]):
         generation_kwargs = dict(streamer=streamer, **options.dict())
         generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)
 
-        TextIteratorStreamer = self.TextIteratorStreamer
-
         async def streamer_to_async_generator(
             streamer: TextIteratorStreamer, generation_thread: threading.Thread
         ) -> AsyncGenerator[dict, None]:
             output_tokens = 0
             generation_thread.start()
-            for text in streamer:
+            for text in streamer:  # type: ignore[attr-defined]
                 if text:
                     output_tokens += 1
                     if output_tokens == 1:

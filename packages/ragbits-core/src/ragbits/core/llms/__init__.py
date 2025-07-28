@@ -27,7 +27,11 @@ def _start_litellm_import() -> None:
 def __getattr__(name: str) -> type:
     if name in ("LiteLLM", "LiteLLMOptions"):
         _start_litellm_import()
-        LiteLLM, LiteLLMOptions = _litellm_future.result()
+        if _litellm_future is not None:
+            LiteLLM, LiteLLMOptions = _litellm_future.result()
+        else:
+            # Fallback to synchronous import if future is None
+            LiteLLM, LiteLLMOptions = _import_litellm()
 
         if name == "LiteLLM":
             return LiteLLM
