@@ -138,6 +138,7 @@ export default function App() {
     <div className="bg-background flex h-screen w-screen items-start justify-center">
       <div className="h-full w-full max-w-full">
         <Layout subTitle={subTitle} title={title} logo={logo}>
+          {/* TODO: We might replace this with outlet? */}
           <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
             {content}
             <div className="relative mt-auto flex max-w-full flex-col gap-2 px-6">

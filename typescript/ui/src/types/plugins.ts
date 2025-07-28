@@ -1,4 +1,4 @@
-import { FunctionComponent, LazyExoticComponent } from "react";
+import { FunctionComponent, LazyExoticComponent, ReactNode } from "react";
 
 export interface Plugin<
   T extends Record<
@@ -12,4 +12,18 @@ export interface Plugin<
   onActivate?: () => void;
   onDeactivate?: () => void;
   components: T;
+  routes?: PluginRoute[];
+  routeWrappers?: PluginRouteWrapper[];
 }
+
+export interface PluginRoute {
+  path: string;
+  element: ReactNode;
+  children?: PluginRoute[];
+  target?: `/${string}`;
+}
+
+export type PluginRouteWrapper = {
+  target?: `/${string}` | "global";
+  wrapper: (element: ReactNode) => ReactNode;
+};

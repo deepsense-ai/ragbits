@@ -312,13 +312,13 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       } = get();
       stopAnswering(conversationId);
 
-      if (conversationId === currentConversation) {
-        newConversation();
-      }
-
       set((draft) => {
         delete draft.conversations[conversationId];
       });
+
+      if (conversationId === currentConversation) {
+        return newConversation();
+      }
     },
     mergeExtensions: (messageId, extensions) => {
       const { currentConversation } = get();
@@ -379,8 +379,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     },
 
     newConversation: () => {
+      const newConversation = initialConversationValues();
       set((draft) => {
-        const newConversation = initialConversationValues();
         draft.conversations[newConversation.conversationId] = newConversation;
         draft.currentConversation = newConversation.conversationId;
 
@@ -392,6 +392,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             c.conversationId !== draft.currentConversation,
         );
       });
+
+      return newConversation.conversationId;
     },
 
     sendMessage: (text) => {
