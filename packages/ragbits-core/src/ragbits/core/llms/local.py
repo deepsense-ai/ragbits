@@ -127,7 +127,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by LLM (Not Supported by the local model).
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -188,11 +188,9 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format (not used).
-            output_schema: Output schema for requesting a specific response format (not used).
             tools: Functions to be used as tools by LLM (not used).
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools

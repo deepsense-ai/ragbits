@@ -322,20 +322,23 @@ async def test_generate_with_tool_choice_callable(llm_with_tools: MockLLM, get_w
 
 async def test_generate_streaming_with_tool_choice_str(llm_with_tools: MockLLM):
     stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice="auto")
-    [_ async for _ in stream]
+    async for _ in stream:
+        pass
     assert llm_with_tools.tool_choice == "auto"
 
 
 async def test_generate_streaming_with_tool_choice_dict(llm_with_tools: MockLLM):
     tool_choice = {"type": "function", "function": {"name": "get_weather"}}
     stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice=tool_choice)
-    [_ async for _ in stream]
+    async for _ in stream:
+        pass
     assert llm_with_tools.tool_choice == tool_choice
 
 
 async def test_generate_streaming_with_tool_choice_callable(llm_with_tools: MockLLM, get_weather_schema: dict):
     stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice=get_weather)
-    [_ async for _ in stream]
+    async for _ in stream:
+        pass
     assert llm_with_tools.tool_choice == get_weather_schema
 
 

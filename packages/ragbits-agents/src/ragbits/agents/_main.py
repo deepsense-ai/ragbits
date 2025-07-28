@@ -222,7 +222,7 @@ class Agent(
             options: The options for the agent run.
             context: The context for the agent run.
             tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
@@ -331,7 +331,7 @@ class Agent(
             options: The options for the agent run.
             context: The context for the agent run.
             tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools

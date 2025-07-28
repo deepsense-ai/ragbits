@@ -49,6 +49,14 @@ The result is an [AgentResult][ragbits.agents.AgentResult], which includes the m
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/tool_use.py).
 
+## Tool choice
+To control what tool is used at first call you could use `tool_choice` parameter. There are the following options:
+- "auto": let model decide if tool call is needed
+- "none": do not call tool
+- "required: enforce tool usage (model decides which one)
+- Callable: one of provided tools
+
+
 ## Conversation history
 [`Agent`][ragbits.agents.Agent]s can retain conversation context across multiple interactions by enabling the `keep_history` flag when initializing the agent. This is useful when you want the agent to understand follow-up questions without needing the user to repeat earlier details.
 

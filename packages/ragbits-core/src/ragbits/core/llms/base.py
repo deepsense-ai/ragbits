@@ -465,7 +465,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -551,7 +551,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -682,7 +682,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt: Formatted prompt template with conversation.
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -772,7 +772,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -797,7 +797,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools

@@ -166,7 +166,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
@@ -257,7 +257,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
             tool_choice: Parameter that allows to control what tool is used. Can be one of:
-                - "auto": let model decide
+                - "auto": let model decide if tool call is needed
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - dict: tool dict corresponding to one of provided tools
