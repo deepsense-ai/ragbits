@@ -56,12 +56,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
     output_type: type[PromptOutputT]
     system_prompt_template: Template | None
     user_prompt_template: Template
-
-    warnings.warn(
-        "The 'image_input_fields' attribute is deprecated. Use 'Attachment' objects in the prompt input instead.",
-        category=UserWarning,
-        stacklevel=2,
-    )
     image_input_fields: list[str] | None = None
 
     @classmethod
@@ -182,6 +176,14 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         if isinstance(input_data, str):
             raise ValueError("Input data must be of pydantic model type")
+
+        if self.image_input_fields:
+            warnings.warn(
+                message="The 'image_input_fields' attribute is deprecated. "
+                "Use 'Attachment' objects in the prompt input instead.",
+                category=UserWarning,
+                stacklevel=2,
+            )
 
         self.rendered_system_prompt = (
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
