@@ -2,8 +2,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.documents.element import ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher

@@ -4,10 +4,9 @@ from typing import Any
 import pydantic
 import pytest
 
-from ragbits.core.prompt import Prompt
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.prompt.base import BasePromptWithParser
 from ragbits.core.prompt.exceptions import PromptWithAttachmentOfUnsupportedFormat, PromptWithEmptyAttachment
-from ragbits.core.prompt.prompt import Attachment
 
 
 class _PromptInput(pydantic.BaseModel):

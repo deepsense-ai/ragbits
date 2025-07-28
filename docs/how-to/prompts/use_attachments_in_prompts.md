@@ -11,7 +11,7 @@ It can be initialized in multiple ways depending on the source of the file data.
 The class supports both binary data and URLs, with optional MIME type specification.
 
 ```python
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment
 
 file_bytes = Attachment(data=b"file_bytes")
 image_url = Attachment(url="http://image.jpg")
@@ -27,8 +27,7 @@ The model should include a field for the attachment, name does not matter, that 
 ```python
 import asyncio
 from pydantic import BaseModel
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.llms.litellm import LiteLLM
 
 
@@ -65,8 +64,7 @@ If you need a prompt that accepts multiple attachments, define an input model co
 ```python
 import asyncio
 from pydantic import BaseModel
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.llms.litellm import LiteLLM
 
 class EmployeeOnboardingInput(BaseModel):
@@ -112,8 +110,7 @@ Sometimes, you may want to modify the prompt based on whether an attachment is p
 ```python
 import asyncio
 from pydantic import BaseModel
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.llms.litellm import LiteLLM
 
 class QuestionWithOptionalPhotoInput(BaseModel):

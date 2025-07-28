@@ -24,8 +24,7 @@ import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.llms import LiteLLM
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.prompt import Attachment
+from ragbits.core.prompt import Attachment, Prompt
 
 
 class ImagePromptInput(BaseModel):
