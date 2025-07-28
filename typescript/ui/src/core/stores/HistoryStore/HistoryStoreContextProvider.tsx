@@ -41,6 +41,11 @@ export function HistoryStoreContextProvider({
                 >(
                   finalState.conversations,
                   (res, c) => {
+                    // Ignore old conversations with `null` as key
+                    if (c.conversationId === null) {
+                      return;
+                    }
+
                     const newKey = c.conversationId;
                     const newValue = {
                       ...c,

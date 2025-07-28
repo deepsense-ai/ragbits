@@ -28,14 +28,14 @@ const NON_MESSAGE_EVENTS = new Set([
   ChatResponseType.FOLLOWUP_MESSAGES,
 ]);
 
-const getTemoraryConversationId = () =>
+const getTemporaryConversationId = () =>
   `${TEMPORARY_CONVERSATION_TAG}${uuidv4()}`;
 
 const initialConversationValues = () => ({
   history: {},
   followupMessages: null,
   serverState: null,
-  conversationId: getTemoraryConversationId(),
+  conversationId: getTemporaryConversationId(),
   eventsLog: [],
   lastMessageId: null,
   context: undefined,
@@ -225,7 +225,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     ) => {
       // Copied conversation should be treated as temporary one, it would get it's own
       // id after first message
-      const conversationId = getTemoraryConversationId();
+      const conversationId = getTemporaryConversationId();
       const conversation: Conversation = {
         ...initialConversationValues(),
         followupMessages,
