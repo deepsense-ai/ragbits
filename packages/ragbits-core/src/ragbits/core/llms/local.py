@@ -2,6 +2,7 @@ import asyncio
 import threading
 import time
 from collections.abc import AsyncGenerator, Iterable
+from typing import Any
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
@@ -81,9 +82,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
         self._price_per_completion_token = price_per_completion_token
 
     @staticmethod
-    def _lazy_import_local_deps():
+    def _lazy_import_local_deps() -> tuple[Any, type, type, type] | None:
         try:
-            import accelerate
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
@@ -267,18 +267,18 @@ class LocalLLM(LLM[LocalLLMOptions]):
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> type:
     """Allow access to transformers classes for testing purposes."""
     if name in ("AutoModelForCausalLM", "AutoTokenizer", "TextIteratorStreamer"):
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
-            if name == "AutoModelForCausalLM":
-                return AutoModelForCausalLM
-            elif name == "AutoTokenizer":
-                return AutoTokenizer
-            elif name == "TextIteratorStreamer":
-                return TextIteratorStreamer
+            transformers_classes = {
+                "AutoModelForCausalLM": AutoModelForCausalLM,
+                "AutoTokenizer": AutoTokenizer,
+                "TextIteratorStreamer": TextIteratorStreamer,
+            }
+            return transformers_classes[name]
         except ImportError:
             pass
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
