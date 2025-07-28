@@ -2,6 +2,7 @@
 
 This guide will walk you through defining and using prompts in Ragbits that accept attachments as input.
 It covers handling single and multiple attachment inputs, incorporating conditionals in prompt templates based on the presence of attachments, and using such prompts with an LLM.
+
 Attachment types currently supported include standard image formats (such as JPEG, PNG) and PDF documents.
 
 ## How to define a prompt with an attachment input
@@ -19,47 +20,11 @@ pdf_url = Attachment(url="http://document.pdf")
 file_with_url_and_mime =  Attachment(url="http://address.pl/file_with_no_extension", mime_type="jpeg")
 ```
 
-### Using a single attachment as input
+To define a prompt that takes an attachment as input, create a Pydantic model representing the input structure.
+The model should include a field for the attachment that holds an instance of `prompt.Attachment` class - its name does not matter.
 
-To define a prompt that takes a single attachment as input, create a Pydantic model representing the input structure.
-The model should include a field for the attachment, name does not matter, that holds an instance of `prompt.Attachment` class.
+To pass multiple attachments, just define multiple fields of type `Attachment` or a single field that is a list of `Attachment` instances.
 
-```python
-import asyncio
-from pydantic import BaseModel
-from ragbits.core.prompt import Attachment, Prompt
-from ragbits.core.llms.litellm import LiteLLM
-
-
-class AnimalPhotoInput(BaseModel):
-    """
-    Input model containing a single animal photo.
-    """
-    photo: Attachment
-
-
-class AnimalPhotoPrompt(Prompt):
-    """
-    A prompt for identifying an animal in a photo.
-    """
-
-    user_prompt = "What animal do you see in this photo?"
-
-
-async def main():
-    llm = LiteLLM("gpt-4o")
-    photo = Attachment(url="<your_photo_here>")
-    prompt = AnimalPhotoPrompt(AnimalPhotoInput(photo=photo))
-    response = await llm.generate(prompt)
-    print(response)
-
-
-asyncio.run(main())
-```
-
-### Using multiple attachments as input
-
-If you need a prompt that accepts multiple attachments, define an input model containing multiple fields of type `Attachment` or a single field that is a list of `Attachment` instances.
 
 ```python
 import asyncio
