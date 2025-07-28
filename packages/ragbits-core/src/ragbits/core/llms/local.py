@@ -13,6 +13,7 @@ from ragbits.core.types import NOT_GIVEN, NotGiven
 if TYPE_CHECKING:
     from transformers import TextIteratorStreamer
 
+
 class LocalLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the local LLM client.
