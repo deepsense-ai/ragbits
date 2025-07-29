@@ -1,8 +1,8 @@
 import { useParams } from "react-router";
-import App from "../../../App";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 import { useEffect } from "react";
+import Chat from "../../../core/components/Chat";
 
 export default function HistoryRoute() {
   const params = useParams();
@@ -23,5 +23,5 @@ export default function HistoryRoute() {
     selectConversation(conversationId);
   }, [conversationId, currentConversation, selectConversation]);
 
-  return <App />;
+  return <Chat />;
 }
