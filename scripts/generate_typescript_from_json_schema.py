@@ -20,6 +20,7 @@ from typing import Any, Dict
 
 from ragbits.chat.providers import RagbitsChatModelProvider
 
+
 def _make_all_fields_required(schema: Dict[str, Any]) -> Dict[str, Any]:
     """Recursively modify a JSON schema so that all object properties are required."""
     schema_type = schema.get("type")
@@ -102,7 +103,7 @@ def _replace_schema_form_types(typescript_code: str) -> str:
     # Replace form fields with RJSFSchema
     replacements = [
         # Match form properties in config structures
-        (r'(form\??:\s*)\{\s*\[k:\s*string\]:\s*unknown;\s*\}(\s*\|\s*null)?', r'\1RJSFSchema\2'),
+        (r"(form\??:\s*)\{\s*\[k:\s*string\]:\s*unknown;\s*\}(\s*\|\s*null)?", r"\1RJSFSchema\2"),
     ]
 
     result = typescript_code
@@ -117,7 +118,7 @@ def _fix_duplicate_interface_names(typescript_content: str) -> str:
     result = typescript_content
 
     patterns_to_fix = [
-        (r'\bFeedbackItem\d+\b', 'FeedbackItem'),
+        (r"\bFeedbackItem\d+\b", "FeedbackItem"),
     ]
 
     for pattern, replacement in patterns_to_fix:
@@ -140,23 +141,29 @@ def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> st
         }
 
         # Create temporary files for input and output
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_input:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as temp_input:
             json.dump(full_schema, temp_input, indent=2)
             temp_input_path = temp_input.name
 
         try:
             # Run json-schema-to-typescript
-            result = subprocess.run([
-                'npx', 'json-schema-to-typescript',
-                temp_input_path,
-                '--bannerComment', '',  # Remove default banner
-                '--declareExternallyReferenced', 'false',
-                '--additionalProperties', 'false',
-                '--unknownAny', 'true',
-            ],
-            capture_output=True,
-            text=True,
-            check=True
+            result = subprocess.run(
+                [
+                    "npx",
+                    "json-schema-to-typescript",
+                    temp_input_path,
+                    "--bannerComment",
+                    "",  # Remove default banner
+                    "--declareExternallyReferenced",
+                    "false",
+                    "--additionalProperties",
+                    "false",
+                    "--unknownAny",
+                    "true",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
             )
 
             output = result.stdout.strip()
@@ -230,13 +237,13 @@ def main():
     for name, model in all_models.items():
         try:
             # Handle Python Enums differently from Pydantic models
-            if hasattr(model, '__members__') and hasattr(model, '__name__'):
+            if hasattr(model, "__members__") and hasattr(model, "__name__"):
                 # This is a Python Enum
                 enum_values = [member.value for member in model]
                 schema = {
                     "type": "string",
                     "enum": enum_values,
-                    "description": f"Enum values: {', '.join(enum_values)}"
+                    "description": f"Enum values: {', '.join(enum_values)}",
                 }
                 schemas[name] = schema
             else:

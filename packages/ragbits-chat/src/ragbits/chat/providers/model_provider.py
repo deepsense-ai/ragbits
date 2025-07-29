@@ -63,7 +63,6 @@ class RagbitsChatModelProvider:
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRoleType": MessageRoleType,
-
                 # Core data models
                 "ChatContext": ChatContext,
                 "LiveUpdate": LiveUpdate,
@@ -73,17 +72,14 @@ class RagbitsChatModelProvider:
                 "ServerState": StateUpdate,
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
-
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
                 "UserSettings": UserSettings,
                 "FeedbackConfig": FeedbackConfig,  # Current from types.py (not deprecated forms.py)
-
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
-
                 # API request models
                 "ChatRequest": ChatRequest,
                 "FeedbackRequest": FeedbackRequest,
@@ -92,8 +88,10 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         except ImportError as e:
-            raise RuntimeError(f"Error importing ragbits-chat models: {e}. "
-                             "Make sure the ragbits-chat package is properly installed.")
+            raise RuntimeError(
+                f"Error importing ragbits-chat models: {e}. "
+                "Make sure the ragbits-chat package is properly installed."
+            )
 
     def get_categories(self) -> Dict[str, list[str]]:
         """
@@ -107,7 +105,15 @@ class RagbitsChatModelProvider:
 
         self._categories_cache = {
             "enums": ["ChatResponseType", "FeedbackType", "LiveUpdateType", "MessageRoleType"],
-            "core_data": ["ChatContext", "LiveUpdate", "LiveUpdateContent", "Message", "Reference", "ServerState", "FeedbackItem"],
+            "core_data": [
+                "ChatContext",
+                "LiveUpdate",
+                "LiveUpdateContent",
+                "Message",
+                "Reference",
+                "ServerState",
+                "FeedbackItem",
+            ],
             "configuration": ["HeaderCustomization", "UICustomization", "UserSettings", "FeedbackConfig"],
             "responses": ["FeedbackResponse", "ConfigResponse"],
             "requests": ["ChatRequest", "FeedbackRequest"],

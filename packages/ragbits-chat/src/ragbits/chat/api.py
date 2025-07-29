@@ -156,7 +156,6 @@ class RagbitsAPI:
                 )
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
-
             # Convert request context to ChatContext
             chat_context = ChatContext(**request.context)
 
