@@ -6,6 +6,7 @@ Pydantic models from the ragbits-chat package.
 """
 
 from enum import Enum
+
 from pydantic import BaseModel
 
 
