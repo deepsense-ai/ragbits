@@ -6,7 +6,14 @@ import DelayedTooltip from "./DelayedTooltip";
 import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
-import { useHistoryActions } from "../stores/historyStore";
+import PluginWrapper from "../utils/plugins/PluginWrapper";
+import { SharePlugin } from "../../plugins/SharePlugin";
+import { useHistoryActions } from "../stores/HistoryStore/selectors";
+import {
+  ChatHistoryPlugin,
+  ChatHistoryPluginName,
+} from "../../plugins/ChatHistoryPlugin";
+import { usePlugin } from "../utils/plugins/usePlugin";
 
 interface LayoutProps {
   title: string;
@@ -27,6 +34,7 @@ export default function Layout({
   logo,
   classNames,
 }: PropsWithChildren<LayoutProps>) {
+  const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
   const { config } = useConfigContext();
   const { clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
@@ -73,27 +81,39 @@ export default function Layout({
     return /^[./~\w%-][\w./~%-]*$/.test(str);
   }
 
+  const historyEnabled = chatHistoryPlugin?.isActivated;
   return (
     <div className="flex h-full min-h-[48rem] justify-center py-4">
-      <div className="flex w-full flex-col px-4 sm:max-w-[1200px]">
+      <PluginWrapper
+        plugin={ChatHistoryPlugin}
+        component="ChatHistory"
+        disableSkeleton
+      />
+      <div
+        className={cn(
+          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          historyEnabled && "pl-0",
+        )}
+      >
         <header
           className={cn(
-            "flex h-16 min-h-16 items-center justify-between gap-2 rounded-none rounded-t-medium border-small border-divider px-4 py-3",
+            "border-small border-divider flex h-16 min-h-16 items-center justify-between gap-2 rounded-none px-4 py-3",
             classNames?.header,
+            historyEnabled ? "rounded-tr-medium" : "rounded-t-medium",
           )}
         >
           <div className="flex w-full items-center gap-2">
             {isURL(logo) ? (
               <img src={logo} className="h-8 w-8" width={32} height={32} />
             ) : (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground">
+              <div className="bg-foreground flex h-8 w-8 items-center justify-center rounded-full">
                 {logo}
               </div>
             )}
             <div className="w-full min-w-[120px] sm:w-auto">
               <div
                 className={cn(
-                  "truncate text-small font-semibold leading-5 text-foreground",
+                  "text-small text-foreground truncate leading-5 font-semibold",
                   classNames?.title,
                 )}
               >
@@ -101,7 +121,7 @@ export default function Layout({
               </div>
               <div
                 className={cn(
-                  "truncate text-small font-normal leading-5 text-default-500",
+                  "text-small text-default-500 truncate leading-5 font-normal",
                   classNames?.subTitle,
                 )}
               >
@@ -110,22 +130,34 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <DelayedTooltip content="Clear chat" placement="bottom">
-              <Button
-                isIconOnly
-                aria-label="Clear chat"
-                variant="ghost"
-                onPress={resetChat}
-              >
-                <Icon icon="heroicons:arrow-path" />
-              </Button>
-            </DelayedTooltip>
+            <PluginWrapper
+              plugin={SharePlugin}
+              component="ShareButton"
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
+            {!historyEnabled && (
+              <DelayedTooltip content="Clear chat" placement="bottom">
+                <Button
+                  isIconOnly
+                  aria-label="Clear chat"
+                  variant="ghost"
+                  onPress={resetChat}
+                  data-testid="layout-clear-chat-button"
+                >
+                  <Icon icon="heroicons:arrow-path" />
+                </Button>
+              </DelayedTooltip>
+            )}
             <DelayedTooltip content="Change theme" placement="bottom">
               <Button
                 isIconOnly
                 aria-label={`Change theme to ${theme === Theme.DARK ? "light" : "dark"}`}
                 variant="ghost"
                 onPress={toggleTheme}
+                data-testid="layout-toggle-theme-button"
               >
                 {theme === Theme.DARK ? (
                   <Icon icon="heroicons:sun" />
@@ -141,10 +173,11 @@ export default function Layout({
                   aria-label={`${isDebugOpened ? "Open" : "Close"} debug panel`}
                   variant="ghost"
                   onPress={() => setDebugOpened((o) => !o)}
+                  data-testid="layout-debug-button"
                 >
                   <Icon icon="heroicons:bug-ant" />
                   {isDebugOpened && (
-                    <div className="absolute left-0 right-0 top-1/2 h-0.5 -rotate-45 bg-default-500" />
+                    <div className="bg-default-500 absolute top-1/2 right-0 left-0 h-0.5 -rotate-45" />
                   )}
                 </Button>
               </DelayedTooltip>
@@ -154,8 +187,9 @@ export default function Layout({
         <main className="flex h-full overflow-hidden">
           <div
             className={cn(
-              "flex h-full w-full flex-col gap-4 rounded-none rounded-b-medium border-0 border-b border-l border-r border-divider py-3",
+              "border-divider flex h-full w-full flex-col gap-4 rounded-none border-0 border-r border-b border-l py-3",
               classNames?.container,
+              historyEnabled ? "rounded-br-medium" : "rounded-b-medium",
             )}
           >
             {children}

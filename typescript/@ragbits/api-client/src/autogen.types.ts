@@ -7,7 +7,7 @@
 import type { RJSFSchema } from '@rjsf/utils'
 
 /**
- * Enum values: text, reference, state_update, message_id, conversation_id, live_update, followup_messages
+ * Enum values: text, reference, state_update, message_id, conversation_id, live_update, followup_messages, image
  */
 export type ChatResponseType =
     | 'text'
@@ -17,6 +17,7 @@ export type ChatResponseType =
     | 'conversation_id'
     | 'live_update'
     | 'followup_messages'
+    | 'image'
 
 /**
  * Enum values: like, dislike
@@ -104,6 +105,14 @@ export interface FeedbackItem {
 }
 
 /**
+ * Represents an image in the conversation.
+ */
+export interface Image {
+    id: string
+    url: string
+}
+
+/**
  * Customization for the header section of the UI.
  */
 export interface HeaderCustomization {
@@ -167,6 +176,10 @@ export interface ConfigResponse {
      * Debug mode flag
      */
     debug_mode: boolean
+    /**
+     * Debug mode flag
+     */
+    conversation_history: boolean
 }
 
 /**
@@ -257,6 +270,11 @@ interface FollowupMessagesChatResponse {
     content: string[]
 }
 
+interface ImageChatResponse {
+    type: 'image'
+    content: Image
+}
+
 /**
  * Typed chat response union
  */
@@ -268,3 +286,4 @@ export type ChatResponse =
     | StateUpdateChatResponse
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
+    | ImageChatResponse

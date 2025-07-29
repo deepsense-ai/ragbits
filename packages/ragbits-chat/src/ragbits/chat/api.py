@@ -130,6 +130,7 @@ class RagbitsAPI:
                 else None,
                 user_settings=self.chat_interface.user_settings,
                 debug_mode=self.debug_mode,
+                conversation_history=self.chat_interface.conversation_history,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -213,6 +214,8 @@ class RagbitsAPI:
                                 outputs.message_id = content
                             case ChatResponseType.CONVERSATION_ID:
                                 outputs.conversation_id = content
+                            case ChatResponseType.IMAGE:
+                                outputs.image_url = content
 
                         yield chunk
 

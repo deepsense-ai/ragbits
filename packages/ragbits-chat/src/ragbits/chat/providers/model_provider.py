@@ -52,6 +52,7 @@ class RagbitsChatModelProvider:
                 FeedbackRequest,
                 FeedbackConfig,
                 FeedbackItem,
+                Image,
             )
             from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
             from ragbits.chat.interface.forms import UserSettings
@@ -71,6 +72,7 @@ class RagbitsChatModelProvider:
                 "Reference": Reference,
                 "ServerState": StateUpdate,
                 "FeedbackItem": FeedbackItem,
+                "Image": Image,
 
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,

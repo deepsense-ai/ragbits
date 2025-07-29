@@ -6,8 +6,6 @@ import {
     ChatResponse,
 } from './autogen.types'
 
-export * from './autogen.types'
-
 /**
  * Configuration for the client
  */

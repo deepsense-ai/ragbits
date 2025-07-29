@@ -59,6 +59,13 @@ class LiveUpdate(BaseModel):
     content: LiveUpdateContent
 
 
+class Image(BaseModel):
+    """Represents an image in the conversation."""
+
+    id: str
+    url: str
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface."""
 
@@ -69,6 +76,7 @@ class ChatResponseType(str, Enum):
     CONVERSATION_ID = "conversation_id"
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
+    IMAGE = "image"
 
 
 class ChatContext(BaseModel):
@@ -84,7 +92,7 @@ class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate | list[str]
+    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image
 
     def as_text(self) -> str | None:
         """
@@ -142,6 +150,12 @@ class ChatResponse(BaseModel):
         """
         return cast(list[str], self.content) if self.type == ChatResponseType.FOLLOWUP_MESSAGES else None
 
+    def as_image(self) -> Image | None:
+        """
+        Return the content as Image if this is an image response, else None.
+        """
+        return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
+
 
 class ChatRequest(BaseModel):
     """Client-side chat request interface."""
@@ -195,3 +209,4 @@ class ConfigResponse(BaseModel):
     customization: UICustomization | None = Field(..., description="UI customization")
     user_settings: UserSettings = Field(..., description="User settings")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
+    conversation_history: bool = Field(default=False, description="Debug mode flag")

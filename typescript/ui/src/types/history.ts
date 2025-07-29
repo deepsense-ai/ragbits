@@ -4,9 +4,8 @@ import {
   MessageRoleType,
   Reference,
   ServerState,
+  Image,
 } from "@ragbits/api-client-react";
-
-export type HistoryState = Map<string, ChatMessage>;
 
 export type UnsubscribeFn = (() => void) | null;
 
@@ -19,19 +18,25 @@ export interface ChatMessage {
   role: MessageRoleType;
   content: string;
   references?: Reference[];
-  liveUpdates?: Map<string, LiveUpdate["content"]>;
+  liveUpdates?: Record<string, LiveUpdate["content"]>;
+  extensions?: Record<string, unknown>;
+  images?: Record<string, Image["url"]>;
 }
 
-export interface HistoryStore {
-  history: Map<string, ChatMessage>;
+export interface Conversation {
+  history: Record<string, ChatMessage>;
   followupMessages: string[] | null;
   serverState: ServerState | null;
   conversationId: string | null;
   eventsLog: ChatResponse[][];
-  isLoading: boolean;
-  abortController: AbortController | null;
   lastMessageId: string | null;
   chatOptions: Record<string, unknown> | undefined;
+}
+export interface HistoryStore {
+  conversations: Record<string, Conversation>;
+  currentConversation: string | null;
+  isLoading: boolean;
+  abortController: AbortController | null;
 
   computed: {
     getContext: () => Record<string, unknown>;
@@ -41,13 +46,30 @@ export interface HistoryStore {
     clearHistory: () => void;
     sendMessage: (text: string) => void;
     stopAnswering: () => void;
+    /** Merge passed extensions with existing object for a given message. New values in the passed extensions
+     * overwrite previous ones.
+     */
+    mergeExtensions: (
+      messageId: string,
+      extensions: Record<string, unknown>,
+    ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
+    selectConversation: (conversationKey: string) => void;
+    deleteConversation: (conversationKey: string) => void;
   };
 
   primitives: {
     addMessage: (message: Omit<ChatMessage, "id">) => string;
     deleteMessage: (messageId: string) => void;
+    restore: (
+      history: Conversation["history"],
+      followupMessages: Conversation["followupMessages"],
+      chatOptions: Conversation["chatOptions"],
+      serverState: Conversation["serverState"],
+      conversationId: Conversation["conversationId"],
+    ) => void;
+    getCurrentConversation: () => Conversation;
   };
 
   _internal: {

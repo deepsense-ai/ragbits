@@ -23,8 +23,6 @@ import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
 interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
-  onArrowUp?: (isFirstLine: boolean) => void;
-  onArrowDown?: (isLastLine: boolean) => void;
   isLoading: boolean;
   followupMessages?: string[] | null;
   history?: ChatMessage[];
@@ -75,7 +73,8 @@ const PromptInput = ({
 
   const handleSubmit = useCallback(
     (text?: string) => {
-      if (!message && !isLoading && !text) return;
+      if (!message && !text) return;
+      stopAnswering();
 
       submit(text ?? message);
       setQuickMessages((quickMessages) => {
@@ -86,7 +85,7 @@ const PromptInput = ({
       setMessage("");
       textAreaRef?.current?.focus();
     },
-    [isLoading, submit, message],
+    [message, stopAnswering, submit],
   );
 
   const onSubmit = useCallback(
@@ -173,7 +172,7 @@ const PromptInput = ({
       />
 
       <Form
-        className="flex w-full flex-row items-center rounded-medium bg-default-100 pl-0 pr-2 dark:bg-default-100"
+        className="rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-row items-center pr-2 pl-0"
         validationBehavior="native"
         onSubmit={onSubmit}
         {...formProps}
@@ -194,13 +193,14 @@ const PromptInput = ({
           value={message}
           onKeyDown={handleKeyDown}
           onValueChange={handleValueChange}
+          data-testid="prompt-input-input"
+          data-value={message}
           {...inputProps}
         />
         <div className="flex items-center gap-2">
           <PluginWrapper
             plugin={ChatOptionsPlugin}
             component="ChatOptionsForm"
-            componentProps={undefined}
             skeletonSize={{
               width: "40px",
               height: "40px",
@@ -220,24 +220,28 @@ const PromptInput = ({
             data-testid="send-message"
             {...sendButtonProps}
           >
-            {!isLoading &&
-              (customSendIcon ?? (
-                <Icon
-                  className={cn(
-                    !message ? "text-default-600" : "text-primary-foreground",
-                  )}
-                  icon="heroicons:arrow-up"
-                  width={20}
-                />
-              ))}
-            {isLoading &&
-              (customStopIcon ?? (
-                <Icon
-                  className="text-primary-foreground"
-                  icon="heroicons:stop"
-                  width={20}
-                />
-              ))}
+            <>
+              {!isLoading &&
+                (customSendIcon ?? (
+                  <Icon
+                    className={cn(
+                      !message ? "text-default-600" : "text-primary-foreground",
+                    )}
+                    icon="heroicons:arrow-up"
+                    data-testid="prompt-input-send-icon"
+                    width={20}
+                  />
+                ))}
+              {isLoading &&
+                (customStopIcon ?? (
+                  <Icon
+                    className="text-primary-foreground"
+                    icon="heroicons:stop"
+                    data-testid="prompt-input-stop-icon"
+                    width={20}
+                  />
+                ))}
+            </>
           </Button>
         </div>
       </Form>

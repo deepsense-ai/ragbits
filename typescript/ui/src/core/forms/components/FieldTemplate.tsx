@@ -11,7 +11,7 @@ export default function FieldTemplate({
 
   return (
     <div
-      className={cn("flex flex-col gap-1 text-default-900", isRoot && "gap-4")}
+      className={cn("text-default-900 flex flex-col gap-1", isRoot && "gap-4")}
     >
       {!isRoot && label}
       {schema.description && (
