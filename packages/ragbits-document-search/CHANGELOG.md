@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Introduce new API for attachments in prompts (#711)
+
 ## 1.1.0 (2025-07-09)
 
 ### Changed
