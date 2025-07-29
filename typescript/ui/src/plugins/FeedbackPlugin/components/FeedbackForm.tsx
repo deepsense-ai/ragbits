@@ -14,7 +14,6 @@ import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfig
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
-import { RJSFSchema } from "@rjsf/utils";
 import { ChatMessage } from "../../../types/history";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 
@@ -36,9 +35,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     method: "POST",
   });
 
-  const schema = feedback[
-    `${feedbackType}_form` as keyof typeof feedback
-  ] as RJSFSchema;
+  const schema = feedback[feedbackType].form;
   const onOpenChange = () => {
     onClose();
   };
@@ -74,7 +71,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
 
   const onOpenFeedbackForm = async (type: FeedbackType) => {
     setFeedbackType(type);
-    if (feedback[`${type}_form` as keyof typeof feedback] === null) {
+    if (feedback[type].form === null) {
       await onFeedbackFormSubmit(null);
       return;
     }
