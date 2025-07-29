@@ -52,7 +52,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
         body: {
           message_id: message.serverId,
           feedback: feedbackType,
-          payload: data,
+          payload: data ?? {},
         },
       });
     } catch (e) {
