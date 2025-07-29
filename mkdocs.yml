@@ -13,7 +13,7 @@ nav:
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md
-        - "Use images in prompts": how-to/prompts/use_images_in_prompts.md
+        - "Use attachments in prompts": how-to/prompts/use_attachments_in_prompts.md
         - "Test prompts with promptfoo": how-to/prompts/promptfoo.md
       - LLMs:
         - "Interact with LLMs": how-to/llms/use_llms.md

@@ -3,11 +3,13 @@
 ## Unreleased
 
 - Add support for Reasoning models (#752)
+- Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
 - Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
+- Introduce new API for attachments in prompts (#711)
 
 ## 1.1.0 (2025-07-09)
 

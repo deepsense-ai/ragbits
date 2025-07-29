@@ -1,5 +1,3 @@
-import base64
-
 from openai import AsyncOpenAI
 
 from ragbits.core.prompt import Prompt
@@ -27,18 +25,13 @@ class OpenAIModerationGuardrail(Guardrail):
         """
         if isinstance(input_to_verify, Prompt):
             inputs = [{"type": "text", "text": input_to_verify.rendered_user_prompt}]
+
             if input_to_verify.rendered_system_prompt is not None:
                 inputs.append({"type": "text", "text": input_to_verify.rendered_system_prompt})
-            if images := input_to_verify.images:
-                inputs.extend(
-                    [
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(im).decode('utf-8')}"},  # type: ignore
-                        }
-                        for im in images
-                    ]
-                )
+
+            if attachments := input_to_verify.attachments:
+                messages = [input_to_verify.create_message_with_attachment(attachment) for attachment in attachments]
+                inputs.extend(messages)
         else:
             inputs = [{"type": "text", "text": input_to_verify}]
         response = await self._openai_client.moderations.create(model=self._moderation_model, input=inputs)  # type: ignore

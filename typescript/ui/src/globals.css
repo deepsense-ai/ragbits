@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @plugin "../hero.ts";
 
 /* NOTE: This path might need to be updated

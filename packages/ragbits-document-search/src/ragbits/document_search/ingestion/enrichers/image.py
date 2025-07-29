@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 from ragbits.core.llms.base import LLM, LLMType
 from ragbits.core.llms.factory import get_preferred_llm
-from ragbits.core.prompt import Prompt
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, import_by_path
 from ragbits.document_search.documents.element import ImageElement
 from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
@@ -13,7 +13,7 @@ class ImageDescriberInput(BaseModel):
     Input data for an image describer prompt.
     """
 
-    image: bytes
+    image: Attachment
 
 
 class ImageDescriberOutput(BaseModel):
@@ -30,7 +30,6 @@ class ImageDescriberPrompt(Prompt[ImageDescriberInput, ImageDescriberOutput]):
     """
 
     user_prompt = "Describe the content of the image."
-    image_input_fields = ["image"]
 
 
 class ImageElementEnricher(ElementEnricher[ImageElement]):
@@ -70,7 +69,8 @@ class ImageElementEnricher(ElementEnricher[ImageElement]):
         responses: list[ImageDescriberOutput] = []
         for element in elements:
             self.validate_element_type(type(element))
-            prompt = self._prompt(ImageDescriberInput(image=element.image_bytes))
+            image = Attachment(data=element.image_bytes)
+            prompt = self._prompt(ImageDescriberInput(image=image))
             responses.append(await self._llm.generate(prompt))
 
         return [
