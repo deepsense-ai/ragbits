@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RagbitsClient, FeedbackType } from '../src'
+import { RagbitsClient } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../src'
