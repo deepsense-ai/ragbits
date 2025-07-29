@@ -1,6 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { FeedbackResponse, TypedChatResponse } from '@ragbits/api-client'
-import { ChatResponseType } from '@ragbits/api-client'
+import type { FeedbackResponse, ChatResponse } from '@ragbits/api-client'
 import { defaultConfigResponse } from '../utils'
 
 export const handlers = [
@@ -26,10 +25,10 @@ export const handlers = [
             start(controller) {
                 // Send multiple chunks to simulate streaming with proper TypedChatResponse format
                 const chunks: string[] = [
-                    `data: ${JSON.stringify({ type: ChatResponseType.TEXT, content: 'Hello' } as TypedChatResponse)}\n\n`,
-                    `data: ${JSON.stringify({ type: ChatResponseType.TEXT, content: ' there!' } as TypedChatResponse)}\n\n`,
-                    `data: ${JSON.stringify({ type: ChatResponseType.MESSAGE_ID, content: 'msg-123' } as TypedChatResponse)}\n\n`,
-                    `data: ${JSON.stringify({ type: ChatResponseType.CONVERSATION_ID, content: 'conv-456' } as TypedChatResponse)}\n\n`,
+                    `data: ${JSON.stringify({ type: 'text', content: 'Hello' } as ChatResponse)}\n\n`,
+                    `data: ${JSON.stringify({ type: 'text', content: ' there!' } as ChatResponse)}\n\n`,
+                    `data: ${JSON.stringify({ type: 'message_id', content: 'msg-123' } as ChatResponse)}\n\n`,
+                    `data: ${JSON.stringify({ type: 'conversation_id', content: 'conv-456' } as ChatResponse)}\n\n`,
                 ]
 
                 let index = 0
