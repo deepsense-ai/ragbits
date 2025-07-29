@@ -11,6 +11,7 @@ export const ChatHistoryPlugin = createPlugin({
   },
   routes: [
     {
+      target: `/`,
       path: `/history/:conversationId`,
       element: <HistoryRoute />,
     },
