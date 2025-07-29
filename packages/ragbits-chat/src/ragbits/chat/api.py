@@ -111,6 +111,8 @@ class RagbitsAPI:
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await self.chat_interface.setup()
+            if self.auth_backend:
+                await self.auth_backend.setup()
             yield
 
         self.app = FastAPI(lifespan=lifespan)

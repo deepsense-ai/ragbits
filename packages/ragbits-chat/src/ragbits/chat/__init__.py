@@ -20,6 +20,16 @@ from ragbits.chat.interface.types import (
     StateUpdate,
 )
 
+from ragbits.chat.auth import (
+    AuthenticatedChatInterface,
+    AuthenticationBackend,
+    AuthenticationResult,
+    ListAuthBackend,
+    User,
+    UserCredentials,
+    UserSession,
+)
+
 __all__ = [
     "AuthenticationBackend",
     "AuthenticationResult",
