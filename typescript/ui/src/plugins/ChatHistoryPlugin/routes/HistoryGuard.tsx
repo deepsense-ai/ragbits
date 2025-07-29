@@ -3,6 +3,7 @@ import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistorySto
 import { Navigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
+import { getConversationRoute } from "../utils";
 
 export default function HistoryGuard({ children }: PropsWithChildren) {
   const conversations = useHistoryStore(
@@ -22,7 +23,7 @@ export default function HistoryGuard({ children }: PropsWithChildren) {
       throw new Error("No conversation to navigate to");
     }
     selectConversation(newestConversation);
-    return <Navigate to={`/history/${newestConversation}`} replace />;
+    return <Navigate to={getConversationRoute(newestConversation)} replace />;
   }
 
   return children;
