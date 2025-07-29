@@ -7,6 +7,7 @@ from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
+from typing_extensions import Self
 from pydantic import BaseModel, Field
 
 from ragbits import agents
@@ -34,6 +35,8 @@ from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill
+    from ragbits.core.llms import LiteLLM
+    from pydantic_ai import Agent as PydanticAIAgent
 
 
 @dataclass
@@ -560,3 +563,20 @@ class Agent(
             )
             for tool in all_tools.values()
         ]
+    
+    @requires_dependencies("pydantic_ai")
+    def to_pydantic_ai(self) -> "PydanticAIAgent":
+        return PydanticAIAgent(
+            model=self.llm.model_name,
+            system_prompt=self.prompt.system_prompt,
+            tools=[tool.to_pydantic_ai() for tool in self.tools]
+        )
+    
+    @classmethod
+    @requires_dependencies("pydantic_ai")
+    def from_pydantic_ai(cls, pydantic_ai_agent: "PydanticAIAgent") -> Self:
+        return cls(
+            llm=LiteLLM(model_name=pydantic_ai_agent.model.model_name),
+            prompt=pydantic_ai_agent.system_prompt,
+            tools=[tool.function for _, tool in pydantic_ai_agent._function_tools.items()]
+        )
