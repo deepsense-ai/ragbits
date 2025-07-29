@@ -1,16 +1,26 @@
-from .client import (
+from ragbits.chat.client import (
     RagbitsChatClient,
     RagbitsConversation,
     SyncRagbitsChatClient,
     SyncRagbitsConversation,
 )
-from .interface.types import (
+from ragbits.chat.interface.types import (
     ChatResponse,
     ChatResponseType,
     Message,
     MessageRole,
     Reference,
     StateUpdate,
+)
+
+from ragbits.chat.auth import (
+    AuthenticatedChatInterface,
+    AuthenticationBackend,
+    AuthenticationResult,
+    ListAuthBackend,
+    User,
+    UserCredentials,
+    UserSession,
 )
 
 __all__ = [
@@ -24,4 +34,11 @@ __all__ = [
     "StateUpdate",
     "SyncRagbitsChatClient",
     "SyncRagbitsConversation",
+    "AuthenticatedChatInterface",
+    "AuthenticationBackend",
+    "AuthenticationResult",
+    "ListAuthBackend",
+    "User",
+    "UserCredentials",
+    "UserSession",
 ]
