@@ -58,7 +58,7 @@ Ragbits provides a flexible way to interact with LLMs by allowing you to use [`P
 
 ## Using prompts with LLMs
 
-Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How-To: Use images in prompts wirh Ragbits](../prompts/use_images_in_prompts.md).
+Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using attachments in prompts, check out the guide: [How-To: Use attachments in prompts with Ragbits](../prompts/use_attachments_in_prompts.md).
 
 ```python
 from ragbits.core.prompt import Prompt
