@@ -29,7 +29,7 @@ LLMs in Ragbits allow you to customize the behavior of the model using various o
 
 ### LiteLLM Options
 
-The `LiteLLMOptions` class provides options for remote LLMs, aligning with the LiteLLM API. These options allow you to control the behavior of models from various providers. Each of the option is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
+The `LiteLLMOptions` class provides options for remote LLMs, aligning with the LiteLLM API. These options allow you to control the behavior of models from various providers. Each of the option is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input) and [Reasoning Documentation](https://docs.litellm.ai/docs/reasoning_content)
 
 Example usage:
 ```python
@@ -46,6 +46,9 @@ llm = LiteLLM(model_name="gpt-4o-2024-08-06", default_options=options)
 response = llm.generate("Write a short story about a robot learning to paint.")
 print(response)
 ```
+
+!!! warning
+    If you provide reasoning_effort to the OpenAI model, [the reasoning content will not be returned](https://platform.openai.com/docs/guides/reasoning?api-mode=responses).
 
 ## Using Local LLMs
 

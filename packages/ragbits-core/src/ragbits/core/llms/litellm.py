@@ -1,7 +1,7 @@
 import asyncio
 import time
 from collections.abc import AsyncGenerator, Callable, Iterable
-from typing import Any
+from typing import Any, Literal
 
 import litellm
 import tiktoken
@@ -47,7 +47,7 @@ class LiteLLMOptions(LLMOptions):
     mock_response: str | None | NotGiven = NOT_GIVEN
     tpm: int | None | NotGiven = NOT_GIVEN
     rpm: int | None | NotGiven = NOT_GIVEN
-    reasoning_effort: str | None | NotGiven = NOT_GIVEN
+    reasoning_effort: Literal["low", "medium", "high"] | None | NotGiven = NOT_GIVEN
     thinking: dict | None | NotGiven = NOT_GIVEN
 
 
