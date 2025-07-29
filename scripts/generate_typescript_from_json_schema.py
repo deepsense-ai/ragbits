@@ -16,12 +16,11 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
 
 from ragbits.chat.providers import RagbitsChatModelProvider
 
 
-def _make_all_fields_required(schema: Dict[str, Any]) -> Dict[str, Any]:
+def _make_all_fields_required(schema: dict[str, any]) -> dict[str, any]:
     """Recursively modify a JSON schema so that all object properties are required."""
     schema_type = schema.get("type")
     if schema_type == "object" and "properties" in schema:
@@ -48,7 +47,7 @@ def _make_all_fields_required(schema: Dict[str, Any]) -> Dict[str, Any]:
     return schema
 
 
-def _clean_schema_titles(schema: Dict[str, Any]) -> Dict[str, Any]:
+def _clean_schema_titles(schema: dict[str, any]) -> dict[str, any]:
     """Remove title fields that cause false type references."""
     cleaned = {}
     for key, value in schema.items():
@@ -64,7 +63,7 @@ def _clean_schema_titles(schema: Dict[str, Any]) -> Dict[str, Any]:
     return cleaned
 
 
-def _normalize_refs(schema: Dict[str, Any], ref_map: Dict[str, str] = None) -> Dict[str, Any]:
+def _normalize_refs(schema: dict[str, any], ref_map: dict[str, str] = None) -> dict[str, any]:
     """Normalize $ref values to prevent duplicate type generation."""
     if ref_map is None:
         ref_map = {}
@@ -89,7 +88,7 @@ def _normalize_refs(schema: Dict[str, Any], ref_map: Dict[str, str] = None) -> D
         return schema
 
 
-def _prepare_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
+def _prepare_schema(schema: dict[str, any]) -> dict[str, any]:
     """Wrapper function to prepare correct JSON schema for TypeScript generation."""
     required = _make_all_fields_required(schema)
     cleaned = _clean_schema_titles(required)
@@ -99,7 +98,6 @@ def _prepare_schema(schema: Dict[str, Any]) -> Dict[str, Any]:
 
 def _replace_schema_form_types(typescript_code: str) -> str:
     """Replace generic objects with RJSFSchema where appropriate."""
-
     # Replace form fields with RJSFSchema
     replacements = [
         # Match form properties in config structures
@@ -127,7 +125,7 @@ def _fix_duplicate_interface_names(typescript_content: str) -> str:
     return result
 
 
-def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> str:
+def _generate_typescript_with_node(schema: dict[str, any], type_name: str) -> str:
     """Generate TypeScript interface using json-schema-to-typescript via subprocess."""
     try:
         # Clean up problematic title fields
@@ -179,7 +177,7 @@ def _generate_typescript_with_node(schema: Dict[str, Any], type_name: str) -> st
         print(f"Error: json-schema-to-typescript failed for {type_name}: {e.stderr}")
         raise RuntimeError(f"Failed to generate TypeScript for {type_name}")
     except FileNotFoundError:
-        print(f"Error: json-schema-to-typescript not found. Install with: npm install -g json-schema-to-typescript")
+        print("Error: json-schema-to-typescript not found. Install with: npm install -g json-schema-to-typescript")
         raise RuntimeError("json-schema-to-typescript is required but not installed")
 
 
@@ -220,7 +218,7 @@ def _generate_chat_response_union_type() -> str:
     return "\n".join(lines)
 
 
-def main():
+def main() -> None:
     """Main function to generate TypeScript interfaces."""
     # Initialize model provider
     provider = RagbitsChatModelProvider()

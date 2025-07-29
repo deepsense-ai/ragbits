@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Any, Literal, Optional, cast, TypedDict
+from typing import Any, Literal, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
+from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
 
 
@@ -27,7 +27,7 @@ class Reference(BaseModel):
 
     title: str
     content: str
-    url: Optional[str] = None
+    url: str | None = None
 
 
 class StateUpdate(BaseModel):

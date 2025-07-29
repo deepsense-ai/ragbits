@@ -5,7 +5,6 @@ This module provides the RagbitsChatModelProvider class for importing and organi
 Pydantic models from the ragbits-chat package.
 """
 
-from typing import Dict, Type
 from pydantic import BaseModel
 
 
@@ -18,10 +17,10 @@ class RagbitsChatModelProvider:
     """
 
     def __init__(self):
-        self._models_cache: Dict[str, Type[BaseModel]] | None = None
-        self._categories_cache: Dict[str, list[str]] | None = None
+        self._models_cache: dict[str, type[BaseModel]] | None = None
+        self._categories_cache: dict[str, list[str]] | None = None
 
-    def get_models(self) -> Dict[str, Type[BaseModel]]:
+    def get_models(self) -> dict[str, type[BaseModel]]:
         """
         Import and return all ragbits-chat models.
 
@@ -35,12 +34,18 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         try:
+            from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
                 ChatContext,
                 ChatRequest,
                 ChatResponseType,
+                ConfigResponse,
+                FeedbackConfig,
+                FeedbackItem,
+                FeedbackRequest,
                 FeedbackResponse,
                 FeedbackType,
+                Image,
                 LiveUpdate,
                 LiveUpdateContent,
                 LiveUpdateType,
@@ -48,14 +53,8 @@ class RagbitsChatModelProvider:
                 MessageRoleType,
                 Reference,
                 StateUpdate,
-                ConfigResponse,
-                FeedbackRequest,
-                FeedbackConfig,
-                FeedbackItem,
-                Image,
             )
             from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
-            from ragbits.chat.interface.forms import UserSettings
 
             self._models_cache = {
                 # Enums
@@ -93,7 +92,7 @@ class RagbitsChatModelProvider:
                 "Make sure the ragbits-chat package is properly installed."
             )
 
-    def get_categories(self) -> Dict[str, list[str]]:
+    def get_categories(self) -> dict[str, list[str]]:
         """
         Get models organized by category.
 
@@ -121,7 +120,7 @@ class RagbitsChatModelProvider:
 
         return self._categories_cache
 
-    def get_models_by_category(self, category: str) -> Dict[str, Type[BaseModel]]:
+    def get_models_by_category(self, category: str) -> dict[str, type[BaseModel]]:
         """
         Get models filtered by category.
 
@@ -142,7 +141,7 @@ class RagbitsChatModelProvider:
 
         return {name: all_models[name] for name in categories[category] if name in all_models}
 
-    def get_enum_models(self) -> Dict[str, Type[BaseModel]]:
+    def get_enum_models(self) -> dict[str, type[BaseModel]]:
         """
         Get only enum models.
 
@@ -151,7 +150,7 @@ class RagbitsChatModelProvider:
         """
         return self.get_models_by_category("enums")
 
-    def get_pydantic_models(self) -> Dict[str, Type[BaseModel]]:
+    def get_pydantic_models(self) -> dict[str, type[BaseModel]]:
         """
         Get only Pydantic models (excluding enums).
 

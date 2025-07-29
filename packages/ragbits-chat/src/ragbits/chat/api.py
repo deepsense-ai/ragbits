@@ -14,12 +14,19 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatRequest, ChatResponse, ChatResponseType, FeedbackRequest
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatRequest,
+    ChatResponse,
+    ChatResponseType,
+    ConfigResponse,
+    FeedbackConfig,
+    FeedbackItem,
+    FeedbackRequest,
+)
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
-from ragbits.chat.interface.types import ConfigResponse, FeedbackConfig, FeedbackItem
-from ragbits.chat.interface.forms import UserSettings
 
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
