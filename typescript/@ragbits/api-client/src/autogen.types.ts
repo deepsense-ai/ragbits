@@ -167,7 +167,10 @@ export interface FeedbackConfig {
  */
 export interface ConfigResponse {
     feedback: FeedbackConfig
-    customization: UICustomization
+    /**
+     * UI customization
+     */
+    customization: UICustomization | null
     user_settings: UserSettings
     /**
      * Debug mode flag
@@ -226,7 +229,7 @@ export interface FeedbackRequest {
      */
     payload: {
         [k: string]: unknown
-    } | null
+    }
 }
 
 /**

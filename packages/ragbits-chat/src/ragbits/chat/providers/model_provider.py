@@ -6,6 +6,7 @@ Pydantic models from the ragbits-chat package.
 """
 
 from enum import Enum
+from typing import cast
 
 from pydantic import BaseModel
 
@@ -150,7 +151,7 @@ class RagbitsChatModelProvider:
         Returns:
             Dictionary of enum models
         """
-        return self.get_models_by_category("enums")
+        return cast(dict[str, type[Enum]], self.get_models_by_category("enums"))
 
     def get_pydantic_models(self) -> dict[str, type[BaseModel | Enum]]:
         """

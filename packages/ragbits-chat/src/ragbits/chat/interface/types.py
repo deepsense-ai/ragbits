@@ -185,7 +185,7 @@ class FeedbackRequest(BaseModel):
 
     message_id: str = Field(..., description="ID of the message receiving feedback")
     feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
-    payload: dict[str, Any] | None = Field(default_factory=None, description="Additional feedback details")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Additional feedback details")
 
 
 class FeedbackItem(BaseModel):
@@ -206,7 +206,7 @@ class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
-    customization: UICustomization = Field(default_factory=UICustomization, description="UI customization")
+    customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Debug mode flag")
