@@ -132,9 +132,7 @@ class RagbitsAPI:
                         form=feedback_config.dislike_form,
                     ),
                 ),
-                customization=self.chat_interface.ui_customization.model_dump()
-                if self.chat_interface.ui_customization
-                else None,
+                customization=self.chat_interface.ui_customization,
                 user_settings=self.chat_interface.user_settings,
                 debug_mode=self.debug_mode,
                 conversation_history=self.chat_interface.conversation_history,

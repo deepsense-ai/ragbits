@@ -5,6 +5,7 @@ This module provides the RagbitsChatModelProvider class for importing and organi
 Pydantic models from the ragbits-chat package.
 """
 
+from enum import Enum
 from pydantic import BaseModel
 
 
@@ -16,11 +17,11 @@ class RagbitsChatModelProvider:
     provides caching for performance, and organizes models into logical categories.
     """
 
-    def __init__(self):
-        self._models_cache: dict[str, type[BaseModel]] | None = None
+    def __init__(self) -> None:
+        self._models_cache: dict[str, type[BaseModel | Enum]] | None = None
         self._categories_cache: dict[str, list[str]] | None = None
 
-    def get_models(self) -> dict[str, type[BaseModel]]:
+    def get_models(self) -> dict[str, type[BaseModel | Enum]]:
         """
         Import and return all ragbits-chat models.
 
@@ -120,7 +121,7 @@ class RagbitsChatModelProvider:
 
         return self._categories_cache
 
-    def get_models_by_category(self, category: str) -> dict[str, type[BaseModel]]:
+    def get_models_by_category(self, category: str) -> dict[str, type[BaseModel | Enum]]:
         """
         Get models filtered by category.
 
@@ -141,7 +142,7 @@ class RagbitsChatModelProvider:
 
         return {name: all_models[name] for name in categories[category] if name in all_models}
 
-    def get_enum_models(self) -> dict[str, type[BaseModel]]:
+    def get_enum_models(self) -> dict[str, type[Enum]]:
         """
         Get only enum models.
 
@@ -150,7 +151,7 @@ class RagbitsChatModelProvider:
         """
         return self.get_models_by_category("enums")
 
-    def get_pydantic_models(self) -> dict[str, type[BaseModel]]:
+    def get_pydantic_models(self) -> dict[str, type[BaseModel | Enum]]:
         """
         Get only Pydantic models (excluding enums).
 

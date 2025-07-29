@@ -330,7 +330,7 @@ class ChatInterface(ABC):
         self,
         message_id: str,
         feedback: Literal["like", "dislike"],
-        payload: dict,
+        payload: dict[str, Any] | None = None,
     ) -> None:
         """
         Save feedback about a chat message.

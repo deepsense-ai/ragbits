@@ -206,7 +206,7 @@ class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
-    customization: UICustomization | None = Field(..., description="UI customization")
-    user_settings: UserSettings = Field(..., description="User settings")
+    customization: UICustomization = Field(default_factory=UICustomization, description="UI customization")
+    user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Debug mode flag")
