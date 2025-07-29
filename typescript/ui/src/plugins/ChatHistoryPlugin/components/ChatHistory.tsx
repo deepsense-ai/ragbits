@@ -7,6 +7,7 @@ import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
 import { useNavigate } from "react-router";
+import { getConversationRoute } from "../utils";
 
 export default function ChatHistory() {
   const { selectConversation, deleteConversation, newConversation } =
@@ -20,12 +21,12 @@ export default function ChatHistory() {
 
   const handleNewConversation = () => {
     const conversationId = newConversation();
-    navigate(`/history/${conversationId}`);
+    navigate(getConversationRoute(conversationId));
   };
 
   const handleNavigate = (conversationId: string) => {
     selectConversation(conversationId);
-    navigate(`/history/${conversationId}`);
+    navigate(getConversationRoute(conversationId));
   };
 
   return (
