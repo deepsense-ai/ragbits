@@ -145,8 +145,8 @@ def _generate_typescript_with_node(schema: dict[str, any], type_name: str) -> st
 
         try:
             # Run json-schema-to-typescript
-            result = subprocess.run(
-                [
+            result = subprocess.run(  # noqa: S603
+                [  # noqa: S607
                     "npx",
                     "json-schema-to-typescript",
                     temp_input_path,
@@ -175,10 +175,10 @@ def _generate_typescript_with_node(schema: dict[str, any], type_name: str) -> st
 
     except subprocess.CalledProcessError as e:
         print(f"Error: json-schema-to-typescript failed for {type_name}: {e.stderr}")
-        raise RuntimeError(f"Failed to generate TypeScript for {type_name}")
+        raise RuntimeError(f"Failed to generate TypeScript for {type_name}") from e
     except FileNotFoundError:
         print("Error: json-schema-to-typescript not found. Install with: npm install -g json-schema-to-typescript")
-        raise RuntimeError("json-schema-to-typescript is required but not installed")
+        raise RuntimeError("json-schema-to-typescript is required but not installed") from None
 
 
 def _generate_chat_response_union_type() -> str:

@@ -90,7 +90,7 @@ class RagbitsChatModelProvider:
             raise RuntimeError(
                 f"Error importing ragbits-chat models: {e}. "
                 "Make sure the ragbits-chat package is properly installed."
-            )
+            ) from e
 
     def get_categories(self) -> dict[str, list[str]]:
         """
