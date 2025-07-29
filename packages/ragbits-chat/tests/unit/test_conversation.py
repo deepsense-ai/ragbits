@@ -8,7 +8,7 @@ import pytest
 
 from ragbits.chat.client.conversation import RagbitsConversation, SyncRagbitsConversation
 from ragbits.chat.client.exceptions import ChatClientResponseError
-from ragbits.chat.interface.types import ChatResponseType, Message, MessageRole, StateUpdate
+from ragbits.chat.interface.types import ChatResponseType, Message, MessageRoleType, StateUpdate
 
 
 class _DummyStreamResponse:
@@ -130,10 +130,10 @@ def test_history_excludes_system_messages() -> None:
 
     http_client = httpx.Client()
     conv = SyncRagbitsConversation(base_url="x", http_client=http_client)
-    conv.history.append(Message(role=MessageRole.SYSTEM, content="sys"))
+    conv.history.append(Message(role=MessageRoleType.SYSTEM, content="sys"))
     with patch.object(http_client, "stream", side_effect=_mock_stream):
         list(conv.run_streaming("hello"))
-    assert all(msg["role"] != MessageRole.SYSTEM.value for msg in sent_payload["history"])
+    assert all(msg["role"] != MessageRoleType.SYSTEM.value for msg in sent_payload["history"])
 
 
 def test_context_merging() -> None:
