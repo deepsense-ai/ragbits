@@ -1,10 +1,7 @@
 import {
   ChatRequest,
   ChatResponse,
-  ChatResponseType,
   LiveUpdate,
-  LiveUpdateType,
-  MessageRole,
   RagbitsClient,
   Image,
 } from "@ragbits/api-client-react";
@@ -21,9 +18,9 @@ import { immer } from "zustand/middleware/immer";
 
 const RAGBITS_CLIENT = new RagbitsClient({ baseUrl: API_URL });
 const NON_MESSAGE_EVENTS = new Set([
-  ChatResponseType.STATE_UPDATE,
-  ChatResponseType.CONVERSATION_ID,
-  ChatResponseType.FOLLOWUP_MESSAGES,
+  "state_update",
+  "conversation_id",
+  "followup_messages",
 ]);
 
 const initialHistoryValues = () => ({
@@ -100,7 +97,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         const { update_id, content, type } = liveUpdate;
 
         return produce(message.liveUpdates ?? {}, (draft) => {
-          if (type === LiveUpdateType.START && update_id in draft) {
+          if (type === "START" && update_id in draft) {
             console.error(
               `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
             );
@@ -115,20 +112,20 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         set(
           updateConversation((draft) => {
             switch (type) {
-              case ChatResponseType.STATE_UPDATE:
+              case "state_update":
                 draft.serverState = content;
                 break;
-              case ChatResponseType.CONVERSATION_ID:
+              case "conversation_id":
                 draft.conversationId = content;
                 break;
-              case ChatResponseType.FOLLOWUP_MESSAGES:
+              case "followup_messages":
                 draft.followupMessages = content;
                 break;
             }
           }),
         );
 
-        if (type === ChatResponseType.CONVERSATION_ID) {
+        if (type === "conversation_id") {
           const newKey = getConversationKey(content);
 
           set((draft) => {
@@ -154,25 +151,25 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               throw new Error(`Message ID ${messageId} not found in history`);
 
             switch (response.type) {
-              case ChatResponseType.TEXT:
+              case "text":
                 message.content += response.content;
                 break;
-              case ChatResponseType.REFERENCE:
+              case "reference":
                 message.references = [
                   ...(message.references ?? []),
                   response.content,
                 ];
                 break;
-              case ChatResponseType.MESSAGE_ID:
+              case "message_id":
                 message.serverId = response.content;
                 break;
-              case ChatResponseType.LIVE_UPDATE:
+              case "live_update":
                 message.liveUpdates = _handleLiveUpdate(
                   response.content,
                   message,
                 );
                 break;
-              case ChatResponseType.IMAGE:
+              case "image":
                 message.images = _handleImage(response.content, message);
                 break;
             }
@@ -236,7 +233,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         conversationId,
       };
       const nonUserMessages = Object.values(history).filter(
-        (m) => m.role !== MessageRole.USER,
+        (m) => m.role !== "user",
       );
       conversation.eventsLog = nonUserMessages.map(() => []);
       set((draft: HistoryStore) => {
@@ -379,13 +376,13 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       const { history } = getCurrentConversation();
       addMessage({
-        role: MessageRole.USER,
+        role: "user",
         content: text,
       });
 
       // Add empty assistant message that will be filled with the response
       const assistantResponseId = addMessage({
-        role: MessageRole.ASSISTANT,
+        role: "assistant",
         content: "",
       });
 
@@ -417,7 +414,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           onError: (error: Error) => {
             handleResponse(
               {
-                type: ChatResponseType.TEXT,
+                type: "text",
                 content: error.message,
               },
               assistantResponseId,

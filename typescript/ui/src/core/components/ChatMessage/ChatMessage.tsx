@@ -1,6 +1,5 @@
 import { forwardRef, useState } from "react";
 import { cn } from "@heroui/react";
-import { MessageRole } from "@ragbits/api-client-react";
 
 import MarkdownContent from "./MarkdownContent.tsx";
 import LiveUpdates from "./LiveUpdates.tsx";
@@ -36,11 +35,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     const { serverId, content, role, references, liveUpdates, images } =
       message;
-    const rightAlign = role === MessageRole.USER;
+    const rightAlign = role === "user";
     const isLoading =
-      isHistoryLoading &&
-      role === MessageRole.ASSISTANT &&
-      messageId === lastMessageId;
+      isHistoryLoading && role === "assistant" && messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);
 

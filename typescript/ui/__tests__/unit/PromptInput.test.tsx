@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { MessageRole } from "@ragbits/api-client-react";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps } from "react";
 import HorizontalActions from "../../src/core/components/inputs/PromptInput/HorizontalActions";
@@ -33,17 +32,17 @@ vi.mock("../../src/core/utils/useTextAreaCaretDetection.tsx", () => ({
 
 const MOCK_HISTORY: ChatMessage[] = [
   {
-    role: MessageRole.USER,
+    role: "user",
     content: "Hello, how are you?",
     id: "1",
   },
   {
-    role: MessageRole.ASSISTANT,
+    role: "assistant",
     content: "I'm fine, thank you. How can I help you today?",
     id: "2",
   },
   {
-    role: MessageRole.USER,
+    role: "user",
     content: "I'm doing well, thanks for asking. What's new?",
     id: "3",
   },
