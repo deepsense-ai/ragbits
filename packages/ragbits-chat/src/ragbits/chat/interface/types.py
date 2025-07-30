@@ -151,4 +151,5 @@ class ChatContext(BaseModel):
     conversation_id: str | None = None
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)
+    session_id: str | None = None
     model_config = ConfigDict(extra="allow")

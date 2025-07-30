@@ -137,7 +137,10 @@ export function useRagbitsStream<
         [K in keyof Endpoints]: EndpointDefinition
     } = BaseStreamingEndpoints,
     URL extends keyof Endpoints = keyof Endpoints,
->(endpoint: URL): RagbitsStreamResult<URL, Endpoints, Error> {
+>(
+    endpoint: URL,
+    customHeaders?: Record<string, string>
+): RagbitsStreamResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [isStreaming, setIsStreaming] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -194,7 +197,8 @@ export function useRagbitsStream<
                         }
                     },
                 },
-                abortController.signal
+                abortController.signal,
+                customHeaders
             )
 
             return () => {
@@ -202,7 +206,7 @@ export function useRagbitsStream<
                 cancelFn()
             }
         },
-        [client, cancel, endpoint, isStreaming]
+        [isStreaming, client, endpoint, customHeaders, cancel]
     )
 
     return {

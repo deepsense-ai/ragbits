@@ -189,6 +189,10 @@ export interface ConfigResponse {
     }
     debug_mode: boolean
     conversation_history: boolean
+    authentication: {
+        enabled: boolean
+        type: string | null
+    }
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   ChatHistoryPluginName,
 } from "../../plugins/ChatHistoryPlugin";
 import { usePlugin } from "../utils/plugins/usePlugin";
+import { AuthPlugin } from "../../plugins/AuthPlugin";
 
 interface LayoutProps {
   title: string;
@@ -36,7 +37,7 @@ export default function Layout({
 }: PropsWithChildren<LayoutProps>) {
   const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryActions();
+  const { newConversation: clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
@@ -91,7 +92,7 @@ export default function Layout({
       />
       <div
         className={cn(
-          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          "flex grow flex-col px-4 sm:max-w-[1200px]",
           historyEnabled && "pl-0",
         )}
       >
@@ -130,6 +131,14 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PluginWrapper
+              plugin={AuthPlugin}
+              component="LogoutButton"
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
             <PluginWrapper
               plugin={SharePlugin}
               component="ShareButton"
