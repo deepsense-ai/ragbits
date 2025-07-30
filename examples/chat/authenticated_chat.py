@@ -35,7 +35,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.api import RagbitsAPI
-from ragbits.chat.auth import AuthenticatedChatInterface, ListAuthBackend
+from ragbits.chat.auth import ListAuthBackend
+from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -75,8 +76,8 @@ class UserSettingsFormExample(BaseModel):
     language: Literal["English", "Polish"] = Field(description="Please select the language", default="English")
 
 
-class MyAuthenticatedChat(AuthenticatedChatInterface):
-    """An example implementation of AuthenticatedChatInterface with user-specific responses."""
+class MyAuthenticatedChat(ChatInterface):
+    """An example implementation of ChatInterface with user-specific responses."""
 
     feedback_config = FeedbackConfig(
         like_enabled=True,
@@ -106,17 +107,15 @@ class MyAuthenticatedChat(AuthenticatedChatInterface):
 
     conversation_history = True
 
-    def __init__(self, auth_backend=None):
-        if auth_backend is None:
-            auth_backend = create_auth_backend()
-        super().__init__(auth_backend)
+    def __init__(self):
+        super().__init__()
         self.llm = LiteLLM(model_name="gpt-4o-mini")
 
-    async def authenticated_chat(
-        self,
-        message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+    async def chat(
+            self,
+            message: str,
+            history: list[Message] | None = None,
+            context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Authenticated chat implementation that provides user-specific responses.
@@ -139,10 +138,10 @@ class MyAuthenticatedChat(AuthenticatedChatInterface):
             yield self.create_text_response("⚠️ Authentication information not found.")
             return
 
-        username = user_info.get("username", "Unknown")
-        full_name = user_info.get("full_name", username)
-        user_roles = user_info.get("roles", [])
-        user_id = user_info.get("user_id", "unknown")
+        username = user_info.username
+        full_name = user_info.full_name
+        user_roles = user_info.roles
+        user_id = user_info.user_id
 
         # Create user-specific reference
         yield self.create_reference(
@@ -218,7 +217,8 @@ class MyAuthenticatedChat(AuthenticatedChatInterface):
             yield self.create_text_response(chunk)
 
         # Role-specific followup suggestions
-        followup_messages = [f"Tell me about my user profile", f"What can I do as a {user_roles[0] if user_roles else 'user'}?"]
+        followup_messages = [f"Tell me about my user profile",
+                             f"What can I do as a {user_roles[0] if user_roles else 'user'}?"]
 
         if "admin" in user_roles:
             followup_messages.extend(["Show admin dashboard", "Manage user permissions"])
@@ -273,7 +273,7 @@ def create_auth_backend():
 def create_api():
     """Create and configure the authenticated API."""
     auth_backend = create_auth_backend()
-    chat_interface = MyAuthenticatedChat(auth_backend)
+    chat_interface = MyAuthenticatedChat()
 
     api = RagbitsAPI(
         chat_interface=type(chat_interface),

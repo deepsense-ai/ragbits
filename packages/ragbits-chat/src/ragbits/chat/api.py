@@ -270,6 +270,7 @@ class RagbitsAPI:
             # Add session_id to context if authenticated
             if authenticated_user and credentials:
                 chat_context.session_id = credentials.credentials
+                chat_context.state["authenticated_user"] = authenticated_user
 
             # Verify state signature if provided
             if "state" in request.context and "signature" in request.context:
