@@ -396,7 +396,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text) => {
+    sendMessage: (text, accessToken?: string) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -460,6 +460,12 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         });
       };
 
+      // TODO: Refactor this
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       RAGBITS_CLIENT.makeStreamRequest(
         "/api/chat",
         chatRequest,
@@ -480,6 +486,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           },
         },
         abortController.signal,
+        headers,
       );
     },
   },
