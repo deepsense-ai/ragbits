@@ -5,19 +5,19 @@ import { useShallow } from "zustand/shallow";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { getConversationRoute } from "../utils";
 
-export default function HistoryGuard({ children }: PropsWithChildren) {
+export default function ConversationGuard({ children }: PropsWithChildren) {
   const conversations = useHistoryStore(
     useShallow((s) => Object.keys(s.conversations)),
   );
   const { selectConversation } = useHistoryActions();
   const params = useParams();
   const conversationId = params.conversationId;
-  const isValidURL =
+  const isValidConversation =
     conversationId &&
     typeof conversationId === "string" &&
     conversations.includes(conversationId);
 
-  if (!isValidURL) {
+  if (!isValidConversation) {
     const newestConversation = conversations.at(-1);
     if (!newestConversation) {
       throw new Error("No conversation to navigate to");

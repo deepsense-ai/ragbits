@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
-import HistoryRoute from "./routes/HistoryRoute";
-import HistoryGuard from "./routes/HistoryGuard";
+import ConversationRoute from "./routes/ConversationRoute";
+import ConversationGuard from "./routes/ConversationGuard";
 
 export const ChatHistoryPluginName = "ChatHistoryPlugin";
 export const ChatHistoryPlugin = createPlugin({
@@ -12,14 +12,14 @@ export const ChatHistoryPlugin = createPlugin({
   routes: [
     {
       target: `/`,
-      path: `/history/:conversationId`,
-      element: <HistoryRoute />,
+      path: `/conversation/:conversationId`,
+      element: <ConversationRoute />,
     },
   ],
   routeWrappers: [
     {
       target: "global",
-      wrapper: (children) => <HistoryGuard>{children}</HistoryGuard>,
+      wrapper: (children) => <ConversationGuard>{children}</ConversationGuard>,
     },
   ],
 });

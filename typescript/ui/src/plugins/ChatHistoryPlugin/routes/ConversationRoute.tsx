@@ -4,7 +4,7 @@ import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistorySto
 import { useEffect } from "react";
 import Chat from "../../../core/components/Chat";
 
-export default function HistoryRoute() {
+export default function ConversationRoute() {
   const params = useParams();
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const conversationId = params.conversationId;
