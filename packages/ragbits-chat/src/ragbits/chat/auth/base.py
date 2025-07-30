@@ -7,6 +7,7 @@ from .models import OAuth2Credentials, User, UserCredentials, UserSession
 
 class AuthenticationResult(BaseModel):
     """Result of an authentication attempt."""
+
     success: bool
     user: User | None = None
     session: UserSession | None = None

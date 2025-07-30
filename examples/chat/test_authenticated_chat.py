@@ -19,16 +19,16 @@ import httpx
 
 class AuthenticatedChatTester:
     """Test client for the authenticated chat API."""
-    
+
     def __init__(self, base_url: str = "http://127.0.0.1:8000"):
         self.base_url = base_url
         self.session_id: str | None = None
         self.current_user: dict[str, Any] | None = None
-    
+
     async def test_config(self) -> None:
         """Test the configuration endpoint."""
         print("🔍 Testing API configuration...")
-        
+
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(f"{self.base_url}/api/config")
@@ -42,23 +42,22 @@ class AuthenticatedChatTester:
                     print(f"❌ Config request failed: {response.status_code}")
             except Exception as e:
                 print(f"❌ Config request error: {e}")
-    
+
     async def login(self, username: str, password: str) -> bool:
         """Login with username and password."""
         print(f"🔐 Attempting login for user: {username}")
-        
+
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    f"{self.base_url}/api/auth/login",
-                    json={"username": username, "password": password}
+                    f"{self.base_url}/api/auth/login", json={"username": username, "password": password}
                 )
-                
+
                 result = response.json()
                 if result.get("success") and result.get("session_id"):
                     self.session_id = result["session_id"]
                     self.current_user = result["user"]
-                    
+
                     print(f"✅ Login successful!")
                     print(f"👤 User: {self.current_user['full_name']} ({self.current_user['email']})")
                     print(f"🏷️  Roles: {', '.join(self.current_user['roles'])}")
@@ -70,33 +69,29 @@ class AuthenticatedChatTester:
             except Exception as e:
                 print(f"❌ Login error: {e}")
                 return False
-    
+
     async def chat(self, message: str, show_streaming: bool = True) -> None:
         """Send a chat message."""
         if not self.session_id:
             print("❌ Not logged in. Please login first.")
             return
-        
+
         print(f"💬 You: {message}")
         print("🤖 Bot:", end=" " if show_streaming else "\n")
-        
+
         headers = {"Authorization": f"Bearer {self.session_id}"}
-        
+
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
                 response_text = ""
                 references = []
                 images = []
-                
+
                 async with client.stream(
                     "POST",
                     f"{self.base_url}/api/chat",
-                    json={
-                        "message": message,
-                        "history": [],
-                        "context": {}
-                    },
-                    headers=headers
+                    json={"message": message, "history": [], "context": {}},
+                    headers=headers,
                 ) as response:
                     if response.status_code == 200:
                         async for line in response.aiter_lines():
@@ -105,7 +100,7 @@ class AuthenticatedChatTester:
                                     data = json.loads(line[6:])
                                     content_type = data.get("type")
                                     content = data.get("content")
-                                    
+
                                     if content_type == "text":
                                         if show_streaming:
                                             print(content, end="", flush=True)
@@ -129,42 +124,39 @@ class AuthenticatedChatTester:
                                             print(f"   {i}. {followup}")
                                 except json.JSONDecodeError:
                                     continue
-                        
+
                         if show_streaming:
                             print()  # New line after streaming response
-                        
+
                         # Show references and images
                         if references:
                             print("\n📚 References:")
                             for ref in references:
                                 print(f"   📄 {ref['title']}: {ref['content'][:100]}...")
-                        
+
                         if images:
                             print("\n🖼️ Images:")
                             for img in images:
                                 print(f"   🔗 {img['url']}")
-                                
+
                     else:
                         error_data = response.json()
                         print(f"\n❌ Chat failed: {error_data.get('detail', 'Unknown error')}")
             except Exception as e:
                 print(f"\n❌ Chat error: {e}")
-    
+
     async def logout(self) -> None:
         """Logout and clear session."""
         if not self.session_id:
             print("❌ Not logged in.")
             return
-        
+
         print("🚪 Logging out...")
-        
+
         async with httpx.AsyncClient() as client:
             try:
-                response = await client.post(
-                    f"{self.base_url}/api/auth/logout",
-                    json={"session_id": self.session_id}
-                )
-                
+                response = await client.post(f"{self.base_url}/api/auth/logout", json={"session_id": self.session_id})
+
                 result = response.json()
                 if result.get("success"):
                     print("✅ Logout successful!")
@@ -174,22 +166,17 @@ class AuthenticatedChatTester:
                     print(f"❌ Logout failed: {result.get('error_message', 'Unknown error')}")
             except Exception as e:
                 print(f"❌ Logout error: {e}")
-    
+
     async def test_unauthenticated_request(self) -> None:
         """Test making a request without authentication."""
         print("🧪 Testing unauthenticated chat request...")
-        
+
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(
-                    f"{self.base_url}/api/chat",
-                    json={
-                        "message": "Hello without auth",
-                        "history": [],
-                        "context": {}
-                    }
+                    f"{self.base_url}/api/chat", json={"message": "Hello without auth", "history": [], "context": {}}
                 )
-                
+
                 if response.status_code == 401:
                     error_data = response.json()
                     print(f"✅ Correctly rejected: {error_data['detail']}")
@@ -202,23 +189,23 @@ class AuthenticatedChatTester:
 async def run_automated_test():
     """Run a comprehensive automated test."""
     tester = AuthenticatedChatTester()
-    
+
     print("🧪 Automated Authentication Test")
     print("=" * 50)
-    
+
     # Test configuration
     await tester.test_config()
     print()
-    
+
     # Test unauthenticated request
     await tester.test_unauthenticated_request()
     print()
-    
+
     # Test invalid login
     print("🧪 Testing invalid credentials...")
     await tester.login("invalid", "credentials")
     print()
-    
+
     # Test valid login as regular user
     print("🧪 Testing login as regular user...")
     if await tester.login("alice", "alice123"):
@@ -228,7 +215,7 @@ async def run_automated_test():
         print()
         await tester.logout()
     print()
-    
+
     # Test login as admin
     print("🧪 Testing login as admin...")
     if await tester.login("admin", "admin123"):
@@ -238,21 +225,21 @@ async def run_automated_test():
         print()
         await tester.logout()
     print()
-    
+
     # Test login as moderator
     print("🧪 Testing login as moderator...")
     if await tester.login("moderator", "mod123"):
         await tester.chat("What are my moderator responsibilities?", show_streaming=False)
         print()
         await tester.logout()
-    
+
     print("\n✅ Automated test completed!")
 
 
 async def run_interactive_test():
     """Run interactive test mode."""
     tester = AuthenticatedChatTester()
-    
+
     print("🎮 Interactive Authenticated Chat Test")
     print("=" * 40)
     print("Available commands:")
@@ -270,16 +257,16 @@ async def run_interactive_test():
     print("  alice / alice123       (user)")
     print("  bob / bob123           (user)")
     print()
-    
+
     while True:
         try:
             if tester.current_user:
                 prompt = f"[{tester.current_user['username']}] 🔤 "
             else:
                 prompt = "[not logged in] 🔤 "
-            
+
             command = input(prompt).strip().split(" ", 2)
-            
+
             if not command or command[0] == "":
                 continue
             elif command[0] == "quit":
@@ -306,7 +293,7 @@ async def run_interactive_test():
             break
         except Exception as e:
             print(f"Error: {e}")
-    
+
     if tester.session_id:
         await tester.logout()
 
@@ -324,5 +311,5 @@ if __name__ == "__main__":
     print("Make sure the API server is running first:")
     print("   python examples/chat/authenticated_chat.py")
     print()
-    
+
     asyncio.run(main())

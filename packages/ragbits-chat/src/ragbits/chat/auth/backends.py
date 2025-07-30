@@ -32,8 +32,8 @@ class ListAuthBackend(AuthenticationBackend):
                     email=user_data.get("email"),
                     full_name=user_data.get("full_name"),
                     roles=user_data.get("roles", []),
-                    metadata=user_data.get("metadata", {})
-                )
+                    metadata=user_data.get("metadata", {}),
+                ),
             }
 
     async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:
@@ -51,7 +51,7 @@ class ListAuthBackend(AuthenticationBackend):
             session_id=session_id,
             user=user_data["user"],
             created_at=datetime.now(),
-            expires_at=datetime.now() + timedelta(hours=24)
+            expires_at=datetime.now() + timedelta(hours=24),
         )
         self.sessions[session_id] = session
 
@@ -159,15 +159,12 @@ class OAuth2Backend(AuthenticationBackend):
             email="user@example.com",
             full_name="OAuth User",
             roles=["user"],
-            metadata={"provider": self.provider}
+            metadata={"provider": self.provider},
         )
 
         session_id = str(uuid.uuid4())
         session = UserSession(
-            session_id=session_id,
-            user=user,
-            created_at=datetime.now(),
-            expires_at=oauth_credentials.expires_at
+            session_id=session_id, user=user, created_at=datetime.now(), expires_at=oauth_credentials.expires_at
         )
         self.sessions[session_id] = session
 

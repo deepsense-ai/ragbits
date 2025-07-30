@@ -174,6 +174,7 @@ class RagbitsAPI:
 
         # Authentication routes
         if self.auth_backend:
+
             @self.app.post("/api/auth/login", response_class=JSONResponse)
             async def login(request: LoginRequest) -> JSONResponse:
                 return await self._handle_login(request)
@@ -237,9 +238,7 @@ class RagbitsAPI:
         return auth_result.user
 
     async def _handle_chat_message(
-        self,
-        request: ChatMessageRequest,
-        credentials: HTTPAuthorizationCredentials | None = None
+        self, request: ChatMessageRequest, credentials: HTTPAuthorizationCredentials | None = None
     ) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
@@ -395,9 +394,7 @@ class RagbitsAPI:
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
     async def _handle_feedback(
-        self,
-        request: FeedbackRequest,
-        credentials: HTTPAuthorizationCredentials | None = None
+        self, request: FeedbackRequest, credentials: HTTPAuthorizationCredentials | None = None
     ) -> JSONResponse:
         """Handle feedback requests with metrics tracking."""
         start_time = time.time()
@@ -498,11 +495,13 @@ class RagbitsAPI:
             auth_result = await self.auth_backend.authenticate_with_credentials(credentials)
 
             if auth_result.success and auth_result.session:
-                return JSONResponse(content=LoginResponse(
-                    success=True,
-                    session_id=auth_result.session.session_id,
-                    user=auth_result.user.model_dump() if auth_result.user else None
-                ).model_dump())
+                return JSONResponse(
+                    content=LoginResponse(
+                        success=True,
+                        session_id=auth_result.session.session_id,
+                        user=auth_result.user.model_dump() if auth_result.user else None,
+                    ).model_dump()
+                )
             else:
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -510,19 +509,16 @@ class RagbitsAPI:
                         success=False,
                         session_id=None,
                         user=None,
-                        error_message=auth_result.error_message or "Invalid credentials"
-                    ).model_dump()
+                        error_message=auth_result.error_message or "Invalid credentials",
+                    ).model_dump(),
                 )
         except Exception as e:
             logger.error(f"Login error: {e}")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content=LoginResponse(
-                    success=False,
-                    session_id=None,
-                    user=None,
-                    error_message="Internal server error"
-                ).model_dump()
+                    success=False, session_id=None, user=None, error_message="Internal server error"
+                ).model_dump(),
             )
 
     async def _handle_logout(self, request: LogoutRequest) -> JSONResponse:
@@ -537,7 +533,7 @@ class RagbitsAPI:
             logger.error(f"Logout error: {e}")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error_message": "Internal server error"}
+                content={"success": False, "error_message": "Internal server error"},
             )
 
     @staticmethod

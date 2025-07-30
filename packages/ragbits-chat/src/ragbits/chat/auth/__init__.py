@@ -5,12 +5,12 @@ from .authenticated_interface import AuthenticatedChatInterface
 
 __all__ = [
     "AuthenticationBackend",
-    "AuthenticationResult", 
+    "AuthenticationResult",
     "User",
     "UserCredentials",
     "UserSession",
     "ListAuthBackend",
-    "DatabaseAuthBackend", 
+    "DatabaseAuthBackend",
     "OAuth2Backend",
     "AuthenticatedChatInterface",
 ]

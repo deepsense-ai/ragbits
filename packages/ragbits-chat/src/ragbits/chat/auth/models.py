@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 class User(BaseModel):
     """Represents an authenticated user."""
+
     user_id: str
     username: str
     email: str | None = None
@@ -16,12 +17,14 @@ class User(BaseModel):
 
 class UserCredentials(BaseModel):
     """Represents user login credentials."""
+
     username: str
     password: str
 
 
 class OAuth2Credentials(BaseModel):
     """Represents OAuth2 authentication data."""
+
     access_token: str
     token_type: str = "bearer"
     refresh_token: str | None = None
@@ -31,6 +34,7 @@ class OAuth2Credentials(BaseModel):
 
 class UserSession(BaseModel):
     """Represents an active user session."""
+
     session_id: str
     user: User
     created_at: datetime

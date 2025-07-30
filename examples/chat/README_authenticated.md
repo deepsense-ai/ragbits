@@ -5,7 +5,7 @@ This example demonstrates how to create a chat interface with user authenticatio
 ## Features
 
 - 🔐 **User Authentication**: Login/logout with username/password
-- 👤 **Role-based Access**: Different user roles (admin, moderator, user) with specific capabilities  
+- 👤 **Role-based Access**: Different user roles (admin, moderator, user) with specific capabilities
 - 🛡️ **Secure Sessions**: Session-based authentication with Bearer tokens
 - 📊 **Personalized Responses**: User-specific chat responses based on profile and roles
 - 🔄 **Live Updates**: Role-specific live updates during processing
@@ -28,7 +28,7 @@ uv run python authenticated_chat.py
 ```
 
 #### Alternative Methods
-```bash  
+```bash
 # From project root
 python examples/chat/authenticated_chat.py
 
@@ -114,7 +114,7 @@ Interactive commands:
 ### As Regular User
 ```
 💬 You: Tell me about my profile
-🤖 Bot: Hello Alice Johnson! You're logged in as 'alice' with user role. 
+🤖 Bot: Hello Alice Johnson! You're logged in as 'alice' with user role.
 Your profile shows you're part of the Marketing department.
 ```
 
@@ -164,7 +164,7 @@ from ragbits.chat.auth.backends import DatabaseAuthBackend, OAuth2Backend
 # Database authentication
 auth_backend = DatabaseAuthBackend("sqlite:///users.db")
 
-# OAuth2 authentication  
+# OAuth2 authentication
 auth_backend = OAuth2Backend("google", client_id, client_secret, redirect_uri)
 ```
 

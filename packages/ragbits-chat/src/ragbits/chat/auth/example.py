@@ -13,7 +13,7 @@ from .backends import ListAuthBackend
 
 class ExampleAuthenticatedChat(AuthenticatedChatInterface):
     """Example authenticated chat implementation."""
-    
+
     async def authenticated_chat(
         self,
         message: str,
@@ -31,7 +31,7 @@ class ExampleAuthenticatedChat(AuthenticatedChatInterface):
 # Example usage:
 async def example_usage():
     """Demonstrate how to use the authentication system."""
-    
+
     # 1. Create users list for ListAuthBackend
     users = [
         {
@@ -39,33 +39,33 @@ async def example_usage():
             "password": "secret123",
             "email": "alice@example.com",
             "full_name": "Alice Smith",
-            "roles": ["user", "admin"]
+            "roles": ["user", "admin"],
         },
         {
-            "username": "bob", 
+            "username": "bob",
             "password": "password456",
             "email": "bob@example.com",
             "full_name": "Bob Johnson",
-            "roles": ["user"]
-        }
+            "roles": ["user"],
+        },
     ]
-    
+
     # 2. Create authentication backend
     auth_backend = ListAuthBackend(users)
-    
+
     # 3. Create authenticated chat interface
     chat = ExampleAuthenticatedChat(auth_backend)
     await chat.setup()
-    
+
     # 4. Authenticate user
     auth_result = await chat.authenticate_user("alice", "secret123")
-    
+
     if auth_result.success:
         print(f"Authentication successful for user: {auth_result.user.username}")
-        
+
         # 5. Use the session in chat context
         context = ChatContext(session_id=auth_result.session.session_id)
-        
+
         # 6. Chat with authentication
         async for response in chat.chat("Hello!", context=context):
             if text := response.as_text():
@@ -76,4 +76,5 @@ async def example_usage():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(example_usage())

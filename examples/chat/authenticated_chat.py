@@ -89,9 +89,7 @@ class MyAuthenticatedChat(ChatInterface):
 
     ui_customization = UICustomization(
         header=HeaderCustomization(
-            title="🔐 Authenticated Ragbits Chat",
-            subtitle="by deepsense.ai - Secure Chat Experience",
-            logo="🛡️"
+            title="🔐 Authenticated Ragbits Chat", subtitle="by deepsense.ai - Secure Chat Experience", logo="🛡️"
         ),
         welcome_message=(
             "🔐 **Welcome to Authenticated Ragbits Chat!**\n\n"
@@ -112,10 +110,10 @@ class MyAuthenticatedChat(ChatInterface):
         self.llm = LiteLLM(model_name="gpt-4o-mini")
 
     async def chat(
-            self,
-            message: str,
-            history: list[Message] | None = None,
-            context: ChatContext | None = None,
+        self,
+        message: str,
+        history: list[Message] | None = None,
+        context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Authenticated chat implementation that provides user-specific responses.
@@ -151,48 +149,66 @@ class MyAuthenticatedChat(ChatInterface):
         )
 
         # Create user-specific state update
-        yield self.create_state_update({
-            "authenticated_user_id": user_id,
-            "session_context": context.session_id if context and context.session_id else "unknown",
-            "user_roles": user_roles,
-            "chat_timestamp": asyncio.get_event_loop().time()
-        })
+        yield self.create_state_update(
+            {
+                "authenticated_user_id": user_id,
+                "session_context": context.session_id if context and context.session_id else "unknown",
+                "user_roles": user_roles,
+                "chat_timestamp": asyncio.get_event_loop().time(),
+            }
+        )
 
         # Show a personalized image based on user role
         if "admin" in user_roles:
             yield self.create_image_response(
                 str(uuid.uuid4()),
-                "https://media.istockphoto.com/id/1300845620/photo/user-icon-human-person-symbol-social-profile-icon-avatar-login-sign-web-user-symbol.jpg"
+                "https://media.istockphoto.com/id/1300845620/photo/user-icon-human-person-symbol-social-profile-icon-avatar-login-sign-web-user-symbol.jpg",
             )
 
         # Role-specific live updates
         role_updates = []
         if "admin" in user_roles:
-            role_updates.extend([
-                self.create_live_update("admin_0", LiveUpdateType.START, "🔧 [ADMIN] Accessing admin resources..."),
-                self.create_live_update(
-                    "admin_0", LiveUpdateType.FINISH, "🔧 [ADMIN] Admin resources loaded",
-                    "Full system access granted."
-                ),
-            ])
+            role_updates.extend(
+                [
+                    self.create_live_update("admin_0", LiveUpdateType.START, "🔧 [ADMIN] Accessing admin resources..."),
+                    self.create_live_update(
+                        "admin_0",
+                        LiveUpdateType.FINISH,
+                        "🔧 [ADMIN] Admin resources loaded",
+                        "Full system access granted.",
+                    ),
+                ]
+            )
 
         if "moderator" in user_roles:
-            role_updates.extend([
-                self.create_live_update("mod_1", LiveUpdateType.START, "🛡️ [MODERATOR] Checking content policies..."),
-                self.create_live_update(
-                    "mod_1", LiveUpdateType.FINISH, "🛡️ [MODERATOR] Content policy check complete",
-                    "All content meets guidelines."
-                ),
-            ])
+            role_updates.extend(
+                [
+                    self.create_live_update(
+                        "mod_1", LiveUpdateType.START, "🛡️ [MODERATOR] Checking content policies..."
+                    ),
+                    self.create_live_update(
+                        "mod_1",
+                        LiveUpdateType.FINISH,
+                        "🛡️ [MODERATOR] Content policy check complete",
+                        "All content meets guidelines.",
+                    ),
+                ]
+            )
 
         # Standard user updates
-        role_updates.extend([
-            self.create_live_update("user_2", LiveUpdateType.START, f"🤖 [CHAT] Processing message for {username}..."),
-            self.create_live_update(
-                "user_2", LiveUpdateType.FINISH, f"🤖 [CHAT] Message processed",
-                f"Generating personalized response for {full_name}."
-            ),
-        ])
+        role_updates.extend(
+            [
+                self.create_live_update(
+                    "user_2", LiveUpdateType.START, f"🤖 [CHAT] Processing message for {username}..."
+                ),
+                self.create_live_update(
+                    "user_2",
+                    LiveUpdateType.FINISH,
+                    f"🤖 [CHAT] Message processed",
+                    f"Generating personalized response for {full_name}.",
+                ),
+            ]
+        )
 
         for live_update in role_updates:
             yield live_update
@@ -217,8 +233,10 @@ class MyAuthenticatedChat(ChatInterface):
             yield self.create_text_response(chunk)
 
         # Role-specific followup suggestions
-        followup_messages = [f"Tell me about my user profile",
-                             f"What can I do as a {user_roles[0] if user_roles else 'user'}?"]
+        followup_messages = [
+            f"Tell me about my user profile",
+            f"What can I do as a {user_roles[0] if user_roles else 'user'}?",
+        ]
 
         if "admin" in user_roles:
             followup_messages.extend(["Show admin dashboard", "Manage user permissions"])
@@ -239,7 +257,7 @@ def create_auth_backend():
             "email": "admin@example.com",
             "full_name": "System Administrator",
             "roles": ["admin", "moderator", "user"],
-            "metadata": {"department": "IT", "clearance_level": "high"}
+            "metadata": {"department": "IT", "clearance_level": "high"},
         },
         {
             "username": "moderator",
@@ -247,7 +265,7 @@ def create_auth_backend():
             "email": "mod@example.com",
             "full_name": "Community Moderator",
             "roles": ["moderator", "user"],
-            "metadata": {"department": "Community", "shift": "day"}
+            "metadata": {"department": "Community", "shift": "day"},
         },
         {
             "username": "alice",
@@ -255,7 +273,7 @@ def create_auth_backend():
             "email": "alice@example.com",
             "full_name": "Alice Johnson",
             "roles": ["user"],
-            "metadata": {"department": "Marketing", "join_date": "2024-01-15"}
+            "metadata": {"department": "Marketing", "join_date": "2024-01-15"},
         },
         {
             "username": "bob",
@@ -263,8 +281,8 @@ def create_auth_backend():
             "email": "bob@example.com",
             "full_name": "Bob Smith",
             "roles": ["user"],
-            "metadata": {"department": "Sales", "territory": "North America"}
-        }
+            "metadata": {"department": "Sales", "territory": "North America"},
+        },
     ]
 
     return ListAuthBackend(users)
@@ -279,7 +297,7 @@ def create_api():
         chat_interface=type(chat_interface),
         auth_backend=auth_backend,
         cors_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-        debug_mode=True
+        debug_mode=True,
     )
 
     return api
