@@ -12,6 +12,7 @@ import {
 import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
+import { useAuthStore } from "../../plugins/AuthPlugin/contexts/AuthStoreContext/useAuthStore";
 
 export default function Chat() {
   const {
@@ -28,6 +29,12 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
+  const authStore = useAuthStore();
+  const [accessToken, isAuthEnabled] = authStore((s) => s.token);
+
+  const authorizedSendMessage = (text: string) => {
+    sendMessage(text, isAuthEnabled && accessToken ? accessToken : undefined);
+  };
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -139,7 +146,7 @@ export default function Chat() {
         </Button>
         <QuickMessageInput
           isLoading={historyIsLoading}
-          submit={sendMessage}
+          submit={authorizedSendMessage}
           stopAnswering={stopAnswering}
           followupMessages={followupMessages}
         />

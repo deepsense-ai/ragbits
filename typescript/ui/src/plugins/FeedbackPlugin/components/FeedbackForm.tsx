@@ -16,6 +16,7 @@ import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 import { ChatMessage } from "../../../types/history";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
+import { useAuthStore } from "../../AuthPlugin/contexts/AuthStoreContext/useAuthStore";
 
 interface FeedbackFormProps {
   message: ChatMessage;
@@ -30,9 +31,12 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(
     FeedbackType.LIKE,
   );
+  const authStore = useAuthStore();
+  const [token, isAuthEnabled] = authStore((s) => s.token);
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
+      Authorization: isAuthEnabled ? `Bearer ${token}` : "",
     },
     method: "POST",
   });

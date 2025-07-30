@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RagbitsClient, FeedbackType } from '../src'
+import { RagbitsClient, FeedbackType, ChatResponseType } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../src'
@@ -478,6 +478,55 @@ describe('RagbitsClient', () => {
 
             // Restore original fetch
             global.fetch = originalFetch
+        })
+
+        it('should handle request with custom headers', async () => {
+            server.use(
+                http.post('http://127.0.0.1:8000/api/chat', ({ request }) => {
+                    const customHeader = request.headers.get('X-Custom-Header')
+                    const message = { type: 'text', content: customHeader }
+                    const encoder = new TextEncoder()
+                    const stream = new ReadableStream({
+                        start(controller) {
+                            controller.enqueue(
+                                encoder.encode(
+                                    `data: ${JSON.stringify(message)}\n\n`
+                                )
+                            )
+                            controller.close()
+                        },
+                    })
+                    return new HttpResponse(stream, {
+                        headers: { 'Content-Type': 'text/event-stream' },
+                    })
+                })
+            )
+
+            const messages: string[] = []
+            client.makeStreamRequest(
+                '/api/chat',
+                { message: 'Start streaming', history: [] },
+                {
+                    onMessage: (data) => {
+                        if (data.type !== ChatResponseType.TEXT) {
+                            return
+                        }
+
+                        messages.push(data.content)
+                    },
+                    onError: () => {},
+                },
+                undefined,
+                {
+                    'X-Custom-Header': 'test-header',
+                }
+            )
+
+            // Wait for message to be captured
+            await new Promise((resolve) => setTimeout(resolve, 100))
+
+            expect(messages).toHaveLength(1)
+            expect(messages[0]).toBe('test-header')
         })
     })
 })
