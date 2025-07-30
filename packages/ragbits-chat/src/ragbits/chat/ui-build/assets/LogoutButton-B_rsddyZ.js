@@ -1,0 +1,1 @@
+import{aY as e,aZ as n,j as t,D as s,e as r,I as u}from"./index-CGTLCg14.js";function i(){const o=e(n,a=>a.logout);return t.jsx(s,{content:"Logout",placement:"bottom",children:t.jsx(r,{isIconOnly:!0,"aria-label":"Logout",variant:"ghost",onPress:o,"data-testid":"logout-button",children:t.jsx(u,{icon:"heroicons:arrow-left-start-on-rectangle"})})})}export{i as default};
