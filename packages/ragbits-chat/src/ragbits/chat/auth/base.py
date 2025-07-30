@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from pydantic import BaseModel
 
-from .models import OAuth2Credentials, User, UserCredentials, UserSession
+from .models import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
 class AuthenticationResult(BaseModel):
@@ -10,7 +10,7 @@ class AuthenticationResult(BaseModel):
 
     success: bool
     user: User | None = None
-    session: UserSession | None = None
+    jwt_token: JWTToken | None = None  # JWT jwt_token for new implementations
     error_message: str | None = None
 
 
@@ -43,26 +43,26 @@ class AuthenticationBackend(ABC):
         """
         pass
 
-    @abstractmethod
-    async def validate_session(self, session_id: str) -> AuthenticationResult:
+    async def validate_token(self, token: str) -> AuthenticationResult:
         """
-        Validate an existing session.
+        Validate a JWT jwt_token.
 
         Args:
-            session_id: The session ID to validate
+            token: The JWT jwt_token to validate
 
         Returns:
-            AuthenticationResult with user and session if valid
+            AuthenticationResult with user if valid
         """
-        pass
+        # Default implementation for backward compatibility
+        return AuthenticationResult(success=False, error_message="JWT validation not implemented")
 
     @abstractmethod
-    async def revoke_session(self, session_id: str) -> bool:
+    async def revoke_token(self, token: str) -> bool:
         """
         Revoke/logout a session.
 
         Args:
-            session_id: The session ID to revoke
+            token: The jwt_token to revoke
 
         Returns:
             True if successfully revoked

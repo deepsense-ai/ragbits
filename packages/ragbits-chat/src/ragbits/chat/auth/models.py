@@ -31,13 +31,11 @@ class OAuth2Credentials(BaseModel):
     expires_at: datetime | None = None
     scope: str | None = None
 
+class JWTToken(BaseModel):
+    """Represents a JWT authentication jwt_token."""
 
-class UserSession(BaseModel):
-    """Represents an active user session."""
-
-    session_id: str
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int  # seconds until expiration
+    refresh_token: str | None = None
     user: User
-    created_at: datetime
-    expires_at: datetime | None = None
-    is_active: bool = True
-    metadata: dict[str, Any] = Field(default_factory=dict)

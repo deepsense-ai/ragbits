@@ -23,6 +23,7 @@ from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
 
 from .auth import AuthenticationBackend, User
+from .auth.models import JWTToken
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
@@ -63,9 +64,9 @@ class LoginResponse(BaseModel):
     """
 
     success: bool = Field(..., description="Whether login was successful")
-    session_id: str | None = Field(None, description="Session ID for authenticated requests")
     user: dict | None = Field(None, description="User information")
     error_message: str | None = Field(None, description="Error message if login failed")
+    jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
 
 
 class LogoutRequest(BaseModel):
@@ -226,8 +227,8 @@ class RagbitsAPI:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # The token should be the session_id
-        auth_result = await self.auth_backend.validate_session(credentials.credentials)
+        # The jwt_token should be the session_id
+        auth_result = await self.auth_backend.validate_token(credentials.credentials)
         if not auth_result.success:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -494,12 +495,13 @@ class RagbitsAPI:
             credentials = UserCredentials(username=request.username, password=request.password)
             auth_result = await self.auth_backend.authenticate_with_credentials(credentials)
 
-            if auth_result.success and auth_result.session:
+            if auth_result.success and auth_result.jwt_token:
                 return JSONResponse(
                     content=LoginResponse(
                         success=True,
-                        session_id=auth_result.session.session_id,
                         user=auth_result.user.model_dump() if auth_result.user else None,
+                        error_message=None,
+                        jwt_token=auth_result.jwt_token,
                     ).model_dump()
                 )
             else:
@@ -507,9 +509,9 @@ class RagbitsAPI:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     content=LoginResponse(
                         success=False,
-                        session_id=None,
                         user=None,
                         error_message=auth_result.error_message or "Invalid credentials",
+                        jwt_token=None,
                     ).model_dump(),
                 )
         except Exception as e:
@@ -517,7 +519,7 @@ class RagbitsAPI:
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content=LoginResponse(
-                    success=False, session_id=None, user=None, error_message="Internal server error"
+                    success=False, user=None, error_message="Internal server error", jwt_token=None,
                 ).model_dump(),
             )
 

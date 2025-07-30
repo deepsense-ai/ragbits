@@ -20,7 +20,6 @@ from ragbits.chat.auth import (
     ListAuthBackend,
     User,
     UserCredentials,
-    UserSession,
 )
 
 __all__ = [
@@ -40,5 +39,4 @@ __all__ = [
     "ListAuthBackend",
     "User",
     "UserCredentials",
-    "UserSession",
 ]
