@@ -529,7 +529,7 @@ class RagbitsAPI:
             raise HTTPException(status_code=500, detail="Authentication not configured")
 
         try:
-            success = await self.auth_backend.revoke_session(request.session_id)
+            success = await self.auth_backend.revoke_token(request.session_id)
             return JSONResponse(content={"success": success})
         except Exception as e:
             logger.error(f"Logout error: {e}")
