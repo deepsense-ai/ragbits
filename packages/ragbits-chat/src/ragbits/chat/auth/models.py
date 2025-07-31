@@ -31,6 +31,7 @@ class OAuth2Credentials(BaseModel):
     expires_at: datetime | None = None
     scope: str | None = None
 
+
 class JWTToken(BaseModel):
     """Represents a JWT authentication jwt_token."""
 

@@ -8,12 +8,12 @@ from pathlib import Path
 from typing import Any, Literal
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, status, Depends
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
@@ -519,7 +519,10 @@ class RagbitsAPI:
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content=LoginResponse(
-                    success=False, user=None, error_message="Internal server error", jwt_token=None,
+                    success=False,
+                    user=None,
+                    error_message="Internal server error",
+                    jwt_token=None,
                 ).model_dump(),
             )
 

@@ -63,7 +63,7 @@ def mock_chat_interface() -> type[MockChatInterface]:
 def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
     """Fixture providing a RagbitsAPI instance with the mock interface."""
     from ragbits.chat.auth.backends import ListAuthBackend
-    
+
     # Set up authentication backend with test users
     test_users = [
         {
@@ -75,7 +75,7 @@ def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
         }
     ]
     auth_backend = ListAuthBackend(users=test_users, jwt_secret="test-secret")
-    
+
     api = RagbitsAPI(mock_chat_interface, auth_backend=auth_backend)
     return api
 
@@ -138,18 +138,14 @@ def test_chat_endpoint(client: TestClient) -> None:
     """Test the chat endpoint returns streaming response."""
     # Authenticate first
     token = authenticate_user(client)
-    
+
     request_data = {
         "message": "Hello",
         "history": [{"role": "user", "content": "Previous message"}],
         "context": {"user_id": "test_user"},
     }
 
-    response = client.post(
-        "/api/chat", 
-        json=request_data,
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     # Check only the main part of the content type, ignoring charset
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -274,7 +270,7 @@ def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> N
     """Test state verification succeeds with valid signature."""
     # Authenticate first
     token = authenticate_user(client)
-    
+
     state = {"user_data": "test_value"}
     signature = api.chat_interface._sign_state(state)
 
@@ -284,11 +280,7 @@ def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> N
         "context": {"state": state, "signature": signature},
     }
 
-    response = client.post(
-        "/api/chat", 
-        json=request_data,
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
 
@@ -297,7 +289,7 @@ def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
     """Test state verification fails with invalid signature."""
     # Authenticate first
     token = authenticate_user(client)
-    
+
     state = {"user_data": "test_value"}
     invalid_signature = "invalid-signature"
 
@@ -307,11 +299,7 @@ def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
         "context": {"state": state, "signature": invalid_signature},
     }
 
-    response = client.post(
-        "/api/chat", 
-        json=request_data,
-        headers={"Authorization": f"Bearer {token}"}
-    )
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid state signature"
 
@@ -361,7 +349,7 @@ def test_logout_endpoint(client: TestClient) -> None:
     """Test the logout endpoint."""
     # First login to get a token
     token = authenticate_user(client)
-    
+
     # Then logout
     response = client.post("/api/auth/logout", json={"session_id": token})
     assert response.status_code == 200

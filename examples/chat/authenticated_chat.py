@@ -204,7 +204,7 @@ class MyAuthenticatedChat(ChatInterface):
                 self.create_live_update(
                     "user_2",
                     LiveUpdateType.FINISH,
-                    f"🤖 [CHAT] Message processed",
+                    "🤖 [CHAT] Message processed",
                     f"Generating personalized response for {full_name}.",
                 ),
             ]
@@ -234,7 +234,7 @@ class MyAuthenticatedChat(ChatInterface):
 
         # Role-specific followup suggestions
         followup_messages = [
-            f"Tell me about my user profile",
+            "Tell me about my user profile",
             f"What can I do as a {user_roles[0] if user_roles else 'user'}?",
         ]
 
@@ -248,7 +248,7 @@ class MyAuthenticatedChat(ChatInterface):
         yield self.create_followup_messages(followup_messages[:4])  # Limit to 4 suggestions
 
 
-def create_auth_backend():
+def create_auth_backend() -> ListAuthBackend:
     """Create and return the authentication backend with example users."""
     users = [
         {
@@ -288,7 +288,7 @@ def create_auth_backend():
     return ListAuthBackend(users)
 
 
-def create_api():
+def create_api() -> RagbitsAPI:
     """Create and configure the authenticated API."""
     auth_backend = create_auth_backend()
     chat_interface = MyAuthenticatedChat()
@@ -303,7 +303,7 @@ def create_api():
     return api
 
 
-def main():
+def main() -> None:
     """Run the authenticated chat API server."""
     api = create_api()
 
