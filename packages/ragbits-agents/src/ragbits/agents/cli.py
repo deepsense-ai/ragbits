@@ -26,6 +26,59 @@ class ChatMessage(Static):
             self.add_class("assistant-message")
 
 
+class StreamingChatMessage(Static):
+    """A widget to display a streaming chat message that can be updated in real-time."""
+
+    def __init__(self, initial_content: str = "", is_user: bool = False, **kwargs: Any) -> None:  # noqa: ANN401
+        super().__init__(initial_content, **kwargs)
+        self.is_user = is_user
+        self.content_buffer = initial_content
+        self.typing_animation_active = False
+        self.typing_dots_count = 0
+        if is_user:
+            self.add_class("user-message")
+        else:
+            self.add_class("assistant-message")
+
+    def start_typing_animation(self) -> None:
+        """Start the typing animation with dots."""
+        self.typing_animation_active = True
+        self.typing_dots_count = 0
+        self._animate_typing()
+
+    def stop_typing_animation(self) -> None:
+        """Stop the typing animation."""
+        self.typing_animation_active = False
+
+    def _animate_typing(self) -> None:
+        """Animate typing dots."""
+        if not self.typing_animation_active:
+            return
+
+        self.typing_dots_count = (self.typing_dots_count % 3) + 1
+        dots = "." * self.typing_dots_count
+        self.update(f"{dots}")
+
+        self.set_timer(0.5, self._animate_typing)
+
+    def append_content(self, new_content: str) -> None:
+        """Append new content to the message and update the display."""
+        if self.typing_animation_active:
+            self.stop_typing_animation()
+            self.content_buffer = ""
+
+        self.content_buffer += new_content
+        self.update(self.content_buffer)
+
+    def set_content(self, content: str) -> None:
+        """Set the complete content of the message."""
+        if self.typing_animation_active:
+            self.stop_typing_animation()
+
+        self.content_buffer = content
+        self.update(self.content_buffer)
+
+
 class ChatApp(App):
     """A Textual app for agent chat interface."""
 
@@ -82,6 +135,7 @@ class ChatApp(App):
     def __init__(self, agent: Agent) -> None:
         super().__init__()
         self.agent = agent
+        self.initial_payload = None
 
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
@@ -91,11 +145,53 @@ class ChatApp(App):
                     if message["role"] in ["assistant", "user"] and message["content"]:
                         yield ChatMessage(message["content"], is_user=message["role"] == "user")
             with Container(id="input-container"):
-                yield Input(placeholder="Type your message... (Ctrl+C to exit)", id="message-input")
+                yield Input(placeholder="Type your message... (Ctrl+q to exit)", id="message-input")
 
-    def on_mount(self) -> None:
+    async def on_mount(self) -> None:
         """Called when app starts."""
         self.query_one("#message-input", Input).focus()
+
+        if hasattr(self, "initial_payload") and self.initial_payload is not None:
+            self.call_after_refresh(self._schedule_initial_payload)
+
+    def _schedule_initial_payload(self) -> None:
+        """Schedule the initial payload processing without blocking the UI."""
+        asyncio.create_task(self._process_initial_payload())
+
+    async def _process_initial_payload(self) -> None:
+        """Process the initial payload in the background after the UI is loaded."""
+        await asyncio.sleep(0.1)
+
+        messages_container = self.query_one("#messages", ScrollableContainer)
+
+        streaming_message = None
+        try:
+            stream = self.agent.run_streaming(self.initial_payload)
+            initial_chat_message = False
+            is_first_message = True
+            async for chunk in stream:
+                if self.initial_payload and not initial_chat_message:
+                    initial_user_message = (
+                        self.agent.prompt.rendered_user_prompt if self.agent.prompt else self.initial_payload
+                    )
+                    await messages_container.mount(ChatMessage(initial_user_message, is_user=True))
+                    initial_chat_message = True
+                if is_first_message:
+                    streaming_message = StreamingChatMessage("", is_user=False)
+                    await messages_container.mount(streaming_message)
+                    messages_container.scroll_end(animate=False)
+                    streaming_message.start_typing_animation()
+                    is_first_message = False
+                if isinstance(chunk, str):
+                    streaming_message.append_content(chunk)
+                    messages_container.scroll_end(animate=False)
+
+        except Exception as e:
+            if streaming_message:
+                await streaming_message.remove()
+            await messages_container.mount(ChatMessage(f"Error: {str(e)}", is_user=False))
+
+        messages_container.scroll_end(animate=False)
 
     @on(Input.Submitted, "#message-input")
     async def send_message(self, event: Input.Submitted) -> None:
@@ -105,43 +201,34 @@ class ChatApp(App):
 
         user_message = event.value
 
-        # Add user message to chat
         messages_container = self.query_one("#messages", ScrollableContainer)
         await messages_container.mount(ChatMessage(user_message, is_user=True))
 
-        # Clear input
         event.input.value = ""
 
-        # Check for exit command
         if user_message.lower() == "exit":
             self.exit()
             return
 
-        # Get agent response
-        typing_message = None
+        streaming_message = None
         try:
-            # Show typing indicator
-            typing_message = ChatMessage("Assistant is typing...", is_user=False)
-            typing_message.add_class("typing")
-            await messages_container.mount(typing_message)
+            streaming_message = StreamingChatMessage("", is_user=False)
+            await messages_container.mount(streaming_message)
             messages_container.scroll_end(animate=False)
 
-            # Get agent response
-            result = await self.agent.run(user_message)
+            stream = self.agent.run_streaming(user_message)
+            streaming_message.start_typing_animation()
 
-            # Remove typing indicator
-            typing_message.remove()
-
-            # Add assistant response
-            await messages_container.mount(ChatMessage(result.content, is_user=False))
+            async for chunk in stream:
+                if isinstance(chunk, str):
+                    streaming_message.append_content(chunk)
+                    messages_container.scroll_end(animate=False)
 
         except Exception as e:
-            # Remove typing indicator if it exists
-            if typing_message:
-                typing_message.remove()
+            if streaming_message:
+                await streaming_message.remove()
             await messages_container.mount(ChatMessage(f"Error: {str(e)}", is_user=False))
 
-        # Scroll to bottom
         messages_container.scroll_end(animate=False)
 
 
@@ -194,17 +281,9 @@ def run(agent_factory: str, payload: str | None = None) -> None:
     agent: Agent = Agent.subclass_from_factory(agent_factory)
     agent.keep_history = True
 
-    asyncio.run(agent.run(_create_prompt_input(agent.prompt, payload)))
-    interactive_agent: Agent = Agent(
-        agent.llm,
-        prompt=None,
-        history=agent.history,
-        keep_history=agent.keep_history,
-        mcp_servers=agent.mcp_servers,
-        default_options=agent.default_options,
-    )
-    interactive_agent.tools = agent.tools
+    app = ChatApp(agent)
 
-    # Launch the chat interface
-    app = ChatApp(interactive_agent)
+    if payload is not None:
+        app.initial_payload = _create_prompt_input(agent.prompt, payload)
+
     app.run()
