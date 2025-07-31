@@ -91,7 +91,7 @@ export default function Layout({
       />
       <div
         className={cn(
-          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          "flex grow flex-col px-4 sm:max-w-[1200px]",
           historyEnabled && "pl-0",
         )}
       >
