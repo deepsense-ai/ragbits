@@ -2,16 +2,48 @@
 
 ## Unreleased
 
-## 1.2.0 (2025-08-01)
+### 🚀 Enhanced User Experience & Core Improvements
 
-### Changed
+This release focuses on significant user experience enhancements, particularly in the chat interface, along with important core improvements including reasoning model support and better attachment handling.
 
-- ragbits-chat updated to version v1.2.0
-- ragbits-cli updated to version v1.2.0
-- ragbits-document-search updated to version v1.2.0
-- ragbits-evaluate updated to version v1.2.0
-- ragbits-guardrails updated to version v1.2.0
-- ragbits-core updated to version v1.2.0
+### ✨ Key Features & Highlights
+
+#### Ragbits UI Major Enhancements
+- **Parallel Conversations:** Support for multiple simultaneous conversations in the UI, enabling users to manage several chat sessions at once.
+- **Persistent Chat History:** Client-side chat history using IndexedDB with redesigned history UI and configurable enabling options.
+- **Image Support:** Full images support in chat messages with an integrated images gallery for rich multimedia conversations.
+- **Persistent User Settings:** User settings now persist across sessions, improving user experience and customization.
+- **Share Functionality:** New share functionality with informative modal, making it easy to share conversations and results.
+- **Enhanced Feedback System:** Feedback indicators on messages with support for `extensions` in chat messages for richer interactions.
+- **Client Routing:** New client-side routing system with ability for plugins to define custom routes, enhancing extensibility.
+- **UI Infrastructure Updates:** Updated TailwindCSS, React, Vite, and tailwind config with missing typography plugin for better styling.
+- **Testing Infrastructure:** Added unit tests for UI's core components, improving code quality and reliability.
+
+#### Core Engine Improvements
+- **Reasoning Models Support:** Added support for reasoning models, enabling more sophisticated AI reasoning capabilities.
+- **Enhanced Attachment API:** New API for attachments in prompts across multiple components (core, document-search, guardrails).
+- **Google Drive Integration:** Native Google Drive support for seamless integration with Google Drive sources.
+- **Batch Generation Support:** Enhanced support for batch generation operations, improving performance for bulk operations.
+- **Enhanced Usage Tracking:** Added LLM Usage to LLMResponseWithMetadata and split usage tracking per model type for better monitoring.
+
+#### Agent Improvements
+- **Native OpenAI Tools Support:** Direct support for OpenAI's native tools, streamlining tool integration.
+- **Agent Context:** Added Context support to Agents for better state management and conversation handling.
+
+#### Bug Fixes & Stability
+- **Cost Calculation Fixes:** Resolved issues with cost calculation for some models.
+- **Tool Call Arguments:** Fixed improper conversion to JSON of tool call arguments.
+- **Dependency Management:** Fixed double OpenAI optional dependency version mismatch in guardrails.
+
+#### Developer Experience
+- **Enhanced Testing:** Comprehensive unit testing for UI components ensures better code quality.
+- **Improved Configuration:** Better configuration options for user settings and UI customization.
+
+### Technical Improvements
+- Modern frontend stack with updated dependencies
+- Improved error handling and stability
+- Enhanced monitoring and usage tracking capabilities
+- Better separation of concerns in UI architecture
 
 ## 1.1.0 (2025-07-09)
 
