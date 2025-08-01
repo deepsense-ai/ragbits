@@ -11,7 +11,7 @@ pip install ragbits
 ```
 
 ## Example Usage
-The following example assumes that `ragbits-core` is installed and that the current ddirectory contains a `song_prompt.py` file with a prompt class named `SongPrompt`, as defined in the [Quickstart Guide](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#making-the-prompt-dynamic).
+The following example assumes that `ragbits-core` is installed and that the current directory contains a `song_prompt.py` file with a prompt class named `SongPrompt`, as defined in the [Quickstart Guide](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#making-the-prompt-dynamic).
 
 The example demonstrates how to execute the prompt using the `ragbits` CLI tool.
 The left side of the table shows the system and user prompts (rendered with placeholders replaced by the provided values), and the right side shows the generated response from the Large Language Model.
