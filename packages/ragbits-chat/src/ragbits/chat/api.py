@@ -215,9 +215,6 @@ class RagbitsAPI:
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
 
-    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
-        """Handle chat message requests with metrics tracking."""
-        start_time = time.time()
     async def _validate_authentication(self, credentials: HTTPAuthorizationCredentials | None) -> User | None:
         """Validate authentication credentials and return user if valid."""
         if not self.auth_backend:
