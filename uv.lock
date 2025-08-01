@@ -5185,7 +5185,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.3,<2.0.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]
