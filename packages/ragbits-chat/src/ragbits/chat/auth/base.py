@@ -43,6 +43,7 @@ class AuthenticationBackend(ABC):
         """
         pass
 
+    @abstractmethod
     async def validate_token(self, token: str) -> AuthenticationResult:
         """
         Validate a JWT jwt_token.
@@ -54,7 +55,7 @@ class AuthenticationBackend(ABC):
             AuthenticationResult with user if valid
         """
         # Default implementation for backward compatibility
-        return AuthenticationResult(success=False, error_message="JWT validation not implemented")
+        pass
 
     @abstractmethod
     async def revoke_token(self, token: str) -> bool:
@@ -69,9 +70,3 @@ class AuthenticationBackend(ABC):
         """
         pass
 
-    async def setup(self) -> None:
-        """
-        Setup the authentication backend.
-        Called during initialization, can be overridden for setup logic.
-        """
-        pass

@@ -111,8 +111,6 @@ class RagbitsAPI:
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await self.chat_interface.setup()
-            if self.auth_backend:
-                await self.auth_backend.setup()
             yield
 
         self.app = FastAPI(lifespan=lifespan)
@@ -152,6 +150,8 @@ class RagbitsAPI:
 
     def setup_routes(self) -> None:
         """Defines API routes."""
+        # Create security dependency variable to avoid B008 linting error
+        security_dependency = Depends(self.security) if self.security else None
 
         @self.app.get("/", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
@@ -162,14 +162,14 @@ class RagbitsAPI:
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(
             request: ChatMessageRequest,
-            credentials: HTTPAuthorizationCredentials | None = Depends(self.security) if self.security else None,
+            credentials: HTTPAuthorizationCredentials | None = security_dependency,
         ) -> StreamingResponse:
             return await self._handle_chat_message(request, credentials)
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
         async def feedback(
             request: FeedbackRequest,
-            credentials: HTTPAuthorizationCredentials | None = Depends(self.security) if self.security else None,
+            credentials: HTTPAuthorizationCredentials | None = security_dependency,
         ) -> JSONResponse:
             return await self._handle_feedback(request, credentials)
 
@@ -238,6 +238,41 @@ class RagbitsAPI:
 
         return auth_result.user
 
+    @staticmethod
+    def _prepare_chat_context(
+        request: ChatMessageRequest,
+        authenticated_user: User | None,
+        credentials: HTTPAuthorizationCredentials | None,
+    ) -> ChatContext:
+        """Prepare and validate chat context from request."""
+        chat_context = ChatContext(**request.context)
+
+        # Add session_id to context if authenticated
+        if authenticated_user and credentials:
+            chat_context.session_id = credentials.credentials
+            chat_context.state["authenticated_user"] = authenticated_user
+
+        # Verify state signature if provided
+        if "state" in request.context and "signature" in request.context:
+            state = request.context["state"]
+            signature = request.context["signature"]
+            if not ChatInterface.verify_state(state, signature):
+                logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
+                record_metric(
+                    ChatCounterMetric.API_ERROR_COUNT,
+                    1,
+                    metric_type=MetricType.COUNTER,
+                    endpoint="/api/chat",
+                    status_code="400",
+                    error_type="invalid_state_signature",
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid state signature",
+                )
+
+        return chat_context
+
     async def _handle_chat_message(
         self, request: ChatMessageRequest, credentials: HTTPAuthorizationCredentials | None = None
     ) -> StreamingResponse:  # noqa: PLR0915
@@ -264,33 +299,8 @@ class RagbitsAPI:
                 )
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
-            # Convert request context to ChatContext
-            chat_context = ChatContext(**request.context)
-
-            # Add session_id to context if authenticated
-            if authenticated_user and credentials:
-                chat_context.session_id = credentials.credentials
-                chat_context.state["authenticated_user"] = authenticated_user
-
-            # Verify state signature if provided
-            if "state" in request.context and "signature" in request.context:
-                state = request.context["state"]
-                signature = request.context["signature"]
-                if not ChatInterface.verify_state(state, signature):
-                    logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
-                    record_metric(
-                        ChatCounterMetric.API_ERROR_COUNT,
-                        1,
-                        metric_type=MetricType.COUNTER,
-                        endpoint="/api/chat",
-                        status_code="400",
-                        error_type="invalid_state_signature",
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid state signature",
-                    )
-                # Remove the signature from context after verification (it's already parsed into ChatContext)
+            # Prepare chat context
+            chat_context = RagbitsAPI._prepare_chat_context(request, authenticated_user, credentials)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
