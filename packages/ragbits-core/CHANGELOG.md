@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add lazy loading of Local and LightLLM (#845)
 - Add support for Reasoning models (#752)
 - Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
