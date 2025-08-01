@@ -1,14 +1,16 @@
 import asyncio
 import json
+from collections.abc import Generator
 from typing import Any
 
 import typer
 from textual import on
 from textual.app import App, ComposeResult
-from textual.containers import Container, ScrollableContainer, Vertical
-from textual.widgets import Input, Static
+from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
+from textual.widgets import Input, Label, Static
 
 from ragbits.agents import Agent
+from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 
 agents_app = typer.Typer(no_args_is_help=True)
@@ -24,6 +26,35 @@ class ChatMessage(Static):
             self.add_class("user-message")
         else:
             self.add_class("assistant-message")
+
+
+class UsagePanel(Vertical):
+    """A widget to display token usage information."""
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.prompt_tokens = Label("Prompt Tokens: 0")
+        self.completion_tokens = Label("Completion Tokens: 0")
+        self.total_tokens = Label("Total Tokens: 0")
+        self._prompt_tokens = 0
+        self._completion_tokens = 0
+        self._total_tokens = 0
+
+    def compose(self) -> Generator[Label]:
+        """Composes Usage Panel"""
+        yield Label("Usage", classes="usage-header")
+        yield self.prompt_tokens
+        yield self.completion_tokens
+        yield self.total_tokens
+
+    def update_usage(self, usage: Usage) -> None:
+        """Update the displayed usage information."""
+        self._prompt_tokens += usage.prompt_tokens
+        self._completion_tokens += usage.completion_tokens
+        self._total_tokens += usage.total_tokens
+        self.prompt_tokens.update(f"Prompt Tokens: {self._prompt_tokens}")
+        self.completion_tokens.update(f"Completion Tokens: {self._completion_tokens}")
+        self.total_tokens.update(f"Total Tokens: {self._total_tokens}")
 
 
 class StreamingChatMessage(Static):
@@ -87,10 +118,23 @@ class ChatApp(App):
         layout: vertical;
     }
 
-    #messages {
+    #main-container {
+        layout: horizontal;
         height: 1fr;
+    }
+
+    #messages {
+        width: 1fr;
+        height: 100%;
         padding: 1;
         border: solid $primary;
+    }
+
+    #usage-panel {
+        width: 40;
+        height: 100%;
+        padding: 1;
+        border: solid $secondary;
     }
 
     #input-container {
@@ -130,6 +174,11 @@ class ChatApp(App):
     #message-input:focus {
         border: thick $accent;
     }
+
+    .usage-header {
+        text-style: bold;
+        margin-bottom: 1;
+    }
     """
 
     def __init__(self, agent: Agent) -> None:
@@ -140,10 +189,12 @@ class ChatApp(App):
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         with Vertical():
-            with ScrollableContainer(id="messages"):
-                for message in self.agent.history:
-                    if message["role"] in ["assistant", "user"] and message["content"]:
-                        yield ChatMessage(message["content"], is_user=message["role"] == "user")
+            with Horizontal(id="main-container"):
+                with ScrollableContainer(id="messages"):
+                    for message in self.agent.history:
+                        if message["role"] in ["assistant", "user"] and message["content"]:
+                            yield ChatMessage(message["content"], is_user=message["role"] == "user")
+                yield UsagePanel(id="usage-panel")
             with Container(id="input-container"):
                 yield Input(placeholder="Type your message... (Ctrl+q to exit)", id="message-input")
 
@@ -186,6 +237,9 @@ class ChatApp(App):
                     streaming_message.append_content(chunk)
                     messages_container.scroll_end(animate=False)
 
+            if stream.usage:
+                self.query_one(UsagePanel).update_usage(stream.usage)
+
         except Exception as e:
             if streaming_message:
                 await streaming_message.remove()
@@ -223,6 +277,9 @@ class ChatApp(App):
                 if isinstance(chunk, str):
                     streaming_message.append_content(chunk)
                     messages_container.scroll_end(animate=False)
+
+            if stream.usage:
+                self.query_one(UsagePanel).update_usage(stream.usage)
 
         except Exception as e:
             if streaming_message:
