@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any, Literal
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -21,6 +22,8 @@ from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
 
+from .auth import AuthenticationBackend, User
+from .auth.models import JWTToken
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
@@ -46,6 +49,34 @@ class FeedbackRequest(BaseModel):
     payload: dict = Field(default_factory=dict, description="Additional feedback details")
 
 
+class LoginRequest(BaseModel):
+    """
+    Request body for user login
+    """
+
+    username: str = Field(..., description="Username")
+    password: str = Field(..., description="Password")
+
+
+class LoginResponse(BaseModel):
+    """
+    Response body for successful login
+    """
+
+    success: bool = Field(..., description="Whether login was successful")
+    user: dict | None = Field(None, description="User information")
+    error_message: str | None = Field(None, description="Error message if login failed")
+    jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
+
+
+class LogoutRequest(BaseModel):
+    """
+    Request body for user logout
+    """
+
+    session_id: str = Field(..., description="Session ID to logout")
+
+
 class RagbitsAPI:
     """
     RagbitsAPI class for running API with Demo UI for testing purposes
@@ -57,6 +88,7 @@ class RagbitsAPI:
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
         debug_mode: bool = False,
+        auth_backend: AuthenticationBackend | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -67,11 +99,14 @@ class RagbitsAPI:
             cors_origins: List of allowed CORS origins. If None, defaults to common development origins.
             ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
             debug_mode: Flag enabling debug tools in the default UI
+            auth_backend: Authentication backend for user authentication. If None, no authentication required.
         """
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
         self.debug_mode = debug_mode
+        self.auth_backend = auth_backend
+        self.security = HTTPBearer(auto_error=False) if auth_backend else None
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -115,14 +150,33 @@ class RagbitsAPI:
 
     def setup_routes(self) -> None:
         """Defines API routes."""
+        # Create security dependency variable to avoid B008 linting error
+        security_dependency = Depends(self.security) if self.security else None
 
         @self.app.post("/api/chat", response_class=StreamingResponse)
-        async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
-            return await self._handle_chat_message(request)
+        async def chat_message(
+            request: ChatMessageRequest,
+            credentials: HTTPAuthorizationCredentials | None = security_dependency,
+        ) -> StreamingResponse:
+            return await self._handle_chat_message(request, credentials)
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
-        async def feedback(request: FeedbackRequest) -> JSONResponse:
-            return await self._handle_feedback(request)
+        async def feedback(
+            request: FeedbackRequest,
+            credentials: HTTPAuthorizationCredentials | None = security_dependency,
+        ) -> JSONResponse:
+            return await self._handle_feedback(request, credentials)
+
+        # Authentication routes
+        if self.auth_backend:
+
+            @self.app.post("/api/auth/login", response_class=JSONResponse)
+            async def login(request: LoginRequest) -> JSONResponse:
+                return await self._handle_login(request)
+
+            @self.app.post("/api/auth/logout", response_class=JSONResponse)
+            async def logout(request: LogoutRequest) -> JSONResponse:
+                return await self._handle_logout(request)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -147,6 +201,10 @@ class RagbitsAPI:
                 "user_settings": {"form": user_settings_config},
                 "debug_mode": self.debug_mode,
                 "conversation_history": self.chat_interface.conversation_history,
+                "authentication": {
+                    "enabled": self.auth_backend is not None,
+                    "type": type(self.auth_backend).__name__ if self.auth_backend else None,
+                },
             }
 
             return JSONResponse(content=config_dict)
@@ -157,7 +215,67 @@ class RagbitsAPI:
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
 
-    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
+    async def _validate_authentication(self, credentials: HTTPAuthorizationCredentials | None) -> User | None:
+        """Validate authentication credentials and return user if valid."""
+        if not self.auth_backend:
+            return None
+
+        if not credentials:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # The jwt_token should be the session_id
+        auth_result = await self.auth_backend.validate_token(credentials.credentials)
+        if not auth_result.success:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=auth_result.error_message or "Invalid session",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        return auth_result.user
+
+    @staticmethod
+    def _prepare_chat_context(
+        request: ChatMessageRequest,
+        authenticated_user: User | None,
+        credentials: HTTPAuthorizationCredentials | None,
+    ) -> ChatContext:
+        """Prepare and validate chat context from request."""
+        chat_context = ChatContext(**request.context)
+
+        # Add session_id to context if authenticated
+        if authenticated_user and credentials:
+            chat_context.session_id = credentials.credentials
+            chat_context.state["authenticated_user"] = authenticated_user
+
+        # Verify state signature if provided
+        if "state" in request.context and "signature" in request.context:
+            state = request.context["state"]
+            signature = request.context["signature"]
+            if not ChatInterface.verify_state(state, signature):
+                logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
+                record_metric(
+                    ChatCounterMetric.API_ERROR_COUNT,
+                    1,
+                    metric_type=MetricType.COUNTER,
+                    endpoint="/api/chat",
+                    status_code="400",
+                    error_type="invalid_state_signature",
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid state signature",
+                )
+
+        return chat_context
+
+    async def _handle_chat_message(
+        self, request: ChatMessageRequest, credentials: HTTPAuthorizationCredentials | None = None
+    ) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 
@@ -167,6 +285,9 @@ class RagbitsAPI:
         )
 
         try:
+            # Validate authentication if required
+            authenticated_user = await self._validate_authentication(credentials)
+
             if not self.chat_interface:
                 record_metric(
                     ChatCounterMetric.API_ERROR_COUNT,
@@ -178,28 +299,8 @@ class RagbitsAPI:
                 )
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
-            # Convert request context to ChatContext
-            chat_context = ChatContext(**request.context)
-
-            # Verify state signature if provided
-            if "state" in request.context and "signature" in request.context:
-                state = request.context["state"]
-                signature = request.context["signature"]
-                if not ChatInterface.verify_state(state, signature):
-                    logger.warning(f"Invalid state signature received for message {chat_context.message_id}")
-                    record_metric(
-                        ChatCounterMetric.API_ERROR_COUNT,
-                        1,
-                        metric_type=MetricType.COUNTER,
-                        endpoint="/api/chat",
-                        status_code="400",
-                        error_type="invalid_state_signature",
-                    )
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid state signature",
-                    )
-                # Remove the signature from context after verification (it's already parsed into ChatContext)
+            # Prepare chat context
+            chat_context = RagbitsAPI._prepare_chat_context(request, authenticated_user, credentials)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
@@ -303,7 +404,9 @@ class RagbitsAPI:
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
-    async def _handle_feedback(self, request: FeedbackRequest) -> JSONResponse:
+    async def _handle_feedback(
+        self, request: FeedbackRequest, credentials: HTTPAuthorizationCredentials | None = None
+    ) -> JSONResponse:
         """Handle feedback requests with metrics tracking."""
         start_time = time.time()
 
@@ -317,6 +420,9 @@ class RagbitsAPI:
         )
 
         try:
+            # Validate authentication if required
+            await self._validate_authentication(credentials)
+
             if not self.chat_interface:
                 record_metric(
                     ChatCounterMetric.API_ERROR_COUNT,
@@ -387,6 +493,63 @@ class RagbitsAPI:
                 error_type=type(e).__name__,
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
+
+    async def _handle_login(self, request: LoginRequest) -> JSONResponse:
+        """Handle user login requests."""
+        if not self.auth_backend:
+            raise HTTPException(status_code=500, detail="Authentication not configured")
+
+        try:
+            from .auth.models import UserCredentials
+
+            credentials = UserCredentials(username=request.username, password=request.password)
+            auth_result = await self.auth_backend.authenticate_with_credentials(credentials)
+
+            if auth_result.success and auth_result.jwt_token:
+                return JSONResponse(
+                    content=LoginResponse(
+                        success=True,
+                        user=auth_result.user.model_dump() if auth_result.user else None,
+                        error_message=None,
+                        jwt_token=auth_result.jwt_token,
+                    ).model_dump()
+                )
+            else:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content=LoginResponse(
+                        success=False,
+                        user=None,
+                        error_message=auth_result.error_message or "Invalid credentials",
+                        jwt_token=None,
+                    ).model_dump(),
+                )
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content=LoginResponse(
+                    success=False,
+                    user=None,
+                    error_message="Internal server error",
+                    jwt_token=None,
+                ).model_dump(),
+            )
+
+    async def _handle_logout(self, request: LogoutRequest) -> JSONResponse:
+        """Handle user logout requests."""
+        if not self.auth_backend:
+            raise HTTPException(status_code=500, detail="Authentication not configured")
+
+        try:
+            success = await self.auth_backend.revoke_token(request.session_id)
+            return JSONResponse(content={"success": success})
+        except Exception as e:
+            logger.error(f"Logout error: {e}")
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={"success": False, "error_message": "Internal server error"},
+            )
 
     @staticmethod
     async def _chat_response_to_sse(
