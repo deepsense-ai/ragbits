@@ -4,46 +4,37 @@
 
 ### 🚀 Enhanced User Experience & Core Improvements
 
-This release focuses on significant user experience enhancements, particularly in the chat interface, along with important core improvements including reasoning model support and better attachment handling.
+This release delivers a comprehensive upgrade across the entire Ragbits ecosystem, featuring major UI enhancements with image support and conversation history, powerful new agent capabilities with native OpenAI tools integration, advanced core engine improvements including reasoning models and Google Drive integration, plus important stability fixes and performance optimizations.
 
 ### ✨ Key Features & Highlights
 
 #### Ragbits UI Major Enhancements
+- **Image Support:** Attach images to responses from your chatbot! Ragbits will create a gallery under agent response with all the images.
+- **Conversation History:** In Ragbits 1.2.0 history of conversations can be saved client-side, so your users can go back to the chat they never ended!
+- **Share Functionality:** New share functionality you can copy payload to the clipboard and send it to somebody else - pasting the payload will open exactly the same chat as you
 - **Parallel Conversations:** Support for multiple simultaneous conversations in the UI, enabling users to manage several chat sessions at once.
-- **Persistent Chat History:** Client-side chat history using IndexedDB with redesigned history UI and configurable enabling options.
-- **Image Support:** Full images support in chat messages with an integrated images gallery for rich multimedia conversations.
-- **Persistent User Settings:** User settings now persist across sessions, improving user experience and customization.
-- **Share Functionality:** New share functionality with informative modal, making it easy to share conversations and results.
-- **Enhanced Feedback System:** Feedback indicators on messages with support for `extensions` in chat messages for richer interactions.
-- **Client Routing:** New client-side routing system with ability for plugins to define custom routes, enhancing extensibility.
-- **UI Infrastructure Updates:** Updated TailwindCSS, React, Vite, and tailwind config with missing typography plugin for better styling.
-- **Testing Infrastructure:** Added unit tests for UI's core components, improving code quality and reliability.
+- **Other Improvements:**
+    - User settings now persist across sessions
+    - UI elements on messages behave better when loading
+    - Updated Tailwind, React, and Vite
+    - More testing
 
 #### Core Engine Improvements
-- **Reasoning Models Support:** Added support for reasoning models, enabling more sophisticated AI reasoning capabilities.
-- **Enhanced Attachment API:** New API for attachments in prompts across multiple components (core, document-search, guardrails).
-- **Google Drive Integration:** Native Google Drive support for seamless integration with Google Drive sources.
-- **Batch Generation Support:** Enhanced support for batch generation operations, improving performance for bulk operations.
-- **Enhanced Usage Tracking:** Added LLM Usage to LLMResponseWithMetadata and split usage tracking per model type for better monitoring.
+- **Reasoning Models Support:** Added support for reasoning models and capturing their thinking blocks.
+- **Enhanced Attachment API:** New API for attaching images / files in prompts.
+- **Enhanced Usage Tracking:** Split usage per model to calculate final cost.
+- **Google Drive Integration:** Added Google Drive Source.
+- **Batch Generation Support:** Added batch generation in LLM, improving performance for bulk operations.
 
 #### Agent Improvements
-- **Native OpenAI Tools Support:** Direct support for OpenAI's native tools, streamlining tool integration.
-- **Agent Context:** Added Context support to Agents for better state management and conversation handling.
+- **Native OpenAI Tools Support:** Direct support for OpenAI's native tools: web_search, code_interpreter, image_generation.
+- **Agent Context:** Added Context object to Agents for easier state management and usage tracking.
+- **Token-based limits for agents**: Agents can now stop their processing when they reach X amount of tokens used.
 
 #### Bug Fixes & Stability
 - **Cost Calculation Fixes:** Resolved issues with cost calculation for some models.
 - **Tool Call Arguments:** Fixed improper conversion to JSON of tool call arguments.
-- **Dependency Management:** Fixed double OpenAI optional dependency version mismatch in guardrails.
 
-#### Developer Experience
-- **Enhanced Testing:** Comprehensive unit testing for UI components ensures better code quality.
-- **Improved Configuration:** Better configuration options for user settings and UI customization.
-
-### Technical Improvements
-- Modern frontend stack with updated dependencies
-- Improved error handling and stability
-- Enhanced monitoring and usage tracking capabilities
-- Better separation of concerns in UI architecture
 
 ## 1.1.0 (2025-07-09)
 
@@ -81,14 +72,14 @@ This release brings agentic capabilities to Ragbits, together with major user in
 - **Weaviate VectorStore:** Use Weaviate as a fully compatible VectorStore backend across Ragbits components such as document-search.
 
 #### Developer Experience & Other Improvements
-- **RagbitsChatClient:** Introduced a new `RagbitsChatClient` for seamless interaction with RagbitsAPI from Python. Makes building custom python clients and integrations easier than ever.
+- **RagbitsChatClient:** Introduced a new `RagbitsChatClient` for seamless interaction with RagbitsAPI from Python. Makes building custom Python clients and integrations easier than ever.
 
 
 ## 1.0.0 (2025-06-04)
 
 ### 🎉 Major Release
 
-This is the first stable release of ragbits, marking a significant milestone in the project's development.
+This is the first stable release of Ragbits, marking a significant milestone in the project's development.
 The v1.0.0 release represents a mature, production-ready framework for building GenAI applications.
 
 ### 🚀 New Features
@@ -105,7 +96,7 @@ The v1.0.0 release represents a mature, production-ready framework for building 
 - **Utilities**: Added batched() helper method to utils
 
 #### ragbits-document-search
-- **Advanced Document Processing**: Switch to docling as default document parser for improved document handling
+- **Advanced Document Processing**: Switched to docling as default document parser for improved document handling
 - **Batching Support**: Added elements batching for ingest strategies to improve performance
 - **Document Types**: Added support for JSONL file type and improved document file type detection
 - **Reranking Enhancements**:
@@ -324,21 +315,21 @@ The v1.0.0 release represents a mature, production-ready framework for building 
 - ragbits-conversations updated to version v0.10.0
 - ragbits-document-search updated to version v0.10.0
   - BREAKING CHANGE: Processing strategies refactored to ingest strategies (#394)
-  - Compability with the new Vector Store interface from ragbits-core (#288)
+  - Compatibility with the new Vector Store interface from ragbits-core (#288)
   - Fix docstring formatting to resolve Griffe warnings
   - Introduce intermediate image elements (#139)
   - Add HTTP source type, which downloads a file from the provided URL (#397)
   - added traceable
 - ragbits-evaluate updated to version v0.10.0
-  - Compability with the new Vector Store interface from ragbits-core (#288)
-  - chore: fix typo in README.
-  - fix typos in doc strings
+  - Compatibility with the new Vector Store interface from ragbits-core (#288)
+  - Chore: fix typo in README
+  - Fix typos in doc strings
 - ragbits-guardrails updated to version v0.10.0
 - ragbits-core updated to version v0.10.0
   - BREAKING CHANGE: Vector Stores are now responsible for creating embeddings (#288)
   - Qdrant vector store can now be serialized during Ray processing (#394)
   - Improve cli trace handler
-  - Add traceable to some method
+  - Add traceable to some methods
   - Add support for images in few shot prompts (#155)
   - Add instruction on how to use local servers for LLMs (#395).
   - Introduce intermediate image elements (#139)
@@ -351,19 +342,19 @@ The v1.0.0 release represents a mature, production-ready framework for building 
 
 - ragbits-cli updated to version v0.9.0
 - ragbits-conversations updated to version v0.9.0
-  - Add support to persisting history of conversations using sqlalchemy (#354).
+  - Add support for persisting history of conversations using sqlalchemy (#354).
 - ragbits-document-search updated to version v0.9.0
   - Add MultiQueryRetrieval (#311).
   - Add AWS S3 source integration (#339).
   - Add Azure BlobStorage source integration (#340).
 - ragbits-evaluate updated to version v0.9.0
-  - Add cli for document search evaluation added (#356)
+  - Add CLI for document search evaluation (#356)
   - Add local data loader (#334).
 - ragbits-guardrails updated to version v0.9.0
 - ragbits-core updated to version v0.9.0
-  - Add support to fastembed dense & sparse embeddings.
+  - Add support for fastembed dense & sparse embeddings.
   - Rename "default configuration" to "preferred configuration" (#361).
-  - Allow to pass str or dict to LLM.generate() (#286)
+  - Allow passing str or dict to LLM.generate() (#286)
   - Fix: changed variable type from Filter to WhereQuery in the Qdrant vector store in list method.
   - Rename all embedders to have `Embedder` in their name (instead of `Embeddings`).
 
@@ -448,7 +439,7 @@ The v1.0.0 release represents a mature, production-ready framework for building 
 - ragbits-cli updated to version v0.5.0
   - Add global flag to specify output type: text or json (#232).
 - ragbits-document-search updated to version v0.5.0
-  - Distributed ingestion with usage of https://www.ray.io/ (#207)
+  - Distributed ingestion using https://www.ray.io/ (#207)
   - Documents can be now replaced in existing VectorStore (#210)
   - Providers are now loaded dynamically (#219)
 - ragbits-core updated to version v0.5.0
@@ -523,7 +514,7 @@ The v1.0.0 release represents a mature, production-ready framework for building 
   - Automatic detection of document type (#99).
   - LLM-based query rephrasing (#115).
   - Batch ingestion from sources (#112).
-  - Support to image formats (#121).
+  - Support for image formats (#121).
   - HuggingFace sources (#106).
 - ragbits-core updated to version v0.2.0
   - Project README.md (#103).
@@ -559,5 +550,5 @@ The v1.0.0 release represents a mature, production-ready framework for building 
 
 - ragbits-document-search v0.1.0:
   - Initial release of the package.
-  - Introduce core modules: documents, ingestion and retrival.
+  - Introduce core modules: documents, ingestion and retrieval.
   - Unstructured integration.
