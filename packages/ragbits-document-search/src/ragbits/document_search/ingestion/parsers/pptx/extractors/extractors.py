@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any
@@ -13,13 +12,7 @@ from pptx.shapes.picture import Picture
 from pptx.slide import Slide
 
 from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import ElementLocation, TextElement
-from ragbits.document_search.ingestion.parsers.pptx.exceptions import (
-    PptxExtractorError,
-    PptxSlideProcessingError,
-)
-
-logger = logging.getLogger(__name__)
+from ragbits.document_search.documents.element import Element, ElementLocation, ImageElement, TextElement
 
 
 class BasePptxExtractor(ABC):
@@ -31,16 +24,6 @@ class BasePptxExtractor(ABC):
         slides = [slide] if slide else list(presentation.slides)
         return list(enumerate(slides, start=1))
 
-    @staticmethod
-    def _get_shape_info(shape: BaseShape) -> str:
-        """Get descriptive information about a shape for logging purposes."""
-        try:
-            shape_type = getattr(shape, "shape_type", "unknown")
-            shape_name = getattr(shape, "name", "unnamed")
-            shape_id = getattr(shape, "shape_id", "no_id")
-            return f"type={shape_type}, name={shape_name}, id={shape_id}"
-        except Exception:
-            return "unknown_shape"
 
     @staticmethod
     def _create_text_element(
@@ -59,6 +42,38 @@ class BasePptxExtractor(ABC):
 
         return TextElement(element_type=element_type, document_meta=document_meta, location=location, content=content)
 
+    @staticmethod
+    def _get_coordinates(shape: BaseShape | None) -> dict[str, Any]:
+        """Extract coordinates from a shape."""
+        if shape is None:
+            return {}
+        try:
+            return {"left": shape.left, "top": shape.top, "width": shape.width, "height": shape.height}
+        except AttributeError:
+            return {}
+
+    @staticmethod
+    def _create_image_element(
+        document_meta: DocumentMeta,
+        image_bytes: bytes,
+        slide_idx: int,
+        shape: BaseShape | None = None,
+        description: str | None = None,
+        coordinates: dict[str, Any] | None = None,
+    ) -> ImageElement:
+        """Create an ImageElement with standardized location."""
+        if coordinates is None:
+            coordinates = BasePptxExtractor._get_coordinates(shape)
+
+        location = ElementLocation(page_number=slide_idx, coordinates=coordinates)
+
+        return ImageElement(
+            document_meta=document_meta,
+            location=location,
+            image_bytes=image_bytes,
+            description=description,
+        )
+
     def _extract_from_shapes(
         self,
         presentation: Presentation,
@@ -66,109 +81,32 @@ class BasePptxExtractor(ABC):
         slide: Slide | None,
         content_extractor: Callable[[BaseShape], str | None],
         element_type: str = "text",
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Generic method to extract content from shapes based on extractor."""
-        elements: list[TextElement] = []
-        extractor_name = self.get_extractor_name()
-        total_shapes_processed = 0
-        failed_extractions = 0
-
-        logger.debug(
-            "Starting shape extraction for %s on %d slides",
-            extractor_name,
-            len(list(self._get_slides(presentation, slide))),
-        )
-
+        elements: list[Element] = []
+        
         for slide_idx, sld in self._get_slides(presentation, slide):
-            slide_shapes_count = 0
-            slide_extracted_count = 0
-            slide_failed_count = 0
-
-            try:
-                for shape in sld.shapes:
-                    total_shapes_processed += 1
-                    slide_shapes_count += 1
-
-                    try:
-                        content = content_extractor(shape)
-                        if content and content.strip():
-                            element = self._create_text_element(
-                                element_type=element_type,
-                                document_meta=document_meta,
-                                content=content,
-                                slide_idx=slide_idx,
-                                shape=shape,
-                            )
-                            elements.append(element)
-                            slide_extracted_count += 1
-                            logger.debug(
-                                "Successfully extracted %s content from shape on slide %d", element_type, slide_idx
-                            )
-                    except (AttributeError, TypeError) as e:
-                        failed_extractions += 1
-                        slide_failed_count += 1
-                        shape_info = self._get_shape_info(shape)
-                        logger.warning(
-                            "Failed to extract content from shape on slide %d using %s: %s. Shape: %s",
-                            slide_idx,
-                            extractor_name,
-                            str(e),
-                            shape_info,
-                            exc_info=False,
+            for shape in sld.shapes:
+                try:
+                    content = content_extractor(shape)
+                    if content and content.strip():
+                        element = self._create_text_element(
+                            element_type=element_type,
+                            document_meta=document_meta,
+                            content=content,
+                            slide_idx=slide_idx,
+                            shape=shape,
                         )
-                    except Exception as e:
-                        failed_extractions += 1
-                        slide_failed_count += 1
-                        shape_info = self._get_shape_info(shape)
-                        logger.error(
-                            "Unexpected error extracting content from shape on slide %d using %s: %s. Shape: %s",
-                            slide_idx,
-                            extractor_name,
-                            str(e),
-                            shape_info,
-                            exc_info=True,
-                        )
-
-                logger.debug(
-                    "Slide %d processing complete: %d shapes total, %d extracted, %d failed",
-                    slide_idx,
-                    slide_shapes_count,
-                    slide_extracted_count,
-                    slide_failed_count,
-                )
-
-            except Exception as e:
-                logger.error(
-                    "Failed to process slide %d with %s: %s",
-                    slide_idx,
-                    extractor_name,
-                    str(e),
-                    exc_info=True,
-                )
-                raise PptxSlideProcessingError(extractor_name, slide_idx, e) from e
-
-        success_rate = (
-            ((total_shapes_processed - failed_extractions) / total_shapes_processed * 100)
-            if total_shapes_processed > 0
-            else 100.0
-        )
-
-        logger.info(
-            "%s extraction completed: %d elements extracted, %d total shapes processed, "
-            "%d failed extractions (%.1f%% success rate)",
-            extractor_name,
-            len(elements),
-            total_shapes_processed,
-            failed_extractions,
-            success_rate,
-        )
+                        elements.append(element)
+                except (AttributeError, TypeError):
+                    pass
 
         return elements
 
     @abstractmethod
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract content from the presentation or specific slide."""
 
     @abstractmethod
@@ -188,21 +126,14 @@ class PptxTextExtractor(BasePptxExtractor):
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract text content from the presentation or a specific slide."""
-        logger.debug("Starting text extraction from PPTX document")
-        try:
-            elements = self._extract_from_shapes(
-                presentation=presentation,
-                document_meta=document_meta,
-                slide=slide,
-                content_extractor=self._extract_text_content,
-            )
-            logger.debug("Text extraction completed: %d elements found", len(elements))
-            return elements
-        except Exception as e:
-            logger.error("Text extraction failed: %s", str(e), exc_info=True)
-            raise PptxExtractorError(self.get_extractor_name(), e) from e
+        return self._extract_from_shapes(
+            presentation=presentation,
+            document_meta=document_meta,
+            slide=slide,
+            content_extractor=self._extract_text_content,
+        )
 
     @staticmethod
     def get_extractor_name() -> str:
@@ -224,7 +155,7 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract hyperlink content from the presentation or a specific slide."""
         return self._extract_from_shapes(
             presentation=presentation,
@@ -243,27 +174,32 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
 class PptxImageExtractor(BasePptxExtractor):
     """Extracts image information from shapes."""
 
-    @staticmethod
-    def _extract_image_content(shape: BaseShape) -> str | None:
-        """Extract image content from a shape."""
-        if not isinstance(shape, Picture):
-            return None
-        if not hasattr(shape, "image") or shape.image is None:
-            return None
-        filename = shape.image.filename if hasattr(shape.image, "filename") else "embedded_image"
-        return f"Image: {filename}"
-
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract image content from the presentation or a specific slide."""
-        return self._extract_from_shapes(
-            presentation=presentation,
-            document_meta=document_meta,
-            slide=slide,
-            content_extractor=self._extract_image_content,
-            element_type="image",
-        )
+        elements: list[Element] = []
+        
+        for slide_idx, sld in self._get_slides(presentation, slide):
+            for shape in sld.shapes:
+                try:
+                    if isinstance(shape, Picture) and hasattr(shape, "image") and shape.image is not None:
+                        image_bytes = shape.image.blob
+                        filename = shape.image.filename if hasattr(shape.image, "filename") else "embedded_image"
+                        description = f"Image: {filename}"
+                        
+                        element = self._create_image_element(
+                            document_meta=document_meta,
+                            image_bytes=image_bytes,
+                            slide_idx=slide_idx,
+                            shape=shape,
+                            description=description,
+                        )
+                        elements.append(element)
+                except (AttributeError, TypeError):
+                    pass
+
+        return elements
 
     @staticmethod
     def get_extractor_name() -> str:
@@ -283,7 +219,7 @@ class PptxShapeExtractor(BasePptxExtractor):
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract shape metadata from the presentation or a specific slide."""
         return self._extract_from_shapes(
             presentation=presentation,
@@ -304,38 +240,31 @@ class PptxMetadataExtractor(BasePptxExtractor):
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract metadata from the presentation."""
-        logger.debug("Starting metadata extraction from PPTX document")
-        try:
-            core_properties = presentation.core_properties
-            properties = [
-                ("author", core_properties.author),
-                ("title", core_properties.title),
-                ("subject", core_properties.subject),
-                ("keywords", core_properties.keywords),
-                ("category", core_properties.category),
-                ("created", str(core_properties.created) if core_properties.created else None),
-                ("modified", str(core_properties.modified) if core_properties.modified else None),
-            ]
+        core_properties = presentation.core_properties
+        properties = [
+            ("author", core_properties.author),
+            ("title", core_properties.title),
+            ("subject", core_properties.subject),
+            ("keywords", core_properties.keywords),
+            ("category", core_properties.category),
+            ("created", str(core_properties.created) if core_properties.created else None),
+            ("modified", str(core_properties.modified) if core_properties.modified else None),
+        ]
 
-            elements = []
-            for prop_name, prop_value in properties:
-                if prop_value is not None and str(prop_value).strip():
-                    element = self._create_text_element(
-                        element_type="metadata",
-                        document_meta=document_meta,
-                        content=f"{prop_name}: {prop_value}",
-                        slide_idx=0,
-                    )
-                    elements.append(element)
-                    logger.debug("Extracted metadata property: %s", prop_name)
+        elements: list[Element] = []
+        for prop_name, prop_value in properties:
+            if prop_value is not None and str(prop_value).strip():
+                element = self._create_text_element(
+                    element_type="metadata",
+                    document_meta=document_meta,
+                    content=f"{prop_name}: {prop_value}",
+                    slide_idx=0,
+                )
+                elements.append(element)
 
-            logger.debug("Metadata extraction completed: %d properties found", len(elements))
-            return elements
-        except Exception as e:
-            logger.error("Metadata extraction failed: %s", str(e), exc_info=True)
-            raise PptxExtractorError(self.get_extractor_name(), e) from e
+        return elements
 
     @staticmethod
     def get_extractor_name() -> str:
@@ -348,57 +277,41 @@ class PptxSpeakerNotesExtractor(BasePptxExtractor):
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
-    ) -> list[TextElement]:
+    ) -> list[Element]:
         """Extract speaker notes from the presentation or a specific slide."""
-        logger.debug("Starting speaker notes extraction from PPTX document")
-        try:
-            elements: list[TextElement] = []
-            slides_with_notes = 0
-            total_slides = len(list(self._get_slides(presentation, slide)))
+        elements: list[Element] = []
 
-            for slide_idx, sld in self._get_slides(presentation, slide):
-                try:
-                    if sld.has_notes_slide and sld.notes_slide.notes_text_frame is not None:
-                        notes_slide = sld.notes_slide
-                        notes_text_frame = notes_slide.notes_text_frame
-                        text = getattr(notes_text_frame, "text", None)
-                        text = text.strip() if text else None
+        for slide_idx, sld in self._get_slides(presentation, slide):
+            try:
+                if sld.has_notes_slide and sld.notes_slide.notes_text_frame is not None:
+                    notes_slide = sld.notes_slide
+                    notes_text_frame = notes_slide.notes_text_frame
+                    text = getattr(notes_text_frame, "text", None)
+                    text = text.strip() if text else None
 
-                        if text:
-                            slides_with_notes += 1
-                            try:
-                                coordinates = {
-                                    "left": getattr(notes_text_frame, "margin_left", 0),
-                                    "right": getattr(notes_text_frame, "margin_right", 0),
-                                    "top": getattr(notes_text_frame, "margin_top", 0),
-                                    "bottom": getattr(notes_text_frame, "margin_bottom", 0),
-                                }
-                            except (AttributeError, TypeError):
-                                coordinates = {}
+                    if text:
+                        try:
+                            coordinates = {
+                                "left": getattr(notes_text_frame, "margin_left", 0),
+                                "right": getattr(notes_text_frame, "margin_right", 0),
+                                "top": getattr(notes_text_frame, "margin_top", 0),
+                                "bottom": getattr(notes_text_frame, "margin_bottom", 0),
+                            }
+                        except (AttributeError, TypeError):
+                            coordinates = {}
 
-                            element = self._create_text_element(
-                                element_type="speaker_notes",
-                                document_meta=document_meta,
-                                content=text,
-                                slide_idx=slide_idx,
-                                coordinates=coordinates,
-                            )
-                            elements.append(element)
-                            logger.debug("Extracted speaker notes from slide %d", slide_idx)
-                except Exception as e:
-                    logger.warning(
-                        "Failed to extract speaker notes from slide %d: %s", slide_idx, str(e), exc_info=False
-                    )
+                        element = self._create_text_element(
+                            element_type="speaker_notes",
+                            document_meta=document_meta,
+                            content=text,
+                            slide_idx=slide_idx,
+                            coordinates=coordinates,
+                        )
+                        elements.append(element)
+            except (AttributeError, TypeError):
+                pass
 
-            logger.debug(
-                "Speaker notes extraction completed: %d slides with notes out of %d total slides",
-                slides_with_notes,
-                total_slides,
-            )
-            return elements
-        except Exception as e:
-            logger.error("Speaker notes extraction failed: %s", str(e), exc_info=True)
-            raise PptxExtractorError(self.get_extractor_name(), e) from e
+        return elements
 
     @staticmethod
     def get_extractor_name() -> str:

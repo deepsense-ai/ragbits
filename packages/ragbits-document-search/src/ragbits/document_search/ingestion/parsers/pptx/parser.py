@@ -96,8 +96,6 @@ class PptxDocumentParser(DocumentParser):
                     exc_info=True,
                 )
 
-                # For now, we continue with other extractors instead of raising
-                # This allows partial extraction if some extractors fail
                 logger.warning("Continuing with remaining extractors despite %s failure", extractor_name)
 
         logger.info(
