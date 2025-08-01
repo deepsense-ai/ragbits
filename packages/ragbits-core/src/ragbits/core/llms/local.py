@@ -157,6 +157,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         for i, response in enumerate(responses):
             result = {}
             result["response"] = self.tokenizer.decode(response, skip_special_tokens=True)
+            result["reasoning"] = None
             prompt_tokens = tokens_in[i]
             completion_tokens = sum(response != self.tokenizer._pad_token_type_id)
             result["usage"] = {
@@ -222,7 +223,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
                             prompt=prompt.__class__.__name__,
                         )
 
-                yield {"response": text}
+                yield {"response": text, "reasoning": False}
                 await asyncio.sleep(0.0)
 
             generation_thread.join()

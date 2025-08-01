@@ -18,11 +18,13 @@ import {
   useConversationProperty,
   useHistoryActions,
 } from "../../../core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 
 export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const chatOptions = useConversationProperty((s) => s.chatOptions);
   const { setChatOptions, initializeChatOptions } = useHistoryActions();
+  const currentConversation = useHistoryStore((s) => s.currentConversation);
   const {
     config: { user_settings: userSettings },
   } = useConfigContext();
@@ -57,7 +59,7 @@ export default function ChatOptionsForm() {
 
     const defaultState = getDefaultBasedOnSchemaType(validator, schema);
     initializeChatOptions(defaultState);
-  }, [initializeChatOptions, schema]);
+  }, [initializeChatOptions, schema, currentConversation]);
 
   if (!schema) {
     return null;

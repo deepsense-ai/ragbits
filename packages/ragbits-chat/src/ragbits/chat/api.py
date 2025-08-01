@@ -153,12 +153,6 @@ class RagbitsAPI:
         # Create security dependency variable to avoid B008 linting error
         security_dependency = Depends(self.security) if self.security else None
 
-        @self.app.get("/", response_class=HTMLResponse)
-        async def root() -> HTMLResponse:
-            index_file = self.dist_dir / "index.html"
-            with open(str(index_file)) as file:
-                return HTMLResponse(content=file.read())
-
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(
             request: ChatMessageRequest,
@@ -215,6 +209,15 @@ class RagbitsAPI:
 
             return JSONResponse(content=config_dict)
 
+        @self.app.get("/{full_path:path}", response_class=HTMLResponse)
+        async def root() -> HTMLResponse:
+            index_file = self.dist_dir / "index.html"
+            with open(str(index_file)) as file:
+                return HTMLResponse(content=file.read())
+
+    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
+        """Handle chat message requests with metrics tracking."""
+        start_time = time.time()
     async def _validate_authentication(self, credentials: HTTPAuthorizationCredentials | None) -> User | None:
         """Validate authentication credentials and return user if valid."""
         if not self.auth_backend:

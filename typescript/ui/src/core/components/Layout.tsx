@@ -36,7 +36,7 @@ export default function Layout({
 }: PropsWithChildren<LayoutProps>) {
   const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryActions();
+  const { newConversation: clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
@@ -91,7 +91,7 @@ export default function Layout({
       />
       <div
         className={cn(
-          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          "flex grow flex-col px-4 sm:max-w-[1200px]",
           historyEnabled && "pl-0",
         )}
       >
