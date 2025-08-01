@@ -74,7 +74,7 @@ def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
             "roles": ["user"],
         }
     ]
-    auth_backend = ListAuthBackend(users=test_users, jwt_secret="test-secret") # noqa: S106
+    auth_backend = ListAuthBackend(users=test_users, jwt_secret="test-secret")  # noqa: S106
 
     api = RagbitsAPI(mock_chat_interface, auth_backend=auth_backend)
     return api
@@ -86,7 +86,7 @@ def client(api: RagbitsAPI) -> TestClient:
     return TestClient(api.app)
 
 
-def authenticate_user(client: TestClient, username: str = "testuser", password: str = "testpass") -> str: # noqa: S107
+def authenticate_user(client: TestClient, username: str = "testuser", password: str = "testpass") -> str:  # noqa: S107
     """Helper function to authenticate a user and return the JWT token."""
     login_response = client.post("/api/auth/login", json={"username": username, "password": password})
     assert login_response.status_code == 200

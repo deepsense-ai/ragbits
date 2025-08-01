@@ -69,4 +69,3 @@ class AuthenticationBackend(ABC):
             True if successfully revoked
         """
         pass
-
