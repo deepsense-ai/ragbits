@@ -34,14 +34,12 @@ function mockStore(
   (useConversationProperty as unknown as Mock).mockImplementation((selector) =>
     selector({
       lastMessageId: role,
+      isLoading,
       history: {},
     }),
   );
   (useHistoryStore as unknown as Mock).mockImplementation((selector) =>
     selector({
-      lastMessageId: role,
-      isLoading,
-      history: new Map(),
       addMessage: vi.fn(),
     }),
   );

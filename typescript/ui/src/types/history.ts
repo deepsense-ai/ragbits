@@ -27,23 +27,25 @@ export interface Conversation {
   history: Record<string, ChatMessage>;
   followupMessages: string[] | null;
   serverState: ServerState | null;
-  conversationId: string | null;
+  conversationId: string;
   eventsLog: ChatResponse[][];
   lastMessageId: string | null;
   chatOptions: Record<string, unknown> | undefined;
+  isLoading: boolean;
+  abortController: AbortController | null;
 }
 export interface HistoryStore {
   conversations: Record<string, Conversation>;
-  currentConversation: string | null;
-  isLoading: boolean;
-  abortController: AbortController | null;
+  currentConversation: string;
 
   computed: {
     getContext: () => Record<string, unknown>;
   };
 
   actions: {
-    clearHistory: () => void;
+    newConversation: () => string;
+    selectConversation: (conversationId: string) => void;
+    deleteConversation: (conversationId: string) => void;
     sendMessage: (text: string) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
@@ -55,13 +57,14 @@ export interface HistoryStore {
     ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
     setChatOptions: (options: Record<string, unknown>) => void;
-    selectConversation: (conversationKey: string) => void;
-    deleteConversation: (conversationKey: string) => void;
   };
 
   primitives: {
-    addMessage: (message: Omit<ChatMessage, "id">) => string;
-    deleteMessage: (messageId: string) => void;
+    addMessage: (
+      conversationId: string,
+      message: Omit<ChatMessage, "id">,
+    ) => string;
+    deleteMessage: (conversationId: string, messageId: string) => void;
     restore: (
       history: Conversation["history"],
       followupMessages: Conversation["followupMessages"],
@@ -70,9 +73,14 @@ export interface HistoryStore {
       conversationId: Conversation["conversationId"],
     ) => void;
     getCurrentConversation: () => Conversation;
+    stopAnswering: (conversationId: string) => void;
   };
 
   _internal: {
-    handleResponse: (response: ChatResponse, messageId: string) => void;
+    handleResponse: (
+      conversationId: string,
+      messageId: string,
+      response: ChatResponse,
+    ) => void;
   };
 }

@@ -36,6 +36,7 @@
     "react-hook-form": "^7.55.0",
     "react-json-view-lite": "^2.4.1",
     "react-markdown": "^9.0.3",
+    "react-router": "^7.7.1",
     "remark-gfm": "^4.0.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.2",
