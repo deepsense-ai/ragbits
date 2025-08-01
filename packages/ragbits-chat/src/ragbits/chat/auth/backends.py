@@ -1,7 +1,7 @@
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 
 import bcrypt
 from jose import jwt
@@ -14,7 +14,7 @@ from ragbits.chat.auth.models import JWTToken, OAuth2Credentials, User, UserCred
 class ListAuthBackend(AuthenticationBackend):
     """Authentication backend using a predefined list of users."""
 
-    def __init__(self, users: list[dict[str, Any]], jwt_secret: str = None):
+    def __init__(self, users: list[dict[str, Any]], jwt_secret: str | None = None):
         """
         Initialize with a list of user dictionaries.
 
@@ -26,7 +26,7 @@ class ListAuthBackend(AuthenticationBackend):
         self.jwt_secret = jwt_secret or secrets.token_urlsafe(32)
         self.jwt_algorithm = "HS256"
         self.token_expiry_minutes = 30
-        self.revoked_tokens = set()  # Blacklist for revoked tokens
+        self.revoked_tokens: set[str] = set()  # Blacklist for revoked tokens
 
         for user_data in users:
             # Hash passwords with bcrypt for security
@@ -57,10 +57,11 @@ class ListAuthBackend(AuthenticationBackend):
             return AuthenticationResult(success=False, error_message="User not found")
 
         # Verify password with bcrypt
-        if not bcrypt.checkpw(credentials.password.encode("utf-8"), user_data["password_hash"].encode("utf-8")):
+        password_hash = str(user_data["password_hash"])
+        if not bcrypt.checkpw(credentials.password.encode("utf-8"), password_hash.encode("utf-8")):
             return AuthenticationResult(success=False, error_message="Invalid password")
 
-        user = user_data["user"]
+        user = cast(User, user_data["user"])
 
         # Create JWT jwt_token
         jwt_token = self._create_jwt_token(user)
@@ -289,7 +290,7 @@ class OAuth2Backend(AuthenticationBackend):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
-        self.sessions = {}
+        self.sessions: dict[str, Any] = {}
 
     async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:  # noqa: PLR6301
         """

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from jose import jwt
@@ -61,7 +61,7 @@ class TestListAuthBackendInitialization:
         assert backend.users["alice"]["password_hash"] != test_password
 
         # Verify user objects
-        alice_user = backend.users["alice"]["user"]
+        alice_user: User = cast(User, backend.users["alice"]["user"])
         assert alice_user.user_id == "user1"
         assert alice_user.username == "alice"
         assert alice_user.email == "alice@example.com"
@@ -70,7 +70,7 @@ class TestListAuthBackendInitialization:
         assert alice_user.metadata == {"department": "engineering"}
 
         # Verify user with minimal data
-        charlie_user = backend.users["charlie"]["user"]
+        charlie_user: User = cast(User, backend.users["charlie"]["user"])
         assert charlie_user.username == "charlie"
         assert charlie_user.email is None
         assert charlie_user.full_name is None
@@ -168,6 +168,7 @@ class TestListAuthBackendCredentialAuthentication:
         result = await auth_backend.authenticate_with_credentials(credentials)
 
         assert result.success is True
+        assert result.user is not None
         assert result.user.username == "charlie"
         assert result.user.email is None
         assert result.user.full_name is None
@@ -437,6 +438,7 @@ class TestListAuthBackendPasswordSecurity:
         for username in ["alice", "bob", "charlie"]:
             password_hash = backend.users[username]["password_hash"]
             assert password_hash != test_users[0]["password"]  # Not plain text
+            assert isinstance(password_hash, str)
             assert password_hash.startswith("$2b$")  # bcrypt format
 
     @staticmethod
@@ -477,6 +479,7 @@ class TestListAuthBackendIntegration:
         validate_result = await auth_backend.validate_token(token)
 
         assert validate_result.success is True
+        assert validate_result.user is not None
         assert validate_result.user.username == "alice"
 
         # Step 3: Revoke token
@@ -505,10 +508,14 @@ class TestListAuthBackendIntegration:
         assert bob_result.success is True
 
         # Both tokens should be valid
+        assert alice_result.jwt_token is not None
+        assert bob_result.jwt_token is not None
         alice_validation = await auth_backend.validate_token(alice_result.jwt_token.access_token)
         bob_validation = await auth_backend.validate_token(bob_result.jwt_token.access_token)
 
         assert alice_validation.success is True
         assert bob_validation.success is True
+        assert alice_validation.user is not None
         assert alice_validation.user.username == "alice"
+        assert bob_validation.user is not None
         assert bob_validation.user.username == "bob"
