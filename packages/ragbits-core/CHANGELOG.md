@@ -2,13 +2,30 @@
 
 ## Unreleased
 
-- Added Lazy loading of dependencies in local.py and during importing of LightLLM
+- Added Lazy loading of dependencies in local.py and during importing of LiteLLM
+- Add tool_choice parameter to LLM interface (#738)
+- Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
+
+## 1.2.2 (2025-08-08)
+
+- Fix: rendering iterator arguments in Prompt (#768)
+- Fix: mypy not resolving PromptOutputT Type correctly (#772)
+
+## 1.2.1 (2025-08-04)
+
+- No changes (keeping ragbits versions synced)
+
+## 1.2.0 (2025-08-01)
+
+- Add support for Reasoning models (#752)
+- Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
 - Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
 - Introduce new API for attachments in prompts (#711)
+- Fix issue with trying to store duplicated entries in Vector Stores (#762)
 
 ## 1.1.0 (2025-07-09)
 

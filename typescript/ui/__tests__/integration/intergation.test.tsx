@@ -18,12 +18,13 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import {
-  ChatResponseType,
-  MessageRole,
   RagbitsClient,
   RagbitsContextProvider,
   StreamCallbacks,
   ChatResponse,
+  ChatResponseType,
+  MessageRole,
+  FeedbackType,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
@@ -92,8 +93,7 @@ describe("Integration tests", () => {
       expect(typeof config.conversation_history).toBe("boolean");
       // Feedback
       expect(config).toHaveProperty("feedback");
-
-      expect(config.feedback).toHaveProperty("like");
+      expect(config.feedback).toHaveProperty(FeedbackType.Like);
       expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
       expect(config.feedback.like).toHaveProperty("form");
@@ -102,7 +102,7 @@ describe("Integration tests", () => {
           config.feedback.like.form instanceof Object,
       ).toBe(true);
 
-      expect(config.feedback).toHaveProperty("dislike");
+      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
       expect(config.feedback.dislike).toHaveProperty("enabled");
       expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
       expect(config.feedback.dislike).toHaveProperty("form");
@@ -116,7 +116,7 @@ describe("Integration tests", () => {
   describe("/api/chat", { timeout: 30000 }, () => {
     describe("should call chat endpoint with correct data", () => {
       afterAll(() => {
-        historyStore.getState().actions.clearHistory();
+        historyStore.getState().actions.newConversation();
       });
 
       it("should call chat endpoint with empty request", async () => {
@@ -141,7 +141,10 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -169,9 +172,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 2",
           },
@@ -181,7 +184,10 @@ describe("Integration tests", () => {
 
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -244,11 +250,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
-              { content: "Test message 2", role: MessageRole.USER },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
+              { content: "Test message 2", role: MessageRole.User },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 3",
           },
@@ -257,7 +263,10 @@ describe("Integration tests", () => {
         );
         await waitFor(
           () => {
-            expect(historyStore.getState().isLoading).toBe(false);
+            expect(
+              historyStore.getState().primitives.getCurrentConversation()
+                .isLoading,
+            ).toBe(false);
           },
           {
             timeout: 20000, // Long timeout because of the sleep between live updates
@@ -273,7 +282,7 @@ describe("Integration tests", () => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
             onMessage: (event: ChatResponse) => {
-              expect(event.type).toBeOneOf(Object.values(ChatResponseType));
+              expect(Object.values(ChatResponseType)).toContain(event.type);
             },
           };
 
@@ -293,7 +302,10 @@ describe("Integration tests", () => {
 
       await waitFor(
         () => {
-          expect(historyStore.getState().isLoading).toBe(false);
+          expect(
+            historyStore.getState().primitives.getCurrentConversation()
+              .isLoading,
+          ).toBe(false);
         },
         {
           timeout: 20000, // Long timeout because of the sleep between live updates
@@ -306,14 +318,16 @@ describe("Integration tests", () => {
     describe("should send correct request based on config", async () => {
       let messageId: string = "";
       beforeEach(() => {
-        messageId = historyStore.getState().primitives.addMessage({
-          content: "Mock content",
-          role: MessageRole.ASSISTANT,
-          serverId: "msg-123",
-        });
+        messageId = historyStore
+          .getState()
+          .primitives.addMessage(historyStore.getState().currentConversation, {
+            content: "Mock content",
+            role: MessageRole.Assistant,
+            serverId: "msg-123",
+          });
       });
       afterEach(() => {
-        historyStore.getState().actions.clearHistory();
+        historyStore.getState().actions.newConversation();
       });
       it("handles like form", async () => {
         const feedback = render(
@@ -348,7 +362,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "like",
+            feedback: FeedbackType.Like,
             payload: {
               like_reason: "Example reason",
             },
@@ -394,7 +408,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "dislike",
+            feedback: FeedbackType.Dislike,
             payload: {
               feedback: "Example feedback",
               issue_type: "Other",

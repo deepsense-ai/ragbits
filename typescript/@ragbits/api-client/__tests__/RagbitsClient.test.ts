@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RagbitsClient, FeedbackType } from '../src'
+import { ChatResponseType, FeedbackType, RagbitsClient } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../src'
@@ -57,7 +57,7 @@ describe('RagbitsClient', () => {
         it('should make successful POST request with body', async () => {
             const requestBody: FeedbackRequest = {
                 message_id: 'msg-123',
-                feedback: FeedbackType.LIKE,
+                feedback: FeedbackType.Like,
                 payload: { reason: 'Great response!' },
             }
 
@@ -151,7 +151,7 @@ describe('RagbitsClient', () => {
 
             const cancelFn = client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -181,19 +181,19 @@ describe('RagbitsClient', () => {
 
             expect(messages).toHaveLength(4)
             expect(messages[0]).toEqual({
-                type: 'text',
+                type: ChatResponseType.Text,
                 content: 'Hello there!',
             })
             expect(messages[1]).toEqual({
-                type: 'text',
+                type: ChatResponseType.Text,
                 content: 'How can I help you?',
             })
             expect(messages[2]).toEqual({
-                type: 'message_id',
+                type: ChatResponseType.MessageId,
                 content: 'msg-123',
             })
             expect(messages[3]).toEqual({
-                type: 'conversation_id',
+                type: ChatResponseType.ConversationId,
                 content: 'conv-456',
             })
             expect(errors).toHaveLength(0)
@@ -209,7 +209,7 @@ describe('RagbitsClient', () => {
 
             const cancelFn = client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -242,7 +242,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: () => Promise.resolve(),
                     onError: (error) => {
@@ -285,7 +285,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: () => Promise.resolve(),
                     onError: (error) => {
@@ -309,7 +309,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -351,7 +351,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: () => Promise.resolve(),
                     onError: (error) => {
@@ -398,7 +398,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -429,7 +429,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: () => Promise.resolve(),
                     onError: (error) => {
@@ -460,7 +460,7 @@ describe('RagbitsClient', () => {
 
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: () => Promise.resolve(),
                     onError: (error) => {

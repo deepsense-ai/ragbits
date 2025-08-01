@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useMemo } from "react";
+import { PropsWithChildren, useEffect, useLayoutEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
 import { CircularProgress, cn } from "@heroui/react";
@@ -8,6 +8,7 @@ import { pluginManager } from "../../utils/plugins/PluginManager";
 import { SharePluginName } from "../../../plugins/SharePlugin";
 import { HistoryStoreContextProvider } from "../../stores/HistoryStore/HistoryStoreContextProvider";
 import { ChatHistoryPluginName } from "../../../plugins/ChatHistoryPlugin";
+import { CONFIG_LOADING_PAGE_TITLE } from "../../../config";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -49,6 +50,10 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
   if (!config.data && !config.error && !config.isLoading) {
     fetchConfig();
   }
+
+  useLayoutEffect(() => {
+    document.title = CONFIG_LOADING_PAGE_TITLE;
+  }, []);
 
   // TODO: Consider adding minimal timeout for config to not flash users with this screen
   if (config.isLoading) {

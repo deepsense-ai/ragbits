@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { MessageRole } from "@ragbits/api-client-react";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps } from "react";
 import HorizontalActions from "../../src/core/components/inputs/PromptInput/HorizontalActions";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
 import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "../../src/types/history";
+import { MessageRole } from "@ragbits/api-client";
 
 vi.mock(
   "../../src/core/components/inputs/PromptInput/HorizontalActions.tsx",
@@ -33,17 +33,17 @@ vi.mock("../../src/core/utils/useTextAreaCaretDetection.tsx", () => ({
 
 const MOCK_HISTORY: ChatMessage[] = [
   {
-    role: MessageRole.USER,
+    role: MessageRole.User,
     content: "Hello, how are you?",
     id: "1",
   },
   {
-    role: MessageRole.ASSISTANT,
+    role: MessageRole.Assistant,
     content: "I'm fine, thank you. How can I help you today?",
     id: "2",
   },
   {
-    role: MessageRole.USER,
+    role: MessageRole.User,
     content: "I'm doing well, thanks for asking. What's new?",
     id: "3",
   },

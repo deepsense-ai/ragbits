@@ -1,0 +1,19 @@
+name: Pull request change base branch
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+
+jobs:
+  change-base-branch:
+    if: ${{ !startsWith(github.head_ref, 'release/') && github.head_ref != 'develop' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Change base branch
+        run: |
+          gh pr edit ${{ github.event.pull_request.number }} --base develop
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

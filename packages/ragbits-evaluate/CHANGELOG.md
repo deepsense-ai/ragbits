@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Optional parallel batches execution in ragbits.evaluate.Evaluator (#769)
+
+## 1.2.2 (2025-08-08)
+
+### Changed
+
+- ragbits-core updated to version v1.2.2
+
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-core updated to version v1.2.1
+
+## 1.2.0 (2025-08-01)
+
+### Changed
+
+- ragbits-core updated to version v1.2.0
+
 ## 1.1.0 (2025-07-09)
 
 ### Changed
@@ -124,6 +144,7 @@
 - ragbits-core updated to version v0.10.1
 
 ## 0.10.0 (2025-03-17)
+
 ### Changed
 
 - ragbits-core updated to version v0.10.0

@@ -1,12 +1,12 @@
 import {
   ChatRequest,
   ChatResponse,
-  ChatResponseType,
   LiveUpdate,
-  LiveUpdateType,
-  MessageRole,
   RagbitsClient,
   Image,
+  MessageRole,
+  ChatResponseType,
+  LiveUpdateType,
 } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -18,49 +18,64 @@ import { produce } from "immer";
 import { mapHistoryToMessages } from "../../utils/messageMapper";
 import { API_URL } from "../../../config";
 import { immer } from "zustand/middleware/immer";
+import { omitBy } from "lodash";
 
+const TEMPORARY_CONVERSATION_TAG = "temp-";
 const RAGBITS_CLIENT = new RagbitsClient({ baseUrl: API_URL });
-const NON_MESSAGE_EVENTS = new Set([
-  ChatResponseType.STATE_UPDATE,
-  ChatResponseType.CONVERSATION_ID,
-  ChatResponseType.FOLLOWUP_MESSAGES,
+const NON_MESSAGE_EVENTS = new Set<string>([
+  ChatResponseType.StateUpdate,
+  ChatResponseType.ConversationId,
+  ChatResponseType.FollowupMessages,
 ]);
 
-const initialHistoryValues = () => ({
-  conversations: {},
-  currentConversation: null,
-  isLoading: false,
-  abortController: null,
-});
+const getTemporaryConversationId = () =>
+  `${TEMPORARY_CONVERSATION_TAG}${uuidv4()}`;
 
 const initialConversationValues = () => ({
   history: {},
   followupMessages: null,
   serverState: null,
-  conversationId: null,
+  conversationId: getTemporaryConversationId(),
   eventsLog: [],
   lastMessageId: null,
   context: undefined,
   chatOptions: undefined,
+  isLoading: false,
+  abortController: null,
 });
 
-export const getConversationKey = (conversationId: string | null) =>
-  `${conversationId}`;
-const updateConversation = (mutator: (draft: Conversation) => void) => {
+const initialHistoryValues = () => {
+  // Always initialize with empty conversation
+  const startingConversation = initialConversationValues();
+  return {
+    conversations: {
+      [startingConversation.conversationId]: startingConversation,
+    },
+    currentConversation: startingConversation.conversationId,
+  };
+};
+
+const updateConversation = (
+  conversationId: string,
+  mutator: (draft: Conversation) => void,
+) => {
   return (draft: HistoryStore) => {
-    // `null` is a speciall key for conversations that don't have server assigned id yet
-    // There could only be one conversation without an id at any given time as they have the same key
-    const conversation =
-      draft.conversations[getConversationKey(draft.currentConversation)];
+    // `null` is a special key for conversations that don't have a server-assigned ID yet.
+    // Only one such conversation can exist at any time, as they all share the same key.
+    const conversation = draft.conversations[conversationId];
 
     if (!conversation) {
       throw new Error(
-        `Conversation with ${draft.currentConversation} id doesn't exist`,
+        `Conversation with ID '${conversationId}' does not exist`,
       );
     }
 
     mutator(conversation);
   };
+};
+
+export const isTemporaryConversation = (conversation: Conversation) => {
+  return conversation.conversationId.startsWith(TEMPORARY_CONVERSATION_TAG);
 };
 
 export const createHistoryStore = immer<HistoryStore>((set, get) => ({
@@ -70,17 +85,19 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       const {
         primitives: { getCurrentConversation },
       } = get();
-      const { serverState, conversationId, chatOptions } =
-        getCurrentConversation();
+      const conversation = getCurrentConversation();
+      const { serverState, conversationId, chatOptions } = conversation;
       return {
         ...(serverState ?? {}),
-        ...(conversationId ? { conversation_id: conversationId } : {}),
+        ...(conversationId && !isTemporaryConversation(conversation)
+          ? { conversation_id: conversationId }
+          : {}),
         ...(chatOptions ? { user_settings: chatOptions } : {}),
       };
     },
   },
   _internal: {
-    handleResponse: (response, messageId) => {
+    handleResponse: (conversationId, messageId, response) => {
       const _handleImage = (image: Image, message: ChatMessage) => {
         return produce(message.images ?? {}, (draft) => {
           if (draft[image.id]) {
@@ -100,7 +117,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         const { update_id, content, type } = liveUpdate;
 
         return produce(message.liveUpdates ?? {}, (draft) => {
-          if (type === LiveUpdateType.START && update_id in draft) {
+          if (type === LiveUpdateType.Start && update_id in draft) {
             console.error(
               `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
             );
@@ -113,66 +130,61 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       const _handleNonMessageEvent = () => {
         const { type, content } = response;
         set(
-          updateConversation((draft) => {
+          updateConversation(conversationId, (draft) => {
             switch (type) {
-              case ChatResponseType.STATE_UPDATE:
+              case ChatResponseType.StateUpdate:
                 draft.serverState = content;
                 break;
-              case ChatResponseType.CONVERSATION_ID:
+              case ChatResponseType.ConversationId:
                 draft.conversationId = content;
                 break;
-              case ChatResponseType.FOLLOWUP_MESSAGES:
+              case ChatResponseType.FollowupMessages:
                 draft.followupMessages = content;
                 break;
             }
           }),
         );
 
-        if (type === ChatResponseType.CONVERSATION_ID) {
-          const newKey = getConversationKey(content);
-
+        if (type === ChatResponseType.ConversationId) {
           set((draft) => {
-            const oldKey = getConversationKey(draft.currentConversation);
-            const oldConversation = draft.conversations[oldKey];
+            const oldConversation = draft.conversations[conversationId];
 
             if (!oldConversation) {
               throw new Error("Received events for non-existent conversation");
             }
 
-            delete draft.conversations[oldKey];
-            draft.conversations[newKey] = oldConversation;
-            draft.currentConversation = content;
+            oldConversation.conversationId = content;
           });
         }
       };
 
       const _handleMessageEvent = () => {
         set(
-          updateConversation((draft) => {
+          updateConversation(conversationId, (draft) => {
             const message = draft.history[messageId];
             if (!message)
               throw new Error(`Message ID ${messageId} not found in history`);
 
             switch (response.type) {
-              case ChatResponseType.TEXT:
+              case ChatResponseType.Text:
                 message.content += response.content;
                 break;
-              case ChatResponseType.REFERENCE:
+              case ChatResponseType.Reference:
                 message.references = [
                   ...(message.references ?? []),
                   response.content,
                 ];
                 break;
-              case ChatResponseType.MESSAGE_ID:
+              case ChatResponseType.MessageId:
                 message.serverId = response.content;
                 break;
-              case ChatResponseType.LIVE_UPDATE:
+              case ChatResponseType.LiveUpdate:
                 message.liveUpdates = _handleLiveUpdate(
                   response.content,
                   message,
                 );
                 break;
-              case ChatResponseType.IMAGE:
+              case ChatResponseType.Image:
                 message.images = _handleImage(response.content, message);
                 break;
             }
@@ -187,7 +199,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       }
 
       set(
-        updateConversation((draft) => {
+        updateConversation(conversationId, (draft) => {
           draft.eventsLog[draft.eventsLog.length - 1].push(response);
         }),
       );
@@ -196,21 +208,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
   primitives: {
     getCurrentConversation: () => {
-      set((draft) => {
-        const key = getConversationKey(draft.currentConversation);
-
-        if (key in draft.conversations) {
-          return;
-        }
-
-        draft.conversations[key] = {
-          ...initialConversationValues(),
-        };
-      });
-
       const { currentConversation, conversations } = get();
-      const key = getConversationKey(currentConversation);
-      const conversation = conversations[key];
+      const conversation = conversations[currentConversation];
 
       if (!conversation) {
         throw new Error("Tried to get conversation that doesn't exist.");
@@ -224,9 +223,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       chatOptions: Conversation["chatOptions"],
       serverState: Conversation["serverState"],
     ) => {
-      // Copied conversation should be treated as a new one, it would get it's own
+      // Copied conversation should be treated as temporary one, it would get it's own
       // id after first message
-      const conversationId = null;
+      const conversationId = getTemporaryConversationId();
       const conversation: Conversation = {
         ...initialConversationValues(),
         followupMessages,
@@ -236,20 +235,20 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         conversationId,
       };
       const nonUserMessages = Object.values(history).filter(
-        (m) => m.role !== MessageRole.USER,
+        (m) => m.role !== MessageRole.User,
       );
       conversation.eventsLog = nonUserMessages.map(() => []);
       set((draft: HistoryStore) => {
-        draft.conversations[getConversationKey(conversationId)] = conversation;
+        draft.conversations[conversationId] = conversation;
         draft.currentConversation = conversationId;
       });
     },
 
-    addMessage: (message) => {
+    addMessage: (conversationId, message) => {
       const id = uuidv4();
       const newMessage: ChatMessage = { ...message, id };
       set(
-        updateConversation((draft) => {
+        updateConversation(conversationId, (draft) => {
           draft.followupMessages = null;
           draft.lastMessageId = id;
           draft.history[id] = newMessage;
@@ -258,9 +257,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return id;
     },
 
-    deleteMessage: (messageId) => {
+    deleteMessage: (conversationId, messageId) => {
       set(
-        updateConversation((draft) => {
+        updateConversation(conversationId, (draft) => {
           const { history } = draft;
           const messageIds = Object.keys(history);
 
@@ -272,42 +271,59 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
     },
+
+    stopAnswering: (conversationId: string) => {
+      const conversation = get().conversations[conversationId];
+
+      if (!conversation) {
+        throw new Error(
+          "Tried to stop answering for conversation that doesn't exist",
+        );
+      }
+
+      conversation.abortController?.abort();
+      set(
+        updateConversation(conversationId, (draft) => {
+          draft.abortController = null;
+          draft.isLoading = false;
+        }),
+      );
+    },
   },
 
   actions: {
-    selectConversation: (conversationKey) => {
-      const {
-        actions: { stopAnswering },
-      } = get();
-
-      stopAnswering();
-
+    selectConversation: (conversationId) => {
       set((draft) => {
-        if (!(conversationKey in draft.conversations)) {
+        const conversation = draft.conversations[conversationId];
+        if (!conversation) {
           throw new Error(
-            `Tried to select conversation that doesn't exist, id: ${conversationKey}`,
+            `Tried to select conversation that doesn't exist, id: ${conversationId}`,
           );
         }
 
-        draft.currentConversation = conversationKey;
+        draft.currentConversation = conversationId;
       });
     },
-    deleteConversation: (convKey) => {
-      set((draft) => {
-        if (convKey === getConversationKey(draft.currentConversation)) {
-          const {
-            actions: { stopAnswering },
-          } = get();
+    deleteConversation: (conversationId) => {
+      const {
+        actions: { newConversation },
+        primitives: { stopAnswering },
+        currentConversation,
+      } = get();
+      stopAnswering(conversationId);
 
-          stopAnswering();
-          draft.currentConversation = null;
-        }
-        delete draft.conversations[getConversationKey(convKey)];
+      set((draft) => {
+        delete draft.conversations[conversationId];
       });
+
+      if (conversationId === currentConversation) {
+        return newConversation();
+      }
     },
     mergeExtensions: (messageId, extensions) => {
+      const { currentConversation } = get();
       set(
-        updateConversation((draft) => {
+        updateConversation(currentConversation, (draft) => {
           if (!(messageId in draft.history)) {
             throw new Error(
               "Attempted to set extensions for a message that does not exist.",
@@ -325,8 +341,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     },
 
     initializeChatOptions: (defaultOptions) => {
+      const { currentConversation } = get();
       set(
-        updateConversation((draft) => {
+        updateConversation(currentConversation, (draft) => {
           const currentOptions = draft.chatOptions ?? {};
           Object.keys(currentOptions).forEach((key) => {
             if (!(key in defaultOptions)) {
@@ -345,47 +362,56 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       );
     },
     setChatOptions: (options) => {
+      const { currentConversation } = get();
       set(
-        updateConversation((draft) => {
+        updateConversation(currentConversation, (draft) => {
           draft.chatOptions = options;
         }),
       );
     },
 
     stopAnswering: () => {
-      get().abortController?.abort();
-      set((draft) => {
-        draft.abortController = null;
-        draft.isLoading = false;
-      });
+      const {
+        currentConversation,
+        primitives: { stopAnswering },
+      } = get();
+      stopAnswering(currentConversation);
     },
 
-    clearHistory: () => {
+    newConversation: () => {
+      const newConversation = initialConversationValues();
       set((draft) => {
-        draft.currentConversation = null;
-        draft.conversations[getConversationKey(draft.currentConversation)] = {
-          ...initialConversationValues(),
-        };
+        draft.conversations[newConversation.conversationId] = newConversation;
+        draft.currentConversation = newConversation.conversationId;
+
+        // Cleanup unused temporary conversations
+        draft.conversations = omitBy(
+          draft.conversations,
+          (c) =>
+            isTemporaryConversation(c) &&
+            c.conversationId !== draft.currentConversation,
+        );
       });
+
+      return newConversation.conversationId;
     },
 
     sendMessage: (text) => {
       const {
         _internal: { handleResponse },
-        primitives: { addMessage, getCurrentConversation },
+        primitives: { addMessage, getCurrentConversation, stopAnswering },
         computed: { getContext },
-        actions: { stopAnswering },
       } = get();
 
-      const { history } = getCurrentConversation();
-      addMessage({
-        role: MessageRole.USER,
+      const { history, conversationId } = getCurrentConversation();
+      addMessage(conversationId, {
+        role: MessageRole.User,
         content: text,
       });
 
       // Add empty assistant message that will be filled with the response
-      const assistantResponseId = addMessage({
-        role: MessageRole.ASSISTANT,
+      const assistantResponseId = addMessage(conversationId, {
+        role: MessageRole.Assistant,
         content: "",
       });
 
@@ -397,34 +423,61 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       // Add new entry for events
       set(
-        updateConversation((draft) => {
+        updateConversation(conversationId, (draft) => {
           draft.eventsLog.push([]);
         }),
       );
 
       const abortController = new AbortController();
-      set((draft: HistoryStore) => {
-        draft.abortController = abortController;
-        draft.isLoading = true;
-      });
+      set(
+        updateConversation(conversationId, (draft) => {
+          draft.abortController = abortController;
+          draft.isLoading = true;
+        }),
+      );
+
+      const updateIdentifier = () => {
+        // While streaming, we use a temporary identifier as the key.
+        // When the stream finishes, we replace it with the final identifier stored in the object,
+        // which is then used as the key in the `conversations` record.
+        set((draft) => {
+          const conversation = draft.conversations[conversationId];
+          if (!conversation) {
+            // Silently ignore conversations that don't exist
+            return;
+          }
+
+          draft.conversations = Object.fromEntries(
+            Object.entries(draft.conversations).map(([k, v]) => [
+              k === conversationId ? conversation.conversationId : k,
+              v,
+            ]),
+          );
+
+          if (draft.currentConversation === conversationId) {
+            draft.currentConversation = conversation.conversationId;
+          }
+        });
+      };
 
       RAGBITS_CLIENT.makeStreamRequest(
         "/api/chat",
         chatRequest,
         {
           onMessage: (response: ChatResponse) =>
-            handleResponse(response, assistantResponseId),
+            handleResponse(conversationId, assistantResponseId, response),
           onError: (error: Error) => {
-            handleResponse(
-              {
-                type: ChatResponseType.TEXT,
-                content: error.message,
-              },
-              assistantResponseId,
-            );
-            stopAnswering();
+            handleResponse(conversationId, assistantResponseId, {
+              type: ChatResponseType.Text,
+              content: error.message,
+            });
+            stopAnswering(conversationId);
+            updateIdentifier();
           },
-          onClose: stopAnswering,
+          onClose: () => {
+            stopAnswering(conversationId);
+            updateIdentifier();
+          },
         },
         abortController.signal,
       );

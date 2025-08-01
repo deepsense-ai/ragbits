@@ -1,6 +1,6 @@
 {
     "name": "@ragbits/api-client",
-    "version": "0.0.3",
+    "version": "1.2.2",
     "description": "JavaScript client for the Ragbits API",
     "main": "dist/index.cjs",
     "module": "dist/index.js",

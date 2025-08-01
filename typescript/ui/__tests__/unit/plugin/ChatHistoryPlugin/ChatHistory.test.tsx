@@ -10,24 +10,22 @@ vi.mock("../../../../src/core/stores/HistoryStore/useHistoryStore", () => {
 vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => {
   const selectConversationMock = vi.fn();
   const deleteConversationMock = vi.fn();
-  const clearHistoryMock = vi.fn();
-  const stopAnsweringMock = vi.fn();
+  const newConversationMock = vi.fn();
   return {
     useHistoryActions: () => ({
       selectConversation: selectConversationMock,
       deleteConversation: deleteConversationMock,
-      clearHistory: clearHistoryMock,
-      stopAnswering: stopAnsweringMock,
+      newConversation: newConversationMock,
     }),
   };
 });
 
 import userEvent from "@testing-library/user-event";
-import { getConversationKey } from "../../../../src/core/stores/HistoryStore/historyStore";
 import { useHistoryActions } from "../../../../src/core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../../src/core/stores/HistoryStore/useHistoryStore";
 import ChatHistory from "../../../../src/plugins/ChatHistoryPlugin/components/ChatHistory";
 import { HistoryStore } from "../../../../src/types/history";
+import { isTemporaryConversation } from "../../../../src/core/stores/HistoryStore/historyStore";
 
 const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
   "mock-id-1": {
@@ -38,6 +36,8 @@ const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
     eventsLog: [],
     lastMessageId: null,
     chatOptions: undefined,
+    isLoading: false,
+    abortController: null,
   },
   "mock-id-2": {
     history: {},
@@ -47,8 +47,10 @@ const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
     eventsLog: [],
     lastMessageId: null,
     chatOptions: undefined,
+    isLoading: false,
+    abortController: null,
   },
-  null: {
+  "temp-mock-id-1": {
     history: {},
     followupMessages: null,
     serverState: null,
@@ -56,6 +58,8 @@ const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
     eventsLog: [],
     lastMessageId: null,
     chatOptions: undefined,
+    isLoading: false,
+    abortController: null,
   },
 };
 
@@ -76,7 +80,7 @@ describe("ChatHistory", () => {
       render(<ChatHistory />);
 
       mockConversationsKeys.forEach((key) => {
-        if (key === getConversationKey(null)) {
+        if (isTemporaryConversation(MOCK_CONVERSATIONS[key])) {
           return;
         }
 
@@ -100,7 +104,7 @@ describe("ChatHistory", () => {
       render(<ChatHistory />);
 
       mockConversationsKeys.forEach((key) => {
-        if (key === getConversationKey(null)) {
+        if (isTemporaryConversation(MOCK_CONVERSATIONS[key])) {
           return;
         }
 
@@ -151,9 +155,7 @@ describe("ChatHistory", () => {
       "chat-history-clear-chat-button",
     );
     await user.click(clearChatButton);
-    const clearHistoryMock = useHistoryActions().clearHistory;
-    const stopAnsweringMock = useHistoryActions().stopAnswering;
-    expect(clearHistoryMock).toHaveBeenCalled();
-    expect(stopAnsweringMock).toHaveBeenCalled();
+    const newConversationMock = useHistoryActions().newConversation;
+    expect(newConversationMock).toHaveBeenCalled();
   });
 });

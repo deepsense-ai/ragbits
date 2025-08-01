@@ -14,6 +14,7 @@ import {
   ChatHistoryPluginName,
 } from "../../plugins/ChatHistoryPlugin";
 import { usePlugin } from "../utils/plugins/usePlugin";
+import { isURL } from "../utils/media";
 
 interface LayoutProps {
   title: string;
@@ -36,7 +37,7 @@ export default function Layout({
 }: PropsWithChildren<LayoutProps>) {
   const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
   const { config } = useConfigContext();
-  const { clearHistory, stopAnswering } = useHistoryActions();
+  const { newConversation: clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
   const [isDebugOpened, setDebugOpened] = useState(false);
 
@@ -49,38 +50,6 @@ export default function Layout({
     clearHistory();
   }, [clearHistory, stopAnswering]);
 
-  function isURL(input: string): boolean {
-    if (isAbsoluteURL(input)) {
-      return true;
-    }
-
-    return looksLikeRelativeURL(input) && isRelativeURL(input);
-  }
-
-  function isAbsoluteURL(str: string): boolean {
-    try {
-      new URL(str);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function isRelativeURL(str: string): boolean {
-    try {
-      const DUMMY_BASE_URL = "http://base.local";
-      new URL(str, DUMMY_BASE_URL);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function looksLikeRelativeURL(str: string): boolean {
-    // Reject emojis, spaces, and unrelated strings.
-    return /^[./~\w%-][\w./~%-]*$/.test(str);
-  }
-
   const historyEnabled = chatHistoryPlugin?.isActivated;
   return (
     <div className="flex h-full min-h-[48rem] justify-center py-4">
@@ -91,7 +60,7 @@ export default function Layout({
       />
       <div
         className={cn(
-          "flex w-full flex-col px-4 sm:max-w-[1200px]",
+          "flex grow flex-col px-4 sm:max-w-[1200px]",
           historyEnabled && "pl-0",
         )}
       >
