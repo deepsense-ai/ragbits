@@ -18,7 +18,8 @@ export ANTHROPIC_API_KEY
 export LOGFIRE_TOKEN
 
 GIT_URL_TEMPLATE="git+https://github.com/deepsense-ai/ragbits.git@%s#subdirectory=packages/%s"
-PR_BRANCH="${PR_BRANCH:-main}"
+# Default to the current Git branch when PR_BRANCH is not provided
+PR_BRANCH="${PR_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
 
 has_script_section() {
   local file="$1"
