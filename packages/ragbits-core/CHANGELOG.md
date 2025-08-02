@@ -12,6 +12,7 @@
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
 - Introduce new API for attachments in prompts (#711)
+- Fix issue with trying to store duplicated entries in Vector Stores (#762)
 
 ## 1.1.0 (2025-07-09)
 
