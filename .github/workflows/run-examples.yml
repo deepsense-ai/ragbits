@@ -11,14 +11,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  examples:
-    name: Check examples job
+  # First job: Generate matrix of examples
+  generate-matrix:
+    name: Generate examples matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+      examples-count: ${{ steps.generate.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate matrix
+        id: generate
+        run: |
+          matrix=$(bash .github/scripts/list_examples.sh)
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          count=$(echo "$matrix" | jq '.example | length')
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "Found $count runnable examples"
+          echo "$matrix" | jq .
+
+  # Second job: Run examples in parallel
+  examples:
+    name: Run example
+    runs-on: ubuntu-latest
+    needs: generate-matrix
     timeout-minutes: 15
     permissions:
       checks: write
       pull-requests: write
       contents: read
+
+    # Use matrix strategy to run examples in parallel
+    strategy:
+      fail-fast: false  # Don't stop other examples if one fails
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
 
     services:
       postgres:
@@ -67,7 +94,7 @@ jobs:
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
 
-      - name: Run examples
+      - name: Run example - ${{ matrix.example }}
         env:
           PR_BRANCH: ${{ github.head_ref }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
@@ -79,4 +106,30 @@ jobs:
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
         run: |
           echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS"
-          ./.github/scripts/run_examples.sh
+          chmod +x .github/scripts/run_single_example.sh
+          ./.github/scripts/run_single_example.sh "${{ matrix.example }}"
+
+  # Summary job: Report overall results
+  examples-summary:
+    name: Examples summary
+    runs-on: ubuntu-latest
+    needs: [generate-matrix, examples]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "Examples matrix generation: ${{ needs.generate-matrix.result }}"
+          echo "Examples execution: ${{ needs.examples.result }}"
+          echo "Total examples: ${{ needs.generate-matrix.outputs.examples-count }}"
+
+          if [[ "${{ needs.generate-matrix.result }}" != "success" ]]; then
+            echo "❌ Failed to generate examples matrix"
+            exit 1
+          fi
+
+          if [[ "${{ needs.examples.result }}" != "success" ]]; then
+            echo "❌ Some examples failed"
+            exit 1
+          fi
+
+          echo "✅ All ${{ needs.generate-matrix.outputs.examples-count }} examples completed successfully"
