@@ -1,6 +1,6 @@
 [project]
 name = "ragbits"
-version = "1.1.0"
+version = "1.2.0"
 description = "Building blocks for rapid development of GenAI applications"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["ragbits-document-search==1.1.0", "ragbits-cli==1.1.0", "ragbits-evaluate==1.1.0", "ragbits-guardrails==1.1.0", "ragbits-chat==1.1.0", "ragbits-core==1.1.0"]
+dependencies = ["ragbits-document-search==1.2.0", "ragbits-cli==1.2.0", "ragbits-evaluate==1.2.0", "ragbits-guardrails==1.2.0", "ragbits-chat==1.2.0", "ragbits-core==1.2.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -61,10 +61,11 @@ local = [
     "sentence-transformers>=4.0.2,<5.0.0",
     "torch>=2.2.1,<3.0.0",
     "transformers>=4.44.2,<5.0.0",
-    "numpy>=1.26.0,<2.0.0"
+    "numpy>=1.26.0,<2.0.0",
+    "accelerate>=1.7.0",
 ]
 openai = [
-    "openai>=1.57.3,<2.0.0",
+    "openai>=1.91.0,<2.0.0",
 ]
 otel = [
     "opentelemetry-api>=1.27.0,<2.0.0",
@@ -112,6 +113,15 @@ mcp = [
 ]
 weaviate = [
     "weaviate-client>=4.15.4,<5.0.0",
+]
+google_drive = [
+    "google-api-core>=2.25.1,<3.0.0",
+    "google-api-python-client>=2.174.0,<3.0.0",
+    "google-auth>=2.40.3,<3.0.0",
+    "google-auth-httplib2>=0.2.0,<1.0.0",
+    "google-auth-oauthlib>=1.2.2,<2.0.0",
+    "google-oauth2-tool>=0.0.3,<1.0.0",
+    "googleapis-common-protos>=1.70.0,<2.0.0"
 ]
 
 [build-system]

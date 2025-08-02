@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.0 (2025-08-01)
+
 - Add support for Reasoning models (#752)
 - Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
