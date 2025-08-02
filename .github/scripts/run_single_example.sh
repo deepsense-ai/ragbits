@@ -83,4 +83,8 @@ elif [[ $exit_code -ne 0 ]]; then
   exit $exit_code
 else
   echo "Script completed successfully."
+  # Record success in cache
+  if [ -f ".github/scripts/example_cache.sh" ]; then
+    bash .github/scripts/example_cache.sh record "$EXAMPLE_FILE"
+  fi
 fi
