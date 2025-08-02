@@ -71,12 +71,12 @@ echo "Running the script: $EXAMPLE_FILE"
 patch_dependencies "$EXAMPLE_FILE" "$PR_BRANCH"
 
 set +e
-timeout 30s uv run "$EXAMPLE_FILE"
+timeout 120s uv run "$EXAMPLE_FILE"
 exit_code=$?
 set -e
 
 if [[ $exit_code -eq 124 ]]; then
-  echo "Script timed out"
+  echo "Script timed out after 120 seconds"
   exit 1
 elif [[ $exit_code -ne 0 ]]; then
   echo "Script failed"

@@ -45,6 +45,7 @@ jobs:
     # Use matrix strategy to run examples in parallel
     strategy:
       fail-fast: false  # Don't stop other examples if one fails
+      max-parallel: 10  # Limit concurrency to avoid overwhelming resources
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
 
     services:
@@ -93,6 +94,31 @@ jobs:
         uses: astral-sh/setup-uv@v2
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
+          enable-cache: true
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Pre-install common dependencies
+        run: |
+          # Create a temporary environment with common ragbits packages to cache them
+          uv venv --python 3.10 .temp-env
+          source .temp-env/bin/activate
+          # Install the most commonly used packages across examples
+          uv pip install \
+            ragbits-core \
+            ragbits-document-search \
+            ragbits-agents \
+            ragbits-chat \
+            ragbits-evaluate \
+            ragbits-guardrails
+          deactivate
+          rm -rf .temp-env
 
       - name: Run example - ${{ matrix.example }}
         env:
