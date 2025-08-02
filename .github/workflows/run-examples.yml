@@ -28,8 +28,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .example-cache
-          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-${{ github.sha }}
           restore-keys: |
+            examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-
             examples-cache-${{ github.head_ref || github.ref_name }}-
             examples-cache-main-
 
@@ -125,8 +126,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .example-cache
-          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-${{ github.sha }}
           restore-keys: |
+            examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-
             examples-cache-${{ github.head_ref || github.ref_name }}-
             examples-cache-main-
 
@@ -178,7 +180,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: .example-cache
-          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-${{ github.sha }}
 
   # Summary job: Report overall results
   examples-summary:
