@@ -1,12 +1,17 @@
 import { Button, Input } from "@heroui/react";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 import { useStore } from "zustand";
 import { authStore } from "../stores/authStore";
 import { AnimatePresence, motion } from "framer-motion";
+import { produce } from "immer";
 
 export default function Login() {
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
   const loginRequestFactory = useRagbitsCall("/api/auth/login", {
     headers: {
       "Content-Type": "application/json",
@@ -44,6 +49,15 @@ export default function Login() {
     }
   };
 
+  const handleChange = (field: keyof typeof formData) => {
+    return (event: ChangeEvent<HTMLInputElement>) =>
+      setFormData((prev) =>
+        produce(prev, (draft) => {
+          draft[field] = event.target.value;
+        }),
+      );
+  };
+
   return (
     <div className="flex h-screen w-screen">
       <form
@@ -64,6 +78,9 @@ export default function Login() {
           labelPlacement="outside"
           placeholder="Your username"
           required
+          isRequired
+          value={formData.username}
+          onChange={handleChange("username")}
         />
         <Input
           label="Password"
@@ -73,6 +90,9 @@ export default function Login() {
           type="password"
           placeholder="••••••••"
           required
+          isRequired
+          value={formData.password}
+          onChange={handleChange("password")}
         />
 
         <AnimatePresence>
@@ -92,7 +112,12 @@ export default function Login() {
             )}
         </AnimatePresence>
 
-        <Button type="submit">Sign in</Button>
+        <Button
+          type="submit"
+          color={formData.password && formData.username ? "primary" : "default"}
+        >
+          Sign in
+        </Button>
       </form>
     </div>
   );
