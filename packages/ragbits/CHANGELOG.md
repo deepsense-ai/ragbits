@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-chat updated to version v1.2.1
+- ragbits-cli updated to version v1.2.1
+- ragbits-document-search updated to version v1.2.1
+- ragbits-evaluate updated to version v1.2.1
+- ragbits-guardrails updated to version v1.2.1
+- ragbits-core updated to version v1.2.1
+
 ### 🚀 Enhanced User Experience & Core Improvements
 
 This release delivers a comprehensive upgrade across the entire Ragbits ecosystem, featuring major UI enhancements with image support and conversation history, powerful new agent capabilities with native OpenAI tools integration, advanced core engine improvements including reasoning models and Google Drive integration, plus important stability fixes and performance optimizations.
