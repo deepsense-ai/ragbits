@@ -91,9 +91,15 @@ describe("Integration tests", () => {
       // History mode
       expect(config).toHaveProperty("conversation_history");
       expect(typeof config.conversation_history).toBe("boolean");
+      // Authentication
+      expect(typeof config.authentication).toBe("object");
+      expect(typeof config.authentication.enabled).toBe("boolean");
+      expect(Array.isArray(config.login_forms)).toBe(true);
+
       // Feedback
       expect(config).toHaveProperty("feedback");
       expect(config.feedback).toHaveProperty(FeedbackType.Like);
+      expect(config.feedback).toHaveProperty("like");
       expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
       expect(config.feedback.like).toHaveProperty("form");
@@ -137,6 +143,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -180,6 +187,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -260,6 +268,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
         await waitFor(
           () => {
