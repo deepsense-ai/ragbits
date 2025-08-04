@@ -150,25 +150,10 @@ class RagbitsAPI:
 
     def setup_routes(self) -> None:
         """Defines API routes."""
-        # Create security dependency variable to avoid B008 linting error
-        security_dependency = Depends(self.security) if self.security else None
-
-        @self.app.post("/api/chat", response_class=StreamingResponse)
-        async def chat_message(
-            request: ChatMessageRequest,
-            credentials: HTTPAuthorizationCredentials | None = security_dependency,
-        ) -> StreamingResponse:
-            return await self._handle_chat_message(request, credentials)
-
-        @self.app.post("/api/feedback", response_class=JSONResponse)
-        async def feedback(
-            request: FeedbackRequest,
-            credentials: HTTPAuthorizationCredentials | None = security_dependency,
-        ) -> JSONResponse:
-            return await self._handle_feedback(request, credentials)
-
         # Authentication routes
         if self.auth_backend:
+            # Create security dependency variable to avoid B008 linting error
+            security_dependency = Depends(self.security)
 
             @self.app.post("/api/auth/login", response_class=JSONResponse)
             async def login(request: LoginRequest) -> JSONResponse:
@@ -177,6 +162,33 @@ class RagbitsAPI:
             @self.app.post("/api/auth/logout", response_class=JSONResponse)
             async def logout(request: LogoutRequest) -> JSONResponse:
                 return await self._handle_logout(request)
+
+            @self.app.post("/api/chat", response_class=StreamingResponse)
+            async def chat_message(
+                request: ChatMessageRequest,
+                credentials: HTTPAuthorizationCredentials | None = security_dependency,
+            ) -> StreamingResponse:
+                return await self._handle_chat_message(request, credentials)
+
+            @self.app.post("/api/feedback", response_class=JSONResponse)
+            async def feedback(
+                request: FeedbackRequest,
+                credentials: HTTPAuthorizationCredentials | None = security_dependency,
+            ) -> JSONResponse:
+                return await self._handle_feedback(request, credentials)
+        else:
+
+            @self.app.post("/api/chat", response_class=StreamingResponse)
+            async def chat_message(
+                request: ChatMessageRequest,
+            ) -> StreamingResponse:
+                return await self._handle_chat_message(request, None)
+
+            @self.app.post("/api/feedback", response_class=JSONResponse)
+            async def feedback(
+                request: FeedbackRequest,
+            ) -> JSONResponse:
+                return await self._handle_feedback(request, None)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
