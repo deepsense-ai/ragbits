@@ -1,50 +1,24 @@
 import { Button, Input } from "@heroui/react";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router";
 import { useStore } from "zustand";
 import { authStore } from "../stores/authStore";
-
-interface AuthEndpoints {
-  "/api/auth/login": {
-    method: "POST";
-    request: {
-      username: string;
-      password: string;
-    };
-    response: {
-      success: boolean;
-      user: Record<string, string> | null;
-      session_id: string | null;
-      error_message: string | null;
-    };
-  };
-  "/api/auth/logout": {
-    method: "POST";
-    request: {
-      session_id: string;
-    };
-    response: {
-      success: boolean;
-    };
-  };
-}
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function Login() {
-  const loginRequestFactory = useRagbitsCall<AuthEndpoints, "/api/auth/login">(
-    "/api/auth/login",
-    {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
+  const loginRequestFactory = useRagbitsCall("/api/auth/login", {
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
-
+    method: "POST",
+  });
   const login = useStore(authStore, (s) => s.login);
   const navigate = useNavigate();
+  const [isError, setError] = useState<boolean>(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    setError(false);
     e.preventDefault();
     e.stopPropagation();
     const formData = new FormData(e.currentTarget);
@@ -57,20 +31,15 @@ export default function Login() {
         body: { username, password },
       });
 
-      // TODO: Improve types of response
-      if (!response.success || !response.session_id || !response.user) {
-        // TODO: Show error
+      if (!response.success || !response.jwt_token || !response.user) {
+        setError(true);
         return;
       }
 
-      login(
-        {
-          email: response.user.email,
-        },
-        response.session_id,
-      );
+      login(response.user, response.jwt_token);
       navigate("/");
     } catch (e) {
+      setError(true);
       console.error("Failed to login", e);
     }
   };
@@ -78,7 +47,7 @@ export default function Login() {
   return (
     <div className="flex h-screen w-screen">
       <form
-        className="rounded-medium border-small border-divider m-auto flex flex-col gap-4 p-4"
+        className="rounded-medium border-small border-divider m-auto flex w-full max-w-xs flex-col gap-4 p-4"
         onSubmit={handleSubmit}
       >
         <div className="text-small">
@@ -105,6 +74,23 @@ export default function Login() {
           placeholder="••••••••"
           required
         />
+
+        <AnimatePresence>
+          {isError &&
+            loginRequestFactory.error &&
+            !loginRequestFactory.isLoading && (
+              <motion.div
+                className="text-small text-danger"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                We couldn't sign you in. Please verify your credentials and try
+                again.
+              </motion.div>
+            )}
+        </AnimatePresence>
 
         <Button type="submit">Sign in</Button>
       </form>

@@ -460,7 +460,6 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         });
       };
 
-      // TODO: Refactor this
       const headers: Record<string, string> = {};
       if (accessToken) {
         headers["Authorization"] = `Bearer ${accessToken}`;
