@@ -2,6 +2,11 @@
 
 ## Unreleased
 - Add backend authentication (#761)
+
+## 1.2.0 (2025-08-01)
+### Changed
+
+- ragbits-core updated to version v1.2.0
 - Update TailwindCSS, React, Vite, tailwind config (#742)
 - Add images support in chat message, images gallery (#731)
 - Add persistent user settings (#719)

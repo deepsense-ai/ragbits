@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.2.0 (2025-08-01)
+
+### Changed
+
+- ragbits-core updated to version v1.2.0
+
 - Add native openai tools support (#621)
 - add Context to Agents (#715)
 

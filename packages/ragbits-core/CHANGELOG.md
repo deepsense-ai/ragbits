@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.0 (2025-08-01)
+
 - Add support for Reasoning models (#752)
 - Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
@@ -10,6 +12,7 @@
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
 - Introduce new API for attachments in prompts (#711)
+- Fix issue with trying to store duplicated entries in Vector Stores (#762)
 
 ## 1.1.0 (2025-07-09)
 
