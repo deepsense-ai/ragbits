@@ -19,6 +19,10 @@ export const BASE_ROUTES: RouteObject[] = [
     element: <App />,
     children: [
       {
+        index: true,
+        element: <Chat />,
+      },
+      {
         path: "*",
         element: <Chat />,
       },
