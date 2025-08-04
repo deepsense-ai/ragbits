@@ -29,11 +29,15 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
-  const authStore = useAuthStore();
-  const [accessToken, isAuthEnabled] = authStore((s) => s.token);
+  const [accessToken, isAuthEnabled] = useAuthStore((s) => s.token);
 
   const authorizedSendMessage = (text: string) => {
-    sendMessage(text, isAuthEnabled && accessToken ? accessToken : undefined);
+    sendMessage(
+      text,
+      isAuthEnabled && accessToken?.access_token
+        ? accessToken.access_token
+        : undefined,
+    );
   };
 
   const handleScroll = useCallback(() => {

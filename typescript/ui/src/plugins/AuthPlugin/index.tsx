@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
-import AuthGuard from "./components/AuthGuard";
 import LoginRoute from "./routes/LoginRoute";
+import AuthRoute from "./routes/AuthRoute";
 
 export const AuthPluginName = "AuthPlugin";
 export const AuthPlugin = createPlugin({
@@ -18,7 +18,10 @@ export const AuthPlugin = createPlugin({
   routeWrappers: [
     {
       target: "global",
-      wrapper: (children) => <AuthGuard>{children}</AuthGuard>,
+      wrapper: (children) => <AuthRoute>{children}</AuthRoute>,
     },
   ],
 });
+
+// TODO: Handle token refresh when implemented
+// TODO: Handle different auth backends
