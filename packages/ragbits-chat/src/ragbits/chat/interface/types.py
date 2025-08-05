@@ -17,6 +17,21 @@ class MessageRoleType(str, Enum):
     SYSTEM = "system"
 
 
+@deprecated("MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.")
+class MessageRole(MessageRoleType):
+    """
+    Deprecated alias for MessageRoleType which will be removed in future versions.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
 class Message(BaseModel):
     """Represents a single message in the conversation history."""
 
@@ -170,9 +185,7 @@ class ChatRequest(BaseModel):
 @deprecated("ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.")
 class ChatMessageRequest(ChatRequest):
     """
-    Deprecated alias for ChatRequest.
-
-    This alias will be removed in future versions. Please use `ChatRequest` instead.
+    Deprecated alias for ChatRequest which will be removed in future versions.
     """
 
     def __init__(self, *args, **kwargs):
