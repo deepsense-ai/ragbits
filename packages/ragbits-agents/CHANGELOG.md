@@ -3,6 +3,12 @@
 ## Unreleased
 - Add tool_choice parameter to agent interface (#738)
 
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-core updated to version v1.2.1
+
 ## 1.2.0 (2025-08-01)
 
 ### Changed
