@@ -209,15 +209,16 @@ def _update_ts_packages_version(new_version: str) -> None:
         new_lines: list[str] = []
 
         for line in file_lines:
+            new_line = line
             if '"version"' in line:
                 # capture: "version": "1.2.3" (comma optional)
                 left, right = line.split(":")
                 start = right.index('"')
                 end = right[start + 1 :].index('"') + start
                 old_version = right[start + 1 : end + 1]
-                line = ":".join([left, right[:start] + f'"{new_version}"' + right[end + 2 :]])
+                new_line = ":".join([left, right[:start] + f'"{new_version}"' + right[end + 2 :]])
                 updated = True
-            new_lines.append(line)
+            new_lines.append(new_line)
 
         if updated:
             package_json_path.write_text("\n".join(new_lines) + "\n")
