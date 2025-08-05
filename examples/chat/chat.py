@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
-from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 
 
@@ -84,6 +84,7 @@ class MyChat(ChatInterface):
             "You can ask me **anything**! "
             "I can provide information, answer questions, and assist you with various tasks."
         ),
+        meta=PageMetaCustomization(favicon="🔨", page_title="Change me!"),
     )
 
     conversation_history = True
