@@ -29,7 +29,7 @@ LLMs in Ragbits allow you to customize the behavior of the model using various o
 
 ### LiteLLM Options
 
-The `LiteLLMOptions` class provides options for remote LLMs, aligning with the LiteLLM API. These options allow you to control the behavior of models from various providers. Each of the option is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
+The `LiteLLMOptions` class provides options for remote LLMs, aligning with the LiteLLM API. These options allow you to control the behavior of models from various providers. Each of the option is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input) and [Reasoning Documentation](https://docs.litellm.ai/docs/reasoning_content)
 
 Example usage:
 ```python
@@ -47,6 +47,9 @@ response = llm.generate("Write a short story about a robot learning to paint.")
 print(response)
 ```
 
+!!! warning
+    If you provide reasoning_effort to the OpenAI model, [the reasoning content will not be returned](https://platform.openai.com/docs/guides/reasoning?api-mode=responses).
+
 ## Using Local LLMs
 
 For guidance on setting up and using local models in Ragbits, refer to the [Local LLMs Guide](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/).
@@ -58,7 +61,7 @@ Ragbits provides a flexible way to interact with LLMs by allowing you to use [`P
 
 ## Using prompts with LLMs
 
-Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using images in prompts, check out the guide: [How-To: Use images in prompts wirh Ragbits](../prompts/use_images_in_prompts.md).
+Prompts in Ragbits are powerful tools for structuring inputs and outputs when interacting with LLMs. They allow you to define **system prompts**, **user prompts**, and even **structured output formats** using Pydantic models. For more details on using prompts, check out the [Prompting Guide](https://ragbits.deepsense.ai/how-to/use_prompting/). For more advanced use cases, such as using attachments in prompts, check out the guide: [How-To: Use attachments in prompts with Ragbits](../prompts/use_attachments_in_prompts.md).
 
 ```python
 from ragbits.core.prompt import Prompt

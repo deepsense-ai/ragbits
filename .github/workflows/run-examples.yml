@@ -11,14 +11,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  examples:
-    name: Check examples job
+  # First job: Generate matrix of examples
+  generate-matrix:
+    name: Generate examples matrix
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+      examples-count: ${{ steps.generate.outputs.count }}
+      total-count: ${{ steps.generate.outputs.total-count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git diff
+
+      - name: Restore example cache
+        uses: actions/cache@v4
+        with:
+          path: .example-cache
+          # Use branch-specific key (no per-example key here, since we want a shared cache for all examples)
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          restore-keys: |
+            examples-cache-${{ github.head_ref || github.ref_name }}-
+            examples-cache-main-
+
+      - name: Generate matrix
+        id: generate
+        run: |
+          matrix=$(bash .github/scripts/list_examples.sh)
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          total_count=$(echo "$matrix" | jq '.include | length')
+          skipped_count=$(echo "$matrix" | jq '[.include[] | select(.skip == true)] | length')
+          run_count=$((total_count - skipped_count))
+          echo "total-count=$total_count" >> $GITHUB_OUTPUT
+          echo "count=$run_count" >> $GITHUB_OUTPUT
+          echo "Found $total_count total examples ($run_count to run, $skipped_count cached)"
+          echo "$matrix" | jq .
+
+  # Second job: Run examples in parallel
+  examples:
+    name: Run example
+    runs-on: ubuntu-latest
+    needs: generate-matrix
     timeout-minutes: 15
     permissions:
       checks: write
       pull-requests: write
       contents: read
+
+    # Use matrix strategy to run examples in parallel
+    strategy:
+      fail-fast: false  # Don't stop other examples if one fails
+      max-parallel: 10  # Limit concurrency to avoid overwhelming resources
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
 
     services:
       postgres:
@@ -61,13 +105,62 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for git diff
 
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
           version: ${{ vars.UV_VERSION || '0.6.9' }}
+          enable-cache: true
 
-      - name: Run examples
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Restore example cache
+        uses: actions/cache@v4
+        with:
+          path: .example-cache
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-${{ github.sha }}
+          restore-keys: |
+            examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-
+            examples-cache-${{ github.head_ref || github.ref_name }}-
+            examples-cache-main-
+
+      - name: Check if example should be skipped
+        id: check-skip
+        run: |
+          if [[ "${{ matrix.skip }}" == "true" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "✅ Skipping ${{ matrix.example }} (cached from previous successful run)"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pre-install common dependencies
+        if: steps.check-skip.outputs.skip == 'false'
+        run: |
+          # Create a temporary environment with common ragbits packages to cache them
+          uv venv --python 3.10 .temp-env
+          source .temp-env/bin/activate
+          # Install the most commonly used packages across examples
+          uv pip install \
+            ragbits-core \
+            ragbits-document-search \
+            ragbits-agents \
+            ragbits-chat \
+            ragbits-evaluate \
+            ragbits-guardrails
+          deactivate
+          rm -rf .temp-env
+
+      - name: Run example - ${{ matrix.example }}
+        if: steps.check-skip.outputs.skip == 'false'
         env:
           PR_BRANCH: ${{ github.head_ref }}
           GOOGLE_CLOUD_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
@@ -79,4 +172,43 @@ jobs:
           LOGFIRE_TOKEN: ${{ secrets.LOGFIRE_TOKEN }}
         run: |
           echo "$GCP_KEY" | base64 --decode > "$GOOGLE_APPLICATION_CREDENTIALS"
-          ./.github/scripts/run_examples.sh
+          chmod +x .github/scripts/run_single_example.sh
+          ./.github/scripts/run_single_example.sh "${{ matrix.example }}"
+
+      - name: Save example cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .example-cache
+          key: examples-cache-${{ github.head_ref || github.ref_name }}-${{ matrix.example }}-${{ github.sha }}
+
+  # Summary job: Report overall results
+  examples-summary:
+    name: Examples summary
+    runs-on: ubuntu-latest
+    needs: [generate-matrix, examples]
+    if: always()
+    steps:
+      - name: Check results
+        env:
+          TOTAL_COUNT: ${{ needs.generate-matrix.outputs.total-count }}
+          RUN_COUNT: ${{ needs.generate-matrix.outputs.examples-count }}
+        run: |
+          echo "Examples matrix generation: ${{ needs.generate-matrix.result }}"
+          echo "Examples execution: ${{ needs.examples.result }}"
+          echo "Total examples: $TOTAL_COUNT"
+          echo "Examples run: $RUN_COUNT"
+          cached_count=$((TOTAL_COUNT - RUN_COUNT))
+          echo "Examples cached: $cached_count"
+
+          if [[ "${{ needs.generate-matrix.result }}" != "success" ]]; then
+            echo "❌ Failed to generate examples matrix"
+            exit 1
+          fi
+
+          if [[ "${{ needs.examples.result }}" != "success" ]]; then
+            echo "❌ Some examples failed"
+            exit 1
+          fi
+
+          echo "✅ All examples completed successfully ($RUN_COUNT run, $cached_count cached)"

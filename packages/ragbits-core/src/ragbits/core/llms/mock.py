@@ -14,6 +14,8 @@ class MockLLMOptions(LLMOptions):
     response: str | NotGiven = NOT_GIVEN
     response_stream: list[str] | NotGiven = NOT_GIVEN
     tool_calls: list[dict] | NotGiven = NOT_GIVEN
+    reasoning: str | NotGiven = NOT_GIVEN
+    reasoning_stream: list[str] | NotGiven = NOT_GIVEN
 
 
 class MockLLM(LLM[MockLLMOptions]):
@@ -72,6 +74,7 @@ class MockLLM(LLM[MockLLMOptions]):
         self.calls.extend([p.chat for p in prompt])
         self.tool_choice = tool_choice
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
+        reasoning = None if isinstance(options.reasoning, NotGiven) else options.reasoning
         tool_calls = (
             None
             if isinstance(options.tool_calls, NotGiven)
@@ -81,6 +84,7 @@ class MockLLM(LLM[MockLLMOptions]):
         return [
             {
                 "response": response,
+                "reasoning": reasoning,
                 "tool_calls": tool_calls,
                 "is_mocked": True,
                 "throughput": 1 / len(prompt),
@@ -112,10 +116,16 @@ class MockLLM(LLM[MockLLMOptions]):
             ):
                 yield {"tool_calls": options.tool_calls}
             elif not isinstance(options.response_stream, NotGiven):
+                if not isinstance(options.reasoning_stream, NotGiven):
+                    for reasoning in options.reasoning_stream:
+                        yield {"response": reasoning, "reasoning": True}
                 for response in options.response_stream:
                     yield {"response": response}
             elif not isinstance(options.response, NotGiven):
+                if not isinstance(options.reasoning, NotGiven):
+                    yield {"response": options.reasoning, "reasoning": True}
                 yield {"response": options.response}
+
             else:
                 yield {"response": "mocked response"}
 

@@ -199,6 +199,10 @@ class Usage(BaseModel):
         )
 
 
+class Reasoning(str):
+    """A class for reasoning streaming"""
+
+
 class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
     """
     A schema of output with metadata
@@ -206,6 +210,7 @@ class LLMResponseWithMetadata(BaseModel, Generic[PromptOutputT]):
 
     content: PromptOutputT
     metadata: dict = {}
+    reasoning: str | None = None
     tool_calls: list[ToolCall] | None = None
     usage: Usage | None = None
 
@@ -601,12 +606,14 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     )
 
                 content = response.pop("response")
+                reasoning = response.pop("reasoning", None)
 
                 if isinstance(prompt, BasePromptWithParser) and content:
                     content = await prompt.parse_response(content)
 
                 response_with_metadata = LLMResponseWithMetadata[type(content)](  # type: ignore
                     content=content,
+                    reasoning=reasoning,
                     tool_calls=tool_calls,
                     metadata=response,
                     usage=usage,
@@ -654,7 +661,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         tools: None = None,
         tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResultStreaming[str]: ...
+    ) -> LLMResultStreaming[str | Reasoning]: ...
 
     @overload
     def generate_streaming(
@@ -664,7 +671,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         tools: list[Tool],
         tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> LLMResultStreaming[str | ToolCall]: ...
+    ) -> LLMResultStreaming[str | Reasoning | ToolCall]: ...
 
     def generate_streaming(
         self,
@@ -701,7 +708,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         tools: list[Tool] | None = None,
         tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
-    ) -> AsyncGenerator[str | ToolCall | LLMResponseWithMetadata, None]:
+    ) -> AsyncGenerator[str | Reasoning | ToolCall | LLMResponseWithMetadata, None]:
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
             merged_options = (self.default_options | options) if options else self.default_options
             if isinstance(prompt, str | list):
@@ -723,12 +730,17 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             )
 
             content = ""
+            reasoning = ""
             tool_calls = []
             usage_data = {}
             async for chunk in response:
                 if text := chunk.get("response"):
-                    content += text
-                    yield text
+                    if chunk.get("reasoning"):
+                        reasoning += text
+                        yield Reasoning(text)
+                    else:
+                        content += text
+                        yield text
 
                 if tools and (_tool_calls := chunk.get("tool_calls")):
                     for tool_call in _tool_calls:
@@ -750,6 +762,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
 
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore
                 content=content or None,
+                reasoning=reasoning or None,
                 tool_calls=tool_calls or None,
                 usage=usage,
             )

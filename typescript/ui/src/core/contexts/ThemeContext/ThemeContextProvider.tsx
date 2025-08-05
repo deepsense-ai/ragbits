@@ -31,7 +31,6 @@ export const ThemeContextProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const themeValue = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
   useEffect(() => {
     document.documentElement.classList.toggle(
       "dark",
