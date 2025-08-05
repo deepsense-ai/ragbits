@@ -13,6 +13,8 @@
 - ragbits-guardrails updated to version v1.2.1
 - ragbits-core updated to version v1.2.1
 
+
+## 1.2.0 (2025-08-01)
 ### 🚀 Enhanced User Experience & Core Improvements
 
 This release delivers a comprehensive upgrade across the entire Ragbits ecosystem, featuring major UI enhancements with image support and conversation history, powerful new agent capabilities with native OpenAI tools integration, advanced core engine improvements including reasoning models and Google Drive integration, plus important stability fixes and performance optimizations.

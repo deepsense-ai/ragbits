@@ -196,8 +196,9 @@ def _update_ts_packages_version(new_version: str) -> None:
     """
     if not isinstance(new_version, str):
         raise TypeError("new_version must be a string")
-
+    print(TS_PACKAGES_DIR)
     for package_json_path in TS_PACKAGES_DIR.rglob("package.json"):
+        print(package_json_path)
         # Skip node_modules to avoid touching installed packages
         if "node_modules" in package_json_path.parts:
             continue
@@ -214,7 +215,8 @@ def _update_ts_packages_version(new_version: str) -> None:
                 start = right.index('"')
                 end = right[start + 1 :].index('"') + start
                 old_version = right[start + 1 : end + 1]
-                line = ":".join([left, right[:start] + f'"{new_version}"' + right[end + 1 :]])
+                line = ":".join([left, right[:start] + f'"{new_version}"' + right[end + 2 :]])
+                updated = True
             new_lines.append(line)
 
         if updated:

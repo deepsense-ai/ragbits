@@ -1,6 +1,6 @@
 {
     "name": "@ragbits/api-client-react",
-    "version": "0.0.3",
+    "version": "1.2.1",
     "description": "React hooks for the Ragbits API client",
     "main": "dist/index.cjs",
     "module": "dist/index.js",
