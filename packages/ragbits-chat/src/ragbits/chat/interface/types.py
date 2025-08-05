@@ -1,7 +1,10 @@
+import warnings
+
 from enum import Enum
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import deprecated
 
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -165,6 +168,23 @@ class ChatRequest(BaseModel):
     context: dict[str, Any] = Field(default_factory=dict, description="User context information")
 
 
+@deprecated("ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.")
+class ChatMessageRequest(ChatRequest):
+    """
+    Deprecated alias for ChatRequest.
+
+    This alias will be removed in future versions. Please use `ChatRequest` instead.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+
 class FeedbackType(str, Enum):
     """Feedback types for user feedback."""
 
@@ -184,7 +204,7 @@ class FeedbackRequest(BaseModel):
     """
 
     message_id: str = Field(..., description="ID of the message receiving feedback")
-    feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
+    feedback: FeedbackType = Field(..., description="Type of feedback (like or dislike)")
     payload: dict[str, Any] = Field(default_factory=dict, description="Additional feedback details")
 
 
