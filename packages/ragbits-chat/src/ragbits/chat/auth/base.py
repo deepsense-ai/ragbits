@@ -1,8 +1,19 @@
 from abc import ABC, abstractmethod
+from types import ModuleType
+from typing import ClassVar
 
 from pydantic import BaseModel
 
+from ragbits.core.options import Options
+from ragbits.core.utils.config_handling import ConfigurableComponent
+
 from .models import JWTToken, OAuth2Credentials, User, UserCredentials
+
+
+class AuthBackendOptions(Options):
+    """Options for authentication backends."""
+
+    pass
 
 
 class AuthenticationResult(BaseModel):
@@ -14,8 +25,12 @@ class AuthenticationResult(BaseModel):
     error_message: str | None = None
 
 
-class AuthenticationBackend(ABC):
+class AuthenticationBackend(ConfigurableComponent[AuthBackendOptions], ABC):
     """Base class for authentication backends."""
+
+    configuration_key: ClassVar[str] = "auth_backend"
+    options_cls = AuthBackendOptions
+    default_module: ClassVar[ModuleType | None] = None
 
     @abstractmethod
     async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:

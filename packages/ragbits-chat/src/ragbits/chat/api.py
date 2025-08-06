@@ -88,7 +88,7 @@ class RagbitsAPI:
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
         debug_mode: bool = False,
-        auth_backend: AuthenticationBackend | None = None,
+        auth_backend: AuthenticationBackend | type[AuthenticationBackend] | str | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -105,7 +105,7 @@ class RagbitsAPI:
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
         self.debug_mode = debug_mode
-        self.auth_backend = auth_backend
+        self.auth_backend = self._load_auth_backend(auth_backend)
         self.security = HTTPBearer(auto_error=False) if auth_backend else None
 
         @asynccontextmanager
@@ -625,6 +625,46 @@ class RagbitsAPI:
             raise TypeError("Implementation must inherit from ChatInterface")
 
         logger.info(f"Initialized chat implementation: {implementation_class.__name__}")
+        return implementation_class()
+
+    @staticmethod
+    def _load_auth_backend(
+        implementation: AuthenticationBackend | type[AuthenticationBackend] | str | None,
+    ) -> AuthenticationBackend | None:
+        """Initialize the auth backend from a class, instance, or module path.
+
+        Args:
+            implementation: Either an AuthenticationBackend instance, class, or a
+            string path in format "module:class" or "module:function"
+        """
+        if implementation is None:
+            return None
+
+        # If it's already an instance, return it directly
+        if isinstance(implementation, AuthenticationBackend):
+            logger.info(f"Using existing auth backend instance: {type(implementation).__name__}")
+            return implementation
+
+        if isinstance(implementation, str):
+            module_stringify, object_stringify = implementation.split(":")
+            logger.info(f"Loading Auth implementation from path: {module_stringify}, object: {object_stringify}")
+
+            module = importlib.import_module(module_stringify)
+            implementation_obj = getattr(module, object_stringify)
+
+            # If it's a function, call it to get the backend instance
+            if callable(implementation_obj) and not isinstance(implementation_obj, type):
+                logger.info(f"Calling factory function: {object_stringify}")
+                return implementation_obj()
+            else:
+                implementation_class = implementation_obj
+        else:
+            implementation_class = implementation
+
+        if not issubclass(implementation_class, AuthenticationBackend):
+            raise TypeError("Implementation must inherit from AuthenticationBackend")
+
+        logger.info(f"Initialized auth backend: {implementation_class.__name__}")
         return implementation_class()
 
     def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:

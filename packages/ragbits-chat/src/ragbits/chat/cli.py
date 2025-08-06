@@ -31,11 +31,16 @@ def run(
         help="Path to a custom UI build directory. If not specified, uses the default package UI.",
     ),
     debug_mode: bool = typer.Option(False, "--debug", help="Flag enabling debug tools in the default UI"),
+    auth: str = typer.Option(None, help="Path to a module with Authentication Backend"),
 ) -> None:
     """
     Run API service with UI demo
     """
     api = RagbitsAPI(
-        chat_interface=chat_interface, cors_origins=cors_origins, ui_build_dir=ui_build_dir, debug_mode=debug_mode
+        chat_interface=chat_interface,
+        cors_origins=cors_origins,
+        ui_build_dir=ui_build_dir,
+        debug_mode=debug_mode,
+        auth_backend=auth,
     )
     api.run(host=host, port=port)

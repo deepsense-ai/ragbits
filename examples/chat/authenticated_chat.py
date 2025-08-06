@@ -5,10 +5,11 @@ This example demonstrates how to use the `AuthenticatedChatInterface` to create 
 with user authentication. It showcases different response types while ensuring only authenticated
 users can access the chat functionality.
 
-To run the script, execute the following command:
+To run the script using preferred components run:
 
     ```bash
     uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat
+     --auth examples.chat.authenticated_chat:get_auth_backend
     ```
 
 Or run directly with full authentication support:
@@ -17,7 +18,8 @@ Or run directly with full authentication support:
     python examples/chat/authenticated_chat.py
     ```
 
-Note: The CLI version has limited authentication support. Use the direct Python execution for full features.
+The preferred components approach allows the CLI to automatically use your configured authentication
+backend while keeping the ChatInterface class focused on its core functionality.
 """
 
 # /// script
@@ -248,8 +250,9 @@ class MyAuthenticatedChat(ChatInterface):
         yield self.create_followup_messages(followup_messages[:4])  # Limit to 4 suggestions
 
 
-def create_auth_backend() -> ListAuthBackend:
-    """Create and return the authentication backend with example users."""
+# Factory functions for preferred components
+def get_auth_backend() -> ListAuthBackend:
+    """Factory function to create the preferred authentication backend."""
     users = [
         {
             "username": "admin",
@@ -290,7 +293,7 @@ def create_auth_backend() -> ListAuthBackend:
 
 def create_api() -> RagbitsAPI:
     """Create and configure the authenticated API."""
-    auth_backend = create_auth_backend()
+    auth_backend = get_auth_backend()
     chat_interface = MyAuthenticatedChat()
 
     api = RagbitsAPI(
