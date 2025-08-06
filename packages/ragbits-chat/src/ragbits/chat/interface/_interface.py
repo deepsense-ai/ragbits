@@ -7,7 +7,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
-from typing import Any, Literal
+from typing import Any
 
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
@@ -22,6 +22,7 @@ from .types import (
     ChatContext,
     ChatResponse,
     ChatResponseType,
+    FeedbackType,
     Image,
     LiveUpdate,
     LiveUpdateContent,
@@ -329,7 +330,7 @@ class ChatInterface(ABC):
     async def save_feedback(
         self,
         message_id: str,
-        feedback: Literal["like", "dislike"],
+        feedback: FeedbackType,
         payload: dict[str, Any] | None = None,
     ) -> None:
         """
