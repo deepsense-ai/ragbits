@@ -1,6 +1,6 @@
 import warnings
 from enum import Enum
-from typing import Any, cast
+from typing import Any, Iterator, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import deprecated
@@ -23,7 +23,7 @@ class MessageRole:
     Deprecated alias for MessageRoleType which will be removed in future versions.
     """
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> MessageRoleType:
         warnings.warn(
             "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
             DeprecationWarning,
@@ -31,7 +31,7 @@ class MessageRole:
         )
         return getattr(MessageRoleType, name)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> MessageRoleType:
         warnings.warn(
             "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
             DeprecationWarning,
@@ -39,7 +39,7 @@ class MessageRole:
         )
         return MessageRoleType[name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[MessageRoleType]:
         warnings.warn(
             "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
             DeprecationWarning,
