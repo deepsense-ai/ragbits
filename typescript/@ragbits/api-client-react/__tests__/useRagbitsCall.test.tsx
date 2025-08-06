@@ -3,7 +3,7 @@ import React from 'react'
 import { act } from 'react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsCall, RagbitsContextProvider } from '../src'
-import { type ConfigResponse, type FeedbackRequest } from '@ragbits/api-client'
+import { FeedbackType, type ConfigResponse, type FeedbackRequest } from '@ragbits/api-client'
 import { defaultConfigResponse } from './utils'
 
 function createWrapper() {
@@ -51,7 +51,7 @@ describe('useRagbitsCall', () => {
 
         const requestBody: FeedbackRequest = {
             message_id: 'msg-123',
-            feedback: 'like',
+            feedback: FeedbackType.Like,
             payload: { comment: 'Great response!' },
         }
 

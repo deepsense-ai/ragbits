@@ -93,18 +93,18 @@ describe("Integration tests", () => {
       expect(typeof config.conversation_history).toBe("boolean");
       // Feedback
       expect(config).toHaveProperty("feedback");
-
-      expect(config.feedback).toHaveProperty(FeedbackType.Like);
+      expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
-      expect(config.feedback).toHaveProperty(FeedbackType.Like);
+      expect(config.feedback.like).toHaveProperty("form");
       expect(
         config.feedback.like.form === null ||
           config.feedback.like.form instanceof Object,
       ).toBe(true);
 
       expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
+      expect(config.feedback.dislike).toHaveProperty("enabled");
       expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
-      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
+      expect(config.feedback.dislike).toHaveProperty("form");
       expect(
         config.feedback.dislike.form === null ||
           config.feedback.dislike.form instanceof Object,
