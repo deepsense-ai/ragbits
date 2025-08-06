@@ -1,11 +1,12 @@
 from pathlib import Path
+from typing import Any
 
 import pydantic
 import pytest
 
-from ragbits.core.prompt import Prompt
+from ragbits.core.prompt import Attachment, Prompt
 from ragbits.core.prompt.base import BasePromptWithParser
-from ragbits.core.prompt.exceptions import PromptWithImagesOfInvalidFormat
+from ragbits.core.prompt.exceptions import PromptWithAttachmentOfUnsupportedFormat, PromptWithEmptyAttachment
 
 
 class _PromptInput(pydantic.BaseModel):
@@ -18,20 +19,20 @@ class _PromptInput(pydantic.BaseModel):
     age: int
 
 
-class _ImagePromptInput(pydantic.BaseModel):
+class _SingleAttachmentPromptInput(pydantic.BaseModel):
     """
-    Input format for the TestImagePrompt.
-    """
-
-    image: bytes | str | None
-
-
-class _ImagesPromptInput(pydantic.BaseModel):
-    """
-    List input format for the TestImagePrompt.
+    Single input format for the TestAttachmentPrompt.
     """
 
-    images: list[bytes | str]
+    attachment: Any
+
+
+class _MultipleAttachmentPromptInput(pydantic.BaseModel):
+    """
+    Multiple input format for the TestAttachmentsPrompt.
+    """
+
+    attachments: list[Any]
 
 
 class _PromptOutput(pydantic.BaseModel):
@@ -43,10 +44,37 @@ class _PromptOutput(pydantic.BaseModel):
     song_lyrics: str
 
 
-def _get_image_bytes() -> bytes:
-    """Get the test image as bytes."""
-    with open(Path(__file__).parent.parent.parent / "assets" / "img" / "test.png", "rb") as f:
-        return f.read()
+def _get_image_bytes() -> Attachment:
+    """Get an image attachment with bytes data."""
+    image_path = Path(__file__).parent.parent.parent / "assets" / "img" / "test.png"
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+    return Attachment(data=image_bytes)
+
+
+def _get_image_url() -> Attachment:
+    """Get an image attachment with a URL."""
+    return Attachment(url="http://example.com/image.jpg")
+
+
+def _get_image_url_and_mime() -> Attachment:
+    """Get an image attachment with a URL and MIME type."""
+    return Attachment(url="http://example.com/image", mime_type="image/jpeg")
+
+
+def _get_pdf_bytes() -> Attachment:
+    """Get a PDF attachment with bytes data."""
+    return Attachment(data=b"%PDF-1.4\n%fake PDF content\n")
+
+
+def _get_pdf_url() -> Attachment:
+    """Get a PDF attachment with a URL."""
+    return Attachment(url="http://example.com/document.pdf")
+
+
+def _get_pdf_url_and_mime() -> Attachment:
+    """Get a PDF attachment with a URL and MIME type."""
+    return Attachment(url="http://example.com/document", mime_type="application/pdf")
 
 
 def test_raises_when_no_user_message():
@@ -122,82 +150,158 @@ def test_raises_when_no_input_data():
         TestPrompt()
 
 
+def test_empty_attachment():
+    """Tests the prompt creation using an empty attachment"""
+
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "This should fail due to empty attachment"
+
+    with pytest.raises(PromptWithEmptyAttachment):
+        TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=Attachment()))
+
+
+def test_unsupported_attachment():
+    """Tests the prompt creation using an unsupported attachment format"""
+
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "This should fail due to unsupported attachment format"
+
+    with pytest.raises(PromptWithAttachmentOfUnsupportedFormat):
+        TestAttachmentPrompt(
+            _SingleAttachmentPromptInput(attachment=Attachment(data=b"random data", mime_type="invalid/type"))
+        )
+
+
 @pytest.mark.parametrize(
     ("field_value", "image_present"),
     [
         (_get_image_bytes(), True),
-        ("http://example.com/image.jpg", True),
+        (_get_image_url(), True),
+        (_get_image_url_and_mime(), True),
+        ("non-attachment-object", False),
         (None, False),
     ],
 )
-def test_image_prompt(field_value: bytes | str, image_present: bool):
+def test_image_prompt(field_value: Attachment | str | None, image_present: bool):
     """Tests the prompt creation using an image"""
 
-    class ImagePrompt(Prompt):
-        user_prompt = "What is on this image?"
-        image_input_fields = ["image"]
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this image?"
 
-    prompt = ImagePrompt(_ImagePromptInput(image=field_value))
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=field_value))
     assert len(prompt.list_images()) == (1 if image_present else 0)
 
 
 def test_image_prompt_format():
     """Tests the prompt format using an image"""
 
-    class ImagePrompt(Prompt):
-        user_prompt = "What is on this image?"
-        image_input_fields = ["image"]
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this image?"
 
-    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=_get_image_bytes()))
     chat = prompt.chat
     assert len(chat) == 1
     assert chat[0]["role"] == "user"
-    assert chat[0]["content"][0]["text"] == "What is on this image?"
+    assert chat[0]["content"][0]["text"] == "What is in this image?"
     assert chat[0]["content"][1]["type"] == "image_url"
+
+
+def test_image_prompt_encoding():
+    """Tests whether the image has a proper encoding"""
+
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this image?"
+
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=_get_image_bytes()))
+    images_list = prompt.list_images()
+    assert len(images_list) == 1
+    assert images_list[0].startswith("data:image/png")
 
 
 @pytest.mark.parametrize(
     ("field_value", "expected_number"),
     [
-        ([_get_image_bytes(), "http://example.com/image.jpg"], 2),
-        (["http://example.com/image.jpg"], 1),
-        ([_get_image_bytes()], 1),
+        ([_get_image_bytes(), _get_image_url(), _get_image_url_and_mime()], 3),
+        ([_get_image_url(), _get_image_url_and_mime(), "non-attachment-object"], 2),
+        ([_get_image_bytes(), "non-attachment-object"], 1),
+        (["non-attachment-object"], 0),
         ([], 0),
     ],
 )
-def test_images_prompt(field_value: list[bytes | str], expected_number: int):
+def test_images_prompt(field_value: list[Attachment | str | None], expected_number: int):
     """Tests the prompt creation using images"""
 
-    class ImagesPrompt(Prompt):
-        user_prompt = "What is on these images?"
-        image_input_fields = ["images"]
+    class TestAttachmentsPrompt(Prompt):
+        user_prompt = "What is in these images?"
 
-    prompt = ImagesPrompt(_ImagesPromptInput(images=field_value))
+    prompt = TestAttachmentsPrompt(_MultipleAttachmentPromptInput(attachments=field_value))
     assert len(prompt.list_images()) == expected_number
 
 
-def test_image_wrong_format():
-    """Tests the prompt creation using an invalid image"""
+@pytest.mark.parametrize(
+    ("field_value", "pdf_present"),
+    [
+        (_get_pdf_bytes(), True),
+        (_get_pdf_url(), True),
+        (_get_pdf_url_and_mime(), True),
+        ("non-attachment-object", False),
+        (None, False),
+    ],
+)
+def test_pdf_prompt(field_value: Attachment | str | None, pdf_present: bool):
+    """Tests the prompt creation using a PDF"""
 
-    class ImagePrompt(Prompt):
-        user_prompt = "What is on this image?"
-        image_input_fields = ["image"]
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this PDF?"
 
-    with pytest.raises(PromptWithImagesOfInvalidFormat):
-        ImagePrompt(_ImagePromptInput(image=b"invalid image data"))
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=field_value))
+    assert len(prompt.list_pdfs()) == (1 if pdf_present else 0)
 
 
-def test_image_encoding():
-    """Tests whether the image has a proper encoding"""
+def test_pdf_prompt_format():
+    """Tests the prompt format using a PDF"""
 
-    class ImagePrompt(Prompt):
-        user_prompt = "What is on this image?"
-        image_input_fields = ["image"]
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this PDF?"
 
-    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
-    images_list = prompt.list_images()
-    assert len(images_list) == 1
-    assert images_list[0][11:14] == "png"
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=_get_pdf_bytes()))
+    chat = prompt.chat
+    assert len(chat) == 1
+    assert chat[0]["role"] == "user"
+    assert chat[0]["content"][0]["text"] == "What is in this PDF?"
+    assert chat[0]["content"][1]["type"] == "file"
+
+
+def test_pdf_prompt_encoding():
+    """Tests whether the PDF has a proper encoding"""
+
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this PDF?"
+
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=_get_pdf_bytes()))
+    pdf_list = prompt.list_pdfs()
+    assert len(pdf_list) == 1
+    assert pdf_list[0].startswith("data:application/pdf")
+
+
+@pytest.mark.parametrize(
+    ("field_value", "expected_number"),
+    [
+        ([_get_pdf_bytes(), _get_pdf_url(), _get_pdf_url_and_mime()], 3),
+        ([_get_pdf_url(), _get_pdf_url_and_mime(), "non-attachment-object"], 2),
+        ([_get_pdf_bytes(), "non-attachment-object"], 1),
+        (["non-attachment-object"], 0),
+        ([], 0),
+    ],
+)
+def test_pdfs_prompt(field_value: list[Attachment | str | None], expected_number: int):
+    """Tests the prompt creation using PDFs"""
+
+    class TestAttachmentsPrompt(Prompt):
+        user_prompt = "What is in these PDFs?"
+
+    prompt = TestAttachmentsPrompt(_MultipleAttachmentPromptInput(attachments=field_value))
+    assert len(prompt.list_pdfs()) == expected_number
 
 
 def test_prompt_with_no_input_type():
@@ -566,18 +670,17 @@ def test_add_user_message_with_input_model():
 def test_add_user_message_with_image():
     """Test adding a user message with an image."""
 
-    class ImagePrompt(Prompt):
-        user_prompt = "What is on this image?"
-        image_input_fields = ["image"]
+    class TestAttachmentPrompt(Prompt):
+        user_prompt = "What is in this image?"
 
-    prompt = ImagePrompt(_ImagePromptInput(image=_get_image_bytes()))
-    prompt.add_user_message(_ImagePromptInput(image=_get_image_bytes()))
+    prompt = TestAttachmentPrompt(_SingleAttachmentPromptInput(attachment=_get_image_bytes()))
+    prompt.add_user_message(_MultipleAttachmentPromptInput(attachments=[_get_image_bytes(), _get_pdf_bytes()]))
 
     assert len(prompt.chat) == 2
     assert prompt.chat[0]["role"] == "user"
     assert prompt.chat[1]["role"] == "user"
     assert len(prompt.chat[0]["content"]) == 2  # text + image
-    assert len(prompt.chat[1]["content"]) == 2  # text + image
+    assert len(prompt.chat[1]["content"]) == 3  # text + image + pdf
 
 
 def test_add_assistant_message():

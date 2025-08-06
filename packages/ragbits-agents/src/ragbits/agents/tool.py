@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -95,3 +95,6 @@ class Tool:
             name=self.name,
             description=self.description,
         )
+
+
+ToolChoice = Literal["auto", "none", "required"] | Callable
