@@ -11,7 +11,6 @@ import {
   useConversationProperty,
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
-import { useHistoryStore } from "../../stores/HistoryStore/useHistoryStore.ts";
 
 type ChatMessageProps = {
   classNames?: {
@@ -26,7 +25,7 @@ type ChatMessageProps = {
 const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
   ({ messageId, classNames }, ref) => {
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
-    const isHistoryLoading = useHistoryStore((s) => s.isLoading);
+    const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
 
     if (!message) {

@@ -1,7 +1,7 @@
 import asyncio
 import time
 from collections.abc import AsyncGenerator, Callable, Iterable
-from typing import Any
+from typing import Any, Literal
 
 import litellm
 import tiktoken
@@ -11,12 +11,13 @@ from typing_extensions import Self
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM, LLMOptions
+from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMNotSupportingImagesError,
     LLMNotSupportingPdfsError,
+    LLMNotSupportingReasoningEffortError,
     LLMNotSupportingToolUseError,
     LLMResponseError,
     LLMStatusError,
@@ -29,6 +30,7 @@ class LiteLLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the LiteLLM client.
     Each of them is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input).
+    Reasoning effort and thinking are described in [LiteLLM Reasoning documentation](https://docs.litellm.ai/docs/reasoning_content)
     """
 
     frequency_penalty: float | None | NotGiven = NOT_GIVEN
@@ -45,6 +47,8 @@ class LiteLLMOptions(LLMOptions):
     mock_response: str | None | NotGiven = NOT_GIVEN
     tpm: int | None | NotGiven = NOT_GIVEN
     rpm: int | None | NotGiven = NOT_GIVEN
+    reasoning_effort: Literal["low", "medium", "high"] | None | NotGiven = NOT_GIVEN
+    thinking: dict | None | NotGiven = NOT_GIVEN
 
 
 class LiteLLM(LLM[LiteLLMOptions]):
@@ -116,7 +120,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Returns:
             The estimated cost of the LLM call.
         """
-        response_cost = litellm.model_cost[self.model_name]
+        response_cost = litellm.get_model_info(self.model_name)
         response_cost_input = prompt_tokens * response_cost["input_cost_per_token"]
         response_cost_output = completion_tokens * response_cost["output_cost_per_token"]
         return response_cost_input + response_cost_output
@@ -156,6 +160,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         prompt: Iterable[BasePrompt],
         options: LiteLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -164,6 +169,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
             prompt: Iterable of BasePrompt objects containing conversations
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             list of dictionaries with responses from the LLM and metadata.
@@ -185,6 +195,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
+        if options.reasoning_effort and not litellm.supports_reasoning(self.model_name):
+            raise LLMNotSupportingReasoningEffortError(self.model_name)
+
         start_time = time.perf_counter()
         raw_responses = await asyncio.gather(
             *(
@@ -195,6 +208,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                         output_schema=single_prompt.output_schema(), json_mode=single_prompt.json_mode
                     ),
                     tools=tools,
+                    tool_choice=tool_choice,
                 )
                 for single_prompt in prompt
             )
@@ -209,6 +223,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
 
             result = {}
             result["response"] = response.choices[0].message.content  # type: ignore
+            result["reasoning"] = getattr(response.choices[0].message, "reasoning_content", None)  # type: ignore
             result["throughput"] = throughput_batch / float(len(raw_responses))
 
             result["tool_calls"] = (
@@ -244,6 +259,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         prompt: BasePrompt,
         options: LiteLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -251,8 +267,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Response string from LLM.
@@ -274,6 +294,9 @@ class LiteLLM(LLM[LiteLLMOptions]):
         if tools and not litellm.supports_function_calling(self.model_name):
             raise LLMNotSupportingToolUseError()
 
+        if options.reasoning_effort and not litellm.supports_reasoning(self.model_name):
+            raise LLMNotSupportingReasoningEffortError(self.model_name)
+
         response_format = self._get_response_format(output_schema=prompt.output_schema(), json_mode=prompt.json_mode)
         input_tokens = self.count_tokens(prompt)
 
@@ -285,10 +308,10 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options=options,
             response_format=response_format,
             tools=tools,
+            tool_choice=tool_choice,
             stream=True,
             stream_options={"include_usage": True},
         )
-
         if not response.completion_stream and not response.choices:  # type: ignore
             raise LLMEmptyResponseError()
 
@@ -298,7 +321,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
             tool_calls: list[dict] = []
 
             async for item in response:
-                if content := item.choices[0].delta.content:
+                reasoning_content = getattr(item.choices[0].delta, "reasoning_content", None)
+                if content := item.choices[0].delta.content or reasoning_content:
                     output_tokens += 1
                     if output_tokens == 1:
                         record_metric(
@@ -308,7 +332,8 @@ class LiteLLM(LLM[LiteLLMOptions]):
                             model=self.model_name,
                             prompt=prompt.__class__.__name__,
                         )
-                    yield {"response": content}
+
+                    yield {"response": content, "reasoning": bool(reasoning_content)}
 
                 if tool_calls_delta := item.choices[0].delta.tool_calls:
                     for tool_call_chunk in tool_calls_delta:
@@ -397,6 +422,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
         stream: bool = False,
         stream_options: dict | None = None,
     ) -> ModelResponse | CustomStreamWrapper:
@@ -408,9 +434,16 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "model": self.model_name,
             "response_format": response_format,
             "tools": tools,
+            "tool_choice": tool_choice,
             "stream": stream,
             **options.dict(),
         }
+
+        supported_openai_params = litellm.get_supported_openai_params(model=self.model_name) or []
+        if "reasoning_effort" not in supported_openai_params:
+            completion_kwargs.pop("reasoning_effort")
+        if "thinking" not in supported_openai_params:
+            completion_kwargs.pop("thinking")
 
         if stream_options is not None:
             completion_kwargs["stream_options"] = stream_options

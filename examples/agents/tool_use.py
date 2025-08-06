@@ -82,7 +82,7 @@ async def main() -> None:
         tools=[get_weather],
         default_options=AgentOptions(max_total_tokens=500, max_turns=5),
     )
-    response = await agent.run(WeatherPromptInput(location="Paris"))
+    response = await agent.run(WeatherPromptInput(location="Paris"), tool_choice=get_weather)
     print(response)
 
 
