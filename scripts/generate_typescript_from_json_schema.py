@@ -225,7 +225,7 @@ def _generate_ts_enum_object(enum_name: str, enum_values: list[str]) -> str:
     lines.append(" */")
     lines.append(f"export const {enum_name} = {{")
     for v in enum_values:
-        camel_case = "".join(word.capitalize() if i > 0 else word.lower() for i, word in enumerate(v.split("_")))
+        camel_case = "".join(word.capitalize() if i > 0 else word.capitalize() for i, word in enumerate(v.split("_")))
         lines.append(f"    {camel_case}: '{v}',")
     lines.append("} as const;")
     lines.append("")

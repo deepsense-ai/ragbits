@@ -12,14 +12,14 @@ export type TypeFrom<T> = T[keyof T]
  * Represents the ChatResponseType enum
  */
 export const ChatResponseType = {
-    text: 'text',
-    reference: 'reference',
-    stateUpdate: 'state_update',
-    messageId: 'message_id',
-    conversationId: 'conversation_id',
-    liveUpdate: 'live_update',
-    followupMessages: 'followup_messages',
-    image: 'image',
+    Text: 'text',
+    Reference: 'reference',
+    StateUpdate: 'state_update',
+    MessageId: 'message_id',
+    ConversationId: 'conversation_id',
+    LiveUpdate: 'live_update',
+    FollowupMessages: 'followup_messages',
+    Image: 'image',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -28,8 +28,8 @@ export type ChatResponseType = TypeFrom<typeof ChatResponseType>
  * Represents the FeedbackType enum
  */
 export const FeedbackType = {
-    like: 'like',
-    dislike: 'dislike',
+    Like: 'like',
+    Dislike: 'dislike',
 } as const
 
 export type FeedbackType = TypeFrom<typeof FeedbackType>
@@ -38,8 +38,8 @@ export type FeedbackType = TypeFrom<typeof FeedbackType>
  * Represents the LiveUpdateType enum
  */
 export const LiveUpdateType = {
-    start: 'START',
-    finish: 'FINISH',
+    Start: 'START',
+    Finish: 'FINISH',
 } as const
 
 export type LiveUpdateType = TypeFrom<typeof LiveUpdateType>
@@ -48,9 +48,9 @@ export type LiveUpdateType = TypeFrom<typeof LiveUpdateType>
  * Represents the MessageRoleType enum
  */
 export const MessageRoleType = {
-    user: 'user',
-    assistant: 'assistant',
-    system: 'system',
+    User: 'user',
+    Assistant: 'assistant',
+    System: 'system',
 } as const
 
 export type MessageRoleType = TypeFrom<typeof MessageRoleType>

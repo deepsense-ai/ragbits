@@ -19,6 +19,7 @@ import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDet
 import { ChatMessage } from "../../../../types/history";
 import PluginWrapper from "../../../utils/plugins/PluginWrapper";
 import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
+import { MessageRoleType } from "@ragbits/api-client";
 
 interface PromptInputProps {
   submit: (text: string) => void;
@@ -151,7 +152,7 @@ const PromptInput = ({
 
   useEffect(() => {
     const newQuickMessages = (history ?? [])
-      .filter((m) => m.role === "user")
+      .filter((m) => m.role === MessageRoleType.User)
       .map((m) => m.content);
 
     if (quickMessages.length - 1 === newQuickMessages.length) {

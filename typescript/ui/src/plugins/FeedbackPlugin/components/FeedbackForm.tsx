@@ -27,7 +27,9 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const {
     config: { feedback },
   } = useConfigContext();
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>("like");
+  const [feedbackType, setFeedbackType] = useState<FeedbackType>(
+    FeedbackType.Like,
+  );
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
@@ -95,12 +97,12 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as helpful"
-            onPress={() => onOpenFeedbackForm("like")}
+            onPress={() => onOpenFeedbackForm(FeedbackType.Like)}
             data-testid="feedback-like"
           >
             <Icon
               icon={
-                selectedFeedback === "like"
+                selectedFeedback === FeedbackType.Like
                   ? "heroicons:hand-thumb-up-solid"
                   : "heroicons:hand-thumb-up"
               }
@@ -115,12 +117,12 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as unhelpful"
-            onPress={() => onOpenFeedbackForm("dislike")}
+            onPress={() => onOpenFeedbackForm(FeedbackType.Dislike)}
             data-testid="feedback-dislike"
           >
             <Icon
               icon={
-                selectedFeedback === "dislike"
+                selectedFeedback === FeedbackType.Dislike
                   ? "heroicons:hand-thumb-down-solid"
                   : "heroicons:hand-thumb-down"
               }

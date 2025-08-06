@@ -23,6 +23,8 @@ import {
   StreamCallbacks,
   ChatResponse,
   ChatResponseType,
+  MessageRoleType,
+  FeedbackType,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
@@ -54,16 +56,6 @@ const historyStore = createStore(createHistoryStore);
 (useHistoryStore as Mock).mockImplementation(
   (selector: (s: HistoryStore) => unknown) => selector(historyStore.getState()),
 );
-
-const chatResponseTypes: ChatResponseType[] = [
-  "text",
-  "reference",
-  "state_update",
-  "message_id",
-  "conversation_id",
-  "live_update",
-  "followup_messages",
-] as const;
 
 describe("Integration tests", () => {
   const BASE_URL = "http://127.0.0.1:8000";
@@ -102,17 +94,17 @@ describe("Integration tests", () => {
       // Feedback
       expect(config).toHaveProperty("feedback");
 
-      expect(config.feedback).toHaveProperty("like");
+      expect(config.feedback).toHaveProperty(FeedbackType.Like);
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
-      expect(config.feedback).toHaveProperty("like");
+      expect(config.feedback).toHaveProperty(FeedbackType.Like);
       expect(
         config.feedback.like.form === null ||
           config.feedback.like.form instanceof Object,
       ).toBe(true);
 
-      expect(config.feedback).toHaveProperty("dislike");
+      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
       expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
-      expect(config.feedback).toHaveProperty("dislike");
+      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
       expect(
         config.feedback.dislike.form === null ||
           config.feedback.dislike.form instanceof Object,
@@ -179,9 +171,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: "user",
+                role: MessageRoleType.User,
               },
-              { content: expect.any(String), role: "assistant" },
+              { content: expect.any(String), role: MessageRoleType.Assistant },
             ],
             message: "Test message 2",
           },
@@ -257,11 +249,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: "user",
+                role: MessageRoleType.User,
               },
-              { content: expect.any(String), role: "assistant" },
-              { content: "Test message 2", role: "user" },
-              { content: expect.any(String), role: "assistant" },
+              { content: expect.any(String), role: MessageRoleType.Assistant },
+              { content: "Test message 2", role: MessageRoleType.User },
+              { content: expect.any(String), role: MessageRoleType.Assistant },
             ],
             message: "Test message 3",
           },
@@ -289,7 +281,7 @@ describe("Integration tests", () => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
             onMessage: (event: ChatResponse) => {
-              expect(event.type).toBeOneOf(chatResponseTypes);
+              expect(Object.values(ChatResponseType)).toContain(event.type);
             },
           };
 
@@ -329,7 +321,7 @@ describe("Integration tests", () => {
           .getState()
           .primitives.addMessage(historyStore.getState().currentConversation, {
             content: "Mock content",
-            role: "assistant",
+            role: MessageRoleType.Assistant,
             serverId: "msg-123",
           });
       });
@@ -369,7 +361,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "like",
+            feedback: FeedbackType.Like,
             payload: {
               like_reason: "Example reason",
             },
@@ -415,7 +407,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "dislike",
+            feedback: FeedbackType.Dislike,
             payload: {
               feedback: "Example feedback",
               issue_type: "Other",
