@@ -93,6 +93,7 @@ describe("Integration tests", () => {
       expect(typeof config.conversation_history).toBe("boolean");
       // Feedback
       expect(config).toHaveProperty("feedback");
+      expect(config.feedback).toHaveProperty(FeedbackType.Like);
       expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
       expect(config.feedback.like).toHaveProperty("form");
