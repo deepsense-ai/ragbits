@@ -1,6 +1,7 @@
 import warnings
+from collections.abc import Iterator
 from enum import Enum
-from typing import Any, Iterator, cast
+from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import deprecated
