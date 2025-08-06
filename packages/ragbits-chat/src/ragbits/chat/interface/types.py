@@ -18,18 +18,34 @@ class MessageRoleType(str, Enum):
 
 
 @deprecated("MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.")
-class MessageRole(MessageRoleType):
+class MessageRole:
     """
     Deprecated alias for MessageRoleType which will be removed in future versions.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __getattr__(self, name):
         warnings.warn(
             "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        super().__init__(*args, **kwargs)
+        return getattr(MessageRoleType, name)
+
+    def __getitem__(self, name):
+        warnings.warn(
+            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return MessageRoleType[name]
+
+    def __iter__(self):
+        warnings.warn(
+            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return iter(MessageRoleType)
 
 
 class Message(BaseModel):
