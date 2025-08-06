@@ -11,7 +11,7 @@ from typing_extensions import Self
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM, LLMOptions
+from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
@@ -160,6 +160,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         prompt: Iterable[BasePrompt],
         options: LiteLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -168,6 +169,11 @@ class LiteLLM(LLM[LiteLLMOptions]):
             prompt: Iterable of BasePrompt objects containing conversations
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             list of dictionaries with responses from the LLM and metadata.
@@ -202,6 +208,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
                         output_schema=single_prompt.output_schema(), json_mode=single_prompt.json_mode
                     ),
                     tools=tools,
+                    tool_choice=tool_choice,
                 )
                 for single_prompt in prompt
             )
@@ -252,6 +259,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         prompt: BasePrompt,
         options: LiteLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Calls the appropriate LLM endpoint with the given prompt and options.
@@ -259,8 +267,12 @@ class LiteLLM(LLM[LiteLLMOptions]):
         Args:
             prompt: BasePrompt object containing the conversation
             options: Additional settings used by the LLM.
-
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Response string from LLM.
@@ -296,6 +308,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             options=options,
             response_format=response_format,
             tools=tools,
+            tool_choice=tool_choice,
             stream=True,
             stream_options={"include_usage": True},
         )
@@ -409,6 +422,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
         options: LiteLLMOptions,
         response_format: type[BaseModel] | dict | None,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
         stream: bool = False,
         stream_options: dict | None = None,
     ) -> ModelResponse | CustomStreamWrapper:
@@ -420,6 +434,7 @@ class LiteLLM(LLM[LiteLLMOptions]):
             "model": self.model_name,
             "response_format": response_format,
             "tools": tools,
+            "tool_choice": tool_choice,
             "stream": stream,
             **options.dict(),
         }

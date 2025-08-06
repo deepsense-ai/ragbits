@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add tool_choice parameter to agent interface (#738)
 
 ## 1.2.2 (2025-08-08)
 
@@ -19,7 +20,6 @@
 ### Changed
 
 - ragbits-core updated to version v1.2.0
-
 - Add native openai tools support (#621)
 - add Context to Agents (#715)
 
