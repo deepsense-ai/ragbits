@@ -3,7 +3,11 @@ import React from 'react'
 import { act } from 'react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsCall, RagbitsContextProvider } from '../src'
-import { FeedbackType, type ConfigResponse, type FeedbackRequest } from '@ragbits/api-client'
+import {
+    FeedbackType,
+    type ConfigResponse,
+    type FeedbackRequest,
+} from '@ragbits/api-client'
 import { defaultConfigResponse } from './utils'
 
 function createWrapper() {
