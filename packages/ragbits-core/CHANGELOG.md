@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add tool_choice parameter to LLM interface (#738)
+
 ## 1.2.2 (2025-08-08)
 
 - Fix: rendering iterator arguments in Prompt (#768)
