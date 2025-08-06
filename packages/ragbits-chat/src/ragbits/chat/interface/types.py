@@ -205,7 +205,7 @@ class ChatMessageRequest(ChatRequest):
     Deprecated alias for ChatRequest which will be removed in future versions.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: object, **kwargs: object) -> None:
         warnings.warn(
             "ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.",
             DeprecationWarning,

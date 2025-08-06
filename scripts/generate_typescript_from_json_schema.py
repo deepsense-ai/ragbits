@@ -218,6 +218,21 @@ def _generate_chat_response_union_type() -> str:
     return "\n".join(lines)
 
 
+def _generate_ts_enum_object(enum_name: str, enum_values: list[str]) -> str:
+    lines = []
+    lines.append("/**")
+    lines.append(f" * Represents the {enum_name} enum")
+    lines.append(" */")
+    lines.append(f"export const {enum_name} = {{")
+    for v in enum_values:
+        camel_case = "".join(word.capitalize() if i > 0 else word.lower() for i, word in enumerate(v.split("_")))
+        lines.append(f"    {camel_case}: '{v}',")
+    lines.append("} as const;")
+    lines.append("")
+    lines.append(f"export type {enum_name} = TypeFrom<typeof {enum_name}>;")
+    return "\n".join(lines)
+
+
 def main() -> None:
     """Main function to generate TypeScript interfaces."""
     # Initialize model provider
@@ -266,16 +281,20 @@ def main() -> None:
     lines.append("import type { RJSFSchema } from '@rjsf/utils';")
     lines.append("")
 
-    # Generate enums first (they might be referenced by interfaces)
+    # Add TypeFrom utility type if we have enums
     enum_names = list(enum_models.keys())
-    pydantic_names = list(pydantic_models.keys())
+    if enum_names:
+        lines.append("export type TypeFrom<T> = T[keyof T];")
+        lines.append("")
 
-    # Generate enums
+    # Generate enums first (they might be referenced by interfaces)
     for name in enum_names:
-        lines.append(_generate_typescript_with_node(schemas[name], name))
+        enum_values = schemas[name]["enum"]
+        lines.append(_generate_ts_enum_object(name, enum_values))
         lines.append("")
 
     # Generate interfaces
+    pydantic_names = list(pydantic_models.keys())
     for name in pydantic_names:
         lines.append(_generate_typescript_with_node(schemas[name], name))
         lines.append("")
