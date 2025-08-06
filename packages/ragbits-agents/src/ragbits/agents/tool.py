@@ -1,10 +1,15 @@
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from typing import Any, Literal
 
 from typing_extensions import Self
 
+from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
+
+with suppress(ImportError):
+    from pydantic_ai import Tool as PydanticAITool
 
 
 @dataclass
@@ -76,6 +81,20 @@ class Tool:
                 "parameters": self.parameters,
             },
         }
+
+    @requires_dependencies("pydantic_ai")
+    def to_pydantic_ai(self) -> "PydanticAITool":
+        """
+        Convert ragbits tool to a Pydantic AI Tool.
+
+        Returns:
+            A `pydantic_ai.tools.Tool` object.
+        """
+        return PydanticAITool(
+            function=self.on_tool_call,
+            name=self.name,
+            description=self.description,
+        )
 
 
 ToolChoice = Literal["auto", "none", "required"] | Callable
