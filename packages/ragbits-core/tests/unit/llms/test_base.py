@@ -80,6 +80,28 @@ def get_weather(location: str) -> str:
         return json.dumps({"location": location, "temperature": "unknown"})
 
 
+@pytest.fixture(name="get_weather_schema")
+def mock_get_weather_schema() -> dict:
+    return {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Returns the current weather for a given location.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "description": "The location to get the weather for.",
+                        "title": "Location",
+                        "type": "string",
+                    }
+                },
+                "required": ["location"],
+            },
+        },
+    }
+
+
 async def test_generate_with_str(llm: MockLLM):
     response = await llm.generate("Hello")
     assert response == "test response"
@@ -272,6 +294,44 @@ async def test_generate_stream_with_tools_output(llm_with_tools: MockLLM):
 async def test_generate_stream_with_tools_output_no_tool_used(llm: MockLLM):
     stream = llm.generate_streaming("Hello", tools=[get_weather])
     assert [response async for response in stream] == ["first response", "second response"]
+
+
+async def test_generate_with_tool_choice_str(llm_with_tools: MockLLM):
+    await llm_with_tools.generate("Hello", tools=[get_weather], tool_choice="auto")
+    assert llm_with_tools.tool_choice == "auto"
+
+
+async def test_generate_with_tool_choice_dict(llm_with_tools: MockLLM):
+    tool_choice = {"type": "function", "function": {"name": "get_weather"}}
+    await llm_with_tools.generate("Hello", tools=[get_weather], tool_choice=tool_choice)
+    assert llm_with_tools.tool_choice == tool_choice
+
+
+async def test_generate_with_tool_choice_callable(llm_with_tools: MockLLM, get_weather_schema: dict):
+    await llm_with_tools.generate("Hello", tools=[get_weather], tool_choice=get_weather)
+    assert llm_with_tools.tool_choice == get_weather_schema
+
+
+async def test_generate_streaming_with_tool_choice_str(llm_with_tools: MockLLM):
+    stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice="auto")
+    async for _ in stream:
+        pass
+    assert llm_with_tools.tool_choice == "auto"
+
+
+async def test_generate_streaming_with_tool_choice_dict(llm_with_tools: MockLLM):
+    tool_choice = {"type": "function", "function": {"name": "get_weather"}}
+    stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice=tool_choice)
+    async for _ in stream:
+        pass
+    assert llm_with_tools.tool_choice == tool_choice
+
+
+async def test_generate_streaming_with_tool_choice_callable(llm_with_tools: MockLLM, get_weather_schema: dict):
+    stream = llm_with_tools.generate_streaming("Hello", tools=[get_weather], tool_choice=get_weather)
+    async for _ in stream:
+        pass
+    assert llm_with_tools.tool_choice == get_weather_schema
 
 
 def test_init_with_str():

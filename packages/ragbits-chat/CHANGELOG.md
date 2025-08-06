@@ -3,6 +3,14 @@
 ## Unreleased
 - Add backend authentication (#761)
 
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-core updated to version v1.2.1
+
+- Fix routing error causing chat to not be displayed with disabled history (#764)
+
 ## 1.2.0 (2025-08-01)
 ### Changed
 

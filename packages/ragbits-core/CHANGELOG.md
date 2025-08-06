@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add tool_choice parameter to LLM interface (#738)
+
+## 1.2.1 (2025-08-04)
+
 ## 1.2.0 (2025-08-01)
 
 - Add support for Reasoning models (#752)
