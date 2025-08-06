@@ -2,12 +2,22 @@
 
 ## Unreleased
 
+- Add tool_choice parameter to LLM interface (#738)
+
+## 1.2.1 (2025-08-04)
+
+## 1.2.0 (2025-08-01)
+
+- Add support for Reasoning models (#752)
+- Fix issue with cost calculation for some models (#748)
 - Fix issue with improper convertion to json of tool call arguments (#737)
 - Added Google Drive support (#686)
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
 - Added Google Drive support for impersonation and presentation-to-pdf (#724)
+- Introduce new API for attachments in prompts (#711)
+- Fix issue with trying to store duplicated entries in Vector Stores (#762)
 
 ## 1.1.0 (2025-07-09)
 

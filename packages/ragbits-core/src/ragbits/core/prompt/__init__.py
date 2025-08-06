@@ -1,3 +1,3 @@
-from ragbits.core.prompt.prompt import ChatFormat, Prompt
+from ragbits.core.prompt.prompt import Attachment, ChatFormat, Prompt
 
-__all__ = ["ChatFormat", "Prompt"]
+__all__ = ["Attachment", "ChatFormat", "Prompt"]

@@ -1,5 +1,5 @@
 """
-Ragbits Core Example: Multimodal Prompt
+Ragbits Core Example: Multimodal Prompt with Image Input
 
 This example demonstrates how to use the `Prompt` class to generate themed text using an LLM
 with both text and image inputs. We define an `ImagePrompt` that generates a themed description
@@ -8,7 +8,7 @@ for a given image.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/core/prompt/multimodal.py
+    uv run examples/core/prompt/multimodal_with_image.py
     ```
 """
 
@@ -24,7 +24,7 @@ import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.llms import LiteLLM
-from ragbits.core.prompt import Prompt
+from ragbits.core.prompt import Attachment, Prompt
 
 
 class ImagePromptInput(BaseModel):
@@ -33,7 +33,7 @@ class ImagePromptInput(BaseModel):
     """
 
     theme: str
-    image_url: str
+    image: Attachment
 
 
 class ImagePromptOutput(BaseModel):
@@ -57,18 +57,14 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
     Theme: {{ theme }}
     """
 
-    image_input_fields = ["image_url"]
-
 
 async def main() -> None:
     """
     Run the example.
     """
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    prompt_input = ImagePromptInput(
-        image_url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG",
-        theme="dramatic",
-    )
+    image = Attachment(url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG")
+    prompt_input = ImagePromptInput(image=image, theme="dramatic")
     prompt = ImagePrompt(prompt_input)
     response = await llm.generate(prompt)
     print(response.description)

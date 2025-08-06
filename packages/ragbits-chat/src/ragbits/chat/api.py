@@ -116,12 +116,6 @@ class RagbitsAPI:
     def setup_routes(self) -> None:
         """Defines API routes."""
 
-        @self.app.get("/", response_class=HTMLResponse)
-        async def root() -> HTMLResponse:
-            index_file = self.dist_dir / "index.html"
-            with open(str(index_file)) as file:
-                return HTMLResponse(content=file.read())
-
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
             return await self._handle_chat_message(request)
@@ -152,9 +146,16 @@ class RagbitsAPI:
                 else None,
                 "user_settings": {"form": user_settings_config},
                 "debug_mode": self.debug_mode,
+                "conversation_history": self.chat_interface.conversation_history,
             }
 
             return JSONResponse(content=config_dict)
+
+        @self.app.get("/{full_path:path}", response_class=HTMLResponse)
+        async def root() -> HTMLResponse:
+            index_file = self.dist_dir / "index.html"
+            with open(str(index_file)) as file:
+                return HTMLResponse(content=file.read())
 
     async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
@@ -234,6 +235,8 @@ class RagbitsAPI:
                                 outputs.message_id = content
                             case ChatResponseType.CONVERSATION_ID:
                                 outputs.conversation_id = content
+                            case ChatResponseType.IMAGE:
+                                outputs.image_url = content
 
                         yield chunk
 
