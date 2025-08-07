@@ -3,15 +3,18 @@
 ## Unreleased
 - Add backend authentication (#761)
 
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
+
 ## 1.2.1 (2025-08-04)
 
 ### Changed
 
 - ragbits-core updated to version v1.2.1
-
 - Fix routing error causing chat to not be displayed with disabled history (#764)
 
 ## 1.2.0 (2025-08-01)
+
 ### Changed
 
 - ragbits-core updated to version v1.2.0

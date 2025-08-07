@@ -18,12 +18,13 @@ import {
   fireEvent,
 } from "@testing-library/react";
 import {
-  ChatResponseType,
-  MessageRole,
   RagbitsClient,
   RagbitsContextProvider,
   StreamCallbacks,
   ChatResponse,
+  ChatResponseType,
+  MessageRole,
+  FeedbackType,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
@@ -92,8 +93,7 @@ describe("Integration tests", () => {
       expect(typeof config.conversation_history).toBe("boolean");
       // Feedback
       expect(config).toHaveProperty("feedback");
-
-      expect(config.feedback).toHaveProperty("like");
+      expect(config.feedback).toHaveProperty(FeedbackType.Like);
       expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
       expect(config.feedback.like).toHaveProperty("form");
@@ -102,7 +102,7 @@ describe("Integration tests", () => {
           config.feedback.like.form instanceof Object,
       ).toBe(true);
 
-      expect(config.feedback).toHaveProperty("dislike");
+      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
       expect(config.feedback.dislike).toHaveProperty("enabled");
       expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
       expect(config.feedback.dislike).toHaveProperty("form");
@@ -172,9 +172,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 2",
           },
@@ -250,11 +250,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
-              { content: "Test message 2", role: MessageRole.USER },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
+              { content: "Test message 2", role: MessageRole.User },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 3",
           },
@@ -282,7 +282,7 @@ describe("Integration tests", () => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
             onMessage: (event: ChatResponse) => {
-              expect(event.type).toBeOneOf(Object.values(ChatResponseType));
+              expect(Object.values(ChatResponseType)).toContain(event.type);
             },
           };
 
@@ -322,7 +322,7 @@ describe("Integration tests", () => {
           .getState()
           .primitives.addMessage(historyStore.getState().currentConversation, {
             content: "Mock content",
-            role: MessageRole.ASSISTANT,
+            role: MessageRole.Assistant,
             serverId: "msg-123",
           });
       });
@@ -362,7 +362,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "like",
+            feedback: FeedbackType.Like,
             payload: {
               like_reason: "Example reason",
             },
@@ -408,7 +408,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "dislike",
+            feedback: FeedbackType.Dislike,
             payload: {
               feedback: "Example feedback",
               issue_type: "Other",

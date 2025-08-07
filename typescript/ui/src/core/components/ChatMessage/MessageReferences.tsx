@@ -11,7 +11,7 @@ const MessageReferences = ({ references }: MessageReferencesProps) => {
         {references.map((reference, index) => (
           <li key={index}>
             <a
-              href={reference.url}
+              href={reference.url ?? undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:underline"

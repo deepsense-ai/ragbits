@@ -5,7 +5,6 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Literal
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -14,10 +13,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Message
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatMessageRequest,
+    ChatResponse,
+    ChatResponseType,
+    ConfigResponse,
+    FeedbackConfig,
+    FeedbackItem,
+    FeedbackRequest,
+)
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
@@ -195,35 +202,26 @@ class RagbitsAPI:
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
-            like_config = self.chat_interface.feedback_config.like_form
-            dislike_config = self.chat_interface.feedback_config.dislike_form
-            user_settings_config = self.chat_interface.user_settings.form
+            feedback_config = self.chat_interface.feedback_config
 
-            config_dict = {
-                "feedback": {
-                    "like": {
-                        "enabled": self.chat_interface.feedback_config.like_enabled,
-                        "form": like_config,
-                    },
-                    "dislike": {
-                        "enabled": self.chat_interface.feedback_config.dislike_enabled,
-                        "form": dislike_config,
-                    },
-                },
-                "customization": self.chat_interface.ui_customization.model_dump()
-                if self.chat_interface.ui_customization
-                else None,
-                "user_settings": {"form": user_settings_config},
-                "debug_mode": self.debug_mode,
-                "conversation_history": self.chat_interface.conversation_history,
-                "authentication": {
-                    "enabled": self.auth_backend is not None,
-                    "type": type(self.auth_backend).__name__ if self.auth_backend else None,
-                    "login_forms": ["CredentialsLoginRequest"],
-                },
-            }
+            config_response = ConfigResponse(
+                feedback=FeedbackConfig(
+                    like=FeedbackItem(
+                        enabled=feedback_config.like_enabled,
+                        form=feedback_config.like_form,
+                    ),
+                    dislike=FeedbackItem(
+                        enabled=feedback_config.dislike_enabled,
+                        form=feedback_config.dislike_form,
+                    ),
+                ),
+                customization=self.chat_interface.ui_customization,
+                user_settings=self.chat_interface.user_settings,
+                debug_mode=self.debug_mode,
+                conversation_history=self.chat_interface.conversation_history,
+            )
 
-            return JSONResponse(content=config_dict)
+            return JSONResponse(content=config_response.model_dump())
 
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
