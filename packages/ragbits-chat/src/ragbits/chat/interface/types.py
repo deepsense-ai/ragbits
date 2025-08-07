@@ -3,6 +3,9 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.chat.interface.forms import UserSettings
+from ragbits.chat.interface.ui_customization import UICustomization
+
 
 class MessageRole(str, Enum):
     """Defines the role of the message sender in a conversation."""
@@ -76,6 +79,15 @@ class ChatResponseType(str, Enum):
     IMAGE = "image"
 
 
+class ChatContext(BaseModel):
+    """Represents the context of a chat conversation."""
+
+    conversation_id: str | None = None
+    message_id: str | None = None
+    state: dict[str, Any] = Field(default_factory=dict)
+    model_config = ConfigDict(extra="allow")
+
+
 class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
@@ -145,10 +157,56 @@ class ChatResponse(BaseModel):
         return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
 
 
-class ChatContext(BaseModel):
-    """Represents the context of a chat conversation."""
+class ChatMessageRequest(BaseModel):
+    """Client-side chat request interface."""
 
-    conversation_id: str | None = None
-    message_id: str | None = None
-    state: dict[str, Any] = Field(default_factory=dict)
-    model_config = ConfigDict(extra="allow")
+    message: str = Field(..., description="The current user message")
+    history: list["Message"] = Field(default_factory=list, description="Previous message history")
+    context: dict[str, Any] = Field(default_factory=dict, description="User context information")
+
+
+class FeedbackType(str, Enum):
+    """Feedback types for user feedback."""
+
+    LIKE = "like"
+    DISLIKE = "dislike"
+
+
+class FeedbackResponse(BaseModel):
+    """Response from feedback submission."""
+
+    status: str = Field(..., description="Status of the feedback submission")
+
+
+class FeedbackRequest(BaseModel):
+    """
+    Request body for feedback submission
+    """
+
+    message_id: str = Field(..., description="ID of the message receiving feedback")
+    feedback: FeedbackType = Field(..., description="Type of feedback (like or dislike)")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Additional feedback details")
+
+
+class FeedbackItem(BaseModel):
+    """Individual feedback configuration (like/dislike)."""
+
+    enabled: bool = Field(..., description="Whether this feedback type is enabled")
+    form: dict[str, Any] | None = Field(..., description="Form schema for this feedback type")
+
+
+class FeedbackConfig(BaseModel):
+    """Feedback configuration containing like and dislike settings."""
+
+    like: FeedbackItem = Field(..., description="Like feedback configuration")
+    dislike: FeedbackItem = Field(..., description="Dislike feedback configuration")
+
+
+class ConfigResponse(BaseModel):
+    """Configuration response from the API."""
+
+    feedback: FeedbackConfig = Field(..., description="Feedback configuration")
+    customization: UICustomization | None = Field(default=None, description="UI customization")
+    user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
+    debug_mode: bool = Field(default=False, description="Debug mode flag")
+    conversation_history: bool = Field(default=False, description="Debug mode flag")
