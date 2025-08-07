@@ -4,7 +4,7 @@ import {
   LiveUpdate,
   RagbitsClient,
   Image,
-  MessageRoleType,
+  MessageRole,
   ChatResponseType,
   LiveUpdateType,
 } from "@ragbits/api-client-react";
@@ -235,7 +235,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         conversationId,
       };
       const nonUserMessages = Object.values(history).filter(
-        (m) => m.role !== MessageRoleType.User,
+        (m) => m.role !== MessageRole.User,
       );
       conversation.eventsLog = nonUserMessages.map(() => []);
       set((draft: HistoryStore) => {
@@ -405,13 +405,13 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       const { history, conversationId } = getCurrentConversation();
       addMessage(conversationId, {
-        role: MessageRoleType.User,
+        role: MessageRole.User,
         content: text,
       });
 
       // Add empty assistant message that will be filled with the response
       const assistantResponseId = addMessage(conversationId, {
-        role: MessageRoleType.Assistant,
+        role: MessageRole.Assistant,
         content: "",
       });
 

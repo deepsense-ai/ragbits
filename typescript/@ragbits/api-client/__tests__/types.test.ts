@@ -29,12 +29,12 @@ describe('Package Exports', () => {
         expect(RagbitsApiClient.ChatResponseType.LiveUpdate).toBe('live_update')
     })
 
-    it('should export MessageRoleType enum', () => {
-        expect(RagbitsApiClient.MessageRoleType).toBeDefined()
-        expect(typeof RagbitsApiClient.MessageRoleType).toBe('object')
-        expect(RagbitsApiClient.MessageRoleType.User).toBe('user')
-        expect(RagbitsApiClient.MessageRoleType.Assistant).toBe('assistant')
-        expect(RagbitsApiClient.MessageRoleType.System).toBe('system')
+    it('should export MessageRole enum', () => {
+        expect(RagbitsApiClient.MessageRole).toBeDefined()
+        expect(typeof RagbitsApiClient.MessageRole).toBe('object')
+        expect(RagbitsApiClient.MessageRole.User).toBe('user')
+        expect(RagbitsApiClient.MessageRole.Assistant).toBe('assistant')
+        expect(RagbitsApiClient.MessageRole.System).toBe('system')
     })
 
     it('should export LiveUpdateType enum', () => {

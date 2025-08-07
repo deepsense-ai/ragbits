@@ -11,7 +11,7 @@ import {
   useConversationProperty,
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
-import { MessageRoleType } from "@ragbits/api-client";
+import { MessageRole } from "@ragbits/api-client";
 
 type ChatMessageProps = {
   classNames?: {
@@ -35,10 +35,10 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
     const { serverId, content, role, references, liveUpdates, images } =
       message;
-    const rightAlign = role === MessageRoleType.User;
+    const rightAlign = role === MessageRole.User;
     const isLoading =
       isHistoryLoading &&
-      role === MessageRoleType.Assistant &&
+      role === MessageRole.Assistant &&
       messageId === lastMessageId;
 
     const [didAnimate, setDidAnimate] = useState(false);

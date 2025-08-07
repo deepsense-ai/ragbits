@@ -6,7 +6,7 @@ import HorizontalActions from "../../src/core/components/inputs/PromptInput/Hori
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
 import userEvent from "@testing-library/user-event";
 import { ChatMessage } from "../../src/types/history";
-import { MessageRoleType } from "@ragbits/api-client";
+import { MessageRole } from "@ragbits/api-client";
 
 vi.mock(
   "../../src/core/components/inputs/PromptInput/HorizontalActions.tsx",
@@ -33,17 +33,17 @@ vi.mock("../../src/core/utils/useTextAreaCaretDetection.tsx", () => ({
 
 const MOCK_HISTORY: ChatMessage[] = [
   {
-    role: MessageRoleType.User,
+    role: MessageRole.User,
     content: "Hello, how are you?",
     id: "1",
   },
   {
-    role: MessageRoleType.Assistant,
+    role: MessageRole.Assistant,
     content: "I'm fine, thank you. How can I help you today?",
     id: "2",
   },
   {
-    role: MessageRoleType.User,
+    role: MessageRole.User,
     content: "I'm doing well, thanks for asking. What's new?",
     id: "3",
   },

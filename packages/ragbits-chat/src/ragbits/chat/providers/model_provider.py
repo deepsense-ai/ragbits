@@ -40,7 +40,7 @@ class RagbitsChatModelProvider:
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
                 ChatContext,
-                ChatRequest,
+                ChatMessageRequest,
                 ChatResponseType,
                 ConfigResponse,
                 FeedbackConfig,
@@ -53,7 +53,7 @@ class RagbitsChatModelProvider:
                 LiveUpdateContent,
                 LiveUpdateType,
                 Message,
-                MessageRoleType,
+                MessageRole,
                 Reference,
                 StateUpdate,
             )
@@ -64,7 +64,7 @@ class RagbitsChatModelProvider:
                 "ChatResponseType": ChatResponseType,
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
-                "MessageRoleType": MessageRoleType,
+                "MessageRole": MessageRole,
                 # Core data models
                 "ChatContext": ChatContext,
                 "LiveUpdate": LiveUpdate,
@@ -83,7 +83,7 @@ class RagbitsChatModelProvider:
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
                 # API request models
-                "ChatRequest": ChatRequest,
+                "ChatRequest": ChatMessageRequest,
                 "FeedbackRequest": FeedbackRequest,
             }
 
@@ -106,7 +106,7 @@ class RagbitsChatModelProvider:
             return self._categories_cache
 
         self._categories_cache = {
-            "enums": ["ChatResponseType", "FeedbackType", "LiveUpdateType", "MessageRoleType"],
+            "enums": ["ChatResponseType", "FeedbackType", "LiveUpdateType", "MessageRole"],
             "core_data": [
                 "ChatContext",
                 "LiveUpdate",
@@ -115,6 +115,7 @@ class RagbitsChatModelProvider:
                 "Reference",
                 "ServerState",
                 "FeedbackItem",
+                "Image",
             ],
             "configuration": ["HeaderCustomization", "UICustomization", "UserSettings", "FeedbackConfig"],
             "responses": ["FeedbackResponse", "ConfigResponse"],

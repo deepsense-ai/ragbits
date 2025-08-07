@@ -1,16 +1,13 @@
-import warnings
-from collections.abc import Iterator
 from enum import Enum
 from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import deprecated
 
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
 
 
-class MessageRoleType(str, Enum):
+class MessageRole(str, Enum):
     """Defines the role of the message sender in a conversation."""
 
     USER = "user"
@@ -18,41 +15,10 @@ class MessageRoleType(str, Enum):
     SYSTEM = "system"
 
 
-@deprecated("MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.")
-class MessageRole:
-    """
-    Deprecated alias for MessageRoleType which will be removed in future versions.
-    """
-
-    def __getattr__(self, name: str) -> MessageRoleType:
-        warnings.warn(
-            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return getattr(MessageRoleType, name)
-
-    def __getitem__(self, name: str) -> MessageRoleType:
-        warnings.warn(
-            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return MessageRoleType[name]
-
-    def __iter__(self) -> Iterator[MessageRoleType]:
-        warnings.warn(
-            "MessageRole is deprecated and will be removed in future versions. Please use MessageRoleType instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return iter(MessageRoleType)
-
-
 class Message(BaseModel):
     """Represents a single message in the conversation history."""
 
-    role: MessageRoleType
+    role: MessageRole
     content: str
 
 
@@ -191,27 +157,12 @@ class ChatResponse(BaseModel):
         return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
 
 
-class ChatRequest(BaseModel):
+class ChatMessageRequest(BaseModel):
     """Client-side chat request interface."""
 
     message: str = Field(..., description="The current user message")
     history: list["Message"] = Field(default_factory=list, description="Previous message history")
     context: dict[str, Any] = Field(default_factory=dict, description="User context information")
-
-
-@deprecated("ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.")
-class ChatMessageRequest(ChatRequest):
-    """
-    Deprecated alias for ChatRequest which will be removed in future versions.
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        warnings.warn(
-            "ChatMessageRequest is deprecated and will be removed in future versions. Please use ChatRequest instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super().__init__(*args, **kwargs)
 
 
 class FeedbackType(str, Enum):

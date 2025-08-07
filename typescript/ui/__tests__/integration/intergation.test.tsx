@@ -23,7 +23,7 @@ import {
   StreamCallbacks,
   ChatResponse,
   ChatResponseType,
-  MessageRoleType,
+  MessageRole,
   FeedbackType,
 } from "@ragbits/api-client-react";
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
@@ -172,9 +172,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRoleType.User,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRoleType.Assistant },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 2",
           },
@@ -250,11 +250,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRoleType.User,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRoleType.Assistant },
-              { content: "Test message 2", role: MessageRoleType.User },
-              { content: expect.any(String), role: MessageRoleType.Assistant },
+              { content: expect.any(String), role: MessageRole.Assistant },
+              { content: "Test message 2", role: MessageRole.User },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 3",
           },
@@ -322,7 +322,7 @@ describe("Integration tests", () => {
           .getState()
           .primitives.addMessage(historyStore.getState().currentConversation, {
             content: "Mock content",
-            role: MessageRoleType.Assistant,
+            role: MessageRole.Assistant,
             serverId: "msg-123",
           });
       });

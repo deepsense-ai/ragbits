@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
-    ChatRequest,
+    ChatMessageRequest,
     ChatResponse,
     ChatResponseType,
     ConfigResponse,
@@ -104,7 +104,7 @@ class RagbitsAPI:
         """Defines API routes."""
 
         @self.app.post("/api/chat", response_class=StreamingResponse)
-        async def chat_message(request: ChatRequest) -> StreamingResponse:
+        async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
             return await self._handle_chat_message(request)
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
@@ -140,7 +140,7 @@ class RagbitsAPI:
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
 
-    async def _handle_chat_message(self, request: ChatRequest) -> StreamingResponse:  # noqa: PLR0915
+    async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 

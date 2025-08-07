@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import ChatMessage from "../../src/core/components/ChatMessage/ChatMessage";
-import { MessageRoleType } from "@ragbits/api-client-react";
+import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps, PropsWithChildren } from "react";
@@ -27,7 +27,7 @@ import {
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 
 function mockStore(
-  role: MessageRoleType,
+  role: MessageRole,
   isLoading: boolean = false,
   content?: string,
 ) {
@@ -49,10 +49,10 @@ function mockStore(
       serverId: role,
       content:
         content ??
-        (role === MessageRoleType.Assistant ? "Hello, world!" : "Hi there!"),
+        (role === MessageRole.Assistant ? "Hello, world!" : "Hi there!"),
       role,
       references:
-        role === MessageRoleType.Assistant
+        role === MessageRole.Assistant
           ? [
               {
                 title: "Example",
@@ -91,15 +91,15 @@ describe("ChatMessage", () => {
   });
   describe("assistant role", () => {
     it("is correctly aligned", () => {
-      mockStore(MessageRoleType.Assistant);
-      render(<ChatMessage messageId={MessageRoleType.Assistant} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       const wrapper = screen.getByTestId("chat-message-wrapper");
       expect(wrapper).not.toHaveClass("flex-row-reverse");
     });
 
     it("has correct content", () => {
-      mockStore(MessageRoleType.Assistant);
-      render(<ChatMessage messageId={MessageRoleType.Assistant} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByText("Hello, world!")).toBeInTheDocument();
       // Check references
       expect(screen.getByText("Example")).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe("ChatMessage", () => {
     });
 
     it("shows feedback from when enabled", () => {
-      mockStore(MessageRoleType.Assistant);
+      mockStore(MessageRole.Assistant);
       vi.mock(
         "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
         () => ({
@@ -129,19 +129,19 @@ describe("ChatMessage", () => {
         }),
       );
 
-      render(<ChatMessage messageId={MessageRoleType.Assistant} />);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
     });
 
     it("displays loading state for assistant message without content", () => {
-      mockStore(MessageRoleType.Assistant, true, "");
-      render(<ChatMessage messageId={MessageRoleType.Assistant} />);
+      mockStore(MessageRole.Assistant, true, "");
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     });
 
     it("copies content to clipboard when copy button is clicked", async () => {
-      mockStore(MessageRoleType.Assistant);
-      render(<ChatMessage messageId={MessageRoleType.Assistant} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       const user = userEvent.setup();
       const copyButton = screen.getByLabelText("Copy message");
       await user.click(copyButton);
@@ -159,14 +159,14 @@ describe("ChatMessage", () => {
 
   describe("user role", () => {
     it("is correctly aligned", () => {
-      mockStore(MessageRoleType.User);
-      render(<ChatMessage messageId={MessageRoleType.User} />);
+      mockStore(MessageRole.User);
+      render(<ChatMessage messageId={MessageRole.User} />);
       const wrapper = screen.getByTestId("chat-message-wrapper");
       expect(wrapper).toHaveClass("flex-row-reverse");
     });
     it("has correct content", () => {
-      mockStore(MessageRoleType.User);
-      render(<ChatMessage messageId={MessageRoleType.User} />);
+      mockStore(MessageRole.User);
+      render(<ChatMessage messageId={MessageRole.User} />);
       expect(screen.getByText("Hi there!")).toBeInTheDocument();
     });
   });

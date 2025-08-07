@@ -45,15 +45,15 @@ export const LiveUpdateType = {
 export type LiveUpdateType = TypeFrom<typeof LiveUpdateType>
 
 /**
- * Represents the MessageRoleType enum
+ * Represents the MessageRole enum
  */
-export const MessageRoleType = {
+export const MessageRole = {
     User: 'user',
     Assistant: 'assistant',
     System: 'system',
 } as const
 
-export type MessageRoleType = TypeFrom<typeof MessageRoleType>
+export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
  * Represents the context of a chat conversation.
@@ -88,7 +88,7 @@ export interface LiveUpdateContent {
  * Represents a single message in the conversation history.
  */
 export interface Message {
-    role: MessageRoleType
+    role: MessageRole
     content: string
 }
 
