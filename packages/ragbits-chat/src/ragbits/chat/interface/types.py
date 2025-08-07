@@ -205,6 +205,7 @@ class FeedbackConfig(BaseModel):
 
 class AuthenticationConfig(BaseModel):
     """Configuration for authentication."""
+
     enabled: bool = Field(default=False, description="Enable/disable authentication")
     type: str | None = Field(default=None, description="Authentication type")
     login_forms: list[str] = Field(default=[], description="List of authentication forms")

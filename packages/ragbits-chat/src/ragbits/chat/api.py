@@ -322,7 +322,7 @@ class RagbitsAPI:
                     context=chat_context,
                 ) as outputs:
                     async for chunk in RagbitsAPI._chat_response_to_sse(response_generator):
-                        data_dict = json.loads(chunk[len("data: "):])
+                        data_dict = json.loads(chunk[len("data: ") :])
 
                         content = str(data_dict.get("content", ""))
 
