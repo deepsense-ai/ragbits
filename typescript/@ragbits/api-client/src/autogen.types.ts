@@ -163,6 +163,24 @@ export interface UICustomization {
      * Custom welcome message to be displayed on the UI. It supports Markdown.
      */
     welcome_message: string | null
+    /**
+     * Custom meta properties customization
+     */
+    meta: PageMetaCustomization | null
+}
+
+/**
+ * Customization for the meta properites of the UI
+ */
+export interface PageMetaCustomization {
+    /**
+     * Custom favicon URL or content. If `None` logo is used.The favicon can also be serverd from 'static' directory inside 'ui-build'
+     */
+    favicon: string | null
+    /**
+     * Custom title for the page displayed in the browser's bar. If `None` header title is used.
+     */
+    page_title: string | null
 }
 
 /**
