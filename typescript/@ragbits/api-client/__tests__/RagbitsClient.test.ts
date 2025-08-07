@@ -505,10 +505,10 @@ describe('RagbitsClient', () => {
             const messages: string[] = []
             client.makeStreamRequest(
                 '/api/chat',
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
-                        if (data.type !== ChatResponseType.TEXT) {
+                        if (data.type !== ChatResponseType.Text) {
                             return
                         }
 

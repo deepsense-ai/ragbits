@@ -1,1 +1,0 @@
-import{b2 as i,b3 as o}from"./index-ARGH7eR7.js";const l=i(o(e=>({user:null,token:null,isAuthenticated:!1,tokenExpiration:null,login:(n,t)=>e(()=>({user:n,token:t,tokenExpiration:Date.now()+t.expires_in*1e3,isAuthenticated:!0})),logout:()=>e(()=>({user:null,token:null,isAuthenticated:!1}))})));export{l as a};
