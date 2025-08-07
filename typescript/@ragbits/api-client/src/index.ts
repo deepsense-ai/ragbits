@@ -231,3 +231,4 @@ export class RagbitsClient {
 
 // Re-export types
 export * from './types'
+export * from './autogen.types'
