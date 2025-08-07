@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
 
 ## 1.2.1 (2025-08-04)
 

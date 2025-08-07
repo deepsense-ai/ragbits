@@ -57,7 +57,11 @@ class RagbitsChatModelProvider:
                 Reference,
                 StateUpdate,
             )
-            from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+            from ragbits.chat.interface.ui_customization import (
+                HeaderCustomization,
+                PageMetaCustomization,
+                UICustomization,
+            )
 
             self._models_cache = {
                 # Enums
@@ -77,6 +81,7 @@ class RagbitsChatModelProvider:
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
+                "PageMetaCustomization": PageMetaCustomization,
                 "UserSettings": UserSettings,
                 "FeedbackConfig": FeedbackConfig,  # Current from types.py (not deprecated forms.py)
                 # API response models
