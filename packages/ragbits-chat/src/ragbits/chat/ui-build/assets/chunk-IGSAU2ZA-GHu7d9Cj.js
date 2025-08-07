@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-2GLb9zev.js
-import{E as h,aT as p,R as x,r as i,j as M,W as R}from"./index-CKLJLbbQ.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var H=s;export{H as m};
-========
-import{E as h,aT as p,R as x,r as i,j as M,W as R}from"./index-CYBfprpm.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var H=s;export{H as m};
->>>>>>>> 29efaf040 (chore(ui): build ui):packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-GHu7d9Cj.js
