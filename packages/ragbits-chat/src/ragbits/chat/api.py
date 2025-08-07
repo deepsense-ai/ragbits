@@ -49,13 +49,16 @@ class FeedbackRequest(BaseModel):
     payload: dict = Field(default_factory=dict, description="Additional feedback details")
 
 
-class LoginRequest(BaseModel):
+class CredentialsLoginRequest(BaseModel):
     """
     Request body for user login
     """
 
     username: str = Field(..., description="Username")
     password: str = Field(..., description="Password")
+
+
+LoginRequest = CredentialsLoginRequest
 
 
 class LoginResponse(BaseModel):
@@ -216,6 +219,7 @@ class RagbitsAPI:
                 "authentication": {
                     "enabled": self.auth_backend is not None,
                     "type": type(self.auth_backend).__name__ if self.auth_backend else None,
+                    "login_forms": ["CredentialsLoginRequest"],
                 },
             }
 
