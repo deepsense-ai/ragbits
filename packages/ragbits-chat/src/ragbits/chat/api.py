@@ -203,7 +203,6 @@ class RagbitsAPI:
                 conversation_history=self.chat_interface.conversation_history,
                 authentication=AuthenticationConfig(
                     enabled=self.auth_backend is not None,
-                    type=type(self.auth_backend).__name__ if self.auth_backend else None,
                     login_forms=["CredentialsLoginRequest"],
                 ),
             )
