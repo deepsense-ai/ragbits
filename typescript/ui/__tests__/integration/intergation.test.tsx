@@ -94,7 +94,7 @@ describe("Integration tests", () => {
       // Authentication
       expect(typeof config.authentication).toBe("object");
       expect(typeof config.authentication.enabled).toBe("boolean");
-      expect(Array.isArray(config.login_forms)).toBe(true);
+      expect(Array.isArray(config.authentication.auth_types)).toBe(true);
 
       // Feedback
       expect(config).toHaveProperty("feedback");

@@ -4,44 +4,15 @@ import {
     FeedbackResponse,
     ChatRequest,
     ChatResponse,
+    LogoutRequest,
+    LoginRequest,
+    LoginResponse,
 } from './autogen.types'
 
-export interface User {
-    user_id: string
-    username: string
-    email: string | null
-    full_name: string | null
-    roles: string[]
-    metadata: Record<string, unknown>
-}
-
-export interface JWTToken {
-    access_token: string
-    token_type: string
-    expires_in: number
-    refresh_token: string | null
-    user: User
-}
-
-export interface LoginRequest {
-    username: string
-    password: string
-}
-
-export interface LoginResponse {
-    success: boolean
-    user: User | null
-    error_message: string | null
-    jwt_token: JWTToken | null
-}
-
-export interface LogoutRequest {
-    session_id: string
-}
-
-export interface LogoutResponse {
+export interface GenericResponse {
     success: boolean
 }
+
 /**
  * Configuration for the client
  */
@@ -72,7 +43,7 @@ export interface BaseApiEndpoints {
     '/api/config': EndpointDefinition<never, ConfigResponse>
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
     '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
-    '/api/auth/logout': EndpointDefinition<LogoutRequest, LogoutResponse>
+    '/api/auth/logout': EndpointDefinition<LogoutRequest, GenericResponse>
 }
 
 /**

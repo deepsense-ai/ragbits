@@ -10,6 +10,8 @@ from typing import cast
 
 from pydantic import BaseModel
 
+from ragbits.chat.interface.types import AuthType
+
 
 class RagbitsChatModelProvider:
     """
@@ -37,8 +39,17 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         try:
+            from ragbits.chat.auth.types import (
+                CredentialsLoginRequest,
+                JWTToken,
+                LoginRequest,
+                LoginResponse,
+                LogoutRequest,
+                User,
+            )
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
+                AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
                 ChatResponseType,
@@ -90,6 +101,15 @@ class RagbitsChatModelProvider:
                 # API request models
                 "ChatRequest": ChatMessageRequest,
                 "FeedbackRequest": FeedbackRequest,
+                # Auth
+                "AuthType": AuthType,
+                "AuthenticationConfig": AuthenticationConfig,
+                "CredentialsLoginRequest": CredentialsLoginRequest,
+                "JWTToken": JWTToken,
+                "LoginRequest": LoginRequest,
+                "LoginResponse": LoginResponse,
+                "LogoutRequest": LogoutRequest,
+                "User": User,
             }
 
             return self._models_cache
