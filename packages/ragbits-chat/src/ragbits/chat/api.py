@@ -13,9 +13,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
+    AuthenticationConfig,
     ChatContext,
     ChatMessageRequest,
     ChatResponse,
@@ -34,26 +36,6 @@ from .auth.models import JWTToken
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
-
-
-class ChatMessageRequest(BaseModel):
-    """
-    Request body for chat message
-    """
-
-    message: str = Field(..., description="The current user message")
-    history: list[Message] = Field(default_factory=list, description="Previous message history")
-    context: dict[str, Any] = Field(default_factory=dict, description="User context information")
-
-
-class FeedbackRequest(BaseModel):
-    """
-    Request body for feedback submission
-    """
-
-    message_id: str = Field(..., description="ID of the message receiving feedback")
-    feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
-    payload: dict = Field(default_factory=dict, description="Additional feedback details")
 
 
 class CredentialsLoginRequest(BaseModel):
@@ -219,6 +201,11 @@ class RagbitsAPI:
                 user_settings=self.chat_interface.user_settings,
                 debug_mode=self.debug_mode,
                 conversation_history=self.chat_interface.conversation_history,
+                authentication=AuthenticationConfig(
+                    enabled=self.auth_backend is not None,
+                    type=type(self.auth_backend).__name__ if self.auth_backend else None,
+                    login_forms=["CredentialsLoginRequest"],
+                ),
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -335,7 +322,7 @@ class RagbitsAPI:
                     context=chat_context,
                 ) as outputs:
                     async for chunk in RagbitsAPI._chat_response_to_sse(response_generator):
-                        data_dict = json.loads(chunk[len("data: ") :])
+                        data_dict = json.loads(chunk[len("data: "):])
 
                         content = str(data_dict.get("content", ""))
 

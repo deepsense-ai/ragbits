@@ -85,6 +85,7 @@ class ChatContext(BaseModel):
     conversation_id: str | None = None
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)
+    session_id: str | None = None
     model_config = ConfigDict(extra="allow")
 
 
@@ -187,11 +188,6 @@ class FeedbackRequest(BaseModel):
     feedback: FeedbackType = Field(..., description="Type of feedback (like or dislike)")
     payload: dict[str, Any] = Field(default_factory=dict, description="Additional feedback details")
 
-    conversation_id: str | None = None
-    message_id: str | None = None
-    state: dict[str, Any] = Field(default_factory=dict)
-    session_id: str | None = None
-    model_config = ConfigDict(extra="allow")
 
 class FeedbackItem(BaseModel):
     """Individual feedback configuration (like/dislike)."""
@@ -207,6 +203,13 @@ class FeedbackConfig(BaseModel):
     dislike: FeedbackItem = Field(..., description="Dislike feedback configuration")
 
 
+class AuthenticationConfig(BaseModel):
+    """Configuration for authentication."""
+    enabled: bool = Field(default=False, description="Enable/disable authentication")
+    type: str | None = Field(default=None, description="Authentication type")
+    login_forms: list[str] = Field(default=[], description="List of authentication forms")
+
+
 class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
@@ -215,3 +218,4 @@ class ConfigResponse(BaseModel):
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Debug mode flag")
+    authentication: AuthenticationConfig = Field(..., description="Authentication configuration")
