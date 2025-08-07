@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,15 @@ class _PromptInput(pydantic.BaseModel):
     theme: str
     name: str
     age: int
+
+
+class _PromptInputWithIterator(pydantic.BaseModel):
+    """
+    Input format for the TestPromptWithIterator, which can be consumed only once.
+    """
+
+    model_config = pydantic.ConfigDict(arbitrary_types_allowed=True)
+    context: Iterator[str]
 
 
 class _SingleAttachmentPromptInput(pydantic.BaseModel):
@@ -204,6 +214,9 @@ def test_image_prompt_format():
     assert chat[0]["role"] == "user"
     assert chat[0]["content"][0]["text"] == "What is in this image?"
     assert chat[0]["content"][1]["type"] == "image_url"
+    assert len(prompt.rendered_user_prompt) == 2
+    assert prompt.rendered_user_prompt[0] == {"type": "text", "text": "What is in this image?"}
+    assert prompt.rendered_user_prompt[1]["type"] == "image_url"
 
 
 def test_image_prompt_encoding():
@@ -270,6 +283,9 @@ def test_pdf_prompt_format():
     assert chat[0]["role"] == "user"
     assert chat[0]["content"][0]["text"] == "What is in this PDF?"
     assert chat[0]["content"][1]["type"] == "file"
+    assert len(prompt.rendered_user_prompt) == 2
+    assert prompt.rendered_user_prompt[0] == {"type": "text", "text": "What is in this PDF?"}
+    assert prompt.rendered_user_prompt[1]["type"] == "file"
 
 
 def test_pdf_prompt_encoding():
@@ -334,6 +350,21 @@ def test_prompt_with_input_type():
     assert prompt.chat == [
         {"role": "system", "content": "You are a song generator for a adult named Alice."},
         {"role": "user", "content": "Theme for the song is rock."},
+    ]
+
+
+def test_prompt_with_iterator_input():
+    """Test that a prompt can be created with an iterator input."""
+
+    class TestPrompt(Prompt[_PromptInputWithIterator, str]):  # pylint: disable=unused-variable
+        """A test prompt"""
+
+        user_prompt = "Context: {% for chunk in context %}{{ chunk }}{%- endfor %}"
+
+    prompt = TestPrompt(_PromptInputWithIterator(context=iter(["Hello", " World"])))
+    assert prompt.rendered_user_prompt == "Context: Hello World"
+    assert prompt.chat == [
+        {"role": "user", "content": "Context: Hello World"},
     ]
 
 
