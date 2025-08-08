@@ -18,7 +18,7 @@ export const ChatHistoryPlugin = createPlugin({
   ],
   routeWrappers: [
     {
-      target: "global",
+      target: "/",
       wrapper: (children) => <ConversationGuard>{children}</ConversationGuard>,
     },
   ],

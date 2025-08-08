@@ -15,6 +15,7 @@ import {
 } from "../../plugins/ChatHistoryPlugin";
 import { usePlugin } from "../utils/plugins/usePlugin";
 import { isURL } from "../utils/media";
+import { AuthPlugin } from "../../plugins/AuthPlugin";
 
 interface LayoutProps {
   title: string;
@@ -99,6 +100,14 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <PluginWrapper
+              plugin={AuthPlugin}
+              component="LogoutButton"
+              skeletonSize={{
+                width: "40px",
+                height: "40px",
+              }}
+            />
             <PluginWrapper
               plugin={SharePlugin}
               component="ShareButton"

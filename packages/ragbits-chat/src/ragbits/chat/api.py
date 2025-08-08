@@ -57,7 +57,7 @@ class LoginResponse(BaseModel):
     """
 
     success: bool = Field(..., description="Whether login was successful")
-    user: dict | None = Field(None, description="User information")
+    user: User | None = Field(None, description="User information")
     error_message: str | None = Field(None, description="Error message if login failed")
     jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
 
@@ -510,7 +510,7 @@ class RagbitsAPI:
                 return JSONResponse(
                     content=LoginResponse(
                         success=True,
-                        user=auth_result.user.model_dump() if auth_result.user else None,
+                        user=auth_result.user if auth_result.user else None,
                         error_message=None,
                         jwt_token=auth_result.jwt_token,
                     ).model_dump()
