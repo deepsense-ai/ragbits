@@ -1,3 +1,5 @@
+import asyncio
+import time
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, cast
@@ -31,15 +33,23 @@ class MockEvaluationTarget(WithConstructionConfig):
 
 
 class MockEvaluationPipeline(EvaluationPipeline[MockEvaluationTarget, MockEvaluationData, MockEvaluationResult]):
+    def __init__(self, evaluation_target: MockEvaluationTarget, slow: bool = False):
+        super().__init__(evaluation_target)
+        self._slow = slow
+
     async def __call__(self, data: Iterable[MockEvaluationData]) -> Iterable[MockEvaluationResult]:
-        return [
-            MockEvaluationResult(
-                input_data=row.input_data,
-                processed_output=f"{self.evaluation_target.model_name}_{row.input_data}",
-                is_correct=row.input_data % 2 == 0,
+        results = []
+        for row in data:
+            if self._slow:
+                await asyncio.sleep(0.5)
+            results.append(
+                MockEvaluationResult(
+                    input_data=row.input_data,
+                    processed_output=f"{self.evaluation_target.model_name}_{row.input_data}",
+                    is_correct=row.input_data % 2 == 0,
+                )
             )
-            for row in data
-        ]
+        return results
 
     @classmethod
     def from_config(cls, config: dict) -> "MockEvaluationPipeline":
@@ -100,6 +110,66 @@ async def test_run_evaluation(
     assert len(results.errors) == expected_errors
     assert results.metrics["accuracy"] == expected_accuracy
     assert all("test_model_" in r.processed_output for r in results.results)
+
+
+@pytest.mark.parametrize(
+    ("parallel_batches", "expected_results", "expected_accuracy"),
+    [(False, 4, 0.5), (True, 4, 0.5)],
+)
+async def test_run_evaluation_with_parallel_batches(
+    parallel_batches: bool,
+    expected_results: int,
+    expected_accuracy: float,
+) -> None:
+    target = MockEvaluationTarget(model_name="parallel_test_model")
+    pipeline = MockEvaluationPipeline(target)
+    dataloader = MockDataLoader()
+    metrics = MetricSet(*[MockMetric()])
+    evaluator = Evaluator(batch_size=2, parallel_batches=parallel_batches)
+
+    results = await evaluator.compute(
+        pipeline=pipeline,
+        dataloader=dataloader,
+        metricset=metrics,
+    )
+
+    assert len(results.results) == expected_results
+    assert len(results.errors) == 0
+    assert results.metrics["accuracy"] == expected_accuracy
+    assert all("parallel_test_model_" in r.processed_output for r in results.results)
+
+
+async def test_parallel_batches_performance() -> None:
+    """Test that parallel processing is faster than sequential processing."""
+    target = MockEvaluationTarget(model_name="timing_test_model")
+    pipeline = MockEvaluationPipeline(target, slow=True)
+    dataloader = MockDataLoader(dataset_size=4)
+    metrics = MetricSet(*[MockMetric()])
+
+    # Test sequential processing
+    evaluator_sequential = Evaluator(batch_size=2, parallel_batches=False)
+    start_time = time.perf_counter()
+    results_sequential = await evaluator_sequential.compute(
+        pipeline=pipeline,
+        dataloader=dataloader,
+        metricset=metrics,
+    )
+    sequential_time = time.perf_counter() - start_time
+
+    evaluator_parallel = Evaluator(batch_size=2, parallel_batches=True)
+    start_time = time.perf_counter()
+    results_parallel = await evaluator_parallel.compute(
+        pipeline=pipeline,
+        dataloader=dataloader,
+        metricset=metrics,
+    )
+    parallel_time = time.perf_counter() - start_time
+
+    assert len(results_sequential.results) == len(results_parallel.results)
+    assert results_sequential.metrics == results_parallel.metrics
+
+    # Parallel processing should be roughly 2x faster, but we add some margin
+    assert parallel_time < sequential_time * 0.7
 
 
 async def test_run_from_config() -> None:
