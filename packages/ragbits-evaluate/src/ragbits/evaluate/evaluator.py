@@ -1,7 +1,7 @@
 import asyncio
 import random
 import time
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable, Sized
 from dataclasses import dataclass
 from typing import Generic, ParamSpec, TypeVar
 
@@ -71,6 +71,7 @@ class Evaluator(WithConstructionConfig):
         num_retries: int = 3,
         backoff_multiplier: int = 1,
         backoff_max: int = 60,
+        parallel_batches: bool = False,
     ) -> None:
         """
         Initialize the Evaluator instance.
@@ -80,11 +81,13 @@ class Evaluator(WithConstructionConfig):
             num_retries: The number of retries per evaluation pipeline inference error.
             backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
             backoff_max: The maximum allowed delay (in seconds) between retries.
+            parallel_batches: Whether to process samples within each batch in parallel (asyncio.gather).
         """
         self.batch_size = batch_size
         self.num_retries = num_retries
         self.backoff_multiplier = backoff_multiplier
         self.backoff_max = backoff_max
+        self.parallel_batches = parallel_batches
 
     @classmethod
     async def run_from_config(cls, config: dict) -> EvaluatorResult:
@@ -156,16 +159,33 @@ class Evaluator(WithConstructionConfig):
             The evaluation results and performance metrics.
         """
         start_time = time.perf_counter()
-        outputs = [
-            await self._call_with_error_handling(pipeline, data)
-            for data in tqdm(batched(dataset, self.batch_size), desc="Evaluation")
-        ]
+
+        total_samples = len(dataset) if isinstance(dataset, Sized) else None
+        batches = batched(dataset, self.batch_size)
+        outputs: list[Iterable[EvaluationResultT] | Exception] = []
+
+        with tqdm(total=total_samples, desc="Evaluation", unit="sample") as progress_bar:
+            for batch in batches:
+                batch_list = list(batch)
+
+                if self.parallel_batches:
+                    tasks = [self._call_with_error_handling(pipeline, [sample]) for sample in batch_list]
+                    batch_results = await asyncio.gather(*tasks)
+
+                    for result in batch_results:
+                        outputs.append(result)
+                        progress_bar.update(1)
+                else:
+                    result = await self._call_with_error_handling(pipeline, batch_list)
+                    outputs.append(result)
+                    progress_bar.update(len(batch_list))
+
         end_time = time.perf_counter()
 
         errors = [output for output in outputs if isinstance(output, Exception)]
         results = [item for output in outputs if not isinstance(output, Exception) for item in output]
 
-        return results, errors, self._compute_time_perf(start_time, end_time, len(outputs))
+        return results, errors, self._compute_time_perf(start_time, end_time, len(results))
 
     async def _call_with_error_handling(
         self,
