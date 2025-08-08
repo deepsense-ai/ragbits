@@ -7,7 +7,7 @@ import bcrypt
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 
-from ragbits.chat.auth.base import AuthBackendOptions, AuthenticationBackend, AuthenticationResult
+from ragbits.chat.auth.base import AuthBackendOptions, AuthenticationBackend, AuthenticationResponse
 from ragbits.chat.auth.models import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
@@ -50,30 +50,30 @@ class ListAuthBackend(AuthenticationBackend):
                 ),
             }
 
-    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate into backend using provided credentials
 
         Args:
             credentials: User credentials
         Returns:
-            AuthenticationResult: Result of authentication
+            AuthenticationResponse: Result of authentication
         """
         user_data = self.users.get(credentials.username)
         if not user_data:
-            return AuthenticationResult(success=False, error_message="User not found")
+            return AuthenticationResponse(success=False, error_message="User not found")
 
         # Verify password with bcrypt
         password_hash = str(user_data["password_hash"])
         if not bcrypt.checkpw(credentials.password.encode("utf-8"), password_hash.encode("utf-8")):
-            return AuthenticationResult(success=False, error_message="Invalid password")
+            return AuthenticationResponse(success=False, error_message="Invalid password")
 
         user = cast(User, user_data["user"])
 
         # Create JWT jwt_token
         jwt_token = self._create_jwt_token(user)
 
-        return AuthenticationResult(success=True, user=user, jwt_token=jwt_token)
+        return AuthenticationResponse(success=True, user=user, jwt_token=jwt_token)
 
     def _create_jwt_token(self, user: User) -> JWTToken:
         """Create a JWT jwt_token for the user."""
@@ -96,11 +96,11 @@ class ListAuthBackend(AuthenticationBackend):
         token_type = "bearer"  # noqa: S105
         return JWTToken(access_token=access_token, token_type=token_type, expires_in=expires_in, user=user)
 
-    async def validate_token(self, token: str) -> AuthenticationResult:
+    async def validate_token(self, token: str) -> AuthenticationResponse:
         """Validate a JWT jwt_token."""
         # Check if token is blacklisted (revoked)
         if token in self.revoked_tokens:
-            return AuthenticationResult(success=False, error_message="Token has been revoked")
+            return AuthenticationResponse(success=False, error_message="Token has been revoked")
 
         try:
             payload = jwt.decode(token, self.jwt_secret, algorithms=[self.jwt_algorithm])
@@ -115,14 +115,14 @@ class ListAuthBackend(AuthenticationBackend):
                 metadata=payload.get("metadata", {}),
             )
 
-            return AuthenticationResult(success=True, user=user)
+            return AuthenticationResponse(success=True, user=user)
 
         except ExpiredSignatureError:
-            return AuthenticationResult(success=False, error_message="Token expired")
+            return AuthenticationResponse(success=False, error_message="Token expired")
         except JWTError:
-            return AuthenticationResult(success=False, error_message="Invalid jwt_token")
+            return AuthenticationResponse(success=False, error_message="Invalid jwt_token")
 
-    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate user with OAuth2 credentials.
 
@@ -130,9 +130,9 @@ class ListAuthBackend(AuthenticationBackend):
             oauth_credentials: OAuth2 credentials
 
         Returns:
-            AuthenticationResult: Authentication failure as OAuth2 is not supported
+            AuthenticationResponse: Authentication failure as OAuth2 is not supported
         """
-        return AuthenticationResult(success=False, error_message="OAuth2 not supported by ListAuthBackend")
+        return AuthenticationResponse(success=False, error_message="OAuth2 not supported by ListAuthBackend")
 
     async def revoke_token(self, token: str) -> bool:  # noqa: PLR6301
         """
@@ -202,7 +202,7 @@ class DatabaseAuthBackend(AuthenticationBackend):
         # await self.db.create_tables_if_not_exists()
         pass
 
-    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate user with username and password credentials via database.
 
@@ -210,16 +210,16 @@ class DatabaseAuthBackend(AuthenticationBackend):
             credentials: User credentials containing username and password
 
         Returns:
-            AuthenticationResult: Authentication failure as database auth is not implemented
+            AuthenticationResponse: Authentication failure as database auth is not implemented
         """
         # In real implementation:
         # user = await self.db.get_user_by_username(credentials.username)
         # if user and verify_password(credentials.password, user.password_hash):
         #     session = await self.db.create_session(user)
         #     return AuthenticationResult(success=True, user=user, session=session)
-        return AuthenticationResult(success=False, error_message="Database authentication not implemented")
+        return AuthenticationResponse(success=False, error_message="Database authentication not implemented")
 
-    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate user with OAuth2 credentials via database.
 
@@ -227,15 +227,15 @@ class DatabaseAuthBackend(AuthenticationBackend):
             oauth_credentials: OAuth2 credentials
 
         Returns:
-            AuthenticationResult: Authentication failure as OAuth2 database auth is not implemented
+            AuthenticationResponse: Authentication failure as OAuth2 database auth is not implemented
         """
         # In real implementation:
         # user_info = await self.verify_oauth_token(oauth_credentials.access_token)
         # user = await self.db.get_or_create_user_from_oauth(user_info)
         # session = await self.db.create_session(user)
-        return AuthenticationResult(success=False, error_message="OAuth2 database authentication not implemented")
+        return AuthenticationResponse(success=False, error_message="OAuth2 database authentication not implemented")
 
-    async def validate_session(self, session_id: str) -> AuthenticationResult:  # noqa: PLR6301
+    async def validate_session(self, session_id: str) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Validate a user session by session ID.
 
@@ -243,13 +243,13 @@ class DatabaseAuthBackend(AuthenticationBackend):
             session_id: The session identifier to validate
 
         Returns:
-            AuthenticationResult: Validation failure as session validation is not implemented
+            AuthenticationResponse: Validation failure as session validation is not implemented
         """
         # In real implementation:
         # session = await self.db.get_active_session(session_id)
         # if session and not session.is_expired():
         #     return AuthenticationResult(success=True, user=session.user, session=session)
-        return AuthenticationResult(success=False, error_message="Session validation not implemented")
+        return AuthenticationResponse(success=False, error_message="Session validation not implemented")
 
     async def revoke_session(self, session_id: str) -> bool:  # noqa: PLR6301
         """
@@ -299,7 +299,7 @@ class OAuth2Backend(AuthenticationBackend):
         self.redirect_uri = redirect_uri
         self.sessions: dict[str, Any] = {}
 
-    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate user with username and password credentials.
 
@@ -307,11 +307,11 @@ class OAuth2Backend(AuthenticationBackend):
             credentials: User credentials
 
         Returns:
-            AuthenticationResult: Authentication failure directing to use OAuth2 flow
+            AuthenticationResponse: Authentication failure directing to use OAuth2 flow
         """
-        return AuthenticationResult(success=False, error_message="Use OAuth2 flow for authentication")
+        return AuthenticationResponse(success=False, error_message="Use OAuth2 flow for authentication")
 
-    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResult:  # noqa: PLR6301
+    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:  # noqa: PLR6301
         """
         Authenticate user with OAuth2 credentials.
 
@@ -319,7 +319,7 @@ class OAuth2Backend(AuthenticationBackend):
             oauth_credentials: OAuth2 credentials containing access token
 
         Returns:
-            AuthenticationResult: Result of OAuth2 authentication attempt
+            AuthenticationResponse: Result of OAuth2 authentication attempt
         """
         # In real implementation, verify the OAuth2 jwt_token with the provider
         # user_info = await self.verify_token_with_provider(oauth_credentials.access_token)
@@ -333,7 +333,7 @@ class OAuth2Backend(AuthenticationBackend):
             roles=["user"],
             metadata={"provider": self.provider},
         )
-        return AuthenticationResult(success=True, user=user)
+        return AuthenticationResponse(success=True, user=user)
 
     async def revoke_token(self, token: str) -> bool:  # noqa: PLR6301
         """

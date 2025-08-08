@@ -16,7 +16,7 @@ class AuthBackendOptions(Options):
     pass
 
 
-class AuthenticationResult(BaseModel):
+class AuthenticationResponse(BaseModel):
     """Result of an authentication attempt."""
 
     success: bool
@@ -33,7 +33,7 @@ class AuthenticationBackend(ConfigurableComponent[AuthBackendOptions], ABC):
     default_module: ClassVar[ModuleType | None] = None
 
     @abstractmethod
-    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResult:
+    async def authenticate_with_credentials(self, credentials: UserCredentials) -> AuthenticationResponse:
         """
         Authenticate a user with username/password credentials.
 
@@ -46,7 +46,7 @@ class AuthenticationBackend(ConfigurableComponent[AuthBackendOptions], ABC):
         pass
 
     @abstractmethod
-    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResult:
+    async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:
         """
         Authenticate a user with OAuth2 credentials.
 
@@ -59,7 +59,7 @@ class AuthenticationBackend(ConfigurableComponent[AuthBackendOptions], ABC):
         pass
 
     @abstractmethod
-    async def validate_token(self, token: str) -> AuthenticationResult:
+    async def validate_token(self, token: str) -> AuthenticationResponse:
         """
         Validate a JWT jwt_token.
 

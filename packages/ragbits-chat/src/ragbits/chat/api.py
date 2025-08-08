@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
+    AuthType,
     ChatContext,
     ChatMessageRequest,
     ChatResponse,
@@ -203,7 +204,7 @@ class RagbitsAPI:
                 conversation_history=self.chat_interface.conversation_history,
                 authentication=AuthenticationConfig(
                     enabled=self.auth_backend is not None,
-                    login_forms=["CredentialsLoginRequest"],
+                    auth_types=[AuthType.CREDENTIALS],
                 ),
             )
 

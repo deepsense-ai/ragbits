@@ -203,11 +203,17 @@ class FeedbackConfig(BaseModel):
     dislike: FeedbackItem = Field(..., description="Dislike feedback configuration")
 
 
+class AuthType(str, Enum):
+    """Defines the available authentication types."""
+
+    CREDENTIALS = "credentials"
+
+
 class AuthenticationConfig(BaseModel):
     """Configuration for authentication."""
 
     enabled: bool = Field(default=False, description="Enable/disable authentication")
-    login_forms: list[str] = Field(default=[], description="List of authentication forms")
+    auth_types: list[AuthType] = Field(default=[], description="List of available authentication types")
 
 
 class ConfigResponse(BaseModel):
