@@ -1,4 +1,10 @@
-"""Simple test agent for CLI testing."""
+"""Simple test agent for CLI testing.
+
+run:
+
+uv run ragbits agents run examples.agents.test_cli_agent:test_agent
+
+"""
 
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
@@ -7,21 +13,21 @@ from ragbits.core.llms import LiteLLM
 def get_current_weather(location: str) -> str:
     """
     Get the current weather in a specific location.
-    
+
     Args:
         location: The location to get weather for
-        
+
     Returns:
         Weather information for the location
     """
     # Mock weather data
     weather_data = {
         "London": "Rainy, 15°C",
-        "Paris": "Sunny, 22°C", 
+        "Paris": "Sunny, 22°C",
         "New York": "Cloudy, 18°C",
         "Tokyo": "Sunny, 25°C",
     }
-    
+
     return weather_data.get(location, f"Weather data not available for {location}")
 
 
