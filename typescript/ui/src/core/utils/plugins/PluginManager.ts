@@ -1,9 +1,18 @@
+import { transform } from "lodash";
 import { Plugin } from "../../../types/plugins";
 
-type PluginState = Record<string, { isActivated: boolean; config: Plugin }>;
+type PluginState = {
+  isActivated: boolean;
+  config: Plugin;
+};
+type Plugins = Record<string, PluginState>;
 
 class PluginManager {
-  private plugins: PluginState = {};
+  private plugins: Plugins = {};
+  /**
+   * Calculated based on `plugins`. Used to trigger updates in `useSyncExternalStore`
+   */
+  private activePlugins: Plugin[] = [];
   private listeners: Set<() => void> = new Set();
 
   register(plugin: Plugin) {
@@ -25,6 +34,8 @@ class PluginManager {
     if (plugin.config.onActivate) {
       plugin.config.onActivate();
     }
+
+    this.produceActivePlugins();
     this.notify();
   }
 
@@ -38,6 +49,8 @@ class PluginManager {
     if (plugin.config.onDeactivate) {
       plugin.config.onDeactivate();
     }
+
+    this.produceActivePlugins();
     this.notify();
   }
 
@@ -46,12 +59,16 @@ class PluginManager {
     return !!plugin && plugin.isActivated;
   }
 
-  getPlugin(name: string): Plugin | null {
+  getPlugin(name: string): PluginState | null {
     const plugin = this.plugins[name];
     if (!plugin || !plugin.isActivated) {
       return null;
     }
-    return plugin.config;
+    return plugin;
+  }
+
+  getActivePlugins(): Plugin[] {
+    return this.activePlugins;
   }
 
   subscribe(listener: () => void) {
@@ -61,6 +78,20 @@ class PluginManager {
 
   private notify() {
     this.listeners.forEach((listener) => listener());
+  }
+
+  private produceActivePlugins() {
+    this.activePlugins = transform<typeof this.plugins, Plugin[]>(
+      this.plugins,
+      (res, p) => {
+        if (!p.isActivated) {
+          return;
+        }
+
+        res.push(p.config);
+      },
+      [],
+    );
   }
 }
 

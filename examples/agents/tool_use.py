@@ -63,7 +63,7 @@ class WeatherPrompt(Prompt[WeatherPromptInput]):
     """
 
     system_prompt = """
-    You are a helpful assisstant that responds to user questions about weather.
+    You are a helpful assistant that responds to user questions about weather.
     """
 
     user_prompt = """
@@ -82,7 +82,7 @@ async def main() -> None:
         tools=[get_weather],
         default_options=AgentOptions(max_total_tokens=500, max_turns=5),
     )
-    response = await agent.run(WeatherPromptInput(location="Paris"))
+    response = await agent.run(WeatherPromptInput(location="Paris"), tool_choice=get_weather)
     print(response)
 
 

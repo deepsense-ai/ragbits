@@ -3,23 +3,24 @@ import { Accordion, AccordionItem } from "@heroui/react";
 import { allExpanded, defaultStyles, JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { toJSONSafe } from "../utils/json";
-import { useHistoryStore } from "../stores/historyStore";
 import { useShallow } from "zustand/shallow";
+import { useConversationProperty } from "../stores/HistoryStore/selectors";
+import { useHistoryStore } from "../stores/HistoryStore/useHistoryStore";
 
 const DEFAULT_STYLES = {
   container:
-    "max-w-full overflow-auto rounded bg-gray-200 p-2 font-mono font-normal text-gray-800 dark:bg-gray-800 dark:text-gray-200",
-  label: `${defaultStyles.label} text-gray-800 dark:text-gray-200`,
-  collapseIcon: `${defaultStyles.collapseIcon} text-gray-800 dark:text-gray-200`,
-  expandIcon: `${defaultStyles.expandIcon} text-gray-800 dark:text-gray-200`,
-  collapsedContent: `${defaultStyles.collapsedContent} text-gray-800 dark:text-gray-200`,
-  punctuation: `text-gray-800 dark:text-gray-200`,
-  stringValue: `${defaultStyles.stringValue} text-gray-800 dark:text-gray-200`,
-  otherValue: `${defaultStyles.otherValue} text-gray-800 dark:text-gray-200`,
-  numberValue: `${defaultStyles.numberValue} text-gray-800 dark:text-gray-200`,
-  nullValue: `${defaultStyles.nullValue} text-gray-800 dark:text-gray-200`,
-  booleanValue: `${defaultStyles.booleanValue} text-gray-800 dark:text-gray-200`,
-  undefinedValue: `${defaultStyles.undefinedValue} text-gray-800 dark:text-gray-200`,
+    "max-w-full overflow-auto rounded bg-default p-2 font-mono font-normal",
+  label: `${defaultStyles.label} !text-default-900`,
+  collapseIcon: `${defaultStyles.collapseIcon} !text-default-900`,
+  expandIcon: `${defaultStyles.expandIcon} !text-default-900`,
+  collapsedContent: `${defaultStyles.collapsedContent} !text-default-900`,
+  punctuation: `!text-default-900`,
+  stringValue: `${defaultStyles.stringValue} !text-green-600`,
+  otherValue: `${defaultStyles.otherValue} !text-purple-500`,
+  numberValue: `${defaultStyles.numberValue}`,
+  nullValue: `${defaultStyles.nullValue}`,
+  booleanValue: `${defaultStyles.booleanValue} !text-yellow-600`,
+  undefinedValue: `${defaultStyles.undefinedValue}`,
 };
 
 interface DebugPanelProps {
@@ -27,9 +28,9 @@ interface DebugPanelProps {
 }
 
 export default function DebugPanel({ isOpen }: DebugPanelProps) {
-  const history = useHistoryStore((s) => s.history);
-  const followupMessages = useHistoryStore((s) => s.followupMessages);
-  const eventsLog = useHistoryStore((s) => s.eventsLog);
+  const history = useConversationProperty((s) => s.history);
+  const followupMessages = useConversationProperty((s) => s.followupMessages);
+  const eventsLog = useConversationProperty((s) => s.eventsLog);
   const context = useHistoryStore(useShallow((s) => s.computed.getContext()));
 
   return (
@@ -51,13 +52,13 @@ export default function DebugPanel({ isOpen }: DebugPanelProps) {
             opacity: 0,
             width: 0,
           }}
-          className="w-full max-w-[33%] overflow-hidden"
+          className="w-full max-w-[33%] overflow-hidden px-4"
         >
           <div
-            className="mr-4 h-full overflow-auto rounded-medium border-small border-divider"
+            className="rounded-medium border-small border-divider mr-4 h-full overflow-auto"
             data-testid="debug-panel"
           >
-            <div className="min-h-16 border-b-small border-divider p-4 text-lg font-bold">
+            <div className="border-b-small border-divider min-h-16 p-4 text-lg font-bold">
               <span>Debug</span>
             </div>
             <Accordion className="max-h-full">

@@ -6,24 +6,25 @@ import {
   Button,
   useDisclosure,
 } from "@heroui/react";
-import { Icon } from "@iconify/react/dist/iconify.js";
+import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import { FormTheme, useTransformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
-import {
-  useHistoryActions,
-  useHistoryStore,
-} from "../../../core/stores/historyStore";
 import { useEffect } from "react";
 import { getDefaultBasedOnSchemaType } from "@rjsf/utils/lib/schema/getDefaultFormState";
-import { useShallow } from "zustand/shallow";
+import {
+  useConversationProperty,
+  useHistoryActions,
+} from "../../../core/stores/HistoryStore/selectors";
+import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 
 export default function ChatOptionsForm() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const chatOptions = useHistoryStore(useShallow((s) => s.chatOptions));
+  const chatOptions = useConversationProperty((s) => s.chatOptions);
   const { setChatOptions, initializeChatOptions } = useHistoryActions();
+  const currentConversation = useHistoryStore((s) => s.currentConversation);
   const {
     config: { user_settings: userSettings },
   } = useConfigContext();
@@ -58,7 +59,7 @@ export default function ChatOptionsForm() {
 
     const defaultState = getDefaultBasedOnSchemaType(validator, schema);
     initializeChatOptions(defaultState);
-  }, [initializeChatOptions, schema]);
+  }, [initializeChatOptions, schema, currentConversation]);
 
   if (!schema) {
     return null;
@@ -83,7 +84,7 @@ export default function ChatOptionsForm() {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1 text-default-900">
+              <ModalHeader className="text-default-900 flex flex-col gap-1">
                 {schema.title || "Chat Options"}
               </ModalHeader>
               <ModalBody>

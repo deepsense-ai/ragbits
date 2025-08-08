@@ -49,6 +49,14 @@ The result is an [AgentResult][ragbits.agents.AgentResult], which includes the m
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/tool_use.py).
 
+## Tool choice
+To control what tool is used at first call you could use `tool_choice` parameter. There are the following options:
+- "auto": let model decide if tool call is needed
+- "none": do not call tool
+- "required: enforce tool usage (model decides which one)
+- Callable: one of provided tools
+
+
 ## Conversation history
 [`Agent`][ragbits.agents.Agent]s can retain conversation context across multiple interactions by enabling the `keep_history` flag when initializing the agent. This is useful when you want the agent to understand follow-up questions without needing the user to repeat earlier details.
 
@@ -80,3 +88,35 @@ AgentResult(content='The current temperature in Tokyo is 10°C.', ...)
 For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
 
 This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and tool-related events in real time.
+
+## Native OpenAI tools
+Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
+```python
+from ragbits.agents.tools import get_web_search_tool
+
+async def main() -> None:
+    """Run the weather agent with additional tool."""
+    model_name = "gpt-4o-2024-08-06"
+    llm = LiteLLM(model_name=model_name, use_structured_output=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_web_search_tool(model_name)], keep_history=True)
+
+    response = await agent.run(WeatherPromptInput(location="Paris"))
+    print(response)
+```
+
+Tool descriptions are available [here](https://platform.openai.com/docs/guides/tools?api-mode=responses). For each of these you can see detailed
+information on the corresponding sub-pages (i.e. [here](https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses#user-location) for web search).
+You can use default parameters or specify your own as a dict. For web search this might look like that:
+```python
+from ragbits.agents.tools import get_web_search_tool
+
+tool_params = {
+        "user_location": {
+            "type": "approximate",
+            "country": "GB",
+            "city": "London",
+            "region": "London",
+        }
+}
+web_search_tool = get_web_search_tool("gpt-4o", tool_params)
+```
