@@ -4832,7 +4832,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-agents"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4864,7 +4864,7 @@ provides-extras = ["a2a", "mcp", "openai"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "fastapi" },
@@ -4908,7 +4908,7 @@ dev = [
 
 [[package]]
 name = "ragbits-cli"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4923,7 +4923,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5061,7 +5061,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5115,7 +5115,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5163,7 +5163,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.2.1"
+version = "1.2.2"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
