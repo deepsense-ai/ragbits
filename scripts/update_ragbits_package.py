@@ -24,6 +24,8 @@ from inquirer.shortcuts import confirm, list_input, text
 from rich import print as pprint
 
 PACKAGES_DIR = Path(__file__).parent.parent / "packages"
+# Root directory containing TypeScript workspaces
+TS_PACKAGES_DIR = Path(__file__).parent.parent / "typescript"
 
 
 class UpdateType(Enum):
@@ -181,6 +183,48 @@ def _create_changelog_release(pkg_name: str, new_version: str) -> None:
     changelog_path.write_text(changelog_content)
 
 
+# ---------------------------------------------------------------------------
+# TypeScript helpers
+# ---------------------------------------------------------------------------
+
+
+def _update_ts_packages_version(new_version: str) -> None:
+    """Update the `version` field in every package.json under the `typescript` directory.
+
+    Args:
+        new_version: The version string that should replace the current one.
+    """
+    if not isinstance(new_version, str):
+        raise TypeError("new_version must be a string")
+    print(TS_PACKAGES_DIR)
+    for package_json_path in TS_PACKAGES_DIR.rglob("package.json"):
+        print(package_json_path)
+        # Skip node_modules to avoid touching installed packages
+        if "node_modules" in package_json_path.parts:
+            continue
+
+        file_lines = package_json_path.read_text().splitlines()
+        updated = False
+        old_version: str | None = None
+        new_lines: list[str] = []
+
+        for line in file_lines:
+            new_line = line
+            if '"version"' in line:
+                # capture: "version": "1.2.3" (comma optional)
+                left, right = line.split(":")
+                start = right.index('"')
+                end = right[start + 1 :].index('"') + start
+                old_version = right[start + 1 : end + 1]
+                new_line = ":".join([left, right[:start] + f'"{new_version}"' + right[end + 2 :]])
+                updated = True
+            new_lines.append(new_line)
+
+        if updated:
+            package_json_path.write_text("\n".join(new_lines) + "\n")
+            pprint(f"[green]Updated {package_json_path} version from {old_version} to {new_version}.[/green]")
+
+
 def _update_ragbits_extras(packages: list[str]) -> None:
     subpackages = [pkg for pkg in packages if pkg != "ragbits"]
 
@@ -240,8 +284,9 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
     user_prompt_required = pkg_name is None or casted_update_type is None
 
     if pkg_name == "ragbits":
-        _update_pkg_version(pkg_name, update_type=casted_update_type)
+        version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
         _update_ragbits_extras(packages)
+        _update_ts_packages_version(new_version)
 
     elif pkg_name == "ragbits-core":
         if user_prompt_required:
@@ -254,6 +299,7 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
             _update_ragbits_extras(packages)
             version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
             casted_update_type = _check_update_type(version, new_version)
+            _update_ts_packages_version(new_version)
 
             for pkg in sorted([pkg for pkg in packages if pkg != "ragbits-core"], reverse=True):
                 pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg / "pyproject.toml").read_text())

@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator, Iterable
 
-from ragbits.core.llms.base import LLM, LLMOptions
+from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
@@ -44,6 +44,7 @@ class MockLLM(LLM[MockLLMOptions]):
         """
         super().__init__(model_name, default_options=default_options)
         self.calls: list[ChatFormat] = []
+        self.tool_choice: ToolChoice | None = None
         self._price_per_prompt_token = price_per_prompt_token
         self._price_per_completion_token = price_per_completion_token
 
@@ -64,12 +65,14 @@ class MockLLM(LLM[MockLLMOptions]):
         prompt: Iterable[BasePrompt],
         options: MockLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
         prompt = list(prompt)
         self.calls.extend([p.chat for p in prompt])
+        self.tool_choice = tool_choice
         response = "mocked response" if isinstance(options.response, NotGiven) else options.response
         reasoning = None if isinstance(options.reasoning, NotGiven) else options.reasoning
         tool_calls = (
@@ -99,11 +102,13 @@ class MockLLM(LLM[MockLLMOptions]):
         prompt: BasePrompt,
         options: MockLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Mocks the call to the LLM, using the response from the options if provided.
         """
         self.calls.append(prompt.chat)
+        self.tool_choice = tool_choice
 
         async def generator() -> AsyncGenerator[dict, None]:
             if not isinstance(options.tool_calls, NotGiven) and not any(

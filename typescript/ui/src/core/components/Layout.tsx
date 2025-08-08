@@ -14,6 +14,7 @@ import {
   ChatHistoryPluginName,
 } from "../../plugins/ChatHistoryPlugin";
 import { usePlugin } from "../utils/plugins/usePlugin";
+import { isURL } from "../utils/media";
 
 interface LayoutProps {
   title: string;
@@ -48,38 +49,6 @@ export default function Layout({
     stopAnswering();
     clearHistory();
   }, [clearHistory, stopAnswering]);
-
-  function isURL(input: string): boolean {
-    if (isAbsoluteURL(input)) {
-      return true;
-    }
-
-    return looksLikeRelativeURL(input) && isRelativeURL(input);
-  }
-
-  function isAbsoluteURL(str: string): boolean {
-    try {
-      new URL(str);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function isRelativeURL(str: string): boolean {
-    try {
-      const DUMMY_BASE_URL = "http://base.local";
-      new URL(str, DUMMY_BASE_URL);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  function looksLikeRelativeURL(str: string): boolean {
-    // Reject emojis, spaces, and unrelated strings.
-    return /^[./~\w%-][\w./~%-]*$/.test(str);
-  }
 
   const historyEnabled = chatHistoryPlugin?.isActivated;
   return (

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
-import { LiveUpdates } from "../../src/core/components/ChatMessage";
+import LiveUpdates from "../../src/core/components/ChatMessage/LiveUpdates";
 import { ChatMessage } from "../../src/types/history";
 import ShimmerText from "../../src/core/components/ShimmerText";
 

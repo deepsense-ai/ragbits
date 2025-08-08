@@ -188,7 +188,6 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         self.rendered_system_prompt = (
             self._render_template(self.system_prompt_template, input_data) if self.system_prompt_template else None
         )
-        self.rendered_user_prompt = self._render_template(self.user_prompt_template, input_data)
         self.attachments = self._get_attachments_from_input_data(input_data)
 
         # Additional few shot examples that can be added dynamically using methods
@@ -197,7 +196,9 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
 
         # Additional conversation history that can be added dynamically using methods
         self._conversation_history: list[dict[str, Any]] = history or []
-        self.add_user_message(input_data if input_data else self.rendered_user_prompt)
+
+        self.add_user_message(input_data or self._render_template(self.user_prompt_template, input_data))
+        self.rendered_user_prompt = self.chat[-1]["content"]
         super().__init__()
 
     @property
