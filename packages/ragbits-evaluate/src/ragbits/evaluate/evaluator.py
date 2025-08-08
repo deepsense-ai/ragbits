@@ -71,7 +71,7 @@ class Evaluator(WithConstructionConfig):
         num_retries: int = 3,
         backoff_multiplier: int = 1,
         backoff_max: int = 60,
-        parallel_batches: bool = False,
+        parallelize_batches: bool = False,
     ) -> None:
         """
         Initialize the Evaluator instance.
@@ -81,13 +81,13 @@ class Evaluator(WithConstructionConfig):
             num_retries: The number of retries per evaluation pipeline inference error.
             backoff_multiplier: The base delay multiplier for exponential backoff (in seconds).
             backoff_max: The maximum allowed delay (in seconds) between retries.
-            parallel_batches: Whether to process samples within each batch in parallel (asyncio.gather).
+            parallelize_batches: Whether to process samples within each batch in parallel (asyncio.gather).
         """
         self.batch_size = batch_size
         self.num_retries = num_retries
         self.backoff_multiplier = backoff_multiplier
         self.backoff_max = backoff_max
-        self.parallel_batches = parallel_batches
+        self.parallelize_batches = parallelize_batches
 
     @classmethod
     async def run_from_config(cls, config: dict) -> EvaluatorResult:
@@ -168,7 +168,7 @@ class Evaluator(WithConstructionConfig):
             for batch in batches:
                 batch_list = list(batch)
 
-                if self.parallel_batches:
+                if self.parallelize_batches:
                     tasks = [self._call_with_error_handling(pipeline, [sample]) for sample in batch_list]
                     batch_results = await asyncio.gather(*tasks)
 

@@ -113,11 +113,11 @@ async def test_run_evaluation(
 
 
 @pytest.mark.parametrize(
-    ("parallel_batches", "expected_results", "expected_accuracy"),
+    ("parallelize_batches", "expected_results", "expected_accuracy"),
     [(False, 4, 0.5), (True, 4, 0.5)],
 )
 async def test_run_evaluation_with_parallel_batches(
-    parallel_batches: bool,
+    parallelize_batches: bool,
     expected_results: int,
     expected_accuracy: float,
 ) -> None:
@@ -125,7 +125,7 @@ async def test_run_evaluation_with_parallel_batches(
     pipeline = MockEvaluationPipeline(target)
     dataloader = MockDataLoader()
     metrics = MetricSet(*[MockMetric()])
-    evaluator = Evaluator(batch_size=2, parallel_batches=parallel_batches)
+    evaluator = Evaluator(batch_size=2, parallelize_batches=parallelize_batches)
 
     results = await evaluator.compute(
         pipeline=pipeline,
@@ -147,7 +147,7 @@ async def test_parallel_batches_performance() -> None:
     metrics = MetricSet(*[MockMetric()])
 
     # Test sequential processing
-    evaluator_sequential = Evaluator(batch_size=2, parallel_batches=False)
+    evaluator_sequential = Evaluator(batch_size=2, parallelize_batches=False)
     start_time = time.perf_counter()
     results_sequential = await evaluator_sequential.compute(
         pipeline=pipeline,
@@ -156,7 +156,7 @@ async def test_parallel_batches_performance() -> None:
     )
     sequential_time = time.perf_counter() - start_time
 
-    evaluator_parallel = Evaluator(batch_size=2, parallel_batches=True)
+    evaluator_parallel = Evaluator(batch_size=2, parallelize_batches=True)
     start_time = time.perf_counter()
     results_parallel = await evaluator_parallel.compute(
         pipeline=pipeline,
