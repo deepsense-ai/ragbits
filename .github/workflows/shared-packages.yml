@@ -10,7 +10,6 @@ jobs:
     timeout-minutes: 15
     permissions:
       checks: write
-      pull-requests: write
       contents: read
     steps:
       - uses: actions/checkout@v4
@@ -56,21 +55,6 @@ jobs:
           skip-dirs: .venv,.ruff_cache,.mypy_cache
           format: "table"
           output: "trivy-scanning-results.txt"
-
-      - name: Format trivy message
-        run: |
-          echo "Trivy scanning results." >> trivy.txt
-          cat trivy-scanning-results.txt >> trivy.txt
-
-      - name: Add trivy report to PR
-        uses: thollander/actions-comment-pull-request@v2
-        continue-on-error: true
-        if: ${{ github.event_name == 'pull_request' }}
-        with:
-          filePath: trivy.txt
-          reactions: ""
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          comment_tag: trivy
 
       - name: Check licenses
         run: |
