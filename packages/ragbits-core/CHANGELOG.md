@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add lazy loading of Local and LightLLM (#845)
 - Add tool_choice parameter to LLM interface (#738)
 - Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
 
