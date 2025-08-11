@@ -61,7 +61,7 @@ async def test_google_drive_impersonate():
     if target_email is None:
         pytest.skip("GOOGLE_DRIVE_TARGET_EMAIL environment variable not set")
 
-    GoogleDriveSource.set_impersonation_target(target_email)
+    GoogleDriveSource.set_default_impersonation_target(target_email)
 
     unit_test_folder_id = os.environ.get("GOOGLE_SOURCE_UNIT_TEST_FOLDER")
 

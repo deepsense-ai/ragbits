@@ -209,13 +209,20 @@ After configuring domain-wide delegation, you can specify a target user to imper
 from ragbits.core.sources.google_drive import GoogleDriveSource
 
 target_email = "johnDoe@yourdomain.com"
-credentials_file = "service-account-key.json"
+credentials_file = "service-account-key.json"  # See [Create a Service Account](#2-create-a-service-account) for instructions on creating this file
 
 # Set the path to your service account key file
 GoogleDriveSource.set_credentials_file_path(credentials_file)
 
-# Set the email address of the user to impersonate
-GoogleDriveSource.set_impersonation_target(target_email)
+# Option 1: Set default impersonation for all instances (class-level)
+GoogleDriveSource.set_default_impersonation_target(target_email)
+
+# Option 2: Set impersonation for specific instances
+sources = await GoogleDriveSource.from_uri("folder_id/**", impersonate_target_email=target_email)
+
+# Option 3: Set impersonation on individual instances
+source = GoogleDriveSource(file_id="...", file_name="...", mime_type="...")
+source.set_impersonation_target(target_email)
 ```
 
 **Note:**
