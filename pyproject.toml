@@ -12,6 +12,7 @@ dependencies = [
     "ragbits-guardrails[openai]",
     "ragbits-chat",
     "ragbits-agents[mcp,a2a]",
+    "ragbits>=0.0.1",
 ]
 
 [tool.uv]

@@ -21,7 +21,6 @@ class VectorStoreEntry(BaseModel):
     An object representing a vector database entry.
     Contains text and/or image for embedding + metadata.
     """
-
     id: UUID
     text: str | None = None
     image_bytes: SerializableBytes | None = None
