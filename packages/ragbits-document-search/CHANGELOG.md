@@ -4,6 +4,26 @@
 
 - feat: add pptx document parser (#693)
 
+## 1.2.2 (2025-08-08)
+
+### Changed
+
+- ragbits-core updated to version v1.2.2
+
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-core updated to version v1.2.1
+
+## 1.2.0 (2025-08-01)
+
+### Changed
+
+- ragbits-core updated to version v1.2.0
+
+- Introduce new API for attachments in prompts (#711)
+
 ## 1.1.0 (2025-07-09)
 
 ### Changed

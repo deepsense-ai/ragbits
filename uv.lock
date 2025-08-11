@@ -4832,7 +4832,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-agents"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4847,20 +4847,24 @@ a2a = [
 mcp = [
     { name = "mcp" },
 ]
+openai = [
+    { name = "openai" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "a2a-sdk", marker = "extra == 'a2a'", specifier = ">=0.2.9,<1.0.0" },
     { name = "fastapi", marker = "extra == 'a2a'", specifier = ">=0.115.0,<1.0.0" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.9.4,<2.0.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
     { name = "uvicorn", marker = "extra == 'a2a'", specifier = ">=0.31.0,<1.0.0" },
 ]
-provides-extras = ["a2a", "mcp"]
+provides-extras = ["a2a", "mcp", "openai"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "fastapi" },
@@ -4904,7 +4908,7 @@ dev = [
 
 [[package]]
 name = "ragbits-cli"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -4919,7 +4923,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5057,7 +5061,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5111,7 +5115,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5159,7 +5163,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.1.0"
+version = "1.2.2"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5181,7 +5185,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.57.3,<2.0.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]

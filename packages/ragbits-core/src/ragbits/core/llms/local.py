@@ -14,7 +14,7 @@ except ImportError:
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
-from ragbits.core.llms.base import LLM, LLMOptions
+from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
@@ -117,6 +117,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         prompt: Iterable[BasePrompt],
         options: LocalLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Makes a call to the local LLM with the provided prompt and options.
@@ -125,6 +126,11 @@ class LocalLLM(LLM[LocalLLMOptions]):
             prompt:  Iterable of BasePrompt objects containing conversations
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by LLM (Not Supported by the local model).
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Dictionary containing the responses from the LLM and throughput.
@@ -132,7 +138,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Raises:
             NotImplementedError: If tools are provided.
         """
-        if tools is not None:
+        if tools or tool_choice:
             raise NotImplementedError("Tools are not supported for local LLMs")
 
         prompts = [p.chat for p in prompt]
@@ -157,6 +163,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         for i, response in enumerate(responses):
             result = {}
             result["response"] = self.tokenizer.decode(response, skip_special_tokens=True)
+            result["reasoning"] = None
             prompt_tokens = tokens_in[i]
             completion_tokens = sum(response != self.tokenizer._pad_token_type_id)
             result["usage"] = {
@@ -174,6 +181,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         prompt: BasePrompt,
         options: LocalLLMOptions,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Makes a call to the local LLM with the provided prompt and options in streaming manner.
@@ -181,9 +189,12 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Args:
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
-            json_mode: Force the response to be in JSON format (not used).
-            output_schema: Output schema for requesting a specific response format (not used).
             tools: Functions to be used as tools by LLM (not used).
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Async generator of tokens.
@@ -191,7 +202,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         Raises:
             NotImplementedError: If tools are provided.
         """
-        if tools:
+        if tools or tool_choice:
             raise NotImplementedError("Tools are not supported for local LLMs")
 
         start_time = time.perf_counter()
@@ -222,7 +233,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
                             prompt=prompt.__class__.__name__,
                         )
 
-                yield {"response": text}
+                yield {"response": text, "reasoning": False}
                 await asyncio.sleep(0.0)
 
             generation_thread.join()

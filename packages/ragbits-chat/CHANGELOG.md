@@ -1,16 +1,40 @@
 # CHANGELOG
 
 ## Unreleased
+
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
+
+## 1.2.2 (2025-08-08)
+
+### Changed
+
+- ragbits-core updated to version v1.2.2
+
+## 1.2.1 (2025-08-04)
+
+### Changed
+
+- ragbits-core updated to version v1.2.1
+- Fix routing error causing chat to not be displayed with disabled history (#764)
+
+## 1.2.0 (2025-08-01)
+
+### Changed
+
+- ragbits-core updated to version v1.2.0
 - Update TailwindCSS, React, Vite, tailwind config (#742)
 - Add images support in chat message, images gallery (#731)
 - Add persistent user settings (#719)
 - Send chat options under `user_settings` key (#721)
 - Add feedback indicator to messages, allow `extensions` in chat messages (#722)
-- Added unit tests for UI's core components (#717)
-- Added share functionality with informative modal (#726)
-- Added persisent chat history to the default UI using IndexedDB (#732)
-- Redesigned history UI, allowed enabling of client side history using config (#744)
-- Added missing typography plugin for TailwindCSS (#750)
+- Add unit tests for UI's core components (#717)
+- Add share functionality with informative modal (#726)
+- Add persisent chat history to the default UI using IndexedDB (#732)
+- Redesign history UI, allowed enabling of client side history using config (#744)
+- Allow parallel conversations in the UI (#749)
+- Add missing typography plugin for TailwindCSS (#750)
+- Add client routing with ability for plugins to define custom routes (#754)
 
 ## 1.1.0 (2025-07-09)
 

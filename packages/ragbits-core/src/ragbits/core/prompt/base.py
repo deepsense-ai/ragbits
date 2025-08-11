@@ -49,6 +49,15 @@ class BasePrompt(metaclass=ABCMeta):
         """
         return []
 
+    def list_pdfs(self) -> list[str]:  # noqa: PLR6301
+        """
+        Returns the PDFs in form of URLs or base64 encoded strings.
+
+        Returns:
+            list of PDFs
+        """
+        return []
+
     def add_assistant_message(self, message: str | PromptOutputT) -> Self:
         """
         Add an assistant message to the conversation history.

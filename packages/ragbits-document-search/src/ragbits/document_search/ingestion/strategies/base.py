@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 import traceback
 from abc import ABC, abstractmethod
@@ -16,6 +17,8 @@ from ragbits.document_search.documents.element import Element
 from ragbits.document_search.ingestion import strategies
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
 from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
+
+logger = logging.getLogger(__name__)
 
 _CallP = ParamSpec("_CallP")
 _CallReturnT = TypeVar("_CallReturnT")
@@ -265,4 +268,23 @@ class IngestStrategy(WithConstructionConfig, ABC):
             elements: The list of elements to insert.
             vector_store: The vector store to store document chunks.
         """
-        await vector_store.store([element.to_vector_db_entry() for element in elements])
+        entries = [element.to_vector_db_entry() for element in elements]
+
+        # Deduplicate entries by their unique ID to prevent duplicate key errors in the
+        # underlying vector store implementation (many vector stores require IDs to be
+        # unique and will raise an error if duplicates are provided).
+        unique_entries: dict = {}
+        for entry in entries:
+            # If the ID is already present we skip the duplicate and log a warning.
+            # This behaviour ensures idempotency of the ingest operation while
+            # still indexing the first occurrence of every element
+            if entry.id not in unique_entries:
+                unique_entries[entry.id] = entry
+            else:
+                logger.warning(
+                    f"Skipping duplicate entry: {entry.id} from document "
+                    f"{entry.metadata.get('document_meta', {}).get('source', {}).get('id')}"
+                )
+
+        if unique_entries:
+            await vector_store.store(list(unique_entries.values()))

@@ -54,6 +54,15 @@ class LLMNotSupportingImagesError(LLMError):
         super().__init__(message)
 
 
+class LLMNotSupportingPdfsError(LLMError):
+    """
+    Raised when there are PDFs in the prompt, but LLM doesn't support them.
+    """
+
+    def __init__(self, message: str = "There are PDFs in the prompt, but given LLM doesn't support them.") -> None:
+        super().__init__(message)
+
+
 class LLMNotSupportingToolUseError(LLMError):
     """
     Raised when there are tools provided, but LLM doesn't support tool use.
@@ -61,3 +70,12 @@ class LLMNotSupportingToolUseError(LLMError):
 
     def __init__(self, message: str = "There are tools provided, but given LLM doesn't support tool use.") -> None:
         super().__init__(message)
+
+
+class LLMNotSupportingReasoningEffortError(LLMError):
+    """
+    Raised when there is reasoning effort provided, but LLM doesn't support it.
+    """
+
+    def __init__(self, model_name: str) -> None:
+        super().__init__(f"Model {model_name} does not support reasoning effort.")

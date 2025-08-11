@@ -5,7 +5,6 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Literal
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, status
@@ -13,10 +12,18 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Message
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatMessageRequest,
+    ChatResponse,
+    ChatResponseType,
+    ConfigResponse,
+    FeedbackConfig,
+    FeedbackItem,
+    FeedbackRequest,
+)
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
@@ -24,26 +31,6 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
-
-
-class ChatMessageRequest(BaseModel):
-    """
-    Request body for chat message
-    """
-
-    message: str = Field(..., description="The current user message")
-    history: list[Message] = Field(default_factory=list, description="Previous message history")
-    context: dict[str, Any] = Field(default_factory=dict, description="User context information")
-
-
-class FeedbackRequest(BaseModel):
-    """
-    Request body for feedback submission
-    """
-
-    message_id: str = Field(..., description="ID of the message receiving feedback")
-    feedback: Literal["like", "dislike"] = Field(..., description="Type of feedback (like or dislike)")
-    payload: dict = Field(default_factory=dict, description="Additional feedback details")
 
 
 class RagbitsAPI:
@@ -116,12 +103,6 @@ class RagbitsAPI:
     def setup_routes(self) -> None:
         """Defines API routes."""
 
-        @self.app.get("/", response_class=HTMLResponse)
-        async def root() -> HTMLResponse:
-            index_file = self.dist_dir / "index.html"
-            with open(str(index_file)) as file:
-                return HTMLResponse(content=file.read())
-
         @self.app.post("/api/chat", response_class=StreamingResponse)
         async def chat_message(request: ChatMessageRequest) -> StreamingResponse:
             return await self._handle_chat_message(request)
@@ -132,30 +113,32 @@ class RagbitsAPI:
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
-            like_config = self.chat_interface.feedback_config.like_form
-            dislike_config = self.chat_interface.feedback_config.dislike_form
-            user_settings_config = self.chat_interface.user_settings.form
+            feedback_config = self.chat_interface.feedback_config
 
-            config_dict = {
-                "feedback": {
-                    "like": {
-                        "enabled": self.chat_interface.feedback_config.like_enabled,
-                        "form": like_config,
-                    },
-                    "dislike": {
-                        "enabled": self.chat_interface.feedback_config.dislike_enabled,
-                        "form": dislike_config,
-                    },
-                },
-                "customization": self.chat_interface.ui_customization.model_dump()
-                if self.chat_interface.ui_customization
-                else None,
-                "user_settings": {"form": user_settings_config},
-                "debug_mode": self.debug_mode,
-                "conversation_history": self.chat_interface.conversation_history,
-            }
+            config_response = ConfigResponse(
+                feedback=FeedbackConfig(
+                    like=FeedbackItem(
+                        enabled=feedback_config.like_enabled,
+                        form=feedback_config.like_form,
+                    ),
+                    dislike=FeedbackItem(
+                        enabled=feedback_config.dislike_enabled,
+                        form=feedback_config.dislike_form,
+                    ),
+                ),
+                customization=self.chat_interface.ui_customization,
+                user_settings=self.chat_interface.user_settings,
+                debug_mode=self.debug_mode,
+                conversation_history=self.chat_interface.conversation_history,
+            )
 
-            return JSONResponse(content=config_dict)
+            return JSONResponse(content=config_response.model_dump())
+
+        @self.app.get("/{full_path:path}", response_class=HTMLResponse)
+        async def root() -> HTMLResponse:
+            index_file = self.dist_dir / "index.html"
+            with open(str(index_file)) as file:
+                return HTMLResponse(content=file.read())
 
     async def _handle_chat_message(self, request: ChatMessageRequest) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
