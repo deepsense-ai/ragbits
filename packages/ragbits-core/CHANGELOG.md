@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added support for halfvec (for vectors longer than 2000 tokens) type and IVFFlat indexing (#775)
+
 ## 1.2.1 (2025-08-04)
 
 ## 1.2.0 (2025-08-01)
