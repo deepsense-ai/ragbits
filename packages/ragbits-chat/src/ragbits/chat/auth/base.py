@@ -10,10 +10,11 @@ from ragbits.core.utils.config_handling import ConfigurableComponent
 from .types import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
-class AuthBackendOptions(Options):
+class AuthOptions(Options):
     """Options for authentication backends."""
 
-    pass
+    jwt_algorithm: str = "HS256"
+    token_expiry_minutes: int = 30
 
 
 class AuthenticationResponse(BaseModel):
@@ -21,15 +22,15 @@ class AuthenticationResponse(BaseModel):
 
     success: bool
     user: User | None = None
-    jwt_token: JWTToken | None = None  # JWT jwt_token for new implementations
+    jwt_token: JWTToken | None = None
     error_message: str | None = None
 
 
-class AuthenticationBackend(ConfigurableComponent[AuthBackendOptions], ABC):
+class Authentication(ConfigurableComponent[AuthOptions], ABC):
     """Base class for authentication backends."""
 
     configuration_key: ClassVar[str] = "auth_backend"
-    options_cls = AuthBackendOptions
+    options_cls = AuthOptions
     default_module: ClassVar[ModuleType | None] = None
 
     @abstractmethod

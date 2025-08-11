@@ -14,7 +14,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
-from ragbits.chat.auth import AuthenticationBackend, User
+from ragbits.chat.auth import Authentication, User
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
@@ -49,7 +49,7 @@ class RagbitsAPI:
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
         debug_mode: bool = False,
-        auth_backend: AuthenticationBackend | type[AuthenticationBackend] | str | None = None,
+        auth_backend: Authentication | type[Authentication] | str | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -586,8 +586,8 @@ class RagbitsAPI:
 
     @staticmethod
     def _load_auth_backend(
-        implementation: AuthenticationBackend | type[AuthenticationBackend] | str | None,
-    ) -> AuthenticationBackend | None:
+        implementation: Authentication | type[Authentication] | str | None,
+    ) -> Authentication | None:
         """Initialize the auth backend from a class, instance, or module path.
 
         Args:
@@ -598,7 +598,7 @@ class RagbitsAPI:
             return None
 
         # If it's already an instance, return it directly
-        if isinstance(implementation, AuthenticationBackend):
+        if isinstance(implementation, Authentication):
             logger.info(f"Using existing auth backend instance: {type(implementation).__name__}")
             return implementation
 
@@ -618,7 +618,7 @@ class RagbitsAPI:
         else:
             implementation_class = implementation
 
-        if not issubclass(implementation_class, AuthenticationBackend):
+        if not issubclass(implementation_class, Authentication):
             raise TypeError("Implementation must inherit from AuthenticationBackend")
 
         logger.info(f"Initialized auth backend: {implementation_class.__name__}")

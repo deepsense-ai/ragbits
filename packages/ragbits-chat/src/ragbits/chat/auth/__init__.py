@@ -1,13 +1,11 @@
-from .backends import DatabaseAuthBackend, ListAuthBackend, OAuth2Backend
-from .base import AuthenticationBackend, AuthenticationResponse
+from .backends import ListAuthentication
+from .base import Authentication, AuthenticationResponse
 from .types import User, UserCredentials
 
 __all__ = [
-    "AuthenticationBackend",
+    "Authentication",
     "AuthenticationResponse",
-    "DatabaseAuthBackend",
-    "ListAuthBackend",
-    "OAuth2Backend",
+    "ListAuthentication",
     "User",
     "UserCredentials",
 ]

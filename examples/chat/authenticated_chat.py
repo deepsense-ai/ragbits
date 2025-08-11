@@ -24,13 +24,13 @@ backend while keeping the ChatInterface class focused on its core functionality.
 # ///
 
 import asyncio
-import uuid
 from collections.abc import AsyncGenerator
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ragbits.chat.auth import ListAuthBackend
+from ragbits.chat.auth import ListAuthentication
+from ragbits.chat.auth.base import AuthOptions
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
@@ -153,13 +153,6 @@ class MyAuthenticatedChat(ChatInterface):
             }
         )
 
-        # Show a personalized image based on user role
-        if "admin" in user_roles:
-            yield self.create_image_response(
-                str(uuid.uuid4()),
-                "https://media.istockphoto.com/id/1300845620/photo/user-icon-human-person-symbol-social-profile-icon-avatar-login-sign-web-user-symbol.jpg",
-            )
-
         # Role-specific live updates
         role_updates = []
         if "admin" in user_roles:
@@ -244,7 +237,7 @@ class MyAuthenticatedChat(ChatInterface):
 
 
 # Factory functions for preferred components
-def get_auth_backend() -> ListAuthBackend:
+def get_auth_backend() -> ListAuthentication:
     """Factory function to create the preferred authentication backend."""
     users = [
         {
@@ -281,4 +274,6 @@ def get_auth_backend() -> ListAuthBackend:
         },
     ]
 
-    return ListAuthBackend(users)
+    default_options = AuthOptions()
+
+    return ListAuthentication(users, default_options=default_options)
