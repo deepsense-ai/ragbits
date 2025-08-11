@@ -94,6 +94,26 @@ class GoogleDriveSource(Source):
         """Set the path to the service account credentials file."""
         cls._credentials_file_path = path
 
+    @classmethod
+    def set_default_impersonation_target(cls, target_email: str) -> None:
+        """
+        Sets the default email address to impersonate when accessing Google Drive resources.
+        This will be used for all instances unless overridden at the instance level.
+
+        Args:
+            target_email (str): The email address to impersonate by default.
+
+        Raises:
+            ValueError: If the provided email address is invalid.
+        """
+        import re
+
+        # Validate email with regex
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not target_email or not re.match(email_pattern, target_email):
+            raise ValueError(f"Invalid email address provided for impersonation: {target_email}")
+        cls._default_impersonate_target_email = target_email
+
     def set_impersonation_target(self, target_email: str) -> None:
         """
         Sets the email address to impersonate when accessing Google Drive resources.
@@ -492,7 +512,7 @@ class GoogleDriveSource(Source):
             FileNotFoundError: If the Google Drive item with the given ID is not found.
             RuntimeError: If an error occurs during metadata fetching.
         """
-        client = cls._get_client()
+        client = cls._get_client(impersonate_target_email)
         try:
             file_meta = (
                 client.files().get(fileId=drive_id, fields="id, name, mimeType", supportsAllDrives=True).execute()

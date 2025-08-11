@@ -206,7 +206,7 @@ def test_determine_file_extension_override():
         mime_type="application/vnd.google-apps.document",
     )
 
-    export_mime, extension = src._determine_file_extension(override_mime=GoogleDriveExportFormat.PDF.value)
+    export_mime, extension = src._determine_file_extension(override_format=GoogleDriveExportFormat.PDF)
 
     assert export_mime == GoogleDriveExportFormat.PDF.value
     assert extension == ".pdf"
