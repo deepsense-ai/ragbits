@@ -5,7 +5,14 @@
 - Add tool_choice parameter to LLM interface (#738)
 - Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
 
+## 1.2.2 (2025-08-08)
+
+- Fix: rendering iterator arguments in Prompt (#768)
+- Fix: mypy not resolving PromptOutputT Type correctly (#772)
+
 ## 1.2.1 (2025-08-04)
+
+- No changes (keeping ragbits versions synced)
 
 ## 1.2.0 (2025-08-01)
 
