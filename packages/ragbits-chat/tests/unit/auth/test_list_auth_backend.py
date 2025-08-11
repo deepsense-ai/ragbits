@@ -5,7 +5,7 @@ import pytest
 from jose import jwt
 
 from ragbits.chat.auth.backends import ListAuthBackend
-from ragbits.chat.auth.models import OAuth2Credentials, User, UserCredentials
+from ragbits.chat.auth.types import OAuth2Credentials, User, UserCredentials
 
 
 @pytest.fixture

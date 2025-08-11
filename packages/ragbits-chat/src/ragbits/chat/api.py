@@ -14,6 +14,8 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
+from ragbits.chat.auth import AuthenticationBackend, User
+from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -31,42 +33,9 @@ from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
 
-from .auth import AuthenticationBackend, User
-from .auth.models import JWTToken
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
-
-
-class CredentialsLoginRequest(BaseModel):
-    """
-    Request body for user login
-    """
-
-    username: str = Field(..., description="Username")
-    password: str = Field(..., description="Password")
-
-
-LoginRequest = CredentialsLoginRequest
-
-
-class LoginResponse(BaseModel):
-    """
-    Response body for successful login
-    """
-
-    success: bool = Field(..., description="Whether login was successful")
-    user: dict | None = Field(None, description="User information")
-    error_message: str | None = Field(None, description="Error message if login failed")
-    jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
-
-
-class LogoutRequest(BaseModel):
-    """
-    Request body for user logout
-    """
-
-    session_id: str = Field(..., description="Session ID to logout")
 
 
 class RagbitsAPI:
@@ -500,7 +469,7 @@ class RagbitsAPI:
             raise HTTPException(status_code=500, detail="Authentication not configured")
 
         try:
-            from .auth.models import UserCredentials
+            from .auth.types import UserCredentials
 
             credentials = UserCredentials(username=request.username, password=request.password)
             auth_result = await self.auth_backend.authenticate_with_credentials(credentials)

@@ -40,3 +40,34 @@ class JWTToken(BaseModel):
     expires_in: int  # seconds until expiration
     refresh_token: str | None = None
     user: User
+
+
+class CredentialsLoginRequest(BaseModel):
+    """
+    Request body for user login
+    """
+
+    username: str = Field(..., description="Username")
+    password: str = Field(..., description="Password")
+
+
+LoginRequest = CredentialsLoginRequest
+
+
+class LoginResponse(BaseModel):
+    """
+    Response body for successful login
+    """
+
+    success: bool = Field(..., description="Whether login was successful")
+    user: dict | None = Field(None, description="User information")
+    error_message: str | None = Field(None, description="Error message if login failed")
+    jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
+
+
+class LogoutRequest(BaseModel):
+    """
+    Request body for user logout
+    """
+
+    session_id: str = Field(..., description="Session ID to logout")

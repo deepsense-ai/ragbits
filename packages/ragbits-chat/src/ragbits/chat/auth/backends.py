@@ -8,7 +8,7 @@ from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 
 from ragbits.chat.auth.base import AuthBackendOptions, AuthenticationBackend, AuthenticationResponse
-from ragbits.chat.auth.models import JWTToken, OAuth2Credentials, User, UserCredentials
+from ragbits.chat.auth.types import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
 class ListAuthBackend(AuthenticationBackend):

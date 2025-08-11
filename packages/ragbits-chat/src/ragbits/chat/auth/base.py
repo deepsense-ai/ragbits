@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-from .models import JWTToken, OAuth2Credentials, User, UserCredentials
+from .types import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
 class AuthBackendOptions(Options):
