@@ -12,12 +12,6 @@ To run the script using preferred components run:
      --auth examples.chat.authenticated_chat:get_auth_backend
     ```
 
-Or run directly with full authentication support:
-
-    ```bash
-    python examples/chat/authenticated_chat.py
-    ```
-
 The preferred components approach allows the CLI to automatically use your configured authentication
 backend while keeping the ChatInterface class focused on its core functionality.
 """
@@ -36,7 +30,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.auth import ListAuthBackend
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
@@ -289,48 +282,3 @@ def get_auth_backend() -> ListAuthBackend:
     ]
 
     return ListAuthBackend(users)
-
-
-def create_api() -> RagbitsAPI:
-    """Create and configure the authenticated API."""
-    auth_backend = get_auth_backend()
-    chat_interface = MyAuthenticatedChat()
-
-    api = RagbitsAPI(
-        chat_interface=type(chat_interface),
-        auth_backend=auth_backend,
-        cors_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-        debug_mode=True,
-    )
-
-    return api
-
-
-def main() -> None:
-    """Run the authenticated chat API server."""
-    api = create_api()
-
-    print("🔐 Starting Authenticated Ragbits Chat API...")
-    print("=" * 50)
-    print("👥 Available Users:")
-    print("   🔧 admin / admin123      (admin, moderator, user)")
-    print("   🛡️ moderator / mod123    (moderator, user)")
-    print("   👤 alice / alice123      (user)")
-    print("   👤 bob / bob123          (user)")
-    print()
-    print("🌐 API Endpoints:")
-    print("   📝 POST /api/auth/login  - User authentication")
-    print("   🚪 POST /api/auth/logout - User logout")
-    print("   💬 POST /api/chat        - Chat (requires auth)")
-    print("   👍 POST /api/feedback    - Feedback (requires auth)")
-    print("   ⚙️  GET  /api/config     - Configuration")
-    print()
-    print("🔗 Web Interface: http://127.0.0.1:8000")
-    print("📖 Test the authentication workflow using the web UI!")
-    print("=" * 50)
-
-    api.run(host="127.0.0.1", port=8000)
-
-
-if __name__ == "__main__":
-    main()
