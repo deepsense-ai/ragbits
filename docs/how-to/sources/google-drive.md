@@ -209,7 +209,7 @@ After configuring domain-wide delegation, you can specify a target user to imper
 from ragbits.core.sources.google_drive import GoogleDriveSource
 
 target_email = "johnDoe@yourdomain.com"
-credentials_file = "service-account-key.json"  # See [Create a Service Account](#2-create-a-service-account) for instructions on creating this file
+credentials_file = "service-account-key.json"
 
 # Set the path to your service account key file
 GoogleDriveSource.set_credentials_file_path(credentials_file)
