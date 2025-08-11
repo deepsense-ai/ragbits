@@ -369,6 +369,15 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
     @overload
     async def generate(
         self,
+        prompt: BasePromptWithParser[PromptOutputT],
+        *,
+        tools: None = None,
+        options: LLMClientOptionsT | None = None,
+    ) -> PromptOutputT: ...
+
+    @overload
+    async def generate(
+        self,
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: None = None,
