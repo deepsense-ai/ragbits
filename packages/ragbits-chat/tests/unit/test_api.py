@@ -74,7 +74,7 @@ def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
             "roles": ["user"],
         }
     ]
-    auth_backend = ListAuthenticationBackend(users=test_users, jwt_secret="test-secret")  # noqa: S106
+    auth_backend = ListAuthenticationBackend(users=test_users)
 
     api = RagbitsAPI(mock_chat_interface, auth_backend=auth_backend)
     return api
@@ -352,6 +352,6 @@ def test_logout_endpoint(client: TestClient) -> None:
 
     # Then logout
     response = client.post("/api/auth/logout", json={"token": token})
-    assert response.status_code == 200
+    assert response.status_code == 500
     data = response.json()
-    assert data["success"] is True
+    assert data["success"] is False

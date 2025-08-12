@@ -1,4 +1,3 @@
-import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
@@ -9,6 +8,7 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 
 from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
 from ragbits.chat.auth.types import JWTToken, OAuth2Credentials, User, UserCredentials
+from ragbits.core.utils import get_secret_key
 
 
 class ListAuthenticationBackend(AuthenticationBackend):
@@ -18,7 +18,6 @@ class ListAuthenticationBackend(AuthenticationBackend):
         self,
         users: list[dict[str, Any]],
         default_options: AuthOptions | None = None,
-        jwt_secret: str | None = None,
     ):
         """
         Initialize with a list of user dictionaries.
@@ -32,7 +31,7 @@ class ListAuthenticationBackend(AuthenticationBackend):
             default_options = AuthOptions()
         super().__init__(default_options)
         self.users = {}
-        self.jwt_secret = jwt_secret or secrets.token_urlsafe(32)
+        self.jwt_secret = get_secret_key()
         self.jwt_algorithm = default_options.jwt_algorithm
         self.token_expiry_minutes = default_options.token_expiry_minutes
         self.revoked_tokens: set[str] = set()  # Blacklist for revoked tokens
@@ -138,25 +137,15 @@ class ListAuthenticationBackend(AuthenticationBackend):
 
     async def revoke_token(self, token: str) -> bool:  # noqa: PLR6301
         """
-        Revoke a JWT token by adding it to the blacklist.
+        Revoke a JWT token.
 
         Args:
             token: The JWT token to revoke
 
-        Returns:
-            True if successfully revoked, False if token is invalid
+        Raises:
+            NotImplementedError: This method is not implemented
         """
-        try:
-            # Validate the token first to ensure it's a valid JWT
-            jwt.decode(token, self.jwt_secret, algorithms=[self.jwt_algorithm])
-
-            # Add to blacklist
-            self.revoked_tokens.add(token)
-            return True
-
-        except JWTError:
-            # Invalid token, cannot revoke
-            return False
+        raise NotImplementedError("revoke_token method is not implemented")
 
     def cleanup_expired_tokens(self) -> int:
         """

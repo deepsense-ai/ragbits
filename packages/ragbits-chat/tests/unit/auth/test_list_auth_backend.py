@@ -38,8 +38,7 @@ def test_users():
 @pytest.fixture
 def auth_backend(test_users: list[dict[str, Any]]) -> ListAuthenticationBackend:
     """Create a ListAuthBackend instance for testing."""
-    jwt_secret = "test-secret-key"  # noqa: S106,S105
-    return ListAuthenticationBackend(users=test_users, jwt_secret=jwt_secret)
+    return ListAuthenticationBackend(users=test_users)
 
 
 class TestListAuthInitialization:
@@ -76,14 +75,6 @@ class TestListAuthInitialization:
         assert charlie_user.full_name is None
         assert charlie_user.roles == []
         assert charlie_user.metadata == {}
-
-    @staticmethod
-    def test_init_with_custom_jwt_secret(test_users: list[dict[str, Any]]) -> None:
-        """Test initialization with custom JWT secret."""
-        custom_secret = "my-custom-secret"  # noqa: S105
-        backend = ListAuthenticationBackend(users=test_users, jwt_secret=custom_secret)
-
-        assert backend.jwt_secret == custom_secret
 
     @staticmethod
     def test_init_without_jwt_secret(test_users: list[dict[str, Any]]) -> None:
@@ -295,7 +286,7 @@ class TestListAuthTokenRevocation:
     @pytest.mark.asyncio
     @staticmethod
     async def test_revoke_valid_token(auth_backend: ListAuthenticationBackend) -> None:
-        """Test revoking a valid JWT token."""
+        """Test revoking a valid JWT token raises NotImplementedError."""
         user = User(user_id="test", username="test")
         jwt_token = auth_backend._create_jwt_token(user)
 
@@ -303,48 +294,35 @@ class TestListAuthTokenRevocation:
         result = await auth_backend.validate_token(jwt_token.access_token)
         assert result.success is True
 
-        # Revoke the token
-        revoke_result = await auth_backend.revoke_token(jwt_token.access_token)
-        assert revoke_result is True
-
-        # Token should be invalid after revocation
-        result = await auth_backend.validate_token(jwt_token.access_token)
-        assert result.success is False
-        assert result.error_message == "Token has been revoked"
+        # Revoke the token should raise NotImplementedError
+        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+            await auth_backend.revoke_token(jwt_token.access_token)
 
     @pytest.mark.asyncio
     @staticmethod
     async def test_revoke_invalid_token(auth_backend: ListAuthenticationBackend) -> None:
-        """Test revoking an invalid JWT token."""
+        """Test revoking an invalid JWT token raises NotImplementedError."""
         invalid_token = "invalid.jwt.token"  # noqa: S105
-        revoke_result = await auth_backend.revoke_token(invalid_token)
 
-        assert revoke_result is False
+        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+            await auth_backend.revoke_token(invalid_token)
 
     @pytest.mark.asyncio
     @staticmethod
     async def test_revoke_multiple_tokens(auth_backend: ListAuthenticationBackend) -> None:
-        """Test revoking multiple tokens."""
+        """Test revoking multiple tokens raises NotImplementedError."""
         user1 = User(user_id="user1", username="user1")
         user2 = User(user_id="user2", username="user2")
 
         token1 = auth_backend._create_jwt_token(user1)
         token2 = auth_backend._create_jwt_token(user2)
 
-        # Revoke both tokens
-        result1 = await auth_backend.revoke_token(token1.access_token)
-        result2 = await auth_backend.revoke_token(token2.access_token)
+        # Revoke both tokens should raise NotImplementedError
+        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+            await auth_backend.revoke_token(token1.access_token)
 
-        assert result1 is True
-        assert result2 is True
-        assert len(auth_backend.revoked_tokens) == 2
-
-        # Both tokens should be invalid
-        validation1 = await auth_backend.validate_token(token1.access_token)
-        validation2 = await auth_backend.validate_token(token2.access_token)
-
-        assert validation1.success is False
-        assert validation2.success is False
+        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+            await auth_backend.revoke_token(token2.access_token)
 
 
 class TestListAuthTokenCleanup:
@@ -465,7 +443,7 @@ class TestListAuthIntegration:
     @pytest.mark.asyncio
     @staticmethod
     async def test_complete_authentication_flow(auth_backend: ListAuthenticationBackend) -> None:
-        """Test complete flow: authenticate -> validate token -> revoke token."""
+        """Test complete flow: authenticate -> validate token -> revoke token raises NotImplementedError."""
         # Step 1: Authenticate
         test_password = "password123"  # noqa: S106,S105
         credentials = UserCredentials(username="alice", password=test_password)
@@ -482,14 +460,9 @@ class TestListAuthIntegration:
         assert validate_result.user is not None
         assert validate_result.user.username == "alice"
 
-        # Step 3: Revoke token
-        revoke_result = await auth_backend.revoke_token(token)
-        assert revoke_result is True
-
-        # Step 4: Validate revoked token
-        validate_revoked = await auth_backend.validate_token(token)
-        assert validate_revoked.success is False
-        assert validate_revoked.error_message == "Token has been revoked"
+        # Step 3: Revoke token should raise NotImplementedError
+        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+            await auth_backend.revoke_token(token)
 
     @pytest.mark.asyncio
     @staticmethod
