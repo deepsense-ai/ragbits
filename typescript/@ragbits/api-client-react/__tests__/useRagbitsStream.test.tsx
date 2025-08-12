@@ -4,7 +4,7 @@ import { act } from 'react'
 import { waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsStream, RagbitsContextProvider } from '../src'
-import { ChatResponseType, type TypedChatResponse } from '@ragbits/api-client'
+import { ChatResponseType, type ChatResponse } from '@ragbits/api-client'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -33,13 +33,13 @@ describe('useRagbitsStream', () => {
             wrapper: createWrapper(),
         })
 
-        const messages: TypedChatResponse[] = []
+        const messages: ChatResponse[] = []
         const errors: string[] = []
         let closed = false
 
         act(() => {
             result.current.stream(
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -66,19 +66,19 @@ describe('useRagbitsStream', () => {
 
         expect(messages).toHaveLength(4)
         expect(messages[0]).toEqual({
-            type: ChatResponseType.TEXT,
+            type: ChatResponseType.Text,
             content: 'Hello',
         })
         expect(messages[1]).toEqual({
-            type: ChatResponseType.TEXT,
+            type: ChatResponseType.Text,
             content: ' there!',
         })
         expect(messages[2]).toEqual({
-            type: ChatResponseType.MESSAGE_ID,
+            type: ChatResponseType.MessageId,
             content: 'msg-123',
         })
         expect(messages[3]).toEqual({
-            type: ChatResponseType.CONVERSATION_ID,
+            type: ChatResponseType.ConversationId,
             content: 'conv-456',
         })
         expect(errors).toHaveLength(0)
@@ -90,13 +90,13 @@ describe('useRagbitsStream', () => {
             wrapper: createWrapper(),
         })
 
-        const messages: TypedChatResponse[] = []
+        const messages: ChatResponse[] = []
 
         let cancelFn: (() => void) | undefined
 
         act(() => {
             cancelFn = result.current.stream(
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
@@ -128,13 +128,13 @@ describe('useRagbitsStream', () => {
             wrapper: createWrapper(),
         })
 
-        const messages1: TypedChatResponse[] = []
-        const messages2: TypedChatResponse[] = []
+        const messages1: ChatResponse[] = []
+        const messages2: ChatResponse[] = []
 
         // Start first stream
         act(() => {
             result.current.stream(
-                { message: 'Stream 1', history: [] },
+                { message: 'Stream 1', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages1.push(data)
@@ -149,7 +149,7 @@ describe('useRagbitsStream', () => {
         // Start second stream while first is in progress (should cancel first)
         act(() => {
             result.current.stream(
-                { message: 'Stream 2', history: [] },
+                { message: 'Stream 2', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages2.push(data)
@@ -178,11 +178,11 @@ describe('useRagbitsStream', () => {
             wrapper: createWrapper(),
         })
 
-        const messages: TypedChatResponse[] = []
+        const messages: ChatResponse[] = []
 
         act(() => {
             result.current.stream(
-                { message: 'Start streaming', history: [] },
+                { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
                         messages.push(data)
