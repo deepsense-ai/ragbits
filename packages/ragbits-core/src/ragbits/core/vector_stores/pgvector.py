@@ -109,7 +109,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             raise ValueError("list must be a positive integer for IVFFlat indexing.")
 
         if distance_method is None:
-            distance_method = "l2" if isinstance(embedder, SparseEmbedder) else "cosine"
+            distance_method = "sparsevec_l2" if isinstance(embedder, SparseEmbedder) else "cosine"
         self._client = client
         self._table_name = table_name
         self._vector_size = vector_size
