@@ -70,4 +70,4 @@ class LogoutRequest(BaseModel):
     Request body for user logout
     """
 
-    session_id: str = Field(..., description="Session ID to logout")
+    token: str = Field(..., description="Session ID to logout")

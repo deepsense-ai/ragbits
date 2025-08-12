@@ -1,11 +1,11 @@
-from .backends import ListAuthentication
-from .base import Authentication, AuthenticationResponse
+from .backends import ListAuthenticationBackend
+from .base import AuthenticationBackend, AuthenticationResponse
 from .types import User, UserCredentials
 
 __all__ = [
-    "Authentication",
+    "AuthenticationBackend",
     "AuthenticationResponse",
-    "ListAuthentication",
+    "ListAuthenticationBackend",
     "User",
     "UserCredentials",
 ]

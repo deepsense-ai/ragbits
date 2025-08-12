@@ -25,62 +25,16 @@ backend while keeping the ChatInterface class focused on its core functionality.
 
 import asyncio
 from collections.abc import AsyncGenerator
-from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from ragbits.chat.auth import ListAuthentication
-from ragbits.chat.auth.base import AuthOptions
+from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 
 
-class LikeFormExample(BaseModel):
-    """A simple example implementation of the like form that demonstrates how to use Pydantic for form definition."""
-
-    model_config = ConfigDict(
-        title="Like Form",
-        json_schema_serialization_defaults_required=True,
-    )
-
-    like_reason: str = Field(
-        description="Why do you like this?",
-        min_length=1,
-    )
-
-
-class DislikeFormExample(BaseModel):
-    """A simple example implementation of the dislike form that demonstrates how to use Pydantic for form definition."""
-
-    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
-
-    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
-        description="What was the issue?"
-    )
-    feedback: str = Field(description="Please provide more details", min_length=1)
-
-
-class UserSettingsFormExample(BaseModel):
-    """A simple example implementation of the chat form that demonstrates how to use Pydantic for form definition."""
-
-    model_config = ConfigDict(title="Chat Form", json_schema_serialization_defaults_required=True)
-
-    language: Literal["English", "Polish"] = Field(description="Please select the language", default="English")
-
-
 class MyAuthenticatedChat(ChatInterface):
     """An example implementation of ChatInterface with user-specific responses."""
-
-    feedback_config = FeedbackConfig(
-        like_enabled=True,
-        like_form=LikeFormExample,
-        dislike_enabled=True,
-        dislike_form=DislikeFormExample,
-    )
-    user_settings = UserSettings(form=UserSettingsFormExample)
 
     ui_customization = UICustomization(
         header=HeaderCustomization(
@@ -237,7 +191,7 @@ class MyAuthenticatedChat(ChatInterface):
 
 
 # Factory functions for preferred components
-def get_auth_backend() -> ListAuthentication:
+def get_auth_backend() -> ListAuthenticationBackend:
     """Factory function to create the preferred authentication backend."""
     users = [
         {
@@ -274,6 +228,4 @@ def get_auth_backend() -> ListAuthentication:
         },
     ]
 
-    default_options = AuthOptions()
-
-    return ListAuthentication(users, default_options=default_options)
+    return ListAuthenticationBackend(users)

@@ -14,7 +14,7 @@ class AuthOptions(Options):
     """Options for authentication backends."""
 
     jwt_algorithm: str = "HS256"
-    token_expiry_minutes: int = 30
+    token_expiry_minutes: int = 24 * 60
 
 
 class AuthenticationResponse(BaseModel):
@@ -26,7 +26,7 @@ class AuthenticationResponse(BaseModel):
     error_message: str | None = None
 
 
-class Authentication(ConfigurableComponent[AuthOptions], ABC):
+class AuthenticationBackend(ConfigurableComponent[AuthOptions], ABC):
     """Base class for authentication backends."""
 
     configuration_key: ClassVar[str] = "auth_backend"

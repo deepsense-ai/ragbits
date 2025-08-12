@@ -7,17 +7,17 @@ import bcrypt
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 
-from ragbits.chat.auth.base import Authentication, AuthenticationResponse, AuthOptions
+from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
 from ragbits.chat.auth.types import JWTToken, OAuth2Credentials, User, UserCredentials
 
 
-class ListAuthentication(Authentication):
+class ListAuthenticationBackend(AuthenticationBackend):
     """Authentication backend using a predefined list of users."""
 
     def __init__(
         self,
         users: list[dict[str, Any]],
-        default_options: AuthOptions,
+        default_options: AuthOptions | None = None,
         jwt_secret: str | None = None,
     ):
         """
@@ -28,6 +28,8 @@ class ListAuthentication(Authentication):
             jwt_secret: Secret key for JWT jwt_token signing (generates random if not provided)
             default_options: Default options for the component
         """
+        if default_options is None:
+            default_options = AuthOptions()
         super().__init__(default_options)
         self.users = {}
         self.jwt_secret = jwt_secret or secrets.token_urlsafe(32)

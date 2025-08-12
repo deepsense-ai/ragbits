@@ -1,7 +1,7 @@
 from ragbits.chat.auth import (
-    Authentication,
+    AuthenticationBackend,
     AuthenticationResponse,
-    ListAuthentication,
+    ListAuthenticationBackend,
     User,
     UserCredentials,
 )
@@ -21,11 +21,11 @@ from ragbits.chat.interface.types import (
 )
 
 __all__ = [
-    "Authentication",
+    "AuthenticationBackend",
     "AuthenticationResponse",
     "ChatResponse",
     "ChatResponseType",
-    "ListAuthentication",
+    "ListAuthenticationBackend",
     "Message",
     "MessageRole",
     "RagbitsChatClient",

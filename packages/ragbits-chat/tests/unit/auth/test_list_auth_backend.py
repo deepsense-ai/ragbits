@@ -4,8 +4,7 @@ from typing import Any, cast
 import pytest
 from jose import jwt
 
-from ragbits.chat.auth.backends import ListAuthentication
-from ragbits.chat.auth.base import AuthOptions
+from ragbits.chat.auth.backends import ListAuthenticationBackend
 from ragbits.chat.auth.types import OAuth2Credentials, User, UserCredentials
 
 
@@ -37,10 +36,10 @@ def test_users():
 
 
 @pytest.fixture
-def auth_backend(test_users: list[dict[str, Any]]) -> ListAuthentication:
+def auth_backend(test_users: list[dict[str, Any]]) -> ListAuthenticationBackend:
     """Create a ListAuthBackend instance for testing."""
     jwt_secret = "test-secret-key"  # noqa: S106,S105
-    return ListAuthentication(users=test_users, default_options=AuthOptions(), jwt_secret=jwt_secret)
+    return ListAuthenticationBackend(users=test_users, jwt_secret=jwt_secret)
 
 
 class TestListAuthInitialization:
@@ -49,7 +48,7 @@ class TestListAuthInitialization:
     @staticmethod
     def test_init_with_users(test_users: list[dict[str, Any]]) -> None:
         """Test that users are properly initialized."""
-        backend = ListAuthentication(users=test_users, default_options=AuthOptions())
+        backend = ListAuthenticationBackend(users=test_users)
 
         assert len(backend.users) == 3
         assert "alice" in backend.users
@@ -82,14 +81,14 @@ class TestListAuthInitialization:
     def test_init_with_custom_jwt_secret(test_users: list[dict[str, Any]]) -> None:
         """Test initialization with custom JWT secret."""
         custom_secret = "my-custom-secret"  # noqa: S105
-        backend = ListAuthentication(users=test_users, default_options=AuthOptions(), jwt_secret=custom_secret)
+        backend = ListAuthenticationBackend(users=test_users, jwt_secret=custom_secret)
 
         assert backend.jwt_secret == custom_secret
 
     @staticmethod
     def test_init_without_jwt_secret(test_users: list[dict[str, Any]]) -> None:
         """Test initialization without JWT secret generates random one."""
-        backend = ListAuthentication(users=test_users, default_options=AuthOptions())
+        backend = ListAuthenticationBackend(users=test_users)
 
         assert backend.jwt_secret is not None
         assert len(backend.jwt_secret) > 0
@@ -97,10 +96,10 @@ class TestListAuthInitialization:
     @staticmethod
     def test_default_configuration(test_users: list[dict[str, Any]]) -> None:
         """Test default configuration values."""
-        backend = ListAuthentication(users=test_users, default_options=AuthOptions())
+        backend = ListAuthenticationBackend(users=test_users)
 
         assert backend.jwt_algorithm == "HS256"
-        assert backend.token_expiry_minutes == 30
+        assert backend.token_expiry_minutes == 1440
         assert isinstance(backend.revoked_tokens, set)
         assert len(backend.revoked_tokens) == 0
 
@@ -110,7 +109,7 @@ class TestListAuthCredentialAuthentication:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_authenticate_valid_credentials(auth_backend: ListAuthentication) -> None:
+    async def test_authenticate_valid_credentials(auth_backend: ListAuthenticationBackend) -> None:
         """Test authentication with valid credentials."""
         test_password = "password123"  # noqa: S106,S105
         credentials = UserCredentials(username="alice", password=test_password)
@@ -131,12 +130,12 @@ class TestListAuthCredentialAuthentication:
         assert result.jwt_token.access_token is not None
         bearer_type = "bearer"  # noqa: S105
         assert result.jwt_token.token_type == bearer_type
-        assert result.jwt_token.expires_in == 30 * 60  # 30 minutes in seconds
+        assert result.jwt_token.expires_in == 1440 * 60  # 30 minutes in seconds
         assert result.jwt_token.user == result.user
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_authenticate_invalid_username(auth_backend: ListAuthentication) -> None:
+    async def test_authenticate_invalid_username(auth_backend: ListAuthenticationBackend) -> None:
         """Test authentication with non-existent username."""
         test_password = "password123"  # noqa: S106,S105
         credentials = UserCredentials(username="nonexistent", password=test_password)
@@ -149,7 +148,7 @@ class TestListAuthCredentialAuthentication:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_authenticate_invalid_password(auth_backend: ListAuthentication) -> None:
+    async def test_authenticate_invalid_password(auth_backend: ListAuthenticationBackend) -> None:
         """Test authentication with wrong password."""
         wrong_password = "wrongpassword"  # noqa: S106,S105
         credentials = UserCredentials(username="alice", password=wrong_password)
@@ -162,7 +161,7 @@ class TestListAuthCredentialAuthentication:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_authenticate_minimal_user_data(auth_backend: ListAuthentication) -> None:
+    async def test_authenticate_minimal_user_data(auth_backend: ListAuthenticationBackend) -> None:
         """Test authentication with user having minimal data."""
         test_password = "test789"  # noqa: S106,S105
         credentials = UserCredentials(username="charlie", password=test_password)
@@ -181,7 +180,7 @@ class TestListAuthJWTTokenOperations:
     """Test JWT token creation and validation."""
 
     @staticmethod
-    def test_create_jwt_token(auth_backend: ListAuthentication) -> None:
+    def test_create_jwt_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test JWT token creation."""
         user = User(
             user_id="test-user",
@@ -197,7 +196,7 @@ class TestListAuthJWTTokenOperations:
         assert jwt_token.access_token is not None
         bearer_type = "bearer"  # noqa: S105
         assert jwt_token.token_type == bearer_type
-        assert jwt_token.expires_in == 30 * 60
+        assert jwt_token.expires_in == 1440 * 60
         assert jwt_token.user == user
 
         # Verify token payload
@@ -213,7 +212,7 @@ class TestListAuthJWTTokenOperations:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_validate_valid_token(auth_backend: ListAuthentication) -> None:
+    async def test_validate_valid_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test validation of valid JWT token."""
         user = User(
             user_id="test-user",
@@ -239,7 +238,7 @@ class TestListAuthJWTTokenOperations:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_validate_invalid_token(auth_backend: ListAuthentication) -> None:
+    async def test_validate_invalid_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test validation of invalid JWT token."""
         invalid_token = "invalid.jwt.token"  # noqa: S105
         result = await auth_backend.validate_token(invalid_token)
@@ -250,7 +249,7 @@ class TestListAuthJWTTokenOperations:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_validate_expired_token(auth_backend: ListAuthentication) -> None:
+    async def test_validate_expired_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test validation of expired JWT token."""
         # Create token with negative expiry time
         user = User(user_id="test", username="test")
@@ -270,7 +269,7 @@ class TestListAuthJWTTokenOperations:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_validate_token_with_wrong_secret(auth_backend: ListAuthentication) -> None:
+    async def test_validate_token_with_wrong_secret(auth_backend: ListAuthenticationBackend) -> None:
         """Test validation of token signed with different secret."""
         user = User(user_id="test", username="test")
         wrong_secret = "wrong-secret"  # noqa: S105
@@ -295,7 +294,7 @@ class TestListAuthTokenRevocation:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_revoke_valid_token(auth_backend: ListAuthentication) -> None:
+    async def test_revoke_valid_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test revoking a valid JWT token."""
         user = User(user_id="test", username="test")
         jwt_token = auth_backend._create_jwt_token(user)
@@ -315,7 +314,7 @@ class TestListAuthTokenRevocation:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_revoke_invalid_token(auth_backend: ListAuthentication) -> None:
+    async def test_revoke_invalid_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test revoking an invalid JWT token."""
         invalid_token = "invalid.jwt.token"  # noqa: S105
         revoke_result = await auth_backend.revoke_token(invalid_token)
@@ -324,7 +323,7 @@ class TestListAuthTokenRevocation:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_revoke_multiple_tokens(auth_backend: ListAuthentication) -> None:
+    async def test_revoke_multiple_tokens(auth_backend: ListAuthenticationBackend) -> None:
         """Test revoking multiple tokens."""
         user1 = User(user_id="user1", username="user1")
         user2 = User(user_id="user2", username="user2")
@@ -352,7 +351,7 @@ class TestListAuthTokenCleanup:
     """Test token cleanup functionality."""
 
     @staticmethod
-    def test_cleanup_expired_tokens(auth_backend: ListAuthentication) -> None:
+    def test_cleanup_expired_tokens(auth_backend: ListAuthenticationBackend) -> None:
         """Test cleanup of expired tokens from revocation list."""
         # Add some expired tokens to the revoked list
         expired_payload = {
@@ -391,7 +390,7 @@ class TestListAuthTokenCleanup:
         assert valid_token in auth_backend.revoked_tokens
 
     @staticmethod
-    def test_cleanup_no_expired_tokens(auth_backend: ListAuthentication) -> None:
+    def test_cleanup_no_expired_tokens(auth_backend: ListAuthenticationBackend) -> None:
         """Test cleanup when no tokens are expired."""
         # Add only valid tokens
         valid_payload = {
@@ -415,7 +414,7 @@ class TestListAuthOAuth2:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_oauth2_not_supported(auth_backend: ListAuthentication) -> None:
+    async def test_oauth2_not_supported(auth_backend: ListAuthenticationBackend) -> None:
         """Test that OAuth2 authentication is not supported."""
         fake_token = "fake-token"  # noqa: S106,S105
         oauth_creds = OAuth2Credentials(access_token=fake_token)
@@ -433,7 +432,7 @@ class TestListAuthPasswordSecurity:
     @staticmethod
     def test_password_hashing_with_bcrypt(test_users: list[dict[str, Any]]) -> None:
         """Test that passwords are properly hashed with bcrypt."""
-        backend = ListAuthentication(users=test_users, default_options=AuthOptions())
+        backend = ListAuthenticationBackend(users=test_users)
 
         # Verify passwords are hashed
         for username in ["alice", "bob", "charlie"]:
@@ -451,7 +450,7 @@ class TestListAuthPasswordSecurity:
             {"username": "user2", "password": "samepassword"},  # noqa: S106
         ]
 
-        backend = ListAuthentication(users=same_password_users, default_options=AuthOptions())
+        backend = ListAuthenticationBackend(users=same_password_users)
 
         hash1 = backend.users["user1"]["password_hash"]
         hash2 = backend.users["user2"]["password_hash"]
@@ -465,7 +464,7 @@ class TestListAuthIntegration:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_complete_authentication_flow(auth_backend: ListAuthentication) -> None:
+    async def test_complete_authentication_flow(auth_backend: ListAuthenticationBackend) -> None:
         """Test complete flow: authenticate -> validate token -> revoke token."""
         # Step 1: Authenticate
         test_password = "password123"  # noqa: S106,S105
@@ -494,7 +493,7 @@ class TestListAuthIntegration:
 
     @pytest.mark.asyncio
     @staticmethod
-    async def test_multiple_user_sessions(auth_backend: ListAuthentication) -> None:
+    async def test_multiple_user_sessions(auth_backend: ListAuthenticationBackend) -> None:
         """Test multiple users can authenticate simultaneously."""
         # Authenticate multiple users
         alice_password = "password123"  # noqa: S106,S105
