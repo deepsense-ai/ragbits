@@ -33,7 +33,7 @@ class DistanceOp(NamedTuple):
 DISTANCE_OPS = {
     "cosine": DistanceOp("vector_cosine_ops", "<=>", "1 - distance"),
     "l2": DistanceOp("vector_l2_ops", "<->", "distance * -1"),
-    "halfvec_l2_ops": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
+    "halfvec_l2": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
     "l1": DistanceOp("vector_l1_ops", "<+>", "distance * -1"),
     "ip": DistanceOp("vector_ip_ops", "<#>", "distance * -1"),
     "bit_hamming": DistanceOp("bit_hamming_ops", "<~>", "distance * -1"),
@@ -109,7 +109,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             raise ValueError("list must be a positive integer for IVFFlat indexing.")
 
         if distance_method is None:
-            distance_method = "halfvec_l2_ops" if isinstance(embedder, SparseEmbedder) else "cosine"
+            distance_method = "l2" if isinstance(embedder, SparseEmbedder) else "cosine"
         self._client = client
         self._table_name = table_name
         self._vector_size = vector_size
