@@ -193,50 +193,6 @@ async def chat(
 - For production, always set `RAGBITS_SECRET_KEY` to a strong, unique value
 - State signatures are verified on each request - tampering results in a 400 error
 
-## Server Configuration
-
-### Launch the API Server
-
-You can start the API server using the Ragbits CLI:
-
-```bash
-ragbits api run path.to.your.module:MyChat
-```
-
-> **Note**: `path.to.your.module` should be the dotted Python _module path_ **without** the `.py` extension.
-
-### Custom UI
-
-To use a custom UI build, use the `--ui-build-dir` option:
-
-```bash
-ragbits api run path.to.your.module:MyChat --ui-build-dir /path/to/your/ui/build
-```
-
-### CORS Configuration
-
-To allow cross-origin requests, use the `--cors-origin` option (can be specified multiple times):
-
-```bash
-ragbits api run path.to.your.module:MyChat --cors-origin http://localhost:3000 --cors-origin https://your-domain.com
-```
-
-### Custom Host and Port
-
-To run on a different host or port:
-
-```bash
-ragbits api run path.to.your.module:MyChat --host 0.0.0.0 --port 9000
-```
-
-### Enable Debug Mode
-
-To enable debug mode for detailed logging and error information, use the `--debug` flag. It will enable button in UI to toggle debug side panel which will show you all the internal state of the chat:
-
-```bash
-ragbits api run path.to.your.module:MyChat --debug
-```
-
 ## User Interface Configuration
 
 ### Configure User Forms
@@ -378,6 +334,50 @@ The API server exposes the following endpoints:
 - `GET /api/config`: Returns UI configuration including feedback forms
 - `POST /api/chat`: Accepts chat messages and returns streaming responses
 - `POST /api/feedback`: Accepts feedback from the user
+
+## Server Configuration
+
+### Launch the API Server
+
+You can start the API server using the Ragbits CLI:
+
+```bash
+ragbits api run path.to.your.module:MyChat
+```
+
+> **Note**: `path.to.your.module` should be the dotted Python _module path_ **without** the `.py` extension.
+
+### Custom UI
+
+To use a custom UI build, use the `--ui-build-dir` option:
+
+```bash
+ragbits api run path.to.your.module:MyChat --ui-build-dir /path/to/your/ui/build
+```
+
+### CORS Configuration
+
+To allow cross-origin requests, use the `--cors-origin` option (can be specified multiple times):
+
+```bash
+ragbits api run path.to.your.module:MyChat --cors-origin http://localhost:3000 --cors-origin https://your-domain.com
+```
+
+### Custom Host and Port
+
+To run on a different host or port:
+
+```bash
+ragbits api run path.to.your.module:MyChat --host 0.0.0.0 --port 9000
+```
+
+### Enable Debug Mode
+
+To enable debug mode for detailed logging and error information, use the `--debug` flag. It will enable button in UI to toggle debug side panel which will show you all the internal state of the chat:
+
+```bash
+ragbits api run path.to.your.module:MyChat --debug
+```
 
 ## Complete Example
 
