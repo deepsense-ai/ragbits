@@ -2,118 +2,84 @@ from __future__ import annotations
 
 import logging
 
+from docling.datamodel.base_models import InputFormat
+from docling.document_converter import FormatOption
+from docling_core.transforms.chunker.base import BaseChunker
+from docling_core.types.doc import DoclingDocument
 from pptx import Presentation
 
-from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import Element
-from ragbits.document_search.ingestion.parsers.base import DocumentParser
-from ragbits.document_search.ingestion.parsers.pptx.exceptions import (
-    PptxPresentationError,
-)
-from ragbits.document_search.ingestion.parsers.pptx.extractors import (
-    DEFAULT_EXTRACTORS,
-    BasePptxExtractor,
-)
+from ragbits.document_search.documents.document import Document, DocumentType
+from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
+from ragbits.document_search.ingestion.parsers.pptx.callbacks import PptxCallback
+from ragbits.document_search.ingestion.parsers.pptx.exceptions import PptxExtractionError, PptxPresentationError
 
 logger = logging.getLogger(__name__)
 
 
-class PptxDocumentParser(DocumentParser):
+class PptxDocumentParser(DoclingDocumentParser):
     """
-    A comprehensive PPTX parser using python-pptx library with modular extractor architecture.
+    Document parser for PPTX files with callback-based enhancement.
     """
 
     supported_document_types = {DocumentType.PPTX}
 
     def __init__(
         self,
-        extractors: list[BasePptxExtractor] | None = None,
+        ignore_images: bool = False,
+        num_threads: int = 1,
+        chunker: BaseChunker | None = None,
+        format_options: dict[InputFormat, FormatOption] | None = None,
+        pptx_callbacks: list[PptxCallback] | None = None,
     ) -> None:
-        """
-        Initialize the PPTX parser with configurable extractors.
+        super().__init__(
+            ignore_images=ignore_images,
+            num_threads=num_threads,
+            chunker=chunker,
+            format_options=format_options,
+        )
 
-        Args:
-            extractors: List of extractors to use. If None, uses DEFAULT_EXTRACTORS.
-        """
-        self.extractors = extractors or DEFAULT_EXTRACTORS
-        logger.debug("Initialized PptxDocumentParser with %d extractors", len(self.extractors))
+        if pptx_callbacks is None:
+            from ragbits.document_search.ingestion.parsers.pptx import DEFAULT_CALLBACKS
 
-    async def parse(self, document: Document) -> list[Element]:
-        """
-        Parse the PPTX document and return extracted elements.
+            self.pptx_callbacks = DEFAULT_CALLBACKS
+        else:
+            self.pptx_callbacks = pptx_callbacks
 
-        Args:
-            document: The document to parse.
+        logger.debug("Initialized PptxDocumentParser with %d callbacks", len(self.pptx_callbacks))
 
-        Returns:
-            List of extracted elements.
+    async def _partition(self, document: Document) -> DoclingDocument:
+        docling_document = await super()._partition(document)
 
-        Raises:
-            PptxPresentationError: If the PPTX file cannot be loaded or processed.
-            PptxExtractorError: If an extractor fails completely.
-        """
-        self.validate_document_type(document.metadata.document_type)
+        if not self.pptx_callbacks:
+            return docling_document
 
-        document_path = document.local_path
-        document_meta = DocumentMeta.from_local_path(document_path)
-        extracted_elements: list[Element] = []
-
-        logger.info("Starting PPTX parsing for document: %s", document_path.name)
+        logger.info("Enhancing docling document with %d callbacks", len(self.pptx_callbacks))
 
         try:
-            presentation = Presentation(document_path.as_posix())
-            logger.debug("Successfully loaded PPTX presentation with %d slides", len(presentation.slides))
+            presentation = Presentation(document.local_path.as_posix())
         except Exception as e:
-            logger.error("Failed to load PPTX presentation from %s: %s", document_path, str(e), exc_info=True)
-            raise PptxPresentationError(str(document_path), e) from e
+            logger.error("Failed to load presentation for callbacks: %s", str(e))
+            raise PptxPresentationError(str(document.local_path), e) from e
 
-        successful_extractors = 0
-        failed_extractors = 0
-        total_elements_extracted = 0
-
-        for extractor in self.extractors:
-            extractor_name = extractor.get_extractor_name()
-            logger.debug("Running extractor: %s", extractor_name)
-
+        successful_callbacks = 0
+        for callback in self.pptx_callbacks:
             try:
-                extractor_elements = extractor.extract(presentation, document_meta)
-                extracted_elements.extend(extractor_elements)
-                successful_extractors += 1
-                total_elements_extracted += len(extractor_elements)
-
-                logger.debug(
-                    "Extractor %s completed successfully: %d elements extracted",
-                    extractor_name,
-                    len(extractor_elements),
-                )
-
+                logger.debug("Running callback: %s", callback.name)
+                docling_document = callback(document.local_path, presentation, docling_document)
+                successful_callbacks += 1
+                logger.debug("Successfully applied callback: %s", callback.name)
             except Exception as e:
-                failed_extractors += 1
+                extraction_error = PptxExtractionError(callback.name, -1, "callback execution", e)
                 logger.error(
-                    "Extractor %s failed completely: %s",
-                    extractor_name,
-                    str(e),
+                    "Callback %s failed: %s. Continuing with other callbacks.",
+                    callback.name,
+                    str(extraction_error),
                     exc_info=True,
                 )
 
-                logger.warning("Continuing with remaining extractors despite %s failure", extractor_name)
-
         logger.info(
-            "PPTX parsing completed for %s: %d total elements extracted, %d/%d extractors successful",
-            document_path.name,
-            total_elements_extracted,
-            successful_extractors,
-            len(self.extractors),
+            "Enhanced docling document with %d/%d successful callbacks",
+            successful_callbacks,
+            len(self.pptx_callbacks),
         )
-
-        if failed_extractors > 0:
-            logger.warning(
-                "Some extractors failed during parsing: %d successful, %d failed",
-                successful_extractors,
-                failed_extractors,
-            )
-
-        if not extracted_elements:
-            logger.warning("No elements were extracted from the PPTX document: %s", document_path.name)
-
-        return extracted_elements
+        return docling_document

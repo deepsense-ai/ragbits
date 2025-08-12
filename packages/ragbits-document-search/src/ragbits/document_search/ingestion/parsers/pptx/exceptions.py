@@ -33,29 +33,6 @@ class PptxExtractionError(PptxParserError):
         self.original_error = original_error
 
 
-class PptxSlideProcessingError(PptxParserError):
-    """
-    Raised when processing of an entire slide fails.
-    """
-
-    def __init__(self, extractor_name: str, slide_idx: int, original_error: Exception) -> None:
-        """
-        Initialize the PptxSlideProcessingError.
-
-        Args:
-            extractor_name: Name of the extractor that failed.
-            slide_idx: Index of the slide that failed to process.
-            original_error: The original exception that caused the failure.
-        """
-        message = (
-            f"Extractor '{extractor_name}' failed to process slide {slide_idx}. " f"Original error: {original_error}"
-        )
-        super().__init__(message)
-        self.extractor_name = extractor_name
-        self.slide_idx = slide_idx
-        self.original_error = original_error
-
-
 class PptxPresentationError(PptxParserError):
     """
     Raised when the PPTX presentation cannot be loaded or processed.
@@ -72,23 +49,4 @@ class PptxPresentationError(PptxParserError):
         message = f"Failed to load or process PPTX presentation from '{file_path}'. Original error: {original_error}"
         super().__init__(message)
         self.file_path = file_path
-        self.original_error = original_error
-
-
-class PptxExtractorError(PptxParserError):
-    """
-    Raised when an extractor fails completely.
-    """
-
-    def __init__(self, extractor_name: str, original_error: Exception) -> None:
-        """
-        Initialize the PptxExtractorError.
-
-        Args:
-            extractor_name: Name of the extractor that failed.
-            original_error: The original exception that caused the failure.
-        """
-        message = f"Extractor '{extractor_name}' failed completely. Original error: {original_error}"
-        super().__init__(message)
-        self.extractor_name = extractor_name
         self.original_error = original_error
