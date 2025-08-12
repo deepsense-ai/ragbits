@@ -109,13 +109,16 @@ class BasePptxExtractor(ABC):
     ) -> list[Element]:
         """Extract content from the presentation or specific slide."""
 
-    @abstractmethod
-    def get_extractor_name(self) -> str:
+    @property
+    def name(self) -> str:
         """Get the name of this extractor."""
+        return self._name
 
 
 class PptxTextExtractor(BasePptxExtractor):
     """Extracts text content from text frames."""
+
+    _name = "pptx_text_extractor"
 
     @staticmethod
     def _extract_text_content(shape: BaseShape) -> str | None:
@@ -135,14 +138,12 @@ class PptxTextExtractor(BasePptxExtractor):
             content_extractor=self._extract_text_content,
         )
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_text_extractor"
 
 
 class PptxHyperlinkExtractor(BasePptxExtractor):
     """Extracts hyperlink addresses from shapes."""
+
+    _name = "pptx_hyperlink_extractor"
 
     @staticmethod
     def _extract_hyperlink_content(shape: BaseShape) -> str | None:
@@ -165,14 +166,12 @@ class PptxHyperlinkExtractor(BasePptxExtractor):
             element_type="hyperlink",
         )
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_hyperlink_extractor"
 
 
 class PptxImageExtractor(BasePptxExtractor):
     """Extracts image information from shapes."""
+
+    _name = "pptx_image_extractor"
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
@@ -201,14 +200,12 @@ class PptxImageExtractor(BasePptxExtractor):
 
         return elements
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_image_extractor"
 
 
 class PptxShapeExtractor(BasePptxExtractor):
     """Extracts shape information and metadata."""
+
+    _name = "pptx_shape_extractor"
 
     @staticmethod
     def _extract_shape_content(shape: BaseShape) -> str | None:
@@ -229,14 +226,12 @@ class PptxShapeExtractor(BasePptxExtractor):
             element_type="shape",
         )
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_shape_extractor"
 
 
 class PptxMetadataExtractor(BasePptxExtractor):
     """Extracts document metadata."""
+
+    _name = "pptx_metadata_extractor"
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
@@ -266,14 +261,12 @@ class PptxMetadataExtractor(BasePptxExtractor):
 
         return elements
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_metadata_extractor"
 
 
 class PptxSpeakerNotesExtractor(BasePptxExtractor):
     """Extracts speaker notes from slides."""
+
+    _name = "pptx_speaker_notes_extractor"
 
     def extract(
         self, presentation: Presentation, document_meta: DocumentMeta, slide: Slide | None = None
@@ -313,10 +306,6 @@ class PptxSpeakerNotesExtractor(BasePptxExtractor):
 
         return elements
 
-    @staticmethod
-    def get_extractor_name() -> str:
-        """Get the name of this extractor."""
-        return "pptx_speaker_notes_extractor"
 
 
 DEFAULT_EXTRACTORS = [
