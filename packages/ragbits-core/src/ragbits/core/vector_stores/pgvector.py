@@ -295,7 +295,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # Check vector size
             # if greater than 2000 then choose type HALFVEC
             # More info: https://github.com/pgvector/pgvector
-            vector_func = "HALFVEC" if vector_size > MAX_VECTOR_SIZE else "VECTOR" if not is_sparse else "SPARSEVEC"
+            vector_func = "HALFVEC" if vector_size > MAX_VECTOR_SIZE and "lists" in self._indexing_params else "VECTOR" if not is_sparse else "SPARSEVEC"
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
