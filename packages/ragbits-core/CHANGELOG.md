@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add tool_choice parameter to LLM interface (#738)
+- Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
+
 ## 1.2.2 (2025-08-08)
 
 - Fix: rendering iterator arguments in Prompt (#768)
@@ -20,6 +23,7 @@
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
+- Added Google Drive support for impersonation and presentation-to-pdf (#724)
 - Introduce new API for attachments in prompts (#711)
 - Fix issue with trying to store duplicated entries in Vector Stores (#762)
 

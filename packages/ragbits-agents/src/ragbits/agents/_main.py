@@ -3,11 +3,13 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import ClassVar, Generic, cast, overload
 
 from pydantic import BaseModel, Field
+from typing_extensions import Self
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
@@ -20,9 +22,9 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
-from ragbits.agents.mcp.server import MCPServer
+from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.tool import Tool, ToolCallResult
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
@@ -34,6 +36,10 @@ from ragbits.core.utils.decorators import requires_dependencies
 
 with suppress(ImportError):
     from a2a.types import AgentCapabilities, AgentCard, AgentSkill
+    from pydantic_ai import Agent as PydanticAIAgent
+    from pydantic_ai import mcp
+
+    from ragbits.core.llms import LiteLLM
 
 
 @dataclass
@@ -192,6 +198,7 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -200,6 +207,7 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -207,6 +215,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -218,6 +227,11 @@ class Agent(
                 - None: No input. Only valid when a string prompt was provided during initialization.
             options: The options for the agent run.
             context: The context for the agent run.
+            tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - Callable: one of provided tools
 
         Returns:
             The result of the agent run.
@@ -251,6 +265,7 @@ class Agent(
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
                         tools=[tool.to_function_schema() for tool in tools_mapping.values()],
+                        tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                         options=self._get_llm_options(llm_options, merged_options, context.usage),
                     ),
                 )
@@ -294,6 +309,7 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -302,6 +318,7 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -309,6 +326,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -318,6 +336,11 @@ class Agent(
             input: The input for the agent run.
             options: The options for the agent run.
             context: The context for the agent run.
+            tool_choice: Parameter that allows to control what tool is used at first call. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - Callable: one of provided tools
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -329,7 +352,7 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
-        generator = self._stream_internal(input, options, context)
+        generator = self._stream_internal(input, options, context, tool_choice)
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
@@ -337,6 +360,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
@@ -357,6 +381,7 @@ class Agent(
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
+                    tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
                 async for chunk in streaming_result:
@@ -560,3 +585,106 @@ class Agent(
             )
             for tool in all_tools.values()
         ]
+
+    @requires_dependencies("pydantic_ai")
+    def to_pydantic_ai(self) -> "PydanticAIAgent":
+        """
+        Convert ragbits agent instance into a `pydantic_ai.Agent` representation.
+
+        Returns:
+            PydanticAIAgent: The equivalent Pydantic-based agent configuration.
+
+        Raises:
+            ValueError: If the `prompt` is not a string or a `Prompt` instance.
+        """
+        mcp_servers: list[mcp.MCPServerStdio | mcp.MCPServerHTTP] = []
+
+        if not self.prompt:
+            raise ValueError("Prompt is required but was None.")
+
+        if isinstance(self.prompt, str):
+            system_prompt = self.prompt
+        else:
+            if not self.prompt.system_prompt:
+                raise ValueError("System prompt is required but was None.")
+            system_prompt = self.prompt.system_prompt
+
+        for mcp_server in self.mcp_servers:
+            if isinstance(mcp_server, MCPServerStdio):
+                mcp_servers.append(
+                    mcp.MCPServerStdio(
+                        command=mcp_server.params.command, args=mcp_server.params.args, env=mcp_server.params.env
+                    )
+                )
+            elif isinstance(mcp_server, MCPServerStreamableHttp):
+                timeout = mcp_server.params["timeout"]
+                sse_timeout = mcp_server.params["sse_read_timeout"]
+
+                mcp_servers.append(
+                    mcp.MCPServerHTTP(
+                        url=mcp_server.params["url"],
+                        headers=mcp_server.params["headers"],
+                        timeout=timeout.total_seconds() if isinstance(timeout, timedelta) else timeout,
+                        sse_read_timeout=sse_timeout.total_seconds()
+                        if isinstance(sse_timeout, timedelta)
+                        else sse_timeout,
+                    )
+                )
+        return PydanticAIAgent(
+            model=self.llm.model_name,
+            system_prompt=system_prompt,
+            tools=[tool.to_pydantic_ai() for tool in self.tools],
+            mcp_servers=mcp_servers,
+        )
+
+    @classmethod
+    @requires_dependencies("pydantic_ai")
+    def from_pydantic_ai(cls, pydantic_ai_agent: "PydanticAIAgent") -> Self:
+        """
+        Construct an agent instance from a `pydantic_ai.Agent` representation.
+
+        Args:
+            pydantic_ai_agent: A Pydantic-based agent configuration.
+
+        Returns:
+            An instance of the agent class initialized from the Pydantic representation.
+        """
+        mcp_servers: list[MCPServerStdio | MCPServerStreamableHttp] = []
+        for mcp_server in pydantic_ai_agent._mcp_servers:
+            if isinstance(mcp_server, mcp.MCPServerStdio):
+                mcp_servers.append(
+                    MCPServerStdio(
+                        params={
+                            "command": mcp_server.command,
+                            "args": list(mcp_server.args),
+                            "env": mcp_server.env or {},
+                        }
+                    )
+                )
+            elif isinstance(mcp_server, mcp.MCPServerHTTP):
+                headers = mcp_server.headers or {}
+
+                mcp_servers.append(
+                    MCPServerStreamableHttp(
+                        params={
+                            "url": mcp_server.url,
+                            "headers": {str(k): str(v) for k, v in headers.items()},
+                            "sse_read_timeout": mcp_server.sse_read_timeout,
+                            "timeout": mcp_server.timeout,
+                        }
+                    )
+                )
+
+        if not pydantic_ai_agent.model:
+            raise ValueError("Missing LLM in `pydantic_ai.Agent` instance")
+        elif isinstance(pydantic_ai_agent.model, str):
+            model_name = pydantic_ai_agent.model
+        else:
+            model_name = pydantic_ai_agent.model.model_name
+
+        return cls(
+            llm=LiteLLM(model_name=model_name),  # type: ignore[arg-type]
+            prompt="\n".join(pydantic_ai_agent._system_prompts),
+            tools=[tool.function for _, tool in pydantic_ai_agent._function_tools.items()],
+            mcp_servers=cast(list[MCPServer], mcp_servers),
+        )
