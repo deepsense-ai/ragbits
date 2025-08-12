@@ -183,14 +183,6 @@ async def chat(
 
     # Store the updated state
     yield self.create_state_update(new_state)
-
-    # Use state in your logic
-    if new_state.get("conversation_count", 0) > 5:
-        yield self.create_text_response("I notice we've been chatting for a while! ")
-
-    # Continue with normal response...
-    async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
-        yield self.create_text_response(chunk)
 ```
 
 ### Security Considerations
