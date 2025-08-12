@@ -19,7 +19,6 @@ from ragbits.core.vector_stores.base import (
     WhereQuery,
 )
 
-#Just test if modifications included
 
 class DistanceOp(NamedTuple):
     """
@@ -34,13 +33,15 @@ class DistanceOp(NamedTuple):
 DISTANCE_OPS = {
     "cosine": DistanceOp("vector_cosine_ops", "<=>", "1 - distance"),
     "l2": DistanceOp("vector_l2_ops", "<->", "distance * -1"),
-    "halfvec_l2": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
+    "halfvec_l2_ops": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
     "l1": DistanceOp("vector_l1_ops", "<+>", "distance * -1"),
     "ip": DistanceOp("vector_ip_ops", "<#>", "distance * -1"),
     "bit_hamming": DistanceOp("bit_hamming_ops", "<~>", "distance * -1"),
     "bit_jaccard": DistanceOp("bit_jaccard_ops", "<%>", "distance * -1"),
     "sparsevec_l2": DistanceOp("sparsevec_l2_ops", "<->", "distance * -1"),
 }
+
+MAX_VECTOR_SIZE = 2000
 
 
 class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
@@ -49,7 +50,6 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
     """
 
     options_cls = VectorStoreOptions
-
 
     def __init__(
         self,
@@ -74,7 +74,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance method to use, default is "cosine" for dense vectors
                 and "sparsevec_l2" for sparse vectors.
-            is_hnsw: if hnsw or ivfflat indexing should be used 
+            is_hnsw: if hnsw or ivfflat indexing should be used
             params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
         """
@@ -107,7 +107,6 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             raise ValueError("params must contain 'list' key for IVFFlat indexing.")
         elif not isinstance(params["lists"], int) or params["lists"] <= 0:
             raise ValueError("list must be a positive integer for IVFFlat indexing.")
-
 
         if distance_method is None:
             distance_method = "halfvec_l2_ops" if isinstance(embedder, SparseEmbedder) else "cosine"
@@ -292,33 +291,32 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # and it is a valid vector size.
 
             is_sparse = isinstance(self._embedder, SparseEmbedder)
-            
-            #Check vector size
-            # if greater thann 2000 then choose type HALFVEC
+
+            # Check vector size
+            # if greater than 2000 then choose type HALFVEC
             # More info: https://github.com/pgvector/pgvector
-            if vector_size > 2000:
-                vector_func = "HALFVEC"
-            else:    
-                vector_func = "VECTOR" if not is_sparse else "SPARSEVEC"
+            vector_func = "HALFVEC" if vector_size > MAX_VECTOR_SIZE else "VECTOR" if not is_sparse else "SPARSEVEC"
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
             (id UUID, text TEXT, image_bytes BYTEA, vector {vector_func}({vector_size}), metadata JSONB);
             """
             # _idexing_params has been validated in the class constructor, and it is valid dict[str,int].
-            if "lists" in self._indexing_params.keys():
+            if "lists" in self._indexing_params:
                 index_type = "ivfflat"
-                index_params = f"(lists = 1000);"
+                index_params = "(lists = 1000);"
             else:
                 index_type = "hnsw"
-                index_params = f"(m = {self._indexing_params['m']}, ef_construction = {self._indexing_params['ef_construction']});"
-            
+                index_params = (
+                    f"(m = {self._indexing_params['m']}, ef_construction = {self._indexing_params['ef_construction']});"
+                )
+
             create_index_query = f"""
             CREATE INDEX {self._table_name + "_" + index_type + "_idx"} ON {self._table_name}
-            USING {index_type} (vector {distance}) 
+            USING {index_type} (vector {distance})
             WITH {index_params}
             """
-            
+
             if await self._check_table_exists():
                 print(f"Table {self._table_name} already exist!")
                 return
