@@ -297,7 +297,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # More info: https://github.com/pgvector/pgvector
             vector_func = (
                 "HALFVEC"
-                if vector_size > MAX_VECTOR_SIZE and "lists" in self._indexing_params
+                if vector_size > MAX_VECTOR_SIZE and re.search("halfvec", distance)
                 else "VECTOR"
                 if not is_sparse
                 else "SPARSEVEC"
