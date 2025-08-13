@@ -97,16 +97,16 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             params = {"lists": 100}
         elif not isinstance(params, dict):
             raise ValueError("params must be a dictionary.")
-        elif "m" not in params or "ef_construction" not in params:
+        elif "m" not in params or "ef_construction" not in params and is_hnsw:
             raise ValueError("params must contain 'm' and 'ef_construction' keys for hnsw indexing.")
-        elif not isinstance(params["m"], int) or params["m"] <= 0:
+        elif not isinstance(params["m"], int) or params["m"] <= 0 and is_hnsw:
             raise ValueError("m must be a positive integer for hnsw indexing.")
-        elif not isinstance(params["ef_construction"], int) or params["ef_construction"] <= 0:
+        elif not isinstance(params["ef_construction"], int) or params["ef_construction"] <= 0 and is_hnsw:
             raise ValueError("ef_construction must be a positive integer for hnsw indexing.")
-        elif "list" not in params and not is_hnsw:
-            raise ValueError("params must contain 'list' key for IVFFlat indexing.")
-        elif not isinstance(params["lists"], int) or params["lists"] <= 0:
-            raise ValueError("list must be a positive integer for IVFFlat indexing.")
+        elif "lists" not in params and not is_hnsw:
+            raise ValueError("params must contain 'lists' key for IVFFlat indexing.")
+        elif not isinstance(params["lists"], int) or params["lists"] <= 0 and not is_hnsw:
+            raise ValueError("lists must be a positive integer for IVFFlat indexing.")
 
         if distance_method is None:
             distance_method = "sparsevec_l2" if isinstance(embedder, SparseEmbedder) else "cosine"
@@ -295,13 +295,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # Check vector size
             # if greater than 2000 then choose type HALFVEC
             # More info: https://github.com/pgvector/pgvector
-            vector_func = (
-                "HALFVEC"
-                if vector_size > MAX_VECTOR_SIZE and "lists" in self._indexing_params
-                else "VECTOR"
-                if not is_sparse
-                else "SPARSEVEC"
-            )
+            vector_func = "HALFVEC" if vector_size > MAX_VECTOR_SIZE else "VECTOR" if not is_sparse else "SPARSEVEC"
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
@@ -310,7 +304,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # _idexing_params has been validated in the class constructor, and it is valid dict[str,int].
             if "lists" in self._indexing_params:
                 index_type = "ivfflat"
-                index_params = "(lists = 1000);"
+                index_params = f"(lists = {self._indexing_params['lists']});"
             else:
                 index_type = "hnsw"
                 index_params = (
