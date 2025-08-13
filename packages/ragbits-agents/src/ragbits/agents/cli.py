@@ -316,7 +316,7 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                                 if first_response:
                                     # Hide loading indicator and start agent response
                                     loading.display = False
-                                    chat_log.write(f"\n🤖 Agent: ")
+                                    chat_log.write("\n🤖 Agent: ")
                                     first_response = False
                                 chat_log.write(result)
                             case ToolCallResult():
@@ -325,7 +325,7 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                     total_usage = agent_results.usage
                     if first_response:
                         loading.display = False
-                        chat_log.write(f"\n🤖 Agent: (No response)")
+                        chat_log.write("\n🤖 Agent: (No response)")
 
                     usage_text = (
                         f"📊 Usage: {total_usage.prompt_tokens}+"
