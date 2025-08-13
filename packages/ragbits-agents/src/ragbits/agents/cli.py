@@ -7,7 +7,7 @@ from typing import Any
 
 import typer
 
-from ragbits.agents import Agent
+from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentResult
 
 agents_app = typer.Typer(help="Commands for managing agents")
@@ -124,6 +124,7 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
             Footer,
             Header,
             Input,
+            LoadingIndicator,
             Log,
             Static,
             TabbedContent,
@@ -178,6 +179,11 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                 height: auto;
                 margin: 1;
             }
+
+            LoadingIndicator {
+                height: 1;
+                margin: 0 1;
+            }
             """
 
             TITLE = "Ragbits Agent Interactive CLI"
@@ -199,6 +205,7 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                     with TabPane("Chat", id="chat"):
                         yield Vertical(
                             Log(id="chat_log", classes="chat-container"),
+                            LoadingIndicator(id="loading_indicator"),
                             Horizontal(
                                 Input(placeholder="Type your message...", id="chat_input"),
                                 Button("Send", variant="primary", id="send_button"),
@@ -236,6 +243,10 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                 chat_log.write_line(f"🤖 Agent loaded: {self.agent_path}")
                 chat_log.write_line("💬 Type a message and press Enter or click Send to start chatting!")
                 chat_log.write_line("💡 Tip: Type '/exit' to quit the interactive session")
+
+                # Hide loading indicator initially
+                loading = self.query_one("#loading_indicator", LoadingIndicator)
+                loading.display = False
 
                 # Focus on input
                 self.query_one("#chat_input", Input).focus()
@@ -289,48 +300,42 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                 """Run the agent with the provided message."""
                 chat_log = self.query_one("#chat_log", Log)
                 tools_log = self.query_one("#tools_log", Log)
+                loading = self.query_one("#loading_indicator", LoadingIndicator)
 
                 try:
-                    # Show a temporary thinking message
-                    chat_log.write_line("🤖 Agent: *thinking...*")
-                    self.refresh()  # Force UI refresh to show thinking message
+                    # Show loading indicator while agent is thinking
+                    loading.display = True
+                    tools_log.write_line(f"🔧 Tool calls for message '{message[:50]}...':")
 
-                    # Run the agent
-                    result = await self.agent.run(message)
+                    first_response = True
+                    agent_results = self.agent.run_streaming(message)
 
-                    # Clear the log and rewrite without the thinking message
-                    last_lines = list(chat_log.lines)
-                    if last_lines and "*thinking...*" in str(last_lines[-1]):
-                        # Remove the thinking message by clearing and rewriting all but the last line
-                        chat_log.clear()
-                        for line in last_lines[:-1]:
-                            chat_log.write(str(line))
+                    async for result in agent_results:
+                        match result:
+                            case str():
+                                if first_response:
+                                    # Hide loading indicator and start agent response
+                                    loading.display = False
+                                    chat_log.write(f"\n🤖 Agent: ")
+                                    first_response = False
+                                chat_log.write(result)
+                            case ToolCallResult():
+                                tools_log.write_line(f"  • {result.name}({result.arguments}) → {result.result}")
 
-                    # Add agent response
-                    chat_log.write_line(f"🤖 Agent: {result.content}")
+                    total_usage = agent_results.usage
+                    if first_response:
+                        loading.display = False
+                        chat_log.write(f"\n🤖 Agent: (No response)")
 
-                    # Log tools if any were used
-                    if result.tool_calls:
-                        tools_log.write_line(f"🔧 Tool calls for message '{message[:50]}...':")
-                        for tool_call in result.tool_calls:
-                            tools_log.write_line(f"  • {tool_call.name}({tool_call.arguments}) → {tool_call.result}")
-
-                    # Log usage
-                    if result.usage.total_tokens > 0:
-                        usage_text = (
-                            f"📊 Usage: {result.usage.prompt_tokens}+"
-                            f"{result.usage.completion_tokens}={result.usage.total_tokens} tokens"
-                        )
-                        chat_log.write_line(usage_text)
+                    usage_text = (
+                        f"📊 Usage: {total_usage.prompt_tokens}+"
+                        f"{total_usage.completion_tokens}={total_usage.total_tokens} tokens"
+                    )
+                    chat_log.write_line(usage_text)
 
                 except Exception as e:
-                    # Clear the log and rewrite without the thinking message if it exists
-                    last_lines = list(chat_log.lines)
-                    if last_lines and "*thinking...*" in str(last_lines[-1]):
-                        chat_log.clear()
-                        for line in last_lines[:-1]:
-                            chat_log.write(str(line))
-
+                    # Always hide loading indicator on error
+                    loading.display = False
                     chat_log.write_line(f"❌ Error: {e}")
                     tools_log.write_line(f"❌ Error running agent: {e}")
 
