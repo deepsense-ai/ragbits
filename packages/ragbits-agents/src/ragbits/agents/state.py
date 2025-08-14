@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
 
