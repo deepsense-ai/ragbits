@@ -11,7 +11,7 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
-    "ragbits-agents[mcp,a2a]",
+    "ragbits-agents[a2a,cli,mcp]",
 ]
 
 [tool.uv]
@@ -45,7 +45,7 @@ ragbits-document-search = { workspace = true }
 ragbits-evaluate = {workspace = true}
 ragbits-guardrails = {workspace = true}
 ragbits-chat = {workspace = true}
-ragbits-agents = {workspace = true}
+ragbits-agents = { workspace = true }
 
 [tool.uv.workspace]
 members = [

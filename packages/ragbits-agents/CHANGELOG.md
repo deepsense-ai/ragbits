@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Chat with agents in CLI
 - Add tool_choice parameter to agent interface (#738)
 - Add PydanticAI agents support (#755)
 
