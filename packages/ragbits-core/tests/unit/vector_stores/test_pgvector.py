@@ -82,7 +82,7 @@ async def test_invalid_hnsw_raises_error(mock_db_pool: tuple[MagicMock, AsyncMoc
                 client=mock_pool,
                 table_name=TEST_TABLE_NAME,
                 vector_size=3,
-                hnsw_params=hnsw,  # type: ignore
+                params=hnsw,  # type: ignore
                 embedder=NoopEmbedder(),
             )
 
