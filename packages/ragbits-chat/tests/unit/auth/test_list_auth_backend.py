@@ -294,8 +294,13 @@ class TestListAuthTokenRevocation:
         result = await auth_backend.validate_token(jwt_token.access_token)
         assert result.success is True
 
+        revocation_text = (
+            "ListAuthenticationBackend is designed to run in development / testing scenarios. "
+            "Revoking tokens is not implemented in this backend, "
+            "if you need to revoke tokens please consider using different backend or implementing your own."
+        )
         # Revoke the token should raise NotImplementedError
-        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+        with pytest.raises(NotImplementedError, match=revocation_text):
             await auth_backend.revoke_token(jwt_token.access_token)
 
     @pytest.mark.asyncio
@@ -303,8 +308,13 @@ class TestListAuthTokenRevocation:
     async def test_revoke_invalid_token(auth_backend: ListAuthenticationBackend) -> None:
         """Test revoking an invalid JWT token raises NotImplementedError."""
         invalid_token = "invalid.jwt.token"  # noqa: S105
-
-        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+        revocation_text = (
+            "ListAuthenticationBackend is designed to run in development / testing scenarios. "
+            "Revoking tokens is not implemented in this backend, "
+            "if you need to revoke tokens please consider using different backend or implementing your own."
+        )
+        # Revoke the token should raise NotImplementedError
+        with pytest.raises(NotImplementedError, match=revocation_text):
             await auth_backend.revoke_token(invalid_token)
 
     @pytest.mark.asyncio
@@ -317,11 +327,16 @@ class TestListAuthTokenRevocation:
         token1 = auth_backend._create_jwt_token(user1)
         token2 = auth_backend._create_jwt_token(user2)
 
-        # Revoke both tokens should raise NotImplementedError
-        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+        revocation_text = (
+            "ListAuthenticationBackend is designed to run in development / testing scenarios. "
+            "Revoking tokens is not implemented in this backend, "
+            "if you need to revoke tokens please consider using different backend or implementing your own."
+        )
+        # Revoke the token should raise NotImplementedError
+        with pytest.raises(NotImplementedError, match=revocation_text):
             await auth_backend.revoke_token(token1.access_token)
 
-        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+        with pytest.raises(NotImplementedError, match=revocation_text):
             await auth_backend.revoke_token(token2.access_token)
 
 
@@ -460,8 +475,13 @@ class TestListAuthIntegration:
         assert validate_result.user is not None
         assert validate_result.user.username == "alice"
 
+        revocation_text = (
+            "ListAuthenticationBackend is designed to run in development / testing scenarios. "
+            "Revoking tokens is not implemented in this backend, "
+            "if you need to revoke tokens please consider using different backend or implementing your own."
+        )
         # Step 3: Revoke token should raise NotImplementedError
-        with pytest.raises(NotImplementedError, match="revoke_token method is not implemented"):
+        with pytest.raises(NotImplementedError, match=revocation_text):
             await auth_backend.revoke_token(token)
 
     @pytest.mark.asyncio
