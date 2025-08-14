@@ -3,6 +3,7 @@
 ## Unreleased
 - Add tool_choice parameter to agent interface (#738)
 - Add PydanticAI agents support (#755)
+- Add AgentDependencies type (#781)
 
 ## 1.2.2 (2025-08-08)
 
