@@ -62,7 +62,21 @@ def mock_chat_interface() -> type[MockChatInterface]:
 @pytest.fixture
 def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
     """Fixture providing a RagbitsAPI instance with the mock interface."""
-    api = RagbitsAPI(mock_chat_interface)
+    from ragbits.chat.auth.backends import ListAuthenticationBackend
+
+    # Set up authentication backend with test users
+    test_users = [
+        {
+            "username": "testuser",
+            "password": "testpass",
+            "email": "test@example.com",
+            "full_name": "Test User",
+            "roles": ["user"],
+        }
+    ]
+    auth_backend = ListAuthenticationBackend(users=test_users)
+
+    api = RagbitsAPI(mock_chat_interface, auth_backend=auth_backend)
     return api
 
 
@@ -70,6 +84,15 @@ def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
 def client(api: RagbitsAPI) -> TestClient:
     """Fixture providing a test client for the FastAPI app."""
     return TestClient(api.app)
+
+
+def authenticate_user(client: TestClient, username: str = "testuser", password: str = "testpass") -> str:  # noqa: S107
+    """Helper function to authenticate a user and return the JWT token."""
+    login_response = client.post("/api/auth/login", json={"username": username, "password": password})
+    assert login_response.status_code == 200
+    login_data = login_response.json()
+    assert login_data["success"] is True
+    return login_data["jwt_token"]["access_token"]
 
 
 @pytest.mark.asyncio
@@ -113,13 +136,16 @@ def test_root_endpoint(client: TestClient) -> None:
 
 def test_chat_endpoint(client: TestClient) -> None:
     """Test the chat endpoint returns streaming response."""
+    # Authenticate first
+    token = authenticate_user(client)
+
     request_data = {
         "message": "Hello",
         "history": [{"role": "user", "content": "Previous message"}],
         "context": {"user_id": "test_user"},
     }
 
-    response = client.post("/api/chat", json=request_data)
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     # Check only the main part of the content type, ignoring charset
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -201,6 +227,20 @@ def test_validation_exception_handler(client: TestClient) -> None:
     assert "body" in data
 
 
+def test_unauthenticated_request(client: TestClient) -> None:
+    """Test that requests without authentication are rejected."""
+    request_data = {
+        "message": "Hello",
+        "history": [{"role": "user", "content": "Previous message"}],
+        "context": {"user_id": "test_user"},
+    }
+
+    response = client.post("/api/chat", json=request_data)
+    assert response.status_code == 401
+    data = response.json()
+    assert data["detail"] == "Authentication required"
+
+
 def test_load_chat_interface_from_class() -> None:
     """Test loading chat interface from a class."""
     api = RagbitsAPI(MockChatInterface)
@@ -228,6 +268,9 @@ def test_load_chat_interface_from_string(mock_import: MagicMock) -> None:
 
 def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> None:
     """Test state verification succeeds with valid signature."""
+    # Authenticate first
+    token = authenticate_user(client)
+
     state = {"user_data": "test_value"}
     signature = api.chat_interface._sign_state(state)
 
@@ -237,13 +280,16 @@ def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> N
         "context": {"state": state, "signature": signature},
     }
 
-    response = client.post("/api/chat", json=request_data)
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
 
 
 def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
     """Test state verification fails with invalid signature."""
+    # Authenticate first
+    token = authenticate_user(client)
+
     state = {"user_data": "test_value"}
     invalid_signature = "invalid-signature"
 
@@ -253,7 +299,7 @@ def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
         "context": {"state": state, "signature": invalid_signature},
     }
 
-    response = client.post("/api/chat", json=request_data)
+    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid state signature"
 
@@ -278,3 +324,34 @@ def test_run_method() -> None:
 
         # Verify uvicorn.run was called with the correct parameters
         mock_run.assert_called_once_with(api.app, host="localhost", port=9000)
+
+
+def test_login_endpoint(client: TestClient) -> None:
+    """Test the login endpoint with valid credentials."""
+    response = client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["user"]["username"] == "testuser"
+    assert data["jwt_token"]["access_token"] is not None
+
+
+def test_login_endpoint_invalid_credentials(client: TestClient) -> None:
+    """Test the login endpoint with invalid credentials."""
+    response = client.post("/api/auth/login", json={"username": "testuser", "password": "wrongpass"})
+    assert response.status_code == 401
+    data = response.json()
+    assert data["success"] is False
+    assert data["error_message"] == "Invalid password"
+
+
+def test_logout_endpoint(client: TestClient) -> None:
+    """Test the logout endpoint."""
+    # First login to get a token
+    token = authenticate_user(client)
+
+    # Then logout
+    response = client.post("/api/auth/logout", json={"token": token})
+    assert response.status_code == 500
+    data = response.json()
+    assert data["success"] is False
