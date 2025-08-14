@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import ClassVar, Generic, cast, overload
+from typing import Any, ClassVar, Generic, cast, overload
 
 from pydantic import BaseModel, Field
 from typing_extensions import Self
@@ -24,6 +24,7 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
+from ragbits.agents.state import StateT
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
@@ -79,15 +80,23 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_completion_tokens: int | None | NotGiven = NOT_GIVEN
     """The maximum number of completion tokens the agent can use, if NOT_GIVEN
     or None, agent will run forever"""
+    auto_save: bool | NotGiven = NOT_GIVEN
+    """Whether to automatically save state changes after each agent run, if NOT_GIVEN
+    defaults to True for stateful agents"""
 
 
-class AgentRunContext(BaseModel):
-    """
-    Context for the agent run.
-    """
+class AgentRunContext(BaseModel, Generic[StateT]):
+    """Context for the agent run."""
 
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
+
+    state: StateT | None = None
+    """State object for stateful agent operations."""
+    session_id: str | None = None
+    """Session identifier for state persistence."""
+    state_store: object | None = Field(default=None, exclude=True)
+    """State store instance (excluded from serialization)."""
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
@@ -197,7 +206,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
@@ -206,7 +215,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
@@ -214,7 +223,7 @@ class Agent(
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
@@ -308,7 +317,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
@@ -317,7 +326,7 @@ class Agent(
         self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming: ...
 
@@ -325,7 +334,7 @@ class Agent(
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResultStreaming:
         """
@@ -359,7 +368,7 @@ class Agent(
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        context: AgentRunContext[Any] | None = None,
         tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
@@ -495,7 +504,7 @@ class Agent(
 
     @staticmethod
     async def _execute_tool(
-        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext[Any] | None = None
     ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
