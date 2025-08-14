@@ -1,6 +1,10 @@
 # CHANGELOG
 
 ## Unreleased
+- Add backend authentication (#761)
+
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
 
 - Autogenerate typescript types based on backend typing (#727)
 - Add ability to customize favicon and page title (#766)
