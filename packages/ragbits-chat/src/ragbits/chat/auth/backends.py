@@ -145,7 +145,11 @@ class ListAuthenticationBackend(AuthenticationBackend):
         Raises:
             NotImplementedError: This method is not implemented
         """
-        raise NotImplementedError("revoke_token method is not implemented")
+        raise NotImplementedError(
+            "ListAuthenticationBackend is designed to run in development / testing scenarios. "
+            "Revoking tokens is not implemented in this backend, "
+            "if you need to revoke tokens please consider using different backend or implementing your own."
+        )
 
     def cleanup_expired_tokens(self) -> int:
         """
