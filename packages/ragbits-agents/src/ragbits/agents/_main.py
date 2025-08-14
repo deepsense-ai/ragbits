@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import ClassVar, Generic, cast, overload
+from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel, Field
 from typing_extensions import Self
@@ -82,11 +82,70 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     or None, agent will run forever"""
 
 
-class AgentRunContext(BaseModel):
+DepsT = TypeVar("DepsT")
+
+
+class AgentDependencies(BaseModel, Generic[DepsT]):
     """
-    Context for the agent run.
+    Container for agent runtime dependencies.
+
+    Becomes immutable after first attribute access.
     """
 
+    model_config = {"arbitrary_types_allowed": True}
+
+    _frozen: bool
+    _value: DepsT | None
+
+    def __init__(self, value: DepsT | None = None) -> None:
+        super().__init__()
+        self._value = value
+        self._frozen = False
+
+    def __setattr__(self, name: str, value: object) -> None:
+        is_frozen = False
+        if name != "_frozen":
+            try:
+                is_frozen = object.__getattribute__(self, "_frozen")
+            except Exception:
+                is_frozen = False
+
+        if is_frozen and name not in {"_frozen"}:
+            raise RuntimeError("Dependencies are immutable after first access")
+
+        super().__setattr__(name, value)
+
+    @property
+    def value(self) -> DepsT | None:
+        return self._value
+
+    @value.setter
+    def value(self, value: DepsT) -> None:
+        if self._frozen:
+            raise RuntimeError("Dependencies are immutable after first access")
+        self._value = value
+
+    def _freeze(self) -> None:
+        if not self._frozen:
+            self._frozen = True
+
+    def __getattr__(self, name: str) -> object:
+        value = object.__getattribute__(self, "_value")
+        if value is None:
+            raise AttributeError(name)
+        self._freeze()
+        return getattr(value, name)
+
+    def __contains__(self, key: str) -> bool:
+        value = object.__getattribute__(self, "_value")
+        return hasattr(value, key) if value is not None else False
+
+
+class AgentRunContext(BaseModel, Generic[DepsT]):
+    """Context for the agent run."""
+
+    deps: AgentDependencies[DepsT] = Field(default_factory=lambda: AgentDependencies())
+    """Container for external dependencies."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
 

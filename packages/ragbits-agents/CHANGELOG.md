@@ -5,6 +5,7 @@
 - Add PydanticAI agents support (#755)
 - Add unique ID to each agent instance for better tracking and identification
 - Add audit tracing for tool calls to improve observability and debugging
+- Add AgentDependencies type (#781)
 
 ## 1.2.2 (2025-08-08)
 
