@@ -2,12 +2,7 @@
 
 ## Unreleased
 
-<<<<<<< HEAD
-- Add tool_choice parameter to LLM interface (#738)
-- Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
-=======
 - Feat: added support for IVFFlat indexing and Halfvec datatype
->>>>>>> bd0a2314 (vectors longer than 2000 tokens supported)
 
 ## 1.2.2 (2025-08-08)
 
