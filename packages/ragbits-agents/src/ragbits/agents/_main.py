@@ -106,7 +106,7 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
         if name != "_frozen":
             try:
                 is_frozen = object.__getattribute__(self, "_frozen")
-            except Exception:
+            except AttributeError:
                 is_frozen = False
 
         if is_frozen and name not in {"_frozen"}:
