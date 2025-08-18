@@ -2,21 +2,16 @@ import asyncio
 import threading
 import time
 from collections.abc import AsyncGenerator, Iterable
-
-try:
-    import accelerate  # noqa: F401
-    import torch  # noqa: F401
-    from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer  # noqa: F401
-
-    HAS_LOCAL_LLM = True
-except ImportError:
-    HAS_LOCAL_LLM = False
+from typing import TYPE_CHECKING, Any
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.llms.base import LLM, LLMOptions, ToolChoice
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+
+if TYPE_CHECKING:
+    from transformers import TextIteratorStreamer
 
 
 class LocalLLMOptions(LLMOptions):
@@ -69,8 +64,10 @@ class LocalLLM(LLM[LocalLLMOptions]):
             ImportError: If the 'local' extra requirements are not installed.
             ValueError: If the model was not trained as a chat model.
         """
-        if not HAS_LOCAL_LLM:
+        deps = self._lazy_import_local_deps()
+        if deps is None:
             raise ImportError("You need to install the 'local' extra requirements to use local LLM models")
+        torch, AutoModelForCausalLM, AutoTokenizer, self.TextIteratorStreamer = deps
 
         super().__init__(model_name, default_options)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -86,6 +83,16 @@ class LocalLLM(LLM[LocalLLMOptions]):
         self.api_key = api_key
         self._price_per_prompt_token = price_per_prompt_token
         self._price_per_completion_token = price_per_completion_token
+
+    @staticmethod
+    def _lazy_import_local_deps() -> tuple[Any, Any, Any, Any] | None:
+        try:
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+
+            return torch, AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+        except ImportError:
+            return None
 
     def get_model_id(self) -> str:
         """
@@ -212,7 +219,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         input_ids = self.tokenizer.apply_chat_template(prompt.chat, add_generation_prompt=True, return_tensors="pt").to(
             self.model.device
         )
-        streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True)
+        streamer = self.TextIteratorStreamer(self.tokenizer, skip_prompt=True)
         generation_kwargs = dict(streamer=streamer, **options.dict())
         generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)
 
@@ -221,7 +228,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         ) -> AsyncGenerator[dict, None]:
             output_tokens = 0
             generation_thread.start()
-            for text in streamer:
+            for text in streamer:  # type: ignore[attr-defined]
                 if text:
                     output_tokens += 1
                     if output_tokens == 1:
@@ -270,3 +277,20 @@ class LocalLLM(LLM[LocalLLMOptions]):
             )
 
         return streamer_to_async_generator(streamer=streamer, generation_thread=generation_thread)
+
+
+def __getattr__(name: str) -> type:
+    """Allow access to transformers classes for testing purposes."""
+    if name in ("AutoModelForCausalLM", "AutoTokenizer", "TextIteratorStreamer"):
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+
+            transformers_classes = {
+                "AutoModelForCausalLM": AutoModelForCausalLM,
+                "AutoTokenizer": AutoTokenizer,
+                "TextIteratorStreamer": TextIteratorStreamer,
+            }
+            return transformers_classes[name]
+        except ImportError:
+            pass
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
