@@ -6,6 +6,7 @@ import { useStore } from "zustand";
 import { authStore } from "../stores/authStore";
 import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
+import { useInitializeUserStore } from "../../../core/stores/HistoryStore/useInitializeUserStore";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -18,8 +19,10 @@ export default function Login() {
     },
     method: "POST",
   });
+
   const login = useStore(authStore, (s) => s.login);
   const navigate = useNavigate();
+  const initializeUserStore = useInitializeUserStore();
   const [isError, setError] = useState<boolean>(false);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -42,6 +45,7 @@ export default function Login() {
       }
 
       login(response.user, response.jwt_token);
+      initializeUserStore(response.user.user_id);
       navigate("/");
     } catch (e) {
       setError(true);

@@ -195,6 +195,7 @@ def get_auth_backend() -> ListAuthenticationBackend:
     """Factory function to create the preferred authentication backend."""
     users = [
         {
+            "user_id": "8e6c5871-3817-4d62-828f-ef6789de31b9",
             "username": "admin",
             "password": "admin123",
             "email": "admin@example.com",
@@ -203,6 +204,7 @@ def get_auth_backend() -> ListAuthenticationBackend:
             "metadata": {"department": "IT", "clearance_level": "high"},
         },
         {
+            "user_id": "d3afde97-35fb-41d0-9aa6-6a1c822db63e",
             "username": "moderator",
             "password": "mod123",
             "email": "mod@example.com",
@@ -211,6 +213,7 @@ def get_auth_backend() -> ListAuthenticationBackend:
             "metadata": {"department": "Community", "shift": "day"},
         },
         {
+            "user_id": "7ef3d9d5-cdad-405a-a919-3d3ee5e1c34d",
             "username": "alice",
             "password": "alice123",
             "email": "alice@example.com",
@@ -219,6 +222,7 @@ def get_auth_backend() -> ListAuthenticationBackend:
             "metadata": {"department": "Marketing", "join_date": "2024-01-15"},
         },
         {
+            "user_id": "acac16db-37f0-43cb-b18f-b005c3c3de88",
             "username": "bob",
             "password": "bob123",
             "email": "bob@example.com",

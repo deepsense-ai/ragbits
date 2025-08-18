@@ -131,7 +131,9 @@ class RagbitsChatModelProvider:
             return self._categories_cache
 
         self._categories_cache = {
-            "enums": [model_name for model_name, model in self._models_cache.items() if issubclass(model, Enum)],
+            "enums": [model_name for model_name, model in self._models_cache.items() if issubclass(model, Enum)]
+            if self._models_cache
+            else [],
             "core_data": [
                 "ChatContext",
                 "LiveUpdate",
