@@ -131,7 +131,7 @@ class RagbitsChatModelProvider:
             return self._categories_cache
 
         self._categories_cache = {
-            "enums": ["ChatResponseType", "FeedbackType", "LiveUpdateType", "MessageRole"],
+            "enums": [model_name for model_name, model in self._models_cache.items() if issubclass(model, Enum)],
             "core_data": [
                 "ChatContext",
                 "LiveUpdate",
@@ -141,10 +141,28 @@ class RagbitsChatModelProvider:
                 "ServerState",
                 "FeedbackItem",
                 "Image",
+                "JWTToken",
+                "User",
             ],
-            "configuration": ["HeaderCustomization", "UICustomization", "UserSettings", "FeedbackConfig"],
-            "responses": ["FeedbackResponse", "ConfigResponse"],
-            "requests": ["ChatRequest", "FeedbackRequest"],
+            "configuration": [
+                "HeaderCustomization",
+                "UICustomization",
+                "UserSettings",
+                "FeedbackConfig",
+                "AuthenticationConfig",
+            ],
+            "responses": [
+                "FeedbackResponse",
+                "ConfigResponse",
+                "LoginResponse",
+            ],
+            "requests": [
+                "ChatRequest",
+                "FeedbackRequest",
+                "CredentialsLoginRequest",
+                "LoginRequest",
+                "LogoutRequest",
+            ],
         }
 
         return self._categories_cache

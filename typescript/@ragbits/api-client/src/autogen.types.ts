@@ -56,6 +56,15 @@ export const MessageRole = {
 export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
+ * Represents the AuthType enum
+ */
+export const AuthType = {
+    Credentials: 'credentials',
+} as const
+
+export type AuthType = TypeFrom<typeof AuthType>
+
+/**
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
@@ -274,11 +283,6 @@ export interface FeedbackRequest {
 }
 
 /**
- * Enum values: credentials
- */
-export type AuthType = 'credentials'
-
-/**
  * Configuration for authentication.
  */
 export interface AuthenticationConfig {
@@ -342,9 +346,7 @@ export interface LoginResponse {
     /**
      * User information
      */
-    user: {
-        [k: string]: unknown
-    } | null
+    user: User | null
     /**
      * Error message if login failed
      */
