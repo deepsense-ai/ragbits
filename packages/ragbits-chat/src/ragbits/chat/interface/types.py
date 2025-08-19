@@ -85,6 +85,7 @@ class ChatContext(BaseModel):
     conversation_id: str | None = None
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)
+    session_id: str | None = None
     model_config = ConfigDict(extra="allow")
 
 
@@ -202,6 +203,19 @@ class FeedbackConfig(BaseModel):
     dislike: FeedbackItem = Field(..., description="Dislike feedback configuration")
 
 
+class AuthType(str, Enum):
+    """Defines the available authentication types."""
+
+    CREDENTIALS = "credentials"
+
+
+class AuthenticationConfig(BaseModel):
+    """Configuration for authentication."""
+
+    enabled: bool = Field(default=False, description="Enable/disable authentication")
+    auth_types: list[AuthType] = Field(default=[], description="List of available authentication types")
+
+
 class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
@@ -210,3 +224,4 @@ class ConfigResponse(BaseModel):
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Debug mode flag")
+    authentication: AuthenticationConfig = Field(..., description="Authentication configuration")

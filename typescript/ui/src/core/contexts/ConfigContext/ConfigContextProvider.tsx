@@ -9,6 +9,7 @@ import { SharePluginName } from "../../../plugins/SharePlugin";
 import { HistoryStoreContextProvider } from "../../stores/HistoryStore/HistoryStoreContextProvider";
 import { ChatHistoryPluginName } from "../../../plugins/ChatHistoryPlugin";
 import { CONFIG_LOADING_PAGE_TITLE } from "../../../config";
+import { AuthPluginName } from "../../../plugins/AuthPlugin";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -32,6 +33,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       feedback,
       user_settings: userSettings,
       conversation_history,
+      authentication,
     } = config.data;
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
@@ -41,6 +43,9 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     }
     if (conversation_history) {
       pluginManager.activate(ChatHistoryPluginName);
+    }
+    if (authentication.enabled) {
+      pluginManager.activate(AuthPluginName);
     }
 
     pluginManager.activate(SharePluginName);
