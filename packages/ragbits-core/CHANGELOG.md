@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Added Lazy loading of dependencies in local.py and during importing of LiteLLM
 - Add tool_choice parameter to LLM interface (#738)
 - Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
 
