@@ -478,7 +478,7 @@ class RagbitsAPI:
                 return JSONResponse(
                     content=LoginResponse(
                         success=True,
-                        user=auth_result.user.model_dump() if auth_result.user else None,
+                        user=auth_result.user if auth_result.user else None,
                         error_message=None,
                         jwt_token=auth_result.jwt_token,
                     ).model_dump()

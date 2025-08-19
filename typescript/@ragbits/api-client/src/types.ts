@@ -4,7 +4,14 @@ import {
     FeedbackResponse,
     ChatRequest,
     ChatResponse,
+    LogoutRequest,
+    LoginRequest,
+    LoginResponse,
 } from './autogen.types'
+
+export interface GenericResponse {
+    success: boolean
+}
 
 /**
  * Configuration for the client
@@ -35,6 +42,8 @@ export interface EndpointDefinition<Req = any, Res = any> {
 export interface BaseApiEndpoints {
     '/api/config': EndpointDefinition<never, ConfigResponse>
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
+    '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
+    '/api/auth/logout': EndpointDefinition<LogoutRequest, GenericResponse>
 }
 
 /**

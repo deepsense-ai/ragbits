@@ -60,7 +60,7 @@ class LoginResponse(BaseModel):
     """
 
     success: bool = Field(..., description="Whether login was successful")
-    user: dict | None = Field(None, description="User information")
+    user: User | None = Field(None, description="User information")
     error_message: str | None = Field(None, description="Error message if login failed")
     jwt_token: JWTToken | None = Field(..., description="Access jwt_token")
 
