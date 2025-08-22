@@ -187,6 +187,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               case ChatResponseType.Image:
                 message.images = _handleImage(response.content, message);
                 break;
+              case ChatResponseType.Usage:
+                message.usage = response.content;
+                break;
             }
           }),
         );
