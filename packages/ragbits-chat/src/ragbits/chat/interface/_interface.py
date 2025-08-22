@@ -12,6 +12,7 @@ from typing import Any
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
+from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
@@ -27,6 +28,7 @@ from .types import (
     LiveUpdate,
     LiveUpdateContent,
     LiveUpdateType,
+    MessageUsage,
     Reference,
     StateUpdate,
 )
@@ -235,6 +237,13 @@ class ChatInterface(ABC):
     def create_image_response(image_id: str, image_url: str) -> ChatResponse:
         """Helper method to create an image response."""
         return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
+
+    @staticmethod
+    def create_usage_response(usage: Usage) -> ChatResponse:
+        return ChatResponse(
+            type=ChatResponseType.USAGE,
+            content={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()},
+        )
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

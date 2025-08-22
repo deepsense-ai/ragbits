@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
+from ragbits.core.llms.base import Usage
 
 
 class MessageRole(str, Enum):
@@ -66,6 +67,35 @@ class Image(BaseModel):
     url: str
 
 
+class MessageUsage(BaseModel):
+    """Represents usage for a message. Reflects `Usage` computed properties."""
+
+    n_requests: int
+    estimated_cost: float
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+    @classmethod
+    def from_usage(cls, usage: Usage) -> "MessageUsage":
+        """
+        Create a MessageUsage object from Usage.
+
+        Args:
+            usage: Usage object to be transformed.
+
+        Returns:
+            The corresponding MessageUsage.
+        """
+        return cls(
+            completion_tokens=usage.completion_tokens,
+            estimated_cost=usage.estimated_cost,
+            n_requests=usage.n_requests,
+            prompt_tokens=usage.prompt_tokens,
+            total_tokens=usage.total_tokens,
+        )
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface."""
 
@@ -77,6 +107,7 @@ class ChatResponseType(str, Enum):
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
     IMAGE = "image"
+    USAGE = "usage"
 
 
 class ChatContext(BaseModel):
@@ -93,7 +124,7 @@ class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image
+    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage]
 
     def as_text(self) -> str | None:
         """
@@ -156,6 +187,12 @@ class ChatResponse(BaseModel):
         Return the content as Image if this is an image response, else None.
         """
         return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
+
+    def as_usage(self) -> dict[str, Usage] | None:
+        """
+        Return the content as dict from model name to Usage if this is an usage response, else None
+        """
+        return cast(dict[str, MessageUsage], self.content) if self.type == ChatResponseType.USAGE else None
 
 
 class ChatMessageRequest(BaseModel):
