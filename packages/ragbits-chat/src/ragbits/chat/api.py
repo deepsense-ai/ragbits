@@ -171,6 +171,7 @@ class RagbitsAPI:
                 user_settings=self.chat_interface.user_settings,
                 debug_mode=self.debug_mode,
                 conversation_history=self.chat_interface.conversation_history,
+                show_usage=self.chat_interface.show_usage,
                 authentication=AuthenticationConfig(
                     enabled=self.auth_backend is not None,
                     auth_types=[AuthType.CREDENTIALS],

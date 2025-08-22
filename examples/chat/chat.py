@@ -88,6 +88,7 @@ class MyChat(ChatInterface):
     )
 
     conversation_history = True
+    show_usage = True
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")

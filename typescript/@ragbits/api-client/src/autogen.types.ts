@@ -239,9 +239,13 @@ export interface ConfigResponse {
      */
     debug_mode: boolean
     /**
-     * Debug mode flag
+     * Flag to enable conversation history
      */
     conversation_history: boolean
+    /**
+     * Flag to enable usage statistics
+     */
+    show_usage: boolean
     authentication: AuthenticationConfig
 }
 
