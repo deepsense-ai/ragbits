@@ -22,7 +22,6 @@ To run the script, execute the following command:
 
 import os
 import uuid
-import tempfile
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -32,8 +31,57 @@ from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.core.prompt import Prompt
 from ragbits.agents import Agent, ToolCallResult
-from ragbits.agents.tools import get_web_search_tool, get_image_generation_tool
+from ragbits.agents.tools import get_image_generation_tool
 from ragbits.core.llms import LiteLLM, ToolCall
+
+
+def get_web_search_tool_with_references(model_name: str):
+    """
+    Returns a web search tool with references as a callable function.
+
+    Args:
+        model_name: The model name to use
+
+    Returns:
+        A callable async web search function that returns content and references
+    """
+    from ragbits.agents.tools.openai import OpenAIResponsesLLM
+
+    async def search_web_with_references(query: str) -> dict:
+        # Create the OpenAI tool instance
+        openai_tool = OpenAIResponsesLLM(model_name, {"type": "web_search_preview"})
+
+        # Get the raw response object
+        response = await openai_tool.use_tool(query)
+
+        references = []
+        chat_text = ""
+
+        if getattr(response, "output", None):
+            for item in response.output:
+                # Chat content
+                if item.type in ["message", "response_output_message"]:
+                    for content_part in getattr(item, "content", []):
+                        if hasattr(content_part, "text"):
+                            chat_text += content_part.text + "\n"
+
+                        # Extract URL citations
+                        for annotation in getattr(content_part, "annotations", []):
+                            if annotation.type == "url_citation" and annotation.title and annotation.url:
+                                ref = {
+                                    "title": annotation.title,
+                                    "url": annotation.url,
+                                    "content": "",
+                                }
+                                if ref not in references:
+                                    references.append(ref)
+
+        return {
+            "content": chat_text.strip(),
+            "references": references
+        }
+
+    return search_web_with_references
 
 
 class GeneralAssistantPromptInput(BaseModel):
@@ -50,17 +98,15 @@ class GeneralAssistantPrompt(Prompt[GeneralAssistantPromptInput]):
     """
 
     system_prompt = """
-    You are a helpful assistant that responds to user questions.
-    You have access to tools for web search and image generation.
+    You are a helpful assistant that is expert in mountain hiking and answers user questions. You have access to the following tools: web search and image generation.
 
-    Guidelines for tool usage:
-    - Use web search when the user asks for information, facts, current events, research, or needs to look something up
-    - Use image generation when the user asks to create, generate, draw, make, or produce images/pictures
-    - Choose the most appropriate tool based on the user's specific request
-    - You can use only one tool per response - choose the most relevant one
-    - Do not provide image data in the response or provide information about the image save in the file system, because the image is showed in the UI
-    - Always generate 1024x1024 image
-    - With web search, always return the sources of the informations in the response in additional key "references" in a list of objects with title, content and url
+    Guidelines:
+
+    1. Use the web search tool when the user asks for factual information, research, or current events.
+    2. Use the image generation tool when the user asks to create, generate, draw, or produce images 1024x1024.
+    3. Always select the most appropriate tool based on the user’s request.
+    4. If the user asks explicity for a picture, use only the image generation tool.
+    5. Do not output images in chat. The image will be displayed in the UI.
     """
 
     user_prompt = """
@@ -75,7 +121,7 @@ class MyChat(ChatInterface):
         self.model_name = "gpt-4o-2024-08-06"
         self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
         self.agent = Agent(llm=self.llm, prompt=GeneralAssistantPrompt, tools=[
-            get_web_search_tool(self.model_name),
+            get_web_search_tool_with_references(self.model_name),
             get_image_generation_tool(self.model_name),
         ])
 
@@ -113,7 +159,7 @@ class MyChat(ChatInterface):
                 case ToolCall():
                     # Tool is starting to execute
                     tool_display_name = {
-                        "search_web": "🔍 Web Search",
+                        "search_web_with_references": "🔍 Web Search",
                         "image_generation": "🎨 Image Generator"
                     }.get(response.name, response.name)
 
@@ -127,7 +173,7 @@ class MyChat(ChatInterface):
                 case ToolCallResult():
                     # Tool has finished executing
                     tool_display_name = {
-                        "search_web": "🔍 Web Search",
+                        "search_web_with_references": "🔍 Web Search",
                         "image_generation": "🎨 Image Generator"
                     }.get(response.name, response.name)
 
@@ -137,15 +183,27 @@ class MyChat(ChatInterface):
                         f"{tool_display_name} completed",
                     )
 
-                    if response.name == "search_web":
-                        print(response.result)
+                    if response.name == "search_web_with_references":
+                        result_content = response.result
+
+                        for reference in result_content["references"]:
+                            yield self.create_reference(
+                                title=reference["title"],
+                                url=reference["url"],
+                                content=reference["content"]
+                            )
 
                     # Handle different tool results
                     if response.name == "image_generation":
                         result_content = response.result
+
                         if isinstance(result_content, str):
                             # Look for image path in the result
                             image_path = response.arguments.get("save_path")
+
+                            # Fallback to default if no path is provided
+                            if not image_path:
+                                image_path = "generated_image.png"
 
                             if image_path and os.path.exists(image_path):
                                 try:
