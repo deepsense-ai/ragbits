@@ -5,6 +5,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -539,13 +540,12 @@ class RagbitsAPI:
         try:
             async for response in responses:
                 chunk_count += 1
+                response_to_send: Any = response.content
                 if isinstance(response.content, dict):
                     response_to_send = {
                         key: model.model_dump() if isinstance(model, BaseModel) else model
                         for key, model in response.content.items()
                     }
-                else:
-                    response_to_send = response.content
                 data = json.dumps(
                     {
                         "type": response.type.value,

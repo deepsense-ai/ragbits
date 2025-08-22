@@ -20,7 +20,7 @@ import { MessageUsage } from "@ragbits/api-client-react";
 import { upperFirst, words } from "lodash";
 
 interface UsageButtonProps {
-  usage: ChatMessage["usage"];
+  usage: Exclude<ChatMessage["usage"], undefined>;
 }
 
 type TableData = MessageUsage & { model: string };
@@ -57,16 +57,12 @@ function toFormattedNumber(numStr: string) {
 }
 
 export default function UsageButton({ usage }: UsageButtonProps) {
-  const models = Object.keys(usage ?? {});
+  const models = Object.keys(usage);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const onOpenChange = () => {
     onClose();
   };
-
-  if (models.length === 0 || !usage) {
-    return null;
-  }
 
   const properties = Object.keys(usage[models[0]]) as (keyof MessageUsage)[];
   const orderedProperties = [

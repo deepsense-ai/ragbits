@@ -125,7 +125,7 @@ class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage]
+    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage] | None
 
     def as_text(self) -> str | None:
         """
@@ -195,7 +195,7 @@ class ChatResponse(BaseModel):
         """
         return cast(None, self.content)
 
-    def as_usage(self) -> dict[str, Usage] | None:
+    def as_usage(self) -> dict[str, MessageUsage] | None:
         """
         Return the content as dict from model name to Usage if this is an usage response, else None
         """

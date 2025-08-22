@@ -445,6 +445,7 @@ interface ClearMessageResponse {
     type: 'clear_message'
     content: never
 }
+
 interface MessageUsageChatResponse {
     type: 'usage'
     content: Record<string, MessageUsage>

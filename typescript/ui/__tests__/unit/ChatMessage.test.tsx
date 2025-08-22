@@ -61,16 +61,32 @@ function mockStore(
               },
             ]
           : [],
+      usage: {
+        "litellm:gpt4-mini": {
+          n_requests: 0,
+          estimated_cost: 0,
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+        },
+      },
     };
   });
 }
 
+const COMPONENT_TEST_ID: Record<string, string> = {
+  FeedbackForm: "feedback-form",
+  UsageButton: "usage-button",
+};
+
 vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
-  default: ({ component }: ComponentProps<typeof PluginWrapper>) => (
-    <div data-testid="feedback-form" data-plugin={component}>
-      {component}
-    </div>
-  ),
+  default: ({ component }: ComponentProps<typeof PluginWrapper>) => {
+    return (
+      <div data-testid={COMPONENT_TEST_ID[component]} data-plugin={component}>
+        {component}
+      </div>
+    );
+  },
 }));
 
 vi.mock("../DelayedTooltip.tsx", () => ({
@@ -131,6 +147,21 @@ describe("ChatMessage", () => {
 
       render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
+    });
+
+    it("shows usage button when enabled", () => {
+      mockStore(MessageRole.Assistant);
+      vi.mock(
+        "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
+        () => ({
+          config: {
+            show_usage: true,
+          },
+        }),
+      );
+
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
+      expect(screen.getByTestId("usage-button")).toBeInTheDocument();
     });
 
     it("displays loading state for assistant message without content", () => {

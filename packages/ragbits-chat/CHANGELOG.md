@@ -2,7 +2,7 @@
 
 ## Unreleased
 - Add `clear_message` event type allowing to reset whole message (#789)
-- Add usage component to UI with backend support (#785)
+- Add usage component to UI with backend support (#786)
 - Add authentication handling in the UI (#763)
 - Add backend authentication (#761)
 
