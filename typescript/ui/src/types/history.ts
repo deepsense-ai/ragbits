@@ -5,6 +5,7 @@ import {
   Reference,
   ServerState,
   Image,
+  MessageUsage,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -21,6 +22,7 @@ export interface ChatMessage {
   liveUpdates?: Record<string, LiveUpdate["content"]>;
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
+  usage?: Record<string, MessageUsage>;
 }
 
 export interface Conversation {

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add usage component to UI with backend support (#786)
 - Add authentication handling in the UI (#763)
 - Add backend authentication (#761)
 
