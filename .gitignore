@@ -105,3 +105,7 @@ qdrant/
 
 .DS_Store
 node_modules/
+
+lazygit
+
+lazygit.tar.gz
