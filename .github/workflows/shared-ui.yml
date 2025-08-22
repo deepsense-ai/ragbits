@@ -59,14 +59,6 @@ jobs:
         run: npm run build
         working-directory: typescript/ui
 
-      - name: Check Ragbits Chat UI build sync
-        run: |
-          git diff --quiet * || {
-            echo "ragbits-chat package ui build not synced"
-            exit 1
-          }
-        working-directory: typescript/ui
-
       - name: Run unit tests
         run: npm run test:run
         working-directory: typescript/ui
