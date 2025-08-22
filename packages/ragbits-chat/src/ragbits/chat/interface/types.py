@@ -188,7 +188,7 @@ class ChatResponse(BaseModel):
         """
         return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
 
-    def as_usage(self) -> dict[str, Usage] | None:
+    def as_usage(self) -> dict[str, MessageUsage] | None:
         """
         Return the content as dict from model name to Usage if this is an usage response, else None
         """

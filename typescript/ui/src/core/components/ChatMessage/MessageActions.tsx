@@ -35,17 +35,19 @@ const MessageActions = ({
 
   return (
     <div className="flex items-center gap-2">
-      <PluginWrapper
-        plugin={UsagePlugin}
-        component="UsageButton"
-        componentProps={{
-          usage: message.usage,
-        }}
-        skeletonSize={{
-          width: "88px",
-          height: "40px",
-        }}
-      />
+      {message.usage && Object.keys(message.usage).length >= 1 && (
+        <PluginWrapper
+          plugin={UsagePlugin}
+          component="UsageButton"
+          componentProps={{
+            usage: message.usage,
+          }}
+          skeletonSize={{
+            width: "88px",
+            height: "40px",
+          }}
+        />
+      )}
 
       <DelayedTooltip content="Copy" placement="bottom">
         <Button

@@ -539,13 +539,9 @@ class RagbitsAPI:
         try:
             async for response in responses:
                 chunk_count += 1
+                response_to_send: str | BaseModel | list | dict = response.content
                 if isinstance(response.content, dict):
-                    response_to_send = {
-                        key: model.model_dump() if isinstance(model, BaseModel) else model
-                        for key, model in response.content.items()
-                    }
-                else:
-                    response_to_send = response.content
+                    response_to_send = {key: model.model_dump() for key, model in response.content.items()}
                 data = json.dumps(
                     {
                         "type": response.type.value,
