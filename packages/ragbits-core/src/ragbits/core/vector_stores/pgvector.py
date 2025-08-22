@@ -33,13 +33,15 @@ class DistanceOp(NamedTuple):
 DISTANCE_OPS = {
     "cosine": DistanceOp("vector_cosine_ops", "<=>", "1 - distance"),
     "l2": DistanceOp("vector_l2_ops", "<->", "distance * -1"),
+    "halfvec_l2": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
     "l1": DistanceOp("vector_l1_ops", "<+>", "distance * -1"),
     "ip": DistanceOp("vector_ip_ops", "<#>", "distance * -1"),
     "bit_hamming": DistanceOp("bit_hamming_ops", "<~>", "distance * -1"),
     "bit_jaccard": DistanceOp("bit_jaccard_ops", "<%>", "distance * -1"),
     "sparsevec_l2": DistanceOp("sparsevec_l2_ops", "<->", "distance * -1"),
-    "halfvec_l2": DistanceOp("halfvec_l2_ops", "<->", "distance * -1"),
 }
+
+MAX_VECTOR_SIZE = 2000
 
 
 class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
@@ -57,7 +59,8 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         vector_size: int | None = None,
         embedding_type: EmbeddingType = EmbeddingType.TEXT,
         distance_method: str | None = None,
-        hnsw_params: dict | None = None,
+        is_hnsw: bool = True,
+        params: dict | None = None,
         default_options: VectorStoreOptions | None = None,
     ) -> None:
         """
@@ -71,7 +74,8 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             embedding_type: Which part of the entry to embed, either text or image. The other part will be ignored.
             distance_method: The distance method to use, default is "cosine" for dense vectors
                 and "sparsevec_l2" for sparse vectors.
-            hnsw_params: The parameters for the HNSW index. If None, the default parameters will be used.
+            is_hnsw: if hnsw or ivfflat indexing should be used
+            params: The parameters for the HNSW index. If None, the default parameters will be used.
             default_options: The default options for querying the vector store.
         """
         (
@@ -87,16 +91,22 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         if vector_size is not None and (not isinstance(vector_size, int) or vector_size <= 0):
             raise ValueError("Vector size must be a positive integer.")
 
-        if hnsw_params is None:
-            hnsw_params = {"m": 4, "ef_construction": 10}
-        elif not isinstance(hnsw_params, dict):
-            raise ValueError("hnsw_params must be a dictionary.")
-        elif "m" not in hnsw_params or "ef_construction" not in hnsw_params:
-            raise ValueError("hnsw_params must contain 'm' and 'ef_construction' keys.")
-        elif not isinstance(hnsw_params["m"], int) or hnsw_params["m"] <= 0:
-            raise ValueError("m must be a positive integer.")
-        elif not isinstance(hnsw_params["ef_construction"], int) or hnsw_params["ef_construction"] <= 0:
-            raise ValueError("ef_construction must be a positive integer.")
+        if params is None and is_hnsw:
+            params = {"m": 4, "ef_construction": 10}
+        elif params is None and not is_hnsw:
+            params = {"lists": 100}
+        elif not isinstance(params, dict):
+            raise ValueError("params must be a dictionary.")
+        elif "m" not in params or "ef_construction" not in params and is_hnsw:
+            raise ValueError("params must contain 'm' and 'ef_construction' keys for hnsw indexing.")
+        elif not isinstance(params["m"], int) or params["m"] <= 0 and is_hnsw:
+            raise ValueError("m must be a positive integer for hnsw indexing.")
+        elif not isinstance(params["ef_construction"], int) or params["ef_construction"] <= 0 and is_hnsw:
+            raise ValueError("ef_construction must be a positive integer for hnsw indexing.")
+        elif "lists" not in params and not is_hnsw:
+            raise ValueError("params must contain 'lists' key for IVFFlat indexing.")
+        elif not isinstance(params["lists"], int) or params["lists"] <= 0 and not is_hnsw:
+            raise ValueError("lists must be a positive integer for IVFFlat indexing.")
 
         if distance_method is None:
             distance_method = "sparsevec_l2" if isinstance(embedder, SparseEmbedder) else "cosine"
@@ -105,7 +115,7 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
         self._vector_size = vector_size
         self._vector_size_info: VectorSize | None = None
         self._distance_method = distance_method
-        self._hnsw_params = hnsw_params
+        self._indexing_params = params
 
     def __reduce__(self) -> tuple:
         """
@@ -264,14 +274,15 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
 
     async def create_table(self) -> None:
         """
-        Create a pgVector table with an HNSW index for given similarity.
+        Create a pgVector table with an HNSW/IVFFlat index for given similarity.
         """
         vector_size = await self._get_vector_size()
+
         with trace(
             table_name=self._table_name,
             distance_method=self._distance_method,
             vector_size=vector_size,
-            hnsw_index_parameters=self._hnsw_params,
+            hnsw_index_parameters=self._indexing_params,
         ):
             distance = DISTANCE_OPS[self._distance_method].function_name
             create_vector_extension = "CREATE EXTENSION IF NOT EXISTS vector;"
@@ -280,18 +291,38 @@ class PgVectorStore(VectorStoreWithEmbedder[VectorStoreOptions]):
             # and it is a valid vector size.
 
             is_sparse = isinstance(self._embedder, SparseEmbedder)
-            vector_func = "VECTOR" if not is_sparse else "SPARSEVEC"
+
+            # Check vector size
+            # if greater than 2000 then choose type HALFVEC
+            # More info: https://github.com/pgvector/pgvector
+            vector_func = (
+                "HALFVEC"
+                if vector_size > MAX_VECTOR_SIZE and re.search("halfvec", distance)
+                else "VECTOR"
+                if not is_sparse
+                else "SPARSEVEC"
+            )
 
             create_table_query = f"""
             CREATE TABLE {self._table_name}
             (id UUID, text TEXT, image_bytes BYTEA, vector {vector_func}({vector_size}), metadata JSONB);
             """
-            # _hnsw_params has been validated in the class constructor, and it is valid dict[str,int].
+            # _idexing_params has been validated in the class constructor, and it is valid dict[str,int].
+            if "lists" in self._indexing_params:
+                index_type = "ivfflat"
+                index_params = f"(lists = {self._indexing_params['lists']});"
+            else:
+                index_type = "hnsw"
+                index_params = (
+                    f"(m = {self._indexing_params['m']}, ef_construction = {self._indexing_params['ef_construction']});"
+                )
+
             create_index_query = f"""
-                    CREATE INDEX {self._table_name + "_hnsw_idx"} ON {self._table_name}
-                    USING hnsw (vector {distance})
-                    WITH (m = {self._hnsw_params["m"]}, ef_construction = {self._hnsw_params["ef_construction"]});
-                    """
+            CREATE INDEX {self._table_name + "_" + index_type + "_idx"} ON {self._table_name}
+            USING {index_type} (vector {distance})
+            WITH {index_params}
+            """
+
             if await self._check_table_exists():
                 print(f"Table {self._table_name} already exist!")
                 return
