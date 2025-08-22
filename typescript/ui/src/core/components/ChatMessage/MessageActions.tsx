@@ -6,6 +6,7 @@ import DelayedTooltip from "../DelayedTooltip.tsx";
 import PluginWrapper from "../../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../../plugins/FeedbackPlugin/index.tsx";
 import { ChatMessage } from "../../../types/history.ts";
+import { UsagePlugin } from "../../../plugins/UsagePlugin/index.tsx";
 
 type MessageActionsProps = {
   content: string;
@@ -34,6 +35,18 @@ const MessageActions = ({
 
   return (
     <div className="flex items-center gap-2">
+      <PluginWrapper
+        plugin={UsagePlugin}
+        component="UsageButton"
+        componentProps={{
+          usage: message.usage,
+        }}
+        skeletonSize={{
+          width: "88px",
+          height: "40px",
+        }}
+      />
+
       <DelayedTooltip content="Copy" placement="bottom">
         <Button
           isIconOnly
