@@ -143,7 +143,11 @@ class MyChat(ChatInterface):
             yield live_update
             await asyncio.sleep(2)
 
-        async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
+        streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
+        async for chunk in streaming_result:
             yield self.create_text_response(chunk)
+
+        if streaming_result.usage:
+            yield self.create_usage_response(streaming_result.usage)
 
         yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])

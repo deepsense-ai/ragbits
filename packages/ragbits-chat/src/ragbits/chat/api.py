@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
@@ -537,12 +538,19 @@ class RagbitsAPI:
         try:
             async for response in responses:
                 chunk_count += 1
+                if isinstance(response.content, dict):
+                    response_to_send = {
+                        key: model.model_dump() if isinstance(model, BaseModel) else model
+                        for key, model in response.content.items()
+                    }
+                else:
+                    response_to_send = response.content
                 data = json.dumps(
                     {
                         "type": response.type.value,
-                        "content": response.content
-                        if isinstance(response.content, str | list | None)
-                        else response.content.model_dump(),
+                        "content": response_to_send.model_dump()
+                        if isinstance(response_to_send, BaseModel)
+                        else response_to_send,
                     }
                 )
                 yield f"data: {data}\n\n"

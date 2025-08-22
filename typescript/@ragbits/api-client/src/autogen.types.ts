@@ -21,6 +21,7 @@ export const ChatResponseType = {
     FollowupMessages: 'followup_messages',
     Image: 'image',
     ClearMessage: 'clear_message',
+    Usage: 'usage',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -142,6 +143,17 @@ export interface FeedbackItem {
 export interface Image {
     id: string
     url: string
+}
+
+/**
+ * Represents usage for a message. Reflects `Usage` computed properties.
+ */
+export interface MessageUsage {
+    n_requests: number
+    estimated_cost: number
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
 }
 
 /**
@@ -429,6 +441,10 @@ interface ClearMessageResponse {
     type: 'clear_message'
     content: never
 }
+interface MessageUsageChatResponse {
+    type: 'usage'
+    content: Record<string, MessageUsage>
+}
 
 /**
  * Typed chat response union
@@ -443,3 +459,4 @@ export type ChatResponse =
     | FollowupMessagesChatResponse
     | ImageChatResponse
     | ClearMessageResponse
+    | MessageUsageChatResponse

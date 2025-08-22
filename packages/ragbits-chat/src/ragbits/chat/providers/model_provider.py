@@ -65,6 +65,7 @@ class RagbitsChatModelProvider:
                 LiveUpdateType,
                 Message,
                 MessageRole,
+                MessageUsage,
                 Reference,
                 StateUpdate,
             )
@@ -89,6 +90,7 @@ class RagbitsChatModelProvider:
                 "ServerState": StateUpdate,
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
+                "MessageUsage": MessageUsage,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -145,6 +147,7 @@ class RagbitsChatModelProvider:
                 "Image",
                 "JWTToken",
                 "User",
+                "MessageUsage",
             ],
             "configuration": [
                 "HeaderCustomization",
