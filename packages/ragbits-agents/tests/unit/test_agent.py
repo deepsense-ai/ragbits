@@ -325,7 +325,7 @@ async def test_agent_run_tools_with_context(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_agent_run_context_is_updated(llm_without_tool_call: MockLLM, method: Callable):
-    context = AgentRunContext()
+    context: AgentRunContext = AgentRunContext()
     agent: Agent = Agent(
         llm=llm_without_tool_call,
         prompt="NOT IMPORTANT",
