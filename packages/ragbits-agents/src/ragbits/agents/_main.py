@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from contextlib import suppress
 from copy import deepcopy
@@ -185,6 +186,7 @@ class Agent(
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
+        self.id = uuid.uuid4().hex[:8]
         self.llm = llm
         self.prompt = prompt
         self.tools = [Tool.from_callable(tool) for tool in tools or []]
@@ -493,9 +495,8 @@ class Agent(
 
         return tools_mapping
 
-    @staticmethod
     async def _execute_tool(
-        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+        self, tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
     ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
@@ -505,18 +506,28 @@ class Agent(
 
         tool = tools_mapping[tool_call.name]
 
-        try:
-            call_args = tool_call.arguments.copy()
-            if tool.context_var_name:
-                call_args[tool.context_var_name] = context
+        with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
+            try:
+                call_args = tool_call.arguments.copy()
+                if tool.context_var_name:
+                    call_args[tool.context_var_name] = context
 
-            tool_output = (
-                await tool.on_tool_call(**call_args)
-                if iscoroutinefunction(tool.on_tool_call)
-                else tool.on_tool_call(**call_args)
-            )
-        except Exception as e:
-            raise AgentToolExecutionError(tool_call.name, e) from e
+                tool_output = (
+                    await tool.on_tool_call(**call_args)
+                    if iscoroutinefunction(tool.on_tool_call)
+                    else tool.on_tool_call(**call_args)
+                )
+
+                outputs.result = {
+                    "tool_output": tool_output,
+                    "tool_call_id": tool_call.id,
+                }
+            except Exception as e:
+                outputs.result = {
+                    "error": str(e),
+                    "tool_call_id": tool_call.id,
+                }
+                raise AgentToolExecutionError(tool_call.name, e) from e
 
         return ToolCallResult(
             id=tool_call.id,
