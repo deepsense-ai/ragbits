@@ -541,7 +541,7 @@ class RagbitsAPI:
                     {
                         "type": response.type.value,
                         "content": response.content
-                        if isinstance(response.content, str | list)
+                        if isinstance(response.content, str | list | None)
                         else response.content.model_dump(),
                     }
                 )

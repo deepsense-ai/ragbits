@@ -237,6 +237,11 @@ class ChatInterface(ABC):
         return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
 
     @staticmethod
+    def create_clear_message_response() -> ChatResponse:
+        """Helper method to create an clear message response."""
+        return ChatResponse(type=ChatResponseType.CLEAR_MESSAGE, content=None)
+
+    @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:
         """
         Sign the state with HMAC to ensure integrity.
