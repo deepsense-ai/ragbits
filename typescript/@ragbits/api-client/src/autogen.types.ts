@@ -20,6 +20,7 @@ export const ChatResponseType = {
     LiveUpdate: 'live_update',
     FollowupMessages: 'followup_messages',
     Image: 'image',
+    ClearMessage: 'clear_message',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -424,6 +425,11 @@ interface ImageChatResponse {
     content: Image
 }
 
+interface ClearMessageResponse {
+    type: 'clear_message'
+    content: never
+}
+
 /**
  * Typed chat response union
  */
@@ -436,3 +442,4 @@ export type ChatResponse =
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
     | ImageChatResponse
+    | ClearMessageResponse

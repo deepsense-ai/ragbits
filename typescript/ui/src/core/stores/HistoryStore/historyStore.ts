@@ -187,6 +187,12 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               case ChatResponseType.Image:
                 message.images = _handleImage(response.content, message);
                 break;
+              case ChatResponseType.ClearMessage:
+                draft.history[messageId] = {
+                  id: message.id,
+                  role: message.role,
+                  content: "",
+                };
             }
           }),
         );
