@@ -98,6 +98,12 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     },
   },
   _internal: {
+    _hasHydrated: false,
+    _setHasHydrated: (state) => {
+      set((draft) => {
+        draft._internal._hasHydrated = state;
+      });
+    },
     handleResponse: (conversationIdRef, messageId, response) => {
       const _handleImage = (image: Image, message: ChatMessage) => {
         return produce(message.images ?? {}, (draft) => {

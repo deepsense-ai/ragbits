@@ -1,10 +1,11 @@
 import { PropsWithChildren, useMemo, useState } from "react";
-import { createStore } from "zustand";
+import { createStore, useStore } from "zustand";
 import { createHistoryStore } from "./historyStore";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { IndexedDBStorage } from "./indexedDBStorage";
 import { HistoryStoreContext } from "./HistoryStoreContext";
 import { Conversation } from "../../../types/history";
+import InitializationScreen from "../../components/InitializationScreen";
 
 export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
 
@@ -20,6 +21,11 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
         partialize: (value) => ({
           conversations: value.conversations,
         }),
+        onRehydrateStorage: (state) => {
+          // We have to wait for the hydration to finish to avoid any races that may result in saving of the invalid
+          // state to the storage (e.g. clearing all history)
+          return () => state._internal._setHasHydrated(true);
+        },
         merge: (persistedState, currentState) => {
           const persistedConversations =
             (persistedState as Record<string, unknown>)?.conversations ?? {};
@@ -53,7 +59,7 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
   return createStore(createHistoryStore);
 }
 
-export function HistoryStoreContextProvider({
+export default function HistoryStoreContextProvider({
   children,
   shouldStoreHistory,
 }: PropsWithChildren<HistoryStoreContextProviderProps>) {
@@ -62,6 +68,7 @@ export function HistoryStoreContextProvider({
     () => initializeStore(shouldStoreHistory, storeKey),
     [shouldStoreHistory, storeKey],
   );
+  const hasHydrated = useStore(store, (s) => s._internal._hasHydrated);
 
   const initializeUserStore = (userId: string) => {
     _setStoreKey(`${HISTORY_STORE_KEY_BASE}-${userId}`);
@@ -74,6 +81,10 @@ export function HistoryStoreContextProvider({
     }),
     [store],
   );
+
+  if (!hasHydrated) {
+    return <InitializationScreen />;
+  }
 
   return (
     <HistoryStoreContext.Provider value={value}>
