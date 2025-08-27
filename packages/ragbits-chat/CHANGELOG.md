@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Fix bug that caused messages to be sent when changing chat settings; simplify and harden history logic (#791) 
 - Add `clear_message` event type allowing to reset whole message (#789)
 - Add usage component to UI with backend support (#786)
 - Add authentication handling in the UI (#763)

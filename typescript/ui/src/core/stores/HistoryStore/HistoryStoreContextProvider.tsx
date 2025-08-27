@@ -4,7 +4,6 @@ import { createHistoryStore } from "./historyStore";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { IndexedDBStorage } from "./indexedDBStorage";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import { transform } from "lodash";
 import { Conversation } from "../../../types/history";
 
 export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
@@ -22,41 +21,29 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
           conversations: value.conversations,
         }),
         merge: (persistedState, currentState) => {
+          const persistedConversations =
+            (persistedState as Record<string, unknown>)?.conversations ?? {};
           const { conversations, currentConversation } = currentState;
-          const finalState = {
+          const fixedConversations = Object.values(
+            persistedConversations,
+          ).reduce((acc, c: Conversation) => {
+            if (c.conversationId === null) {
+              return acc;
+            }
+
+            acc[c.conversationId] = {
+              ...c,
+              isLoading: false,
+              abortController: null,
+            };
+            return acc;
+          }, {});
+
+          return {
             ...currentState,
-            ...(persistedState ?? {}),
+            currentConversation: currentConversation,
+            conversations: { ...fixedConversations, ...conversations },
           };
-
-          // When loading the state, we need to reset the `isLoading` and `abortController` properties,
-          // since any information about the current stream is lost when the app is closed or reloaded.
-          finalState.conversations = transform<
-            Conversation,
-            Record<string, Conversation>
-          >(
-            finalState.conversations,
-            (res, c) => {
-              // Ignore old conversations with `null` as key
-              if (c.conversationId === null) {
-                return;
-              }
-
-              const newKey = c.conversationId;
-              const newValue = {
-                ...c,
-                isLoading: false,
-                abortController: null,
-              };
-              res[newKey] = newValue;
-            },
-            {},
-          );
-          // This ensures that we always start with empty conversation
-          finalState.conversations[currentConversation] =
-            conversations[currentConversation];
-          finalState.currentConversation = currentConversation;
-
-          return finalState;
         },
         storage: createJSONStorage(() => IndexedDBStorage),
       }),

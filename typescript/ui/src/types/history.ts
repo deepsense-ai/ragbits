@@ -80,7 +80,7 @@ export interface HistoryStore {
 
   _internal: {
     handleResponse: (
-      conversationId: string,
+      conversationIdRef: { current: string },
       messageId: string,
       response: ChatResponse,
     ) => void;
