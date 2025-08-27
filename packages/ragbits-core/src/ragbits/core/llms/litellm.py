@@ -106,9 +106,16 @@ class LiteLLM(LLM[LiteLLMOptions]):
         else:
 
             def download_and_register_model_cost() -> None:
-                litellm.register_model(
-                    model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
-                )
+                # Suppress debug info to prevent "Provider List" messages during registration
+                original_suppress_debug = litellm.suppress_debug_info
+                litellm.suppress_debug_info = True
+                try:
+                    litellm.register_model(
+                        model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
+                    )
+                finally:
+                    # Restore original setting
+                    litellm.suppress_debug_info = original_suppress_debug
 
             thread = threading.Thread(target=download_and_register_model_cost, daemon=True)
             thread.start()
