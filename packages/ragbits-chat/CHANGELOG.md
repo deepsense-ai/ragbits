@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add `clear_message` event type allowing to reset whole message (#789)
 - Add authentication handling in the UI (#763)
 - Add backend authentication (#761)
 

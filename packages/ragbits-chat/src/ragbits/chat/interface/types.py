@@ -77,6 +77,7 @@ class ChatResponseType(str, Enum):
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
     IMAGE = "image"
+    CLEAR_MESSAGE = "clear_message"
 
 
 class ChatContext(BaseModel):
@@ -93,7 +94,7 @@ class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image
+    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image | None
 
     def as_text(self) -> str | None:
         """
@@ -156,6 +157,12 @@ class ChatResponse(BaseModel):
         Return the content as Image if this is an image response, else None.
         """
         return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
+
+    def as_clear_message(self) -> None:
+        """
+        Return the content of clear_message response, which is None
+        """
+        return cast(None, self.content)
 
 
 class ChatMessageRequest(BaseModel):
