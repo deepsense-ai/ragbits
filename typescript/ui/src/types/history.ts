@@ -79,8 +79,10 @@ export interface HistoryStore {
   };
 
   _internal: {
+    _hasHydrated: boolean;
+    _setHasHydrated: (state: boolean) => void;
     handleResponse: (
-      conversationId: string,
+      conversationIdRef: { current: string },
       messageId: string,
       response: ChatResponse,
     ) => void;

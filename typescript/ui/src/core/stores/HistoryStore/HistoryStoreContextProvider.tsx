@@ -1,11 +1,11 @@
 import { PropsWithChildren, useMemo, useState } from "react";
-import { createStore } from "zustand";
+import { createStore, useStore } from "zustand";
 import { createHistoryStore } from "./historyStore";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { IndexedDBStorage } from "./indexedDBStorage";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import { transform } from "lodash";
 import { Conversation } from "../../../types/history";
+import InitializationScreen from "../../components/InitializationScreen";
 
 export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
 
@@ -21,42 +21,35 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
         partialize: (value) => ({
           conversations: value.conversations,
         }),
+        onRehydrateStorage: (state) => {
+          // We have to wait for the hydration to finish to avoid any races that may result in saving of the invalid
+          // state to the storage (e.g. clearing all history)
+          return () => state._internal._setHasHydrated(true);
+        },
         merge: (persistedState, currentState) => {
+          const persistedConversations =
+            (persistedState as Record<string, unknown>)?.conversations ?? {};
           const { conversations, currentConversation } = currentState;
-          const finalState = {
+          const fixedConversations = Object.values(
+            persistedConversations,
+          ).reduce((acc, c: Conversation) => {
+            if (c.conversationId === null) {
+              return acc;
+            }
+
+            acc[c.conversationId] = {
+              ...c,
+              isLoading: false,
+              abortController: null,
+            };
+            return acc;
+          }, {});
+
+          return {
             ...currentState,
-            ...(persistedState ?? {}),
+            currentConversation: currentConversation,
+            conversations: { ...fixedConversations, ...conversations },
           };
-
-          // When loading the state, we need to reset the `isLoading` and `abortController` properties,
-          // since any information about the current stream is lost when the app is closed or reloaded.
-          finalState.conversations = transform<
-            Conversation,
-            Record<string, Conversation>
-          >(
-            finalState.conversations,
-            (res, c) => {
-              // Ignore old conversations with `null` as key
-              if (c.conversationId === null) {
-                return;
-              }
-
-              const newKey = c.conversationId;
-              const newValue = {
-                ...c,
-                isLoading: false,
-                abortController: null,
-              };
-              res[newKey] = newValue;
-            },
-            {},
-          );
-          // This ensures that we always start with empty conversation
-          finalState.conversations[currentConversation] =
-            conversations[currentConversation];
-          finalState.currentConversation = currentConversation;
-
-          return finalState;
         },
         storage: createJSONStorage(() => IndexedDBStorage),
       }),
@@ -66,7 +59,7 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
   return createStore(createHistoryStore);
 }
 
-export function HistoryStoreContextProvider({
+export default function HistoryStoreContextProvider({
   children,
   shouldStoreHistory,
 }: PropsWithChildren<HistoryStoreContextProviderProps>) {
@@ -75,6 +68,7 @@ export function HistoryStoreContextProvider({
     () => initializeStore(shouldStoreHistory, storeKey),
     [shouldStoreHistory, storeKey],
   );
+  const hasHydrated = useStore(store, (s) => s._internal._hasHydrated);
 
   const initializeUserStore = (userId: string) => {
     _setStoreKey(`${HISTORY_STORE_KEY_BASE}-${userId}`);
@@ -87,6 +81,10 @@ export function HistoryStoreContextProvider({
     }),
     [store],
   );
+
+  if (!hasHydrated) {
+    return <InitializationScreen />;
+  }
 
   return (
     <HistoryStoreContext.Provider value={value}>

@@ -1,16 +1,17 @@
 import { PropsWithChildren, useEffect, useLayoutEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { CircularProgress, cn } from "@heroui/react";
+import { cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
 import { SharePluginName } from "../../../plugins/SharePlugin";
-import { HistoryStoreContextProvider } from "../../stores/HistoryStore/HistoryStoreContextProvider";
+import HistoryStoreContextProvider from "../../stores/HistoryStore/HistoryStoreContextProvider";
 import { ChatHistoryPluginName } from "../../../plugins/ChatHistoryPlugin";
 import { CONFIG_LOADING_PAGE_TITLE } from "../../../config";
 import { AuthPluginName } from "../../../plugins/AuthPlugin";
 import { UsagePluginName } from "../../../plugins/UsagePlugin";
+import InitializationScreen from "../../components/InitializationScreen";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -67,18 +68,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
 
   // TODO: Consider adding minimal timeout for config to not flash users with this screen
   if (config.isLoading) {
-    return (
-      <div
-        className={cn(
-          "bg-background flex h-screen w-screen items-start justify-center",
-        )}
-      >
-        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
-          <CircularProgress size="lg" />
-          <p>Initializing...</p>
-        </div>
-      </div>
-    );
+    return <InitializationScreen />;
   }
 
   if (config.error || !value) {
