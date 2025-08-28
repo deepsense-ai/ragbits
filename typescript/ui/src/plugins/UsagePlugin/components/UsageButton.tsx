@@ -66,7 +66,9 @@ export default function UsageButton({ usage }: UsageButtonProps) {
 
   const properties = Object.keys(usage[models[0]]) as (keyof MessageUsage)[];
   const orderedProperties = [
-    ...PREFERRED_ORDER,
+    ...PREFERRED_ORDER.filter(
+      (key) => key === "model" || properties.includes(key),
+    ),
     ...properties.filter((key) => !PREFERRED_ORDER.includes(key)),
   ];
   const initialStats = properties.reduce<MessageUsage>(
@@ -106,27 +108,35 @@ export default function UsageButton({ usage }: UsageButtonProps) {
   const tooltip = (
     <div className="p-2">
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between gap-2">
-          <span className="font-semibold">Prompt tokens</span>
-          <span>{totalStats.prompt_tokens}</span>
-        </div>
+        {totalStats.prompt_tokens !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Prompt tokens</span>
+            <span>{totalStats.prompt_tokens}</span>
+          </div>
+        )}
 
-        <div className="flex justify-between gap-2">
-          <span className="font-semibold">Completion tokens</span>
-          <span>{totalStats.completion_tokens}</span>
-        </div>
+        {totalStats.completion_tokens !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Completion tokens</span>
+            <span>{totalStats.completion_tokens}</span>
+          </div>
+        )}
 
-        <div className="flex justify-between gap-2">
-          <span className="font-semibold">Total tokens</span>
-          <span>{totalStats.total_tokens}</span>
-        </div>
+        {totalStats.total_tokens !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Total tokens</span>
+            <span>{totalStats.total_tokens}</span>
+          </div>
+        )}
 
-        <div className="flex justify-between gap-2">
-          <span className="font-semibold">Estimated cost</span>
-          <span>
-            {toFormattedNumber(totalStats.estimated_cost.toString())}$
-          </span>
-        </div>
+        {totalStats.estimated_cost !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Estimated cost</span>
+            <span>
+              {toFormattedNumber(totalStats.estimated_cost.toString())}$
+            </span>
+          </div>
+        )}
       </div>
       <p className="m-auto mt-2 text-center">
         Show detailed usage breakdown by model.
