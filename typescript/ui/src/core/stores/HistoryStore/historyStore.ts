@@ -193,6 +193,10 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
                   role: message.role,
                   content: "",
                 };
+                break;
+              case ChatResponseType.Usage:
+                message.usage = response.content;
+                break;
             }
           }),
         );

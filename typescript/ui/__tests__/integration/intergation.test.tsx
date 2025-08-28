@@ -76,6 +76,7 @@ describe("Integration tests", () => {
    */
   describe("/api/config", () => {
     it("should return config", async () => {
+      // TODO: Automate generation of this test
       const { result } = renderWithHook(() => useConfigContext());
 
       await waitFor(() => {
@@ -95,6 +96,9 @@ describe("Integration tests", () => {
       expect(typeof config.authentication).toBe("object");
       expect(typeof config.authentication.enabled).toBe("boolean");
       expect(Array.isArray(config.authentication.auth_types)).toBe(true);
+      // Usage
+      expect(config).toHaveProperty("show_usage");
+      expect(typeof config.show_usage).toBe("boolean");
 
       // Feedback
       expect(config).toHaveProperty("feedback");
