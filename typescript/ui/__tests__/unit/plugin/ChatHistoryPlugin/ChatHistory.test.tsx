@@ -80,7 +80,7 @@ describe("ChatHistory", () => {
       render(<ChatHistory />);
 
       mockConversationsKeys.forEach((key) => {
-        if (isTemporaryConversation(MOCK_CONVERSATIONS[key])) {
+        if (isTemporaryConversation(MOCK_CONVERSATIONS[key].conversationId)) {
           return;
         }
 
@@ -104,7 +104,7 @@ describe("ChatHistory", () => {
       render(<ChatHistory />);
 
       mockConversationsKeys.forEach((key) => {
-        if (isTemporaryConversation(MOCK_CONVERSATIONS[key])) {
+        if (isTemporaryConversation(MOCK_CONVERSATIONS[key].conversationId)) {
           return;
         }
 
