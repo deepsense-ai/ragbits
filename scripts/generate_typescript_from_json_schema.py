@@ -200,6 +200,7 @@ def _generate_chat_response_union_type() -> str:
         ("FollowupMessagesChatResponse", "followup_messages", "string[]"),
         ("ImageChatResponse", "image", "Image"),
         ("ClearMessageResponse", "clear_message", "never"),
+        ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
     ]
 
     for interface_name, response_type, content_type in response_interfaces:
