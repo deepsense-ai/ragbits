@@ -3,6 +3,8 @@
 ## Unreleased
 - Add tool_choice parameter to agent interface (#738)
 - Add PydanticAI agents support (#755)
+- Add unique ID to each agent instance for better tracking and identification
+- Add audit tracing for tool calls to improve observability and debugging
 
 ## 1.2.2 (2025-08-08)
 
@@ -23,7 +25,6 @@
 - ragbits-core updated to version v1.2.0
 - Add native openai tools support (#621)
 - add Context to Agents (#715)
-- add PydanticAI agnts support (#755)
 
 ## 1.1.0 (2025-07-09)
 

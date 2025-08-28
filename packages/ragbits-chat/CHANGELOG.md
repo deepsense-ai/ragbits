@@ -1,6 +1,13 @@
 # CHANGELOG
 
 ## Unreleased
+- Add `clear_message` event type allowing to reset whole message (#789)
+- Add usage component to UI with backend support (#786)
+- Add authentication handling in the UI (#763)
+- Add backend authentication (#761)
+
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
 
 - Autogenerate typescript types based on backend typing (#727)
 - Add ability to customize favicon and page title (#766)

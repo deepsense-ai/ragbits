@@ -187,6 +187,16 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               case ChatResponseType.Image:
                 message.images = _handleImage(response.content, message);
                 break;
+              case ChatResponseType.ClearMessage:
+                draft.history[messageId] = {
+                  id: message.id,
+                  role: message.role,
+                  content: "",
+                };
+                break;
+              case ChatResponseType.Usage:
+                message.usage = response.content;
+                break;
             }
           }),
         );
@@ -396,7 +406,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text) => {
+    sendMessage: (text, accessToken?: string) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -460,6 +470,11 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         });
       };
 
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       RAGBITS_CLIENT.makeStreamRequest(
         "/api/chat",
         chatRequest,
@@ -480,6 +495,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           },
         },
         abortController.signal,
+        headers,
       );
     },
   },

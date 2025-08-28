@@ -14,12 +14,16 @@ import { SharePlugin } from "./plugins/SharePlugin/index.tsx";
 import { ChatHistoryPlugin } from "./plugins/ChatHistoryPlugin/index";
 import { BrowserRouter } from "react-router";
 import { Routes } from "./core/components/Routes.tsx";
+import { AuthPlugin } from "./plugins/AuthPlugin/index.tsx";
+import { UsagePlugin } from "./plugins/UsagePlugin/index.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
 pluginManager.register(ChatOptionsPlugin);
 pluginManager.register(SharePlugin);
 pluginManager.register(ChatHistoryPlugin);
+pluginManager.register(AuthPlugin);
+pluginManager.register(UsagePlugin);
 
 // Preload icons
 loadIcons([

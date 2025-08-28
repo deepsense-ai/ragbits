@@ -20,6 +20,8 @@ export const ChatResponseType = {
     LiveUpdate: 'live_update',
     FollowupMessages: 'followup_messages',
     Image: 'image',
+    ClearMessage: 'clear_message',
+    Usage: 'usage',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -56,6 +58,15 @@ export const MessageRole = {
 export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
+ * Represents the AuthType enum
+ */
+export const AuthType = {
+    Credentials: 'credentials',
+} as const
+
+export type AuthType = TypeFrom<typeof AuthType>
+
+/**
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
@@ -64,6 +75,7 @@ export interface ChatContext {
     state: {
         [k: string]: unknown
     }
+    session_id: string | null
     [k: string]: unknown
 }
 
@@ -131,6 +143,17 @@ export interface FeedbackItem {
 export interface Image {
     id: string
     url: string
+}
+
+/**
+ * Represents usage for a message. Reflects `Usage` computed properties.
+ */
+export interface MessageUsage {
+    n_requests: number
+    estimated_cost: number
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
 }
 
 /**
@@ -216,9 +239,14 @@ export interface ConfigResponse {
      */
     debug_mode: boolean
     /**
-     * Debug mode flag
+     * Flag to enable conversation history
      */
     conversation_history: boolean
+    /**
+     * Flag to enable usage statistics
+     */
+    show_usage: boolean
+    authentication: AuthenticationConfig
 }
 
 /**
@@ -272,6 +300,105 @@ export interface FeedbackRequest {
 }
 
 /**
+ * Configuration for authentication.
+ */
+export interface AuthenticationConfig {
+    /**
+     * Enable/disable authentication
+     */
+    enabled: boolean
+    /**
+     * List of available authentication types
+     */
+    auth_types: AuthType[]
+}
+
+/**
+ * Request body for user login
+ */
+export interface CredentialsLoginRequest {
+    /**
+     * Username
+     */
+    username: string
+    /**
+     * Password
+     */
+    password: string
+}
+
+/**
+ * Represents a JWT authentication jwt_token.
+ */
+export interface JWTToken {
+    access_token: string
+    token_type: string
+    expires_in: number
+    refresh_token: string | null
+    user: User
+}
+
+/**
+ * Request body for user login
+ */
+export interface LoginRequest {
+    /**
+     * Username
+     */
+    username: string
+    /**
+     * Password
+     */
+    password: string
+}
+
+/**
+ * Response body for successful login
+ */
+export interface LoginResponse {
+    /**
+     * Whether login was successful
+     */
+    success: boolean
+    /**
+     * User information
+     */
+    user: User | null
+    /**
+     * Error message if login failed
+     */
+    error_message: string | null
+    /**
+     * Access jwt_token
+     */
+    jwt_token: JWTToken | null
+}
+
+/**
+ * Request body for user logout
+ */
+export interface LogoutRequest {
+    /**
+     * Session ID to logout
+     */
+    token: string
+}
+
+/**
+ * Represents an authenticated user.
+ */
+export interface User {
+    user_id: string
+    username: string
+    email: string | null
+    full_name: string | null
+    roles: string[]
+    metadata: {
+        [k: string]: unknown
+    }
+}
+
+/**
  * Specific chat response types
  */
 interface TextChatResponse {
@@ -314,6 +441,16 @@ interface ImageChatResponse {
     content: Image
 }
 
+interface ClearMessageResponse {
+    type: 'clear_message'
+    content: never
+}
+
+interface MessageUsageChatResponse {
+    type: 'usage'
+    content: Record<string, MessageUsage>
+}
+
 /**
  * Typed chat response union
  */
@@ -326,3 +463,5 @@ export type ChatResponse =
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
     | ImageChatResponse
+    | ClearMessageResponse
+    | MessageUsageChatResponse

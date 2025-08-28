@@ -13,6 +13,14 @@ fi
 
 CHANGED_PACKAGES=$(echo "$CHANGED_FILES" | grep -oE 'packages/[^/]+/src' | cut -d '/' -f2 | sort -u)
 
+# Treat changes in `typescript` directory as `ragbits-chat` package.
+if echo "$CHANGED_FILES" | grep -q "typescript/"; then
+  CHANGED_PACKAGES="$CHANGED_PACKAGES"$'\n'ragbits-chat
+fi
+
+# Deduplicate
+CHANGED_PACKAGES=$(echo "$CHANGED_PACKAGES" | sort -u)
+
 if [ -z "$CHANGED_PACKAGES" ]; then
   echo "No package changes detected. Skipping changelog check."
   exit 0

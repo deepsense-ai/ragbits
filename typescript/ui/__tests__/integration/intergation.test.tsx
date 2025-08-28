@@ -76,6 +76,7 @@ describe("Integration tests", () => {
    */
   describe("/api/config", () => {
     it("should return config", async () => {
+      // TODO: Automate generation of this test
       const { result } = renderWithHook(() => useConfigContext());
 
       await waitFor(() => {
@@ -91,9 +92,18 @@ describe("Integration tests", () => {
       // History mode
       expect(config).toHaveProperty("conversation_history");
       expect(typeof config.conversation_history).toBe("boolean");
+      // Authentication
+      expect(typeof config.authentication).toBe("object");
+      expect(typeof config.authentication.enabled).toBe("boolean");
+      expect(Array.isArray(config.authentication.auth_types)).toBe(true);
+      // Usage
+      expect(config).toHaveProperty("show_usage");
+      expect(typeof config.show_usage).toBe("boolean");
+
       // Feedback
       expect(config).toHaveProperty("feedback");
       expect(config.feedback).toHaveProperty(FeedbackType.Like);
+      expect(config.feedback).toHaveProperty("like");
       expect(config.feedback.like).toHaveProperty("enabled");
       expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
       expect(config.feedback.like).toHaveProperty("form");
@@ -137,6 +147,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -180,6 +191,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -260,6 +272,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
         await waitFor(
           () => {
