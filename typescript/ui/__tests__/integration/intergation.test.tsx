@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ComponentProps } from "react";
 import {
   describe,
   it,
@@ -37,6 +37,18 @@ import { createHistoryStore } from "../../src/core/stores/HistoryStore/historySt
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 import { HistoryStore } from "../../src/types/history";
+import HistoryStoreContextProvider from "../../src/core/stores/HistoryStore/HistoryStoreContextProvider";
+
+vi.mock(
+  "../../src/core/stores/HistoryStore/HistoryStoreContextProvider.tsx",
+  () => ({
+    default: ({
+      children,
+    }: ComponentProps<typeof HistoryStoreContextProvider>) => (
+      <div data-testid="history-store-context-provider">{children}</div>
+    ),
+  }),
+);
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -53,6 +65,8 @@ vi.mock("idb-keyval", () => ({
 }));
 
 const historyStore = createStore(createHistoryStore);
+historyStore.getState()._internal._setHasHydrated(true);
+
 (useHistoryStore as Mock).mockImplementation(
   (selector: (s: HistoryStore) => unknown) => selector(historyStore.getState()),
 );

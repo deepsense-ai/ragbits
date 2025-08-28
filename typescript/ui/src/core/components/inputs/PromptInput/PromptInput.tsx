@@ -48,6 +48,7 @@ const PromptInput = ({
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
+  const formRef = useRef<HTMLFormElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
@@ -91,8 +92,11 @@ const PromptInput = ({
 
   const onSubmit = useCallback(
     (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+      if (e.target !== formRef.current) {
+        return;
+      }
 
+      e.preventDefault();
       handleSubmit();
     },
     [handleSubmit],
@@ -176,6 +180,7 @@ const PromptInput = ({
         className="rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-row items-center pr-2 pl-0"
         validationBehavior="native"
         onSubmit={onSubmit}
+        ref={formRef}
         {...formProps}
       >
         <PromptInputText
