@@ -1,4 +1,4 @@
-import React, { ComponentProps } from "react";
+import React from "react";
 import {
   describe,
   it,
@@ -37,18 +37,6 @@ import { createHistoryStore } from "../../src/core/stores/HistoryStore/historySt
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 import { HistoryStore } from "../../src/types/history";
-import HistoryStoreContextProvider from "../../src/core/stores/HistoryStore/HistoryStoreContextProvider";
-
-vi.mock(
-  "../../src/core/stores/HistoryStore/HistoryStoreContextProvider.tsx",
-  () => ({
-    default: ({
-      children,
-    }: ComponentProps<typeof HistoryStoreContextProvider>) => (
-      <div data-testid="history-store-context-provider">{children}</div>
-    ),
-  }),
-);
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -246,8 +234,13 @@ describe("Integration tests", () => {
 
         render(<WrappedInput />);
         const user = userEvent.setup();
-        const chatOptionsButton =
-          await screen.findByTestId("open-chat-options");
+        const chatOptionsButton = await screen.findByTestId(
+          "open-chat-options",
+          undefined,
+          {
+            timeout: 5000,
+          },
+        );
         await user.click(chatOptionsButton);
         const selectTrigger = await screen.findByLabelText("Language", {
           selector: "select",

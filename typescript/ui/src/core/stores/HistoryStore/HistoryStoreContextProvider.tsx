@@ -56,7 +56,11 @@ function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
     );
   }
 
-  return createStore(createHistoryStore);
+  // Manually set _hasHydrated when we don't use any storage
+  const store = createStore(createHistoryStore);
+  store.getState()._internal._setHasHydrated(true);
+
+  return store;
 }
 
 export default function HistoryStoreContextProvider({
@@ -82,7 +86,7 @@ export default function HistoryStoreContextProvider({
     [store],
   );
 
-  if (!hasHydrated) {
+  if (shouldStoreHistory && !hasHydrated) {
     return <InitializationScreen />;
   }
 
