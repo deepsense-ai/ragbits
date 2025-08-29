@@ -1,4 +1,4 @@
-import { PropsWithChildren, useEffect, useLayoutEffect, useMemo } from "react";
+import { PropsWithChildren, useEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
@@ -57,12 +57,11 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     pluginManager.activate(SharePluginName);
   }, [config.data]);
 
-  // Load config on mount
   if (!config.data && !config.error && !config.isLoading) {
     fetchConfig();
   }
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     document.title = CONFIG_LOADING_PAGE_TITLE;
   }, []);
 
