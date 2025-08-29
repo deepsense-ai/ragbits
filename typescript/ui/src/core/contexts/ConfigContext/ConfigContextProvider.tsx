@@ -1,7 +1,6 @@
 import { PropsWithChildren, useEffect, useLayoutEffect, useMemo } from "react";
 import { ConfigContext } from "./ConfigContext";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { cn } from "@heroui/react";
 import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
@@ -12,6 +11,7 @@ import { CONFIG_LOADING_PAGE_TITLE } from "../../../config";
 import { AuthPluginName } from "../../../plugins/AuthPlugin";
 import { UsagePluginName } from "../../../plugins/UsagePlugin";
 import InitializationScreen from "../../components/InitializationScreen";
+import InitializationErrorScreen from "../../components/InitializationErrorScreen";
 
 export function ConfigContextProvider({ children }: PropsWithChildren) {
   const { call: fetchConfig, ...config } = useRagbitsCall("/api/config");
@@ -66,28 +66,12 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
     document.title = CONFIG_LOADING_PAGE_TITLE;
   }, []);
 
-  // TODO: Consider adding minimal timeout for config to not flash users with this screen
   if (config.isLoading) {
     return <InitializationScreen />;
   }
 
   if (config.error || !value) {
-    return (
-      <div
-        className={cn(
-          "bg-background flex h-screen w-screen items-start justify-center",
-        )}
-      >
-        <div className="text-default-900 m-auto flex flex-col items-center gap-4">
-          <p className="text-large">
-            Something went wrong during chat initialization.
-          </p>
-          <p className="text-small text-default-500">
-            Try refreshing the page.
-          </p>
-        </div>
-      </div>
-    );
+    return <InitializationErrorScreen />;
   }
 
   return (
