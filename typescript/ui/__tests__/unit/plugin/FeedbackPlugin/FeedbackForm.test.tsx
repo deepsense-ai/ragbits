@@ -45,7 +45,7 @@ vi.mock("../../../../src/core/forms", async (importOriginal) => ({
 }));
 
 const mergeExtensionsMock = vi.fn();
-const callMock = vi.fn().mockResolvedValue(undefined);
+const callMock = vi.fn();
 function mockActions() {
   (useHistoryActions as Mock).mockReturnValue({
     mergeExtensions: mergeExtensionsMock,
