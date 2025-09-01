@@ -89,10 +89,6 @@ vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
   },
 }));
 
-vi.mock("../DelayedTooltip.tsx", () => ({
-  DelayedTooltip: ({ children }: PropsWithChildren) => children,
-}));
-
 vi.mock("react-markdown", () => ({
   default: ({ children }: PropsWithChildren) => (
     <div className="markdown-content">{children}</div>
@@ -179,12 +175,14 @@ describe("ChatMessage", () => {
       const clipboardText = await navigator.clipboard.readText();
       expect(clipboardText).toBe("Hello, world!");
       await waitFor(async () => {
-        expect(
-          await screen.findByTestId("chat-message-copy-icon"),
-        ).toHaveAttribute("data-icon", "heroicons:check");
+        expect(await screen.findByText("heroicons:check"));
       });
-      // Not waiting for the icon to change due to current bug with fake timers and userEvent
-      // https://github.com/testing-library/user-event/issues/1115
+      await waitFor(
+        async () => {
+          expect(await screen.findByText("heroicons:clipboard"));
+        },
+        { timeout: 5000 },
+      );
     });
   });
 
