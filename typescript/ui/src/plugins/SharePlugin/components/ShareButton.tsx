@@ -101,11 +101,13 @@ export default function ShareButton() {
       }
 
       const types = e.clipboardData.types;
-      if (!types.includes("text/plain")) {
+      if (!types.includes("text/plain") && !types.includes("text")) {
         return;
       }
 
-      const pastedText = e.clipboardData.getData("text/plain");
+      const pastedText =
+        e.clipboardData.getData("text/plain") ??
+        e.clipboardData.getData("text");
       try {
         const pastedBinary = atob(pastedText);
 

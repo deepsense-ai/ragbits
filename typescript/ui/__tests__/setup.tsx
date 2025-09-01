@@ -1,5 +1,6 @@
 import { IconProps } from "@iconify/react";
 import "@testing-library/jest-dom";
+import { PropsWithChildren } from "react";
 import { afterEach, vi } from "vitest";
 
 vi.mock("react-router", () => ({
@@ -13,6 +14,27 @@ vi.mock("@iconify/react", () => ({
     <svg {...props}>{icon.toString()}</svg>
   ),
 }));
+
+// Disable framer-motion animations so portals/modals render immediately
+vi.mock("framer-motion", async () => {
+  return {
+    // No-op presence
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
+    // Render motion.* as simple divs
+    motion: new Proxy(
+      {},
+      {
+        get:
+          () =>
+          ({ children, ...props }: PropsWithChildren) => (
+            <div {...props}>{children}</div>
+          ),
+      },
+    ),
+  };
+});
 
 Object.defineProperty(window, "scrollTo", {
   value: vi.fn(),
