@@ -84,6 +84,41 @@ In this scenario, the agent recognizes that the follow-up question "What about T
 AgentResult(content='The current temperature in Tokyo is 10°C.', ...)
 ```
 
+## Binding dependencies via AgentRunContext
+You can bind your external dependencies before the first access and safely use them in tools. After first attribute lookup, the dependencies container freezes to prevent mutation during a run.
+
+```python
+from dataclasses import dataclass
+from ragbits.agents import Agent, AgentRunContext
+from ragbits.core.llms.mock import MockLLM, MockLLMOptions
+
+@dataclass
+class Deps:
+    api_host: str
+
+def get_api_host(context: AgentRunContext | None) -> str:
+    """Return the API host taken from the bound dependencies in context."""
+    assert context is not None
+    return context.deps.api_host
+
+async def main() -> None:
+    llm = MockLLM(
+        default_options=MockLLMOptions(
+            response="Using dependencies from context.",
+            tool_calls=[{"name": "get_api_host", "arguments": "{}", "id": "example", "type": "function"}],
+        )
+    )
+    agent = Agent(llm=llm, prompt="Retrieve API host", tools=[get_api_host])
+
+    context = AgentRunContext()
+    context.deps.value = Deps(api_host="https://api.local")
+
+    result = await agent.run("What host are we using?", context=context)
+    print(result.tool_calls[0].result)
+```
+
+See the runnable example in `examples/agents/dependencies.py`.
+
 ## Streaming agent responses
 For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
 

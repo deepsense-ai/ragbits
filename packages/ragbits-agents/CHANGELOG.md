@@ -3,8 +3,9 @@
 ## Unreleased
 - Add tool_choice parameter to agent interface (#738)
 - Add PydanticAI agents support (#755)
-- Add unique ID to each agent instance for better tracking and identification
-- Add audit tracing for tool calls to improve observability and debugging
+- Add unique ID to each agent instance for better tracking and identification (#790)
+- Add audit tracing for tool calls to improve observability and debugging (#790)
+- Add AgentDependencies type (#781)
 
 ## 1.2.2 (2025-08-08)
 
