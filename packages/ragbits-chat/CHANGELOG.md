@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Remove redundant test for `/api/config` endpoint (#795)
+- Fix bug causing infinite initialization screen (#793)
 - Fix bug that caused messages to be sent when changing chat settings; simplify and harden history logic (#791)
 - Add `clear_message` event type allowing to reset whole message (#789)
 - Add usage component to UI with backend support (#786)
