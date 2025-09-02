@@ -184,6 +184,10 @@ describe("Integration tests", () => {
         const submitButton = await screen.findByText("Save");
         await user.click(submitButton);
 
+        await waitFor(async () => {
+          expect(await screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
+
         const input = await screen.findByRole("textbox");
         fireEvent.change(input, { target: { value: "Test message 3" } });
 

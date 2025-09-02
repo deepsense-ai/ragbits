@@ -5,4 +5,4 @@ export { default as SelectWidget } from "./components/SelectWidget";
 export { default as FieldTemplate } from "./components/FieldTemplate";
 
 // Shared form utilities
-export { useTransformErrors } from "./utils";
+export { transformErrors } from "./utils";
