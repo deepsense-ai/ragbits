@@ -106,7 +106,7 @@ class OpenAITools:
         Returns:
             The web search result
         """
-        return (await self._responses_llm.use_tool(query))
+        return await self._responses_llm.use_tool(query)
 
     async def code_interpreter(self, query: str) -> Response:
         """
@@ -118,7 +118,7 @@ class OpenAITools:
         Returns:
             Output of the interpreter
         """
-        return (await self._responses_llm.use_tool(query))
+        return await self._responses_llm.use_tool(query)
 
     async def image_generation(self, query: str, save_path: str = None) -> dict:
         """
@@ -131,7 +131,6 @@ class OpenAITools:
         Returns:
             LLM dict with image_path and output_text
         """
-
         if save_path is None:
             save_path = get_local_storage_dir() / f"{uuid.uuid4()}.png"
 

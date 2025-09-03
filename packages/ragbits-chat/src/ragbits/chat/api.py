@@ -5,7 +5,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -31,6 +31,7 @@ from ragbits.chat.interface.types import (
     FeedbackConfig,
     FeedbackItem,
     FeedbackRequest,
+    Image,
 )
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -555,9 +556,7 @@ class RagbitsAPI:
                     }
 
                 # Auto-chunk large images using ChunkedContent model
-                if (response.type == ChatResponseType.IMAGE and
-                    response.content.url.startswith('data:')):
-
+                if response.type == ChatResponseType.IMAGE and cast(Image, response.content).url.startswith("data:"):
                     # Auto-chunk the image
                     async for chunk_response in RagbitsAPI._create_chunked_responses(ChatResponseType.IMAGE, response):
                         yield f"data: {json.dumps(chunk_response)}\n\n"
@@ -597,10 +596,10 @@ class RagbitsAPI:
         type: Literal[ChatResponseType.IMAGE], base64_response: ChatResponse
     ) -> AsyncGenerator[dict, None]:
         """Create chunked responses from a base64 response."""
-        image_content = base64_response.content
-        mime_type, base64_data = image_content.url.split(',', 1)
+        image_content = cast(Image, base64_response.content)
+        mime_type, base64_data = image_content.url.split(",", 1)
 
-        chunks = [base64_data[i:i+CHUNK_SIZE] for i in range(0, len(base64_data), CHUNK_SIZE)]
+        chunks = [base64_data[i : i + CHUNK_SIZE] for i in range(0, len(base64_data), CHUNK_SIZE)]
 
         for i, chunk in enumerate(chunks):
             chunked_content = ChunkedContent(
@@ -609,13 +608,10 @@ class RagbitsAPI:
                 chunk_index=i,
                 total_chunks=len(chunks),
                 mime_type=mime_type,
-                data=chunk
+                data=chunk,
             )
 
-            yield {
-                "type": ChatResponseType.CHUNKED_CONTENT.value,
-                "content": chunked_content.model_dump()
-            }
+            yield {"type": ChatResponseType.CHUNKED_CONTENT.value, "content": chunked_content.model_dump()}
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

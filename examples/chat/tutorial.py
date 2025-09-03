@@ -1,4 +1,3 @@
-
 """
 Ragbits Chat Example: Tutorial Chat Interface
 
@@ -145,27 +144,25 @@ class MyChat(ChatInterface):
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
         self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
-        self.agent = Agent(llm=self.llm, prompt=GeneralAssistantPrompt, tools=[
-            get_web_search_tool(self.model_name),
-            get_image_generation_tool(self.model_name),
-        ])
+        self.agent = Agent(
+            llm=self.llm,
+            prompt=GeneralAssistantPrompt,
+            tools=[
+                get_web_search_tool(self.model_name),
+                get_image_generation_tool(self.model_name),
+            ],
+        )
 
     @staticmethod
     def _get_tool_display_name(tool_name: str) -> str:
         """Get display name for a tool."""
-        return {
-            "search_web": "🔍 Web Search",
-            "image_generation": "🎨 Image Generator"
-        }.get(tool_name, tool_name)
+        return {"search_web": "🔍 Web Search", "image_generation": "🎨 Image Generator"}.get(tool_name, tool_name)
 
     async def _handle_tool_call(self, response: ToolCall) -> ChatResponse:
         """Handle tool call and return live update."""
         tool_display_name = self._get_tool_display_name(response.name)
         return self.create_live_update(
-            response.id,
-            LiveUpdateType.START,
-            f"Using {tool_display_name}",
-            "Processing your request..."
+            response.id, LiveUpdateType.START, f"Using {tool_display_name}", "Processing your request..."
         )
 
     async def _handle_tool_result(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
@@ -191,21 +188,14 @@ class MyChat(ChatInterface):
                 for content in item.content:
                     for annotation in content.annotations:
                         if annotation.type == "url_citation" and annotation.title and annotation.url:
-                            yield self.create_reference(
-                                title=annotation.title,
-                                url=annotation.url,
-                                content=""
-                            )
+                            yield self.create_reference(title=annotation.title, url=annotation.url, content="")
 
     async def _create_image_response(self, image_path: Path) -> ChatResponse:
         """Create image response from file path."""
         with open(image_path, "rb") as image_file:
             image_filename = image_path.name
             base64_image = base64.b64encode(image_file.read()).decode("utf-8")
-            return self.create_image_response(
-                image_filename,
-                f"data:image/png;base64,{base64_image}"
-            )
+            return self.create_image_response(image_filename, f"data:image/png;base64,{base64_image}")
 
     async def chat(
         self,
@@ -234,10 +224,9 @@ class MyChat(ChatInterface):
             yield self.create_text_response("⚠️ Authentication information not found.")
             return
 
-        stream = self.agent.run_streaming(GeneralAssistantPromptInput(
-            query=message,
-            language=context.user_settings["language"]
-        ))
+        stream = self.agent.run_streaming(
+            GeneralAssistantPromptInput(query=message, language=context.user_settings["language"])
+        )
 
         async for response in stream:
             match response:
@@ -252,6 +241,7 @@ class MyChat(ChatInterface):
                 case ToolCallResult():
                     async for result_response in self._handle_tool_result(response):
                         yield result_response
+
 
 def get_auth_backend() -> ListAuthenticationBackend:
     """Factory function to create the preferred authentication backend."""
