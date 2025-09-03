@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Improve user settings storage when history is disabled (#799)
 - Remove redundant test for `/api/config` endpoint (#795)
 - Fix bug causing infinite initialization screen (#793)
 - Fix bug that caused messages to be sent when changing chat settings; simplify and harden history logic (#791)
