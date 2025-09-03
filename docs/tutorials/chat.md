@@ -1,293 +1,93 @@
-# Tutorial: Building Intelligent Chat Interfaces with Agents
+# Tutorial: Building Tool-Powered Chat Interfaces with Agents
 
-Let's build a **sophisticated chatbot interface** with **Ragbits Chat and Agents**. We'll create an intelligent chat system that uses AI agents to dynamically decide what enhancements to provide - no hardcoded rules, just intelligent decision-making.
+Let's build a **sophisticated chatbot interface** with **Ragbits Chat and Agents**. We'll create an intelligent chat system that uses AI agents with real tools to provide web search results, generate images, and deliver live updates during processing.
 
 **What you'll learn:**
 
-- How to create an agent-powered chat interface that makes intelligent decisions
-- How to use structured output with agents for consistent content generation
-- How to dynamically generate references, images, and follow-ups based on context
-- How to implement intelligent live updates that respond to query complexity
-- How to build adaptive state management that learns from conversations
-- How to configure smart user forms that evolve with user preferences
-- How to create agents that customize responses based on user expertise
-- How to debug and optimize agent-driven chat systems
-- How to build production-ready intelligent assistants
+- How to create an agent-powered chat interface with real tools (web search, image generation)
+- How to implement live updates that show tool execution progress
+- How to extract and display web search references automatically
+- How to handle image generation with base64 encoding and chunking
+- How to build authentication-enabled chat interfaces
+- How to configure user settings and feedback forms
+- How to customize the chat UI with branding and welcome messages
+- How to debug and optimize tool-powered chat systems
+- How to build production-ready intelligent assistants with real capabilities
 
 Install the latest Ragbits via `pip install -U ragbits[agents]` and follow along.
 
 ## Configuring the environment
 
-During development, we will use OpenAI's `gpt-4o-mini` model. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this out for [other providers](../how-to/llms/use_llms.md) or [local models](../how-to/llms/use_local_llms.md).
+During development, we will use OpenAI's `gpt-4o-2024-08-06` model with tools. To authenticate, Ragbits will look into your `OPENAI_API_KEY`. You can easily swap this out for [other providers](../how-to/llms/use_llms.md) or [local models](../how-to/llms/use_local_llms.md).
 
 !!! tip "Recommended: Set up OpenTelemetry tracing to understand what's happening under the hood."
-OpenTelemetry is an LLMOps tool that natively integrates with Ragbits and offer explainability and experiment tracking. In this tutorial, you can use OpenTelemetry to visualize prompts and optimization progress as traces to understand the Ragbits' behavior better. Check the full setup guide [here](../how-to/audit/use_tracing.md/#using-opentelemetry-tracer).
+OpenTelemetry is an LLMOps tool that natively integrates with Ragbits and offers explainability and experiment tracking. In this tutorial, you can use OpenTelemetry to visualize prompts and tool calls as traces. Check the full setup guide [here](../how-to/audit/use_tracing.md/#using-opentelemetry-tracer).
 
-## Creating an Agent-Powered Chat Interface
+## Step 1: Basic Agent Setup with Prompt
 
-The foundation of our intelligent chat system is the [`ChatInterface`][ragbits.chat.interface.ChatInterface] combined with **Ragbits Agents using tools** for decision-making. Following the Ragbits pattern, we'll use a **single agent with multiple tools** instead of multiple agents.
+Let's start by creating the foundation - an agent with a specialized prompt for mountain hiking assistance. This establishes the core AI behavior and domain expertise.
+
+Create a file called `mountain_chat.py` and add the basic structure:
 
 ```python
-import json
-import uuid
+import base64
 from collections.abc import AsyncGenerator
-from typing import Literal, Optional
+from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel, Field
-from ragbits.agents import Agent
+from pydantic import BaseModel, ConfigDict, Field
+
+from ragbits.agents import Agent, ToolCallResult
+from ragbits.agents.tools.openai import get_image_generation_tool, get_web_search_tool
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatResponse, Message, LiveUpdateType
-from ragbits.core.llms import LiteLLM, ToolCall, ToolCallResult
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
+from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import Prompt
 
-# Define structured output for the agent's response
-class Reference(BaseModel):
-    title: str = Field(description="Title of the reference")
-    content: str = Field(description="Brief description of what this reference contains")
-    url: str = Field(description="URL to the reference")
+# Define the agent's input format
+class GeneralAssistantPromptInput(BaseModel):
+    """Input format for the General Assistant Prompt."""
+    query: str
+    language: str
 
-class ImageSuggestion(BaseModel):
-    should_include: bool = Field(description="Whether an image would be helpful")
-    type: Optional[str] = Field(description="Type of image (diagram, chart, etc.)", default=None)
-    description: Optional[str] = Field(description="What the image should show", default=None)
+# Create the agent prompt with domain expertise
+class GeneralAssistantPrompt(Prompt[GeneralAssistantPromptInput]):
+    """Prompt that responds to user queries using appropriate tools."""
 
-class ChatResponse(BaseModel):
-    """Structured response from the agent with optional enhancements."""
-    main_response: str = Field(description="The main text response to the user")
-    references: list[Reference] = Field(description="Relevant references if helpful", default_factory=list)
-    image_suggestion: Optional[ImageSuggestion] = Field(description="Image suggestion if helpful", default=None)
-    followup_questions: list[str] = Field(description="Follow-up questions to continue the conversation", default_factory=list)
-
-class ChatInput(BaseModel):
-    message: str
-    conversation_history: list[str] = Field(default_factory=list)
-
-class ChatPrompt(Prompt[ChatInput, ChatResponse]):
     system_prompt = """
-    You are an intelligent chat assistant. For each user message, provide a helpful response
-    and decide whether to include enhancements like references, images, or follow-up questions.
+    You are a helpful assistant that is expert in mountain hiking and answers user questions.
+    You have access to the following tools: web search and image generation.
 
     Guidelines:
-    - Always provide a main_response answering the user's question
-    - Add references only when they would genuinely help (credible sources, documentation, research)
-    - Suggest images only when visual content would aid understanding (diagrams for complex concepts, charts for data, etc.)
-    - Include follow-up questions that naturally extend the conversation based on the topic and context
-    - Be intelligent about what enhancements add value vs. what feels forced
-
-    Make decisions based on the content and context, not rigid rules.
+    1. Use the web search tool when the user asks for factual information, research, or current events.
+    2. Use the image generation tool when the user asks to create, generate, draw, or produce images.
+    3. The image generation tool generates images in 512x512 resolution.
+    4. Return the image as a base64 encoded string in the response.
+    5. Always select the most appropriate tool based on the user's request.
+    6. If the user asks explicitly for a picture, use only the image generation tool.
+    7. Do not output images in chat. The image will be displayed in the UI.
+    8. Answer in {{ language }} language.
     """
 
     user_prompt = """
-    User message: {{ message }}
-
-    {% if conversation_history %}
-    Recent conversation: {{ conversation_history | join(" | ") }}
-    {% endif %}
-
-    Provide a helpful response with appropriate enhancements.
+    {{ query }}
     """
 
-class AgentPoweredChat(ChatInterface):
-    def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o", use_structured_output=True)
-
-        # Agent with structured output - makes all decisions intelligently
-        self.agent = Agent(
-            llm=self.llm,
-            prompt=ChatPrompt,
-        )
-
-    async def chat(
-        self,
-        message: str,
-        history: list[Message] | None = None,
-        context: dict | None = None,
-    ) -> AsyncGenerator[ChatResponse, None]:
-        # Prepare input for the agent
-        chat_input = ChatInput(
-            message=message,
-            conversation_history=[msg.get("content", "") for msg in (history or [])[-3:]]
-        )
-
-        # Get structured response from agent
-        agent_response = await self.agent.run(chat_input)
-        structured_response = agent_response.content
-
-        # Stream the main text response
-        yield self.create_text_response(structured_response.main_response)
-
-        # Add references if the agent decided they're helpful
-        for ref in structured_response.references:
-            yield self.create_reference(
-                title=ref.title,
-                content=ref.content,
-                url=ref.url
-            )
-
-        # Add image if the agent suggested one
-        if structured_response.image_suggestion and structured_response.image_suggestion.should_include:
-            img = structured_response.image_suggestion
-            yield self.create_image_response(
-                str(uuid.uuid4()),
-                f"https://via.placeholder.com/500x300/4CAF50/FFFFFF?text={img.type or 'Image'}"
-            )
-
-        # Add follow-up questions if the agent provided them
-        if structured_response.followup_questions:
-            yield self.create_followup_messages(structured_response.followup_questions)
-```
-
-Save this code to a file called `agent_chat.py`.
-
-!!! info "Intelligent Agent with Structured Output"
-This approach is even better than tools - the agent uses **structured output** to make all decisions about content enhancements. No hardcoded logic, no tool parsing - just intelligent decisions.
-
-    Key benefits:
-    - **Pure Agent Intelligence**: Agent decides everything through structured output
-    - **No Hardcoding**: References, images, and follow-ups are all agent-generated
-    - **Context Aware**: Agent considers conversation history and user intent
-    - **Flexible**: Agent can decide when NOT to include enhancements
-    - **Clean Implementation**: No complex tool result parsing
-
-!!! tip "Understanding the Flow" 1. User sends a message with conversation history 2. Agent analyzes everything and returns structured response 3. Agent decides: main text, references (if helpful), images (if useful), follow-ups (if relevant) 4. Chat interface uses agent's decisions to create appropriate UI elements 5. Everything is dynamic and contextual - no hardcoded rules!
-
-## Starting the User Interface
-
-Launch the agent-powered chat interface with the built-in web UI using the Ragbits CLI:
-
-```bash
-ragbits api run agent_chat:AgentPoweredChat
-```
-
-!!! note "Module Path Format"
-The path should be the dotted Python _module path_ **without** the `.py` extension. For example, if your file is `agent_chat.py`, use `agent_chat:AgentPoweredChat`.
-
-The server will start on **port 8000** by default. Open your browser and navigate to:
-
-```
-http://127.0.0.1:8000
-```
-
-You'll see an intelligent chat interface where the AI agent analyzes each message to determine what enhancements would be most helpful. Try asking complex questions like "How do machine learning algorithms work?" and watch how the agent decides whether to add live updates, references, or other enhancements.
-
-## Customizing Agent Behavior
-
-You can easily customize how the agent makes decisions by modifying the prompt and structured output models:
-
-```python
-# Add more specific fields to guide agent decisions
-class EnhancedChatResponse(BaseModel):
-    """Enhanced structured response with more control."""
-    main_response: str = Field(description="The main text response to the user")
-    references: list[Reference] = Field(description="Relevant references if helpful", default_factory=list)
-    image_suggestion: Optional[ImageSuggestion] = Field(description="Image suggestion if helpful", default=None)
-    followup_questions: list[str] = Field(description="Follow-up questions", default_factory=list)
-
-    # Additional fields for more control
-    response_tone: Literal["casual", "professional", "technical"] = Field(
-        description="Appropriate tone for this response", default="professional"
-    )
-    complexity_level: Literal["beginner", "intermediate", "advanced"] = Field(
-        description="Target complexity level", default="intermediate"
-    )
-
-class EnhancedChatPrompt(Prompt[ChatInput, EnhancedChatResponse]):
-    system_prompt = """
-    You are an intelligent chat assistant. Analyze each message and provide responses
-    with appropriate enhancements based on context and user needs.
-
-    Guidelines for decision-making:
-    - For technical topics: Include references to documentation, tutorials, or research
-    - For visual topics: Suggest diagrams, charts, or illustrations when they aid understanding
-    - For learning conversations: Provide follow-up questions that deepen understanding
-    - For quick questions: Keep enhancements minimal
-    - For complex topics: Include comprehensive references and detailed follow-ups
-
-    Always consider:
-    - User's apparent expertise level from their question
-    - Whether they're asking for specific information or general exploration
-    - What would genuinely help them understand or learn more
-    """
-
-    user_prompt = """
-    User message: {{ message }}
-
-    {% if conversation_history %}
-    Recent conversation: {{ conversation_history | join(" | ") }}
-    {% endif %}
-
-    Provide an intelligent response with contextually appropriate enhancements.
-    """
-```
-
-This approach lets the agent make nuanced decisions about content, tone, and complexity based on the conversation context.
-
-## Adding State Management and User Forms
-
-Let's add intelligent state management and user preference forms to make our chat more personalized:
-
-```python
-from pydantic import ConfigDict
-from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-from ragbits.chat.interface.types import ChatContext
-from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
-
-class UserPreferencesForm(BaseModel):
-    model_config = ConfigDict(
-        title="Chat Preferences",
-        json_schema_serialization_defaults_required=True
-    )
-
-    expertise_level: Literal["Beginner", "Intermediate", "Expert"] = Field(
-        description="Your technical expertise level",
-        default="Intermediate"
-    )
-    preferred_detail: Literal["Brief", "Detailed", "Comprehensive"] = Field(
-        description="How much detail do you prefer in responses?",
-        default="Detailed"
-    )
-
-class IntelligentChatWithForms(ChatInterface):
-    # Add user settings form
-    user_settings = UserSettings(form=UserPreferencesForm)
-
-    # Customize the UI
-    ui_customization = UICustomization(
-        header=HeaderCustomization(
-            title="🤖 Smart Agent Assistant",
-            subtitle="Powered by Ragbits Tools",
-            logo="🛠️"
-        ),
-        welcome_message=(
-            "Welcome to the Smart Agent Assistant! 🤖\n\n"
-            "I use intelligent tools to enhance our conversation:\n"
-            "- **Smart References** based on your questions\n"
-            "- **Contextual Images** when they help explain concepts\n"
-            "- **Relevant Follow-ups** that continue the discussion\n\n"
-            "Try asking me about programming, science, or any topic you're curious about!"
-        ),
-    )
-
-    conversation_history = True
+class BasicMountainChat(ChatInterface):
+    """Basic mountain hiking assistant with tools."""
 
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o-mini", use_structured_output=True)
+        self.model_name = "gpt-4o-2024-08-06"
+        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
 
-        # Enhanced prompt that considers user preferences
-        enhanced_prompt = ChatPrompt()
-        enhanced_prompt.system_prompt += """
-
-        Consider the user's expertise level and preferred detail level when responding:
-        - Beginner: Use simple language and provide more context
-        - Expert: Use technical terminology and be more concise
-        - Brief: Keep responses focused and to-the-point
-        - Comprehensive: Provide thorough explanations with examples
-        """
-
+        # Create agent with real tools
         self.agent = Agent(
             llm=self.llm,
-            prompt=enhanced_prompt,
-            tools=[enhanced_generate_references, smart_suggest_image, contextual_followups],
+            prompt=GeneralAssistantPrompt,
+            tools=[
+                get_web_search_tool(self.model_name),
+                get_image_generation_tool(self.model_name),
+            ],
         )
 
     async def chat(
@@ -296,124 +96,711 @@ class IntelligentChatWithForms(ChatInterface):
         history: list[Message] | None = None,
         context: ChatContext | None = None,
     ) -> AsyncGenerator[ChatResponse, None]:
-        # Get user preferences and state
-        current_state = context.state if context else {}
-        user_prefs = context.user_settings if context else {}
-        conversation_count = current_state.get("conversation_count", 0) + 1
-
-        # Update state with conversation tracking
-        updated_state = {
-            "conversation_count": conversation_count,
-            "last_topic": message[:50] + "..." if len(message) > 50 else message,
-            "user_expertise": user_prefs.get("expertise_level", "Intermediate"),
-        }
-        yield self.create_state_update(updated_state)
-
-        # Prepare enhanced input with user context
-        conversation_history = [msg.get("content", "") for msg in (history or [])[-5:]]
-        chat_input = ChatInput(
-            message=message,
-            conversation_history=conversation_history
+        # Basic streaming implementation
+        stream = self.agent.run_streaming(
+            GeneralAssistantPromptInput(
+                query=message,
+                language="English"  # Default language for now
+            )
         )
 
-        # Stream responses from agent
-        async for response in self.agent.run_streaming(chat_input):
+        async for response in stream:
             match response:
                 case str():
-                    yield self.create_text_response(response)
-                case ToolCall():
-                    yield self.create_live_update(
-                        response.id,
-                        LiveUpdateType.START,
-                        f"🛠️ Using {response.name} tool",
-                    )
-                case ToolCallResult():
-                    yield self.create_live_update(
-                        response.id,
-                        LiveUpdateType.FINISH,
-                        f"✅ {response.name} completed",
-                    )
-
-                    # Process tool results
-                    if response.name == "enhanced_generate_references":
-                        refs = json.loads(response.result)
-                        for ref in refs:
-                            yield self.create_reference(
-                                title=ref["title"],
-                                content=ref["content"],
-                                url=ref["url"]
-                            )
-                    elif response.name == "smart_suggest_image":
-                        img_data = json.loads(response.result)
-                        if img_data.get("should_include"):
-                            yield self.create_image_response(
-                                str(uuid.uuid4()),
-                                f"https://via.placeholder.com/500x300/4CAF50/FFFFFF?text={img_data['type']}"
-                            )
-                    elif response.name == "contextual_followups":
-                        followups = json.loads(response.result)
-                        if followups:
-                            yield self.create_followup_messages(followups)
+                    # Regular text content from the LLM
+                    if response.strip():  # Only yield non-empty text
+                        yield self.create_text_response(response)
 ```
 
-This complete implementation demonstrates the proper Ragbits pattern: **one intelligent agent with multiple smart tools**.
+**How this works:**
+
+- **Domain Expertise**: The prompt specializes the agent in mountain hiking, giving it focused knowledge
+- **Tool Integration**: We configure web search and image generation tools that the agent can use
+- **Streaming**: The agent streams responses in real-time as they're generated
+- **Language Support**: Input includes language parameter for internationalization
+
+Test this basic version:
+
+```bash
+ragbits api run mountain_chat:BasicMountainChat
+```
+
+!!! info "Why Start Simple"
+Starting with a basic implementation helps you understand the core concepts before adding complexity. The agent already has access to powerful tools but we'll add UI feedback in the next steps.
+
+## Step 2: Adding Live Updates for Tool Execution
+
+Now let's add live updates so users can see when tools are being executed. This provides real-time feedback during potentially long-running operations like web searches or image generation.
+
+Add these methods to your `BasicMountainChat` class:
+
+```python
+class BasicMountainChat(ChatInterface):
+    # ... previous code ...
+
+    @staticmethod
+    def _get_tool_display_name(tool_name: str) -> str:
+        """Get user-friendly display names for tools."""
+        return {
+            "search_web": "🔍 Web Search",
+            "image_generation": "🎨 Image Generator"
+        }.get(tool_name, tool_name)
+
+    async def _handle_tool_call(self, response: ToolCall) -> ChatResponse:
+        """Handle tool call and return live update."""
+        tool_display_name = self._get_tool_display_name(response.name)
+        return self.create_live_update(
+            response.id,
+            LiveUpdateType.START,
+            f"Using {tool_display_name}",
+            "Processing your request..."
+        )
+
+    async def _handle_tool_result(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        """Handle tool call result and yield appropriate responses."""
+        tool_display_name = self._get_tool_display_name(response.name)
+
+        # Signal completion
+        yield self.create_live_update(
+            response.id,
+            LiveUpdateType.FINISH,
+            f"{tool_display_name} completed",
+        )
+
+    async def chat(
+        self,
+        message: str,
+        history: list[Message] | None = None,
+        context: ChatContext | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        # Enhanced streaming with tool handling
+        stream = self.agent.run_streaming(
+            GeneralAssistantPromptInput(
+                query=message,
+                language="English"
+            )
+        )
+
+        async for response in stream:
+            match response:
+                case str():
+                    # Regular text content from the LLM
+                    if response.strip():
+                        yield self.create_text_response(response)
+
+                case ToolCall():
+                    # Tool is being called - show live update
+                    yield await self._handle_tool_call(response)
+
+                case ToolCallResult():
+                    # Tool completed - process results
+                    async for result_response in self._handle_tool_result(response):
+                        yield result_response
+```
+
+**How live updates work:**
+
+- **ToolCall Detection**: When the agent decides to use a tool, we catch the `ToolCall` object
+- **Start Indicator**: Show a "Using [Tool Name]" message with a processing indicator
+- **Completion Signal**: When the tool finishes, show a completion message
+- **User Experience**: Users see real-time progress instead of waiting in silence
+
+Test the enhanced version:
+
+```bash
+ragbits api run mountain_chat:BasicMountainChat
+```
+
+Try asking: "Search for information about Mount Everest weather" and watch the live updates appear!
+
+## Step 3: Processing Web Search Results
+
+Now let's add automatic extraction of web search references. When the web search tool returns results, we'll extract URLs and display them as clickable references in the chat.
+
+Add this method to handle web search results:
+
+```python
+class BasicMountainChat(ChatInterface):
+    # ... previous code ...
+
+    async def _extract_web_references(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        """Extract URL citations from web search results."""
+        for item in response.result.output:
+            if item.type == "message":
+                for content in item.content:
+                    for annotation in content.annotations:
+                        if annotation.type == "url_citation" and annotation.title and annotation.url:
+                            yield self.create_reference(
+                                title=annotation.title,
+                                url=annotation.url,
+                                content=""
+                            )
+
+    async def _handle_tool_result(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        """Handle tool call result and yield appropriate responses."""
+        tool_display_name = self._get_tool_display_name(response.name)
+
+        # Signal completion
+        yield self.create_live_update(
+            response.id,
+            LiveUpdateType.FINISH,
+            f"{tool_display_name} completed",
+        )
+
+        # Process specific tool results
+        if response.name == "search_web":
+            async for reference in self._extract_web_references(response):
+                yield reference
+```
+
+**How web reference extraction works:**
+
+- **Result Processing**: After web search completes, we examine the tool result
+- **Annotation Parsing**: Web search results contain annotations with URL citations
+- **Reference Creation**: Each citation becomes a clickable reference in the chat UI
+- **Automatic Display**: Users see relevant links without manual processing
+
+The web search tool returns structured data with:
+
+- **URLs**: Direct links to relevant web pages
+- **Titles**: Descriptive titles for each reference
+- **Annotations**: Metadata about why each link is relevant
+
+Test web search with references:
+
+```bash
+ragbits api run mountain_chat:BasicMountainChat
+```
+
+Try: "Search for the best hiking trails in the Alps" and you'll see both the AI response and clickable reference links!
+
+## Step 4: Adding Image Generation Support
+
+Now let's add support for image generation with proper base64 encoding and display. When the image generation tool creates images, we'll handle the file processing and convert them for display in the chat.
+
+Add this method to handle image generation results:
+
+```python
+class BasicMountainChat(ChatInterface):
+    # ... previous code ...
+
+    async def _create_image_response(self, image_path: Path) -> ChatResponse:
+        """Create image response from file path."""
+        with open(image_path, "rb") as image_file:
+            image_filename = image_path.name
+            base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+            return self.create_image_response(
+                image_filename,
+                f"data:image/png;base64,{base64_image}"
+            )
+
+    async def _handle_tool_result(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        """Handle tool call result and yield appropriate responses."""
+        tool_display_name = self._get_tool_display_name(response.name)
+
+        # Signal completion
+        yield self.create_live_update(
+            response.id,
+            LiveUpdateType.FINISH,
+            f"{tool_display_name} completed",
+        )
+
+        # Process specific tool results
+        if response.name == "search_web":
+            async for reference in self._extract_web_references(response):
+                yield reference
+        elif response.name == "image_generation" and response.result.get("image_path"):
+            yield await self._create_image_response(response.result["image_path"])
+```
+
+**How image generation works:**
+
+- **Tool Execution**: The agent calls the image generation tool with a text prompt
+- **File Creation**: The tool generates an image and saves it to a temporary file
+- **Base64 Encoding**: We read the image file and convert it to base64 format
+- **Data URL**: Create a proper data URL with MIME type for browser display
+- **Automatic Chunking**: Large images are automatically chunked by the API for efficient transmission
+
+The image generation process:
+
+1. **Agent Decision**: Agent determines an image would be helpful
+2. **Tool Call**: Calls image generation with descriptive prompt
+3. **AI Generation**: Uses AI image model (like DALL-E) to create the image
+4. **File Processing**: Converts generated image to base64 for web display
+5. **UI Display**: Image appears directly in the chat interface
+
+Test image generation:
+
+```bash
+ragbits api run mountain_chat:BasicMountainChat
+```
+
+Try: "Generate an image of mountain hiking gear" and watch the AI create a custom image!
+
+## Step 5: Adding UI Customization and User Settings
+
+Now let's add a polished UI with custom branding, user settings, and conversation history. This transforms our basic chat into a professional-looking application.
+
+Add user settings and UI customization:
+
+```python
+from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
+from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
+
+# Define user settings form
+class UserSettingsFormExample(BaseModel):
+    """User preferences for the chat interface."""
+    model_config = ConfigDict(title="Chat Settings", json_schema_serialization_defaults_required=True)
+
+    language: Literal["English", "Polish"] = Field(
+        description="Please select the language",
+        default="English"
+    )
+
+class MountainChatWithUI(ChatInterface):
+    """Enhanced mountain hiking assistant with custom UI."""
+
+    # Customize the UI appearance
+    ui_customization = UICustomization(
+        header=HeaderCustomization(
+            title="🏔️ Mountain Hiking Assistant",
+            subtitle="by Ragbits",
+            logo="🥾"
+        ),
+        welcome_message=(
+            "🏔️ **Welcome to your Mountain Hiking Assistant!**\n\n"
+            "I can help you with:\n"
+            "- **Web Search** for hiking information, weather, trails\n"
+            "- **Image Generation** for visualizing routes, gear, or concepts\n\n"
+            "Ask me anything about mountain hiking!"
+        ),
+        meta=PageMetaCustomization(favicon="🏔️", page_title="Mountain Hiking Assistant"),
+    )
+
+    # Add user settings
+    user_settings = UserSettings(form=UserSettingsFormExample)
+
+    # Enable features
+    conversation_history = True
+    show_usage = True
+
+    def __init__(self) -> None:
+        self.model_name = "gpt-4o-2024-08-06"
+        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+
+        self.agent = Agent(
+            llm=self.llm,
+            prompt=GeneralAssistantPrompt,
+            tools=[
+                get_web_search_tool(self.model_name),
+                get_image_generation_tool(self.model_name),
+            ],
+        )
+
+    # ... (include all the tool handling methods from previous steps) ...
+
+    async def chat(
+        self,
+        message: str,
+        history: list[Message] | None = None,
+        context: ChatContext | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        # Get user language preference
+        language = "English"
+        if context and context.user_settings:
+            language = context.user_settings.get("language", "English")
+
+        # Create streaming response from agent
+        stream = self.agent.run_streaming(
+            GeneralAssistantPromptInput(
+                query=message,
+                language=language
+            )
+        )
+
+        # Process streaming responses (same pattern as before)
+        async for response in stream:
+            match response:
+                case str():
+                    if response.strip():
+                        yield self.create_text_response(response)
+                case ToolCall():
+                    yield await self._handle_tool_call(response)
+                case ToolCallResult():
+                    async for result_response in self._handle_tool_result(response):
+                        yield result_response
+```
+
+**UI customization features:**
+
+- **Custom Header**: Branded title, subtitle, and logo
+- **Welcome Message**: Markdown-formatted introduction with feature overview
+- **Page Metadata**: Custom favicon and page title for browser tabs
+- **User Settings**: Language preference that affects agent responses
+- **Conversation History**: Persistent chat history across sessions
+- **Usage Tracking**: Token usage display for monitoring costs
+
+Test the enhanced UI:
+
+```bash
+ragbits api run mountain_chat:MountainChatWithUI
+```
+
+You'll see a professional-looking interface with custom branding and user settings!
+
+## Step 6: Adding Authentication and Feedback Forms
+
+For production applications, you'll want authentication and user feedback. Let's add these final features to create a complete, secure chat interface.
+
+Add feedback forms and authentication:
+
+```python
+from ragbits.chat.auth import ListAuthenticationBackend
+
+# Define feedback forms
+class LikeFormExample(BaseModel):
+    """Form for positive feedback."""
+    model_config = ConfigDict(
+        title="Like Form",
+        json_schema_serialization_defaults_required=True,
+    )
+
+    like_reason: str = Field(
+        description="Why do you like this?",
+        min_length=1,
+    )
+
+class DislikeFormExample(BaseModel):
+    """Form for negative feedback."""
+    model_config = ConfigDict(
+        title="Dislike Form",
+        json_schema_serialization_defaults_required=True
+    )
+
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(
+        description="What was the issue?"
+    )
+    feedback: str = Field(description="Please provide more details", min_length=1)
+
+class AuthenticatedMountainChat(ChatInterface):
+    """Complete mountain hiking assistant with authentication."""
+
+    ui_customization = UICustomization(
+        header=HeaderCustomization(
+            title="🔐 Authenticated Mountain Assistant",
+            subtitle="by Ragbits",
+            logo="🥾"
+        ),
+        welcome_message=(
+            "🔐 **Welcome to Authenticated Mountain Assistant!**\n\n"
+            "You can ask me **anything** about mountain hiking! \n\n"
+            "I can also generate images for you.\n\n"
+            "Please log in to start chatting!"
+        ),
+        meta=PageMetaCustomization(favicon="🏔️", page_title="Mountain Assistant"),
+    )
+
+    # Configure feedback system
+    feedback_config = FeedbackConfig(
+        like_enabled=True,
+        like_form=LikeFormExample,
+        dislike_enabled=True,
+        dislike_form=DislikeFormExample,
+    )
+
+    # Add user settings and features
+    user_settings = UserSettings(form=UserSettingsFormExample)
+    conversation_history = True
+    show_usage = True
+
+    def __init__(self) -> None:
+        self.model_name = "gpt-4o-2024-08-06"
+        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.agent = Agent(
+            llm=self.llm,
+            prompt=GeneralAssistantPrompt,
+            tools=[
+                get_web_search_tool(self.model_name),
+                get_image_generation_tool(self.model_name),
+            ],
+        )
+
+    # ... (include all the tool handling methods from previous steps) ...
+
+    async def chat(
+        self,
+        message: str,
+        history: list[Message] | None = None,
+        context: ChatContext | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        # Check authentication
+        user_info = context.state.get("authenticated_user") if context else None
+
+        if not user_info:
+            yield self.create_text_response("⚠️ Authentication information not found.")
+            return
+
+        # Get user language preference
+        language = context.user_settings.get("language", "English") if context else "English"
+
+        # Process with agent (same as before)
+        stream = self.agent.run_streaming(
+            GeneralAssistantPromptInput(query=message, language=language)
+        )
+
+        async for response in stream:
+            match response:
+                case str():
+                    if response.strip():
+                        yield self.create_text_response(response)
+                case ToolCall():
+                    yield await self._handle_tool_call(response)
+                case ToolCallResult():
+                    async for result_response in self._handle_tool_result(response):
+                        yield result_response
+
+# Create authentication backend
+def get_auth_backend() -> ListAuthenticationBackend:
+    """Factory function to create the authentication backend."""
+    users = [
+        {
+            "user_id": "8e6c5871-3817-4d62-828f-ef6789de31b9",
+            "username": "test",
+            "password": "test123",
+            "email": "test@example.com",
+            "full_name": "Test User",
+            "roles": ["user"],
+            "metadata": {"department": "Hiking", "clearance_level": "standard"},
+        },
+    ]
+    return ListAuthenticationBackend(users)
+```
+
+**Authentication and feedback features:**
+
+- **User Authentication**: Secure login system with user management
+- **Feedback Forms**: Structured feedback collection with like/dislike options
+- **User Context**: Access to authenticated user information in chat logic
+- **Session Management**: Automatic session handling and token validation
+
+Launch with authentication:
+
+```bash
+ragbits api run mountain_chat:AuthenticatedMountainChat --auth mountain_chat:get_auth_backend
+```
+
+Login credentials:
+
+- Username: `test`
+- Password: `test123`
 
 ## Enabling Debug Mode
 
-Debug mode provides detailed information about the chat's internal state and is invaluable during development:
+Debug mode provides detailed information about tool calls and agent decisions:
 
 ```bash
-ragbits api run your_chat:IntelligentChatWithForms --debug
+ragbits api run mountain_chat:AuthenticatedMountainChat --auth mountain_chat:get_auth_backend --debug
 ```
 
 With debug mode enabled:
 
-- A debug panel appears in the UI showing internal state
-- Detailed logging information is available
-- You can inspect tool calls, agent decisions, and response metadata
-- Error information is more detailed and helpful
+- Debug panel shows tool execution details
+- Agent decision-making process is visible
+- Token usage and performance metrics displayed
+- Error information is comprehensive
 
-Additional server configuration options:
+Additional server options:
 
 ```bash
 # Custom host and port
-ragbits api run your_chat:YourChatClass --host 0.0.0.0 --port 9000
+ragbits api run mountain_chat:AuthenticatedMountainChat --host 0.0.0.0 --port 9000
 
 # Enable CORS for development
-ragbits api run your_chat:YourChatClass --cors-origin http://localhost:3000
+ragbits api run mountain_chat:AuthenticatedMountainChat --cors-origin http://localhost:3000
+```
+
+## Complete Working Example
+
+Here's your complete `mountain_chat.py` file with all features:
+
+```python
+"""
+Complete Mountain Hiking Assistant with Tools, Authentication, and UI Customization
+"""
+
+import base64
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ragbits.agents import Agent, ToolCallResult
+from ragbits.agents.tools.openai import get_image_generation_tool, get_web_search_tool
+from ragbits.chat.auth import ListAuthenticationBackend
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
+from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
+from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.prompt import Prompt
+
+# Forms
+class LikeFormExample(BaseModel):
+    model_config = ConfigDict(title="Like Form", json_schema_serialization_defaults_required=True)
+    like_reason: str = Field(description="Why do you like this?", min_length=1)
+
+class DislikeFormExample(BaseModel):
+    model_config = ConfigDict(title="Dislike Form", json_schema_serialization_defaults_required=True)
+    issue_type: Literal["Incorrect information", "Not helpful", "Unclear", "Other"] = Field(description="What was the issue?")
+    feedback: str = Field(description="Please provide more details", min_length=1)
+
+class UserSettingsFormExample(BaseModel):
+    model_config = ConfigDict(title="Chat Settings", json_schema_serialization_defaults_required=True)
+    language: Literal["English", "Polish"] = Field(description="Please select the language", default="English")
+
+# Agent prompt
+class GeneralAssistantPromptInput(BaseModel):
+    query: str
+    language: str
+
+class GeneralAssistantPrompt(Prompt[GeneralAssistantPromptInput]):
+    system_prompt = """
+    You are a helpful assistant that is expert in mountain hiking and answers user questions.
+    You have access to the following tools: web search and image generation.
+
+    Guidelines:
+    1. Use the web search tool when the user asks for factual information, research, or current events.
+    2. Use the image generation tool when the user asks to create, generate, draw, or produce images.
+    3. The image generation tool generates images in 512x512 resolution.
+    4. Return the image as a base64 encoded string in the response.
+    5. Always select the most appropriate tool based on the user's request.
+    6. If the user asks explicitly for a picture, use only the image generation tool.
+    7. Do not output images in chat. The image will be displayed in the UI.
+    8. Answer in {{ language }} language.
+    """
+    user_prompt = "{{ query }}"
+
+class MyChat(ChatInterface):
+    """Complete mountain hiking assistant with all features."""
+
+    ui_customization = UICustomization(
+        header=HeaderCustomization(title="🔐 Authenticated Mountain Assistant", subtitle="by Ragbits", logo="🥾"),
+        welcome_message=(
+            "🔐 **Welcome to Authenticated Mountain Assistant!**\n\n"
+            "You can ask me **anything** about mountain hiking! \n\n Also I can generate images for you.\n\n"
+            "Please log in to start chatting!"
+        ),
+        meta=PageMetaCustomization(favicon="🏔️", page_title="Mountain Assistant"),
+    )
+
+    feedback_config = FeedbackConfig(
+        like_enabled=True, like_form=LikeFormExample,
+        dislike_enabled=True, dislike_form=DislikeFormExample,
+    )
+    user_settings = UserSettings(form=UserSettingsFormExample)
+    conversation_history = True
+    show_usage = True
+
+    def __init__(self) -> None:
+        self.model_name = "gpt-4o-2024-08-06"
+        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.agent = Agent(llm=self.llm, prompt=GeneralAssistantPrompt, tools=[
+            get_web_search_tool(self.model_name), get_image_generation_tool(self.model_name),
+        ])
+
+    @staticmethod
+    def _get_tool_display_name(tool_name: str) -> str:
+        return {"search_web": "🔍 Web Search", "image_generation": "🎨 Image Generator"}.get(tool_name, tool_name)
+
+    async def _handle_tool_call(self, response: ToolCall) -> ChatResponse:
+        tool_display_name = self._get_tool_display_name(response.name)
+        return self.create_live_update(response.id, LiveUpdateType.START, f"Using {tool_display_name}", "Processing your request...")
+
+    async def _handle_tool_result(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        tool_display_name = self._get_tool_display_name(response.name)
+        yield self.create_live_update(response.id, LiveUpdateType.FINISH, f"{tool_display_name} completed")
+
+        if response.name == "search_web":
+            async for reference in self._extract_web_references(response):
+                yield reference
+        elif response.name == "image_generation" and response.result.get("image_path"):
+            yield await self._create_image_response(response.result["image_path"])
+
+    async def _extract_web_references(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
+        for item in response.result.output:
+            if item.type == "message":
+                for content in item.content:
+                    for annotation in content.annotations:
+                        if annotation.type == "url_citation" and annotation.title and annotation.url:
+                            yield self.create_reference(title=annotation.title, url=annotation.url, content="")
+
+    async def _create_image_response(self, image_path: Path) -> ChatResponse:
+        with open(image_path, "rb") as image_file:
+            image_filename = image_path.name
+            base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+            return self.create_image_response(image_filename, f"data:image/png;base64,{base64_image}")
+
+    async def chat(self, message: str, history: list[Message] | None = None, context: ChatContext | None = None) -> AsyncGenerator[ChatResponse, None]:
+        user_info = context.state.get("authenticated_user") if context else None
+        if not user_info:
+            yield self.create_text_response("⚠️ Authentication information not found.")
+            return
+
+        stream = self.agent.run_streaming(GeneralAssistantPromptInput(
+            query=message, language=context.user_settings["language"]
+        ))
+
+        async for response in stream:
+            match response:
+                case str():
+                    if response.strip():
+                        yield self.create_text_response(response)
+                case ToolCall():
+                    yield await self._handle_tool_call(response)
+                case ToolCallResult():
+                    async for result_response in self._handle_tool_result(response):
+                        yield result_response
+
+def get_auth_backend() -> ListAuthenticationBackend:
+    users = [{"user_id": "8e6c5871-3817-4d62-828f-ef6789de31b9", "username": "test", "password": "test123",
+              "email": "test@example.com", "full_name": "Test User", "roles": ["user"],
+              "metadata": {"department": "Hiking", "clearance_level": "standard"}}]
+    return ListAuthenticationBackend(users)
 ```
 
 ## Conclusions
 
-In this tutorial, we've built a sophisticated chat interface using **intelligent agents with structured output** - the cleanest way to create dynamic, context-aware chat experiences.
+In this tutorial, we've built a sophisticated chat interface using **real AI tools** for web search and image generation, providing actual capabilities rather than simulated responses.
 
 ### Key Features Implemented
 
-- **🧠 Pure Agent Intelligence**: Agent makes all content decisions through structured output
-- **📚 Dynamic References**: Agent-generated references based on context and relevance
-- **🖼️ Contextual Images**: Agent decides when and what type of visuals would help
-- **💭 Smart Follow-ups**: Agent creates questions that naturally extend conversations
-- **📝 User Forms**: Feedback collection and preference settings
-- **🎨 UI Customization**: Personalized interface with branding
-- **⚡ Intelligent State**: Agent-aware state management and conversation tracking
+- **🔍 Real Web Search**: Live web search with automatic reference extraction
+- **🎨 Real Image Generation**: AI-powered image creation with base64 encoding
+- **⚡ Live Updates**: Real-time progress indicators during tool execution
+- **🔐 Authentication**: Secure login system with user management
+- **📝 User Forms**: Feedback collection and language preferences
+- **🎨 UI Customization**: Branded interface with welcome messages
+- **📊 Usage Tracking**: Token usage and conversation history
 
 ### Why This Approach Works
 
-1. **No Hardcoding**: Everything is decided by the agent - no rigid rules or conditional logic
-2. **Context Awareness**: Agent considers conversation history, user intent, and topic complexity
-3. **Flexible Decisions**: Agent can choose NOT to include enhancements when they're not helpful
-4. **Natural Conversations**: Responses feel organic because they're intelligently crafted, not templated
-5. **Easy to Extend**: Add new fields to structured output without changing core logic
+1. **Real Capabilities**: Tools perform actual web searches and generate real images
+2. **Live Feedback**: Users see progress as tools execute, improving UX
+3. **Automatic Processing**: Web references extracted automatically from search results
+4. **Flexible Tools**: Easy to add more tools (database queries, API calls, etc.)
+5. **Production Ready**: Built-in authentication, error handling, and monitoring
 
 ### Next Steps
 
-Now you can build intelligent chat interfaces that make smart decisions! You can:
+Now you can build tool-powered chat interfaces with real capabilities! You can:
 
-- **Add More Tools**: Create tools for web search, code execution, or API calls
-- **Enhance Prompts**: Improve agent decision-making with better prompts
-- **Integrate Document Search**: Connect to [Document Search](./rag.md) for knowledge-based responses
-- **Connect External APIs**: Use tools to integrate with databases and services
+- **Add More Tools**: Create custom tools for specific domains
+- **Enhance Authentication**: Connect to external auth providers
+- **Integrate Databases**: Add tools for data retrieval and storage
+- **Connect APIs**: Use tools to integrate with external services
+- **Add Document Search**: Connect to [Document Search](./rag.md) for knowledge bases
 
-The key insight is simple: **use structured output to let the agent decide everything** - when to include references, what images would help, which follow-ups make sense. No hardcoded rules, no conditional logic, just intelligent agent decisions that create truly conversational experiences.
+The key insight: **use real tools that provide actual capabilities** rather than simulated responses. This creates chat interfaces that can truly help users accomplish tasks.
 
 For more advanced configurations and deployment options, check out the [Chat API How-To Guide](../how-to/chatbots/api.md).
