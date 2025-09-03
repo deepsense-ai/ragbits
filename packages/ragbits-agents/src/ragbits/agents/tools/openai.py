@@ -1,10 +1,12 @@
-import base64
 from collections.abc import Callable
+import base64
+import uuid
 from typing import cast
 
 from openai import AsyncOpenAI
 from openai.types.responses import Response
 from openai.types.responses.tool_param import CodeInterpreter, ToolParam
+from ragbits.core.sources.base import get_local_storage_dir
 
 
 def get_web_search_tool(model_name: str, additional_params: dict | None = None) -> Callable:
@@ -60,7 +62,7 @@ class OpenAIResponsesLLM:
     Class serving as a wrapper for tool calls to responses API of OpenAI
     """
 
-    def __init__(self, model_name: str, tool_param: ToolParam):
+    def __init__(self, model_name: str, tool_param: ToolParam = None):
         self._client = AsyncOpenAI()
         self._model_name = model_name
         self._tool_param = tool_param
@@ -90,10 +92,10 @@ class OpenAITools:
 
     AVAILABLE_TOOLS = {"web_search_preview", "code_interpreter", "image_generation"}
 
-    def __init__(self, model_name: str, tool_param: ToolParam):
+    def __init__(self, model_name: str, tool_param: ToolParam = None):
         self._responses_llm = OpenAIResponsesLLM(model_name, tool_param)
 
-    async def search_web(self, query: str) -> str:
+    async def search_web(self, query: str) -> Response:
         """
         Searches web for a query
 
@@ -103,9 +105,9 @@ class OpenAITools:
         Returns:
             The web search result
         """
-        return (await self._responses_llm.use_tool(query)).output_text
+        return (await self._responses_llm.use_tool(query))
 
-    async def code_interpreter(self, query: str) -> str:
+    async def code_interpreter(self, query: str) -> Response:
         """
         Performs actions in code interpreter based on query
 
@@ -115,9 +117,9 @@ class OpenAITools:
         Returns:
             Output of the interpreter
         """
-        return (await self._responses_llm.use_tool(query)).output_text
+        return (await self._responses_llm.use_tool(query))
 
-    async def image_generation(self, query: str, save_path: str = "generated_image.png") -> str:
+    async def image_generation(self, query: str, save_path: str = None) -> dict:
         """
         Generate image based on query.
 
@@ -126,16 +128,18 @@ class OpenAITools:
             save_path: The path to save the generated image
 
         Returns:
-            LLM text output
+            LLM dict with image_path and output_text
         """
+
+        if save_path is None:
+            save_path = get_local_storage_dir() / f"{uuid.uuid4()}.png"
+
         response = await self._responses_llm.use_tool(query)
         image_data = next((output.result for output in response.output if output.type == "image_generation_call"), None)
 
         if image_data:
             with open(save_path, "wb") as f:
                 f.write(base64.b64decode(image_data))
-            text_prefix = f"Image saved to {save_path}\n"
+            return {"image_path": save_path, "output_text": response.output_text}
         else:
-            text_prefix = "No generated image was returned\n"
-
-        return text_prefix + response.output_text
+            return {"image_path": None, "output_text": response.output_text}

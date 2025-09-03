@@ -7,7 +7,7 @@ We provide a single method as a tool to the agent and expect it to call it when 
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/openai_native_tool_use.py
+    uv run --env-file=path.to.env.file examples/agents/openai_native_tool_use.py
     ```
 """
 
@@ -19,6 +19,7 @@ To run the script, execute the following command:
 # ]
 # ///
 import asyncio
+import os
 
 from pydantic import BaseModel
 

@@ -20,68 +20,17 @@ To run the script, execute the following command:
 # ///
 #
 
-import os
-import uuid
 from collections.abc import AsyncGenerator
-from pathlib import Path
+import base64
 
 from pydantic import BaseModel
 
+from ragbits.agents.tools.openai import get_web_search_tool, get_image_generation_tool
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.core.prompt import Prompt
 from ragbits.agents import Agent, ToolCallResult
-from ragbits.agents.tools import get_image_generation_tool
 from ragbits.core.llms import LiteLLM, ToolCall
-
-
-def get_web_search_tool_with_references(model_name: str):
-    """
-    Returns a web search tool with references as a callable function.
-
-    Args:
-        model_name: The model name to use
-
-    Returns:
-        A callable async web search function that returns content and references
-    """
-    from ragbits.agents.tools.openai import OpenAIResponsesLLM
-
-    async def search_web_with_references(query: str) -> dict:
-        # Create the OpenAI tool instance
-        openai_tool = OpenAIResponsesLLM(model_name, {"type": "web_search_preview"})
-
-        # Get the raw response object
-        response = await openai_tool.use_tool(query)
-
-        references = []
-        chat_text = ""
-
-        if getattr(response, "output", None):
-            for item in response.output:
-                # Chat content
-                if item.type in ["message", "response_output_message"]:
-                    for content_part in getattr(item, "content", []):
-                        if hasattr(content_part, "text"):
-                            chat_text += content_part.text + "\n"
-
-                        # Extract URL citations
-                        for annotation in getattr(content_part, "annotations", []):
-                            if annotation.type == "url_citation" and annotation.title and annotation.url:
-                                ref = {
-                                    "title": annotation.title,
-                                    "url": annotation.url,
-                                    "content": "",
-                                }
-                                if ref not in references:
-                                    references.append(ref)
-
-        return {
-            "content": chat_text.strip(),
-            "references": references
-        }
-
-    return search_web_with_references
 
 
 class GeneralAssistantPromptInput(BaseModel):
@@ -103,10 +52,12 @@ class GeneralAssistantPrompt(Prompt[GeneralAssistantPromptInput]):
     Guidelines:
 
     1. Use the web search tool when the user asks for factual information, research, or current events.
-    2. Use the image generation tool when the user asks to create, generate, draw, or produce images 1024x1024.
-    3. Always select the most appropriate tool based on the user’s request.
-    4. If the user asks explicity for a picture, use only the image generation tool.
-    5. Do not output images in chat. The image will be displayed in the UI.
+    2. Use the image generation tool when the user asks to create, generate, draw, or produce images.
+    3. The image generation tool generates images in 512x512 resolution.
+    4. Return the image as a base64 encoded string in the response.
+    5. Always select the most appropriate tool based on the user’s request.
+    6. If the user asks explicity for a picture, use only the image generation tool.
+    7. Do not output images in chat. The image will be displayed in the UI.
     """
 
     user_prompt = """
@@ -121,7 +72,7 @@ class MyChat(ChatInterface):
         self.model_name = "gpt-4o-2024-08-06"
         self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
         self.agent = Agent(llm=self.llm, prompt=GeneralAssistantPrompt, tools=[
-            get_web_search_tool_with_references(self.model_name),
+            get_web_search_tool(self.model_name),
             get_image_generation_tool(self.model_name),
         ])
 
@@ -149,7 +100,6 @@ class MyChat(ChatInterface):
         stream = self.agent.run_streaming(GeneralAssistantPromptInput(query=message))
 
         async for response in stream:
-            print(response)
             match response:
                 case str():
                     # Regular text content from the LLM
@@ -159,7 +109,7 @@ class MyChat(ChatInterface):
                 case ToolCall():
                     # Tool is starting to execute
                     tool_display_name = {
-                        "search_web_with_references": "🔍 Web Search",
+                        "search_web": "🔍 Web Search",
                         "image_generation": "🎨 Image Generator"
                     }.get(response.name, response.name)
 
@@ -173,7 +123,7 @@ class MyChat(ChatInterface):
                 case ToolCallResult():
                     # Tool has finished executing
                     tool_display_name = {
-                        "search_web_with_references": "🔍 Web Search",
+                        "search_web": "🔍 Web Search",
                         "image_generation": "🎨 Image Generator"
                     }.get(response.name, response.name)
 
@@ -183,51 +133,26 @@ class MyChat(ChatInterface):
                         f"{tool_display_name} completed",
                     )
 
-                    if response.name == "search_web_with_references":
-                        result_content = response.result
+                    if response.name == "search_web":
+                        # Extract URL citations from the response
+                        for item in response.result.output:
+                            if item.type == "message":
+                                for content in item.content:
+                                    for annotation in content.annotations:
+                                        if annotation.type == "url_citation" and annotation.title and annotation.url:
+                                            yield self.create_reference(
+                                                title=annotation.title,
+                                                url=annotation.url,
+                                                content=""
+                                            )
 
-                        for reference in result_content["references"]:
-                            yield self.create_reference(
-                                title=reference["title"],
-                                url=reference["url"],
-                                content=reference["content"]
-                            )
-
-                    # Handle different tool results
                     if response.name == "image_generation":
-                        result_content = response.result
+                        if response.result["image_path"]:
+                            with open(response.result["image_path"], "rb") as image_file:
+                                image_filename = response.result["image_path"].name
+                                base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+                                yield self.create_image_response(
+                                    image_filename,
+                                    f"data:image/png;base64,{base64_image}"
+                                )
 
-                        if isinstance(result_content, str):
-                            # Look for image path in the result
-                            image_path = response.arguments.get("save_path")
-
-                            # Fallback to default if no path is provided
-                            if not image_path:
-                                image_path = "generated_image.png"
-
-                            if image_path and os.path.exists(image_path):
-                                try:
-                                    # Generate unique filename for serving
-                                    unique_filename = f"{uuid.uuid4()}.png"
-
-                                    # You can either:
-                                    # Option A: Move to a static directory that your web server serves
-                                    static_dir = Path("packages/ragbits-chat/src/ragbits/chat/ui-build/static/images")
-                                    static_dir.mkdir(parents=True, exist_ok=True)
-                                    new_path = static_dir / unique_filename
-
-                                    import shutil
-                                    shutil.move(image_path, new_path)
-
-
-                                    # Create URL for the static file
-                                    image_url = f"/static/images/{unique_filename}"
-
-                                    yield self.create_image_response(
-                                        image_id=str(uuid.uuid4()),
-                                        image_url=image_url
-                                    )
-
-                                except Exception as e:
-                                    print(f"Error processing image: {e}")
-                                    yield self.create_text_response("Sorry, there was an error processing the generated image.")
