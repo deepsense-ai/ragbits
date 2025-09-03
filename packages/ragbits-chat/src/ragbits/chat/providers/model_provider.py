@@ -53,6 +53,7 @@ class RagbitsChatModelProvider:
                 ChatContext,
                 ChatMessageRequest,
                 ChatResponseType,
+                ChunkedContent,
                 ConfigResponse,
                 FeedbackConfig,
                 FeedbackItem,
@@ -83,6 +84,7 @@ class RagbitsChatModelProvider:
                 "MessageRole": MessageRole,
                 # Core data models
                 "ChatContext": ChatContext,
+                "ChunkedContent": ChunkedContent,
                 "LiveUpdate": LiveUpdate,
                 "LiveUpdateContent": LiveUpdateContent,
                 "Message": Message,
@@ -138,6 +140,7 @@ class RagbitsChatModelProvider:
             else [],
             "core_data": [
                 "ChatContext",
+                "ChunkedContent",
                 "LiveUpdate",
                 "LiveUpdateContent",
                 "Message",

@@ -5,7 +5,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -26,6 +26,7 @@ from ragbits.chat.interface.types import (
     ChatMessageRequest,
     ChatResponse,
     ChatResponseType,
+    ChunkedContent,
     ConfigResponse,
     FeedbackConfig,
     FeedbackItem,
@@ -38,6 +39,11 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
+
+# Chunk size for large base64 images to prevent SSE message size issues
+# Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
+# Account for JSON overhead: metadata + base64 data should fit comfortably in browser limits
+CHUNK_SIZE = 102400  # ~100KB bytes base64 chunks for ultra-safe JSON parsing and SSE transmission
 
 
 class RagbitsAPI:
@@ -530,6 +536,7 @@ class RagbitsAPI:
         """
         Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
         Each response is converted to JSON and wrapped in the SSE 'data:' prefix.
+        Automatically chunks large base64 images to prevent SSE message size issues.
 
         Args:
             responses: The chat response generator
@@ -546,6 +553,20 @@ class RagbitsAPI:
                         key: model.model_dump() if isinstance(model, BaseModel) else model
                         for key, model in response.content.items()
                     }
+
+                # Auto-chunk large images using ChunkedContent model
+                if (response.type == ChatResponseType.IMAGE and
+                    response.content.url.startswith('data:')):
+
+                    # Auto-chunk the image
+                    async for chunk_response in RagbitsAPI._create_chunked_responses(ChatResponseType.IMAGE, response):
+                        yield f"data: {json.dumps(chunk_response)}\n\n"
+
+                    continue  # Skip normal processing for chunked images
+
+                # Normal processing for:
+                # - Non-image responses
+                # - Regular URL images (https://..., http://..., /path/to/image.jpg)
                 data = json.dumps(
                     {
                         "type": response.type.value,
@@ -570,6 +591,31 @@ class RagbitsAPI:
                 metric_type=MetricType.COUNTER,
                 endpoint="/api/chat",
             )
+
+    @staticmethod
+    async def _create_chunked_responses(
+        type: Literal[ChatResponseType.IMAGE], base64_response: ChatResponse
+    ) -> AsyncGenerator[dict, None]:
+        """Create chunked responses from a base64 response."""
+        image_content = base64_response.content
+        mime_type, base64_data = image_content.url.split(',', 1)
+
+        chunks = [base64_data[i:i+CHUNK_SIZE] for i in range(0, len(base64_data), CHUNK_SIZE)]
+
+        for i, chunk in enumerate(chunks):
+            chunked_content = ChunkedContent(
+                id=image_content.id,
+                content_type=type.value,
+                chunk_index=i,
+                total_chunks=len(chunks),
+                mime_type=mime_type,
+                data=chunk
+            )
+
+            yield {
+                "type": ChatResponseType.CHUNKED_CONTENT.value,
+                "content": chunked_content.model_dump()
+            }
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

@@ -20,17 +20,17 @@ To run the script, execute the following command:
 # ///
 #
 
-from collections.abc import AsyncGenerator
 import base64
+from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel
 
-from ragbits.agents.tools.openai import get_web_search_tool, get_image_generation_tool
+from ragbits.agents import Agent, ToolCallResult
+from ragbits.agents.tools.openai import get_image_generation_tool, get_web_search_tool
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
-from ragbits.core.prompt import Prompt
-from ragbits.agents import Agent, ToolCallResult
 from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.prompt import Prompt
 
 
 class GeneralAssistantPromptInput(BaseModel):
@@ -47,7 +47,8 @@ class GeneralAssistantPrompt(Prompt[GeneralAssistantPromptInput]):
     """
 
     system_prompt = """
-    You are a helpful assistant that is expert in mountain hiking and answers user questions. You have access to the following tools: web search and image generation.
+    You are a helpful assistant that is expert in mountain hiking and answers user questions.
+    You have access to the following tools: web search and image generation.
 
     Guidelines:
 
@@ -96,7 +97,6 @@ class MyChat(ChatInterface):
             - Image responses with base64 data URLs
             - Live updates for tool execution status
         """
-
         stream = self.agent.run_streaming(GeneralAssistantPromptInput(query=message))
 
         async for response in stream:
@@ -117,7 +117,7 @@ class MyChat(ChatInterface):
                         response.id,
                         LiveUpdateType.START,
                         f"Using {tool_display_name}",
-                        f"Processing your request..."
+                        "Processing your request..."
                     )
 
                 case ToolCallResult():
@@ -146,12 +146,11 @@ class MyChat(ChatInterface):
                                                 content=""
                                             )
 
-                    if response.name == "image_generation":
-                        if response.result["image_path"]:
-                            with open(response.result["image_path"], "rb") as image_file:
-                                image_filename = response.result["image_path"].name
-                                base64_image = base64.b64encode(image_file.read()).decode("utf-8")
-                                yield self.create_image_response(
+                    if response.name == "image_generation" and response.result["image_path"]:
+                        with open(response.result["image_path"], "rb") as image_file:
+                            image_filename = response.result["image_path"].name
+                            base64_image = base64.b64encode(image_file.read()).decode("utf-8")
+                            yield self.create_image_response(
                                     image_filename,
                                     f"data:image/png;base64,{base64_image}"
                                 )

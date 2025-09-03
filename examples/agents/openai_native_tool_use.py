@@ -19,7 +19,6 @@ To run the script, execute the following command:
 # ]
 # ///
 import asyncio
-import os
 
 from pydantic import BaseModel
 

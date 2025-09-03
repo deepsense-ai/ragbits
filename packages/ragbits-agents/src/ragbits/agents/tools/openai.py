@@ -1,11 +1,12 @@
-from collections.abc import Callable
 import base64
 import uuid
+from collections.abc import Callable
 from typing import cast
 
 from openai import AsyncOpenAI
 from openai.types.responses import Response
 from openai.types.responses.tool_param import CodeInterpreter, ToolParam
+
 from ragbits.core.sources.base import get_local_storage_dir
 
 
