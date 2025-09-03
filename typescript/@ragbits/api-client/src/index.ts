@@ -15,7 +15,7 @@ import type {
  */
 export class RagbitsClient {
     private readonly baseUrl: string
-    private imageChunks: Map<
+    private chunkQueue: Map<
         string,
         {
             chunks: Map<number, string>
@@ -257,18 +257,19 @@ export class RagbitsClient {
     ): Promise<void> {
         const response = data as ChunkedChatResponse
         const content = response.content
-        const contentType = content.content_type
-        const id = content.id
-        const chunkIndex = content.chunk_index
-        const totalChunks = content.total_chunks
-        const mimeType = content.mime_type
 
-        // The chunk data is now in the _data field
-        const chunkData = content.data
+        const {
+            content_type: contentType,
+            id,
+            chunk_index: chunkIndex,
+            total_chunks: totalChunks,
+            mime_type: mimeType,
+            data: chunkData,
+        } = content
 
         // Initialize chunk storage if needed
-        if (!this.imageChunks.has(id)) {
-            this.imageChunks.set(id, {
+        if (!this.chunkQueue.has(id)) {
+            this.chunkQueue.set(id, {
                 chunks: new Map(),
                 totalChunks,
                 mimeType,
@@ -276,43 +277,45 @@ export class RagbitsClient {
         }
 
         // Store the chunk
-        const imageInfo = this.imageChunks.get(id)!
+        const imageInfo = this.chunkQueue.get(id)!
         imageInfo.chunks.set(chunkIndex, chunkData)
 
         // Check if all chunks are received
-        if (imageInfo.chunks.size === totalChunks) {
-            // Reconstruct the complete data
-            const sortedChunks = Array.from({ length: totalChunks }, (_, i) =>
-                imageInfo.chunks.get(i)
-            )
+        if (imageInfo.chunks.size !== totalChunks) return
 
-            const completeBase64 = sortedChunks.join('')
+        // Reconstruct the complete data
+        const sortedChunks = Array.from({ length: totalChunks }, (_, i) =>
+            imageInfo.chunks.get(i)
+        )
 
-            // Validate the base64 data
-            try {
-                atob(completeBase64)
-            } catch (e) {
-                this.imageChunks.delete(id)
-                console.error('❌ Invalid base64 data: ', e)
-                await callbacks.onError(new Error('Error reading stream'))
-            }
+        const completeBase64 = sortedChunks.join('')
 
-            if (contentType === ChatResponseType.Image) {
-                // Create the complete image response
-                const completeImageResponse: {
-                    type: typeof ChatResponseType.Image
-                    content: Image
-                } = {
-                    type: ChatResponseType.Image,
-                    content: {
-                        id: id,
-                        url: `${imageInfo.mimeType},${completeBase64}`,
-                    },
-                }
-                // Send the complete image
-                await callbacks.onMessage(completeImageResponse as T)
-            }
+        // Validate the base64 data
+        try {
+            atob(completeBase64)
+        } catch (e) {
+            this.chunkQueue.delete(id)
+            console.error('❌ Invalid base64 data: ', e)
+            await callbacks.onError(new Error('Error reading stream'))
         }
+
+        if (contentType === ChatResponseType.Image) {
+            // Create the complete image response
+            const completeImageResponse: {
+                type: typeof ChatResponseType.Image
+                content: Image
+            } = {
+                type: ChatResponseType.Image,
+                content: {
+                    id: id,
+                    url: `${imageInfo.mimeType},${completeBase64}`,
+                },
+            }
+            // Send the complete image
+            await callbacks.onMessage(completeImageResponse as T)
+        }
+
+        this.chunkQueue.delete(id)
     }
 }
 

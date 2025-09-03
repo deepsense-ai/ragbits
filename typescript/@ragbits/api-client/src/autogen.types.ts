@@ -4,9 +4,9 @@
  * DO NOT EDIT MANUALLY
  */
 
-import type { RJSFSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils'
 
-export type TypeFrom<T> = T[keyof T];
+export type TypeFrom<T> = T[keyof T]
 
 /**
  * Represents the ChatResponseType enum
@@ -23,9 +23,9 @@ export const ChatResponseType = {
     ChunkedContent: 'chunked_content',
     ClearMessage: 'clear_message',
     Usage: 'usage',
-} as const;
+} as const
 
-export type ChatResponseType = TypeFrom<typeof ChatResponseType>;
+export type ChatResponseType = TypeFrom<typeof ChatResponseType>
 
 /**
  * Represents the FeedbackType enum
@@ -33,9 +33,9 @@ export type ChatResponseType = TypeFrom<typeof ChatResponseType>;
 export const FeedbackType = {
     Like: 'like',
     Dislike: 'dislike',
-} as const;
+} as const
 
-export type FeedbackType = TypeFrom<typeof FeedbackType>;
+export type FeedbackType = TypeFrom<typeof FeedbackType>
 
 /**
  * Represents the LiveUpdateType enum
@@ -43,9 +43,9 @@ export type FeedbackType = TypeFrom<typeof FeedbackType>;
 export const LiveUpdateType = {
     Start: 'START',
     Finish: 'FINISH',
-} as const;
+} as const
 
-export type LiveUpdateType = TypeFrom<typeof LiveUpdateType>;
+export type LiveUpdateType = TypeFrom<typeof LiveUpdateType>
 
 /**
  * Represents the MessageRole enum
@@ -54,361 +54,361 @@ export const MessageRole = {
     User: 'user',
     Assistant: 'assistant',
     System: 'system',
-} as const;
+} as const
 
-export type MessageRole = TypeFrom<typeof MessageRole>;
+export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
  * Represents the AuthType enum
  */
 export const AuthType = {
     Credentials: 'credentials',
-} as const;
+} as const
 
-export type AuthType = TypeFrom<typeof AuthType>;
+export type AuthType = TypeFrom<typeof AuthType>
 
 /**
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
-  conversation_id: string | null;
-  message_id: string | null;
-  state: {
-    [k: string]: unknown;
-  };
-  session_id: string | null;
-  [k: string]: unknown;
+    conversation_id: string | null
+    message_id: string | null
+    state: {
+        [k: string]: unknown
+    }
+    session_id: string | null
+    [k: string]: unknown
 }
 
 /**
  * Represents a chunk of large content being transmitted.
  */
 export interface ChunkedContent {
-  id: string;
-  content_type: string;
-  chunk_index: number;
-  total_chunks: number;
-  mime_type: string;
-  data: string;
+    id: string
+    content_type: string
+    chunk_index: number
+    total_chunks: number
+    mime_type: string
+    data: string
 }
 
 /**
  * Represents an live update performed by an agent.
  */
 export interface LiveUpdate {
-  update_id: string;
-  type: LiveUpdateType;
-  content: LiveUpdateContent;
+    update_id: string
+    type: LiveUpdateType
+    content: LiveUpdateContent
 }
 
 /**
  * Represents content of a live update.
  */
 export interface LiveUpdateContent {
-  label: string;
-  description: string | null;
+    label: string
+    description: string | null
 }
 
 /**
  * Represents a single message in the conversation history.
  */
 export interface Message {
-  role: MessageRole;
-  content: string;
+    role: MessageRole
+    content: string
 }
 
 /**
  * Represents a document used as reference for the response.
  */
 export interface Reference {
-  title: string;
-  content: string;
-  url: string | null;
+    title: string
+    content: string
+    url: string | null
 }
 
 /**
  * Represents an update to conversation state.
  */
 export interface ServerState {
-  state: {
-    [k: string]: unknown;
-  };
-  signature: string;
+    state: {
+        [k: string]: unknown
+    }
+    signature: string
 }
 
 /**
  * Individual feedback configuration (like/dislike).
  */
 export interface FeedbackItem {
-  /**
-   * Whether this feedback type is enabled
-   */
-  enabled: boolean;
-  /**
-   * Form schema for this feedback type
-   */
-  form: RJSFSchema | null;
+    /**
+     * Whether this feedback type is enabled
+     */
+    enabled: boolean
+    /**
+     * Form schema for this feedback type
+     */
+    form: RJSFSchema | null
 }
 
 /**
  * Represents an image in the conversation.
  */
 export interface Image {
-  id: string;
-  url: string;
+    id: string
+    url: string
 }
 
 /**
  * Represents usage for a message. Reflects `Usage` computed properties.
  */
 export interface MessageUsage {
-  n_requests: number;
-  estimated_cost: number;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
+    n_requests: number
+    estimated_cost: number
+    prompt_tokens: number
+    completion_tokens: number
+    total_tokens: number
 }
 
 /**
  * Customization for the header section of the UI.
  */
 export interface HeaderCustomization {
-  /**
-   * Custom title to be displayed instead of 'Ragbits Chat'
-   */
-  title: string | null;
-  /**
-   * Custom subtitle to be displayed instead of 'by deepsense.ai'
-   */
-  subtitle: string | null;
-  /**
-   * Custom logo URL or content. The logo can also be served from 'static' directory inside 'ui-buid'
-   */
-  logo: string | null;
+    /**
+     * Custom title to be displayed instead of 'Ragbits Chat'
+     */
+    title: string | null
+    /**
+     * Custom subtitle to be displayed instead of 'by deepsense.ai'
+     */
+    subtitle: string | null
+    /**
+     * Custom logo URL or content. The logo can also be served from 'static' directory inside 'ui-buid'
+     */
+    logo: string | null
 }
 
 /**
  * Customization for the UI.
  */
 export interface UICustomization {
-  /**
-   * Custom header configuration
-   */
-  header: HeaderCustomization | null;
-  /**
-   * Custom welcome message to be displayed on the UI. It supports Markdown.
-   */
-  welcome_message: string | null;
-  /**
-   * Custom meta properties customization
-   */
-  meta: PageMetaCustomization | null;
+    /**
+     * Custom header configuration
+     */
+    header: HeaderCustomization | null
+    /**
+     * Custom welcome message to be displayed on the UI. It supports Markdown.
+     */
+    welcome_message: string | null
+    /**
+     * Custom meta properties customization
+     */
+    meta: PageMetaCustomization | null
 }
 
 /**
  * Customization for the meta properites of the UI
  */
 export interface PageMetaCustomization {
-  /**
-   * Custom favicon URL or content. If `None` logo is used.The favicon can also be serverd from 'static' directory inside 'ui-build'
-   */
-  favicon: string | null;
-  /**
-   * Custom title for the page displayed in the browser's bar. If `None` header title is used.
-   */
-  page_title: string | null;
+    /**
+     * Custom favicon URL or content. If `None` logo is used.The favicon can also be serverd from 'static' directory inside 'ui-build'
+     */
+    favicon: string | null
+    /**
+     * Custom title for the page displayed in the browser's bar. If `None` header title is used.
+     */
+    page_title: string | null
 }
 
 /**
  * Configuration for chat options.
  */
 export interface UserSettings {
-  /**
-   * The form to use for chat options. Use Pydantic models to define form objects, that would get converted to JSONSchema and rendered in the UI.
-   */
-  form: RJSFSchema | null;
+    /**
+     * The form to use for chat options. Use Pydantic models to define form objects, that would get converted to JSONSchema and rendered in the UI.
+     */
+    form: RJSFSchema | null
 }
 
 /**
  * Feedback configuration containing like and dislike settings.
  */
 export interface FeedbackConfig {
-  like: FeedbackItem;
-  dislike: FeedbackItem;
+    like: FeedbackItem
+    dislike: FeedbackItem
 }
 
 /**
  * Configuration response from the API.
  */
 export interface ConfigResponse {
-  feedback: FeedbackConfig;
-  /**
-   * UI customization
-   */
-  customization: UICustomization | null;
-  user_settings: UserSettings;
-  /**
-   * Debug mode flag
-   */
-  debug_mode: boolean;
-  /**
-   * Flag to enable conversation history
-   */
-  conversation_history: boolean;
-  /**
-   * Flag to enable usage statistics
-   */
-  show_usage: boolean;
-  authentication: AuthenticationConfig;
+    feedback: FeedbackConfig
+    /**
+     * UI customization
+     */
+    customization: UICustomization | null
+    user_settings: UserSettings
+    /**
+     * Debug mode flag
+     */
+    debug_mode: boolean
+    /**
+     * Flag to enable conversation history
+     */
+    conversation_history: boolean
+    /**
+     * Flag to enable usage statistics
+     */
+    show_usage: boolean
+    authentication: AuthenticationConfig
 }
 
 /**
  * Response from feedback submission.
  */
 export interface FeedbackResponse {
-  /**
-   * Status of the feedback submission
-   */
-  status: string;
+    /**
+     * Status of the feedback submission
+     */
+    status: string
 }
 
 /**
  * Client-side chat request interface.
  */
 export interface ChatRequest {
-  /**
-   * The current user message
-   */
-  message: string;
-  /**
-   * Previous message history
-   */
-  history: Message[];
-  /**
-   * User context information
-   */
-  context: {
-    [k: string]: unknown;
-  };
+    /**
+     * The current user message
+     */
+    message: string
+    /**
+     * Previous message history
+     */
+    history: Message[]
+    /**
+     * User context information
+     */
+    context: {
+        [k: string]: unknown
+    }
 }
 
 /**
  * Request body for feedback submission
  */
 export interface FeedbackRequest {
-  /**
-   * ID of the message receiving feedback
-   */
-  message_id: string;
-  /**
-   * Type of feedback (like or dislike)
-   */
-  feedback: "like" | "dislike";
-  /**
-   * Additional feedback details
-   */
-  payload: {
-    [k: string]: unknown;
-  };
+    /**
+     * ID of the message receiving feedback
+     */
+    message_id: string
+    /**
+     * Type of feedback (like or dislike)
+     */
+    feedback: 'like' | 'dislike'
+    /**
+     * Additional feedback details
+     */
+    payload: {
+        [k: string]: unknown
+    }
 }
 
 /**
  * Configuration for authentication.
  */
 export interface AuthenticationConfig {
-  /**
-   * Enable/disable authentication
-   */
-  enabled: boolean;
-  /**
-   * List of available authentication types
-   */
-  auth_types: AuthType[];
+    /**
+     * Enable/disable authentication
+     */
+    enabled: boolean
+    /**
+     * List of available authentication types
+     */
+    auth_types: AuthType[]
 }
 
 /**
  * Request body for user login
  */
 export interface CredentialsLoginRequest {
-  /**
-   * Username
-   */
-  username: string;
-  /**
-   * Password
-   */
-  password: string;
+    /**
+     * Username
+     */
+    username: string
+    /**
+     * Password
+     */
+    password: string
 }
 
 /**
  * Represents a JWT authentication jwt_token.
  */
 export interface JWTToken {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  refresh_token: string | null;
-  user: User;
+    access_token: string
+    token_type: string
+    expires_in: number
+    refresh_token: string | null
+    user: User
 }
 
 /**
  * Request body for user login
  */
 export interface LoginRequest {
-  /**
-   * Username
-   */
-  username: string;
-  /**
-   * Password
-   */
-  password: string;
+    /**
+     * Username
+     */
+    username: string
+    /**
+     * Password
+     */
+    password: string
 }
 
 /**
  * Response body for successful login
  */
 export interface LoginResponse {
-  /**
-   * Whether login was successful
-   */
-  success: boolean;
-  /**
-   * User information
-   */
-  user: User | null;
-  /**
-   * Error message if login failed
-   */
-  error_message: string | null;
-  /**
-   * Access jwt_token
-   */
-  jwt_token: JWTToken | null;
+    /**
+     * Whether login was successful
+     */
+    success: boolean
+    /**
+     * User information
+     */
+    user: User | null
+    /**
+     * Error message if login failed
+     */
+    error_message: string | null
+    /**
+     * Access jwt_token
+     */
+    jwt_token: JWTToken | null
 }
 
 /**
  * Request body for user logout
  */
 export interface LogoutRequest {
-  /**
-   * Session ID to logout
-   */
-  token: string;
+    /**
+     * Session ID to logout
+     */
+    token: string
 }
 
 /**
  * Represents an authenticated user.
  */
 export interface User {
-  user_id: string;
-  username: string;
-  email: string | null;
-  full_name: string | null;
-  roles: string[];
-  metadata: {
-    [k: string]: unknown;
-  };
+    user_id: string
+    username: string
+    email: string | null
+    full_name: string | null
+    roles: string[]
+    metadata: {
+        [k: string]: unknown
+    }
 }
 
 /**
