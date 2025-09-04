@@ -20,6 +20,7 @@ export const ChatResponseType = {
     LiveUpdate: 'live_update',
     FollowupMessages: 'followup_messages',
     Image: 'image',
+    ChunkedContent: 'chunked_content',
     ClearMessage: 'clear_message',
     Usage: 'usage',
 } as const
@@ -77,6 +78,18 @@ export interface ChatContext {
     }
     session_id: string | null
     [k: string]: unknown
+}
+
+/**
+ * Represents a chunk of large content being transmitted.
+ */
+export interface ChunkedContent {
+    id: string
+    content_type: string
+    chunk_index: number
+    total_chunks: number
+    mime_type: string
+    data: string
 }
 
 /**
@@ -449,6 +462,11 @@ interface ClearMessageResponse {
 interface MessageUsageChatResponse {
     type: 'usage'
     content: Record<string, MessageUsage>
+}
+
+export interface ChunkedChatResponse {
+    type: 'chunked_content'
+    content: ChunkedContent
 }
 
 /**

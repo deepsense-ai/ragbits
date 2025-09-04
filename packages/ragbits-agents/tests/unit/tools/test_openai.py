@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from ragbits.agents.tools.openai import OpenAITools
+from ragbits.agents.tools.types import ImageGenerationResponse
 
 
 @pytest.fixture
@@ -20,13 +21,13 @@ async def test_search_web(mock_async_openai: MagicMock, mock_responses_llm: Magi
     mock_response = MagicMock()
     mock_response.output_text = "Test output"
     mock_responses_llm.use_tool.return_value = mock_response
-    tools = OpenAITools("test_model", tool_param=MagicMock())
+    tools = OpenAITools("test_model", None, tool_param=MagicMock())
     tools._responses_llm = mock_responses_llm
 
     result = await tools.search_web("test query")
 
     mock_responses_llm.use_tool.assert_called_once_with("test query")
-    assert result == "Test output"
+    assert result == mock_response
 
 
 @patch("ragbits.agents.tools.openai.AsyncOpenAI")
@@ -35,13 +36,13 @@ async def test_code_interpreter(mock_async_openai: MagicMock, mock_responses_llm
     mock_response = MagicMock()
     mock_response.output_text = "Interpreter output"
     mock_responses_llm.use_tool.return_value = mock_response
-    tools = OpenAITools("test_model", tool_param=MagicMock())
+    tools = OpenAITools("test_model", None, tool_param=MagicMock())
     tools._responses_llm = mock_responses_llm
 
     result = await tools.code_interpreter("run code")
 
     mock_responses_llm.use_tool.assert_called_once_with("run code")
-    assert result == "Interpreter output"
+    assert result == mock_response
 
 
 @patch("ragbits.agents.tools.openai.AsyncOpenAI")
@@ -64,7 +65,7 @@ async def test_image_generation(
     mock_open.return_value.__enter__.return_value = mock_file_handle
 
     mock_responses_llm.use_tool.return_value = mock_response
-    tools = OpenAITools("test_model", tool_param=MagicMock())
+    tools = OpenAITools("test_model", None, tool_param=MagicMock())
     tools._responses_llm = mock_responses_llm
 
     result = await tools.image_generation("a cat", save_path="cat.png")
@@ -72,7 +73,9 @@ async def test_image_generation(
     mock_responses_llm.use_tool.assert_called_once_with("a cat")
     mock_open.assert_called_once_with("cat.png", "wb")
     mock_file_handle.write.assert_called_once_with(b"test_image_content")
-    assert result == "Image saved to cat.png\nGenerated image."
+
+    expected_result = ImageGenerationResponse(image_path="cat.png", output_text="Generated image.")
+    assert result == expected_result
 
 
 @patch("ragbits.agents.tools.openai.AsyncOpenAI")
@@ -87,9 +90,9 @@ async def test_image_generation_no_image(mock_async_openai: MagicMock, mock_resp
     mock_response.output = [mock_output_item]
 
     mock_responses_llm.use_tool.return_value = mock_response
-    tools = OpenAITools("test_model", tool_param=MagicMock())
+    tools = OpenAITools("test_model", None, tool_param=MagicMock())
     tools._responses_llm = mock_responses_llm
 
     result = await tools.image_generation("a dog")
-
-    assert result == "No generated image was returned\nNo image was generated."
+    expected_result = ImageGenerationResponse(image_path=None, output_text="No image was generated.")
+    assert result == expected_result
