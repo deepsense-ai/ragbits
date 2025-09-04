@@ -11,7 +11,7 @@ import { FeedbackType } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
-import { FormTheme, useTransformErrors } from "../../../core/forms";
+import { FormTheme, transformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 import { ChatMessage } from "../../../types/history";
@@ -81,8 +81,6 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
 
     onOpen();
   };
-
-  const transformErrors = useTransformErrors();
 
   if (!schema) {
     return null;
