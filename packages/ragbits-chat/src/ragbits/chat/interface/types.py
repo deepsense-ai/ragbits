@@ -67,6 +67,17 @@ class Image(BaseModel):
     url: str
 
 
+class ChunkedContent(BaseModel):
+    """Represents a chunk of large content being transmitted."""
+
+    id: str
+    content_type: str
+    chunk_index: int
+    total_chunks: int
+    mime_type: str
+    data: str
+
+
 class MessageUsage(BaseModel):
     """Represents usage for a message. Reflects `Usage` computed properties."""
 
@@ -107,6 +118,7 @@ class ChatResponseType(str, Enum):
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
     IMAGE = "image"
+    CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
 
@@ -125,7 +137,9 @@ class ChatResponse(BaseModel):
     """Container for different types of chat responses."""
 
     type: ChatResponseType
-    content: str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage] | None
+    content: (
+        str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage] | ChunkedContent | None
+    )
 
     def as_text(self) -> str | None:
         """
