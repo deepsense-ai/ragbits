@@ -45,6 +45,9 @@ mcp = [
 openai = [
     "openai>=1.91.0,<2.0.0",
 ]
+cli = [
+    "textual>=0.85.2,<1.0.0",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"

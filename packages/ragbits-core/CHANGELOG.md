@@ -28,6 +28,7 @@
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
+- Added Google Drive support for impersonation and presentation-to-pdf (#724)
 - Introduce new API for attachments in prompts (#711)
 - Fix issue with trying to store duplicated entries in Vector Stores (#762)
 
