@@ -115,7 +115,7 @@ export default function ChatHistory() {
             {Object.entries(conversations)
               .reverse()
               .map(([conversationKey, conversation]) => {
-                if (isTemporaryConversation(conversation)) {
+                if (isTemporaryConversation(conversation.conversationId)) {
                   return null;
                 }
 

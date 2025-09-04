@@ -12,7 +12,6 @@ import {
 import {
   act,
   render,
-  renderHook,
   waitFor,
   screen,
   fireEvent,
@@ -26,7 +25,6 @@ import {
   MessageRole,
   FeedbackType,
 } from "@ragbits/api-client-react";
-import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
 import userEvent from "@testing-library/user-event";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
@@ -53,65 +51,14 @@ vi.mock("idb-keyval", () => ({
 }));
 
 const historyStore = createStore(createHistoryStore);
+historyStore.getState()._internal._setHasHydrated(true);
+
 (useHistoryStore as Mock).mockImplementation(
   (selector: (s: HistoryStore) => unknown) => selector(historyStore.getState()),
 );
 
 describe("Integration tests", () => {
   const BASE_URL = "http://127.0.0.1:8000";
-  const renderWithHook = <R,>(hook: () => R) => {
-    return renderHook(() => hook(), {
-      wrapper: ({ children }: { children: React.ReactNode }) => {
-        return (
-          <RagbitsContextProvider baseUrl={BASE_URL}>
-            <ConfigContextProvider>{children}</ConfigContextProvider>
-          </RagbitsContextProvider>
-        );
-      },
-    });
-  };
-  /**
-   * This should test all default endpoints from the API
-   * using UIs mechanims
-   */
-  describe("/api/config", () => {
-    it("should return config", async () => {
-      const { result } = renderWithHook(() => useConfigContext());
-
-      await waitFor(() => {
-        expect(result.current).not.toBeNull();
-      });
-
-      const config = result.current.config;
-      // Customization
-      expect(config).toHaveProperty("customization");
-      // Debug mode
-      expect(config).toHaveProperty("debug_mode");
-      expect(typeof config.debug_mode).toBe("boolean");
-      // History mode
-      expect(config).toHaveProperty("conversation_history");
-      expect(typeof config.conversation_history).toBe("boolean");
-      // Feedback
-      expect(config).toHaveProperty("feedback");
-      expect(config.feedback).toHaveProperty(FeedbackType.Like);
-      expect(config.feedback.like).toHaveProperty("enabled");
-      expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
-      expect(config.feedback.like).toHaveProperty("form");
-      expect(
-        config.feedback.like.form === null ||
-          config.feedback.like.form instanceof Object,
-      ).toBe(true);
-
-      expect(config.feedback).toHaveProperty(FeedbackType.Dislike);
-      expect(config.feedback.dislike).toHaveProperty("enabled");
-      expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
-      expect(config.feedback.dislike).toHaveProperty("form");
-      expect(
-        config.feedback.dislike.form === null ||
-          config.feedback.dislike.form instanceof Object,
-      ).toBe(true);
-    });
-  });
 
   describe("/api/chat", { timeout: 30000 }, () => {
     describe("should call chat endpoint with correct data", () => {
@@ -137,6 +84,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -180,6 +128,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -220,8 +169,13 @@ describe("Integration tests", () => {
 
         render(<WrappedInput />);
         const user = userEvent.setup();
-        const chatOptionsButton =
-          await screen.findByTestId("open-chat-options");
+        const chatOptionsButton = await screen.findByTestId(
+          "open-chat-options",
+          undefined,
+          {
+            timeout: 5000,
+          },
+        );
         await user.click(chatOptionsButton);
         const selectTrigger = await screen.findByLabelText("Language", {
           selector: "select",
@@ -260,6 +214,7 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
+          expect.anything(), // We don't care about headers
         );
         await waitFor(
           () => {

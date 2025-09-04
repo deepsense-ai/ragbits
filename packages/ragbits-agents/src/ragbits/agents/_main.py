@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from contextlib import suppress
 from copy import deepcopy
@@ -6,7 +7,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import ClassVar, Generic, cast, overload
+from typing import ClassVar, Generic, TypeVar, cast, overload
 
 from pydantic import BaseModel, Field
 from typing_extensions import Self
@@ -81,11 +82,70 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     or None, agent will run forever"""
 
 
-class AgentRunContext(BaseModel):
+DepsT = TypeVar("DepsT")
+
+
+class AgentDependencies(BaseModel, Generic[DepsT]):
     """
-    Context for the agent run.
+    Container for agent runtime dependencies.
+
+    Becomes immutable after first attribute access.
     """
 
+    model_config = {"arbitrary_types_allowed": True}
+
+    _frozen: bool
+    _value: DepsT | None
+
+    def __init__(self, value: DepsT | None = None) -> None:
+        super().__init__()
+        self._value = value
+        self._frozen = False
+
+    def __setattr__(self, name: str, value: object) -> None:
+        is_frozen = False
+        if name != "_frozen":
+            try:
+                is_frozen = object.__getattribute__(self, "_frozen")
+            except AttributeError:
+                is_frozen = False
+
+        if is_frozen and name not in {"_frozen"}:
+            raise RuntimeError("Dependencies are immutable after first access")
+
+        super().__setattr__(name, value)
+
+    @property
+    def value(self) -> DepsT | None:
+        return self._value
+
+    @value.setter
+    def value(self, value: DepsT) -> None:
+        if self._frozen:
+            raise RuntimeError("Dependencies are immutable after first access")
+        self._value = value
+
+    def _freeze(self) -> None:
+        if not self._frozen:
+            self._frozen = True
+
+    def __getattr__(self, name: str) -> object:
+        value = object.__getattribute__(self, "_value")
+        if value is None:
+            raise AttributeError(name)
+        self._freeze()
+        return getattr(value, name)
+
+    def __contains__(self, key: str) -> bool:
+        value = object.__getattribute__(self, "_value")
+        return hasattr(value, key) if value is not None else False
+
+
+class AgentRunContext(BaseModel, Generic[DepsT]):
+    """Context for the agent run."""
+
+    deps: AgentDependencies[DepsT] = Field(default_factory=lambda: AgentDependencies())
+    """Container for external dependencies."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
 
@@ -185,6 +245,7 @@ class Agent(
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
+        self.id = uuid.uuid4().hex[:8]
         self.llm = llm
         self.prompt = prompt
         self.tools = [Tool.from_callable(tool) for tool in tools or []]
@@ -493,9 +554,8 @@ class Agent(
 
         return tools_mapping
 
-    @staticmethod
     async def _execute_tool(
-        tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+        self, tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
     ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
@@ -505,18 +565,28 @@ class Agent(
 
         tool = tools_mapping[tool_call.name]
 
-        try:
-            call_args = tool_call.arguments.copy()
-            if tool.context_var_name:
-                call_args[tool.context_var_name] = context
+        with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
+            try:
+                call_args = tool_call.arguments.copy()
+                if tool.context_var_name:
+                    call_args[tool.context_var_name] = context
 
-            tool_output = (
-                await tool.on_tool_call(**call_args)
-                if iscoroutinefunction(tool.on_tool_call)
-                else tool.on_tool_call(**call_args)
-            )
-        except Exception as e:
-            raise AgentToolExecutionError(tool_call.name, e) from e
+                tool_output = (
+                    await tool.on_tool_call(**call_args)
+                    if iscoroutinefunction(tool.on_tool_call)
+                    else tool.on_tool_call(**call_args)
+                )
+
+                outputs.result = {
+                    "tool_output": tool_output,
+                    "tool_call_id": tool_call.id,
+                }
+            except Exception as e:
+                outputs.result = {
+                    "error": str(e),
+                    "tool_call_id": tool_call.id,
+                }
+                raise AgentToolExecutionError(tool_call.name, e) from e
 
         return ToolCallResult(
             id=tool_call.id,

@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import time
 from collections.abc import AsyncGenerator, Callable, Iterable
 from typing import Any, Literal
@@ -102,6 +103,22 @@ class LiteLLM(LLM[LiteLLMOptions]):
         self.custom_model_cost_config = custom_model_cost_config
         if custom_model_cost_config:
             litellm.register_model(custom_model_cost_config)
+        else:
+
+            def download_and_register_model_cost() -> None:
+                # Suppress debug info to prevent "Provider List" messages during registration
+                original_suppress_debug = litellm.suppress_debug_info
+                litellm.suppress_debug_info = True
+                try:
+                    litellm.register_model(
+                        model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
+                    )
+                finally:
+                    # Restore original setting
+                    litellm.suppress_debug_info = original_suppress_debug
+
+            thread = threading.Thread(target=download_and_register_model_cost, daemon=True)
+            thread.start()
 
     def get_model_id(self) -> str:
         """

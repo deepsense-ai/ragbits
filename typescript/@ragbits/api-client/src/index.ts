@@ -130,7 +130,8 @@ export class RagbitsClient {
         endpoint: URL,
         data: EndpointRequest<URL, Endpoints>,
         callbacks: StreamCallbacks<EndpointResponse<URL, Endpoints>>,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        customHeaders?: Record<string, string>
     ): () => void {
         let isCancelled = false
 
@@ -188,6 +189,7 @@ export class RagbitsClient {
                         headers: {
                             'Content-Type': 'application/json',
                             Accept: 'text/event-stream',
+                            ...customHeaders,
                         },
                         body: JSON.stringify(data),
                         signal,

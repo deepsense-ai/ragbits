@@ -5,6 +5,7 @@ import {
   Reference,
   ServerState,
   Image,
+  MessageUsage,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -21,6 +22,7 @@ export interface ChatMessage {
   liveUpdates?: Record<string, LiveUpdate["content"]>;
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
+  usage?: Record<string, MessageUsage>;
 }
 
 export interface Conversation {
@@ -46,7 +48,7 @@ export interface HistoryStore {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
-    sendMessage: (text: string) => void;
+    sendMessage: (text: string, accessToken?: string) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
      * overwrite previous ones.
@@ -77,8 +79,10 @@ export interface HistoryStore {
   };
 
   _internal: {
+    _hasHydrated: boolean;
+    _setHasHydrated: (state: boolean) => void;
     handleResponse: (
-      conversationId: string,
+      conversationIdRef: { current: string },
       messageId: string,
       response: ChatResponse,
     ) => void;

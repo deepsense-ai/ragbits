@@ -10,6 +10,8 @@ from typing import cast
 
 from pydantic import BaseModel
 
+from ragbits.chat.interface.types import AuthType
+
 
 class RagbitsChatModelProvider:
     """
@@ -37,8 +39,17 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         try:
+            from ragbits.chat.auth.types import (
+                CredentialsLoginRequest,
+                JWTToken,
+                LoginRequest,
+                LoginResponse,
+                LogoutRequest,
+                User,
+            )
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
+                AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
                 ChatResponseType,
@@ -54,6 +65,7 @@ class RagbitsChatModelProvider:
                 LiveUpdateType,
                 Message,
                 MessageRole,
+                MessageUsage,
                 Reference,
                 StateUpdate,
             )
@@ -78,6 +90,7 @@ class RagbitsChatModelProvider:
                 "ServerState": StateUpdate,
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
+                "MessageUsage": MessageUsage,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -90,6 +103,15 @@ class RagbitsChatModelProvider:
                 # API request models
                 "ChatRequest": ChatMessageRequest,
                 "FeedbackRequest": FeedbackRequest,
+                # Auth
+                "AuthType": AuthType,
+                "AuthenticationConfig": AuthenticationConfig,
+                "CredentialsLoginRequest": CredentialsLoginRequest,
+                "JWTToken": JWTToken,
+                "LoginRequest": LoginRequest,
+                "LoginResponse": LoginResponse,
+                "LogoutRequest": LogoutRequest,
+                "User": User,
             }
 
             return self._models_cache
@@ -111,7 +133,9 @@ class RagbitsChatModelProvider:
             return self._categories_cache
 
         self._categories_cache = {
-            "enums": ["ChatResponseType", "FeedbackType", "LiveUpdateType", "MessageRole"],
+            "enums": [model_name for model_name, model in self._models_cache.items() if issubclass(model, Enum)]
+            if self._models_cache
+            else [],
             "core_data": [
                 "ChatContext",
                 "LiveUpdate",
@@ -121,10 +145,29 @@ class RagbitsChatModelProvider:
                 "ServerState",
                 "FeedbackItem",
                 "Image",
+                "JWTToken",
+                "User",
+                "MessageUsage",
             ],
-            "configuration": ["HeaderCustomization", "UICustomization", "UserSettings", "FeedbackConfig"],
-            "responses": ["FeedbackResponse", "ConfigResponse"],
-            "requests": ["ChatRequest", "FeedbackRequest"],
+            "configuration": [
+                "HeaderCustomization",
+                "UICustomization",
+                "UserSettings",
+                "FeedbackConfig",
+                "AuthenticationConfig",
+            ],
+            "responses": [
+                "FeedbackResponse",
+                "ConfigResponse",
+                "LoginResponse",
+            ],
+            "requests": [
+                "ChatRequest",
+                "FeedbackRequest",
+                "CredentialsLoginRequest",
+                "LoginRequest",
+                "LogoutRequest",
+            ],
         }
 
         return self._categories_cache
