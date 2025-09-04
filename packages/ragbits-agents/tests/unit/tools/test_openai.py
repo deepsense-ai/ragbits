@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from ragbits.agents.tools.openai import OpenAITools
+from ragbits.agents.tools.types import ImageGenerationResponse
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ async def test_image_generation(
     mock_open.assert_called_once_with("cat.png", "wb")
     mock_file_handle.write.assert_called_once_with(b"test_image_content")
 
-    expected_result = {"image_path": "cat.png", "output_text": "Generated image."}
+    expected_result = ImageGenerationResponse(image_path="cat.png", output_text="Generated image.")
     assert result == expected_result
 
 
@@ -93,5 +94,5 @@ async def test_image_generation_no_image(mock_async_openai: MagicMock, mock_resp
     tools._responses_llm = mock_responses_llm
 
     result = await tools.image_generation("a dog")
-    expected_result = {"image_path": None, "output_text": "No image was generated."}
+    expected_result = ImageGenerationResponse(image_path=None, output_text="No image was generated.")
     assert result == expected_result

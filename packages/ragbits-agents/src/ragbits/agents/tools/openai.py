@@ -8,6 +8,7 @@ from openai import AsyncOpenAI
 from openai.types.responses import Response
 from openai.types.responses.tool_param import CodeInterpreter, ToolParam
 
+from ragbits.agents.tools.types import ImageGenerationResponse
 from ragbits.core.sources.base import get_local_storage_dir
 
 
@@ -130,7 +131,7 @@ class OpenAITools:
         """
         return await self._responses_llm.use_tool(query)
 
-    async def image_generation(self, query: str, save_path: str | Path | None = None) -> dict:
+    async def image_generation(self, query: str, save_path: str | Path | None = None) -> ImageGenerationResponse:
         """
         Generate image based on query.
 
@@ -150,6 +151,6 @@ class OpenAITools:
         if image_data:
             with open(save_path, "wb") as f:
                 f.write(base64.b64decode(image_data))
-            return {"image_path": save_path, "output_text": response.output_text}
+            return ImageGenerationResponse(image_path=save_path, output_text=response.output_text)
         else:
-            return {"image_path": None, "output_text": response.output_text}
+            return ImageGenerationResponse(image_path=None, output_text=response.output_text)

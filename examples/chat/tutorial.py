@@ -178,8 +178,8 @@ class MyChat(ChatInterface):
         if response.name == "search_web":
             async for reference in self._extract_web_references(response):
                 yield reference
-        elif response.name == "image_generation" and response.result.get("image_path"):
-            yield await self._create_image_response(response.result["image_path"])
+        elif response.name == "image_generation" and response.result.image_path:
+            yield await self._create_image_response(response.result.image_path)
 
     async def _extract_web_references(self, response: ToolCallResult) -> AsyncGenerator[ChatResponse, None]:
         """Extract URL citations from web search results."""
