@@ -11,45 +11,37 @@ from openai.types.responses.tool_param import CodeInterpreter, ToolParam
 from ragbits.core.sources.base import get_local_storage_dir
 
 
-def get_web_search_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+def get_web_search_tool(model_name: str, api_key: str | None = None, additional_params: dict | None = None) -> Callable:
     """
     Returns a native OpenAI web search tool as function
 
     Args:
         model_name: The name of the model
+        api_key: The API key for the model
         additional_params: The additional tool parameters
 
     Returns:
         web search function
     """
-    if additional_params is None or "api_key" not in additional_params:
-        api_key = None
-    else:
-        api_key = cast(str, additional_params.get("api_key"))
-        del additional_params["api_key"]
-
     params_to_pass = additional_params if additional_params else {}
     tool_object = OpenAITools(model_name, api_key, {"type": "web_search_preview", **params_to_pass})
     return tool_object.search_web
 
 
-def get_code_interpreter_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+def get_code_interpreter_tool(
+    model_name: str, api_key: str | None = None, additional_params: dict | None = None
+) -> Callable:
     """
     Returns a native OpenAI code interpreter tool as function
 
     Args:
         model_name: The name of the model
+        api_key: The API key for the model
         additional_params: The additional tool parameters
 
     Returns:
         code interpreter function
     """
-    if additional_params is None or "api_key" not in additional_params:
-        api_key = None
-    else:
-        api_key = cast(str, additional_params.get("api_key"))
-        del additional_params["api_key"]
-
     params_to_pass = additional_params if additional_params else {}
     tool_object = OpenAITools(
         model_name, api_key, cast(CodeInterpreter, {"type": "code_interpreter", **params_to_pass})
@@ -57,25 +49,21 @@ def get_code_interpreter_tool(model_name: str, additional_params: dict | None = 
     return tool_object.code_interpreter
 
 
-def get_image_generation_tool(model_name: str, additional_params: dict | None = None) -> Callable:
+def get_image_generation_tool(
+    model_name: str, api_key: str | None = None, additional_params: dict | None = None
+) -> Callable:
     """
     Returns a native OpenAI image generation tool as function
 
     Args:
         model_name: The name of the model
+        api_key: The API key for the model
         additional_params: The additional tool parameters
 
     Returns:
         image generation function
     """
-    if additional_params is None or "api_key" not in additional_params:
-        api_key = None
-    else:
-        api_key = cast(str, additional_params.get("api_key"))
-        del additional_params["api_key"]
-
     params_to_pass = additional_params if additional_params else {}
-
     tool_object = OpenAITools(model_name, api_key, {"type": "image_generation", **params_to_pass})
     return tool_object.image_generation
 
