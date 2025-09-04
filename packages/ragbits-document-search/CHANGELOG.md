@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: add pptx document parser (#693)
+
 ## 1.2.2 (2025-08-08)
 
 ### Changed
@@ -199,6 +201,7 @@
 ## 0.7.0 (2025-01-21)
 
 ### Added
+
 - Add CLI command to perform search on DocumentSearch instance (#290).
 
 ### Changed
@@ -222,7 +225,7 @@
 
 ### Added
 
-- Distributed ingestion with usage of https://www.ray.io/ (#207)
+- Distributed ingestion with usage of <https://www.ray.io/> (#207)
 - Documents can be now replaced in existing VectorStore (#210)
 
 ### Changed
@@ -247,7 +250,6 @@
 
 - Add location metadata to documents ingested into DocumentSearch (#122).
 - Add LiteLLM Reranker (#109).
-
 
 ### Changed
 

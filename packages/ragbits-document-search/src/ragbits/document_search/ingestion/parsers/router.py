@@ -8,6 +8,7 @@ from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
 from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
+from ragbits.document_search.ingestion.parsers.pptx.parser import PptxDocumentParser
 
 _default_parser = DoclingDocumentParser()
 
@@ -16,7 +17,7 @@ _DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
     DocumentType.MD: _default_parser,
     DocumentType.PDF: _default_parser,
     DocumentType.DOCX: _default_parser,
-    DocumentType.PPTX: _default_parser,
+    DocumentType.PPTX: PptxDocumentParser(),
     DocumentType.XLSX: _default_parser,
     DocumentType.HTML: _default_parser,
     DocumentType.JPG: _default_parser,
