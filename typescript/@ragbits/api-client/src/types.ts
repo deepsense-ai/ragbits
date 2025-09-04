@@ -18,6 +18,10 @@ export interface GenericResponse {
  */
 export interface ClientConfig {
     baseUrl?: string
+    auth?: {
+        getToken?: () => string
+        onUnauthorized?: () => Promise<void> | void
+    }
 }
 
 /**

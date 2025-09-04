@@ -1,10 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, Mock } from "vitest";
-import { FeedbackType, MessageRole } from "@ragbits/api-client-react";
+import {
+  FeedbackType,
+  MessageRole,
+  RagbitsContextProvider,
+  useRagbitsCall,
+} from "@ragbits/api-client-react";
 import FeedbackForm from "../../../../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import { useHistoryActions } from "../../../../src/core/stores/HistoryStore/selectors";
-import useAuthenticatedCall from "../../../../src/plugins/AuthPlugin/utils/useAuthenticatedCall";
 import { useConfigContext } from "../../../../src/core/contexts/ConfigContext/useConfigContext";
 
 vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => ({
@@ -30,14 +34,12 @@ vi.mock("../../../../src/core/contexts/ConfigContext/useConfigContext", () => ({
   })),
 }));
 
-vi.mock(
-  "../../../../src/plugins/AuthPlugin/utils/useAuthenticatedCall",
-  () => ({
-    default: vi.fn(() => ({
-      call: vi.fn().mockResolvedValue(undefined),
-    })),
-  }),
-);
+vi.mock("@ragbits/api-client-react", async (importOriginal) => ({
+  ...(await importOriginal()),
+  useRagbitsCall: vi.fn(() => ({
+    call: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
 
 vi.mock("../../../../src/core/forms", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../../src/core/forms")>()),
@@ -46,14 +48,14 @@ vi.mock("../../../../src/core/forms", async (importOriginal) => ({
 
 const mergeExtensionsMock = vi.fn();
 const callMock = vi.fn();
+function mockRagbitsCall() {
+  (useRagbitsCall as Mock).mockReturnValue({
+    call: callMock,
+  });
+}
 function mockActions() {
   (useHistoryActions as Mock).mockReturnValue({
     mergeExtensions: mergeExtensionsMock,
-  });
-}
-function mockAuthenticatedCall() {
-  (useAuthenticatedCall as Mock).mockReturnValue({
-    call: callMock,
   });
 }
 function mockConfigContext() {
@@ -78,21 +80,29 @@ const message = {
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
 
+  const WrappedForm = () => {
+    return (
+      <RagbitsContextProvider baseUrl="http://localhost">
+        <FeedbackForm message={message} />
+      </RagbitsContextProvider>
+    );
+  };
+
   it("renders like and dislike buttons", () => {
-    render(<FeedbackForm message={message} />);
+    render(<WrappedForm />);
     expect(screen.getByTestId("feedback-like")).toBeInTheDocument();
     expect(screen.getByTestId("feedback-dislike")).toBeInTheDocument();
   });
 
   it("opens modal when like button clicked", async () => {
-    render(<FeedbackForm message={message} />);
+    render(<WrappedForm />);
     await user.click(screen.getByTestId("feedback-like"));
 
     expect(await screen.findByText(/Like Feedback/i)).toBeInTheDocument();
   });
 
   it("opens modal when dislike button clicked", async () => {
-    render(<FeedbackForm message={message} />);
+    render(<WrappedForm />);
     await user.click(screen.getByTestId("feedback-dislike"));
 
     expect(await screen.findByText(/Dislike Feedback/i)).toBeInTheDocument();
@@ -100,9 +110,9 @@ describe("FeedbackForm", () => {
 
   it("calls mergeExtensions and feedback call on submit", async () => {
     mockActions();
-    mockAuthenticatedCall();
+    mockRagbitsCall();
 
-    render(<FeedbackForm message={message} />);
+    render(<WrappedForm />);
     await user.click(screen.getByTestId("feedback-like"));
     await user.click(screen.getByTestId("feedback-submit"));
 
@@ -121,7 +131,7 @@ describe("FeedbackForm", () => {
   });
 
   it("closes modal on cancel", async () => {
-    render(<FeedbackForm message={message} />);
+    render(<WrappedForm />);
     await user.click(screen.getByTestId("feedback-like"));
     const cancelBtn = screen.getByRole("button", {
       name: /Close feedback form/i,
@@ -135,7 +145,7 @@ describe("FeedbackForm", () => {
 
   it("does not render if schema is null", () => {
     mockConfigContext();
-    const { container } = render(<FeedbackForm message={message} />);
+    const { container } = render(<WrappedForm />);
     expect(container.firstChild).toBeNull();
   });
 });

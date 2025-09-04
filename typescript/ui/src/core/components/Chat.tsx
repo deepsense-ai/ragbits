@@ -12,7 +12,7 @@ import {
 import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
-import { useAuthStore } from "../../plugins/AuthPlugin/contexts/AuthStoreContext/useAuthStore";
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 export default function Chat() {
   const {
@@ -29,15 +29,10 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
-  const [accessToken, isAuthEnabled] = useAuthStore((s) => s.token);
+  const ragbitsClient = useRagbitsContext().client;
 
   const authorizedSendMessage = (text: string) => {
-    sendMessage(
-      text,
-      isAuthEnabled && accessToken?.access_token
-        ? accessToken.access_token
-        : undefined,
-    );
+    sendMessage(text, ragbitsClient);
   };
 
   const handleScroll = useCallback(() => {
