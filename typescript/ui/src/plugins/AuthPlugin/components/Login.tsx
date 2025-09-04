@@ -100,20 +100,18 @@ export default function Login() {
         />
 
         <AnimatePresence>
-          {isError &&
-            loginRequestFactory.error &&
-            !loginRequestFactory.isLoading && (
-              <motion.div
-                className="text-small text-danger"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                We couldn't sign you in. Please verify your credentials and try
-                again.
-              </motion.div>
-            )}
+          {isError && !loginRequestFactory.isLoading && (
+            <motion.div
+              className="text-small text-danger"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              We couldn't sign you in. Please verify your credentials and try
+              again.
+            </motion.div>
+          )}
         </AnimatePresence>
 
         <Button
