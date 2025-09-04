@@ -24,7 +24,6 @@ export default function LogoutButton() {
     }
 
     try {
-      // Replace with your API call
       const response = await logoutRequestFactory.call({
         body: { token },
       });
