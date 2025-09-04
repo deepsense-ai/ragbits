@@ -6,7 +6,7 @@ import inspect
 import logging
 from collections.abc import Callable, Generator
 from types import UnionType
-from typing import Any, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, Union, get_args, get_origin, get_type_hints
 
 from griffe import Docstring, DocstringSectionKind
 from pydantic import BaseModel, Field, create_model
@@ -201,10 +201,20 @@ def _is_context_variable(ann: Any) -> bool:  # noqa: ANN401
     """
     Check if a type annotation is AgentRunContext.
     """
-    if hasattr(ann, "__name__") and ann.__name__ == "AgentRunContext":
-        return True
+    if ann is None:
+        return False
 
-    if get_origin(ann) is UnionType:
-        return any(_is_context_variable(arg) for arg in get_args(ann))
+    origin = get_origin(ann)
+    if origin is not None:
+        if getattr(origin, "__name__", None) == "AgentRunContext":
+            return True
+        if origin in (Union, UnionType):
+            return any(_is_context_variable(arg) for arg in get_args(ann))
+        if origin is Annotated:
+            args = get_args(ann)
+            return bool(args) and _is_context_variable(args[0])
+
+    if getattr(ann, "__name__", None) == "AgentRunContext":
+        return True
 
     return isinstance(ann, str) and "AgentRunContext" in ann
