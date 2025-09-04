@@ -188,7 +188,9 @@ export class RagbitsClient {
                             await callbacks.onMessage(parsedData)
                         } catch (parseError) {
                             console.error('Error parsing JSON:', parseError)
-                            await callbacks.onError(new Error('Error processing server response'))
+                            await callbacks.onError(
+                                new Error('Error processing server response')
+                            )
                         }
                     }
                 } catch (streamError) {
