@@ -29,7 +29,7 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
-  const ragbitsClient = useRagbitsContext().client;
+  const { client: ragbitsClient } = useRagbitsContext();
 
   const authorizedSendMessage = (text: string) => {
     sendMessage(text, ragbitsClient);

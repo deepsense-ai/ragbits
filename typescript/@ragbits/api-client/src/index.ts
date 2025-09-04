@@ -88,8 +88,8 @@ export class RagbitsClient {
 
         const response = await fetch(url, { ...options, headers })
 
-        if (response.status === 401 && this.auth?.onUnauthorized) {
-            this.auth.onUnauthorized()
+        if (response.status === 401) {
+            this.auth?.onUnauthorized?.()
         }
 
         if (!response.ok) {
@@ -244,8 +244,8 @@ export class RagbitsClient {
                     }
                 )
 
-                if (response.status === 401 && this.auth?.onUnauthorized) {
-                    this.auth.onUnauthorized()
+                if (response.status === 401) {
+                    this.auth?.onUnauthorized?.()
                 }
 
                 if (!response.ok) {
