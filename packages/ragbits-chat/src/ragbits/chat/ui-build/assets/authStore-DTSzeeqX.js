@@ -1,1 +1,0 @@
-import{bw as i,bx as o}from"./index-CfqNPLkZ.js";const l=i(o(e=>({user:null,token:null,isAuthenticated:!1,tokenExpiration:null,login:(n,t)=>e(()=>({user:n,token:t,tokenExpiration:Date.now()+t.expires_in*1e3,isAuthenticated:!0})),logout:()=>e(()=>({user:null,token:null,isAuthenticated:!1}))})));export{l as a};
