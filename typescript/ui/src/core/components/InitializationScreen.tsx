@@ -8,7 +8,7 @@ export default function InitializationScreen() {
       )}
     >
       <div className="text-default-900 m-auto flex flex-col items-center gap-4">
-        <CircularProgress size="lg" />
+        <CircularProgress size="lg" aria-label="Progress indicator" />
         <p>Initializing...</p>
       </div>
     </div>

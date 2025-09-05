@@ -15,6 +15,7 @@ import type {
  */
 export class RagbitsClient {
     private readonly baseUrl: string
+    private readonly auth: ClientConfig['auth']
     private chunkQueue: Map<
         string,
         {
@@ -29,6 +30,7 @@ export class RagbitsClient {
      */
     constructor(config: ClientConfig = {}) {
         this.baseUrl = config.baseUrl ?? ''
+        this.auth = config.auth
 
         if (this.baseUrl.endsWith('/')) {
             this.baseUrl = this.baseUrl.slice(0, -1)
@@ -71,13 +73,25 @@ export class RagbitsClient {
         url: string,
         options: RequestInit = {}
     ): Promise<Response> {
-        const defaultOptions: RequestInit = {
-            headers: {
-                'Content-Type': 'application/json',
-            },
+        const defaultHeaders: Record<string, string> = {
+            'Content-Type': 'application/json',
         }
 
-        const response = await fetch(url, { ...defaultOptions, ...options })
+        const headers = {
+            ...defaultHeaders,
+            ...this.normalizeHeaders(options.headers),
+        }
+
+        if (this.auth?.getToken) {
+            headers['Authorization'] = `Bearer ${this.auth.getToken()}`
+        }
+
+        const response = await fetch(url, { ...options, headers })
+
+        if (response.status === 401) {
+            this.auth?.onUnauthorized?.()
+        }
+
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
         }
@@ -206,19 +220,33 @@ export class RagbitsClient {
 
         const startStream = async (): Promise<void> => {
             try {
+                const defaultHeaders: Record<string, string> = {
+                    'Content-Type': 'application/json',
+                    Accept: 'text/event-stream',
+                }
+
+                const headers = {
+                    ...defaultHeaders,
+                    ...customHeaders,
+                }
+
+                if (this.auth?.getToken) {
+                    headers['Authorization'] = `Bearer ${this.auth.getToken()}`
+                }
+
                 const response = await fetch(
                     this._buildApiUrl(endpoint.toString()),
                     {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'text/event-stream',
-                            ...customHeaders,
-                        },
+                        headers,
                         body: JSON.stringify(data),
                         signal,
                     }
                 )
+
+                if (response.status === 401) {
+                    this.auth?.onUnauthorized?.()
+                }
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`)
@@ -252,6 +280,17 @@ export class RagbitsClient {
         return () => {
             isCancelled = true
         }
+    }
+
+    private normalizeHeaders(init?: HeadersInit): Record<string, string> {
+        if (!init) return {}
+        if (init instanceof Headers) {
+            return Object.fromEntries(init.entries())
+        }
+        if (Array.isArray(init)) {
+            return Object.fromEntries(init)
+        }
+        return init
     }
 
     private async handleChunkedContent<T>(
