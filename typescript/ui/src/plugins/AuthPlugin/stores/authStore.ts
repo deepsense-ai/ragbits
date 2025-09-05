@@ -50,7 +50,7 @@ export const authStore = createStore(
         set((draft) => {
           draft.user = user;
           draft.token = token;
-          draft.tokenExpiration = Date.now() + 30 * 1000;
+          draft.tokenExpiration = Date.now() + token.expires_in * 1000;
           draft.isAuthenticated = true;
         }),
 

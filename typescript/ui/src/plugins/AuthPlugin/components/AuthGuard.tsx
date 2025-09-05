@@ -26,7 +26,13 @@ export default function AuthGuard({ children }: PropsWithChildren) {
 
   return isAuthenticated && !!token ? (
     <AuthStoreContextProvider>
-      {/* Shadow the unauthorized RagbitsContextProvider with the authorized one */}
+      {/*
+        Shadow the unauthorized RagbitsContextProvider with the authorized one.
+        Note: If the complexity or number of options increases, consider introducing a
+        global <ClientSettingsProvider> above the original <RagbitsContextProvider> and
+        use it to store and provide configuration to that provider.
+        If you choose that solution, remove this provider.
+      */}
       <RagbitsContextProvider
         baseUrl={API_URL}
         auth={{
