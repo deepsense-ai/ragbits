@@ -35,6 +35,7 @@ import { createHistoryStore } from "../../src/core/stores/HistoryStore/historySt
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 import { HistoryStore } from "../../src/types/history";
+import { API_URL } from "../../src/config";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -51,6 +52,7 @@ vi.mock("idb-keyval", () => ({
 }));
 
 const historyStore = createStore(createHistoryStore);
+const ragbitsClient = new RagbitsClient({ baseUrl: API_URL });
 historyStore.getState()._internal._setHasHydrated(true);
 
 (useHistoryStore as Mock).mockImplementation(
@@ -72,7 +74,9 @@ describe("Integration tests", () => {
           "makeStreamRequest",
         );
         await act(() => {
-          historyStore.getState().actions.sendMessage("Test message");
+          historyStore
+            .getState()
+            .actions.sendMessage("Test message", ragbitsClient);
         });
 
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
@@ -84,7 +88,6 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
-          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -106,7 +109,9 @@ describe("Integration tests", () => {
           "makeStreamRequest",
         );
         await act(() => {
-          historyStore.getState().actions.sendMessage("Test message 2");
+          historyStore
+            .getState()
+            .actions.sendMessage("Test message 2", ragbitsClient);
         });
 
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
@@ -128,7 +133,6 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
-          expect.anything(), // We don't care about headers
         );
 
         await waitFor(
@@ -155,7 +159,7 @@ describe("Integration tests", () => {
             <ConfigContextProvider>
               <PromptInput
                 isLoading={false}
-                submit={sendMessage}
+                submit={(text) => sendMessage(text, ragbitsClient)}
                 stopAnswering={stopAnswering}
                 followupMessages={getCurrentConversation().followupMessages}
               />
@@ -218,7 +222,6 @@ describe("Integration tests", () => {
           },
           expect.anything(), // We don't care about callbacks
           expect.anything(), // We don't care about AbortSignal
-          expect.anything(), // We don't care about headers
         );
         await waitFor(
           () => {
@@ -256,7 +259,9 @@ describe("Integration tests", () => {
       );
 
       await act(() => {
-        historyStore.getState().actions.sendMessage("Test message");
+        historyStore
+          .getState()
+          .actions.sendMessage("Test message", ragbitsClient);
       });
 
       await waitFor(

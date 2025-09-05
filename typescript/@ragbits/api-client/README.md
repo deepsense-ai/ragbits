@@ -25,6 +25,12 @@ import { RagbitsClient } from '@ragbits/api-client'
 // Initialize the client
 const client = new RagbitsClient({
     baseUrl: 'http://127.0.0.1:8000', // Optional, defaults to http://127.0.0.1:8000
+    auth: {
+        getToken: () => 'token',
+        onUnauthorized: () => {
+            console.warn('⚠️ Unauthorized')
+        },
+    }, // Optional, used to provide auth details
 })
 
 // Get API configuration
@@ -80,6 +86,7 @@ new RagbitsClient(config?: ClientConfig)
 **Parameters:**
 
 - `config.baseUrl` (optional): Base URL for the API. Defaults to 'http://127.0.0.1:8000'
+- `config.auth` (optional): An object containing authentication details. Provide `getToken` to automatically attach `Authorization: Bearer <token>` to every request. `onUnauthorized` is called if the library encounters a 401 status code.
 
 **Throws:** `Error` if the base URL is invalid
 
@@ -172,8 +179,8 @@ const cleanup = client.makeStreamRequest(
     {
         message: 'Tell me about AI',
         history: [
-            { role: 'user', content: 'Hello', id: 'msg-1' },
-            { role: 'assistant', content: 'Hi there!', id: 'msg-2' },
+            { role: 'user', content: 'Hello' },
+            { role: 'assistant', content: 'Hi there!' },
         ],
         context: { user_id: 'user-123' },
     },

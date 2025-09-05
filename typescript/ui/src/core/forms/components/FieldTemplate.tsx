@@ -8,12 +8,11 @@ export default function FieldTemplate({
   label,
 }: FieldTemplateProps) {
   const isRoot = id === "root";
-
   return (
     <div
       className={cn("text-default-900 flex flex-col gap-1", isRoot && "gap-4")}
     >
-      {!isRoot && label}
+      {!isRoot && schema.type !== "boolean" && label}
       {schema.description && (
         <div className="text-small text-default-500">{schema.description}</div>
       )}

@@ -6,6 +6,7 @@ import {
   ServerState,
   Image,
   MessageUsage,
+  RagbitsClient,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -48,7 +49,7 @@ export interface HistoryStore {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
-    sendMessage: (text: string, accessToken?: string) => void;
+    sendMessage: (text: string, ragbitsClient: RagbitsClient) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
      * overwrite previous ones.

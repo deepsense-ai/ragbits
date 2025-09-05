@@ -50,9 +50,31 @@ describe("AuthGuard", () => {
     mockPathname = "/"; // default
   });
 
+  it("renders Initialization screen when not hydrated", () => {
+    mockPathname = "/login";
+    useStoreMock.mockImplementation((_, selector) =>
+      selector({
+        hasHydrated: false,
+      }),
+    );
+
+    render(
+      <AuthGuard>
+        <div data-testid="child">Login page child</div>
+      </AuthGuard>,
+    );
+
+    expect(screen.getByText("Initializing...")).toBeInTheDocument();
+  });
+
   it("renders children if route is /login regardless of auth state", () => {
     mockPathname = "/login";
-    useStoreMock.mockReturnValue(false);
+    useStoreMock.mockImplementation((_, selector) =>
+      selector({
+        hasHydrated: true,
+        isAuthenticated: false,
+      }),
+    );
 
     render(
       <AuthGuard>
@@ -67,7 +89,15 @@ describe("AuthGuard", () => {
 
   it("wraps children and renders AuthWatcher if authenticated", () => {
     mockPathname = "/dashboard";
-    useStoreMock.mockReturnValue(true);
+    useStoreMock.mockImplementation((_, selector) =>
+      selector({
+        hasHydrated: true,
+        isAuthenticated: true,
+        token: {
+          access_token: "token",
+        },
+      }),
+    );
 
     render(
       <AuthGuard>
@@ -83,7 +113,12 @@ describe("AuthGuard", () => {
 
   it("renders Navigate to /login if not authenticated", () => {
     mockPathname = "/dashboard";
-    useStoreMock.mockReturnValue(false);
+    useStoreMock.mockImplementation((_, selector) =>
+      selector({
+        hasHydrated: true,
+        isAuthenticated: false,
+      }),
+    );
 
     render(
       <AuthGuard>

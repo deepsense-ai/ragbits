@@ -1,6 +1,6 @@
 import { Button, Input } from "@heroui/react";
 import { useRagbitsCall } from "@ragbits/api-client-react";
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useStore } from "zustand";
 import { authStore } from "../stores/authStore";
@@ -61,6 +61,10 @@ export default function Login() {
         }),
       );
   };
+
+  useEffect(() => {
+    document.title = "Login";
+  }, []);
 
   return (
     <div className="flex h-screen w-screen">

@@ -7,7 +7,7 @@ import {
   Button,
   useDisclosure,
 } from "@heroui/react";
-import { FeedbackType } from "@ragbits/api-client-react";
+import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
@@ -16,7 +16,6 @@ import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 import { ChatMessage } from "../../../types/history";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
-import useAuthenticatedCall from "../../AuthPlugin/utils/useAuthenticatedCall";
 
 interface FeedbackFormProps {
   message: ChatMessage;
@@ -31,7 +30,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(
     FeedbackType.Like,
   );
-  const feedbackCallFactory = useAuthenticatedCall("/api/feedback", {
+  const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
     },

@@ -2,7 +2,6 @@ import {
   ChatRequest,
   ChatResponse,
   LiveUpdate,
-  RagbitsClient,
   Image,
   MessageRole,
   ChatResponseType,
@@ -16,12 +15,10 @@ import {
 } from "../../../types/history";
 import { produce } from "immer";
 import { mapHistoryToMessages } from "../../utils/messageMapper";
-import { API_URL } from "../../../config";
 import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
 
 const TEMPORARY_CONVERSATION_TAG = "temp-";
-const RAGBITS_CLIENT = new RagbitsClient({ baseUrl: API_URL });
 const NON_MESSAGE_EVENTS = new Set<string>([
   ChatResponseType.StateUpdate,
   ChatResponseType.ConversationId,
@@ -421,7 +418,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text, accessToken) => {
+    sendMessage: (text, ragbitsClient) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -463,12 +460,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
 
-      const headers: Record<string, string> = {};
-      if (accessToken) {
-        headers["Authorization"] = `Bearer ${accessToken}`;
-      }
-
-      RAGBITS_CLIENT.makeStreamRequest(
+      ragbitsClient.makeStreamRequest(
         "/api/chat",
         chatRequest,
         {
@@ -486,7 +478,6 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           },
         },
         abortController.signal,
-        headers,
       );
     },
   },
