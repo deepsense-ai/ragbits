@@ -307,8 +307,8 @@ class ChatInterface(ABC):
     async def chat(
         self,
         message: str,
-        history: ChatFormat | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Process a chat message and yield responses asynchronously.

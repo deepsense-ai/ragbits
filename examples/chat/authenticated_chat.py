@@ -61,14 +61,14 @@ class MyAuthenticatedChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: list[Message],
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Authenticated chat implementation that provides user-specific responses.
 
         This method is called after authentication validation passes.
-        The user information is available in context.state["authenticated_user"].
+        The user information is available in context.user.
 
         Args:
             message: The current user message
@@ -79,7 +79,7 @@ class MyAuthenticatedChat(ChatInterface):
             ChatResponse objects containing different types of content
         """
         # Get authenticated user info
-        user_info = context.state.get("authenticated_user") if context else None
+        user_info = context.user
 
         if not user_info:
             yield self.create_text_response("⚠️ Authentication information not found.")
@@ -100,8 +100,7 @@ class MyAuthenticatedChat(ChatInterface):
         # Create user-specific state update
         yield self.create_state_update(
             {
-                "authenticated_user_id": user_id,
-                "session_context": context.session_id if context and context.session_id else "unknown",
+                "session_context": context.session_id if context.session_id else "unknown",
                 "user_roles": user_roles,
                 "chat_timestamp": asyncio.get_event_loop().time(),
             }

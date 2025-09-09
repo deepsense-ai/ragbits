@@ -165,7 +165,7 @@ Modify the `chat()` method to customize responses based on user roles:
 
 ```python
 # Get user info from context
-user_info = context.state.get("authenticated_user") if context else None
+user_info = context.user
 user_roles = user_info.roles if user_info else []
 
 if "admin" in user_roles:

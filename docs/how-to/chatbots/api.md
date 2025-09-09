@@ -167,8 +167,8 @@ from ragbits.chat.interface.types import ChatContext
 async def chat(
     self,
     message: str,
-    history: list[Message] | None = None,
-    context: ChatContext | None = None
+    history: list[Message],
+    context: ChatContext
 ) -> AsyncGenerator[ChatResponse, None]:
     # Access existing state from context
     current_state = context.state if context else {}
@@ -486,8 +486,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: list[Message],
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Comprehensive chat implementation demonstrating all response types.

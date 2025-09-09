@@ -200,8 +200,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: list[Message],
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Example implementation of the ChatInterface.
@@ -218,7 +218,7 @@ class MyChat(ChatInterface):
             - Live updates for tool execution status
         """
         # Get authenticated user info
-        user_info = context.state.get("authenticated_user") if context else None
+        user_info = context.user
 
         if not user_info:
             yield self.create_text_response("⚠️ Authentication information not found.")

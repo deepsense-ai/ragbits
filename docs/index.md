@@ -258,8 +258,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: ChatFormat | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse]:
         async for result in agent.run_streaming(message):
             match result:
