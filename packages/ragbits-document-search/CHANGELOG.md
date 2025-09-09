@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: improve document search parser initialization with lazy loading
+
 - feat: add pptx document parser (#693)
 
 ## 1.2.2 (2025-08-08)
