@@ -2,6 +2,7 @@ import importlib
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from types import ModuleType
+from typing import Any
 
 
 class LazyLiteLLM:
@@ -13,7 +14,7 @@ class LazyLiteLLM:
     _import_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="litellm-import")
     _litellm_future: Future[ModuleType] | None = None
 
-    def __new__(cls, *args, **kwargs) -> "LazyLiteLLM":
+    def __new__(cls, *args: Any, **kwargs: Any) -> "LazyLiteLLM":
         """Start background import of litellm when instance is created."""
         instance = super().__new__(cls)
         # Start the import in background thread if not already started
