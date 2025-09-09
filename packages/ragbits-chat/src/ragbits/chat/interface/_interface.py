@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def with_chat_metadata(
-    func: Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]],
+    func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponse, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
     """
     Decorator that adds message and conversation metadata to the chat method and handles history persistence.
@@ -51,12 +51,12 @@ def with_chat_metadata(
     ) -> AsyncGenerator[ChatResponse, None]:
         start_time = time.time()
 
-        # Initialize context if None
-        if context is None:
-            context = ChatContext()
+        # Assure history and context are not None
+        history = history or []
+        context = context or ChatContext()
 
         # Track history length
-        history_length = len(history) if history else 0
+        history_length = len(history)
         record_metric(
             ChatHistogramMetric.CHAT_HISTORY_LENGTH,
             history_length,

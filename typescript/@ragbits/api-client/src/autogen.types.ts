@@ -76,6 +76,7 @@ export interface ChatContext {
     state: {
         [k: string]: unknown
     }
+    user: User | null
     session_id: string | null
     [k: string]: unknown
 }

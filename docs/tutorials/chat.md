@@ -93,7 +93,7 @@ class BasicMountainChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message],
+        history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         # Basic streaming implementation
@@ -170,7 +170,7 @@ class BasicMountainChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message],
+        history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         # Enhanced streaming with tool handling
@@ -402,7 +402,7 @@ class MountainChatWithUI(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message],
+        history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         # Get user language preference
@@ -530,7 +530,7 @@ class AuthenticatedMountainChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message],
+        history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         # Check authentication
@@ -741,7 +741,7 @@ class MyChat(ChatInterface):
             base64_image = base64.b64encode(image_file.read()).decode("utf-8")
             return self.create_image_response(image_filename, f"data:image/png;base64,{base64_image}")
 
-    async def chat(self, message: str, history: list[Message], context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
+    async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
         user_info = context.user
         if not user_info:
             yield self.create_text_response("⚠️ Authentication information not found.")
