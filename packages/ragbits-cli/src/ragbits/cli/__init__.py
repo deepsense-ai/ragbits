@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import pkgutil
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -60,6 +61,7 @@ def autoregister() -> None:
         for module in pkgutil.iter_modules(ragbits.__path__)
         if module.ispkg and module.name != "cli" and (Path(module.module_finder.path) / module.name / "cli.py").exists()  # type: ignore
     ]
+    sys.path.append(os.getcwd())
 
     for module in cli_enabled_modules:
         register_func = importlib.import_module(f"ragbits.{module.name}.cli").register

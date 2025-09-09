@@ -1,6 +1,5 @@
 import re
 from collections.abc import Iterable
-from contextlib import suppress
 from pathlib import Path
 from typing import ClassVar
 
@@ -10,10 +9,6 @@ from ragbits.core.audit.traces import trace, traceable
 from ragbits.core.sources.base import Source, get_local_storage_dir
 from ragbits.core.sources.exceptions import SourceConnectionError, SourceNotFoundError
 from ragbits.core.utils.decorators import requires_dependencies
-
-with suppress(ImportError):
-    from datasets import load_dataset
-    from datasets.exceptions import DatasetNotFoundError
 
 
 class HuggingFaceSource(Source):
@@ -50,6 +45,9 @@ class HuggingFaceSource(Source):
             SourceConnectionError: If the source connection fails.
             SourceNotFoundError: If the source document is not found.
         """
+        from datasets import load_dataset
+        from datasets.exceptions import DatasetNotFoundError
+
         with trace(path=self.path, split=self.split, row=self.row) as outputs:
             if self.row is not None:
                 try:
@@ -105,6 +103,8 @@ class HuggingFaceSource(Source):
         Returns:
             The iterable of sources from the Hugging Face repository.
         """
+        from datasets import load_dataset
+
         sources = load_dataset(path, split=split)
         cleaned_split = re.sub(r"\[.*?\]", "", split)
         return [

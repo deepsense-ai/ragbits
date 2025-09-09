@@ -105,15 +105,44 @@ async def test_google_drive_impersonate():
 @pytest.mark.asyncio
 async def test_google_drive_source_fetch_file_not_found():
     """Test fetching a non-existent file."""
+    import json
+    import tempfile
+    from unittest.mock import MagicMock, patch
+
     file_id = "nonexistent_file"
     file_name = "missing.txt"
     mime_type = "text/plain"
 
-    GoogleDriveSource.set_credentials_file_path("test_clientid.json")
-    source = GoogleDriveSource(file_id=file_id, file_name=file_name, mime_type=mime_type)
+    # Create a temporary credentials file
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as temp_creds:
+        json.dump({"type": "service_account", "client_email": "test@example.com"}, temp_creds)
+        temp_creds.flush()
 
-    with pytest.raises(FileNotFoundError, match=f"File with ID {file_id} not found on Google Drive."):
-        await source.fetch()
+        GoogleDriveSource.set_credentials_file_path(temp_creds.name)
+        source = GoogleDriveSource(file_id=file_id, file_name=file_name, mime_type=mime_type)
+
+        # Mock HttpError
+        mock_response = MagicMock()
+        mock_response.status = 404
+        http_error = HttpError(mock_response, b"File not found")
+
+        # Mock the Google Drive client to simulate file not found
+        with patch.object(GoogleDriveSource, "_get_client") as mock_client:
+            mock_service = mock_client.return_value
+            mock_service.files.return_value.get_media.return_value = MagicMock()
+
+            with patch("ragbits.core.sources.google_drive.MediaIoBaseDownload") as mock_downloader:
+                mock_downloader_instance = MagicMock()
+                mock_downloader.return_value = mock_downloader_instance
+                mock_downloader_instance.next_chunk.side_effect = http_error
+
+                with pytest.raises(FileNotFoundError, match=f"File with ID {file_id} not found on Google Drive."):
+                    await source.fetch()
+
+    # Clean up the temporary file
+    import os
+
+    os.unlink(temp_creds.name)
 
 
 @pytest.mark.asyncio

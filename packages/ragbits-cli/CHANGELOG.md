@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: add current working directory to Python path for better CLI module discovery
+
 ## 1.2.2 (2025-08-08)
 
 ### Changed

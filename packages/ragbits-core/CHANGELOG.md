@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: improve app startup speed with lazy LiteLLM loading
+
 
 - Feat: added support for IVFFlat indexing and Halfvec datatype
 

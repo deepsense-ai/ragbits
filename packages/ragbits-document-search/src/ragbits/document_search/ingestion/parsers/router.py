@@ -6,23 +6,7 @@ from typing_extensions import Self
 from ragbits.core.utils.config_handling import ObjectConstructionConfig, WithConstructionConfig
 from ragbits.document_search.documents.document import DocumentType
 from ragbits.document_search.ingestion.parsers.base import DocumentParser
-from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
 from ragbits.document_search.ingestion.parsers.exceptions import ParserNotFoundError
-from ragbits.document_search.ingestion.parsers.pptx.parser import PptxDocumentParser
-
-_default_parser = DoclingDocumentParser()
-
-_DEFAULT_PARSERS: dict[DocumentType, DocumentParser] = {
-    DocumentType.TXT: _default_parser,
-    DocumentType.MD: _default_parser,
-    DocumentType.PDF: _default_parser,
-    DocumentType.DOCX: _default_parser,
-    DocumentType.PPTX: PptxDocumentParser(),
-    DocumentType.XLSX: _default_parser,
-    DocumentType.HTML: _default_parser,
-    DocumentType.JPG: _default_parser,
-    DocumentType.PNG: _default_parser,
-}
 
 
 class DocumentParserRouter(WithConstructionConfig):
@@ -41,7 +25,7 @@ class DocumentParserRouter(WithConstructionConfig):
         Args:
             parsers: The mapping of document types and their parsers. To override default Unstructured parsers.
         """
-        self._parsers = {**_DEFAULT_PARSERS, **parsers} if parsers else _DEFAULT_PARSERS
+        self._parsers = {**self._get_default_parsers(), **parsers} if parsers else self._get_default_parsers()
 
     @classmethod
     def from_config(cls, config: dict[str, ObjectConstructionConfig]) -> Self:
@@ -82,3 +66,25 @@ class DocumentParserRouter(WithConstructionConfig):
             return parser
 
         raise ParserNotFoundError(document_type)
+
+    @staticmethod
+    def _get_default_parsers() -> dict[DocumentType, DocumentParser]:
+        """
+        Get the default parsers.
+        """
+        from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
+        from ragbits.document_search.ingestion.parsers.pptx.parser import PptxDocumentParser
+
+        _default_parser = DoclingDocumentParser()
+
+        return {
+            DocumentType.TXT: _default_parser,
+            DocumentType.MD: _default_parser,
+            DocumentType.PDF: _default_parser,
+            DocumentType.DOCX: _default_parser,
+            DocumentType.PPTX: PptxDocumentParser(),
+            DocumentType.XLSX: _default_parser,
+            DocumentType.HTML: _default_parser,
+            DocumentType.JPG: _default_parser,
+            DocumentType.PNG: _default_parser,
+        }

@@ -416,43 +416,6 @@ async def test_pickling():
     assert llm_pickled.api_version == "v1"
 
 
-async def test_init_registers_model_with_custom_cost_config():
-    """Test that custom model cost config properly registers the model with LiteLLM."""
-    custom_config = {
-        "some_model": {
-            "support_vision": True,
-            "input_cost_per_token": 0.0015,
-            "output_cost_per_token": 0.002,
-            "max_tokens": 4096,
-        }
-    }
-
-    with patch("litellm.register_model") as mock_register:
-        # Create LLM instance with custom config
-        LiteLLM(
-            model_name="some_model",
-            custom_model_cost_config=custom_config,
-        )
-
-        # Verify register_model was called with the correct config
-        mock_register.assert_called_once_with(custom_config)
-
-
-async def test_init_registers_default_model_cost_when_no_custom_config_provided():
-    """Test that the default model cost config is registered when no custom config is provided."""
-    import time
-
-    with patch("litellm.register_model") as mock_register:
-        LiteLLM(
-            model_name="some_model",
-        )
-        # Give the thread a moment to complete
-        time.sleep(0.1)
-        mock_register.assert_called_once_with(
-            model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
-        )
-
-
 async def test_pickling_registers_model_with_custom_cost_config():
     """Test that the model is registered with LiteLLM when unpickled."""
     custom_config = {
