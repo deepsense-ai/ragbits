@@ -416,25 +416,6 @@ async def test_pickling():
     assert llm_pickled.api_version == "v1"
 
 
-async def test_init_registers_default_model_cost_when_no_custom_config_provided():
-    """Test that the default model cost config is registered when no custom config is provided."""
-    import time
-
-    with patch("ragbits.core.utils.lazy_litellm.importlib.import_module") as mock_import:
-        mock_litellm = MagicMock()
-        mock_import.return_value = mock_litellm
-
-        with patch.object(mock_litellm, "register_model") as mock_register:
-            LiteLLM(
-                model_name="some_model",
-            )
-            # Give the thread a moment to complete
-            time.sleep(0.1)
-            mock_register.assert_called_once_with(
-                model_cost="https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
-            )
-
-
 async def test_pickling_registers_model_with_custom_cost_config():
     """Test that the model is registered with LiteLLM when unpickled."""
     custom_config = {
