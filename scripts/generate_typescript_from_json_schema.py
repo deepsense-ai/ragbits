@@ -201,20 +201,10 @@ def _generate_chat_response_union_type() -> str:
         ("ImageChatResponse", "image", "Image"),
         ("ClearMessageResponse", "clear_message", "never"),
         ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
-    ]
-
-    exported_response_interfaces = [
         ("ChunkedChatResponse", "chunked_content", "ChunkedContent"),
     ]
 
     for interface_name, response_type, content_type in response_interfaces:
-        lines.append(f"interface {interface_name} {{")
-        lines.append(f"    type: '{response_type}'")
-        lines.append(f"    content: {content_type}")
-        lines.append("}")
-        lines.append("")
-
-    for interface_name, response_type, content_type in exported_response_interfaces:
         lines.append(f"export interface {interface_name} {{")
         lines.append(f"    type: '{response_type}'")
         lines.append(f"    content: {content_type}")
