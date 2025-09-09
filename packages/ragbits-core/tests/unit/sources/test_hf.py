@@ -9,7 +9,7 @@ async def test_huggingface_source_fetch() -> None:
     data = MagicMock(skip=skip)
     source = HuggingFaceSource(path="org/docs", split="train", row=1)
 
-    with patch("ragbits.core.sources.hf.load_dataset", return_value=data):
+    with patch("datasets.load_dataset", return_value=data):
         path = await source.fetch()
 
     assert source.id == "hf:org/docs/train/1"
