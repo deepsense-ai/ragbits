@@ -504,7 +504,7 @@ async def test_document_search_ingest_from_huggingface_uri_basic():
             file.write("HuggingFace test content")
 
         with (
-            mock.patch("ragbits.core.sources.hf.load_dataset", return_value=dataset),
+            mock.patch("datasets.load_dataset", return_value=dataset),
             mock.patch("ragbits.core.sources.base.get_local_storage_dir", return_value=storage_dir),
         ):
             document_search: DocumentSearch = DocumentSearch(
