@@ -44,10 +44,11 @@ from ragbits.agents.tools.openai import get_image_generation_tool, get_web_searc
 from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import Prompt
+from ragbits.core.prompt.base import ChatFormat
 
 
 class LikeFormExample(BaseModel):
@@ -200,8 +201,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Example implementation of the ChatInterface.
@@ -218,7 +219,7 @@ class MyChat(ChatInterface):
             - Live updates for tool execution status
         """
         # Get authenticated user info
-        user_info = context.state.get("authenticated_user") if context else None
+        user_info = context.user
 
         if not user_info:
             yield self.create_text_response("⚠️ Authentication information not found.")
