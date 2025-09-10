@@ -97,6 +97,12 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
+      - name: Deploy nightly documentation
+        shell: bash
+        run: uv run ./.github/scripts/deploy_docs.sh nightly
+        env:
+          GCP_KEY: ${{ secrets.GCP_KEY }}
+
       - name: Create git tag for nightly
         run: |
           git config user.name "ds-ragbits-robot"
