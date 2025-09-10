@@ -483,4 +483,3 @@ export type ChatResponse =
     | ImageChatResponse
     | ClearMessageResponse
     | MessageUsageChatResponse
-    | ChunkedChatResponse
