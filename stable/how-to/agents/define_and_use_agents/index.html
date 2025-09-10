@@ -511,27 +511,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../tutorials/chat/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tool-Powered Chat Interfaces
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -1396,15 +1375,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tool-choice" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tool choice
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#conversation-history" class="md-nav__link">
     <span class="md-ellipsis">
       Conversation history
@@ -1425,15 +1395,6 @@
         
       </ul>
     </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#binding-dependencies-via-agentruncontext" class="md-nav__link">
-    <span class="md-ellipsis">
-      Binding dependencies via AgentRunContext
-    </span>
-  </a>
   
 </li>
       
@@ -3089,12 +3050,6 @@ data based on a location.</p>
 </span></code></pre></div></p>
 <p>The result is an <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.AgentResult">AgentResult</a>, which includes the model's output, additional metadata, conversation history, and any tool calls performed.</p>
 <p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/tool_use.py">here</a>.</p>
-<h2 id="tool-choice">Tool choice<a class="headerlink" href="#tool-choice" title="Permanent link">#</a></h2>
-<p>To control what tool is used at first call you could use <code>tool_choice</code> parameter. There are the following options:
-- "auto": let model decide if tool call is needed
-- "none": do not call tool
-- "required: enforce tool usage (model decides which one)
-- Callable: one of provided tools</p>
 <h2 id="conversation-history">Conversation history<a class="headerlink" href="#conversation-history" title="Permanent link">#</a></h2>
 <p><a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.Agent"><code>Agent</code></a>s can retain conversation context across multiple interactions by enabling the <code>keep_history</code> flag when initializing the agent. This is useful when you want the agent to understand follow-up questions without needing the user to repeat earlier details.</p>
 <p>To enable this, simply set <code>keep_history=True</code> when constructing the agent. The full exchange—including messages, tool calls, and results—is stored and can be accessed via the AgentResult.history property.</p>
@@ -3114,67 +3069,36 @@ data based on a location.</p>
 <p>In this scenario, the agent recognizes that the follow-up question "What about Tokyo?" refers to weather information due to the preserved conversation history. The expected output would be an AgentResult containing the response:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">AgentResult</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="s1">&#39;The current temperature in Tokyo is 10°C.&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 </span></code></pre></div>
-<h2 id="binding-dependencies-via-agentruncontext">Binding dependencies via AgentRunContext<a class="headerlink" href="#binding-dependencies-via-agentruncontext" title="Permanent link">#</a></h2>
-<p>You can bind your external dependencies before the first access and safely use them in tools. After first attribute lookup, the dependencies container freezes to prevent mutation during a run.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span><span class="p">,</span> <span class="n">AgentRunContext</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms.mock</span> <span class="kn">import</span> <span class="n">MockLLM</span><span class="p">,</span> <span class="n">MockLLMOptions</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="nd">@dataclass</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="k">class</span> <span class="nc">Deps</span><span class="p">:</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">api_host</span><span class="p">:</span> <span class="nb">str</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">def</span> <span class="nf">get_api_host</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">AgentRunContext</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the API host taken from the bound dependencies in context.&quot;&quot;&quot;</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="k">assert</span> <span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="k">return</span> <span class="n">context</span><span class="o">.</span><span class="n">deps</span><span class="o">.</span><span class="n">api_host</span>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">MockLLM</span><span class="p">(</span>
-</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>        <span class="n">default_options</span><span class="o">=</span><span class="n">MockLLMOptions</span><span class="p">(</span>
-</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>            <span class="n">response</span><span class="o">=</span><span class="s2">&quot;Using dependencies from context.&quot;</span><span class="p">,</span>
-</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>            <span class="n">tool_calls</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;get_api_host&quot;</span><span class="p">,</span> <span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;function&quot;</span><span class="p">}],</span>
-</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>        <span class="p">)</span>
-</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>    <span class="p">)</span>
-</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Retrieve API host&quot;</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">get_api_host</span><span class="p">])</span>
-</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>
-</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">AgentRunContext</span><span class="p">()</span>
-</span><span id="__span-6-24"><a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>    <span class="n">context</span><span class="o">.</span><span class="n">deps</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">Deps</span><span class="p">(</span><span class="n">api_host</span><span class="o">=</span><span class="s2">&quot;https://api.local&quot;</span><span class="p">)</span>
-</span><span id="__span-6-25"><a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>
-</span><span id="__span-6-26"><a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>    <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;What host are we using?&quot;</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
-</span><span id="__span-6-27"><a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">tool_calls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">result</span><span class="p">)</span>
-</span></code></pre></div>
-<p>See the runnable example in <code>examples/agents/dependencies.py</code>.</p>
 <h2 id="streaming-agent-responses">Streaming agent responses<a class="headerlink" href="#streaming-agent-responses" title="Permanent link">#</a></h2>
 <p>For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.Agent"><code>Agent</code></a> class supports streaming through the <code>run_streaming()</code> method.</p>
 <p>This method returns an <code>AgentResultStreaming</code> object — an async iterator that yields parts of the LLM response and tool-related events in real time.</p>
 <h2 id="native-openai-tools">Native OpenAI tools<a class="headerlink" href="#native-openai-tools" title="Permanent link">#</a></h2>
 <p>Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.tools</span> <span class="kn">import</span> <span class="n">get_web_search_tool</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the weather agent with additional tool.&quot;&quot;&quot;</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;gpt-4o-2024-08-06&quot;</span>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span> <span class="n">use_structured_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">WeatherPrompt</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">get_web_search_tool</span><span class="p">(</span><span class="n">model_name</span><span class="p">)],</span> <span class="n">keep_history</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">WeatherPromptInput</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">&quot;Paris&quot;</span><span class="p">))</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.tools</span> <span class="kn">import</span> <span class="n">get_web_search_tool</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the weather agent with additional tool.&quot;&quot;&quot;</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">model_name</span> <span class="o">=</span> <span class="s2">&quot;gpt-4o-2024-08-06&quot;</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span> <span class="n">use_structured_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="n">WeatherPrompt</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">get_web_search_tool</span><span class="p">(</span><span class="n">model_name</span><span class="p">)],</span> <span class="n">keep_history</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">WeatherPromptInput</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="s2">&quot;Paris&quot;</span><span class="p">))</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 </span></code></pre></div></p>
 <p>Tool descriptions are available <a href="https://platform.openai.com/docs/guides/tools?api-mode=responses">here</a>. For each of these you can see detailed
 information on the corresponding sub-pages (i.e. <a href="https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses#user-location">here</a> for web search).
 You can use default parameters or specify your own as a dict. For web search this might look like that:
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.tools</span> <span class="kn">import</span> <span class="n">get_web_search_tool</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">tool_params</span> <span class="o">=</span> <span class="p">{</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="s2">&quot;user_location&quot;</span><span class="p">:</span> <span class="p">{</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;approximate&quot;</span><span class="p">,</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>            <span class="s2">&quot;country&quot;</span><span class="p">:</span> <span class="s2">&quot;GB&quot;</span><span class="p">,</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>            <span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="s2">&quot;London&quot;</span><span class="p">,</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>            <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;London&quot;</span><span class="p">,</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="p">}</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="p">}</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">web_search_tool</span> <span class="o">=</span> <span class="n">get_web_search_tool</span><span class="p">(</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="n">tool_params</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.tools</span> <span class="kn">import</span> <span class="n">get_web_search_tool</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">tool_params</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="s2">&quot;user_location&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;approximate&quot;</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>            <span class="s2">&quot;country&quot;</span><span class="p">:</span> <span class="s2">&quot;GB&quot;</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>            <span class="s2">&quot;city&quot;</span><span class="p">:</span> <span class="s2">&quot;London&quot;</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>            <span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;London&quot;</span><span class="p">,</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="p">}</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">}</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">web_search_tool</span> <span class="o">=</span> <span class="n">get_web_search_tool</span><span class="p">(</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="n">tool_params</span><span class="p">)</span>
 </span></code></pre></div></p>
 
 

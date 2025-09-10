@@ -509,27 +509,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../tutorials/chat/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tool-Powered Chat Interfaces
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -1780,39 +1759,6 @@
   
     <nav class="md-nav" aria-label="ragbits">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#ragbits-agents" class="md-nav__link">
-    <span class="md-ellipsis">
-      agents
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="agents">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#ragbits-agents-exec" class="md-nav__link">
-    <span class="md-ellipsis">
-      exec
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#ragbits-agents-run" class="md-nav__link">
-    <span class="md-ellipsis">
-      run
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#ragbits-api" class="md-nav__link">
@@ -3177,103 +3123,16 @@
 </table>
 <p><strong>Subcommands</strong></p>
 <ul>
-<li><em><a href="#ragbits-agents">agents</a></em>: Commands for managing and running agents</li>
 <li><em><a href="#ragbits-api">api</a></em>: Commands for running API service</li>
 <li><em><a href="#ragbits-document-search">document-search</a></em>: Commands for interacting with the document search</li>
 <li><em><a href="#ragbits-evaluate">evaluate</a></em>: Commands for interacting with ragbits evaluate module</li>
 <li><em><a href="#ragbits-prompts">prompts</a></em>: Commands for managing prompts</li>
 <li><em><a href="#ragbits-vector-store">vector-store</a></em>: Commands for managing vector stores</li>
 </ul>
-<h3 id="ragbits-agents">ragbits agents<a class="headerlink" href="#ragbits-agents" title="Permanent link">#</a></h3>
-<p>Commands for managing and running agents</p>
-<p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ragbits agents [OPTIONS] COMMAND [ARGS]...
-</span></code></pre></div>
-<p><strong>Options:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>--help</code></td>
-<td>boolean</td>
-<td>Show this message and exit.</td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Subcommands</strong></p>
-<ul>
-<li><em><a href="#ragbits-agents-exec">exec</a></em>: Execute a single input against an agent and return the result.</li>
-<li><em><a href="#ragbits-agents-run">run</a></em>: Run an agent interactively or in batch mode.</li>
-</ul>
-<h4 id="ragbits-agents-exec">ragbits agents exec<a class="headerlink" href="#ragbits-agents-exec" title="Permanent link">#</a></h4>
-<p>Execute a single input against an agent and return the result.</p>
-<p>This runs the agent once with the provided input and outputs the result.</p>
-<p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ragbits agents exec [OPTIONS] AGENT_PATH INPUT_TEXT
-</span></code></pre></div>
-<p><strong>Options:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>--help</code></td>
-<td>boolean</td>
-<td>Show this message and exit.</td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
-<h4 id="ragbits-agents-run">ragbits agents run<a class="headerlink" href="#ragbits-agents-run" title="Permanent link">#</a></h4>
-<p>Run an agent interactively or in batch mode.</p>
-<p>AGENT_PATH should be in format 'module.path:agent_variable'
-Example: 'examples.city_explorer:city_explorer_agent'</p>
-<p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ragbits agents run [OPTIONS] AGENT_PATH
-</span></code></pre></div>
-<p><strong>Options:</strong></p>
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Type</th>
-<th>Description</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>--interactive</code>, <code>-i</code> / <code>--no-interactive</code></td>
-<td>boolean</td>
-<td>Run in interactive mode with TUI</td>
-<td><code>True</code></td>
-</tr>
-<tr>
-<td><code>--help</code></td>
-<td>boolean</td>
-<td>Show this message and exit.</td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
 <h3 id="ragbits-api">ragbits api<a class="headerlink" href="#ragbits-api" title="Permanent link">#</a></h3>
 <p>Commands for running API service</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ragbits api [OPTIONS] COMMAND [ARGS]...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ragbits api [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3301,7 +3160,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-api-run">ragbits api run<a class="headerlink" href="#ragbits-api-run" title="Permanent link">#</a></h4>
 <p>Run API service with UI demo</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ragbits api run [OPTIONS] CHAT_INTERFACE
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ragbits api run [OPTIONS] CHAT_INTERFACE
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3345,12 +3204,6 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <td><code>False</code></td>
 </tr>
 <tr>
-<td><code>--auth</code></td>
-<td>text</td>
-<td>Path to a module with Authentication Backend</td>
-<td>None</td>
-</tr>
-<tr>
 <td><code>--help</code></td>
 <td>boolean</td>
 <td>Show this message and exit.</td>
@@ -3361,7 +3214,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h3 id="ragbits-document-search">ragbits document-search<a class="headerlink" href="#ragbits-document-search" title="Permanent link">#</a></h3>
 <p>Commands for interacting with the document search</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ragbits document-search [OPTIONS] COMMAND [ARGS]...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ragbits document-search [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3402,7 +3255,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-document-search-ingest">ragbits document-search ingest<a class="headerlink" href="#ragbits-document-search-ingest" title="Permanent link">#</a></h4>
 <p>Ingest the elements from a given source to vector store.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ragbits document-search ingest [OPTIONS] SOURCE
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ragbits document-search ingest [OPTIONS] SOURCE
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3426,7 +3279,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-document-search-search">ragbits document-search search<a class="headerlink" href="#ragbits-document-search-search" title="Permanent link">#</a></h4>
 <p>Query the chosen vector store.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ragbits document-search search [OPTIONS] QUERY
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ragbits document-search search [OPTIONS] QUERY
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3462,7 +3315,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h3 id="ragbits-evaluate">ragbits evaluate<a class="headerlink" href="#ragbits-evaluate" title="Permanent link">#</a></h3>
 <p>Commands for interacting with ragbits evaluate module</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ragbits evaluate [OPTIONS] COMMAND [ARGS]...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>ragbits evaluate [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3526,7 +3379,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-evaluate-run">ragbits evaluate run<a class="headerlink" href="#ragbits-evaluate-run" title="Permanent link">#</a></h4>
 <p>Evaluate the pipeline.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ragbits evaluate run [OPTIONS]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ragbits evaluate run [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3550,7 +3403,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h3 id="ragbits-prompts">ragbits prompts<a class="headerlink" href="#ragbits-prompts" title="Permanent link">#</a></h3>
 <p>Commands for managing prompts</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ragbits prompts [OPTIONS] COMMAND [ARGS]...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>ragbits prompts [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3581,7 +3434,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-prompts-exec">ragbits prompts exec<a class="headerlink" href="#ragbits-prompts-exec" title="Permanent link">#</a></h4>
 <p>Executes a prompt using the specified prompt class and LLM factory.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ragbits prompts exec [OPTIONS] PROMPT_PATH
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>ragbits prompts exec [OPTIONS] PROMPT_PATH
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3618,7 +3471,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <p>Generates the configuration files for the PromptFoo prompts.</p>
 <p>For more information, see the <a href="../../how-to/prompts/promptfoo/">Promptfoo integration documentation</a>.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ragbits prompts promptfoo [OPTIONS]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>ragbits prompts promptfoo [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3660,7 +3513,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-prompts-render">ragbits prompts render<a class="headerlink" href="#ragbits-prompts-render" title="Permanent link">#</a></h4>
 <p>Renders a prompt by loading a class from a module and initializing it with a given payload.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ragbits prompts render [OPTIONS] PROMPT_PATH
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>ragbits prompts render [OPTIONS] PROMPT_PATH
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3690,7 +3543,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-prompts-search">ragbits prompts search<a class="headerlink" href="#ragbits-prompts-search" title="Permanent link">#</a></h4>
 <p>Lists all available prompts that can be used with the 'render' and 'exec' commands.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>ragbits prompts search [OPTIONS]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>ragbits prompts search [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3726,7 +3579,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h3 id="ragbits-vector-store">ragbits vector-store<a class="headerlink" href="#ragbits-vector-store" title="Permanent link">#</a></h3>
 <p>Commands for managing vector stores</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ragbits vector-store [OPTIONS] COMMAND [ARGS]...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>ragbits vector-store [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3768,7 +3621,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-vector-store-list">ragbits vector-store list<a class="headerlink" href="#ragbits-vector-store-list" title="Permanent link">#</a></h4>
 <p>List all objects in the chosen vector store.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>ragbits vector-store list [OPTIONS]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>ragbits vector-store list [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3810,7 +3663,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-vector-store-query">ragbits vector-store query<a class="headerlink" href="#ragbits-vector-store-query" title="Permanent link">#</a></h4>
 <p>Query the chosen vector store.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>ragbits vector-store query [OPTIONS] TEXT
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>ragbits vector-store query [OPTIONS] TEXT
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>
@@ -3852,7 +3705,7 @@ Example: 'examples.city_explorer:city_explorer_agent'</p>
 <h4 id="ragbits-vector-store-remove">ragbits vector-store remove<a class="headerlink" href="#ragbits-vector-store-remove" title="Permanent link">#</a></h4>
 <p>Remove objects from the chosen vector store.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>ragbits vector-store remove [OPTIONS] IDS...
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>ragbits vector-store remove [OPTIONS] IDS...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <table>

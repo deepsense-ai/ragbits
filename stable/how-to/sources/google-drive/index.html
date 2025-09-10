@@ -511,27 +511,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../tutorials/chat/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Tool-Powered Chat Interfaces
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -1130,39 +1109,6 @@
       Advanced Example: Processing Documents
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#impersonating-google-accounts" class="md-nav__link">
-    <span class="md-ellipsis">
-      Impersonating Google Accounts
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Impersonating Google Accounts">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#step-1-enable-domain-wide-delegation" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 1: Enable Domain-Wide Delegation
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#step-2-impersonate-a-user-in-your-code" class="md-nav__link">
-    <span class="md-ellipsis">
-      Step 2: Impersonate a User in Your Code
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3316,37 +3262,6 @@
 </span><span id="__span-3-53"><a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a><span class="c1"># Run the example</span>
 </span><span id="__span-3-54"><a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">process_drive_documents</span><span class="p">())</span>
 </span></code></pre></div>
-<h2 id="impersonating-google-accounts">Impersonating Google Accounts<a class="headerlink" href="#impersonating-google-accounts" title="Permanent link">#</a></h2>
-<p>You can configure your Google service account to impersonate other users in your Google Workspace domain. This is useful when you need to access files or perform actions on behalf of specific users.</p>
-<h3 id="step-1-enable-domain-wide-delegation">Step 1: Enable Domain-Wide Delegation<a class="headerlink" href="#step-1-enable-domain-wide-delegation" title="Permanent link">#</a></h3>
-<ol>
-<li><strong>Sign in to the <a href="https://admin.google.com/">Google Admin Console</a> as a Super Admin.</strong></li>
-<li>Navigate to:
-    <strong>Security &gt; Access and data control &gt; API controls &gt; MANAGE DOMAIN WIDE DELEGATION</strong></li>
-<li>Add a new API client or edit an existing one, and include the following OAuth scopes:<ul>
-<li><code>https://www.googleapis.com/auth/cloud-platform</code></li>
-<li><code>https://www.googleapis.com/auth/drive</code></li>
-</ul>
-</li>
-<li>Click <strong>Authorize</strong> or <strong>Save</strong> to apply the changes.</li>
-</ol>
-<h3 id="step-2-impersonate-a-user-in-your-code">Step 2: Impersonate a User in Your Code<a class="headerlink" href="#step-2-impersonate-a-user-in-your-code" title="Permanent link">#</a></h3>
-<p>After configuring domain-wide delegation, you can specify a target user to impersonate when using the <code>GoogleDriveSource</code> in your code.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">ragbits.core.sources.google_drive</span> <span class="kn">import</span> <span class="n">GoogleDriveSource</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">target_email</span> <span class="o">=</span> <span class="s2">&quot;johnDoe@yourdomain.com&quot;</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">credentials_file</span> <span class="o">=</span> <span class="s2">&quot;service-account-key.json&quot;</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># Set the path to your service account key file</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">GoogleDriveSource</span><span class="o">.</span><span class="n">set_credentials_file_path</span><span class="p">(</span><span class="n">credentials_file</span><span class="p">)</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Set the email address of the user to impersonate</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">GoogleDriveSource</span><span class="o">.</span><span class="n">set_impersonation_target</span><span class="p">(</span><span class="n">target_email</span><span class="p">)</span>
-</span></code></pre></div>
-<p><strong>Note:</strong>
-- The <code>target_email</code> must be a valid user in your Google Workspace domain.
-- Ensure your service account has been granted domain-wide delegation as described above.</p>
-<p>This setup allows your service account to act on behalf of the specified user, enabling access to their Google Drive files and resources as permitted by the assigned scopes.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">#</a></h2>
 <h3 id="common-issues">Common Issues<a class="headerlink" href="#common-issues" title="Permanent link">#</a></h3>
 <ol>
@@ -3394,8 +3309,8 @@
 <ol>
 <li>
 <p><strong>From the URL</strong>: When viewing a file in Google Drive, the ID is in the URL:
-   <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                                ^--- This is the file ID ---^
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                                ^--- This is the file ID ---^
 </span></code></pre></div></p>
 </li>
 <li>
@@ -3408,10 +3323,10 @@
 <h2 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">#</a></h2>
 <h3 id="local-storage-directory">Local Storage Directory<a class="headerlink" href="#local-storage-directory" title="Permanent link">#</a></h3>
 <p>By default, downloaded files are stored in a temporary directory. You can customize this:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span> <span class="nn">os</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># Set custom download directory</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_STORAGE_DIR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/path/to/your/download/directory&quot;</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span> <span class="nn">os</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># Set custom download directory</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_STORAGE_DIR&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;/path/to/your/download/directory&quot;</span>
 </span></code></pre></div>
 <h3 id="supported-file-types">Supported File Types<a class="headerlink" href="#supported-file-types" title="Permanent link">#</a></h3>
 <p>The Google Drive source automatically handles various file types:</p>
