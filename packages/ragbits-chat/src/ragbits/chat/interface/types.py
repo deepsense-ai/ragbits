@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.llms.base import Usage
@@ -129,6 +130,7 @@ class ChatContext(BaseModel):
     conversation_id: str | None = None
     message_id: str | None = None
     state: dict[str, Any] = Field(default_factory=dict)
+    user: User | None = None
     session_id: str | None = None
     model_config = ConfigDict(extra="allow")
 

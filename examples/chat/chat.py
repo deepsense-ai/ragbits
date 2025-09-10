@@ -28,9 +28,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import ChatFormat
 
 
 class LikeFormExample(BaseModel):
@@ -96,8 +97,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Example implementation of the ChatInterface.
