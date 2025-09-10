@@ -10,7 +10,21 @@ from typing import cast
 
 from pydantic import BaseModel
 
-from ragbits.chat.interface.types import AuthType
+from ragbits.chat.interface.types import (
+    AuthType,
+    ChatResponse,
+    ChunkedContentChatResponse,
+    ClearMessageChatResponse,
+    ConversationIdChatResponse,
+    FollowupMessagesChatResponse,
+    ImageChatResponse,
+    LiveUpdateChatResponse,
+    MessageIdChatResponse,
+    ReferenceChatResponse,
+    StateUpdateChatResponse,
+    TextChatResponse,
+    UsageChatResponse,
+)
 
 
 class RagbitsChatModelProvider:
@@ -93,6 +107,7 @@ class RagbitsChatModelProvider:
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
                 "MessageUsage": MessageUsage,
+                "StateUpdate": StateUpdate,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -114,6 +129,19 @@ class RagbitsChatModelProvider:
                 "LoginResponse": LoginResponse,
                 "LogoutRequest": LogoutRequest,
                 "User": User,
+                # Chat responses:
+                "TextChatResponse": TextChatResponse,
+                "ReferenceChatResponse": ReferenceChatResponse,
+                "MessageIdChatResponse": MessageIdChatResponse,
+                "ConversationIdChatResponse": ConversationIdChatResponse,
+                "StateUpdateChatResponse": StateUpdateChatResponse,
+                "LiveUpdateChatResponse": LiveUpdateChatResponse,
+                "FollowupMessagesChatResponse": FollowupMessagesChatResponse,
+                "ImageChatResponse": ImageChatResponse,
+                "ClearMessageChatResponse": ClearMessageChatResponse,
+                "UsageChatResponse": UsageChatResponse,
+                "ChunkedContentChatResponse": ChunkedContentChatResponse,
+                "ChatResponse": ChatResponse,
             }
 
             return self._models_cache
@@ -163,6 +191,18 @@ class RagbitsChatModelProvider:
                 "FeedbackResponse",
                 "ConfigResponse",
                 "LoginResponse",
+                "TextChatResponse",
+                "ReferenceChatResponse",
+                "MessageIdChatResponse",
+                "ConversationIdChatResponse",
+                "StateUpdateChatResponse",
+                "LiveUpdateChatResponse",
+                "FollowupMessagesChatResponse",
+                "ImageChatResponse",
+                "ClearMessageChatResponse",
+                "UsageChatResponse",
+                "ChunkedContentChatResponse",
+                "ChatResponse",
             ],
             "requests": [
                 "ChatRequest",

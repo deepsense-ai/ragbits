@@ -171,6 +171,16 @@ export interface MessageUsage {
 }
 
 /**
+ * Represents an update to conversation state.
+ */
+export interface StateUpdate {
+    state: {
+        [k: string]: unknown
+    }
+    signature: string
+}
+
+/**
  * Customization for the header section of the UI.
  */
 export interface HeaderCustomization {
@@ -413,74 +423,107 @@ export interface User {
 }
 
 /**
- * Specific chat response types
+ * Represents text chat response
  */
 export interface TextChatResponse {
     type: 'text'
     content: string
 }
 
+/**
+ * Represents reference chat response
+ */
 export interface ReferenceChatResponse {
     type: 'reference'
     content: Reference
 }
 
+/**
+ * Represents message_id chat response
+ */
 export interface MessageIdChatResponse {
     type: 'message_id'
     content: string
 }
 
+/**
+ * Represents conversation_id chat response
+ */
 export interface ConversationIdChatResponse {
     type: 'conversation_id'
     content: string
 }
 
+/**
+ * Represents state update chat response
+ */
 export interface StateUpdateChatResponse {
     type: 'state_update'
-    content: ServerState
+    content: StateUpdate
 }
 
+/**
+ * Represents live update chat response
+ */
 export interface LiveUpdateChatResponse {
     type: 'live_update'
     content: LiveUpdate
 }
 
+/**
+ * Represents followup messages chat response
+ */
 export interface FollowupMessagesChatResponse {
     type: 'followup_messages'
     content: string[]
 }
 
+/**
+ * Represents image chat response
+ */
 export interface ImageChatResponse {
     type: 'image'
     content: Image
 }
 
-export interface ClearMessageResponse {
+/**
+ * Represents clear message event
+ */
+export interface ClearMessageChatResponse {
     type: 'clear_message'
-    content: never
+    content: null
 }
 
-export interface MessageUsageChatResponse {
+/**
+ * Represents usage chat response
+ */
+export interface UsageChatResponse {
     type: 'usage'
-    content: Record<string, MessageUsage>
+    content: {
+        [k: string]: MessageUsage
+    }
 }
 
-export interface ChunkedChatResponse {
+/**
+ * Represents chunked_content event that contains chunked event of different type
+ */
+export interface ChunkedContentChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
 }
 
 /**
- * Typed chat response union
+ * Container for different types of chat responses.
  */
 export type ChatResponse =
     | TextChatResponse
     | ReferenceChatResponse
-    | MessageIdChatResponse
-    | ConversationIdChatResponse
     | StateUpdateChatResponse
+    | ConversationIdChatResponse
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
     | ImageChatResponse
-    | ClearMessageResponse
-    | MessageUsageChatResponse
+    | ClearMessageChatResponse
+    | UsageChatResponse
+    | MessageIdChatResponse
+    | ChunkedContentChatResponse

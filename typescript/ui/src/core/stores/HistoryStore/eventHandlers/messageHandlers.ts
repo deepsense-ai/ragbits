@@ -1,12 +1,12 @@
 import {
-  ClearMessageResponse,
+  ClearMessageChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
   MessageIdChatResponse,
-  MessageUsageChatResponse,
   ReferenceChatResponse,
   TextChatResponse,
+  UsageChatResponse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -76,7 +76,7 @@ export const handleImage: PrimaryHandler<ImageChatResponse> = (
   });
 };
 
-export const handleClearMessage: PrimaryHandler<ClearMessageResponse> = (
+export const handleClearMessage: PrimaryHandler<ClearMessageChatResponse> = (
   _,
   draft,
   ctx,
@@ -89,7 +89,7 @@ export const handleClearMessage: PrimaryHandler<ClearMessageResponse> = (
   };
 };
 
-export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
+export const handleUsage: PrimaryHandler<UsageChatResponse> = (
   response,
   draft,
   ctx,

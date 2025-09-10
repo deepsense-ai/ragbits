@@ -181,50 +181,6 @@ def _generate_typescript_with_node(schema: dict[str, any], type_name: str) -> st
         raise RuntimeError("json-schema-to-typescript is required but not installed") from None
 
 
-def _generate_chat_response_union_type() -> str:
-    """Generate ChatResponse union type and specific response interfaces."""
-    lines = []
-
-    lines.append("/**")
-    lines.append(" * Specific chat response types")
-    lines.append(" */")
-
-    # Generate specific response interfaces
-    response_interfaces = [
-        ("TextChatResponse", "text", "string"),
-        ("ReferenceChatResponse", "reference", "Reference"),
-        ("MessageIdChatResponse", "message_id", "string"),
-        ("ConversationIdChatResponse", "conversation_id", "string"),
-        ("StateUpdateChatResponse", "state_update", "ServerState"),
-        ("LiveUpdateChatResponse", "live_update", "LiveUpdate"),
-        ("FollowupMessagesChatResponse", "followup_messages", "string[]"),
-        ("ImageChatResponse", "image", "Image"),
-        ("ClearMessageResponse", "clear_message", "never"),
-        ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
-    ]
-
-    internal_response_interfaces = [
-        ("ChunkedChatResponse", "chunked_content", "ChunkedContent"),
-    ]
-
-    for interface_name, response_type, content_type in [*response_interfaces, *internal_response_interfaces]:
-        lines.append(f"export interface {interface_name} {{")
-        lines.append(f"    type: '{response_type}'")
-        lines.append(f"    content: {content_type}")
-        lines.append("}")
-        lines.append("")
-
-    lines.append("/**")
-    lines.append(" * Typed chat response union")
-    lines.append(" */")
-    lines.append("export type ChatResponse =")
-
-    for interface_name, _, _ in response_interfaces:
-        lines.append(f"    | {interface_name}")
-
-    return "\n".join(lines)
-
-
 def _generate_ts_enum_object(enum_name: str, enum_values: list[str]) -> str:
     lines = []
     lines.append("/**")
@@ -305,10 +261,6 @@ def main() -> None:
     for name in pydantic_names:
         lines.append(_generate_typescript_with_node(schemas[name], name))
         lines.append("")
-
-    # Generate ChatResponse union type
-    lines.append(_generate_chat_response_union_type())
-    lines.append("")
 
     # Write to output file
     output_file = Path("typescript/@ragbits/api-client/src/autogen.types.ts")

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move ChatResponse to union of types (#809)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed

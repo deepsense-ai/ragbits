@@ -1,4 +1,8 @@
-import { ChatResponseType, ChunkedChatResponse, Image } from './autogen.types'
+import {
+    ChatResponseType,
+    ChunkedContentChatResponse,
+    Image,
+} from './autogen.types'
 import type {
     ClientConfig,
     StreamCallbacks,
@@ -8,6 +12,7 @@ import type {
     RequestOptions,
     BaseStreamingEndpoints,
     EndpointRequest,
+    ChatResponse,
 } from './types'
 
 /**
@@ -297,7 +302,7 @@ export class RagbitsClient {
         data: T,
         callbacks: StreamCallbacks<T>
     ): Promise<void> {
-        const response = data as ChunkedChatResponse
+        const response = data as ChunkedContentChatResponse
         const content = response.content
 
         const {
@@ -364,3 +369,5 @@ export class RagbitsClient {
 // Re-export types
 export * from './types'
 export * from './autogen.types'
+// Re-export the redefined ChatResponse
+export type { ChatResponse }
