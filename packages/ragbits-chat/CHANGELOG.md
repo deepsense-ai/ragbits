@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Refactor chat handlers in the UI to use registry (#805)
 - Add auth token storage and automatic logout on 401 (#802)
 - Improve user settings storage when history is disabled (#799)
 - Remove redundant test for `/api/config` endpoint (#795)

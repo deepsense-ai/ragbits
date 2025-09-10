@@ -1,11 +1,8 @@
 import {
   ChatRequest,
   ChatResponse,
-  LiveUpdate,
-  Image,
   MessageRole,
   ChatResponseType,
-  LiveUpdateType,
 } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -13,17 +10,12 @@ import {
   Conversation,
   HistoryStore,
 } from "../../../types/history";
-import { produce } from "immer";
 import { mapHistoryToMessages } from "../../utils/messageMapper";
 import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
+import { ChatHandlerRegistry } from "./eventHandlers/eventHandlerRegistry";
 
 const TEMPORARY_CONVERSATION_TAG = "temp-";
-const NON_MESSAGE_EVENTS = new Set<string>([
-  ChatResponseType.StateUpdate,
-  ChatResponseType.ConversationId,
-  ChatResponseType.FollowupMessages,
-]);
 
 const getTemporaryConversationId = () =>
   `${TEMPORARY_CONVERSATION_TAG}${uuidv4()}`;
@@ -57,10 +49,7 @@ const updateConversation = (
   mutator: (draft: Conversation) => void,
 ) => {
   return (draft: HistoryStore) => {
-    // `null` is a special key for conversations that don't have a server-assigned ID yet.
-    // Only one such conversation can exist at any time, as they all share the same key.
     const conversation = draft.conversations[conversationId];
-
     if (!conversation) {
       throw new Error(
         `Conversation with ID '${conversationId}' does not exist`,
@@ -102,123 +91,29 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       });
     },
     handleResponse: (conversationIdRef, messageId, response) => {
-      const _handleImage = (image: Image, message: ChatMessage) => {
-        return produce(message.images ?? {}, (draft) => {
-          if (draft[image.id]) {
-            console.error(
-              `Got duplicate image event for image_id: ${image.id}. Ignoring the event.`,
-            );
-          }
+      let additionalContext: object | void = undefined;
+      const handlers = ChatHandlerRegistry.get(response.type);
 
-          draft[image.id] = image.url;
-        });
-      };
+      set(
+        updateConversation(conversationIdRef.current, (draft) => {
+          const message = draft.history[messageId];
+          if (!message)
+            throw new Error(`Message ID ${messageId} not found in history`);
 
-      const _handleLiveUpdate = (
-        liveUpdate: LiveUpdate,
-        message: ChatMessage,
-      ) => {
-        const { update_id, content, type } = liveUpdate;
-
-        return produce(message.liveUpdates ?? {}, (draft) => {
-          if (type === LiveUpdateType.Start && update_id in draft) {
-            console.error(
-              `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
-            );
-          }
-
-          draft[update_id] = content;
-        });
-      };
-
-      const _handleNonMessageEvent = () => {
-        const { type, content } = response;
-        const conversationId = conversationIdRef.current;
-        set(
-          updateConversation(conversationIdRef.current, (draft) => {
-            switch (type) {
-              case ChatResponseType.StateUpdate:
-                draft.serverState = content;
-                break;
-              case ChatResponseType.ConversationId:
-                draft.conversationId = content;
-                // Update the ref to propagate the change
-                conversationIdRef.current = content;
-                break;
-              case ChatResponseType.FollowupMessages:
-                draft.followupMessages = content;
-                break;
-            }
-          }),
-        );
-
-        // Fix the overall state after the conversationId change
-        if (type === ChatResponseType.ConversationId) {
-          set((draft) => {
-            const oldConversation = draft.conversations[conversationId];
-
-            if (!oldConversation) {
-              throw new Error("Received events for non-existent conversation");
-            }
-
-            draft.conversations[conversationIdRef.current] = oldConversation;
-            if (draft.currentConversation === conversationId) {
-              draft.currentConversation = conversationIdRef.current;
-            }
-            delete draft.conversations[conversationId];
+          additionalContext = handlers.handle(response, draft, {
+            conversationIdRef,
+            messageId,
           });
-        }
-      };
+        }),
+      );
 
-      const _handleMessageEvent = () => {
-        set(
-          updateConversation(conversationIdRef.current, (draft) => {
-            const message = draft.history[messageId];
-            if (!message)
-              throw new Error(`Message ID ${messageId} not found in history`);
-
-            switch (response.type) {
-              case ChatResponseType.Text:
-                message.content += response.content;
-                break;
-              case ChatResponseType.Reference:
-                message.references = [
-                  ...(message.references ?? []),
-                  response.content,
-                ];
-                break;
-              case ChatResponseType.MessageId:
-                message.serverId = response.content;
-                break;
-              case ChatResponseType.LiveUpdate:
-                message.liveUpdates = _handleLiveUpdate(
-                  response.content,
-                  message,
-                );
-                break;
-              case ChatResponseType.Image:
-                message.images = _handleImage(response.content, message);
-                break;
-              case ChatResponseType.ClearMessage:
-                draft.history[messageId] = {
-                  id: message.id,
-                  role: message.role,
-                  content: "",
-                };
-                break;
-              case ChatResponseType.Usage:
-                message.usage = response.content;
-                break;
-            }
-          }),
-        );
-      };
-
-      if (NON_MESSAGE_EVENTS.has(response.type)) {
-        _handleNonMessageEvent();
-      } else {
-        _handleMessageEvent();
-      }
+      set((draft) => {
+        handlers.after?.(response, draft, {
+          conversationIdRef,
+          messageId,
+          ...additionalContext,
+        });
+      });
 
       set(
         updateConversation(conversationIdRef.current, (draft) => {
