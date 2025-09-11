@@ -95,6 +95,7 @@ jobs:
           uv tool run twine upload dist/* --verbose
         env:
           TWINE_USERNAME: __token__
+          TWINE_REPOSITORY_URL: https://test.pypi.org/simple/
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Deploy nightly documentation
