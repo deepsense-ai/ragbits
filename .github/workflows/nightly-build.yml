@@ -97,7 +97,7 @@ jobs:
           uv tool run twine upload dist/* --verbose
         env:
           TWINE_USERNAME: __token__
-          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+          TWINE_REPOSITORY_URL: ${{ vars.PYPI_REPOSITORY_URL || 'https://test.pypi.org/legacy/' }}
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Deploy nightly documentation
@@ -106,18 +106,8 @@ jobs:
 
       - name: Create git tag for nightly
         run: |
-          git config user.name "ds-ragbits-robot"
-          git config user.email "ds-ragbits-robot@users.noreply.github.com"
           git tag "${{ needs.check-for-changes.outputs.nightly-version }}"
           git push origin "${{ needs.check-for-changes.outputs.nightly-version }}"
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
-      - name: Clean up old nightly releases
-        run: |
-          # Keep only last 30 nightly tags
-          git tag -l "*dev*" --sort=-version:refname | tail -n +31 | xargs -r git tag -d
-          git tag -l "*dev*" --sort=-version:refname | tail -n +31 | xargs -r -I {} git push origin :refs/tags/{}
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
