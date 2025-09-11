@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
 - fix: replace authenticated_user state tracking with direct user field in ChatContext
 - Refactor chat handlers in the UI to use registry (#805)
 - Add auth token storage and automatic logout on 401 (#802)

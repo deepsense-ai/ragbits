@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
 - Optional parallel batches execution in ragbits.evaluate.Evaluator (#769)
 
 ## 1.2.2 (2025-08-08)
