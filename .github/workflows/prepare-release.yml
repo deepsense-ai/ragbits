@@ -38,11 +38,20 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Get base version from main branch
+        id: base_version
+        run: |
+          # Get the latest version from main branch to use as base for version bump
+          git fetch origin main
+          BASE_VERSION=$(git show origin/main:packages/${{ github.event.inputs.packageName }}/pyproject.toml | grep 'version =' | cut -d '"' -f2 | head -1)
+          echo "base-version=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Using base version from main branch: $BASE_VERSION"
+
       - name: Update packages
         id: packages_update
         run: |
-          echo old_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
-          uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }}
+          echo old_version=${{ steps.base_version.outputs.base-version }} >> $GITHUB_OUTPUT
+          uv run scripts/update_ragbits_package.py ${{ github.event.inputs.packageName }} ${{ github.event.inputs.updateType }} ${{ steps.base_version.outputs.base-version }}
           echo new_version=`grep version packages/${{ github.event.inputs.packageName }}/pyproject.toml | cut -d \" -f2` >> $GITHUB_OUTPUT
           uv sync
 

@@ -49,11 +49,25 @@
 
 ## Installation
 
-To get started quickly, you can install with:
+### Stable Release
+
+To get started quickly, you can install the latest stable release with:
 
 ```sh
 pip install ragbits
 ```
+
+### Nightly Builds
+
+For the latest development features, you can install nightly builds that are automatically published from the `develop` branch:
+
+```sh
+pip install ragbits --pre
+```
+
+**Note:** Nightly builds include the latest features and bug fixes but may be less stable than official releases. They follow the version format `X.Y.Z.devYYYYMMDDHHMM`.
+
+### Package Contents
 
 This is a starter bundle of packages, containing:
 

@@ -156,6 +156,11 @@ markdown_extensions:
 plugins:
   - search
   - autorefs
+  - mike:
+      version_selector: true
+      css_dir: css
+      javascript_dir: js
+      canonical_version: null
   - mkdocstrings:
       handlers:
         python:
@@ -175,6 +180,8 @@ plugins:
             show_symbol_type_toc: true
             show_signature_annotations: true
 extra:
+  version:
+    provider: mike
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/deepsense-ai
