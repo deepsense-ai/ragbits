@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
 - feat: improve document search parser initialization with lazy loading
 
 - feat: add pptx document parser (#693)

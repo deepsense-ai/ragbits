@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## Unreleased
+
+## 1.3.0 (2025-09-11)
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
 - Add Chat with agents in CLI
 - Add tool_choice parameter to agent interface (#738)
 - Add PydanticAI agents support (#755)
