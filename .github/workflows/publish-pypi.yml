@@ -52,3 +52,10 @@ jobs:
         env:
             TWINE_USERNAME: __token__
             TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+            TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
+
+      - name: Deploy documentation
+        run: |
+          uv run mike deploy --push stable
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
