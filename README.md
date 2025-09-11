@@ -65,7 +65,7 @@ For the latest development features, you can install nightly builds that are aut
 pip install ragbits --pre
 ```
 
-**Note:** Nightly builds include the latest features and bug fixes but may be less stable than official releases. They follow the version format `X.Y.Z.devYYYYMMDDcommit`.
+**Note:** Nightly builds include the latest features and bug fixes but may be less stable than official releases. They follow the version format `X.Y.Z.devYYYYMMDDHHMM`.
 
 ### Package Contents
 
