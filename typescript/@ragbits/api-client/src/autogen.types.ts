@@ -76,6 +76,7 @@ export interface ChatContext {
     state: {
         [k: string]: unknown
     }
+    user: User | null
     session_id: string | null
     [k: string]: unknown
 }
@@ -414,52 +415,52 @@ export interface User {
 /**
  * Specific chat response types
  */
-interface TextChatResponse {
+export interface TextChatResponse {
     type: 'text'
     content: string
 }
 
-interface ReferenceChatResponse {
+export interface ReferenceChatResponse {
     type: 'reference'
     content: Reference
 }
 
-interface MessageIdChatResponse {
+export interface MessageIdChatResponse {
     type: 'message_id'
     content: string
 }
 
-interface ConversationIdChatResponse {
+export interface ConversationIdChatResponse {
     type: 'conversation_id'
     content: string
 }
 
-interface StateUpdateChatResponse {
+export interface StateUpdateChatResponse {
     type: 'state_update'
     content: ServerState
 }
 
-interface LiveUpdateChatResponse {
+export interface LiveUpdateChatResponse {
     type: 'live_update'
     content: LiveUpdate
 }
 
-interface FollowupMessagesChatResponse {
+export interface FollowupMessagesChatResponse {
     type: 'followup_messages'
     content: string[]
 }
 
-interface ImageChatResponse {
+export interface ImageChatResponse {
     type: 'image'
     content: Image
 }
 
-interface ClearMessageResponse {
+export interface ClearMessageResponse {
     type: 'clear_message'
     content: never
 }
 
-interface MessageUsageChatResponse {
+export interface MessageUsageChatResponse {
     type: 'usage'
     content: Record<string, MessageUsage>
 }

@@ -12,7 +12,8 @@ First, create a chat implementation by subclassing `ChatInterface`. Here's a min
 from collections.abc import AsyncGenerator
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatResponse, Message
+from ragbits.chat.interface.types import ChatResponse
+from ragbits.core.prompt import ChatFormat
 from ragbits.core.llms import LiteLLM
 
 class MyChat(ChatInterface):
@@ -22,8 +23,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: dict | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
             yield self.create_text_response(chunk)
@@ -58,7 +59,7 @@ Ragbits Chat supports multiple response types that can be yielded from your `cha
 Text responses are the primary way to stream content to users. Use `create_text_response()` to yield text chunks:
 
 ```python
-async def chat(self, message: str, history: list[Message] | None = None, context: dict | None = None) -> AsyncGenerator[ChatResponse, None]:
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
     # Stream response from LLM
     async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
         yield self.create_text_response(chunk)
@@ -69,7 +70,7 @@ async def chat(self, message: str, history: list[Message] | None = None, context
 References allow you to cite sources, documents, or external links that support your response:
 
 ```python
-async def chat(self, message: str, history: list[Message] | None = None, context: dict | None = None) -> AsyncGenerator[ChatResponse, None]:
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
     # Add a reference
     yield self.create_reference(
         title="Example Reference",
@@ -85,7 +86,7 @@ You can include images in your responses using `create_image_response()`:
 ```python
 import uuid
 
-async def chat(self, message: str, history: list[Message] | None = None, context: dict | None = None) -> AsyncGenerator[ChatResponse, None]:
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
     # Add an image to the response
     yield self.create_image_response(
         str(uuid.uuid4()),  # Unique identifier for the image
@@ -98,7 +99,7 @@ async def chat(self, message: str, history: list[Message] | None = None, context
 Provide suggested follow-up questions to guide the conversation:
 
 ```python
-async def chat(self, message: str, history: list[Message] | None = None, context: dict | None = None) -> AsyncGenerator[ChatResponse, None]:
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
     # Main response...
     async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
         yield self.create_text_response(chunk)
@@ -121,7 +122,7 @@ Live updates show real-time progress for long-running operations (like web searc
 import asyncio
 from ragbits.chat.interface.types import LiveUpdateType
 
-async def chat(self, message: str, history: list[Message] | None = None, context: dict | None = None) -> AsyncGenerator[ChatResponse, None]:
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
     # Start a live update
     yield self.create_live_update(
         "search_task",  # Unique task ID
@@ -163,12 +164,13 @@ Use `create_state_update()` to store state information that persists across conv
 
 ```python
 from ragbits.chat.interface.types import ChatContext
+from ragbits.core.prompt import ChatFormat
 
 async def chat(
     self,
     message: str,
-    history: list[Message] | None = None,
-    context: ChatContext | None = None
+    history: ChatFormat,
+    context: ChatContext
 ) -> AsyncGenerator[ChatResponse, None]:
     # Access existing state from context
     current_state = context.state if context else {}
@@ -393,7 +395,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
+from ragbits.core.prompt import ChatFormat
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 
@@ -486,8 +489,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Comprehensive chat implementation demonstrating all response types.
