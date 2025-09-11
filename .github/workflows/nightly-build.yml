@@ -29,8 +29,10 @@ jobs:
           # Check if we already built this commit as nightly
           LAST_NIGHTLY_TAG=$(git tag -l "*dev*" --sort=-version:refname | head -1)
           if [ -n "$LAST_NIGHTLY_TAG" ]; then
-            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY_TAG | cut -c1-7)
-            if [ "$COMMIT_HASH" = "$LAST_NIGHTLY_COMMIT" ]; then
+            # Get the commit that the last nightly tag points to
+            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY_TAG)
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            if [ "$CURRENT_COMMIT" = "$LAST_NIGHTLY_COMMIT" ]; then
               echo "should-build=false" >> "$GITHUB_OUTPUT"
               echo "No new commits since last nightly build"
               exit 0
@@ -47,8 +49,9 @@ jobs:
               data = tomllib.load(f)
           print(data['project']['version'])
           ")
-          DATE=$(date +%Y%m%d)
-          NIGHTLY_VERSION="${BASE_VERSION}.dev${DATE}${COMMIT_HASH}"
+          # Use timestamp for unique nightly version (PEP 440 compliant)
+          TIMESTAMP=$(date +%Y%m%d%H%M)
+          NIGHTLY_VERSION="${BASE_VERSION}.dev${TIMESTAMP}"
 
           echo "should-build=true" >> "$GITHUB_OUTPUT"
           echo "nightly-version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
@@ -100,9 +103,7 @@ jobs:
 
       - name: Deploy nightly documentation
         shell: bash
-        run: uv run ./.github/scripts/deploy_docs.sh nightly
-        env:
-          GCP_KEY: ${{ secrets.GCP_KEY }}
+        run: uv run mike deploy --push nightly
 
       - name: Create git tag for nightly
         run: |
