@@ -1,14 +1,19 @@
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
 
 if TYPE_CHECKING:
-    from ragbits.agents import Agent, AgentResult
+    from ragbits.agents import Agent, AgentResultStreaming
+
+with suppress(ImportError):
+    from pydantic_ai import Tool as PydanticAITool
 
 
 @dataclass
@@ -81,6 +86,20 @@ class Tool:
             },
         }
 
+    @requires_dependencies("pydantic_ai")
+    def to_pydantic_ai(self) -> "PydanticAITool":
+        """
+        Convert ragbits tool to a Pydantic AI Tool.
+
+        Returns:
+            A `pydantic_ai.tools.Tool` object.
+        """
+        return PydanticAITool(
+            function=self.on_tool_call,
+            name=self.name,
+            description=self.description,
+        )
+
     @classmethod
     def from_agent(cls, agent: "Agent") -> "Tool":
         """
@@ -121,14 +140,13 @@ class Tool:
 
         parameters = {"type": "object", "properties": properties, "required": required}
 
-        async def _on_tool_call(**kwargs: dict) -> "AgentResult":
+        def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
             if input_model_cls and issubclass(input_model_cls, BaseModel):
                 model_input = input_model_cls(**kwargs)
             else:
                 model_input = kwargs.get("input")
 
-            result = await agent.run(model_input)
-            return result
+            return agent.run_streaming(model_input)
 
         return cls(
             name=name,
@@ -137,3 +155,6 @@ class Tool:
             on_tool_call=_on_tool_call,
             context_var_name=get_context_variable_name(agent.run),
         )
+
+
+ToolChoice = Literal["auto", "none", "required"] | Callable
