@@ -462,7 +462,6 @@ class Agent(
                     if isinstance(chunk, ToolCall):
                         result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping, context=context)
                         yield result
-                        print(result)
                         prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                         returned_tool_call = True
                 turn_count += 1
@@ -572,26 +571,6 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext | None = None,
     ) -> ToolCallResult:
-        """
-        Execute a tool call. Supports both normal and streaming tools.
-
-        If the tool returns an AgentResultStreaming, it will be
-        converted into a single ToolCallResult with aggregated content, metadata,
-        tool_calls, and usage.
-
-        Args:
-            tool_call: The tool call object containing name, type, and arguments.
-            tools_mapping: Mapping of tool names to Tool instances.
-            context: Optional context to pass to the tool.
-
-        Returns:
-            ToolCallResult.
-
-        Raises:
-            AgentToolNotSupportedError: If the tool type is unsupported.
-            AgentToolNotAvailableError: If the tool is not in tools_mapping.
-            AgentToolExecutionError: If the tool call raises an exception.
-        """
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
 
