@@ -92,22 +92,27 @@ jobs:
             uv build "$dir" --out-dir dist
           done
 
+      - name: Sync versions to repo and push tag
+        run: |
+          git add packages/*/pyproject.toml
+          git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
+          git tag "${{ env.NIGHTLY_VERSION }}"
+          git push origin "${{ env.NIGHTLY_VERSION }}"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
+
       - name: Publish to PyPI
         run: |
           uv tool run twine upload dist/* --verbose
         env:
           TWINE_USERNAME: __token__
-          TWINE_REPOSITORY_URL: ${{ vars.PYPI_REPOSITORY_URL || 'https://test.pypi.org/legacy/' }}
+          TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Deploy nightly documentation
         shell: bash
         run: uv run mike deploy --push nightly
-
-      - name: Create git tag for nightly
-        run: |
-          git tag "${{ needs.check-for-changes.outputs.nightly-version }}"
-          git push origin "${{ needs.check-for-changes.outputs.nightly-version }}"
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
