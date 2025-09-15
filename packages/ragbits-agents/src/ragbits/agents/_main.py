@@ -175,7 +175,6 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
     async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace:
         try:
             item = await self._generator.__anext__()
-
             match item:
                 case str():
                     self.content += item
@@ -188,6 +187,7 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
                     self.tool_calls.append(item)
                     return item
                 case BasePrompt():
+                    item.add_assistant_message(self.content)
                     self.history = item.chat
                     return item
                 case Usage():
