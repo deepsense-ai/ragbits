@@ -121,8 +121,8 @@ class Tool:
         Returns:
             Tool instance representing the agent.
         """
-        display_name = name if name else (agent.name or "agent")
-        name = display_name.replace(" ", "_").lower()
+        display_name = name or agent.name
+        name = display_name.replace(" ", "_").lower() if display_name else "agent"
         description = description or agent.description
 
         input_model_cls = getattr(agent.prompt, "input_type", None)
