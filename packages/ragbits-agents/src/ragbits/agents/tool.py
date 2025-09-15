@@ -121,8 +121,8 @@ class Tool:
         Returns:
             Tool instance representing the agent.
         """
-        display_name = name or agent.name
-        name = display_name.replace(" ", "_").lower() if display_name else "agent"
+        display_name = name or agent.name or "agent"
+        variable_name = display_name.replace(" ", "_").lower()
         description = description or agent.description
 
         input_model_cls = getattr(agent.prompt, "input_type", None)
@@ -159,7 +159,7 @@ class Tool:
             return agent.run_streaming(model_input)
 
         return cls(
-            name=name,
+            name=variable_name,
             description=description,
             parameters=parameters,
             on_tool_call=_on_tool_call,
