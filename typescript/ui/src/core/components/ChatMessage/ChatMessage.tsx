@@ -12,6 +12,7 @@ import {
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
 import { MessageRole } from "@ragbits/api-client";
+import TodoList from "../TodoList.tsx";
 
 type ChatMessageProps = {
   classNames?: {
@@ -100,6 +101,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 {showMessageReferences && (
                   <MessageReferences references={references} />
                 )}
+                {/* TODO: Add check for todos availability */}
+                <TodoList />
                 {showMessageActions && (
                   <MessageActions
                     content={content}
