@@ -101,19 +101,22 @@ class Tool:
         )
 
     @classmethod
-    def from_agent(cls, agent: "Agent") -> "Tool":
+    def from_agent(cls, agent: "Agent", name: str | None = None, description: str | None = None) -> "Tool":
         """
         Wraps a downstream agent as a single tool. The tool parameters are inferred from
         the downstream agent's prompt input.
 
         Args:
             agent: The downstream agent to wrap as a tool.
+            name: Optional override for the tool name.
+            description: Optional override for the tool description.
 
         Returns:
             Tool instance representing the agent.
         """
-        name = agent.name.replace(" ", "_").lower() if agent.name else "agent"
-        description = agent.description
+        display_name = name or agent.name or "agent"
+        name = display_name.replace(" ", "_").lower()
+        description = description or agent.description
 
         input_model_cls = getattr(agent.prompt, "input_type", None)
         if input_model_cls and issubclass(input_model_cls, BaseModel):

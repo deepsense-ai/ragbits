@@ -256,7 +256,10 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, Agent):
+            if isinstance(tool, tuple):
+                agent, kwargs = tool
+                self.tools.append(Tool.from_agent(agent, **kwargs))
+            elif isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             else:
                 self.tools.append(Tool.from_callable(tool))
@@ -784,3 +787,16 @@ class Agent(
             tools=[tool.function for _, tool in pydantic_ai_agent._function_tools.items()],
             mcp_servers=cast(list[MCPServer], mcp_servers),
         )
+
+    def to_tool(self, name: str | None = None, description: str | None = None) -> Tool:
+        """
+        Convert the agent into a Tool instance.
+
+        Args:
+            name: Optional override for the tool name.
+            description: Optional override for the tool description.
+
+        Returns:
+            Tool instance representing the agent.
+        """
+        return Tool.from_agent(self, name=name or self.name, description=description or self.description)
