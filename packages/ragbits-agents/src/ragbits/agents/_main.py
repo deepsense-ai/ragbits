@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
+    AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
     AgentMaxTokensExceededError,
     AgentMaxTurnsExceededError,
@@ -22,6 +23,7 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer
 from ragbits.agents.mcp.utils import get_tools
+from ragbits.agents.post_processors.base import BasePostProcessor
 from ragbits.agents.tool import Tool, ToolCallResult
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
@@ -84,7 +86,7 @@ class AgentRunContext(BaseModel):
     """The usage of the agent."""
 
 
-class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
+class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
@@ -101,38 +103,39 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
         self.history: ChatFormat
         self.usage: Usage = Usage()
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
+    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]:
         return self
 
-    async def __anext__(self) -> str | ToolCall | ToolCallResult:
+    async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace:
         try:
             item = await self._generator.__anext__()
+
             match item:
                 case str():
                     self.content += item
+                    return item
                 case ToolCall():
-                    pass
+                    return item
                 case ToolCallResult():
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                    return item
                 case BasePrompt():
-                    item.add_assistant_message(self.content)
                     self.history = item.chat
-                    item = await self._generator.__anext__()
-                    item = cast(SimpleNamespace, item)
-                    item.result = {
-                        "content": self.content,
-                        "metadata": self.metadata,
-                        "tool_calls": self.tool_calls,
-                    }
-                    raise StopAsyncIteration
+                    return item
                 case Usage():
                     self.usage = item
                     return await self.__anext__()
+                case SimpleNamespace():
+                    result_dict = getattr(item, "result", {})
+                    self.content = result_dict.get("content", self.content)
+                    self.metadata = result_dict.get("metadata", self.metadata)
+                    self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
+                    return item
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-            return item
+
         except StopAsyncIteration:
             raise
 
@@ -192,6 +195,7 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -200,6 +204,7 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -207,6 +212,7 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -218,6 +224,7 @@ class Agent(
                 - None: No input. Only valid when a string prompt was provided during initialization.
             options: The options for the agent run.
             context: The context for the agent run.
+            post_processors: List of post-processors to apply to the response in order.
 
         Returns:
             The result of the agent run.
@@ -228,6 +235,23 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+        """
+        result = await self._run_without_post_processing(input, options, context)
+
+        if post_processors:
+            for processor in post_processors:
+                result = await processor.process(result, self)
+
+        return result
+
+    async def _run_without_post_processing(
+        self,
+        input: str | PromptInputT | None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+    ) -> AgentResult[PromptOutputT]:
+        """
+        Run the agent without applying post-processors.
         """
         if context is None:
             context = AgentRunContext()
@@ -294,6 +318,9 @@ class Agent(
         input: str | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
+        *,
+        allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -302,6 +329,9 @@ class Agent(
         input: PromptInputT,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
+        *,
+        allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -309,6 +339,9 @@ class Agent(
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
+        *,
+        allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -318,6 +351,8 @@ class Agent(
             input: The input for the agent run.
             options: The options for the agent run.
             context: The context for the agent run.
+            post_processors: List of post-processors to apply to the response in order.
+            allow_non_streaming: Whether to allow non-streaming post-processors.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -328,8 +363,17 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+            AgentInvalidPostProcessorError: If the post-processor is invalid.
         """
-        generator = self._stream_internal(input, options, context)
+        if post_processors:
+            if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
+                raise AgentInvalidPostProcessorError(
+                    reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
+                )
+            generator = self._stream_with_post_processing(input, options, context, post_processors)
+        else:
+            generator = self._stream_internal(input, options, context)
+
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
@@ -560,3 +604,68 @@ class Agent(
             )
             for tool in all_tools.values()
         ]
+
+    async def _stream_with_post_processing(
+        self,
+        input: str | PromptInputT | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        post_processors: list[BasePostProcessor] | None = None,
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
+        """
+        Stream with support for both streaming and non-streaming post-processors.
+
+        Streaming processors get chunks in real-time via process_streaming().
+        Non-streaming processors get the complete result via process().
+        """
+        input = cast(PromptInputT, input)
+
+        streaming_processors = [p for p in post_processors or [] if p.supports_streaming]
+        non_streaming_processors = [p for p in post_processors or [] if not p.supports_streaming]
+
+        accumulated_content = ""
+        tool_call_results: list[ToolCallResult] = []
+        usage: Usage = Usage()
+        prompt_with_history: BasePrompt | None = None
+
+        async for chunk in self._stream_internal(input, options, context):
+            processed_chunk = chunk
+            for processor in streaming_processors:
+                processed_chunk = await processor.process_streaming(chunk=processed_chunk, agent=self)
+                if processed_chunk is None:
+                    break
+
+            if isinstance(processed_chunk, str):
+                accumulated_content += processed_chunk
+            elif isinstance(processed_chunk, ToolCallResult):
+                tool_call_results.append(processed_chunk)
+            elif isinstance(processed_chunk, Usage):
+                usage = processed_chunk
+            elif isinstance(processed_chunk, BasePrompt):
+                prompt_with_history = processed_chunk
+
+            if processed_chunk is not None:
+                yield processed_chunk
+
+        if non_streaming_processors and prompt_with_history:
+            agent_result = AgentResult(
+                content=accumulated_content,
+                metadata={},
+                tool_calls=tool_call_results or None,
+                history=prompt_with_history.chat,
+                usage=usage,
+            )
+
+            current_result = agent_result
+            for processor in non_streaming_processors:
+                current_result = await processor.process(current_result, self)
+
+            yield current_result.usage
+            yield prompt_with_history
+            yield SimpleNamespace(
+                result={
+                    "content": current_result.content,
+                    "metadata": current_result.metadata,
+                    "tool_calls": current_result.tool_calls,
+                }
+            )
