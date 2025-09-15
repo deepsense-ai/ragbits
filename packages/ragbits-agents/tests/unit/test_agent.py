@@ -806,7 +806,7 @@ async def test_input_fields_prompt_creation():
     assert prompt_cls.user_prompt == "{{ foo }} {{ bar }}"
 
     InputModel = AgentWithInputFields.input_type
-    valid_input = InputModel(foo=1)
+    InputModel(foo=1)
 
     with pytest.raises(ValidationError):
         InputModel()  # foo is required
