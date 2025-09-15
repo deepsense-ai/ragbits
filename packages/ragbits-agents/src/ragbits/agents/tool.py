@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel
 from typing_extensions import Self
 
+from ragbits.core.llms.base import LLMClientOptionsT
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
 
@@ -101,7 +103,12 @@ class Tool:
         )
 
     @classmethod
-    def from_agent(cls, agent: "Agent", name: str | None = None, description: str | None = None) -> "Tool":
+    def from_agent(
+        cls,
+        agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        name: str | None = None,
+        description: str | None = None,
+    ) -> "Tool":
         """
         Wraps a downstream agent as a single tool. The tool parameters are inferred from
         the downstream agent's prompt input.
@@ -114,7 +121,7 @@ class Tool:
         Returns:
             Tool instance representing the agent.
         """
-        display_name = name or agent.name or "agent"
+        display_name = name if name else (agent.name or "agent")
         name = display_name.replace(" ", "_").lower()
         description = description or agent.description
 
