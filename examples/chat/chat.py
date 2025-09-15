@@ -28,9 +28,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
-from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
+from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import ChatFormat
 
 
 class LikeFormExample(BaseModel):
@@ -84,9 +85,11 @@ class MyChat(ChatInterface):
             "You can ask me **anything**! "
             "I can provide information, answer questions, and assist you with various tasks."
         ),
+        meta=PageMetaCustomization(favicon="🔨", page_title="Change me!"),
     )
 
     conversation_history = True
+    show_usage = True
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
@@ -94,8 +97,8 @@ class MyChat(ChatInterface):
     async def chat(
         self,
         message: str,
-        history: list[Message] | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Example implementation of the ChatInterface.
@@ -142,7 +145,11 @@ class MyChat(ChatInterface):
             yield live_update
             await asyncio.sleep(2)
 
-        async for chunk in self.llm.generate_streaming([*history, {"role": "user", "content": message}]):
+        streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
+        async for chunk in streaming_result:
             yield self.create_text_response(chunk)
+
+        if streaming_result.usage:
+            yield self.create_usage_response(streaming_result.usage)
 
         yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])

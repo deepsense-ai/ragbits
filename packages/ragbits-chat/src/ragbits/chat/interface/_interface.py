@@ -7,11 +7,12 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
-from typing import Any, Literal
+from typing import Any
 
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
+from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
@@ -22,10 +23,12 @@ from .types import (
     ChatContext,
     ChatResponse,
     ChatResponseType,
+    FeedbackType,
     Image,
     LiveUpdate,
     LiveUpdateContent,
     LiveUpdateType,
+    MessageUsage,
     Reference,
     StateUpdate,
 )
@@ -34,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def with_chat_metadata(
-    func: Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]],
+    func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponse, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
     """
     Decorator that adds message and conversation metadata to the chat method and handles history persistence.
@@ -48,12 +51,12 @@ def with_chat_metadata(
     ) -> AsyncGenerator[ChatResponse, None]:
         start_time = time.time()
 
-        # Initialize context if None
-        if context is None:
-            context = ChatContext()
+        # Assure history and context are not None
+        history = history or []
+        context = context or ChatContext()
 
         # Track history length
-        history_length = len(history) if history else 0
+        history_length = len(history)
         record_metric(
             ChatHistogramMetric.CHAT_HISTORY_LENGTH,
             history_length,
@@ -178,6 +181,7 @@ class ChatInterface(ABC):
     feedback_config: FeedbackConfig = FeedbackConfig()
     user_settings: UserSettings = UserSettings()
     conversation_history: bool = False
+    show_usage: bool = False
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
 
@@ -236,6 +240,18 @@ class ChatInterface(ABC):
         return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
 
     @staticmethod
+    def create_clear_message_response() -> ChatResponse:
+        """Helper method to create an clear message response."""
+        return ChatResponse(type=ChatResponseType.CLEAR_MESSAGE, content=None)
+
+    @staticmethod
+    def create_usage_response(usage: Usage) -> ChatResponse:
+        return ChatResponse(
+            type=ChatResponseType.USAGE,
+            content={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()},
+        )
+
+    @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:
         """
         Sign the state with HMAC to ensure integrity.
@@ -291,8 +307,8 @@ class ChatInterface(ABC):
     async def chat(
         self,
         message: str,
-        history: ChatFormat | None = None,
-        context: ChatContext | None = None,
+        history: ChatFormat,
+        context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
         """
         Process a chat message and yield responses asynchronously.
@@ -329,8 +345,8 @@ class ChatInterface(ABC):
     async def save_feedback(
         self,
         message_id: str,
-        feedback: Literal["like", "dislike"],
-        payload: dict,
+        feedback: FeedbackType,
+        payload: dict[str, Any] | None = None,
     ) -> None:
         """
         Save feedback about a chat message.

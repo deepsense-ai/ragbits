@@ -49,6 +49,14 @@ The result is an [AgentResult][ragbits.agents.AgentResult], which includes the m
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/tool_use.py).
 
+## Tool choice
+To control what tool is used at first call you could use `tool_choice` parameter. There are the following options:
+- "auto": let model decide if tool call is needed
+- "none": do not call tool
+- "required: enforce tool usage (model decides which one)
+- Callable: one of provided tools
+
+
 ## Conversation history
 [`Agent`][ragbits.agents.Agent]s can retain conversation context across multiple interactions by enabling the `keep_history` flag when initializing the agent. This is useful when you want the agent to understand follow-up questions without needing the user to repeat earlier details.
 
@@ -75,6 +83,41 @@ In this scenario, the agent recognizes that the follow-up question "What about T
 ```python
 AgentResult(content='The current temperature in Tokyo is 10°C.', ...)
 ```
+
+## Binding dependencies via AgentRunContext
+You can bind your external dependencies before the first access and safely use them in tools. After first attribute lookup, the dependencies container freezes to prevent mutation during a run.
+
+```python
+from dataclasses import dataclass
+from ragbits.agents import Agent, AgentRunContext
+from ragbits.core.llms.mock import MockLLM, MockLLMOptions
+
+@dataclass
+class Deps:
+    api_host: str
+
+def get_api_host(context: AgentRunContext | None) -> str:
+    """Return the API host taken from the bound dependencies in context."""
+    assert context is not None
+    return context.deps.api_host
+
+async def main() -> None:
+    llm = MockLLM(
+        default_options=MockLLMOptions(
+            response="Using dependencies from context.",
+            tool_calls=[{"name": "get_api_host", "arguments": "{}", "id": "example", "type": "function"}],
+        )
+    )
+    agent = Agent(llm=llm, prompt="Retrieve API host", tools=[get_api_host])
+
+    context = AgentRunContext()
+    context.deps.value = Deps(api_host="https://api.local")
+
+    result = await agent.run("What host are we using?", context=context)
+    print(result.tool_calls[0].result)
+```
+
+See the runnable example in `examples/agents/dependencies.py`.
 
 ## Streaming agent responses
 For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.

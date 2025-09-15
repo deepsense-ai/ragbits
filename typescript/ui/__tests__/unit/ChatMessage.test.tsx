@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
-import { ChatMessage } from "../../src/core/components/ChatMessage";
+import ChatMessage from "../../src/core/components/ChatMessage/ChatMessage";
 import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
 import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
@@ -49,10 +49,10 @@ function mockStore(
       serverId: role,
       content:
         content ??
-        (role === MessageRole.ASSISTANT ? "Hello, world!" : "Hi there!"),
+        (role === MessageRole.Assistant ? "Hello, world!" : "Hi there!"),
       role,
       references:
-        role === MessageRole.ASSISTANT
+        role === MessageRole.Assistant
           ? [
               {
                 title: "Example",
@@ -61,20 +61,32 @@ function mockStore(
               },
             ]
           : [],
+      usage: {
+        "litellm:gpt4-mini": {
+          n_requests: 0,
+          estimated_cost: 0,
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+        },
+      },
     };
   });
 }
 
-vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
-  default: ({ component }: ComponentProps<typeof PluginWrapper>) => (
-    <div data-testid="feedback-form" data-plugin={component}>
-      {component}
-    </div>
-  ),
-}));
+const COMPONENT_TEST_ID: Record<string, string> = {
+  FeedbackForm: "feedback-form",
+  UsageButton: "usage-button",
+};
 
-vi.mock("../DelayedTooltip.tsx", () => ({
-  DelayedTooltip: ({ children }: PropsWithChildren) => children,
+vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
+  default: ({ component }: ComponentProps<typeof PluginWrapper>) => {
+    return (
+      <div data-testid={COMPONENT_TEST_ID[component]} data-plugin={component}>
+        {component}
+      </div>
+    );
+  },
 }));
 
 vi.mock("react-markdown", () => ({
@@ -91,15 +103,15 @@ describe("ChatMessage", () => {
   });
   describe("assistant role", () => {
     it("is correctly aligned", () => {
-      mockStore(MessageRole.ASSISTANT);
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       const wrapper = screen.getByTestId("chat-message-wrapper");
       expect(wrapper).not.toHaveClass("flex-row-reverse");
     });
 
     it("has correct content", () => {
-      mockStore(MessageRole.ASSISTANT);
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByText("Hello, world!")).toBeInTheDocument();
       // Check references
       expect(screen.getByText("Example")).toBeInTheDocument();
@@ -110,7 +122,7 @@ describe("ChatMessage", () => {
     });
 
     it("shows feedback from when enabled", () => {
-      mockStore(MessageRole.ASSISTANT);
+      mockStore(MessageRole.Assistant);
       vi.mock(
         "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
         () => ({
@@ -129,44 +141,61 @@ describe("ChatMessage", () => {
         }),
       );
 
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
     });
 
+    it("shows usage button when enabled", () => {
+      mockStore(MessageRole.Assistant);
+      vi.mock(
+        "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
+        () => ({
+          config: {
+            show_usage: true,
+          },
+        }),
+      );
+
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
+      expect(screen.getByTestId("usage-button")).toBeInTheDocument();
+    });
+
     it("displays loading state for assistant message without content", () => {
-      mockStore(MessageRole.ASSISTANT, true, "");
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
+      mockStore(MessageRole.Assistant, true, "");
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("loading-indicator")).toBeInTheDocument();
     });
 
     it("copies content to clipboard when copy button is clicked", async () => {
-      mockStore(MessageRole.ASSISTANT);
-      render(<ChatMessage messageId={MessageRole.ASSISTANT} />);
+      mockStore(MessageRole.Assistant);
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
       const user = userEvent.setup();
       const copyButton = screen.getByLabelText("Copy message");
       await user.click(copyButton);
       const clipboardText = await navigator.clipboard.readText();
       expect(clipboardText).toBe("Hello, world!");
       await waitFor(async () => {
-        expect(
-          await screen.findByTestId("chat-message-copy-icon"),
-        ).toHaveAttribute("data-icon", "heroicons:check");
+        expect(await screen.findByText("heroicons:check"));
       });
-      // Not waiting for the icon to change due to current bug with fake timers and userEvent
-      // https://github.com/testing-library/user-event/issues/1115
+      await waitFor(
+        async () => {
+          expect(await screen.findByText("heroicons:clipboard"));
+        },
+        { timeout: 5000 },
+      );
     });
   });
 
   describe("user role", () => {
     it("is correctly aligned", () => {
-      mockStore(MessageRole.USER);
-      render(<ChatMessage messageId={MessageRole.USER} />);
+      mockStore(MessageRole.User);
+      render(<ChatMessage messageId={MessageRole.User} />);
       const wrapper = screen.getByTestId("chat-message-wrapper");
       expect(wrapper).toHaveClass("flex-row-reverse");
     });
     it("has correct content", () => {
-      mockStore(MessageRole.USER);
-      render(<ChatMessage messageId={MessageRole.USER} />);
+      mockStore(MessageRole.User);
+      render(<ChatMessage messageId={MessageRole.User} />);
       expect(screen.getByText("Hi there!")).toBeInTheDocument();
     });
   });

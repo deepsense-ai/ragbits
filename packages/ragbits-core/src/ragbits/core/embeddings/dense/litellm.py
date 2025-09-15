@@ -1,6 +1,5 @@
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import litellm
 from typing_extensions import Self
 
 from ragbits.core.audit.traces import trace
@@ -14,6 +13,10 @@ from ragbits.core.embeddings.exceptions import (
 )
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.lazy_litellm import LazyLiteLLM
+
+if TYPE_CHECKING:
+    from litellm import Router
 
 
 class LiteLLMEmbedderOptions(Options):
@@ -28,7 +31,7 @@ class LiteLLMEmbedderOptions(Options):
     encoding_format: str | None | NotGiven = NOT_GIVEN
 
 
-class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
+class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions], LazyLiteLLM):
     """
     Client for creating text embeddings using LiteLLM API.
     """
@@ -44,7 +47,7 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
         base_url: str | None = None,  # Alias for api_base
         api_key: str | None = None,
         api_version: str | None = None,
-        router: litellm.Router | None = None,
+        router: "Router | None" = None,
     ) -> None:
         """
         Constructs the LiteLLMEmbeddingClient.
@@ -119,7 +122,7 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
             options=merged_options.dict(),
         ) as outputs:
             try:
-                entrypoint = self.router or litellm
+                entrypoint = self.router or self._litellm
                 response = await entrypoint.aembedding(
                     input=data,
                     model=self.model_name,
@@ -128,11 +131,11 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
                     api_version=self.api_version,
                     **merged_options.dict(),
                 )
-            except litellm.openai.APIConnectionError as exc:
+            except self._litellm.openai.APIConnectionError as exc:
                 raise EmbeddingConnectionError() from exc
-            except litellm.openai.APIStatusError as exc:
+            except self._litellm.openai.APIStatusError as exc:
                 raise EmbeddingStatusError(exc.message, exc.status_code) from exc
-            except litellm.openai.APIResponseValidationError as exc:
+            except self._litellm.openai.APIResponseValidationError as exc:
                 raise EmbeddingResponseError() from exc
 
             if not response.data:
@@ -158,7 +161,7 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions]):
             LiteLLMEmbedder: An initialized LiteLLMEmbedder instance.
         """
         if "router" in config:
-            router = litellm.router.Router(model_list=config["router"])
+            router = cls._get_litellm_module().router.Router(model_list=config["router"])
             config["router"] = router
 
         # Map base_url to api_base if present

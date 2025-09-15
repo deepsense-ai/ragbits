@@ -11,7 +11,7 @@ import { FeedbackType, useRagbitsCall } from "@ragbits/api-client-react";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
-import { FormTheme, useTransformErrors } from "../../../core/forms";
+import { FormTheme, transformErrors } from "../../../core/forms";
 import validator from "@rjsf/validator-ajv8";
 import { IChangeEvent } from "@rjsf/core";
 import { ChatMessage } from "../../../types/history";
@@ -28,7 +28,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     config: { feedback },
   } = useConfigContext();
   const [feedbackType, setFeedbackType] = useState<FeedbackType>(
-    FeedbackType.LIKE,
+    FeedbackType.Like,
   );
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
@@ -54,7 +54,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
         body: {
           message_id: message.serverId,
           feedback: feedbackType,
-          payload: data,
+          payload: data ?? {},
         },
       });
     } catch (e) {
@@ -81,8 +81,6 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     onOpen();
   };
 
-  const transformErrors = useTransformErrors();
-
   if (!schema) {
     return null;
   }
@@ -97,12 +95,12 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as helpful"
-            onPress={() => onOpenFeedbackForm(FeedbackType.LIKE)}
+            onPress={() => onOpenFeedbackForm(FeedbackType.Like)}
             data-testid="feedback-like"
           >
             <Icon
               icon={
-                selectedFeedback === FeedbackType.LIKE
+                selectedFeedback === FeedbackType.Like
                   ? "heroicons:hand-thumb-up-solid"
                   : "heroicons:hand-thumb-up"
               }
@@ -117,12 +115,12 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
             variant="ghost"
             className="p-0"
             aria-label="Rate message as unhelpful"
-            onPress={() => onOpenFeedbackForm(FeedbackType.DISLIKE)}
+            onPress={() => onOpenFeedbackForm(FeedbackType.Dislike)}
             data-testid="feedback-dislike"
           >
             <Icon
               icon={
-                selectedFeedback === FeedbackType.DISLIKE
+                selectedFeedback === FeedbackType.Dislike
                   ? "heroicons:hand-thumb-down-solid"
                   : "heroicons:hand-thumb-down"
               }

@@ -416,37 +416,6 @@ async def test_pickling():
     assert llm_pickled.api_version == "v1"
 
 
-async def test_init_registers_model_with_custom_cost_config():
-    """Test that custom model cost config properly registers the model with LiteLLM."""
-    custom_config = {
-        "some_model": {
-            "support_vision": True,
-            "input_cost_per_token": 0.0015,
-            "output_cost_per_token": 0.002,
-            "max_tokens": 4096,
-        }
-    }
-
-    with patch("litellm.register_model") as mock_register:
-        # Create LLM instance with custom config
-        LiteLLM(
-            model_name="some_model",
-            custom_model_cost_config=custom_config,
-        )
-
-        # Verify register_model was called with the correct config
-        mock_register.assert_called_once_with(custom_config)
-
-
-async def test_init_does_not_register_model_if_no_cost_config_is_provided():
-    """Test that the model is not registered if no cost config is provided."""
-    with patch("litellm.register_model") as mock_register:
-        LiteLLM(
-            model_name="some_model",
-        )
-        mock_register.assert_not_called()
-
-
 async def test_pickling_registers_model_with_custom_cost_config():
     """Test that the model is registered with LiteLLM when unpickled."""
     custom_config = {

@@ -1,12 +1,8 @@
 import {
   ChatRequest,
   ChatResponse,
-  ChatResponseType,
-  LiveUpdate,
-  LiveUpdateType,
   MessageRole,
-  RagbitsClient,
-  Image,
+  ChatResponseType,
 } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -14,19 +10,12 @@ import {
   Conversation,
   HistoryStore,
 } from "../../../types/history";
-import { produce } from "immer";
 import { mapHistoryToMessages } from "../../utils/messageMapper";
-import { API_URL } from "../../../config";
 import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
+import { ChatHandlerRegistry } from "./eventHandlers/eventHandlerRegistry";
 
 const TEMPORARY_CONVERSATION_TAG = "temp-";
-const RAGBITS_CLIENT = new RagbitsClient({ baseUrl: API_URL });
-const NON_MESSAGE_EVENTS = new Set([
-  ChatResponseType.STATE_UPDATE,
-  ChatResponseType.CONVERSATION_ID,
-  ChatResponseType.FOLLOWUP_MESSAGES,
-]);
 
 const getTemporaryConversationId = () =>
   `${TEMPORARY_CONVERSATION_TAG}${uuidv4()}`;
@@ -60,10 +49,7 @@ const updateConversation = (
   mutator: (draft: Conversation) => void,
 ) => {
   return (draft: HistoryStore) => {
-    // `null` is a special key for conversations that don't have a server-assigned ID yet.
-    // Only one such conversation can exist at any time, as they all share the same key.
     const conversation = draft.conversations[conversationId];
-
     if (!conversation) {
       throw new Error(
         `Conversation with ID '${conversationId}' does not exist`,
@@ -74,8 +60,8 @@ const updateConversation = (
   };
 };
 
-export const isTemporaryConversation = (conversation: Conversation) => {
-  return conversation.conversationId.startsWith(TEMPORARY_CONVERSATION_TAG);
+export const isTemporaryConversation = (conversationId: string) => {
+  return conversationId.startsWith(TEMPORARY_CONVERSATION_TAG);
 };
 
 export const createHistoryStore = immer<HistoryStore>((set, get) => ({
@@ -89,7 +75,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       const { serverState, conversationId, chatOptions } = conversation;
       return {
         ...(serverState ?? {}),
-        ...(conversationId && !isTemporaryConversation(conversation)
+        ...(conversationId &&
+        !isTemporaryConversation(conversation.conversationId)
           ? { conversation_id: conversationId }
           : {}),
         ...(chatOptions ? { user_settings: chatOptions } : {}),
@@ -97,109 +84,39 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
     },
   },
   _internal: {
-    handleResponse: (conversationId, messageId, response) => {
-      const _handleImage = (image: Image, message: ChatMessage) => {
-        return produce(message.images ?? {}, (draft) => {
-          if (draft[image.id]) {
-            console.error(
-              `Got duplicate image event for image_id: ${image.id}. Ignoring the event.`,
-            );
-          }
-
-          draft[image.id] = image.url;
-        });
-      };
-
-      const _handleLiveUpdate = (
-        liveUpdate: LiveUpdate,
-        message: ChatMessage,
-      ) => {
-        const { update_id, content, type } = liveUpdate;
-
-        return produce(message.liveUpdates ?? {}, (draft) => {
-          if (type === LiveUpdateType.START && update_id in draft) {
-            console.error(
-              `Got duplicate start event for update_id: ${update_id}. Ignoring the event.`,
-            );
-          }
-
-          draft[update_id] = content;
-        });
-      };
-
-      const _handleNonMessageEvent = () => {
-        const { type, content } = response;
-        set(
-          updateConversation(conversationId, (draft) => {
-            switch (type) {
-              case ChatResponseType.STATE_UPDATE:
-                draft.serverState = content;
-                break;
-              case ChatResponseType.CONVERSATION_ID:
-                draft.conversationId = content;
-                break;
-              case ChatResponseType.FOLLOWUP_MESSAGES:
-                draft.followupMessages = content;
-                break;
-            }
-          }),
-        );
-
-        if (type === ChatResponseType.CONVERSATION_ID) {
-          set((draft) => {
-            const oldConversation = draft.conversations[conversationId];
-
-            if (!oldConversation) {
-              throw new Error("Received events for non-existent conversation");
-            }
-
-            oldConversation.conversationId = content;
-          });
-        }
-      };
-
-      const _handleMessageEvent = () => {
-        set(
-          updateConversation(conversationId, (draft) => {
-            const message = draft.history[messageId];
-            if (!message)
-              throw new Error(`Message ID ${messageId} not found in history`);
-
-            switch (response.type) {
-              case ChatResponseType.TEXT:
-                message.content += response.content;
-                break;
-              case ChatResponseType.REFERENCE:
-                message.references = [
-                  ...(message.references ?? []),
-                  response.content,
-                ];
-                break;
-              case ChatResponseType.MESSAGE_ID:
-                message.serverId = response.content;
-                break;
-              case ChatResponseType.LIVE_UPDATE:
-                message.liveUpdates = _handleLiveUpdate(
-                  response.content,
-                  message,
-                );
-                break;
-              case ChatResponseType.IMAGE:
-                message.images = _handleImage(response.content, message);
-                break;
-            }
-          }),
-        );
-      };
-
-      if (NON_MESSAGE_EVENTS.has(response.type)) {
-        _handleNonMessageEvent();
-      } else {
-        _handleMessageEvent();
-      }
+    _hasHydrated: false,
+    _setHasHydrated: (state) => {
+      set((draft) => {
+        draft._internal._hasHydrated = state;
+      });
+    },
+    handleResponse: (conversationIdRef, messageId, response) => {
+      let additionalContext: object | void = undefined;
+      const handlers = ChatHandlerRegistry.get(response.type);
 
       set(
-        updateConversation(conversationId, (draft) => {
+        updateConversation(conversationIdRef.current, (draft) => {
+          const message = draft.history[messageId];
+          if (!message)
+            throw new Error(`Message ID ${messageId} not found in history`);
+
+          additionalContext = handlers.handle(response, draft, {
+            conversationIdRef,
+            messageId,
+          });
+        }),
+      );
+
+      set((draft) => {
+        handlers.after?.(response, draft, {
+          conversationIdRef,
+          messageId,
+          ...additionalContext,
+        });
+      });
+
+      set(
+        updateConversation(conversationIdRef.current, (draft) => {
           draft.eventsLog[draft.eventsLog.length - 1].push(response);
         }),
       );
@@ -235,7 +152,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         conversationId,
       };
       const nonUserMessages = Object.values(history).filter(
-        (m) => m.role !== MessageRole.USER,
+        (m) => m.role !== MessageRole.User,
       );
       conversation.eventsLog = nonUserMessages.map(() => []);
       set((draft: HistoryStore) => {
@@ -388,7 +305,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         draft.conversations = omitBy(
           draft.conversations,
           (c) =>
-            isTemporaryConversation(c) &&
+            isTemporaryConversation(c.conversationId) &&
             c.conversationId !== draft.currentConversation,
         );
       });
@@ -396,7 +313,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text) => {
+    sendMessage: (text, ragbitsClient) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -405,13 +322,13 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       const { history, conversationId } = getCurrentConversation();
       addMessage(conversationId, {
-        role: MessageRole.USER,
+        role: MessageRole.User,
         content: text,
       });
 
       // Add empty assistant message that will be filled with the response
       const assistantResponseId = addMessage(conversationId, {
-        role: MessageRole.ASSISTANT,
+        role: MessageRole.Assistant,
         content: "",
       });
 
@@ -429,6 +346,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       );
 
       const abortController = new AbortController();
+      const conversationIdRef = { current: conversationId };
+
       set(
         updateConversation(conversationId, (draft) => {
           draft.abortController = abortController;
@@ -436,47 +355,21 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
 
-      const updateIdentifier = () => {
-        // While streaming, we use a temporary identifier as the key.
-        // When the stream finishes, we replace it with the final identifier stored in the object,
-        // which is then used as the key in the `conversations` record.
-        set((draft) => {
-          const conversation = draft.conversations[conversationId];
-          if (!conversation) {
-            // Silently ignore conversations that don't exist
-            return;
-          }
-
-          draft.conversations = Object.fromEntries(
-            Object.entries(draft.conversations).map(([k, v]) => [
-              k === conversationId ? conversation.conversationId : k,
-              v,
-            ]),
-          );
-
-          if (draft.currentConversation === conversationId) {
-            draft.currentConversation = conversation.conversationId;
-          }
-        });
-      };
-
-      RAGBITS_CLIENT.makeStreamRequest(
+      ragbitsClient.makeStreamRequest(
         "/api/chat",
         chatRequest,
         {
           onMessage: (response: ChatResponse) =>
-            handleResponse(conversationId, assistantResponseId, response),
+            handleResponse(conversationIdRef, assistantResponseId, response),
           onError: (error: Error) => {
-            handleResponse(conversationId, assistantResponseId, {
-              type: ChatResponseType.TEXT,
+            handleResponse(conversationIdRef, assistantResponseId, {
+              type: ChatResponseType.Text,
               content: error.message,
             });
-            stopAnswering(conversationId);
-            updateIdentifier();
+            stopAnswering(conversationIdRef.current);
           },
           onClose: () => {
-            stopAnswering(conversationId);
-            updateIdentifier();
+            stopAnswering(conversationIdRef.current);
           },
         },
         abortController.signal,

@@ -79,11 +79,12 @@ def _update_pkg_version(
     new_version: str | None = None,
     update_type: UpdateType | None = None,
     sync_ragbits_version: bool = False,
+    base_version: str | None = None,
 ) -> tuple[str, str]:
     if not pkg_pyproject:
         pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg_name / "pyproject.toml").read_text())
 
-    version = pkg_pyproject["project"]["version"]
+    version = base_version if base_version else pkg_pyproject["project"]["version"]
 
     if not new_version:
         if update_type is not None:
@@ -252,7 +253,11 @@ def _update_ragbits_extras(packages: list[str]) -> None:
     ragbits_pyproject_path.write_text(tomlkit.dumps(ragbits_pyproject_data))
 
 
-def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = typer.Argument(None)) -> None:
+def run(
+    pkg_name: str | None = typer.Argument(None),
+    update_type: str | None = typer.Argument(None),
+    base_version: str | None = typer.Argument(None),
+) -> None:
     """
     Main entry point for the package version updater. Updates package versions based on user input.
 
@@ -268,6 +273,8 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
         pkg_name: Name of the package to update. If not provided, the user is prompted.
         update_type: Type of version update to apply (major, minor or patch). If not provided,
         the user is prompted for this input.
+        base_version: Base version to update from (used for releases). If not provided, uses
+        the current version from the package's pyproject.toml.
 
     Raises:
         ValueError: If the provided `pkg_name` is not found in the available packages.
@@ -284,7 +291,7 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
     user_prompt_required = pkg_name is None or casted_update_type is None
 
     if pkg_name == "ragbits":
-        version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
+        version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type, base_version=base_version)
         _update_ragbits_extras(packages)
         _update_ts_packages_version(new_version)
 
@@ -297,7 +304,9 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
 
         if is_continue:
             _update_ragbits_extras(packages)
-            version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type)
+            version, new_version = _update_pkg_version(
+                pkg_name, update_type=casted_update_type, base_version=base_version
+            )
             casted_update_type = _check_update_type(version, new_version)
             _update_ts_packages_version(new_version)
 
@@ -309,13 +318,15 @@ def run(pkg_name: str | None = typer.Argument(None), update_type: str | None = t
                 pkg_pyproject["project"]["dependencies"].append(f"ragbits-core=={new_version}")
                 if pkg != "ragbits":
                     _add_updated_dependency_to_changelog(pkg, pkg_name, new_version)
-                _update_pkg_version(pkg, pkg_pyproject, update_type=casted_update_type)
+                _update_pkg_version(pkg, pkg_pyproject, update_type=casted_update_type, base_version=base_version)
 
         else:
             pprint("[red]The ragbits-core package was not successfully updated.[/red]")
 
     else:
-        _update_pkg_version(pkg_name, update_type=casted_update_type, sync_ragbits_version=True)
+        _update_pkg_version(
+            pkg_name, update_type=casted_update_type, sync_ragbits_version=True, base_version=base_version
+        )
 
 
 if __name__ == "__main__":

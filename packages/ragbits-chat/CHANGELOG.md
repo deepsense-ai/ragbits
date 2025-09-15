@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
+- fix: replace authenticated_user state tracking with direct user field in ChatContext
+- Refactor chat handlers in the UI to use registry (#805)
+- Add auth token storage and automatic logout on 401 (#802)
+- Improve user settings storage when history is disabled (#799)
+- Remove redundant test for `/api/config` endpoint (#795)
+- Fix bug causing infinite initialization screen (#793)
+- Fix bug that caused messages to be sent when changing chat settings; simplify and harden history logic (#791)
+- Add `clear_message` event type allowing to reset whole message (#789)
+- Add usage component to UI with backend support (#786)
+- Add authentication handling in the UI (#763)
+- Add backend authentication (#761)
+
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
+
+- Autogenerate typescript types based on backend typing (#727)
+- Add ability to customize favicon and page title (#766)
+
 ## 1.2.2 (2025-08-08)
 
 ### Changed
@@ -13,14 +37,13 @@
 ### Changed
 
 - ragbits-core updated to version v1.2.1
-
 - Fix routing error causing chat to not be displayed with disabled history (#764)
 
 ## 1.2.0 (2025-08-01)
+
 ### Changed
 
 - ragbits-core updated to version v1.2.0
-
 - Update TailwindCSS, React, Vite, tailwind config (#742)
 - Add images support in chat message, images gallery (#731)
 - Add persistent user settings (#719)

@@ -12,6 +12,7 @@ import {
 import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 export default function Chat() {
   const {
@@ -28,6 +29,11 @@ export default function Chat() {
 
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const showHistory = useMemo(() => messageIds.length > 0, [messageIds.length]);
+  const { client: ragbitsClient } = useRagbitsContext();
+
+  const authorizedSendMessage = (text: string) => {
+    sendMessage(text, ragbitsClient);
+  };
 
   const handleScroll = useCallback(() => {
     const AUTO_SCROLL_THRESHOLD = 25;
@@ -139,7 +145,7 @@ export default function Chat() {
         </Button>
         <QuickMessageInput
           isLoading={historyIsLoading}
-          submit={sendMessage}
+          submit={authorizedSendMessage}
           stopAnswering={stopAnswering}
           followupMessages={followupMessages}
         />

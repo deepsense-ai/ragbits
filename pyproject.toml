@@ -11,7 +11,8 @@ dependencies = [
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
-    "ragbits-agents[mcp,a2a]",
+    "ragbits-agents[a2a,cli,mcp]",
+    "mike>=2.1.3",
 ]
 
 [tool.uv]
@@ -29,6 +30,7 @@ dev-dependencies = [
     "mkdocs-click>=0.8.1",
     "mkdocstrings>=0.26.1",
     "mkdocstrings-python>=1.11.1",
+    "mike>=2.1.0",
     "griffe>=1.3.2",
     "griffe-typingdoc>=0.2.7",
     "types-PyYAML>=6.0.2",
@@ -45,7 +47,7 @@ ragbits-document-search = { workspace = true }
 ragbits-evaluate = {workspace = true}
 ragbits-guardrails = {workspace = true}
 ragbits-chat = {workspace = true}
-ragbits-agents = {workspace = true}
+ragbits-agents = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -171,6 +173,9 @@ ignore = [
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
 
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = [

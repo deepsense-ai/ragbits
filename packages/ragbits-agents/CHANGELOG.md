@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+### Changed
+
+- ragbits-core updated to version v1.3.0
+
+- Add Chat with agents in CLI
+- Add tool_choice parameter to agent interface (#738)
+- Add PydanticAI agents support (#755)
+- Add unique ID to each agent instance for better tracking and identification (#790)
+- Add audit tracing for tool calls to improve observability and debugging (#790)
+- Add AgentDependencies type (#781)
+
 ## 1.2.2 (2025-08-08)
 
 ### Changed
@@ -19,7 +31,6 @@
 ### Changed
 
 - ragbits-core updated to version v1.2.0
-
 - Add native openai tools support (#621)
 - add Context to Agents (#715)
 

@@ -2,7 +2,7 @@ import enum
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, MutableSequence
-from typing import ClassVar, Generic, TypeVar, Union, cast, overload
+from typing import ClassVar, Generic, Literal, TypeVar, Union, cast, overload
 
 from pydantic import BaseModel, Field, field_validator
 from typing_extensions import deprecated
@@ -35,6 +35,8 @@ class LLMOptions(Options):
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=LLMOptions)
 Tool = Callable | dict
+ToolChoiceWithCallable = Literal["none", "auto", "required"] | Tool
+ToolChoice = Literal["none", "auto", "required"] | dict
 
 
 class LLMType(enum.Enum):
@@ -62,8 +64,8 @@ class ToolCall(BaseModel):
         """
         Parser for converting tool arguments from string representation to dict
         """
-        pased_arguments = json.loads(tool_arguments)
-        return pased_arguments
+        parsed_arguments = json.loads(tool_arguments)
+        return parsed_arguments
 
 
 class UsageItem(BaseModel):
@@ -379,6 +381,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: None = None,
+        tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> PromptOutputT: ...
 
@@ -388,6 +391,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: None = None,
+        tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[PromptOutputT]: ...
 
@@ -397,6 +401,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool],
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> PromptOutputT | list[ToolCall]: ...
 
@@ -406,6 +411,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool],
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[PromptOutputT | list[ToolCall]]: ...
 
@@ -415,6 +421,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat,
         *,
         tools: None = None,
+        tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> str: ...
 
@@ -424,6 +431,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[str | ChatFormat],
         *,
         tools: None = None,
+        tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[str]: ...
 
@@ -433,6 +441,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat,
         *,
         tools: list[Tool],
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> str | list[ToolCall]: ...
 
@@ -442,6 +451,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[str | ChatFormat],
         *,
         tools: list[Tool],
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[str | list[ToolCall]]: ...
 
@@ -455,6 +465,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> str | PromptOutputT | list[ToolCall] | list[list[ToolCall] | str] | list[str | PromptOutputT | list[ToolCall]]:
         """
@@ -467,12 +478,18 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - ChatFormat: List of message dictionaries in OpenAI chat format
                 - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
+                - Callable: one of provided tools
             options: Options to use for the LLM client.
 
         Returns:
             Parsed response(s) from LLM or list of tool calls.
         """
-        response = await self.generate_with_metadata(prompt, tools=tools, options=options)
+        response = await self.generate_with_metadata(prompt, tools=tools, tool_choice=tool_choice, options=options)
         if isinstance(response, list):
             return [r.tool_calls if tools and r.tool_calls else r.content for r in response]
         else:
@@ -484,6 +501,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt | BasePromptWithParser[PromptOutputT],
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[PromptOutputT]: ...
 
@@ -493,6 +511,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[LLMResponseWithMetadata[PromptOutputT]]: ...
 
@@ -502,6 +521,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat,
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResponseWithMetadata[str]: ...
 
@@ -511,6 +531,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[str | ChatFormat],
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> list[LLMResponseWithMetadata[str]]: ...
 
@@ -524,6 +545,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         | MutableSequence[BasePrompt | BasePromptWithParser[PromptOutputT]],
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> (
         LLMResponseWithMetadata[str]
@@ -542,6 +564,12 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 - ChatFormat: List of message dictionaries in OpenAI chat format
                 - Iterable of any of the above (MutableSequence is only for typing purposes)
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
+                - Callable: one of provided tools
             options: Options to use for the LLM client.
 
         Returns:
@@ -555,6 +583,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         parsed_tools = (
             [convert_function_to_function_schema(tool) if callable(tool) else tool for tool in tools] if tools else None
         )
+        parsed_tool_choice = convert_function_to_function_schema(tool_choice) if callable(tool_choice) else tool_choice
 
         prompts: list[BasePrompt] = [SimplePrompt(p) if isinstance(p, str | list) else p for p in prompt]  # type: ignore
 
@@ -565,6 +594,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 prompt=prompts,
                 options=merged_options,
                 tools=parsed_tools,
+                tool_choice=parsed_tool_choice,
             )
 
             parsed_responses = []
@@ -638,6 +668,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat | BasePrompt,
         *,
         tools: None = None,
+        tool_choice: None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResultStreaming[str | Reasoning]: ...
 
@@ -647,6 +678,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat | BasePrompt,
         *,
         tools: list[Tool],
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResultStreaming[str | Reasoning | ToolCall]: ...
 
@@ -655,6 +687,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: str | ChatFormat | BasePrompt,
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> LLMResultStreaming:
         """
@@ -664,18 +697,25 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         Args:
             prompt: Formatted prompt template with conversation.
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
+                - Callable: one of provided tools
             options: Options to use for the LLM.
 
         Returns:
             Response stream from LLM or list of tool calls.
         """
-        return LLMResultStreaming(self._stream_internal(prompt, tools=tools, options=options))
+        return LLMResultStreaming(self._stream_internal(prompt, tools=tools, tool_choice=tool_choice, options=options))
 
     async def _stream_internal(
         self,
         prompt: str | ChatFormat | BasePrompt,
         *,
         tools: list[Tool] | None = None,
+        tool_choice: ToolChoiceWithCallable | None = None,
         options: LLMClientOptionsT | None = None,
     ) -> AsyncGenerator[str | Reasoning | ToolCall | LLMResponseWithMetadata, None]:
         with trace(model_name=self.model_name, prompt=prompt, options=repr(options)) as outputs:
@@ -688,10 +728,14 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                 if tools
                 else None
             )
+            parsed_tool_choice = (
+                convert_function_to_function_schema(tool_choice) if callable(tool_choice) else tool_choice
+            )
             response = await self._call_streaming(
                 prompt=prompt,
                 options=merged_options,
                 tools=parsed_tools,
+                tool_choice=parsed_tool_choice,
             )
 
             content = ""
@@ -740,6 +784,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: MutableSequence[BasePrompt],
         options: LLMClientOptionsT,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> list[dict]:
         """
         Calls LLM inference API.
@@ -748,6 +793,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Response dict from LLM.
@@ -759,6 +809,7 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
         prompt: BasePrompt,
         options: LLMClientOptionsT,
         tools: list[dict] | None = None,
+        tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[dict, None]:
         """
         Calls LLM inference API with output streaming.
@@ -767,6 +818,11 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             prompt: Formatted prompt template with conversation.
             options: Additional settings used by the LLM.
             tools: Functions to be used as tools by the LLM.
+            tool_choice: Parameter that allows to control what tool is used. Can be one of:
+                - "auto": let model decide if tool call is needed
+                - "none": do not call tool
+                - "required: enforce tool usage (model decides which one)
+                - dict: tool dict corresponding to one of provided tools
 
         Returns:
             Response dict stream from LLM.

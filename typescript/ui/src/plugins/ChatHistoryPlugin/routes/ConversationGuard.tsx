@@ -1,11 +1,12 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
-import { Navigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useShallow } from "zustand/shallow";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { getConversationRoute } from "../utils";
 
 export default function ConversationGuard({ children }: PropsWithChildren) {
+  const navigate = useNavigate();
   const conversations = useHistoryStore(
     useShallow((s) => Object.keys(s.conversations)),
   );
@@ -17,14 +18,18 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
     typeof conversationId === "string" &&
     conversations.includes(conversationId);
 
-  if (!isValidConversation) {
+  useEffect(() => {
+    if (isValidConversation) {
+      return;
+    }
+
     const newestConversation = conversations.at(-1);
     if (!newestConversation) {
       throw new Error("No conversation to navigate to");
     }
     selectConversation(newestConversation);
-    return <Navigate to={getConversationRoute(newestConversation)} replace />;
-  }
+    navigate(getConversationRoute(newestConversation), { replace: true });
+  }, [conversations, isValidConversation, navigate, selectConversation]);
 
   return children;
 }

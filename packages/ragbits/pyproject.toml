@@ -1,6 +1,6 @@
 [project]
 name = "ragbits"
-version = "1.2.2"
+version = "1.3.0"
 description = "Building blocks for rapid development of GenAI applications"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["ragbits-document-search==1.2.2", "ragbits-cli==1.2.2", "ragbits-evaluate==1.2.2", "ragbits-guardrails==1.2.2", "ragbits-chat==1.2.2", "ragbits-core==1.2.2"]
+dependencies = ["ragbits-document-search==1.3.0", "ragbits-cli==1.3.0", "ragbits-evaluate==1.3.0", "ragbits-guardrails==1.3.0", "ragbits-chat==1.3.0", "ragbits-core==1.3.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -93,9 +93,7 @@ fastembed-gpu = [
 pgvector = [
     "asyncpg>=0.30.0,<1.0.0",
 ]
-ray = [
-    "ray[data]>=2.43.0,<3.0.0",
-]
+ray = ["ray[data]>=2.43.0,<3.0.0"]
 unstructured = [
     "unstructured>=0.16.9,<1.0.0",
     "unstructured-client>=0.26.0,<1.0.0",
@@ -122,6 +120,9 @@ google_drive = [
     "google-auth-oauthlib>=1.2.2,<2.0.0",
     "google-oauth2-tool>=0.0.3,<1.0.0",
     "googleapis-common-protos>=1.70.0,<2.0.0"
+]
+cli = [
+    "textual>=0.85.2,<1.0.0",
 ]
 
 [build-system]

@@ -6,7 +6,7 @@ import pytest
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentRunContext
-from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult
+from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult, ToolChoice
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
     AgentMaxTurnsExceededError,
@@ -143,13 +143,82 @@ def llm_with_tool_call_context() -> MockLLM:
     return MockLLM(default_options=options)
 
 
+def get_time() -> str:
+    """
+    Returns the current time.
+
+    Returns:
+        The current time as a string.
+    """
+    return "12:00 PM"
+
+
+@pytest.fixture
+def llm_no_tool_call_when_none() -> MockLLM:
+    """LLM that doesn't call tools when tool_choice is 'none'."""
+    options = MockLLMOptions(response="I cannot call tools right now.")
+    return MockLLM(default_options=options)
+
+
+@pytest.fixture
+def llm_auto_tool_call() -> MockLLM:
+    """LLM that automatically decides to call a tool."""
+    options = MockLLMOptions(
+        response="Let me check the weather for you.",
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "New York"}',
+                "id": "auto_test",
+                "type": "function",
+            }
+        ],
+    )
+    return MockLLM(default_options=options)
+
+
+@pytest.fixture
+def llm_required_tool_call() -> MockLLM:
+    """LLM that is forced to call a tool when tool_choice is 'required'."""
+    options = MockLLMOptions(
+        response="",
+        tool_calls=[
+            {
+                "name": "get_weather",
+                "arguments": '{"location": "Boston"}',
+                "id": "required_test",
+                "type": "function",
+            }
+        ],
+    )
+    return MockLLM(default_options=options)
+
+
+@pytest.fixture
+def llm_specific_tool_call() -> MockLLM:
+    """LLM that calls a specific tool when tool_choice is a specific function."""
+    options = MockLLMOptions(
+        response="",
+        tool_calls=[
+            {
+                "name": "get_time",
+                "arguments": "{}",
+                "id": "specific_test",
+                "type": "function",
+            }
+        ],
+    )
+    return MockLLM(default_options=options)
+
+
 async def _run(
     agent: Agent,
     input: str | BaseModel | None = None,
     options: AgentOptions | None = None,
     context: AgentRunContext | None = None,
+    tool_choice: ToolChoice | None = None,
 ) -> AgentResult:
-    return await agent.run(input, options=options, context=context)
+    return await agent.run(input, options=options, context=context, tool_choice=tool_choice)
 
 
 async def _run_streaming(
@@ -157,8 +226,9 @@ async def _run_streaming(
     input: str | BaseModel | None = None,
     options: AgentOptions | None = None,
     context: AgentRunContext | None = None,
+    tool_choice: ToolChoice | None = None,
 ) -> AgentResultStreaming:
-    result = agent.run_streaming(input, options=options, context=context)
+    result = agent.run_streaming(input, options=options, context=context, tool_choice=tool_choice)
     async for _chunk in result:
         pass
     return result
@@ -255,7 +325,7 @@ async def test_agent_run_tools_with_context(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_agent_run_context_is_updated(llm_without_tool_call: MockLLM, method: Callable):
-    context = AgentRunContext()
+    context: AgentRunContext = AgentRunContext()
     agent: Agent = Agent(
         llm=llm_without_tool_call,
         prompt="NOT IMPORTANT",
@@ -588,3 +658,114 @@ async def test_max_turns_not_exeeded_with_many_tool_calls(llm_multiple_tool_call
 
     assert result.content == "Final response after multiple tool calls"
     assert len(result.tool_calls) == 3
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_with_tool_choice_none(llm_no_tool_call_when_none: MockLLM, method: Callable):
+    """Test agent run with tool_choice set to 'none'."""
+    agent = Agent(
+        llm=llm_no_tool_call_when_none,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+    )
+    result = await method(agent, tool_choice="none")
+
+    assert result.content == "I cannot call tools right now."
+    assert result.tool_calls is None
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_with_auto_tool_call(llm_auto_tool_call: MockLLM, method: Callable):
+    """Test agent run with automatic tool call."""
+    agent = Agent(
+        llm=llm_auto_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+    )
+    result = await method(agent)
+
+    assert result.content == "Let me check the weather for you."
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0].id == "auto_test"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_with_required_tool_call(llm_required_tool_call: MockLLM, method: Callable):
+    """Test agent run with required tool call."""
+    agent = Agent(
+        llm=llm_required_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+    )
+    result = await method(agent, tool_choice="required")
+
+    assert result.content == ""
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0].id == "required_test"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_with_specific_tool_call(llm_specific_tool_call: MockLLM, method: Callable):
+    """Test agent run with specific tool call."""
+    agent = Agent(
+        llm=llm_specific_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather, get_time],
+    )
+    result = await method(agent, tool_choice=get_time)
+
+    assert result.content == ""
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0].id == "specific_test"
+    assert result.tool_calls[0].name == "get_time"
+    assert result.tool_calls[0].result == "12:00 PM"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_agent_run_with_tool_choice_auto_explicit(llm_auto_tool_call: MockLLM, method: Callable):
+    """Test agent run with tool_choice explicitly set to 'auto'."""
+    agent = Agent(
+        llm=llm_auto_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather],
+    )
+    result = await method(agent, tool_choice="auto")
+
+    assert result.content == "Let me check the weather for you."
+    assert len(result.tool_calls) == 1
+    assert result.tool_calls[0].name == "get_weather"
+    assert result.tool_calls[0].arguments == {"location": "New York"}
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_tool_choice_with_multiple_tools_available(llm_auto_tool_call: MockLLM, method: Callable):
+    """Test tool_choice behavior when multiple tools are available."""
+    agent = Agent(
+        llm=llm_auto_tool_call,
+        prompt=CustomPrompt,
+        tools=[get_weather, get_time],  # Multiple tools available
+    )
+
+    result = await method(agent, tool_choice="auto")
+
+    assert result.content == "Let me check the weather for you."
+    assert len(result.tool_calls) == 1
+    # The LLM chose to call get_weather based on its configuration
+    assert result.tool_calls[0].name == "get_weather"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_tool_choice_history_preservation(llm_with_tool_call: MockLLM, method: Callable):
+    """Test that tool_choice works correctly with history preservation."""
+    agent: Agent = Agent(
+        llm=llm_with_tool_call,
+        prompt="You are a helpful assistant",
+        tools=[get_weather],
+        keep_history=True,
+    )
+
+    await method(agent, input="Check weather", tool_choice="auto")
+    assert len(agent.history) >= 3  # At least system, user, assistant messages
+    # Should include tool call in history
+    tool_call_messages = [msg for msg in agent.history if msg.get("role") == "tool"]
+    assert len(tool_call_messages) >= 1

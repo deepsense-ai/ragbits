@@ -2,6 +2,7 @@ import { withTheme } from "@rjsf/core";
 import InputTemplate from "./InputWidget";
 import SelectWidget from "./SelectWidget";
 import FieldTemplate from "./FieldTemplate";
+import CheckboxWidget from "./CheckboxWidget";
 
 function EmptyComponent() {
   return null;
@@ -26,6 +27,7 @@ const FormTheme = withTheme({
   widgets: {
     TextWidget: InputTemplate,
     SelectWidget,
+    CheckboxWidget,
   },
 });
 

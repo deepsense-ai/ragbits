@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+- feat: improve app startup speed with lazy LiteLLM loading
+
+
+- Feat: added support for IVFFlat indexing and Halfvec datatype
+
+- Added Lazy loading of dependencies in local.py and during importing of LiteLLM
+- Add tool_choice parameter to LLM interface (#738)
+- Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
+
+
 ## 1.2.2 (2025-08-08)
 
 - Fix: rendering iterator arguments in Prompt (#768)
@@ -20,6 +32,7 @@
 - Add LLM Usage to LLMResponseWithMetadata (#700)
 - Split usage per model type (#715)
 - Add support for batch generation (#608)
+- Added Google Drive support for impersonation and presentation-to-pdf (#724)
 - Introduce new API for attachments in prompts (#711)
 - Fix issue with trying to store duplicated entries in Vector Stores (#762)
 

@@ -12,20 +12,19 @@ import {
 import {
   act,
   render,
-  renderHook,
   waitFor,
   screen,
   fireEvent,
 } from "@testing-library/react";
 import {
-  ChatResponseType,
-  MessageRole,
   RagbitsClient,
   RagbitsContextProvider,
   StreamCallbacks,
   ChatResponse,
+  ChatResponseType,
+  MessageRole,
+  FeedbackType,
 } from "@ragbits/api-client-react";
-import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/ConfigContextProvider";
 import userEvent from "@testing-library/user-event";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
@@ -36,6 +35,7 @@ import { createHistoryStore } from "../../src/core/stores/HistoryStore/historySt
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 import { HistoryStore } from "../../src/types/history";
+import { API_URL } from "../../src/config";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -52,66 +52,15 @@ vi.mock("idb-keyval", () => ({
 }));
 
 const historyStore = createStore(createHistoryStore);
+const ragbitsClient = new RagbitsClient({ baseUrl: API_URL });
+historyStore.getState()._internal._setHasHydrated(true);
+
 (useHistoryStore as Mock).mockImplementation(
   (selector: (s: HistoryStore) => unknown) => selector(historyStore.getState()),
 );
 
 describe("Integration tests", () => {
   const BASE_URL = "http://127.0.0.1:8000";
-  const renderWithHook = <R,>(hook: () => R) => {
-    return renderHook(() => hook(), {
-      wrapper: ({ children }: { children: React.ReactNode }) => {
-        return (
-          <RagbitsContextProvider baseUrl={BASE_URL}>
-            <ConfigContextProvider>{children}</ConfigContextProvider>
-          </RagbitsContextProvider>
-        );
-      },
-    });
-  };
-  /**
-   * This should test all default endpoints from the API
-   * using UIs mechanims
-   */
-  describe("/api/config", () => {
-    it("should return config", async () => {
-      const { result } = renderWithHook(() => useConfigContext());
-
-      await waitFor(() => {
-        expect(result.current).not.toBeNull();
-      });
-
-      const config = result.current.config;
-      // Customization
-      expect(config).toHaveProperty("customization");
-      // Debug mode
-      expect(config).toHaveProperty("debug_mode");
-      expect(typeof config.debug_mode).toBe("boolean");
-      // History mode
-      expect(config).toHaveProperty("conversation_history");
-      expect(typeof config.conversation_history).toBe("boolean");
-      // Feedback
-      expect(config).toHaveProperty("feedback");
-
-      expect(config.feedback).toHaveProperty("like");
-      expect(config.feedback.like).toHaveProperty("enabled");
-      expect(typeof config.feedback.like.enabled === "boolean").toBe(true);
-      expect(config.feedback.like).toHaveProperty("form");
-      expect(
-        config.feedback.like.form === null ||
-          config.feedback.like.form instanceof Object,
-      ).toBe(true);
-
-      expect(config.feedback).toHaveProperty("dislike");
-      expect(config.feedback.dislike).toHaveProperty("enabled");
-      expect(typeof config.feedback.dislike.enabled === "boolean").toBe(true);
-      expect(config.feedback.dislike).toHaveProperty("form");
-      expect(
-        config.feedback.dislike.form === null ||
-          config.feedback.dislike.form instanceof Object,
-      ).toBe(true);
-    });
-  });
 
   describe("/api/chat", { timeout: 30000 }, () => {
     describe("should call chat endpoint with correct data", () => {
@@ -125,7 +74,9 @@ describe("Integration tests", () => {
           "makeStreamRequest",
         );
         await act(() => {
-          historyStore.getState().actions.sendMessage("Test message");
+          historyStore
+            .getState()
+            .actions.sendMessage("Test message", ragbitsClient);
         });
 
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
@@ -158,7 +109,9 @@ describe("Integration tests", () => {
           "makeStreamRequest",
         );
         await act(() => {
-          historyStore.getState().actions.sendMessage("Test message 2");
+          historyStore
+            .getState()
+            .actions.sendMessage("Test message 2", ragbitsClient);
         });
 
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
@@ -172,9 +125,9 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 2",
           },
@@ -206,7 +159,7 @@ describe("Integration tests", () => {
             <ConfigContextProvider>
               <PromptInput
                 isLoading={false}
-                submit={sendMessage}
+                submit={(text) => sendMessage(text, ragbitsClient)}
                 stopAnswering={stopAnswering}
                 followupMessages={getCurrentConversation().followupMessages}
               />
@@ -220,8 +173,13 @@ describe("Integration tests", () => {
 
         render(<WrappedInput />);
         const user = userEvent.setup();
-        const chatOptionsButton =
-          await screen.findByTestId("open-chat-options");
+        const chatOptionsButton = await screen.findByTestId(
+          "open-chat-options",
+          undefined,
+          {
+            timeout: 5000,
+          },
+        );
         await user.click(chatOptionsButton);
         const selectTrigger = await screen.findByLabelText("Language", {
           selector: "select",
@@ -229,6 +187,10 @@ describe("Integration tests", () => {
         await user.selectOptions(selectTrigger, ["Polish"]);
         const submitButton = await screen.findByText("Save");
         await user.click(submitButton);
+
+        await waitFor(async () => {
+          expect(await screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
 
         const input = await screen.findByRole("textbox");
         fireEvent.change(input, { target: { value: "Test message 3" } });
@@ -250,11 +212,11 @@ describe("Integration tests", () => {
             history: [
               {
                 content: "Test message",
-                role: MessageRole.USER,
+                role: MessageRole.User,
               },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
-              { content: "Test message 2", role: MessageRole.USER },
-              { content: expect.any(String), role: MessageRole.ASSISTANT },
+              { content: expect.any(String), role: MessageRole.Assistant },
+              { content: "Test message 2", role: MessageRole.User },
+              { content: expect.any(String), role: MessageRole.Assistant },
             ],
             message: "Test message 3",
           },
@@ -282,7 +244,7 @@ describe("Integration tests", () => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
             onMessage: (event: ChatResponse) => {
-              expect(event.type).toBeOneOf(Object.values(ChatResponseType));
+              expect(Object.values(ChatResponseType)).toContain(event.type);
             },
           };
 
@@ -297,7 +259,9 @@ describe("Integration tests", () => {
       );
 
       await act(() => {
-        historyStore.getState().actions.sendMessage("Test message");
+        historyStore
+          .getState()
+          .actions.sendMessage("Test message", ragbitsClient);
       });
 
       await waitFor(
@@ -322,7 +286,7 @@ describe("Integration tests", () => {
           .getState()
           .primitives.addMessage(historyStore.getState().currentConversation, {
             content: "Mock content",
-            role: MessageRole.ASSISTANT,
+            role: MessageRole.Assistant,
             serverId: "msg-123",
           });
       });
@@ -362,7 +326,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "like",
+            feedback: FeedbackType.Like,
             payload: {
               like_reason: "Example reason",
             },
@@ -408,7 +372,7 @@ describe("Integration tests", () => {
         expect(makeRequestSpy).toHaveBeenCalledWith("/api/feedback", {
           body: {
             message_id: "msg-123",
-            feedback: "dislike",
+            feedback: FeedbackType.Dislike,
             payload: {
               feedback: "Example feedback",
               issue_type: "Other",

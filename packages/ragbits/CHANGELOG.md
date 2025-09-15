@@ -2,6 +2,69 @@
 
 ## Unreleased
 
+## 1.3.0 (2025-09-11)
+
+### Added
+
+- **Agents**
+  - Agents in CLI support (#776)
+  - Force tool calling support (#751)
+  - Trace tool calls in agents (#790)
+  - PydanticAI agents support (#755)
+  - AgentDependencies in AgentRunContext (#781)
+
+- **Authentication**
+  - Backend authentication into the chat (#761)
+  - UI auth token storage (#802)
+  - Initial auth plugin for UI (#763)
+  - Standardized chat typing system (#803)
+  - Ragbits-chat tutorial and how-to documentation (#778)
+
+- **UI Enhancements**
+  - Persistent user settings v2 (#799)
+  - Usage component for tracking resource consumption (#786)
+  - Clear message event functionality (#789)
+  - Page title & favicon customization (#767)
+
+- **Vector stores**
+  - Support for vectors longer than 2000 tokens in pgvector (#777)
+
+- **Ragbits document-search**
+  - PPTX document parser support (#693)
+
+- **Developer Experience**
+  - Autogenerate TypeScript types (#727)
+  - Automated UI build system (#784)
+  - Optional parallel batches execution in ragbits.evaluate.Evaluator (#769)
+
+- **Performance**
+  - Better litellm lazy loading for improved app speed-up (#806)
+  - Lazy loading to decrease app startup time (#753)
+
+### Fixed
+- UI build issues (#796, #794)
+- Infinite initialization bug (#793)
+- Disappearing history and ChatOptions sending message issue (#791)
+- Litellm logging spam (#792)
+- Prompt consuming same iterator twice (#768)
+
+### Changed
+
+- Refactored UI event handling system (#805)
+- ragbits-chat updated to version v1.3.0
+- ragbits-cli updated to version v1.3.0
+- ragbits-document-search updated to version v1.3.0
+- ragbits-evaluate updated to version v1.3.0
+- ragbits-guardrails updated to version v1.3.0
+- ragbits-core updated to version v1.3.0
+
+### Infrastructure
+- Setup nightly releases (#808)
+- Changelog branch comparison and autogeneration (#807)
+- Added UI plugin tests (#797)
+- Removed config test (#795)
+- Various CI/CD updates
+
 ## 1.2.2 (2025-08-08)
 
 ### Changed
