@@ -188,6 +188,7 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
                     self.tool_calls.append(item)
                     return item
                 case BasePrompt():
+                    item.add_assistant_message(self.content)
                     self.history = item.chat
                     return item
                 case Usage():
