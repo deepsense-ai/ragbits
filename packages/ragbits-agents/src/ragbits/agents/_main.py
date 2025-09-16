@@ -219,6 +219,8 @@ class Agent(
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
+        name: str | None = None,
+        description: str | None = None,
         prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | Prompt[PromptInputT, PromptOutputT] | None = None,
         *,
         history: ChatFormat | None = None,
@@ -232,6 +234,8 @@ class Agent(
 
         Args:
             llm: The LLM to run the agent.
+            name: Optional name of the agent. Used to identify the agent instance.
+            description: Optional description of the agent.
             prompt: The prompt for the agent. Can be:
                 - str: A string prompt that will be used as system message when combined with string input,
                     or as the user message when no input is provided during run().
@@ -248,7 +252,17 @@ class Agent(
         self.id = uuid.uuid4().hex[:8]
         self.llm = llm
         self.prompt = prompt
-        self.tools = [Tool.from_callable(tool) for tool in tools or []]
+        self.name = name
+        self.description = description
+        self.tools = []
+        for tool in tools or []:
+            if isinstance(tool, tuple):
+                agent, kwargs = tool
+                self.tools.append(Tool.from_agent(agent, **kwargs))
+            elif isinstance(tool, Agent):
+                self.tools.append(Tool.from_agent(tool))
+            else:
+                self.tools.append(Tool.from_callable(tool))
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
@@ -555,7 +569,10 @@ class Agent(
         return tools_mapping
 
     async def _execute_tool(
-        self, tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
+        self,
+        tool_call: ToolCall,
+        tools_mapping: dict[str, Tool],
+        context: AgentRunContext | None = None,
     ) -> ToolCallResult:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
@@ -577,10 +594,22 @@ class Agent(
                     else tool.on_tool_call(**call_args)
                 )
 
+                if isinstance(tool_output, AgentResultStreaming):
+                    async for _ in tool_output:
+                        pass
+
+                    tool_output = {
+                        "content": tool_output.content,
+                        "metadata": tool_output.metadata,
+                        "tool_calls": tool_output.tool_calls,
+                        "usage": tool_output.usage,
+                    }
+
                 outputs.result = {
                     "tool_output": tool_output,
                     "tool_call_id": tool_call.id,
                 }
+
             except Exception as e:
                 outputs.result = {
                     "error": str(e),
@@ -758,3 +787,16 @@ class Agent(
             tools=[tool.function for _, tool in pydantic_ai_agent._function_tools.items()],
             mcp_servers=cast(list[MCPServer], mcp_servers),
         )
+
+    def to_tool(self, name: str | None = None, description: str | None = None) -> Tool:
+        """
+        Convert the agent into a Tool instance.
+
+        Args:
+            name: Optional override for the tool name.
+            description: Optional override for the tool description.
+
+        Returns:
+            Tool instance representing the agent.
+        """
+        return Tool.from_agent(self, name=name or self.name, description=description or self.description)
