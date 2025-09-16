@@ -3,7 +3,7 @@ from collections.abc import Callable
 from typing import cast
 
 import pytest
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentRunContext
 from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult, ToolChoice
@@ -776,10 +776,10 @@ async def test_explicit_input_type_prompt_creation():
         foo: int
         bar: str
 
+    @Agent.prompt_config(CustomInput)
     class AgentWithExplicitInput(Agent):
         system_prompt = "System prompt"
         user_prompt = "{{ foo }} {{ bar }}"
-        input_type = CustomInput
 
     prompt_cls = AgentWithExplicitInput.prompt_cls
     assert prompt_cls is not None
@@ -788,75 +788,28 @@ async def test_explicit_input_type_prompt_creation():
     assert prompt_cls.user_prompt == "{{ foo }} {{ bar }}"
 
 
-async def test_input_fields_prompt_creation():
-    class AgentWithInputFields(Agent):
-        system_prompt = "System prompt"
-        user_prompt = "{{ foo }} {{ bar }}"
-        input_foo: int
-        input_bar: str = "default"
-
-    assert AgentWithInputFields.input_type is not None
-    assert issubclass(AgentWithInputFields.input_type, BaseModel)
-    assert set(AgentWithInputFields.input_type.model_fields.keys()) == {"foo", "bar"}
-
-    prompt_cls = AgentWithInputFields.prompt_cls
-    assert prompt_cls is not None
-    assert issubclass(prompt_cls, Prompt)
-    assert prompt_cls.system_prompt == "System prompt"
-    assert prompt_cls.user_prompt == "{{ foo }} {{ bar }}"
-
-    InputModel = AgentWithInputFields.input_type
-    InputModel(foo=1)
-
-    with pytest.raises(ValidationError):
-        InputModel()  # foo is required
-
-
-def test_conflict_raises_error():
-    class CustomInput(BaseModel):
-        foo: int
-        bar: str
-
-    with pytest.raises(ValueError):
-
-        class AgentConflict(Agent):
-            system_prompt = "System prompt"
-            input_type = CustomInput
-            input_foo: int
-
-
-async def test_dynamic_prompt_instance():
-    class AgentDynamic(Agent):
-        system_prompt = "sys"
-        user_prompt = "{{ foo }}"
-        input_foo: int
-
-    prompt_cls = AgentDynamic.prompt_cls
-    assert prompt_cls is not None
-    assert issubclass(prompt_cls, Prompt)
-    assert prompt_cls.system_prompt == "sys"
-    assert prompt_cls.user_prompt == "{{ foo }}"
-
-
 async def test_default_user_prompt_is_input_placeholder():
-    class AgentAutoPrompt(Agent):
-        system_prompt = "System prompt"
-        input_input: int
-
-    prompt_cls = AgentAutoPrompt.prompt_cls
-    assert prompt_cls is not None
-    assert issubclass(prompt_cls, Prompt)
-    assert prompt_cls.user_prompt == "{{ input }}"
-
-    # Also check explicit input_type version
     class CustomInputModel(BaseModel):
         input: int
 
+    @Agent.prompt_config(CustomInputModel)
     class AgentExplicitPrompt(Agent):
         system_prompt = "Explicit system"
-        input_type = CustomInputModel
 
     prompt_cls2 = AgentExplicitPrompt.prompt_cls
     assert prompt_cls2 is not None
     assert issubclass(prompt_cls2, Prompt)
     assert prompt_cls2.user_prompt == "{{ input }}"
+
+
+async def test_input_type_check_with_system_prompt(llm_with_tool_call: MockLLM):
+    class AgentExplicitPrompt(Agent):
+        system_prompt = "Explicit system"
+
+    with pytest.raises(ValueError):
+        AgentExplicitPrompt(
+            llm=llm_with_tool_call,
+            prompt="You are a helpful assistant",
+            tools=[get_weather],
+            keep_history=True,
+        )

@@ -56,6 +56,7 @@ class WeatherAgentInput(BaseModel):
     location: str
 
 
+@Agent.prompt_config(WeatherAgentInput)
 class WeatherAgent(Agent):
     """
     Agent that returns weather for a given location.
@@ -67,7 +68,6 @@ class WeatherAgent(Agent):
     user_prompt = """
     Tell me the temperature in {{ location }}.
     """
-    input_type: WeatherAgentInput = WeatherAgentInput
 
 
 async def main() -> None:

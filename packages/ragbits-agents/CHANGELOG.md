@@ -1,9 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
-- Add syntax sugar allowing easier Agents definition (#820)
 
 - Support wrapping downstream agents as tools (#818)
+- Add syntax sugar allowing easier Agents definition (#820)
 
 ## 1.3.0 (2025-09-11)
 ### Changed

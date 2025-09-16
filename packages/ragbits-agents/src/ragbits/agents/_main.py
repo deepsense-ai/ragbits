@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -14,7 +13,6 @@ from typing import Any, ClassVar, Generic, TypeVar, cast, overload
 from pydantic import (
     BaseModel,
     Field,
-    create_model,
 )
 from typing_extensions import Self
 
@@ -33,7 +31,7 @@ from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStream
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -48,7 +46,8 @@ with suppress(ImportError):
 
     from ragbits.core.llms import LiteLLM
 
-_INPUT_PREFIX = "input_"
+_Input = TypeVar("_Input", bound=BaseModel)
+_Output = TypeVar("_Output")
 
 
 @dataclass
@@ -224,9 +223,9 @@ class Agent(
     default_module: ClassVar[ModuleType | None] = agents
     configuration_key: ClassVar[str] = "agent"
     # Syntax sugar fields
-    user_prompt: str = "{{ input }}"
-    system_prompt: str | None = None
-    input_type: type[BaseModel] | None = None
+    user_prompt: ClassVar[str] = "{{ input }}"
+    system_prompt: ClassVar[str | None] = None
+    input_type: PromptInputT | None = None
     prompt_cls: ClassVar[type[Prompt] | None] = None
 
     def __init__(
@@ -280,14 +279,19 @@ class Agent(
         self.history = history or []
         self.keep_history = keep_history
 
+        if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
+            raise ValueError(
+                f"Agent {type(self).__name__} defines a system_prompt but has no input_type. ",
+                "Use Agent.prompt decorator to properly assign it.",
+            )
+
     def __init_subclass__(cls: type[Self], **kwargs: Any) -> None:
         """
         Automatically invoked when a subclass of Agent is defined.
 
         This method:
-        1. Synthesizes `input_type` from `input_...` annotated class attributes.
-        2. Validates that a system_prompt is paired with an input_type.
-        3. Generates a Prompt subclass for the agent.
+        1. Validates that a system_prompt is paired with an input_type.
+        2. Generates a Prompt subclass for the agent.
 
         Args:
             cls: The subclass of Agent being created.
@@ -296,18 +300,6 @@ class Agent(
         Raises:
             ValueError: If the subclass defines a system_prompt but has no input_type.
         """
-        generated_model = Agent._synthesize_input_model_from_annotations(cls)
-        if generated_model is not None:
-            cls.input_type = generated_model
-
-        if hasattr(cls, "system_prompt"):
-            if not getattr(cls, "input_type", None):
-                raise ValueError(
-                    f"Agent {cls.__name__} defines a system_prompt but has no input_type "
-                    f"(neither explicit nor via `input_...` sugar)."
-                )
-            cls.prompt_cls = Agent._make_prompt_class_for_agent_subclass(cls)
-
         super().__init_subclass__(**kwargs)
 
     @overload
@@ -869,30 +861,6 @@ class Agent(
         return Tool.from_agent(self, name=name or self.name, description=description or self.description)
 
     @staticmethod
-    def _synthesize_input_model_from_annotations(agent_cls: type["Agent[Any, Any, Any]"]) -> type[BaseModel] | None:
-        annotations = getattr(agent_cls, "__annotations__", {})
-        input_fields = {}
-        for name, ann in annotations.items():
-            if name == "input_type":
-                continue
-
-            if name.startswith(_INPUT_PREFIX):
-                field_name = name[len(_INPUT_PREFIX) :]
-                default_val = getattr(agent_cls, name, dataclasses.MISSING)
-                input_fields[field_name] = (ann, default_val)
-
-        if not input_fields:
-            return None
-
-        if getattr(agent_cls, "input_type", None) is not None:
-            raise ValueError("Agent subclass defines both `input_type` and `input_...` fields; pick one.")
-
-        kwargs = {}
-        for k, (typ, default) in input_fields.items():
-            kwargs[k] = (typ, default if default is not dataclasses.MISSING else ...)
-        return create_model(f"_AutoInput_{agent_cls.__name__}", **kwargs)  # type: ignore
-
-    @staticmethod
     def _make_prompt_class_for_agent_subclass(agent_cls: type["Agent[Any, Any, Any]"]) -> type[Prompt] | None:
         system = getattr(agent_cls, "system_prompt", None)
         if not system:
@@ -916,3 +884,43 @@ class Agent(
             (base,),
             exec_body=lambda ns: ns.update(attrs),
         )
+
+    @overload
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, str]"]]: ...
+    @overload
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+        output_model: type[_Output],
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, _Output]"]]: ...
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+        output_model: type[_Output] | type[NotGiven] = NotGiven,
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, _Output]"]]:
+        """
+        Decorator to bind both input and output types of an Agent subclass, with runtime checks.
+
+        Raises:
+            TypeError: if the decorated class is not a subclass of Agent,
+                       or if input_model is not a Pydantic BaseModel.
+        """
+        if not isinstance(input_model, type) or not issubclass(input_model, BaseModel):
+            raise TypeError(f"input_model must be a subclass of pydantic.BaseModel, got {input_model}")
+
+        if not isinstance(output_model, type):
+            raise TypeError(f"output_model must be a type, got {output_model}")
+
+        def decorator(cls: type[Any]) -> type["Agent[LLMOptions, _Input, _Output]"]:
+            if not isinstance(cls, type) or not issubclass(cls, Agent):
+                raise TypeError(f"Can only decorate subclasses of Agent, got {cls}")
+
+            cls.input_type = input_model
+            cls.prompt_cls = Agent._make_prompt_class_for_agent_subclass(cls)
+
+            return cast(type["Agent[LLMOptions, _Input, _Output]"], cls)
+
+        return decorator
