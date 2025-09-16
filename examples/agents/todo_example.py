@@ -43,6 +43,17 @@ class PlanningPrompt(Prompt[HikingPlanInput]):
     Complete this specific planning task with detailed, actionable recommendations.
     """
 
+class SummaryInput(BaseModel):
+    """Input for summary generation with task results."""
+
+    location: str
+    duration_days: int
+    group_size: int
+    skill_level: str
+    season: str
+    preferences: str
+    task_results: str  # Compiled task results
+
 
 class TaskGenerationPrompt(Prompt[HikingPlanInput]):
     """Prompt for AI to generate planning tasks."""
@@ -70,7 +81,7 @@ class TaskGenerationPrompt(Prompt[HikingPlanInput]):
     """
 
 
-class SummaryPrompt(Prompt[HikingPlanInput]):
+class SummaryPrompt(Prompt[SummaryInput]):
     """Prompt for creating final comprehensive summary."""
 
     system_prompt = """
@@ -82,22 +93,18 @@ class SummaryPrompt(Prompt[HikingPlanInput]):
     """
 
     user_prompt = """
-    Create a comprehensive hiking trip plan for:
+    Create a comprehensive hiking trip plan based on the completed research:
+
+    TRIP DETAILS:
     - {{ duration_days }}-day trip in {{ location }}
     - {{ group_size }} {{ skill_level }} hikers
     - Season: {{ season }}
     - Preferences: {{ preferences }}
 
-    Provide a complete plan including:
-    • Trail routes and difficulty assessments
-    • Accommodation recommendations near trailheads
-    • Detailed budget breakdown with costs
-    • Weather analysis and gear recommendations
-    • Daily schedule with sunrise/sunset times
-    • Post-hike activities and relaxation options
-    • Safety protocols and emergency contacts
+    COMPLETED RESEARCH:
+    {{ task_results }}
 
-    Make this a step-by-step plan someone could follow immediately.
+    Based on this research, provide a complete plan...
     """
 
 
@@ -229,14 +236,19 @@ async def smart_hiking_planner() -> None:
     print("\n🚀 Processing tasks under the hood...")
     await asyncio.sleep(1)
 
-    # Process all tasks under the hood (user sees progress, not details)
+    # Process all tasks and capture results
+    task_results = []
     for task in planning_agent.tasks:
         # Show current progress
         planning_agent.mark_task(task.id, "in-progress")
         display_task_list(planning_agent, f"Processing: {task.description[:40]}...")
 
-        # Process task with AI (under the hood)
-        await planning_agent.run(trip_input)
+        # Process task with AI and CAPTURE results
+        task_result = await planning_agent.run(trip_input)
+        task_results.append({
+            "task": task.description,
+            "result": task_result.content if hasattr(task_result, 'content') else str(task_result)
+        })
 
         # Mark as completed
         planning_agent.mark_task(task.id, "done")
@@ -246,12 +258,29 @@ async def smart_hiking_planner() -> None:
     display_task_list(planning_agent, "All Planning Tasks Completed!")
     await asyncio.sleep(2)
 
+    # Compile task results
+    compiled_results = "\n\n".join([
+        f"TASK: {result['task']}\nRESULT: {result['result']}"
+        for result in task_results
+    ])
+
+    # Create summary input with all task results
+    summary_input = SummaryInput(
+        location=trip_input.location,
+        duration_days=trip_input.duration_days,
+        group_size=trip_input.group_size,
+        skill_level=trip_input.skill_level,
+        season=trip_input.season,
+        preferences=trip_input.preferences,
+        task_results=compiled_results
+    )
+
     # Generate and stream comprehensive summary
     print("\n🎯 Generating comprehensive trip plan...")
     print("🤖 AI compiling all research into actionable plan...")
     await asyncio.sleep(2)
 
-    # Create summary agent with all gathered information
+    # Summary agent now has access to all task research!
     summary_agent = TodoAgent(llm=llm, prompt=SummaryPrompt)
 
     # Clear screen for final summary
@@ -262,7 +291,7 @@ async def smart_hiking_planner() -> None:
     print()
 
     # Stream the comprehensive summary
-    streaming_result = summary_agent.run_streaming(trip_input)
+    streaming_result = summary_agent.run_streaming(summary_input)
 
     async for chunk in streaming_result:
         if isinstance(chunk, str):
