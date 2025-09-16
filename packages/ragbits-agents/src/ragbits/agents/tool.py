@@ -1,12 +1,18 @@
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
+from pydantic import BaseModel
 from typing_extensions import Self
 
+from ragbits.core.llms.base import LLMClientOptionsT
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
+
+if TYPE_CHECKING:
+    from ragbits.agents import Agent, AgentResultStreaming
 
 with suppress(ImportError):
     from pydantic_ai import Tool as PydanticAITool
@@ -94,6 +100,70 @@ class Tool:
             function=self.on_tool_call,
             name=self.name,
             description=self.description,
+        )
+
+    @classmethod
+    def from_agent(
+        cls,
+        agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        name: str | None = None,
+        description: str | None = None,
+    ) -> "Tool":
+        """
+        Wraps a downstream agent as a single tool. The tool parameters are inferred from
+        the downstream agent's prompt input.
+
+        Args:
+            agent: The downstream agent to wrap as a tool.
+            name: Optional override for the tool name.
+            description: Optional override for the tool description.
+
+        Returns:
+            Tool instance representing the agent.
+        """
+        display_name = name or agent.name or "agent"
+        variable_name = display_name.replace(" ", "_").lower()
+        description = description or agent.description
+
+        input_model_cls = getattr(agent.prompt, "input_type", None)
+        if input_model_cls and issubclass(input_model_cls, BaseModel):
+            fields = input_model_cls.model_fields
+            properties = {}
+            required = list(fields.keys())
+
+            for field_name in fields:
+                param_desc = None
+                for t in getattr(agent, "tools", []):
+                    t_params = getattr(t, "parameters", {}).get("properties", {})
+                    if field_name in t_params:
+                        param_desc = t_params[field_name].get("description")
+                        break
+
+                properties[field_name] = {
+                    "type": "string",
+                    "title": field_name.capitalize(),
+                    "description": param_desc,
+                }
+        else:
+            properties = {"input": {"type": "string", "description": "Input for the downstream agent"}}
+            required = ["input"]
+
+        parameters = {"type": "object", "properties": properties, "required": required}
+
+        def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
+            if input_model_cls and issubclass(input_model_cls, BaseModel):
+                model_input = input_model_cls(**kwargs)
+            else:
+                model_input = kwargs.get("input")
+
+            return agent.run_streaming(model_input)
+
+        return cls(
+            name=variable_name,
+            description=description,
+            parameters=parameters,
+            on_tool_call=_on_tool_call,
+            context_var_name=get_context_variable_name(agent.run),
         )
 
 
