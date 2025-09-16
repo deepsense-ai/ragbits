@@ -1,9 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
-- Add post-processors (#821)
 
 - Support wrapping downstream agents as tools (#818)
+- Add post-processors (#821)
 
 ## 1.3.0 (2025-09-11)
 ### Changed

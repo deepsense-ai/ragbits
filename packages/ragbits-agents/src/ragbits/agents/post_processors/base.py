@@ -25,7 +25,7 @@ class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
         """
         Whether this post-processor supports streaming mode.
 
-        If True, the processor can work with partial content during streaming
+        If True, the processor can work with content during streaming
         via process_streaming() method.
 
         If False, the processor will only be called after streaming is complete
@@ -39,7 +39,7 @@ class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
         agent: "Agent[LLMOpts, PromptIn, PromptOut]",
     ) -> "AgentResult[PromptOut]":
         """
-        Process the complete agent result (called after streaming is done).
+        Process the complete agent result.
 
         Args:
             result: The complete AgentResult from the agent or previous post-processor.
@@ -57,7 +57,7 @@ class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
         agent: "Agent[LLMOpts, PromptIn, PromptOut]",
     ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
         """
-        Process any chunk during streaming (only called if supports_streaming=True).
+        Process chunks during streaming.
 
         Args:
             chunk: The current chunk being streamed.
