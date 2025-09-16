@@ -8,7 +8,6 @@ from ragbits.agents._main import (
     BasePostProcessor,
     ToolCallResult,
 )
-from ragbits.agents.post_processors import BasePostProcessor
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [

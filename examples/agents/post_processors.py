@@ -19,40 +19,63 @@ To run the script, execute the following command:
 # ///
 
 import asyncio
+from types import SimpleNamespace
 
-from ragbits.agents import Agent, AgentResult, BasePostProcessor
+from ragbits.agents import Agent, AgentResult, BasePostProcessor, ToolCallResult
+from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
 from ragbits.core.llms.litellm import LiteLLM
 
 
 class CustomStreamingProcessor(BasePostProcessor):
+    """
+    Streaming post-processor that checks for forbidden words.
+    """
+
     def __init__(self, forbidden_words: list[str]) -> None:
         self.forbidden_words = forbidden_words
 
     @property
     def supports_streaming(self) -> bool:
+        """
+        Whether this post-processor supports streaming mode.
+        """
         return True
 
-    async def process_streaming(self, chunk, agent: "Agent"):
-        if isinstance(chunk, str):
-            if chunk.lower().strip() in self.forbidden_words:
-                return "[FORBIDDEN_WORD]"
+    async def process_streaming(
+        self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: "Agent"
+    ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
+        """
+        Process chunks during streaming.
+        """
+        if isinstance(chunk, str) and chunk.lower().strip() in self.forbidden_words:
+            return "[FORBIDDEN_WORD]"
         return chunk
 
 
 class CustomNonStreamingProcessor(BasePostProcessor):
+    """
+    Non-streaming post-processor that truncates the content.
+    """
+
     def __init__(self, max_length: int = 200) -> None:
         self.max_length = max_length
 
     @property
     def supports_streaming(self) -> bool:
+        """
+        Whether this post-processor supports streaming mode.
+        """
         return False
 
     async def process(self, result: "AgentResult", agent: "Agent") -> "AgentResult":
+        """
+        Process the agent result.
+        """
         content = result.content
         content_length = len(content)
 
         if content_length > self.max_length:
-            content = content[:self.max_length] 
+            content = content[: self.max_length]
             content += f"... [TRUNCATED] ({content_length} > {self.max_length} chars)"
 
         return AgentResult(
@@ -64,7 +87,10 @@ class CustomNonStreamingProcessor(BasePostProcessor):
         )
 
 
-async def main():
+async def main() -> None:
+    """
+    Run the example.
+    """
     llm = LiteLLM("gpt-3.5-turbo")
     agent = Agent(llm=llm, prompt="You are a helpful assistant.")
     post_processors = [
