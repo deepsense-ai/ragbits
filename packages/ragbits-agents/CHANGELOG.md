@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Support wrapping downstream agents as tools (#819)
+
 ## 1.4.2 (2026-02-18)
 
 ### Changed
