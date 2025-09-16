@@ -7,6 +7,7 @@ from ragbits.agents._main import (
     AgentRunContext,
     ToolCallResult,
 )
+from ragbits.agents.todo_agent import Task, TaskStatus, TodoAgent
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -19,5 +20,8 @@ __all__ = [
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
+    "Task",
+    "TaskStatus",
+    "TodoAgent",
     "ToolCallResult",
 ]
