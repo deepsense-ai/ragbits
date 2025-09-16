@@ -285,23 +285,6 @@ class Agent(
                 "Use Agent.prompt decorator to properly assign it.",
             )
 
-    def __init_subclass__(cls: type[Self], **kwargs: Any) -> None:
-        """
-        Automatically invoked when a subclass of Agent is defined.
-
-        This method:
-        1. Validates that a system_prompt is paired with an input_type.
-        2. Generates a Prompt subclass for the agent.
-
-        Args:
-            cls: The subclass of Agent being created.
-            **kwargs: Additional keyword arguments passed to super().__init_subclass__.
-
-        Raises:
-            ValueError: If the subclass defines a system_prompt but has no input_type.
-        """
-        super().__init_subclass__(**kwargs)
-
     @overload
     async def run(
         self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
@@ -568,14 +551,14 @@ class Agent(
                 self.prompt = cast(Prompt[PromptInputT, PromptOutputT], prompt_cls(input, curr_history))
                 return self.prompt
             else:
-                return cast(Prompt[PromptInputT, PromptOutputT], prompt_cls(input, curr_history))
+                return cast(Prompt[PromptInputT, PromptOutputT], prompt_cls(input))
 
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
             if self.keep_history:
                 self.prompt = self.prompt(input, curr_history)
                 return self.prompt
             else:
-                return self.prompt(input, curr_history)
+                return self.prompt(input)
 
         return None
 
