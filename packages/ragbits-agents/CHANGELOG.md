@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Support wrapping downstream agents as tools (#818)
+- Add syntax sugar allowing easier Agents definition (#820)
 - Add post-processors (#821)
 
 ## 1.3.0 (2025-09-11)
