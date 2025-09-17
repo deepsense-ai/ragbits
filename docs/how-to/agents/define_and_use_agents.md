@@ -32,7 +32,7 @@ Use a structured prompt to instruct the LLM. For details on writing prompts with
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 
---8<-- "examples/agents/tool_use.py:51:70"
+--8<-- "examples/agents/tool_use.py:51:72"
 ```
 
 ### Run the agent
@@ -48,6 +48,33 @@ from ragbits.core.llms import LiteLLM
 The result is an [AgentResult][ragbits.agents.AgentResult], which includes the model's output, additional metadata, conversation history, and any tool calls performed.
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/tool_use.py).
+
+### Alternative approach: inheritance with `prompt_config`
+
+In addition to explicitly attaching a Prompt instance, Ragbits also supports defining agents through a combination of inheritance and the `@Agent.prompt_config` decorator.
+
+This approach lets you bind input (and optionally output) models directly to your agent class. The agent then derives its prompt structure automatically, without requiring a prompt argument in the constructor.
+
+```python
+from pydantic import BaseModel
+from ragbits.agents import Agent
+
+--8<-- "examples/agents/with_decorator.py:51:71"
+```
+
+The decorator can also accept an output type, allowing you to strongly type both the inputs and outputs of the agent. If you do not explicitly define a `user_prompt`, Ragbits will default to `{{ input }}`.
+
+Once defined, the agent class can be used directly, just like any other subclass of Agent:
+
+```python
+import asyncio
+from ragbits.agents import Agent
+from ragbits.core.llms import LiteLLM
+
+--8<-- "examples/agents/with_decorator.py:73:84"
+```
+
+You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/with_decorator.py).
 
 ## Tool choice
 To control what tool is used at first call you could use `tool_choice` parameter. There are the following options:
