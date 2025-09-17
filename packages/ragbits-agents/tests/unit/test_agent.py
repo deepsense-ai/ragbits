@@ -769,3 +769,47 @@ async def test_tool_choice_history_preservation(llm_with_tool_call: MockLLM, met
     # Should include tool call in history
     tool_call_messages = [msg for msg in agent.history if msg.get("role") == "tool"]
     assert len(tool_call_messages) >= 1
+
+
+async def test_explicit_input_type_prompt_creation():
+    class CustomInput(BaseModel):
+        foo: int
+        bar: str
+
+    @Agent.prompt_config(CustomInput)
+    class AgentWithExplicitInput(Agent):
+        system_prompt = "System prompt"
+        user_prompt = "{{ foo }} {{ bar }}"
+
+    prompt_cls = AgentWithExplicitInput.prompt_cls
+    assert prompt_cls is not None
+    assert issubclass(prompt_cls, Prompt)
+    assert prompt_cls.system_prompt == "System prompt"
+    assert prompt_cls.user_prompt == "{{ foo }} {{ bar }}"
+
+
+async def test_default_user_prompt_is_input_placeholder():
+    class CustomInputModel(BaseModel):
+        input: int
+
+    @Agent.prompt_config(CustomInputModel)
+    class AgentExplicitPrompt(Agent):
+        system_prompt = "Explicit system"
+
+    prompt_cls2 = AgentExplicitPrompt.prompt_cls
+    assert prompt_cls2 is not None
+    assert issubclass(prompt_cls2, Prompt)
+    assert prompt_cls2.user_prompt == "{{ input }}"
+
+
+async def test_input_type_check_with_system_prompt(llm_with_tool_call: MockLLM):
+    class AgentExplicitPrompt(Agent):
+        system_prompt = "Explicit system"
+
+    with pytest.raises(ValueError):
+        AgentExplicitPrompt(
+            llm=llm_with_tool_call,
+            prompt="You are a helpful assistant",
+            tools=[get_weather],
+            keep_history=True,
+        )
