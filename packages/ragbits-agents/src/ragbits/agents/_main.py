@@ -296,7 +296,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -306,7 +306,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -315,7 +315,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -429,7 +429,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
@@ -441,7 +441,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
@@ -452,7 +452,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
@@ -779,7 +779,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         """
         Stream with support for both streaming and non-streaming post-processors.
@@ -818,7 +818,7 @@ class Agent(
 
         if non_streaming_processors and prompt_with_history:
             agent_result = AgentResult(
-                content=accumulated_content,
+                content=cast(PromptOutputT, accumulated_content),
                 metadata={},
                 tool_calls=tool_call_results or None,
                 history=prompt_with_history.chat,

@@ -1,23 +1,19 @@
-from abc import ABC
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Generic, TypeVar
-
-from pydantic import BaseModel
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms.base import LLMOptions, ToolCall, Usage
 from ragbits.core.prompt.base import BasePrompt
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
     from ragbits.agents._main import Agent, AgentResult
 
 
-LLMOpts = TypeVar("LLMOpts", bound=LLMOptions)
-PromptIn = TypeVar("PromptIn", bound=BaseModel | None)
-PromptOut = TypeVar("PromptOut")
+LLMOptionsT = TypeVar("LLMOptionsT", bound=LLMOptions)
 
 
-class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
+class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
     """Base class for post-processors."""
 
     @property
@@ -35,9 +31,9 @@ class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
 
     async def process(  # noqa: PLR6301
         self,
-        result: "AgentResult[PromptOut]",
-        agent: "Agent[LLMOpts, PromptIn, PromptOut]",
-    ) -> "AgentResult[PromptOut]":
+        result: "AgentResult[PromptOutputT]",
+        agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
+    ) -> "AgentResult[PromptOutputT]":
         """
         Process the complete agent result.
 
@@ -54,7 +50,7 @@ class BasePostProcessor(ABC, Generic[LLMOpts, PromptIn, PromptOut]):
     async def process_streaming(  # noqa: PLR6301
         self,
         chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage,
-        agent: "Agent[LLMOpts, PromptIn, PromptOut]",
+        agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
     ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
         """
         Process chunks during streaming.
