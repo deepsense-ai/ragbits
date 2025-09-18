@@ -32,10 +32,6 @@ async def main():
         default_options=AgentOptions(max_turns=30)
     )
 
-    print("=== Enhanced Todo Workflow Example ===\n")
-    print("🚀 Hiking trip planning with systematic workflow:\n")
-
-    # Simpler query to reduce complexity
     query = "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. Focus on scenic routes under 15km, avoiding crowds."
     # query = "How long is hike to Giewont from Kuźnice?"
     # query = "Is it difficult to finish Orla Perć? Would you recommend me to go there if I've never been in mountains before?"
@@ -53,6 +49,9 @@ async def main():
                     action = response.arguments.get("action", "unknown")
 
                     if action == "create":
+                        print("=== Enhanced Todo Workflow Example ===\n")
+                        print("🚀 Hiking trip planning with systematic workflow:\n")
+
                         tasks = response.arguments.get("tasks", [])
                         tasks_count = len(tasks)
                         print(f" - Creating {tasks_count} tasks", flush=True)
