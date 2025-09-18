@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, TypeVar, cast, overload
+from typing import Any, ClassVar, Generic, Literal, TypeVar, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -30,7 +30,7 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.post_processors.base import BasePostProcessor
+from ragbits.agents.post_processors.base import BasePostProcessor, NonStreamingPostProcessor, StreamingPostProcessor
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
@@ -296,7 +296,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -306,7 +306,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -315,7 +315,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -429,7 +429,31 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: bool = False,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: Literal[True],
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
@@ -443,7 +467,7 @@ class Agent(
         tool_choice: ToolChoice | None = None,
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
-        allow_non_streaming: bool = False,
+        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -452,7 +476,11 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: (
+            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | None
+        ) = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
@@ -779,7 +807,11 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: (
+            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | None
+        ) = None,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
         """
         Stream with support for both streaming and non-streaming post-processors.
@@ -789,8 +821,8 @@ class Agent(
         """
         input = cast(PromptInputT, input)
 
-        streaming_processors = [p for p in post_processors or [] if p.supports_streaming]
-        non_streaming_processors = [p for p in post_processors or [] if not p.supports_streaming]
+        streaming_processors = [p for p in post_processors or [] if isinstance(p, StreamingPostProcessor)]
+        non_streaming_processors = [p for p in post_processors or [] if isinstance(p, NonStreamingPostProcessor)]
 
         accumulated_content = ""
         tool_call_results: list[ToolCallResult] = []
@@ -799,8 +831,8 @@ class Agent(
 
         async for chunk in self._stream_internal(input, options, context, tool_choice):
             processed_chunk = chunk
-            for processor in streaming_processors:
-                processed_chunk = await processor.process_streaming(chunk=processed_chunk, agent=self)
+            for streaming_processor in streaming_processors:
+                processed_chunk = await streaming_processor.process_streaming(chunk=processed_chunk, agent=self)
                 if processed_chunk is None:
                     break
 
@@ -826,8 +858,8 @@ class Agent(
             )
 
             current_result = agent_result
-            for processor in non_streaming_processors:
-                current_result = await processor.process(current_result, self)
+            for non_streaming_processor in non_streaming_processors:
+                current_result = await non_streaming_processor.process(current_result, self)
 
             yield current_result.usage
             yield prompt_with_history

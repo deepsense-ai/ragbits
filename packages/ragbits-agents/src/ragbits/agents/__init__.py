@@ -5,9 +5,9 @@ from ragbits.agents._main import (
     AgentResult,
     AgentResultStreaming,
     AgentRunContext,
-    BasePostProcessor,
     ToolCallResult,
 )
+from ragbits.agents.post_processors.base import NonStreamingPostProcessor, StreamingPostProcessor
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -17,9 +17,10 @@ __all__ = [
     "AgentResult",
     "AgentResultStreaming",
     "AgentRunContext",
-    "BasePostProcessor",
+    "NonStreamingPostProcessor",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
+    "StreamingPostProcessor",
     "ToolCallResult",
 ]

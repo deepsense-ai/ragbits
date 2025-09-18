@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Generic, TypeVar
 
@@ -17,6 +18,7 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
     """Base class for post-processors."""
 
     @property
+    @abstractmethod
     def supports_streaming(self) -> bool:
         """
         Whether this post-processor supports streaming mode.
@@ -27,9 +29,18 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
         If False, the processor will only be called after streaming is complete
         with the full result via process() method.
         """
+
+
+class NonStreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
+    """Base class for non-streaming post-processors."""
+
+    @property
+    def supports_streaming(self) -> bool:
+        """Whether this post-processor supports streaming mode."""
         return False
 
-    async def process(  # noqa: PLR6301
+    @abstractmethod
+    async def process(
         self,
         result: "AgentResult[PromptOutputT]",
         agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
@@ -45,9 +56,18 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
         Returns:
             Modified AgentResult to pass to the next processor or return as final result.
         """
-        return result
 
-    async def process_streaming(  # noqa: PLR6301
+
+class StreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
+    """Base class for streaming post-processors."""
+
+    @property
+    def supports_streaming(self) -> bool:
+        """Whether this post-processor supports streaming mode."""
+        return True
+
+    @abstractmethod
+    async def process_streaming(
         self,
         chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage,
         agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
@@ -63,4 +83,3 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
             Modified chunk to yield, or None to suppress this chunk.
             Return the same chunk if no modification needed.
         """
-        return chunk

@@ -21,25 +21,18 @@ To run the script, execute the following command:
 import asyncio
 from types import SimpleNamespace
 
-from ragbits.agents import Agent, AgentResult, BasePostProcessor, ToolCallResult
+from ragbits.agents import Agent, AgentResult, NonStreamingPostProcessor, StreamingPostProcessor, ToolCallResult
 from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
 from ragbits.core.llms.litellm import LiteLLM
 
 
-class CustomStreamingProcessor(BasePostProcessor):
+class CustomStreamingProcessor(StreamingPostProcessor):
     """
     Streaming post-processor that checks for forbidden words.
     """
 
     def __init__(self, forbidden_words: list[str]) -> None:
         self.forbidden_words = forbidden_words
-
-    @property
-    def supports_streaming(self) -> bool:
-        """
-        Whether this post-processor supports streaming mode.
-        """
-        return True
 
     async def process_streaming(
         self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: "Agent"
@@ -52,20 +45,13 @@ class CustomStreamingProcessor(BasePostProcessor):
         return chunk
 
 
-class CustomNonStreamingProcessor(BasePostProcessor):
+class CustomNonStreamingProcessor(NonStreamingPostProcessor):
     """
     Non-streaming post-processor that truncates the content.
     """
 
     def __init__(self, max_length: int = 200) -> None:
         self.max_length = max_length
-
-    @property
-    def supports_streaming(self) -> bool:
-        """
-        Whether this post-processor supports streaming mode.
-        """
-        return False
 
     async def process(self, result: "AgentResult", agent: "Agent") -> "AgentResult":
         """

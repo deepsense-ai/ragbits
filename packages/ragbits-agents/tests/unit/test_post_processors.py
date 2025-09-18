@@ -4,12 +4,12 @@ import pytest
 
 from ragbits.agents import Agent, AgentResult, ToolCallResult
 from ragbits.agents.exceptions import AgentInvalidPostProcessorError
-from ragbits.agents.post_processors.base import BasePostProcessor
+from ragbits.agents.post_processors.base import NonStreamingPostProcessor, StreamingPostProcessor
 from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 
 
-class MockNonStreamingPostProcessor(BasePostProcessor):
+class MockNonStreamingPostProcessor(NonStreamingPostProcessor):
     def __init__(self, append_content: str = " - processed"):
         self.append_content = append_content
 
@@ -18,13 +18,9 @@ class MockNonStreamingPostProcessor(BasePostProcessor):
         return result
 
 
-class MockStreamingPostProcessor(BasePostProcessor):
+class MockStreamingPostProcessor(StreamingPostProcessor):
     def __init__(self, append_content: str = " - streamed"):
         self.append_content = append_content
-
-    @property
-    def supports_streaming(self) -> bool:
-        return True
 
     async def process_streaming(
         self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: Agent
@@ -67,7 +63,7 @@ async def test_non_streaming_processor_in_streaming_mode_raises_error(mock_llm: 
     post_processor = MockNonStreamingPostProcessor()
 
     with pytest.raises(AgentInvalidPostProcessorError):
-        await anext(agent.run_streaming(post_processors=[post_processor]))
+        await anext(agent.run_streaming(post_processors=[post_processor]))  # type: ignore  # ignore type-checking to test raising the error
 
 
 @pytest.mark.asyncio
