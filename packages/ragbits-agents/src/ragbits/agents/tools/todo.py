@@ -47,7 +47,6 @@ _current_todo: TodoList | None = None
 def todo_manager(
     action: Literal["create", "get_current", "start_task", "complete_task", "get_final_summary"],
     tasks: list[str] | None = None,
-    task_id: str | None = None,
     summary: str | None = None,
 ) -> dict[str, Any]:
     """
