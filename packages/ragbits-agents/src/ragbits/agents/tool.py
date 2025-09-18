@@ -151,12 +151,15 @@ class Tool:
         parameters = {"type": "object", "properties": properties, "required": required}
 
         def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
+            _stream_flag = kwargs.pop("_stream_downstream_events", True)
+            stream_downstream_events = _stream_flag if isinstance(_stream_flag, bool) else True
+
             if input_model_cls and issubclass(input_model_cls, BaseModel):
                 model_input = input_model_cls(**kwargs)
             else:
                 model_input = kwargs.get("input")
 
-            return agent.run_streaming(model_input)
+            return agent.run_streaming(model_input, stream_downstream_events=stream_downstream_events)
 
         return cls(
             name=variable_name,

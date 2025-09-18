@@ -9,6 +9,7 @@ from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import Any, ClassVar, Generic, Literal, TypeVar, cast, overload
+from typing import Any, ClassVar, Generic, TypeVar, Union, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -55,6 +56,18 @@ with suppress(ImportError):
 
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
+
+
+@dataclass
+class DownstreamAgentResult:
+    """
+    Represents a streamed item from a downstream agent while executing a tool.
+    """
+
+    agent_id: str
+    """ID of the downstream agent."""
+    item: Union[str, ToolCall, ToolCallResult, "DownstreamAgentResult"]
+    """The streamed item from the downstream agent."""
 
 
 @dataclass
@@ -164,7 +177,7 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """The usage of the agent."""
 
 
-class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]):
+class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
@@ -172,19 +185,23 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
     """
 
     def __init__(
-        self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]
+        self,
+        generator: AsyncGenerator[
+            str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage
+        ],
     ):
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
+        self.downstream: dict[str, list[str | ToolCall | ToolCallResult]] = {}
         self.metadata: dict = {}
         self.history: ChatFormat
         self.usage: Usage = Usage()
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]:
+    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
         return self
 
-    async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace:
+    async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
         try:
             item = await self._generator.__anext__()
 
@@ -199,10 +216,23 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
                         self.tool_calls = []
                     self.tool_calls.append(item)
                     return item
+                case DownstreamAgentResult():
+                    if item.agent_id not in self.downstream:
+                        self.downstream[item.agent_id] = []
+                    if isinstance(item.item, (str, ToolCall, ToolCallResult)):
+                        self.downstream[item.agent_id].append(item.item)
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
-                    return item
+                    item = await self._generator.__anext__()
+                    item = cast(SimpleNamespace, item)
+                    item.result = {
+                        "content": self.content,
+                        "metadata": self.metadata,
+                        "tool_calls": self.tool_calls,
+                        "downstream": self.downstream or None,
+                    }
+                    raise StopAsyncIteration
                 case Usage():
                     self.usage = item
                     return await self.__anext__()
@@ -399,10 +429,12 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context)
-                    tool_calls.append(result)
-
-                    prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                    async for result in self._execute_tool(
+                        tool_call=tool_call, tools_mapping=tools_mapping, context=context
+                    ):
+                        if isinstance(result, ToolCallResult):
+                            tool_calls.append(result)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
 
                 turn_count += 1
             else:
@@ -449,6 +481,7 @@ class Agent(
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
+        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -473,6 +506,7 @@ class Agent(
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
+        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -488,6 +522,7 @@ class Agent(
         ) = None,
         *,
         allow_non_streaming: bool = False,
+        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -516,7 +551,13 @@ class Agent(
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
             AgentInvalidPostProcessorError: If the post-processor is invalid.
         """
-        generator = self._stream_internal(input, options, context, tool_choice)
+        generator = self._stream_internal(
+            input=input,
+            options=options,
+            context=context,
+            tool_choice=tool_choice,
+            stream_downstream_events=stream_downstream_events,
+        )
 
         if post_processors:
             if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
@@ -533,7 +574,8 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
+        stream_downstream_events: bool = True,
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
 
@@ -546,24 +588,34 @@ class Agent(
         turn_count = 0
         max_turns = merged_options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
+
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                     tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
+
                 async for chunk in streaming_result:
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping, context=context)
-                        yield result
-                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                        returned_tool_call = True
+                        async for result in self._execute_tool(
+                            tool_call=chunk,
+                            tools_mapping=tools_mapping,
+                            context=context,
+                            stream_downstream_events=stream_downstream_events,
+                        ):
+                            yield result
+                            if isinstance(result, ToolCallResult):
+                                prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            returned_tool_call = True
+
                 turn_count += 1
                 if streaming_result.usage:
                     context.usage += streaming_result.usage
@@ -694,10 +746,10 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext | None = None,
-    ) -> ToolCallResult:
+        stream_downstream_events: bool = True,
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
-
         if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
@@ -709,15 +761,29 @@ class Agent(
                 if tool.context_var_name:
                     call_args[tool.context_var_name] = context
 
-                tool_output = (
-                    await tool.on_tool_call(**call_args)
-                    if iscoroutinefunction(tool.on_tool_call)
-                    else tool.on_tool_call(**call_args)
-                )
+                call_args["_stream_downstream_events"] = stream_downstream_events
+
+                try:
+                    tool_output = (
+                        await tool.on_tool_call(**call_args)
+                        if iscoroutinefunction(tool.on_tool_call)
+                        else tool.on_tool_call(**call_args)
+                    )
+                except TypeError as e:
+                    if "_stream_downstream_events" in str(e):
+                        call_args.pop("_stream_downstream_events", None)
+                        tool_output = (
+                            await tool.on_tool_call(**call_args)
+                            if iscoroutinefunction(tool.on_tool_call)
+                            else tool.on_tool_call(**call_args)
+                        )
+                    else:
+                        raise
 
                 if isinstance(tool_output, AgentResultStreaming):
-                    async for _ in tool_output:
-                        pass
+                    async for downstream_item in tool_output:
+                        if stream_downstream_events:
+                            yield DownstreamAgentResult(agent_id=self.id, item=downstream_item)
 
                     tool_output = {
                         "content": tool_output.content,
@@ -738,7 +804,7 @@ class Agent(
                 }
                 raise AgentToolExecutionError(tool_call.name, e) from e
 
-        return ToolCallResult(
+        yield ToolCallResult(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
