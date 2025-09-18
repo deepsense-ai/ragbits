@@ -3,11 +3,15 @@ import {
     FeedbackRequest,
     FeedbackResponse,
     ChatRequest,
-    ChatResponse,
+    ChatResponse as _ChatResponse,
     LogoutRequest,
     LoginRequest,
     LoginResponse,
+    ChunkedContentChatResponse,
 } from './autogen.types'
+
+// Redefine ChatResponse to exclude "internal" events handled by the library
+export type ChatResponse = Exclude<_ChatResponse, ChunkedContentChatResponse>
 
 export interface GenericResponse {
     success: boolean
