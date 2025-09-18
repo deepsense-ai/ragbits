@@ -1,38 +1,17 @@
 import { Checkbox, CircularProgress } from "@heroui/react";
-
-interface Todo {
-  content: string;
-  status: "initial" | "in-progress" | "done";
-}
-
-const DUMMY_TODOS: Record<string, Todo> = {
-  "1": {
-    content: "Todo item 1",
-    status: "done",
-  },
-  "2": {
-    content: "Todo item 2",
-    status: "in-progress",
-  },
-  "3": {
-    content: "Todo item 3",
-    status: "initial",
-  },
-  "4": {
-    content: "Todo item 4",
-    status: "initial",
-  },
-};
-
+import { TaskTree } from "../utils/tasks";
+import { Task, TaskStatus } from "@ragbits/api-client-react";
 interface TodoListProps {
-  // TODO: Remove optional, should be optional only during development
-  todos?: Record<string, Todo>;
+  tasks: Task[];
+  depth?: number;
 }
 
-export default function TodoList({ todos = DUMMY_TODOS }: TodoListProps) {
+export default function TodoList({ tasks, depth = 0 }: TodoListProps) {
+  const tasksTree = new TaskTree(tasks);
+
   return (
-    <div className="space-y-2">
-      {Object.entries(todos).map(([id, todo]) => {
+    <div className="space-y-2" data-testid={`todo-list-root-${depth}`}>
+      {tasksTree.getRoots().map(({ id, description, status, children }) => {
         const inProgressIcon = (
           <CircularProgress
             size="sm"
@@ -45,30 +24,45 @@ export default function TodoList({ todos = DUMMY_TODOS }: TodoListProps) {
           />
         );
         return (
-          <Checkbox
-            key={id}
-            isSelected={todo.status === "done"}
-            disabled
-            className="block"
-            icon={
-              todo.status === "in-progress" ? () => inProgressIcon : undefined
-            }
-            classNames={{
-              hiddenInput: "cursor-default",
-              wrapper: todo.status === "in-progress" && "before:border-none",
-              base: "pointer-events-none hover:bg-transparent",
-              label: [
-                "transition-colors",
-                todo.status === "done" && "line-through text-default-400",
-                todo.status === "in-progress" && "text-primary italic",
-                todo.status === "initial" && "text-default-900",
-              ]
-                .filter(Boolean)
-                .join(" "),
-            }}
-          >
-            {todo.content}
-          </Checkbox>
+          <div key={id} data-testid={`todo-task-${id}`}>
+            <div>
+              <Checkbox
+                isSelected={status === TaskStatus.Completed}
+                disabled
+                className="block"
+                icon={
+                  status === TaskStatus.InProgress
+                    ? () => inProgressIcon
+                    : undefined
+                }
+                classNames={{
+                  hiddenInput: "cursor-default",
+                  wrapper:
+                    status === TaskStatus.InProgress && "before:border-none",
+                  base: "pointer-events-none hover:bg-transparent",
+                  label: [
+                    "transition-colors",
+                    status === TaskStatus.Completed &&
+                      "line-through text-default-400",
+                    status === TaskStatus.InProgress && "text-primary italic",
+                    status === TaskStatus.Pending && "text-default-900",
+                  ]
+                    .filter(Boolean)
+                    .join(" "),
+                }}
+              >
+                {description}
+              </Checkbox>
+            </div>
+            {children.length > 0 && (
+              <div
+                style={{ marginLeft: `${(depth + 1) * 0.5}rem` }}
+                data-testid={`todo-children-wrapper-${id}`}
+              >
+                <TodoList tasks={children} depth={depth + 1} />
+              </div>
+            )}
+          </div>
         );
       })}
     </div>

@@ -101,8 +101,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 {showMessageReferences && (
                   <MessageReferences references={references} />
                 )}
-                {/* TODO: Add check for todos availability */}
-                <TodoList />
+                {message.tasks && <TodoList tasks={message.tasks} />}
                 {showMessageActions && (
                   <MessageActions
                     content={content}

@@ -1,31 +1,37 @@
 """Todo list management tool for agents."""
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Literal, Callable
+from typing import Any, Literal
+
+from pydantic import BaseModel
 
 
 class TaskStatus(str, Enum):
     """Task status options."""
+
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
 
 
-@dataclass
-class Task:
+class Task(BaseModel):
     """Simple task representation."""
+
     id: str
     description: str
     status: TaskStatus = TaskStatus.PENDING
     order: int = 0
     summary: str | None = None
+    parent_id: str | None = None
 
 
 @dataclass
 class TodoList:
     """Simple todo list for one agent run."""
+
     tasks: list[Task] = field(default_factory=list)
     current_index: int = 0
 
@@ -35,7 +41,7 @@ class TodoList:
             return self.tasks[self.current_index]
         return None
 
-    def advance_to_next(self):
+    def advance_to_next(self) -> None:
         """Move to next task."""
         self.current_index += 1
 
@@ -49,18 +55,14 @@ class TodoList:
         self.current_index = 0
 
         for i, desc in enumerate(task_descriptions):
-            task = Task(
-                id=str(uuid.uuid4()),
-                description=desc.strip(),
-                order=i
-            )
+            task = Task(id=str(uuid.uuid4()), description=desc.strip(), order=i)
             self.tasks.append(task)
 
         return {
             "action": "create",
             "tasks": [{"id": t.id, "description": t.description, "order": t.order} for t in self.tasks],
             "total_count": len(self.tasks),
-            "message": f"Created {len(task_descriptions)} tasks"
+            "message": f"Created {len(task_descriptions)} tasks",
         }
 
     def get_current(self) -> dict[str, Any]:
@@ -71,14 +73,14 @@ class TodoList:
                 "action": "get_current",
                 "current_task": None,
                 "all_completed": True,
-                "message": "All tasks completed!"
+                "message": "All tasks completed!",
             }
 
         return {
             "action": "get_current",
             "current_task": {"id": current.id, "description": current.description, "status": current.status.value},
             "progress": f"{self.current_index + 1}/{len(self.tasks)}",
-            "message": f"Current task: {current.description}"
+            "message": f"Current task: {current.description}",
         }
 
     def start_current_task(self) -> dict[str, Any]:
@@ -91,7 +93,7 @@ class TodoList:
         return {
             "action": "start_task",
             "task": {"id": current.id, "description": current.description, "status": current.status.value},
-            "message": f"Started task: {current.description}"
+            "message": f"Started task: {current.description}",
         }
 
     def complete_current_task(self, summary: str) -> dict[str, Any]:
@@ -119,7 +121,7 @@ class TodoList:
             "next_task": {"id": next_task.id, "description": next_task.description} if next_task else None,
             "progress": f"{completed_count}/{len(self.tasks)}",
             "all_completed": next_task is None,
-            "message": f"Completed: {current.description}"
+            "message": f"Completed: {current.description}",
         }
 
     def get_final_summary(self) -> dict[str, Any]:
@@ -127,11 +129,7 @@ class TodoList:
         completed_tasks = [t for t in self.tasks if t.status == TaskStatus.COMPLETED]
 
         if not completed_tasks:
-            return {
-                "action": "get_final_summary",
-                "final_summary": "",
-                "message": "No completed tasks found."
-            }
+            return {"action": "get_final_summary", "final_summary": "", "message": "No completed tasks found."}
 
         # Create comprehensive final summary
         final_content = []
@@ -147,7 +145,7 @@ class TodoList:
             "action": "get_final_summary",
             "final_summary": final_summary,
             "total_completed": len(completed_tasks),
-            "message": f"Final summary with {len(completed_tasks)} completed tasks."
+            "message": f"Final summary with {len(completed_tasks)} completed tasks.",
         }
 
 
@@ -163,6 +161,7 @@ def create_todo_manager(todo_list: TodoList) -> Callable[..., dict[str, Any]]:
     Returns:
         A todo_manager function that operates on the provided TodoList
     """
+
     def todo_manager(
         action: Literal["create", "get_current", "start_task", "complete_task", "get_final_summary"],
         tasks: list[str] | None = None,

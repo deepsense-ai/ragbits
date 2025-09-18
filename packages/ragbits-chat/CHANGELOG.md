@@ -3,6 +3,7 @@
 ## Unreleased
 
 ## 1.3.0 (2025-09-11)
+- Add todo list component to the UI, add support for todo events in API (#827)
 
 ### Changed
 
