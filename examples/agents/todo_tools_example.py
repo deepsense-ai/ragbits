@@ -27,7 +27,7 @@ async def main():
         - Transportation details with times, costs, parking info
         - Weather considerations and backup plans
         - Safety information and emergency contacts
-        """ + get_todo_instruction_tpl(task_range=(3, 5), enforce_workflow=True),
+        """ + get_todo_instruction_tpl(task_range=(3, 5)),
         tools=[todo_manager],
         default_options=AgentOptions(max_turns=30)
     )
