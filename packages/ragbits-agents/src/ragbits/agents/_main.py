@@ -219,7 +219,7 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
                         self.downstream[item.agent_id] = []
-                    if isinstance(item.item, (str, ToolCall, ToolCallResult)):
+                    if isinstance(item.item, str | ToolCall | ToolCallResult):
                         self.downstream[item.agent_id].append(item.item)
                 case BasePrompt():
                     item.add_assistant_message(self.content)
