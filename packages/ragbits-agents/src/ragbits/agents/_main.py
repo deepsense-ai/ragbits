@@ -527,6 +527,7 @@ class Agent(
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
         iterated over. After the loop completes, all items are available under the same names as in AgentResult class.
+
         Args:
             input: The input for the agent run.
             options: The options for the agent run.
@@ -540,8 +541,10 @@ class Agent(
             allow_non_streaming: Whether to allow non-streaming post-processors.
             stream_downstream_events: Whether to stream events from downstream agents when
                 tools execute other agents. Defaults to True.
+
         Returns:
             A `StreamingResult` object for iteration and collection.
+
         Raises:
             AgentToolDuplicateError: If the tool names are duplicated.
             AgentToolNotSupportedError: If the selected tool type is not supported.
