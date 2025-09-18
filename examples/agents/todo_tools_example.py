@@ -51,7 +51,6 @@ async def main():
             case ToolCall():
                 if response.name == "todo_manager":
                     action = response.arguments.get("action", "unknown")
-                    print(f"\n🔧 [TOOL] {action.upper()}", end="", flush=True)
 
                     if action == "create":
                         tasks = response.arguments.get("tasks", [])
@@ -59,57 +58,6 @@ async def main():
                         print(f" - Creating {tasks_count} tasks", flush=True)
                         for i, task in enumerate(tasks, 1):
                             print(f"   {i}. {task}")
-
-            case ToolCallResult():
-                if response.name == "todo_manager":
-                    result = response.result
-                    action = result.get("action", "unknown")
-
-                    if action == "create":
-                        total = result.get('total_count', 0)
-                        print(f" ✅ {total} tasks created successfully", flush=True)
-                        current_task = result.get("current_task")
-                        if current_task:
-                            print(f"📋 Next: {current_task['description']}")
-                    elif action == "update":
-                        task = result.get("task", {})
-                        task_desc = task.get("description", "Unknown task")[:50]
-                        new_status = task.get("status", "unknown")
-                        print(f" ✅ Status changed to '{new_status}'", flush=True)
-                        print(f"📋 Task: {task_desc}{'...' if len(task.get('description', '')) > 50 else ''}")
-                    elif action == "complete_with_summary":
-                        progress = result.get("progress", "unknown")
-                        all_done = result.get("all_completed", False)
-                        completed_task = result.get("completed_task", {})
-                        task_desc = completed_task.get("description", "Unknown task")
-
-                        if all_done:
-                            print(f" ✅ FINAL TASK COMPLETED! Progress: {progress}", flush=True)
-                            print(f"🎉 All tasks finished! Preparing final summary...")
-                        else:
-                            print(f" ✅ Task completed. Progress: {progress}", flush=True)
-                            next_task = result.get("next_task")
-                            if next_task:
-                                print(f"📋 Next: {next_task['description']}")
-                    elif action == "get_final_summary":
-                        total_completed = result.get("total_completed", 0)
-                        print(f" ✅ Final summary ready ({total_completed} tasks)", flush=True)
-                        print("📄 Complete results below:")
-                    elif action == "get_current":
-                        current_task = result.get("current_task")
-                        all_completed = result.get("all_completed", False)
-                        if all_completed:
-                            print(f" ✅ All tasks completed!", flush=True)
-                        elif current_task:
-                            print(f" ✅ Current task identified", flush=True)
-                            print(f"📋 Current: {current_task['description']}")
-                        else:
-                            print(f" ✅ No current task", flush=True)
-                    elif action == "get":
-                        progress = result.get("progress", "unknown")
-                        print(f" ✅ Task overview retrieved (Progress: {progress})", flush=True)
-                    else:
-                        print(f" ✅ {action} completed", flush=True)
 
     print("\n\n" + "="*50)
     print("🎉 Systematic hiking trip planning completed!")
