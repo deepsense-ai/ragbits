@@ -1,13 +1,18 @@
-"""Example demonstrating the new single tool-based todo functionality."""
+"""Example demonstrating the new instance-based todo functionality."""
 
 import asyncio
 
-from ragbits.agents import Agent, AgentOptions, ToolCallResult, get_todo_instruction_tpl, todo_manager
+from ragbits.agents import Agent, AgentOptions
+from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
 from ragbits.core.llms import LiteLLM, ToolCall
 
 
 async def main():
-    """Demonstrate the new single tool-based todo approach with streaming and logging."""
+    """Demonstrate the new instance-based todo approach with streaming and logging."""
+
+    # Create a dedicated TodoList instance for this agent
+    my_todo_list = TodoList()
+    my_todo_manager = create_todo_manager(my_todo_list)
 
     # Create an agent with higher turn limit and todo capabilities
     my_agent = Agent(
@@ -28,7 +33,7 @@ async def main():
         - Weather considerations and backup plans
         - Safety information and emergency contacts
         """ + get_todo_instruction_tpl(task_range=(3, 5)),
-        tools=[todo_manager],
+        tools=[my_todo_manager],  # Use the instance-specific todo manager
         default_options=AgentOptions(max_turns=30)
     )
 

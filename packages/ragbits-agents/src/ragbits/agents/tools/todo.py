@@ -2,9 +2,8 @@
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, Callable
 
 
 class TaskStatus(str, Enum):
@@ -40,52 +39,33 @@ class TodoList:
         """Move to next task."""
         self.current_index += 1
 
-
-# Storage - just one todo list per agent run
-_current_todo: TodoList | None = None
-
-def todo_manager(
-    action: Literal["create", "get_current", "start_task", "complete_task", "get_final_summary"],
-    tasks: list[str] | None = None,
-    summary: str | None = None,
-) -> dict[str, Any]:
-    """
-    Simplified todo manager for agent runs.
-
-    Actions:
-    - create: Create todo list with tasks
-    - get_current: Get current task to work on
-    - start_task: Mark current task as in progress
-    - complete_task: Complete current task with summary
-    - get_final_summary: Get all completed work
-    """
-    global _current_todo
-
-    if action == "create":
-        if not tasks:
+    def create_tasks(self, task_descriptions: list[str]) -> dict[str, Any]:
+        """Create tasks from descriptions."""
+        if not task_descriptions:
             raise ValueError("Tasks required for create action")
 
-        _current_todo = TodoList()
-        for i, desc in enumerate(tasks):
+        # Clear existing tasks
+        self.tasks.clear()
+        self.current_index = 0
+
+        for i, desc in enumerate(task_descriptions):
             task = Task(
                 id=str(uuid.uuid4()),
                 description=desc.strip(),
                 order=i
             )
-            _current_todo.tasks.append(task)
+            self.tasks.append(task)
 
         return {
             "action": "create",
-            "tasks": [{"id": t.id, "description": t.description, "order": t.order} for t in _current_todo.tasks],
-            "total_count": len(_current_todo.tasks),
-            "message": f"Created {len(tasks)} tasks"
+            "tasks": [{"id": t.id, "description": t.description, "order": t.order} for t in self.tasks],
+            "total_count": len(self.tasks),
+            "message": f"Created {len(task_descriptions)} tasks"
         }
 
-    if not _current_todo:
-        raise ValueError("No todo list exists. Create one first.")
-
-    if action == "get_current":
-        current = _current_todo.get_current_task()
+    def get_current(self) -> dict[str, Any]:
+        """Get current task information."""
+        current = self.get_current_task()
         if not current:
             return {
                 "action": "get_current",
@@ -97,12 +77,13 @@ def todo_manager(
         return {
             "action": "get_current",
             "current_task": {"id": current.id, "description": current.description, "status": current.status.value},
-            "progress": f"{_current_todo.current_index + 1}/{len(_current_todo.tasks)}",
+            "progress": f"{self.current_index + 1}/{len(self.tasks)}",
             "message": f"Current task: {current.description}"
         }
 
-    elif action == "start_task":
-        current = _current_todo.get_current_task()
+    def start_current_task(self) -> dict[str, Any]:
+        """Start the current task."""
+        current = self.get_current_task()
         if not current:
             raise ValueError("No current task to start")
 
@@ -113,11 +94,12 @@ def todo_manager(
             "message": f"Started task: {current.description}"
         }
 
-    elif action == "complete_task":
+    def complete_current_task(self, summary: str) -> dict[str, Any]:
+        """Complete the current task with summary."""
         if not summary:
             raise ValueError("Summary required for complete_task")
 
-        current = _current_todo.get_current_task()
+        current = self.get_current_task()
         if not current:
             raise ValueError("No current task to complete")
 
@@ -126,22 +108,23 @@ def todo_manager(
 
         current.status = TaskStatus.COMPLETED
         current.summary = summary.strip()
-        _current_todo.advance_to_next()
+        self.advance_to_next()
 
-        next_task = _current_todo.get_current_task()
-        completed_count = sum(1 for t in _current_todo.tasks if t.status == TaskStatus.COMPLETED)
+        next_task = self.get_current_task()
+        completed_count = sum(1 for t in self.tasks if t.status == TaskStatus.COMPLETED)
 
         return {
             "action": "complete_task",
             "completed_task": {"id": current.id, "description": current.description, "summary": current.summary},
             "next_task": {"id": next_task.id, "description": next_task.description} if next_task else None,
-            "progress": f"{completed_count}/{len(_current_todo.tasks)}",
+            "progress": f"{completed_count}/{len(self.tasks)}",
             "all_completed": next_task is None,
             "message": f"Completed: {current.description}"
         }
 
-    elif action == "get_final_summary":
-        completed_tasks = [t for t in _current_todo.tasks if t.status == TaskStatus.COMPLETED]
+    def get_final_summary(self) -> dict[str, Any]:
+        """Get comprehensive final summary of all completed work."""
+        completed_tasks = [t for t in self.tasks if t.status == TaskStatus.COMPLETED]
 
         if not completed_tasks:
             return {
@@ -160,9 +143,6 @@ def todo_manager(
 
         final_summary = "\n\n".join(final_content)
 
-        # Clean up after getting final summary
-        _current_todo = None
-
         return {
             "action": "get_final_summary",
             "final_summary": final_summary,
@@ -170,8 +150,48 @@ def todo_manager(
             "message": f"Final summary with {len(completed_tasks)} completed tasks."
         }
 
-    else:
-        raise ValueError(f"Unknown action: {action}")
+
+def create_todo_manager(todo_list: TodoList) -> Callable[..., dict[str, Any]]:
+    """
+    Create a todo_manager function bound to a specific TodoList instance.
+
+    This allows each agent to have its own isolated todo list.
+
+    Args:
+        todo_list: The TodoList instance to bind to
+
+    Returns:
+        A todo_manager function that operates on the provided TodoList
+    """
+    def todo_manager(
+        action: Literal["create", "get_current", "start_task", "complete_task", "get_final_summary"],
+        tasks: list[str] | None = None,
+        summary: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Todo manager bound to a specific TodoList instance.
+
+        Actions:
+        - create: Create todo list with tasks
+        - get_current: Get current task to work on
+        - start_task: Mark current task as in progress
+        - complete_task: Complete current task with summary
+        - get_final_summary: Get all completed work
+        """
+        if action == "create":
+            return todo_list.create_tasks(tasks or [])
+        elif action == "get_current":
+            return todo_list.get_current()
+        elif action == "start_task":
+            return todo_list.start_current_task()
+        elif action == "complete_task":
+            return todo_list.complete_current_task(summary or "")
+        elif action == "get_final_summary":
+            return todo_list.get_final_summary()
+        else:
+            raise ValueError(f"Unknown action: {action}")
+
+    return todo_manager
 
 
 def get_todo_instruction_tpl(task_range: tuple[int, int] = (3, 5)) -> str:

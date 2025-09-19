@@ -7,7 +7,7 @@ from ragbits.agents._main import (
     AgentRunContext,
     ToolCallResult,
 )
-from ragbits.agents.tools import get_todo_instruction_tpl, todo_manager
+from ragbits.agents.tools import get_todo_instruction_tpl, create_todo_manager
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -22,5 +22,5 @@ __all__ = [
     "QuestionAnswerPromptOutput",
     "ToolCallResult",
     "get_todo_instruction_tpl",
-    "todo_manager",
+    "create_todo_manager",
 ]
