@@ -93,6 +93,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     classNames={{ liveUpdates: classNames?.liveUpdates }}
                   />
                 )}
+                {message.tasks && <TodoList tasks={message.tasks} />}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
@@ -101,7 +102,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 {showMessageReferences && (
                   <MessageReferences references={references} />
                 )}
-                {message.tasks && <TodoList tasks={message.tasks} />}
                 {showMessageActions && (
                   <MessageActions
                     content={content}

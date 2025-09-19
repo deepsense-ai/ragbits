@@ -126,4 +126,21 @@ describe("TodoList", () => {
     const ids = childTasks.map((el) => el.getAttribute("data-testid"));
     expect(ids).toEqual(["todo-task-c2", "todo-task-c1"]);
   });
+
+  it("renders task summary when provided", () => {
+    const tasks = [
+      makeTask({
+        id: "with-summary",
+        description: "Task with summary",
+        summary: "This is a summary",
+      }),
+    ];
+
+    render(<TodoList tasks={tasks} />);
+
+    const task = screen.getByTestId("todo-task-with-summary");
+    expect(task).toBeInTheDocument();
+    expect(screen.getByText("Task with summary")).toBeInTheDocument();
+    expect(screen.getByText("This is a summary")).toBeInTheDocument();
+  });
 });
