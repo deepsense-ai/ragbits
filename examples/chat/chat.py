@@ -143,9 +143,7 @@ class MyChat(ChatInterface):
         ]
 
         parentTask = Task(id="task_id_1", description="Example task with a subtask")
-        subtaskTask = Task(
-            id="task_id_2", description="Example subtask", status=TaskStatus.IN_PROGRESS, parent_id="task_id_1"
-        )
+        subtaskTask = Task(id="task_id_2", description="Example subtask", parent_id="task_id_1")
 
         for live_update in example_live_updates:
             yield live_update
@@ -155,10 +153,15 @@ class MyChat(ChatInterface):
         yield self.create_todo_item_response(subtaskTask)
 
         await asyncio.sleep(2)
-        subtaskTask.status = TaskStatus.COMPLETED
+        parentTask.status = TaskStatus.IN_PROGRESS
+        yield self.create_todo_item_response(parentTask)
+        await asyncio.sleep(2)
+        subtaskTask.status = TaskStatus.IN_PROGRESS
         yield self.create_todo_item_response(subtaskTask)
         await asyncio.sleep(2)
         parentTask.status = TaskStatus.COMPLETED
+        subtaskTask.status = TaskStatus.COMPLETED
+        yield self.create_todo_item_response(subtaskTask)
         yield self.create_todo_item_response(parentTask)
 
         streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])

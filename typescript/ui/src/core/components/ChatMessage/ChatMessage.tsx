@@ -13,6 +13,7 @@ import {
 } from "../../stores/HistoryStore/selectors.ts";
 import { MessageRole } from "@ragbits/api-client";
 import TodoList from "../TodoList.tsx";
+import { AnimatePresence, motion } from "framer-motion";
 
 type ChatMessageProps = {
   classNames?: {
@@ -93,7 +94,20 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     classNames={{ liveUpdates: classNames?.liveUpdates }}
                   />
                 )}
-                {message.tasks && <TodoList tasks={message.tasks} />}
+                {message.tasks && message.tasks.length > 0 && (
+                  <AnimatePresence>
+                    <motion.div
+                      key={`${message.id}-execution-plan`}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="rounded-medium text-large text-default-900 border-default flex w-fit flex-col gap-2 border p-4"
+                    >
+                      <p>Execution plan</p>
+                      <TodoList tasks={message.tasks} />
+                    </motion.div>
+                  </AnimatePresence>
+                )}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
