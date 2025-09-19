@@ -7,9 +7,8 @@ from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_in
 from ragbits.core.llms import LiteLLM, ToolCall
 
 
-async def main():
+async def main() -> None:
     """Demonstrate the new instance-based todo approach with streaming and logging."""
-
     # Create a dedicated TodoList instance for this agent
     my_todo_list = TodoList()
     my_todo_manager = create_todo_manager(my_todo_list)
@@ -32,14 +31,21 @@ async def main():
         - Transportation details with times, costs, parking info
         - Weather considerations and backup plans
         - Safety information and emergency contacts
-        """ + get_todo_instruction_tpl(task_range=(3, 5)),
+        """
+        + get_todo_instruction_tpl(task_range=(3, 5)),
         tools=[my_todo_manager],  # Use the instance-specific todo manager
-        default_options=AgentOptions(max_turns=30)
+        default_options=AgentOptions(max_turns=30),
     )
 
-    query = "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. Focus on scenic routes under 15km, avoiding crowds."
+    query = (
+        "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. ",
+        "Focus on scenic routes under 15km, avoiding crowds.",
+    )
     # query = "How long is hike to Giewont from Kuźnice?"
-    # query = "Is it difficult to finish Orla Perć? Would you recommend me to go there if I've never been in mountains before?"
+    # query = (
+    #     "Is it difficult to finish Orla Perć? Would you recommend me ",
+    #     "to go there if I've never been in mountains before?",
+    # )
 
     stream = my_agent.run_streaming(query)
 
@@ -63,7 +69,7 @@ async def main():
                         for i, task in enumerate(tasks, 1):
                             print(f"   {i}. {task}")
 
-    print("\n\n" + "="*50)
+    print("\n\n" + "=" * 50)
     print("🎉 Systematic hiking trip planning completed!")
 
 

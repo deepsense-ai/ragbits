@@ -154,12 +154,12 @@ class MyChat(ChatInterface):
         yield self.create_todo_item_response(parentTask)
         yield self.create_todo_item_response(subtaskTask)
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         subtaskTask.status = TaskStatus.COMPLETED
-        parentTask.status = TaskStatus.COMPLETED
-
-        yield self.create_todo_item_response(parentTask)
         yield self.create_todo_item_response(subtaskTask)
+        await asyncio.sleep(2)
+        parentTask.status = TaskStatus.COMPLETED
+        yield self.create_todo_item_response(parentTask)
 
         streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
         async for chunk in streaming_result:
