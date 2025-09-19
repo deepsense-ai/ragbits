@@ -11,7 +11,7 @@ Ragbits provides two types of post-processors:
 
 ### Implementing a custom Post-Processor
 
-To create a custom post-processor, inherit from the appropriate base class (`PostProcessor` or `StreamingPostProcessor`) and implement the required method.
+To create a custom post-processor, inherit from the appropriate base class ([`PostProcessor`][ragbits.agents.post_processors.base.PostProcessor] or [`StreamingPostProcessor`][ragbits.agents.post_processors.base.StreamingPostProcessor]) and implement the required method.
 
 #### Post-Processor Example
 
