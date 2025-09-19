@@ -77,7 +77,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    llm = LiteLLM("gpt-3.5-turbo")
+    llm = LiteLLM("gpt-4.1-mini")
     agent = Agent(llm=llm, prompt="You are a helpful assistant.")
     post_processors = [
         CustomStreamingPostProcessor(forbidden_words=["python"]),

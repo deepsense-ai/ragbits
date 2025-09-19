@@ -48,7 +48,7 @@ To use post-processors, pass them to the `run` or `run_streaming` methods of the
 
 ```python
 async def main() -> None:
-    llm = LiteLLM("gpt-3.5-turbo")
+    llm = LiteLLM("gpt-4.1-mini")
     agent = Agent(llm=llm, prompt="You are a helpful assistant.")
     post_processors = [
         UpperCaseStreamingProcessor(),
