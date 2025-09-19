@@ -26,6 +26,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.agents.tools.todo import Task, TaskStatus
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -141,9 +142,27 @@ class MyChat(ChatInterface):
             ),
         ]
 
+        parentTask = Task(id="task_id_1", description="Example task with a subtask")
+        subtaskTask = Task(id="task_id_2", description="Example subtask", parent_id="task_id_1")
+
         for live_update in example_live_updates:
             yield live_update
             await asyncio.sleep(2)
+
+        yield self.create_todo_item_response(parentTask)
+        yield self.create_todo_item_response(subtaskTask)
+
+        await asyncio.sleep(2)
+        parentTask.status = TaskStatus.IN_PROGRESS
+        yield self.create_todo_item_response(parentTask)
+        await asyncio.sleep(2)
+        subtaskTask.status = TaskStatus.IN_PROGRESS
+        yield self.create_todo_item_response(subtaskTask)
+        await asyncio.sleep(2)
+        parentTask.status = TaskStatus.COMPLETED
+        subtaskTask.status = TaskStatus.COMPLETED
+        yield self.create_todo_item_response(subtaskTask)
+        yield self.create_todo_item_response(parentTask)
 
         streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
         async for chunk in streaming_result:

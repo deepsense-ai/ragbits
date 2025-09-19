@@ -10,6 +10,7 @@ from typing import cast
 
 from pydantic import BaseModel
 
+from ragbits.agents.tools.todo import Task, TaskStatus
 from ragbits.chat.interface.types import AuthType
 
 
@@ -82,6 +83,7 @@ class RagbitsChatModelProvider:
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
+                "TaskStatus": TaskStatus,
                 # Core data models
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
@@ -93,6 +95,7 @@ class RagbitsChatModelProvider:
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
                 "MessageUsage": MessageUsage,
+                "Task": Task,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -151,6 +154,8 @@ class RagbitsChatModelProvider:
                 "JWTToken",
                 "User",
                 "MessageUsage",
+                "Task",
+                "TaskStatus",
             ],
             "configuration": [
                 "HeaderCustomization",

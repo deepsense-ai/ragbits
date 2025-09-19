@@ -7,6 +7,7 @@ import {
   Image,
   MessageUsage,
   RagbitsClient,
+  Task,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -24,6 +25,7 @@ export interface ChatMessage {
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
+  tasks?: Task[];
 }
 
 export interface Conversation {
