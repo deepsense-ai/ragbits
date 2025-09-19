@@ -6,12 +6,29 @@ Ragbits Agents can be enhanced with post-processors to intercept, log, filter, a
 
 Ragbits provides two types of post-processors:
 
+- **PostProcessor**: Processes the final output after generation, ideal for batch processing.
 - **StreamingPostProcessor**: Processes outputs as they are generated, suitable for real-time applications.
-- **NonStreamingPostProcessor**: Processes the final output after generation, ideal for batch processing.
 
-### Implementing a Post-Processor
+### Implementing a custom Post-Processor
 
-To create a post-processor, inherit from the appropriate base class (`StreamingPostProcessor` or `NonStreamingPostProcessor`) and implement the required method.
+To create a custom post-processor, inherit from the appropriate base class (`PostProcessor` or `StreamingPostProcessor`) and implement the required method.
+
+#### Post-Processor Example
+
+A non-streaming post-processor applies transformations after the entire content is generated.
+
+```python
+class TruncateProcessor(PostProcessor):
+    def __init__(self, max_length: int = 50) -> None:
+        self.max_length = max_length
+
+    async def process(self, result, agent):
+        content = result.content
+        if len(content) > self.max_length:
+            content = content[:self.max_length] + "... [TRUNCATED]"
+        result.content = content
+        return result
+```
 
 #### Streaming Post-Processor Example
 
@@ -25,23 +42,6 @@ class UpperCaseStreamingProcessor(StreamingPostProcessor):
         return chunk
 ```
 
-#### Non-Streaming Post-Processor Example
-
-A non-streaming post-processor applies transformations after the entire content is generated.
-
-```python
-class TruncateNonStreamingProcessor(NonStreamingPostProcessor):
-    def __init__(self, max_length: int = 50) -> None:
-        self.max_length = max_length
-
-    async def process(self, result, agent):
-        content = result.content
-        if len(content) > self.max_length:
-            content = content[:self.max_length] + "... [TRUNCATED]"
-        result.content = content
-        return result
-```
-
 ## Using Post-Processors
 
 To use post-processors, pass them to the `run` or `run_streaming` methods of the `Agent` class. If you pass a non-streaming processor to `run_streaming`, set `allow_non_streaming=True`. This allows streaming processors to handle content piece by piece during generation, while non-streaming processors apply transformations after the entire output is generated.
@@ -52,7 +52,7 @@ async def main() -> None:
     agent = Agent(llm=llm, prompt="You are a helpful assistant.")
     post_processors = [
         UpperCaseStreamingProcessor(),
-        TruncateNonStreamingProcessor(max_length=50),
+        TruncateProcessor(max_length=50),
     ]
     stream_result = agent.run_streaming("Tell me about the history of AI.", post_processors=post_processors, allow_non_streaming=True)
     async for chunk in stream_result:

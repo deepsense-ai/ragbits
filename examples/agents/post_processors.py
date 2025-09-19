@@ -21,12 +21,12 @@ To run the script, execute the following command:
 import asyncio
 from types import SimpleNamespace
 
-from ragbits.agents import Agent, AgentResult, NonStreamingPostProcessor, StreamingPostProcessor, ToolCallResult
+from ragbits.agents import Agent, AgentResult, PostProcessor, StreamingPostProcessor, ToolCallResult
 from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
 from ragbits.core.llms.litellm import LiteLLM
 
 
-class CustomStreamingProcessor(StreamingPostProcessor):
+class CustomStreamingPostProcessor(StreamingPostProcessor):
     """
     Streaming post-processor that checks for forbidden words.
     """
@@ -45,7 +45,7 @@ class CustomStreamingProcessor(StreamingPostProcessor):
         return chunk
 
 
-class CustomNonStreamingProcessor(NonStreamingPostProcessor):
+class CustomPostProcessor(PostProcessor):
     """
     Non-streaming post-processor that truncates the content.
     """
@@ -80,8 +80,8 @@ async def main() -> None:
     llm = LiteLLM("gpt-3.5-turbo")
     agent = Agent(llm=llm, prompt="You are a helpful assistant.")
     post_processors = [
-        CustomStreamingProcessor(forbidden_words=["python"]),
-        CustomNonStreamingProcessor(max_length=200),
+        CustomStreamingPostProcessor(forbidden_words=["python"]),
+        CustomPostProcessor(max_length=200),
     ]
     stream_result = agent.run_streaming("What is Python?", post_processors=post_processors, allow_non_streaming=True)
     async for chunk in stream_result:

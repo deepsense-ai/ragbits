@@ -31,7 +31,7 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
         """
 
 
-class NonStreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
+class PostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
     """Base class for non-streaming post-processors."""
 
     @property

@@ -30,7 +30,7 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.post_processors.base import BasePostProcessor, NonStreamingPostProcessor, StreamingPostProcessor
+from ragbits.agents.post_processors.base import BasePostProcessor, PostProcessor, StreamingPostProcessor
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
@@ -296,7 +296,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -306,7 +306,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -315,7 +315,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[NonStreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -822,7 +822,7 @@ class Agent(
         input = cast(PromptInputT, input)
 
         streaming_processors = [p for p in post_processors or [] if isinstance(p, StreamingPostProcessor)]
-        non_streaming_processors = [p for p in post_processors or [] if isinstance(p, NonStreamingPostProcessor)]
+        non_streaming_processors = [p for p in post_processors or [] if isinstance(p, PostProcessor)]
 
         accumulated_content = ""
         tool_call_results: list[ToolCallResult] = []
