@@ -30,7 +30,12 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.post_processors.base import BasePostProcessor, PostProcessor, StreamingPostProcessor
+from ragbits.agents.post_processors.base import (
+    BasePostProcessor,
+    PostProcessor,
+    StreamingPostProcessor,
+    stream_with_post_processing,
+)
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
@@ -511,14 +516,14 @@ class Agent(
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
             AgentInvalidPostProcessorError: If the post-processor is invalid.
         """
+        generator = self._stream_internal(input, options, context, tool_choice)
+
         if post_processors:
             if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
                 raise AgentInvalidPostProcessorError(
                     reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
                 )
-            generator = self._stream_with_post_processing(input, options, context, tool_choice, post_processors)
-        else:
-            generator = self._stream_internal(input, options, context, tool_choice)
+            generator = stream_with_post_processing(generator, post_processors, self)
 
         return AgentResultStreaming(generator)
 
@@ -800,76 +805,6 @@ class Agent(
             )
             for tool in all_tools.values()
         ]
-
-    async def _stream_with_post_processing(
-        self,
-        input: str | PromptInputT | None = None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
-        tool_choice: ToolChoice | None = None,
-        post_processors: (
-            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | None
-        ) = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
-        """
-        Stream with support for both streaming and non-streaming post-processors.
-
-        Streaming processors get chunks in real-time via process_streaming().
-        Non-streaming processors get the complete result via process().
-        """
-        input = cast(PromptInputT, input)
-
-        streaming_processors = [p for p in post_processors or [] if isinstance(p, StreamingPostProcessor)]
-        non_streaming_processors = [p for p in post_processors or [] if isinstance(p, PostProcessor)]
-
-        accumulated_content = ""
-        tool_call_results: list[ToolCallResult] = []
-        usage: Usage = Usage()
-        prompt_with_history: BasePrompt | None = None
-
-        async for chunk in self._stream_internal(input, options, context, tool_choice):
-            processed_chunk = chunk
-            for streaming_processor in streaming_processors:
-                processed_chunk = await streaming_processor.process_streaming(chunk=processed_chunk, agent=self)
-                if processed_chunk is None:
-                    break
-
-            if isinstance(processed_chunk, str):
-                accumulated_content += processed_chunk
-            elif isinstance(processed_chunk, ToolCallResult):
-                tool_call_results.append(processed_chunk)
-            elif isinstance(processed_chunk, Usage):
-                usage = processed_chunk
-            elif isinstance(processed_chunk, BasePrompt):
-                prompt_with_history = processed_chunk
-
-            if processed_chunk is not None:
-                yield processed_chunk
-
-        if non_streaming_processors and prompt_with_history:
-            agent_result = AgentResult(
-                content=cast(PromptOutputT, accumulated_content),
-                metadata={},
-                tool_calls=tool_call_results or None,
-                history=prompt_with_history.chat,
-                usage=usage,
-            )
-
-            current_result = agent_result
-            for non_streaming_processor in non_streaming_processors:
-                current_result = await non_streaming_processor.process(current_result, self)
-
-            yield current_result.usage
-            yield prompt_with_history
-            yield SimpleNamespace(
-                result={
-                    "content": current_result.content,
-                    "metadata": current_result.metadata,
-                    "tool_calls": current_result.tool_calls,
-                }
-            )
 
     @requires_dependencies("pydantic_ai")
     def to_pydantic_ai(self) -> "PydanticAIAgent":
