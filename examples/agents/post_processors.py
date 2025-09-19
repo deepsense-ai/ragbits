@@ -35,7 +35,7 @@ class CustomStreamingPostProcessor(StreamingPostProcessor):
         self.forbidden_words = forbidden_words
 
     async def process_streaming(
-        self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: "Agent"
+        self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: Agent
     ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
         """
         Process chunks during streaming.
@@ -53,7 +53,7 @@ class CustomPostProcessor(PostProcessor):
     def __init__(self, max_length: int = 200) -> None:
         self.max_length = max_length
 
-    async def process(self, result: "AgentResult", agent: "Agent") -> "AgentResult":
+    async def process(self, result: AgentResult, agent: Agent) -> AgentResult:
         """
         Process the agent result.
         """
