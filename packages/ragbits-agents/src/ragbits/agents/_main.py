@@ -171,10 +171,37 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 class AgentRunContext(BaseModel, Generic[DepsT]):
     """Context for the agent run."""
 
+    model_config = {"arbitrary_types_allowed": True}
+
     deps: AgentDependencies[DepsT] = Field(default_factory=lambda: AgentDependencies())
     """Container for external dependencies."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
+    stream_downstream_events: bool = False
+    """Whether to stream events from downstream agents when tools execute other agents."""
+    downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
+    """Registry of all agents that participated in this run"""
+
+    def register_agent(self, agent: "Agent") -> None:
+        """
+        Register a downstream agent in this context.
+
+        Args:
+            agent: The agent instance to register.
+        """
+        self.downstream_agents[agent.id] = agent
+
+    def get_agent(self, agent_id: str) -> "Agent | None":
+        """
+        Retrieve a registered downstream agent by its ID.
+
+        Args:
+            agent_id: The unique identifier of the agent.
+
+        Returns:
+            The Agent instance if found, otherwise None.
+        """
+        return self.downstream_agents.get(agent_id)
 
 
 class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]):
@@ -558,7 +585,6 @@ class Agent(
             options=options,
             context=context,
             tool_choice=tool_choice,
-            stream_downstream_events=stream_downstream_events,
         )
 
         if post_processors:
@@ -576,16 +602,20 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        stream_downstream_events: bool = True,
     ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
+
+        context.register_agent(cast(Agent[Any, Any, str], self))
+
+        print(context)
 
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
+        print(prompt_with_history)
         tools_mapping = await self._get_all_tools()
         turn_count = 0
         max_turns = merged_options.max_turns
@@ -611,7 +641,6 @@ class Agent(
                             tool_call=chunk,
                             tools_mapping=tools_mapping,
                             context=context,
-                            stream_downstream_events=stream_downstream_events,
                         ):
                             yield result
                             if isinstance(result, ToolCallResult):
@@ -747,8 +776,7 @@ class Agent(
         self,
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
-        context: AgentRunContext | None = None,
-        stream_downstream_events: bool = True,
+        context: AgentRunContext,
     ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
@@ -763,28 +791,15 @@ class Agent(
                 if tool.context_var_name:
                     call_args[tool.context_var_name] = context
 
-                call_args["_stream_downstream_events"] = stream_downstream_events
-
-                try:
-                    tool_output = (
-                        await tool.on_tool_call(**call_args)
-                        if iscoroutinefunction(tool.on_tool_call)
-                        else tool.on_tool_call(**call_args)
-                    )
-                except TypeError as e:
-                    if "_stream_downstream_events" in str(e):
-                        call_args.pop("_stream_downstream_events", None)
-                        tool_output = (
-                            await tool.on_tool_call(**call_args)
-                            if iscoroutinefunction(tool.on_tool_call)
-                            else tool.on_tool_call(**call_args)
-                        )
-                    else:
-                        raise
+                tool_output = (
+                    await tool.on_tool_call(**call_args)
+                    if iscoroutinefunction(tool.on_tool_call)
+                    else tool.on_tool_call(**call_args)
+                )
 
                 if isinstance(tool_output, AgentResultStreaming):
                     async for downstream_item in tool_output:
-                        if stream_downstream_events:
+                        if context.stream_downstream_events:
                             yield DownstreamAgentResult(agent_id=self.id, item=downstream_item)
 
                     tool_output = {
