@@ -152,13 +152,11 @@ class Tool:
 
         context_var_name = get_context_variable_name(agent.run)
 
-        if not isinstance(context_var_name, str):
-            raise ValueError("Tool requires a valid context_var_name")
-
         def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
-            context = cast("AgentRunContext[Any] | None", kwargs.get(context_var_name))
-            if context is not None:
-                context.register_agent(cast("Agent[Any, Any, str]", agent))
+            if context_var_name:
+                context = cast("AgentRunContext[Any] | None", kwargs.get(context_var_name))
+                if context is not None:
+                    context.register_agent(cast("Agent[Any, Any, str]", agent))
 
             if input_model_cls and issubclass(input_model_cls, BaseModel):
                 model_input = input_model_cls(**kwargs)
