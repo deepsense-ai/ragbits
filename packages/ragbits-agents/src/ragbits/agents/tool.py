@@ -152,7 +152,7 @@ class Tool:
 
         context_var_name = get_context_variable_name(agent.run)
 
-        if context_var_name is None:
+        if not isinstance(context_var_name, str):
             raise ValueError("Tool requires a valid context_var_name")
 
         def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
