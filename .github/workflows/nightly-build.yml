@@ -76,6 +76,7 @@ jobs:
           git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
           git tag "${{ env.NIGHTLY_VERSION }}"
           git push origin "${{ env.NIGHTLY_VERSION }}"
+          git push origin develop
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
@@ -91,6 +92,8 @@ jobs:
       - name: Deploy nightly documentation
         shell: bash
         run: |
+            git config user.name "ds-ragbits-robot"
+            git config user.email "ds-ragbits-robot@users.noreply.github.com"
             git fetch origin gh-pages
             uv run mike deploy --push --alias-type copy nightly
         env:
