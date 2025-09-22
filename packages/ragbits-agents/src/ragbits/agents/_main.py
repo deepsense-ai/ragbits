@@ -608,14 +608,11 @@ class Agent(
 
         context.register_agent(cast(Agent[Any, Any, str], self))
 
-        print(context)
-
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
-        print(prompt_with_history)
         tools_mapping = await self._get_all_tools()
         turn_count = 0
         max_turns = merged_options.max_turns
