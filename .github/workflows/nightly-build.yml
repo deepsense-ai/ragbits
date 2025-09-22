@@ -90,7 +90,9 @@ jobs:
 
       - name: Deploy nightly documentation
         shell: bash
-        run: uv run mike deploy --push nightly
+        run: |
+            git fetch origin gh-pages
+            uv run mike deploy --push --alias-type copy nightly
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
