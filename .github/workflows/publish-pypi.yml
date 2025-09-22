@@ -56,6 +56,7 @@ jobs:
 
       - name: Deploy documentation
         run: |
-          uv run mike deploy --push stable
+          git fetch origin gh-pages
+          uv run mike deploy --push --alias-type copy stable
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
