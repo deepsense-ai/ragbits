@@ -18,7 +18,7 @@ jobs:
 
       - name: Deploy docs
         shell: bash
-        run: uv run ./.github/scripts/deploy_docs.sh
+        run: .github/scripts/deploy_docs.sh
         env:
           GCP_KEY: ${{ secrets.GCP_KEY }}
 
