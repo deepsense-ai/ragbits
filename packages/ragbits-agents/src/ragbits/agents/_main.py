@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, TypeVar, cast, overload
+from typing import Any, ClassVar, Generic, Literal, TypeVar, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -18,6 +18,7 @@ from typing_extensions import Self
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
+    AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
     AgentMaxTokensExceededError,
     AgentMaxTurnsExceededError,
@@ -29,6 +30,12 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
+from ragbits.agents.post_processors.base import (
+    BasePostProcessor,
+    PostProcessor,
+    StreamingPostProcessor,
+    stream_with_post_processing,
+)
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
@@ -157,7 +164,7 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """The usage of the agent."""
 
 
-class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
+class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
@@ -174,38 +181,40 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
         self.history: ChatFormat
         self.usage: Usage = Usage()
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
+    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace]:
         return self
 
-    async def __anext__(self) -> str | ToolCall | ToolCallResult:
+    async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace:
         try:
             item = await self._generator.__anext__()
+
             match item:
                 case str():
                     self.content += item
+                    return item
                 case ToolCall():
-                    pass
+                    return item
                 case ToolCallResult():
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                    return item
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
-                    item = await self._generator.__anext__()
-                    item = cast(SimpleNamespace, item)
-                    item.result = {
-                        "content": self.content,
-                        "metadata": self.metadata,
-                        "tool_calls": self.tool_calls,
-                    }
-                    raise StopAsyncIteration
+                    return item
                 case Usage():
                     self.usage = item
                     return await self.__anext__()
+                case SimpleNamespace():
+                    result_dict = getattr(item, "result", {})
+                    self.content = result_dict.get("content", self.content)
+                    self.metadata = result_dict.get("metadata", self.metadata)
+                    self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
+                    return item
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-            return item
+
         except StopAsyncIteration:
             raise
 
@@ -292,6 +301,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -301,6 +311,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -309,6 +320,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -325,6 +337,7 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
+            post_processors: List of post-processors to apply to the response in order.
 
         Returns:
             The result of the agent run.
@@ -335,6 +348,24 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+        """
+        result = await self._run_without_post_processing(input, options, context, tool_choice)
+
+        if post_processors:
+            for processor in post_processors:
+                result = await processor.process(result, self)
+
+        return result
+
+    async def _run_without_post_processing(
+        self,
+        input: str | PromptInputT | None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+    ) -> AgentResult[PromptOutputT]:
+        """
+        Run the agent without applying post-processors.
         """
         if context is None:
             context = AgentRunContext()
@@ -403,6 +434,21 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: bool = False,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -412,6 +458,21 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: bool = False,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -420,6 +481,13 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: (
+            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | None
+        ) = None,
+        *,
+        allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -434,6 +502,8 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
+            post_processors: List of post-processors to apply to the response in order.
+            allow_non_streaming: Whether to allow non-streaming post-processors.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -444,8 +514,17 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+            AgentInvalidPostProcessorError: If the post-processor is invalid.
         """
         generator = self._stream_internal(input, options, context, tool_choice)
+
+        if post_processors:
+            if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
+                raise AgentInvalidPostProcessorError(
+                    reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
+                )
+            generator = stream_with_post_processing(generator, post_processors, self)
+
         return AgentResultStreaming(generator)
 
     async def _stream_internal(

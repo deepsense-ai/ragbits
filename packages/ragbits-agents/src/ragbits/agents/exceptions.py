@@ -106,3 +106,13 @@ class AgentNextPromptOverLimitError(AgentError):
         self.limit = limit
         self.actual = actual
         self.next_prompt_tokens = next_prompt_tokens
+
+
+class AgentInvalidPostProcessorError(AgentError):
+    """
+    Raised when the post-processor is invalid.
+    """
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"Invalid post-processor: {reason}")
+        self.reason = reason
