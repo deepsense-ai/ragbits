@@ -19,43 +19,19 @@ jobs:
           ref: develop
           fetch-depth: 0
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
       - name: Check if nightly build needed
         id: check
-        run: |
-          # Get the latest commit hash on develop
-          COMMIT_HASH=$(git rev-parse --short HEAD)
-          echo "commit-hash=$COMMIT_HASH" >> "$GITHUB_OUTPUT"
-
-          # Check if we already built this commit as nightly
-          LAST_NIGHTLY_TAG=$(git tag -l "*dev*" --sort=-version:refname | head -1)
-          if [ -n "$LAST_NIGHTLY_TAG" ]; then
-            # Get the commit that the last nightly tag points to
-            LAST_NIGHTLY_COMMIT=$(git rev-list -n 1 $LAST_NIGHTLY_TAG)
-            CURRENT_COMMIT=$(git rev-parse HEAD)
-            if [ "$CURRENT_COMMIT" = "$LAST_NIGHTLY_COMMIT" ]; then
-              echo "should-build=false" >> "$GITHUB_OUTPUT"
-              echo "No new commits since last nightly build"
-              exit 0
-            fi
-          fi
-
-          # Generate nightly version
-          BASE_VERSION=$(python -c "
-          try:
-              import tomllib
-          except ImportError:
-              import tomli as tomllib
-          with open('packages/ragbits/pyproject.toml', 'rb') as f:
-              data = tomllib.load(f)
-          print(data['project']['version'])
-          ")
-          # Use timestamp for unique nightly version (PEP 440 compliant)
-          TIMESTAMP=$(date +%Y%m%d%H%M)
-          NIGHTLY_VERSION="${BASE_VERSION}.dev${TIMESTAMP}"
-
-          echo "should-build=true" >> "$GITHUB_OUTPUT"
-          echo "nightly-version=$NIGHTLY_VERSION" >> "$GITHUB_OUTPUT"
-          echo "Will build nightly version: $NIGHTLY_VERSION"
+        run: uv run scripts/check_nightly_build.py
 
   build-and-publish:
     needs: check-for-changes
@@ -100,6 +76,7 @@ jobs:
           git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
           git tag "${{ env.NIGHTLY_VERSION }}"
           git push origin "${{ env.NIGHTLY_VERSION }}"
+          git push origin develop
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
@@ -114,7 +91,11 @@ jobs:
 
       - name: Deploy nightly documentation
         shell: bash
-        run: uv run mike deploy --push nightly
+        run: |
+            git config user.name "ds-ragbits-robot"
+            git config user.email "ds-ragbits-robot@users.noreply.github.com"
+            git fetch origin gh-pages
+            uv run mike deploy --push --alias-type copy nightly
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
