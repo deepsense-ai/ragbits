@@ -1,71 +1,127 @@
-"""Example demonstrating the new instance-based todo functionality."""
+"""Example demonstrating the new orchestrator-based todo functionality with streaming."""
 
 import asyncio
 
-from ragbits.agents import Agent, AgentOptions
-from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
+from ragbits.agents import Agent
+from ragbits.agents.tools.todo import TodoOrchestrator
 from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.agents import ToolCallResult
 
 
-async def main():
-    """Demonstrate the new instance-based todo approach with streaming and logging."""
+async def hiking_guide():
+    """Demonstrate the new orchestrator-based todo approach with streaming."""
 
-    # Create a dedicated TodoList instance for this agent
-    my_todo_list = TodoList()
-    my_todo_manager = create_todo_manager(my_todo_list)
+    # Define the system prompt for hiking guide
+    hiking_system_prompt = """
+    You are an expert hiking guide. Provide detailed, comprehensive information
+    about hiking routes, gear, transportation, and safety considerations.
+    """
 
-    # Create an agent with higher turn limit and todo capabilities
-    my_agent = Agent(
-        llm=LiteLLM("gpt-4o-mini"),
-        prompt="""
-        You are an expert hiking guide. You can either answer questions or
-        create a comprehensive, detailed hiking trip plan.
-
-        WORKFLOW:
-        1. If query is complex you have access to todo_manager tool to create a todo list with specific tasks
-        2. If query is simple question, you work without todo_manager tool, just answer the question
-        3. If you use todo_manager tool, you must follow the todo workflow below
-
-        For hiking plans include:
-        - Specific route names, distances, elevation gain
-        - Detailed gear recommendations with quantities
-        - Transportation details with times, costs, parking info
-        - Weather considerations and backup plans
-        - Safety information and emergency contacts
-        """ + get_todo_instruction_tpl(task_range=(3, 5)),
-        tools=[my_todo_manager],  # Use the instance-specific todo manager
-        default_options=AgentOptions(max_turns=30)
+    # Create generic orchestrator with hiking domain context
+    todo_orchestrator = TodoOrchestrator(
+        domain_context="hiking guide"
     )
 
-    query = "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. Focus on scenic routes under 15km, avoiding crowds."
-    # query = "How long is hike to Giewont from Kuźnice?"
-    # query = "Is it difficult to finish Orla Perć? Would you recommend me to go there if I've never been in mountains before?"
+    # Create a simple agent - orchestrator handles the workflow
+    agent = Agent(
+        llm=LiteLLM("gpt-4o-mini"),
+        prompt=hiking_system_prompt,
+    )
 
-    stream = my_agent.run_streaming(query)
+    # Test queries
+    # query = "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. Focus on scenic routes under 15km, avoiding crowds."
+    query = "How long is hike to Giewont from Kuźnice?"
 
-    async for response in stream:
+    print("=== Generic Todo Orchestrator - Hiking Example ===\n")
+
+    # Run the complete workflow with orchestrator streaming
+    async for response in todo_orchestrator.run_todo_workflow_streaming(agent, query):
         match response:
             case str():
                 if response.strip():
                     print(response, end="", flush=True)
 
             case ToolCall():
-                if response.name == "todo_manager":
-                    action = response.arguments.get("action", "unknown")
+                print(f"\n🔧 Tool Call: {response.name}")
+                if response.arguments:
+                    print(f"   Arguments: {response.arguments}")
 
-                    if action == "create":
-                        print("=== Enhanced Todo Workflow Example ===\n")
-                        print("🚀 Hiking trip planning with systematic workflow:\n")
+            case ToolCallResult():
+                print(f"🔧 Tool Result: {response.result}")
 
-                        tasks = response.arguments.get("tasks", [])
-                        tasks_count = len(tasks)
-                        print(f" - Creating {tasks_count} tasks", flush=True)
-                        for i, task in enumerate(tasks, 1):
-                            print(f"   {i}. {task}")
+            case dict():
+                if response.get("type") == "status":
+                    print(f"{response['message']}")
+                elif response.get("type") == "task_list":
+                    print(f"   {response['task_number']}. {response['task_description']}")
+                elif response.get("type") == "task_summary_start":
+                    print(f"{response['message']}", end="", flush=True)
+                elif response.get("type") == "task_completed":
+                    print(f"{response['message']}")
+                elif response.get("type") == "final_summary_start":
+                    print(f"{response['message']}", end="", flush=True)
+                elif response.get("type") == "final_summary_end":
+                    print(f"{response['message']}")
 
-    print("\n\n" + "="*50)
-    print("🎉 Systematic hiking trip planning completed!")
+    print(f"\n🎯 Workflow completed successfully!")
+
+
+async def software_architecture_example():
+    """Example showing the orchestrator used for software architecture."""
+
+    software_system_prompt = """
+    You are an expert software architect. Provide detailed technical analysis,
+    system design recommendations, and implementation guidance.
+
+    Always be specific with:
+    - Technology stack recommendations with versions
+    - Architecture patterns and design principles
+    - Performance and scalability considerations
+    - Security best practices
+    - Implementation roadmap with timelines
+    """
+
+    todo_orchestrator = TodoOrchestrator(
+        domain_context="software architect"
+    )
+
+    agent = Agent(
+        llm=LiteLLM("gpt-4o-mini"),
+        prompt=software_system_prompt,
+    )
+
+    query = "Design a scalable e-commerce platform for 100k+ users with real-time inventory management and payment processing."
+
+    print("\n" + "="*60)
+    print("=== Generic Todo Orchestrator - Software Architecture Example ===\n")
+
+    async for response in todo_orchestrator.run_todo_workflow_streaming(agent, query):
+        match response:
+            case str():
+                if response.strip():
+                    print(response, end="", flush=True)
+            case dict():
+                if response.get("type") == "status":
+                    print(f"{response['message']}")
+                elif response.get("type") == "task_list":
+                    print(f"   {response['task_number']}. {response['task_description']}")
+                elif response.get("type") == "task_summary_start":
+                    print(f"{response['message']}", end="", flush=True)
+                elif response.get("type") == "task_completed":
+                    print(f"{response['message']}")
+                elif response.get("type") == "final_summary_start":
+                    print(f"{response['message']}", end="", flush=True)
+                elif response.get("type") == "final_summary_end":
+                    print(f"{response['message']}")
+
+    print(f"\n🎯 Software architecture workflow completed!")
+
+
+async def demonstrate_both():
+    """Demonstrate both hiking and software architecture examples."""
+    await hiking_guide()
+    # await software_architecture_example()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(demonstrate_both())
