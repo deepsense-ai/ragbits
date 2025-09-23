@@ -50,6 +50,7 @@ class Tool:
     """The actual callable function to execute when the tool is called."""
     context_var_name: str | None = None
     """The name of the context variable that this tool accepts."""
+    id: str | None = None
 
     @classmethod
     def from_callable(cls, callable: Callable) -> Self:
@@ -167,6 +168,7 @@ class Tool:
 
         return cls(
             name=variable_name,
+            id=agent.id,
             description=description,
             parameters=parameters,
             on_tool_call=_on_tool_call,

@@ -2,14 +2,14 @@ import asyncio
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, Literal, TypeVar, cast, overload
-from typing import Any, ClassVar, Generic, TypeVar, Union, cast, overload
+from typing import Any, ClassVar, Generic, Literal, TypeVar, Union, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -64,9 +64,17 @@ class DownstreamAgentResult:
     Represents a streamed item from a downstream agent while executing a tool.
     """
 
-    agent_id: str
+    agent_id: str | None
     """ID of the downstream agent."""
-    item: Union[str, ToolCall, ToolCallResult, "DownstreamAgentResult"]
+    item: Union[
+        str,
+        ToolCall,
+        ToolCallResult,
+        "DownstreamAgentResult",
+        BasePrompt,
+        Usage,
+        SimpleNamespace,
+    ]
     """The streamed item from the downstream agent."""
 
 
@@ -204,7 +212,9 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
         return self.downstream_agents.get(agent_id)
 
 
-class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]):
+class AgentResultStreaming(
+    AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]
+):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
@@ -220,15 +230,19 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
-        self.downstream: dict[str, list[str | ToolCall | ToolCallResult]] = {}
+        self.downstream: dict[str | None, list[str | ToolCall | ToolCallResult]] = {}
         self.metadata: dict = {}
         self.history: ChatFormat
         self.usage: Usage = Usage()
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
+    def __aiter__(
+        self,
+    ) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
         return self
 
-    async def __anext__(self) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
+    async def __anext__(
+        self,
+    ) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
         try:
             item = await self._generator.__anext__()
 
@@ -248,6 +262,7 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult | BaseP
                         self.downstream[item.agent_id] = []
                     if isinstance(item.item, str | ToolCall | ToolCallResult):
                         self.downstream[item.agent_id].append(item.item)
+                    return item
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
@@ -508,7 +523,6 @@ class Agent(
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
-        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -533,7 +547,6 @@ class Agent(
         post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
-        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -549,7 +562,6 @@ class Agent(
         ) = None,
         *,
         allow_non_streaming: bool = False,
-        stream_downstream_events: bool = True,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -566,8 +578,6 @@ class Agent(
                 - Callable: one of provided tools
             post_processors: List of post-processors to apply to the response in order.
             allow_non_streaming: Whether to allow non-streaming post-processors.
-            stream_downstream_events: Whether to stream events from downstream agents when
-                tools execute other agents. Defaults to True.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -592,6 +602,11 @@ class Agent(
                 raise AgentInvalidPostProcessorError(
                     reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
                 )
+
+            generator = cast(
+                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+                generator,
+            )
             generator = stream_with_post_processing(generator, post_processors, self)
 
         return AgentResultStreaming(generator)
@@ -797,7 +812,7 @@ class Agent(
                 if isinstance(tool_output, AgentResultStreaming):
                     async for downstream_item in tool_output:
                         if context.stream_downstream_events:
-                            yield DownstreamAgentResult(agent_id=self.id, item=downstream_item)
+                            yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
 
                     tool_output = {
                         "content": tool_output.content,
