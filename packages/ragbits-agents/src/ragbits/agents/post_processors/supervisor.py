@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
@@ -9,6 +10,11 @@ from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
 if TYPE_CHECKING:
     from ragbits.agents._main import Agent, AgentResult
 
+
+class HistoryStrategy(str, Enum):
+    """Strategy for handling the chat history."""
+    PRESERVE = "preserve"
+    REMOVE = "remove"
 
 class ValidationOutput(BaseModel):
     """Default result of the validation process."""
@@ -90,12 +96,14 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
         correction_prompt: str | None = None,
         max_retries: int = 3,
         fail_on_exceed: bool = False,
+        history_strategy: HistoryStrategy = HistoryStrategy.REMOVE,
     ) -> None:
         self.llm = llm
         self.validation_prompt = validation_prompt or DefaultSupervisorPrompt
         self.correction_prompt = correction_prompt or DEFAULT_CORRECTION_PROMPT
         self.max_retries = max_retries
         self.fail_on_exceed = fail_on_exceed
+        self.history_strategy = history_strategy
 
     async def process(
         self,
@@ -123,7 +131,9 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
                     raise RuntimeError("Supervisor: maximum retries exceeded")  # TODO: add custom exception
                 return self._attach_metadata(current_result, validations)
 
+            last_assistant_index = len(current_result.history) - 1
             current_result = await self._rerun(agent, current_result, validation)
+            current_result = self._handle_history(current_result, last_assistant_index)
             retries += 1
 
         return self._attach_metadata(current_result, validations)
@@ -163,4 +173,15 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
         result.metadata.setdefault("post_processors", {}).setdefault("supervisor", []).extend(
             [v.model_dump() for v in validations]
         )
+        return result
+
+    def _handle_history(
+        self,
+        result: "AgentResult[PromptOutputT]",
+        last_assistant_index: int,
+    ) -> "AgentResult[PromptOutputT]":
+        if self.history_strategy == HistoryStrategy.REMOVE:
+            result.history.pop(last_assistant_index + 1)
+            result.history.pop(last_assistant_index)
+
         return result
