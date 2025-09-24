@@ -52,10 +52,17 @@ def get_time(location: str) -> str:
 
 
 class TimePromptInput(BaseModel):
+    """Input schema for the TimePrompt, containing the target location."""
+
     location: str
 
 
 class TimePrompt(Prompt[TimePromptInput]):
+    """
+    Provides instructions for generating the current time in a user-specified
+    location.
+    """
+
     system_prompt = """
     You are a helpful assistant that tells the current time in a given city.
     """
@@ -76,10 +83,16 @@ time_agent = Agent(
 
 
 class QAPromptInput(BaseModel):
+    """Input schema for the QA agent, containing a natural-language question."""
+
     question: str
 
 
 class QAPrompt(Prompt[QAPromptInput]):
+    """
+    Guides the agent to respond to user questions.
+    """
+
     system_prompt = """
     You are a helpful assistant that responds to user questions.
     """
@@ -99,6 +112,13 @@ qa_agent = Agent(
 
 
 async def main():
+    """
+    Run the QA agent with downstream streaming enabled.
+
+    The QA agent processes a sample question ("What time is it in Paris?") and delegates to
+    the Time Agent when necessary. Streamed results from both agents are printed in real time,
+    tagged by the agent that produced them.
+    """
     context = AgentRunContext(stream_downstream_events=True)
 
     async for chunk in qa_agent.run_streaming(QAPromptInput(question="What time is it in Paris?"), context=context):

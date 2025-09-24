@@ -5,6 +5,7 @@
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
 - Add post-processors (#821)
+- Support streaming from downstream agents (#812)
 
 ## 1.3.0 (2025-09-11)
 ### Changed

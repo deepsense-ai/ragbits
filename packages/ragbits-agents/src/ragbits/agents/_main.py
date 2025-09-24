@@ -266,15 +266,13 @@ class AgentResultStreaming(
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
-                    item = await self._generator.__anext__()
-                    item = cast(SimpleNamespace, item)
                     item.result = {
                         "content": self.content,
                         "metadata": self.metadata,
                         "tool_calls": self.tool_calls,
                         "downstream": self.downstream or None,
                     }
-                    raise StopAsyncIteration
+                    return item
                 case Usage():
                     self.usage = item
                     return await self.__anext__()

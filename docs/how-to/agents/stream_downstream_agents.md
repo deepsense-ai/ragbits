@@ -25,7 +25,7 @@ from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions
 from ragbits.core.llms import LiteLLM
 
---8<-- "examples/agents/downstream_agents_streaming.py:54:75"
+--8<-- "examples/agents/downstream_agents_streaming.py:54:82"
 ```
 
 ## Create a parent QA agent
@@ -33,7 +33,7 @@ from ragbits.core.llms import LiteLLM
 The parent agent can call downstream agents as tools. This lets the LLM reason and decide when to invoke the downstream agent.
 
 ```python
---8<-- "examples/agents/downstream_agents_streaming.py:78:98"
+--8<-- "examples/agents/downstream_agents_streaming.py:85:111"
 ```
 
 ## Streaming output from downstream agents
@@ -44,5 +44,5 @@ Use `run_streaming` with an [AgentRunContext][ragbits.agents.AgentRunContext] to
 import asyncio
 from ragbits.agents import DownstreamAgentResult
 
---8<-- "examples/agents/downstream_agents_streaming.py:101:113"
+--8<-- "examples/agents/downstream_agents_streaming.py:114:133"
 ```
