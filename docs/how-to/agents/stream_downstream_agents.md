@@ -1,4 +1,4 @@
-# How-To: Streame downstream agents with Ragbits
+# How-To: Stream downstream agents with Ragbits
 
 Ragbits [Agent][ragbits.agents.Agent] can call other agents as tools, creating a chain of reasoning where downstream agents provide structured results to the parent agent.
 
