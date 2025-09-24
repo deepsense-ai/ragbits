@@ -111,7 +111,7 @@ qa_agent = Agent(
 )
 
 
-async def main():
+async def main() -> None:
     """
     Run the QA agent with downstream streaming enabled.
 

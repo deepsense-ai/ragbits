@@ -249,41 +249,33 @@ class AgentResultStreaming(
             match item:
                 case str():
                     self.content += item
-                    return item
                 case ToolCall():
-                    return item
+                    pass
                 case ToolCallResult():
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
-                    return item
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
                         self.downstream[item.agent_id] = []
                     if isinstance(item.item, str | ToolCall | ToolCallResult):
                         self.downstream[item.agent_id].append(item.item)
-                    return item
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
-                    item.result = {
-                        "content": self.content,
-                        "metadata": self.metadata,
-                        "tool_calls": self.tool_calls,
-                        "downstream": self.downstream or None,
-                    }
-                    return item
                 case Usage():
                     self.usage = item
+                    # continue loop instead of tail recursion
                     return await self.__anext__()
                 case SimpleNamespace():
                     result_dict = getattr(item, "result", {})
                     self.content = result_dict.get("content", self.content)
                     self.metadata = result_dict.get("metadata", self.metadata)
                     self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
-                    return item
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
+
+            return item
 
         except StopAsyncIteration:
             raise
