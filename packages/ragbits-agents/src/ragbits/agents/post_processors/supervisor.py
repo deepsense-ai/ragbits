@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
 from pydantic import BaseModel
 
 from ragbits.agents.post_processors.base import PostProcessor
+from ragbits.agents.post_processors.exceptions import SupervisorMaxRetriesExceededError
 from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt.prompt import ChatFormat, Prompt, PromptInputT, PromptOutputT
 
@@ -164,7 +165,7 @@ class SupervisorPostProcessor(
 
             if retries == self.max_retries:
                 if self.fail_on_exceed:
-                    raise RuntimeError("Supervisor: maximum retries exceeded")  # TODO: add custom exception
+                    raise SupervisorMaxRetriesExceededError(self.max_retries, validations)
                 if not agent.keep_history:
                     agent.history = []
                 return self._attach_metadata(current_result, validations)
