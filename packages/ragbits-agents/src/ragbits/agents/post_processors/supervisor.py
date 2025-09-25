@@ -13,22 +13,26 @@ if TYPE_CHECKING:
 
 class HistoryStrategy(str, Enum):
     """Strategy for handling the chat history."""
+
     PRESERVE = "preserve"
     REMOVE = "remove"
 
+
 class ValidationOutput(BaseModel):
-    """Default result of the validation process."""
+    """Result of the validation process for agent responses."""
 
     is_valid: bool
     """Whether the response is valid based on tool calls."""
+
     reasoning: str
     """Explanation of the validation decision."""
+
     suggestion: str
     """Suggestion for correction."""
 
 
 class ValidationInput(BaseModel):
-    """Input data for validation prompt."""
+    """Input data for the validation prompt."""
 
     chat_history: list[dict[str, Any]]
     """The complete chat history for context."""
@@ -55,30 +59,35 @@ class DefaultSupervisorPrompt(Prompt[ValidationInput, ValidationOutput]):
     IMPORTANT VALIDATION RULES:
     - Only flag as INVALID if the answer is clearly incorrect or contradicts the tool results
     - If the answer cannot be determined to be true because it's basic/common knowledge not covered by tools,
-    consider it as VALID
+      consider it as VALID
     - If the response doesn't directly answer the user's question, flag as INVALID
     - Be strict but fair - flag clear inconsistencies while allowing for reasonable inference
       and interpretation of the tool results
     """
 
-    user_prompt = """
-    Chat History:
-    {% for message in chat_history %}
-    {{ message.role | title }}: {% if message.content is none %}{% for tool_call in message.tool_calls %} called tool:
-        {{ tool_call.function.name }}({{ tool_call.function.arguments | tojson }}){% if not loop.last %} {% endif %}{% endfor %}{% else %}{{ message.content }}{% endif %}
-    {% endfor %}
+    user_prompt = (
+        "Chat History:\n"
+        "{% for message in chat_history %}\n"
+        "{{ message.role | title }}: "
+        "{% if message.content is none %}"
+        "{% for tool_call in message.tool_calls %}"
+        "called tool: "
+        "{{ tool_call.function.name }}({{ tool_call.function.arguments | tojson }})"
+        "{% if not loop.last %} {% endif %}"
+        "{% endfor %}"
+        "{% else %}{{ message.content }}{% endif %}"
+        "{% endfor %}\n"
+        "\nPlease validate whether the last assistant's response is logically consistent with the tool call results "
+        "and the conversation context."
+    )
 
-    Please validate whether the last agent's response is logically consistent with the tool call results
-    and the conversation context.
-    """
 
-
-DEFAULT_CORRECTION_PROMPT = """
-Your answer is incorrect. Below you will find the reasoning and suggestion for correction.
-Reasoning: {reasoning}
-Suggestion: {suggestion}
-Please answer again, considering the reasoning and suggestion.
-"""
+DEFAULT_CORRECTION_PROMPT = (
+    "Your answer is incorrect. Below you will find the reasoning and suggestion for correction.\n"
+    "Reasoning: {reasoning}\n"
+    "Suggestion: {suggestion}\n"
+    "Please answer again, considering the reasoning and suggestion.\n"
+)
 
 
 class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]):
@@ -110,9 +119,14 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
         result: "AgentResult[PromptOutputT]",
         agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
     ) -> "AgentResult[PromptOutputT]":
+        """
+        Validate the agent's response and, if necessary, rerun with corrections.
+        """
         retries = 0
         current_result = result
         validations: list[BaseModel] = []
+        accumulated_tool_calls: list = []
+        agent.history = result.history
 
         print("\n[DEBUG] Result content before malforming to error: ", current_result.history[-1]["content"])
         current_result.history[-1]["content"] = "The weather is currently cloudy."
@@ -120,56 +134,63 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
 
         while retries <= self.max_retries:
             validation = await self._validate(current_result)
-            print("\n[SupervisorPostProcessor] Validation response: ", validation)
             validations.append(validation)
+            accumulated_tool_calls.extend(current_result.tool_calls or [])
+            current_result.tool_calls = accumulated_tool_calls
 
             if validation.is_valid:
+                if not agent.keep_history:
+                    agent.history = []
                 return self._attach_metadata(current_result, validations)
 
             if retries == self.max_retries:
                 if self.fail_on_exceed:
                     raise RuntimeError("Supervisor: maximum retries exceeded")  # TODO: add custom exception
+                if not agent.keep_history:
+                    agent.history = []
                 return self._attach_metadata(current_result, validations)
 
             last_assistant_index = len(current_result.history) - 1
-            current_result = await self._rerun(agent, current_result, validation)
+            current_result = await self._rerun(agent, validation)
             current_result = self._handle_history(current_result, last_assistant_index)
             retries += 1
 
+        if not agent.keep_history:
+            agent.history = []
         return self._attach_metadata(current_result, validations)
 
     async def _validate(self, result: "AgentResult") -> BaseModel:
-        input_data = self._build_validation_input(result)
+        """
+        Run the validation prompt on the agent result.
+        """
+        input_data = ValidationInput(chat_history=result.history)
         prompt = self.validation_prompt(input_data)
-
-        print("--------------------------------")
-        print(prompt.rendered_user_prompt)
-        print("--------------------------------")
-
         return await self.llm.generate(prompt)
-
-    def _build_validation_input(self, result: "AgentResult") -> ValidationInput:
-        return ValidationInput(
-            chat_history=result.history,
-        )
 
     async def _rerun(
         self,
         agent: "Agent",
-        result: "AgentResult",
         validation: BaseModel,
     ) -> "AgentResult":
-        # TODO: add try catch for correction prompts that use arguments unset in validation
-        correction_prompt = self.correction_prompt.format(**validation.model_dump())
+        """
+        Rerun the agent with a correction prompt based on validation feedback.
+        """
+        try:
+            correction_prompt = self.correction_prompt.format(**validation.model_dump())
+        except Exception as exc:
+            raise RuntimeError("Failed to format correction prompt.") from exc
 
         # TODO: re-run with full snapshot of original options
         return await agent._run_without_post_processing(correction_prompt)
 
+    @staticmethod
     def _attach_metadata(
-        self,
         result: "AgentResult",
         validations: list[BaseModel],
     ) -> "AgentResult":
+        """
+        Attach validation metadata to the agent result.
+        """
         result.metadata.setdefault("post_processors", {}).setdefault("supervisor", []).extend(
             [v.model_dump() for v in validations]
         )
@@ -180,6 +201,9 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
         result: "AgentResult[PromptOutputT]",
         last_assistant_index: int,
     ) -> "AgentResult[PromptOutputT]":
+        """
+        Handle the chat history according to the configured strategy.
+        """
         if self.history_strategy == HistoryStrategy.REMOVE:
             result.history.pop(last_assistant_index + 1)
             result.history.pop(last_assistant_index)
