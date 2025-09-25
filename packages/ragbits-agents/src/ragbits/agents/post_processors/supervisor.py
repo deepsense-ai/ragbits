@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
 
 from pydantic import BaseModel
 
 from ragbits.agents.post_processors.base import PostProcessor
 from ragbits.core.llms.base import LLM, LLMClientOptionsT
-from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
+from ragbits.core.prompt.prompt import ChatFormat, Prompt, PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
     from ragbits.agents._main import Agent, AgentResult
@@ -16,6 +16,19 @@ class HistoryStrategy(str, Enum):
 
     PRESERVE = "preserve"
     REMOVE = "remove"
+
+
+class SupportsValidation(Protocol):
+    """Protocol for post-processors that support validation."""
+
+    is_valid: bool
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+        """Return a dict of model fields (compatible with BaseModel.model_dump)."""
+        ...
+
+
+ValidationOutputT = TypeVar("ValidationOutputT", bound=SupportsValidation)
 
 
 class ValidationOutput(BaseModel):
@@ -34,7 +47,7 @@ class ValidationOutput(BaseModel):
 class ValidationInput(BaseModel):
     """Input data for the validation prompt."""
 
-    chat_history: list[dict[str, Any]]
+    chat_history: ChatFormat
     """The complete chat history for context."""
 
 
@@ -90,7 +103,10 @@ DEFAULT_CORRECTION_PROMPT = (
 )
 
 
-class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]):
+class SupervisorPostProcessor(
+    PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT],
+    Generic[LLMClientOptionsT, PromptInputT, ValidationOutputT, PromptOutputT],
+):
     """
     Post-processor that validates agent responses against executed tool calls.
 
@@ -101,14 +117,17 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
-        validation_prompt: type[Prompt[BaseModel, BaseModel]] | None = None,
+        validation_prompt: type[Prompt[ValidationInput, ValidationOutputT]] | None = None,
         correction_prompt: str | None = None,
         max_retries: int = 3,
         fail_on_exceed: bool = False,
         history_strategy: HistoryStrategy = HistoryStrategy.REMOVE,
     ) -> None:
         self.llm = llm
-        self.validation_prompt = validation_prompt or DefaultSupervisorPrompt
+        self.validation_prompt: type[Prompt[ValidationInput, ValidationOutputT]] = cast(
+            type[Prompt[ValidationInput, ValidationOutputT]],
+            validation_prompt or DefaultSupervisorPrompt,
+        )
         self.correction_prompt = correction_prompt or DEFAULT_CORRECTION_PROMPT
         self.max_retries = max_retries
         self.fail_on_exceed = fail_on_exceed
@@ -124,7 +143,7 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
         """
         retries = 0
         current_result = result
-        validations: list[BaseModel] = []
+        validations: list[ValidationOutputT] = []
         accumulated_tool_calls: list = []
         agent.history = result.history
 
@@ -159,7 +178,7 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
             agent.history = []
         return self._attach_metadata(current_result, validations)
 
-    async def _validate(self, result: "AgentResult") -> BaseModel:
+    async def _validate(self, result: "AgentResult[PromptOutputT]") -> ValidationOutputT:
         """
         Run the validation prompt on the agent result.
         """
@@ -169,9 +188,9 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
 
     async def _rerun(
         self,
-        agent: "Agent",
-        validation: BaseModel,
-    ) -> "AgentResult":
+        agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        validation: ValidationOutputT,
+    ) -> "AgentResult[PromptOutputT]":
         """
         Rerun the agent with a correction prompt based on validation feedback.
         """
@@ -185,9 +204,9 @@ class SupervisorPostProcessor(PostProcessor[LLMClientOptionsT, PromptInputT, Pro
 
     @staticmethod
     def _attach_metadata(
-        result: "AgentResult",
-        validations: list[BaseModel],
-    ) -> "AgentResult":
+        result: "AgentResult[PromptOutputT]",
+        validations: list[ValidationOutputT],
+    ) -> "AgentResult[PromptOutputT]":
         """
         Attach validation metadata to the agent result.
         """
