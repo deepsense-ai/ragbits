@@ -4,7 +4,10 @@ from typing import TYPE_CHECKING, Any, Generic, Optional, Protocol, TypeVar, cas
 from pydantic import BaseModel
 
 from ragbits.agents.post_processors.base import PostProcessor
-from ragbits.agents.post_processors.exceptions import SupervisorMaxRetriesExceededError
+from ragbits.agents.post_processors.exceptions import (
+    SupervisorCorrectionPromptFormatError,
+    SupervisorMaxRetriesExceededError,
+)
 from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt.prompt import ChatFormat, Prompt, PromptInputT, PromptOutputT
 
@@ -150,10 +153,6 @@ class SupervisorPostProcessor(
         accumulated_tool_calls: list = []
         agent.history = result.history
 
-        print("\n[DEBUG] Result content before malforming to error: ", current_result.history[-1]["content"])
-        current_result.history[-1]["content"] = "The weather is currently cloudy."
-        print("\n[DEBUG] Result content after malforming to error: ", current_result.history[-1]["content"])
-
         while retries <= self.max_retries:
             validation = await self._validate(current_result)
             validations.append(validation)
@@ -201,8 +200,11 @@ class SupervisorPostProcessor(
         """
         try:
             correction_prompt = self.correction_prompt.format(**validation.model_dump())
+        except KeyError as exc:
+            missing = [str(exc).strip("'\"")]
+            raise SupervisorCorrectionPromptFormatError(missing_keys=missing, original_error=exc) from exc
         except Exception as exc:
-            raise RuntimeError("Failed to format correction prompt.") from exc
+            raise SupervisorCorrectionPromptFormatError(original_error=exc) from exc
 
         return await agent._run_without_post_processing(correction_prompt, options, context)
 
