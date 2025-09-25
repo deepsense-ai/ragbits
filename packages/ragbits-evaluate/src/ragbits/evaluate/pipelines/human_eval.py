@@ -209,7 +209,7 @@ class HumanEvalPipeline(
                 try:
                     compile(code, filename="candidate.py", mode="exec")
                     compile_ok.append(True)
-                except Exception as e:  # noqa: BLE001
+                except Exception as e:
                     compile_ok.append(False)
                     pass_mask.append(False)
                     durations.append(0.0)
