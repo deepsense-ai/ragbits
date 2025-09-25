@@ -61,15 +61,30 @@ async def main() -> None:
 
     # Pipeline
     log_path = Path(__file__).with_name("humaneval_examples.ndjson")
+
+    # Code sanitazation function
+    def sanitize_code(text: str) -> str:
+        cleaned = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+        if "```" in cleaned:
+            start = cleaned.find("```")
+            end = cleaned.find("```", start + 3)
+            if end != -1:
+                inside = cleaned[start + 3 : end].lstrip()
+                if "\n" in inside:
+                    first, rest = inside.split("\n", 1)
+                    cleaned = rest if first.strip().lower().startswith("python") else inside
+                else:
+                    cleaned = inside
+        return cleaned.strip()
+
     pipeline = HumanEvalPipeline(
         evaluation_target=agent,
         n_samples=1,
         timeout_sec=30,
-        temperature=0.7,
-        seed=42,
         per_example_log_file=log_path,
         # agent specific ext. logs
-        extended_logs=False, # includes traces, tool usage, etc.
+        extended_logs=True, # includes traces, tool usage, etc.
+        code_sanitize_fn=sanitize_code,
     )
 
     # Metrics

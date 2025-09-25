@@ -2,10 +2,11 @@ import asyncio
 import contextlib
 import io
 import json
+import logging
 import multiprocessing
 import textwrap
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from multiprocessing.connection import Connection
 from pathlib import Path
@@ -85,7 +86,7 @@ def _execute_in_subprocess(
                         os.chdir(tmp.name)
 
                 globals_dict: dict[str, Any] = {"__name__": "__main__"}
-                exec(compile(source, filename="candidate.py", mode="exec"), globals_dict)  # noqa: S102
+                exec(compile(source, filename="candidate.py", mode="exec"), globals_dict)
 
                 if entry_point not in globals_dict:
                     raise NameError(f"Entry point '{entry_point}' not defined")
@@ -95,7 +96,7 @@ def _execute_in_subprocess(
                 compiled_test = compile(
                     harness + "\n" + test_code_clean + "\ncheck(candidate)", filename="test.py", mode="exec"
                 )
-                exec(compiled_test, globals_dict)  # noqa: S102
+                exec(compiled_test, globals_dict)
 
             duration = time.perf_counter() - start
             pipe.send((True, duration, None))
@@ -129,20 +130,18 @@ class HumanEvalPipeline(
         *,
         n_samples: int = 1,
         timeout_sec: int = 10,
-        temperature: float | None = None,
-        seed: int | None = None,
         memory_limit_mb: int | None = 512,
         per_example_log_file: Path | None = None,
         extended_logs: bool = False,
+        code_sanitize_fn: Callable[[str], str] | None = None,
     ) -> None:
         super().__init__(evaluation_target=evaluation_target)
         self.n_samples = n_samples
         self.timeout_sec = timeout_sec
-        self.temperature = temperature
-        self.seed = seed
         self.memory_limit_mb = memory_limit_mb
         self.per_example_log_file = per_example_log_file
         self.extended_logs = extended_logs
+        self.code_sanitize_fn = code_sanitize_fn
         self._init_log_file()
 
     @classmethod
@@ -197,13 +196,13 @@ class HumanEvalPipeline(
                 if self.extended_logs:
                     # Raw is (content, debug)
                     content, dbg = raw
-                    code = self._sanitize_code(content)
+                    code = self._sanitize(content)
                     samples.append(code)
                     if debug_traces is not None:
                         debug_traces.append(dbg)
                 else:
                     # Raw is a simple string
-                    code = self._sanitize_code(raw)
+                    code = self._sanitize(raw)
                     samples.append(code)
 
                 # Compile check
@@ -239,31 +238,24 @@ class HumanEvalPipeline(
             )
             results.append(result)
             ext_log_str = (
-                json.dumps(debug_traces, ensure_ascii=False, default=str) if (self.extended_logs and debug_traces is not None) else None
+                json.dumps(debug_traces, ensure_ascii=False, default=str)
+                if (self.extended_logs and debug_traces is not None)
+                else None
             )
             self._log_example(row, result, ext_log_str)
         return results
 
-    @staticmethod
-    def _sanitize_code(text: str) -> str:
-        """Basic cleanup for LLM answers.
-
-        - Trim whitespace and normalize newlines
-        - If fenced with ```...```, take the first fence block, drop language tag
+    def _sanitize(self, text: str) -> str:
+        """Optionally sanitize cpde from text using provided function.
+        If no parser provided, returns the original text.
         """
-        cleaned = text.replace("\r\n", "\n").replace("\r", "\n").strip()
-        if "```" in cleaned:
-            start = cleaned.find("```")
-            end = cleaned.find("```", start + 3)
-            if end != -1:
-                inside = cleaned[start + 3 : end].lstrip()
-                # drop a possible language tag line
-                if "\n" in inside:
-                    first, rest = inside.split("\n", 1)
-                    cleaned = rest if first.strip().lower().startswith("python") else inside
-                else:
-                    cleaned = inside
-        return cleaned.strip()
+        if self.code_sanitize_fn is None:
+            return text
+        try:
+            return self.code_sanitize_fn(text)
+        except Exception as exc:
+            logging.getLogger(__name__).debug("Code sanitize error: %s", exc)
+            return text
 
     def _init_log_file(self) -> None:
         """Ensure the per-example log file exists if logging is enabled."""
@@ -291,10 +283,7 @@ class HumanEvalPipeline(
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
     async def _generate_code(self, prompt: str) -> str:
-        """Generate final answer code from Agent or raw LLM.
-
-        Sampling/temperature/seed should be configured on the Agent/LLM itself.
-        """
+        """Generate final answer code from Agent or raw LLM."""
         target = self.evaluation_target
         if isinstance(target, Agent):
             res = await target.run(prompt)

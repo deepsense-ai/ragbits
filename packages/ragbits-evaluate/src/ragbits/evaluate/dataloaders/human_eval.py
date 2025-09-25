@@ -10,7 +10,11 @@ class HumanEvalDataLoader(DataLoader[HumanEvalData]):
     HumanEval evaluation data loader.
 
     The source should point to a local/remote JSONL file in HumanEval format, where each line is a JSON object
-    with at least the following keys: "task_id", "prompt", "entry_point", and "test".
+    with at least the following keys: "
+    - task_id" (str)
+    - "prompt" (str)
+    - "entry_point" (str)
+    - "test" (str)
     """
 
     def __init__(

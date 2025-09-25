@@ -9,19 +9,19 @@ from ragbits.evaluate.pipelines.human_eval import HumanEvalResult
 
 class HumanEvalPassAtK(Metric[HumanEvalResult]):
     """
-    Computes pass@k over HumanEval tasks given binary pass masks per task.
-    When multiple samples per task exist, pass@k is defined as average over tasks of indicator that
-    at least one of k samples passes. For n>=k, approximate with: 1 - C(n-m, k) / C(n, k), where m is successes.
+    Computes pass@k over HumanEval tasks.
+    Measures the fraction of tasks with at least one passing sample out of k attempts.
     """
 
-    def __init__(self, k: int = 1, weight: float = 1.0) -> None:
-        super().__init__(weight=weight)
+    def __init__(self, k: int = 1) -> None:
+        super().__init__()
         self.k = k
 
-    async def compute(self, results: list[HumanEvalResult]) -> dict:  # noqa: PLR6301
+    async def compute(self, results: list[HumanEvalResult]) -> dict:
         """Compute pass@k averaged over tasks.
-
-        For each task with n samples and m passes, uses 1 - C(n-m, k) / C(n, k).
+        
+        Returns:
+            Dictionary with humaneval_pass@k: fraction of tasks with at least one passing sample.
         """
         values = []
         for r in results:
@@ -46,7 +46,7 @@ class HumanEvalPassAtK(Metric[HumanEvalResult]):
 
 class HumanEvalQualityPerf(Metric[HumanEvalResult]):
     """
-    Quality/performance aggregates with error breakdown:
+    Code quality and execution performance metrics:
     - humaneval_compile_rate: fraction of samples that compiled
     - humaneval_syntax_error_rate: fraction of samples with syntax error (compile failed)
     - humaneval_assert_fail_rate: fraction of samples that ran but failed assertions
@@ -56,8 +56,12 @@ class HumanEvalQualityPerf(Metric[HumanEvalResult]):
     - humaneval_avg_exec_time_sec: average exec time over compilable runs
     """
 
-    async def compute(self, results: list[HumanEvalResult]) -> dict:  # noqa: PLR6301
-        """Compute compile rate, error rate, tasks solved rate, and average exec time."""
+    async def compute(self, results: list[HumanEvalResult]) -> dict:
+        """Compute code quality and execution performance metrics.
+        
+        Returns:
+            Dictionary with compile rates, error rates, tasks solved rate, and average execution time.
+        """
         total_samples = sum(len(r.passed_mask) for r in results)
         compiled = 0
         syntax_errors = 0
