@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Generic, Protocol, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Optional, Protocol, TypeVar, cast
 
 from pydantic import BaseModel
 
@@ -9,7 +9,7 @@ from ragbits.core.llms.base import LLM, LLMClientOptionsT
 from ragbits.core.prompt.prompt import ChatFormat, Prompt, PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
-    from ragbits.agents._main import Agent, AgentResult
+    from ragbits.agents._main import Agent, AgentOptions, AgentResult, AgentRunContext
 
 
 class HistoryStrategy(str, Enum):
@@ -138,6 +138,8 @@ class SupervisorPostProcessor(
         self,
         result: "AgentResult[PromptOutputT]",
         agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        options: Optional["AgentOptions[LLMClientOptionsT]"] = None,
+        context: Optional["AgentRunContext"] = None,
     ) -> "AgentResult[PromptOutputT]":
         """
         Validate the agent's response and, if necessary, rerun with corrections.
@@ -171,7 +173,7 @@ class SupervisorPostProcessor(
                 return self._attach_metadata(current_result, validations)
 
             last_assistant_index = len(current_result.history) - 1
-            current_result = await self._rerun(agent, validation)
+            current_result = await self._rerun(agent, validation, options, context)
             current_result = self._handle_history(current_result, last_assistant_index)
             retries += 1
 
@@ -191,6 +193,8 @@ class SupervisorPostProcessor(
         self,
         agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
         validation: ValidationOutputT,
+        options: Optional["AgentOptions[LLMClientOptionsT]"] = None,
+        context: Optional["AgentRunContext"] = None,
     ) -> "AgentResult[PromptOutputT]":
         """
         Rerun the agent with a correction prompt based on validation feedback.
@@ -200,8 +204,7 @@ class SupervisorPostProcessor(
         except Exception as exc:
             raise RuntimeError("Failed to format correction prompt.") from exc
 
-        # TODO: re-run with full snapshot of original options
-        return await agent._run_without_post_processing(correction_prompt)
+        return await agent._run_without_post_processing(correction_prompt, options, context)
 
     @staticmethod
     def _attach_metadata(
