@@ -4,6 +4,7 @@
 
 - Support wrapping downstream agents as tools (#819)
 - Add syntax sugar allowing easier Agents definition (#820)
+- Support streaming from downstream agents (#812)
 
 ## 1.4.2 (2026-02-18)
 
