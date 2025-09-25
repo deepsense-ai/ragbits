@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -12,7 +12,7 @@ from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
 
 if TYPE_CHECKING:
-    from ragbits.agents import Agent, AgentResultStreaming
+    from ragbits.agents import Agent, AgentResultStreaming, AgentRunContext
 
 with suppress(ImportError):
     from pydantic_ai import Tool as PydanticAITool
@@ -50,6 +50,7 @@ class Tool:
     """The actual callable function to execute when the tool is called."""
     context_var_name: str | None = None
     """The name of the context variable that this tool accepts."""
+    id: str | None = None
 
     @classmethod
     def from_callable(cls, callable: Callable) -> Self:
@@ -150,20 +151,28 @@ class Tool:
 
         parameters = {"type": "object", "properties": properties, "required": required}
 
+        context_var_name = get_context_variable_name(agent.run)
+
         def _on_tool_call(**kwargs: dict) -> "AgentResultStreaming":
+            if context_var_name:
+                context = cast("AgentRunContext[Any] | None", kwargs.get(context_var_name))
+                if context is not None:
+                    context.register_agent(cast("Agent[Any, Any, str]", agent))
+
             if input_model_cls and issubclass(input_model_cls, BaseModel):
                 model_input = input_model_cls(**kwargs)
             else:
                 model_input = kwargs.get("input")
 
-            return agent.run_streaming(model_input)
+            return agent.run_streaming(model_input, context=context)
 
         return cls(
             name=variable_name,
+            id=agent.id,
             description=description,
             parameters=parameters,
             on_tool_call=_on_tool_call,
-            context_var_name=get_context_variable_name(agent.run),
+            context_var_name=context_var_name,
         )
 
 
