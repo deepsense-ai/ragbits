@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## Unreleased
+- TodoOrchestrator & Todo list for agent (#823)
+
+- Support wrapping downstream agents as tools (#818)
+- Add syntax sugar allowing easier Agents definition (#820)
+- Add post-processors (#821)
+- Support streaming from downstream agents (#812)
 
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
