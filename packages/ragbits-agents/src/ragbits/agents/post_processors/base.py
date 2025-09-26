@@ -1,21 +1,18 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, Optional, cast
 
 from ragbits.agents.tool import ToolCallResult
-from ragbits.core.llms.base import LLMOptions, ToolCall, Usage
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall, Usage
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
-    from ragbits.agents._main import Agent, AgentResult
+    from ragbits.agents._main import Agent, AgentOptions, AgentResult, AgentRunContext
 
 
-LLMOptionsT = TypeVar("LLMOptionsT", bound=LLMOptions)
-
-
-class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
+class BasePostProcessor(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
     """Base class for post-processors."""
 
     @property
@@ -32,7 +29,7 @@ class BasePostProcessor(Generic[LLMOptionsT, PromptInputT, PromptOutputT]):
         """
 
 
-class PostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
+class PostProcessor(ABC, BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]):
     """Base class for non-streaming post-processors."""
 
     @property
@@ -44,7 +41,9 @@ class PostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutp
     async def process(
         self,
         result: "AgentResult[PromptOutputT]",
-        agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
+        agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        options: Optional["AgentOptions[LLMClientOptionsT]"] = None,
+        context: Optional["AgentRunContext"] = None,
     ) -> "AgentResult[PromptOutputT]":
         """
         Process the complete agent result.
@@ -53,13 +52,15 @@ class PostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutp
             result: The complete AgentResult from the agent or previous post-processor.
             agent: The Agent instance that generated the result. Can be used to re-run
                   the agent with modified input if needed.
+            options: The options for the agent run.
+            context: The context for the agent run.
 
         Returns:
             Modified AgentResult to pass to the next processor or return as final result.
         """
 
 
-class StreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]):
+class StreamingPostProcessor(ABC, BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]):
     """Base class for streaming post-processors."""
 
     @property
@@ -71,7 +72,7 @@ class StreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, P
     async def process_streaming(
         self,
         chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage,
-        agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
+        agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
     ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
         """
         Process chunks during streaming.
@@ -89,10 +90,10 @@ class StreamingPostProcessor(ABC, BasePostProcessor[LLMOptionsT, PromptInputT, P
 async def stream_with_post_processing(
     generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
     post_processors: (
-        list[StreamingPostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]]
-        | list[BasePostProcessor[LLMOptionsT, PromptInputT, PromptOutputT]]
+        list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+        | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
     ),
-    agent: "Agent[LLMOptionsT, PromptInputT, PromptOutputT]",
+    agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
 ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
     """
     Stream with support for both streaming and non-streaming post-processors.

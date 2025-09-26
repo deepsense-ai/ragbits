@@ -415,7 +415,7 @@ class Agent(
 
         if post_processors:
             for processor in post_processors:
-                result = await processor.process(result, self)
+                result = await processor.process(result, self, options, context)
 
         return result
 

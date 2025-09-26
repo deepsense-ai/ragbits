@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from ragbits.agents import Agent, AgentResult, ToolCallResult
+from ragbits.agents import Agent, AgentOptions, AgentResult, AgentRunContext, ToolCallResult
 from ragbits.agents.exceptions import AgentInvalidPostProcessorError
 from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
 from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
@@ -13,7 +13,13 @@ class MockPostProcessor(PostProcessor):
     def __init__(self, append_content: str = " - processed"):
         self.append_content = append_content
 
-    async def process(self, result: AgentResult, agent: Agent) -> AgentResult:
+    async def process(
+        self,
+        result: AgentResult,
+        agent: Agent,
+        options: AgentOptions | None = None,
+        context: AgentRunContext | None = None,
+    ) -> AgentResult:
         result.content += self.append_content
         return result
 

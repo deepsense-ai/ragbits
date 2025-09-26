@@ -7,6 +7,8 @@
 - Add post-processors (#821)
 - Support streaming from downstream agents (#812)
 
+- Add supervisor post-processor (#830)
+
 ## 1.4.1 (2026-02-08)
 
 ### Changed
