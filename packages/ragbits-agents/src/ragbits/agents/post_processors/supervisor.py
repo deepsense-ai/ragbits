@@ -124,7 +124,7 @@ class SupervisorPostProcessor(
         validation_prompt: type[Prompt[ValidationInput, ValidationOutputT]] | None = None,
         correction_prompt: str | None = None,
         max_retries: int = 3,
-        fail_on_exceed: bool = False,
+        fail_on_exceed: bool = True,
         history_strategy: HistoryStrategy = HistoryStrategy.REMOVE,
     ) -> None:
         self.llm = llm
