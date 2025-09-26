@@ -12,4 +12,6 @@
 
 ::: ragbits.agents.post_processors.base
 
+::: ragbits.agents.post_processors.supervisor
+
 ::: ragbits.agents.AgentRunContext
