@@ -4,8 +4,17 @@ from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, 
 from ragbits.evaluate.pipelines.document_search import DocumentSearchPipeline
 from ragbits.evaluate.pipelines.gaia import GaiaPipeline
 from ragbits.evaluate.pipelines.human_eval import HumanEvalPipeline
+from ragbits.evaluate.pipelines.hotpot_qa import HotpotQAPipeline
 
-__all__ = ["DocumentSearchPipeline", "EvaluationData", "EvaluationPipeline", "EvaluationResult", "GaiaPipeline", "HumanEvalPipeline"]
+__all__ = [
+    "DocumentSearchPipeline",
+    "EvaluationData",
+    "EvaluationPipeline",
+    "EvaluationResult",
+    "GaiaPipeline",
+    "HumanEvalPipeline",
+    "HotpotQAPipeline",
+]
 
 _target_to_evaluation_pipeline: dict[type[WithConstructionConfig], type[EvaluationPipeline]] = {
     DocumentSearch: DocumentSearchPipeline,
