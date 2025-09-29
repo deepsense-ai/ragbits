@@ -70,5 +70,9 @@ class GaiaDataLoader(DataLoader[GaiaData]):
                 file_name=(row.get(self.file_name_key) or None),
             )
             for row in dataset
-            if (not self.skip_file_attachments or not row.get(self.file_name_key) or str(row.get(self.file_name_key)).strip() == "")
+            if (
+                not self.skip_file_attachments
+                or not row.get(self.file_name_key)
+                or str(row.get(self.file_name_key)).strip() == ""
+            )
         ]

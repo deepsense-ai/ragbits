@@ -14,7 +14,7 @@ class GaiaOutcome(Metric[GaiaResult]):
 
     async def compute(self, results: list[GaiaResult]) -> dict:
         """Compute task success rate.
-        
+
         Returns:
             Dictionary with gaia_task_success_rate: fraction of successfully solved tasks.
         """
@@ -35,7 +35,7 @@ class GaiaTooling(Metric[GaiaResult]):
 
     async def compute(self, results: list[GaiaResult]) -> dict:
         """Compute tool utilization and performance metrics.
-        
+
         Returns:
             Dictionary with tool trigger rate, average tool calls, average errors,
             and flattened tool frequency usage as numeric metrics.
@@ -53,8 +53,7 @@ class GaiaTooling(Metric[GaiaResult]):
                 for name in r.tool_names:
                     aggregated_counts[name] = aggregated_counts.get(name, 0) + 1
         averaged_freq: dict[str, float] = {
-            f"gaia_tool_frequency_usage.{name}": (count / total_tasks)
-            for name, count in aggregated_counts.items()
+            f"gaia_tool_frequency_usage.{name}": (count / total_tasks) for name, count in aggregated_counts.items()
         }
 
         return {
@@ -75,7 +74,7 @@ class GaiaEfficiency(Metric[GaiaResult]):
 
     async def compute(self, results: list[GaiaResult]) -> dict:
         """Compute efficiency and resource usage metrics.
-        
+
         Returns:
             Dictionary with average latency, cost, and token usage.
         """

@@ -3,18 +3,18 @@ import logging
 from pathlib import Path
 
 from ragbits.agents import Agent, AgentOptions
-from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
 from ragbits.agents.tools.extra import (
     add,
-    subtract,
-    multiply,
-    divide,
-    modulus,
     arxiv_search,
-    wiki_search,
+    divide,
     get_extra_instruction_tpl,
+    modulus,
+    multiply,
+    subtract,
+    wiki_search,
 )
+from ragbits.agents.tools.openai import get_web_search_tool
+from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
 from ragbits.core.llms import LiteLLM
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.evaluate.dataloaders.gaia import GaiaDataLoader
@@ -78,9 +78,7 @@ async def main() -> None:
         default_options=AgentOptions(max_turns=30),
     )
 
-    # Data: pick level 1, 2, or 3 -> higher level <-> harder questions
     level = 1
-    # GAIA config name:'2023_all', '2023_level1', '2023_level2', '2023_level3'
     config_name = {1: "2023_level1", 2: "2023_level2", 3: "2023_level3"}[level]
     source = HuggingFaceSource(path="gaia-benchmark/GAIA", name=config_name, split="validation")
     dataloader = GaiaDataLoader(source=source, split="data[:30]", skip_file_attachments=True)
@@ -105,10 +103,8 @@ async def main() -> None:
         parse_answer_fn=parse_final_answer,
     )
 
-    # Metrics
     metrics = MetricSet(GaiaOutcome(), GaiaTooling(), GaiaEfficiency())
 
-    # Evaluate
     evaluator = Evaluator(batch_size=5, parallelize_batches=True)
     results = await evaluator.compute(pipeline=pipeline, dataloader=dataloader, metricset=metrics)
 

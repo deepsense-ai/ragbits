@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
 import json
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from typing import Any
 
 
 def add(a: int, b: int) -> int:
@@ -17,7 +17,6 @@ def add(a: int, b: int) -> int:
     Returns:
         Sum of a and b.
     """
-
     return a + b
 
 
@@ -31,7 +30,6 @@ def subtract(a: int, b: int) -> int:
     Returns:
         Difference a - b.
     """
-
     return a - b
 
 
@@ -45,7 +43,6 @@ def multiply(a: int, b: int) -> int:
     Returns:
         Product a * b.
     """
-
     return a * b
 
 
@@ -62,7 +59,6 @@ def divide(a: int, b: int) -> float:
     Raises:
         ValueError: If b == 0.
     """
-
     if b == 0:
         raise ValueError("Cannot divide by zero.")
     return a / b
@@ -81,7 +77,6 @@ def modulus(a: int, b: int) -> int:
     Raises:
         ValueError: If b == 0.
     """
-
     if b == 0:
         raise ValueError("Cannot divide by zero.")
     return a % b
@@ -103,7 +98,6 @@ def arxiv_search(query: str, max_results: int = 3) -> dict[str, Any]:
     Returns:
         Dict with a list of results: title, summary, link.
     """
-
     if max_results <= 0:
         return {"results": []}
 
@@ -147,7 +141,6 @@ def wiki_search(query: str, max_results: int = 2, language: str = "en") -> dict[
     Returns:
         Dict with list of results: title, pageid, extract, url.
     """
-
     if max_results <= 0:
         return {"results": []}
 
@@ -201,7 +194,6 @@ def get_extra_instruction_tpl() -> str:
     Returns:
         Instruction template string to include in system prompts.
     """
-
     return (
         "\n\n"
         "## Tools Workflow (Arithmetic, arXiv, Wikipedia)\n\n"

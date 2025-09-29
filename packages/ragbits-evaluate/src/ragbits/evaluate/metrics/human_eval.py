@@ -19,7 +19,7 @@ class HumanEvalPassAtK(Metric[HumanEvalResult]):
 
     async def compute(self, results: list[HumanEvalResult]) -> dict:
         """Compute pass@k averaged over tasks.
-        
+
         Returns:
             Dictionary with humaneval_pass@k: fraction of tasks with at least one passing sample.
         """
@@ -58,7 +58,7 @@ class HumanEvalQualityPerf(Metric[HumanEvalResult]):
 
     async def compute(self, results: list[HumanEvalResult]) -> dict:
         """Compute code quality and execution performance metrics.
-        
+
         Returns:
             Dictionary with compile rates, error rates, tasks solved rate, and average execution time.
         """
