@@ -35,7 +35,6 @@ class HotpotQADataLoader(DataLoader[HotpotQAData]):
         context_key: str = "context",
         # filter
         level_filter: str | None = None,  # one of: easy|medium|hard
-        subset: str | None = None,  # one of: distractor|fullwiki (if present in dataset path/metadata)
     ) -> None:
         """
         Initialize the HotpotQA data loader.
@@ -50,7 +49,6 @@ class HotpotQADataLoader(DataLoader[HotpotQAData]):
             level_key: Column with difficulty ("easy" | "medium" | "hard").
             context_key: Column with context object containing titles and sentences.
             level_filter: If provided, return only examples with this level.
-            subset: Unused in mapping; keep for symmetry with dataset organization.
         """
         required = {id_key, question_key, answer_key, type_key, level_key, context_key}
         super().__init__(source=source, split=split, required_keys=required)
@@ -61,7 +59,6 @@ class HotpotQADataLoader(DataLoader[HotpotQAData]):
         self.level_key = level_key
         self.context_key = context_key
         self.level_filter = level_filter
-        self.subset = subset
 
     async def map(self, dataset: Iterable[dict]) -> Iterable[HotpotQAData]:
         """

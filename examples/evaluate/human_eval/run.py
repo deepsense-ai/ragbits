@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 
 from ragbits.agents import Agent, AgentOptions
-from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
 from ragbits.core.llms import LiteLLM
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.evaluate.dataloaders.human_eval import HumanEvalDataLoader
@@ -17,9 +16,6 @@ async def main() -> None:
     """Run HumanEval example with an Agent and print aggregate metrics."""
     logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 
-    todo_list = TodoList()
-    todo_manager = create_todo_manager(todo_list)
-
     prompt_text = "\n".join(
         [
             """
@@ -27,31 +23,17 @@ async def main() -> None:
             Your task is to implement exactly one function that solves the problem.
             Return ONLY the function as plain Python (no markdown). Include all necessary imports.
 
-            WORKFLOW:
-            1. If query is complex you have access to todo_manager tool to create a todo list with specific tasks
-            2. If query is simple question, you work without todo_manager tool, just answer the question
-            3. If you use todo_manager tool, you must follow the todo workflow
-
-            Tool policy:
-            - If the problem is complex, follow this strict TODO workflow:
-              1) todo_manager(action="create", tasks=[...]) with 3-5 concrete tasks
-              2) For EACH task:
-                 - todo_manager(action="get_current")
-                 - todo_manager(action="start_task")
-                 - do the work
-                 - todo_manager(action="complete_task", summary="...")
-              3) Finally: todo_manager(action="get_final_summary")
-            - Never call complete_task before start_task.
-            - If you decide to skip tools, do not call them at all.
+            POLICY:
+            - Think step-by-step internally if needed, but output only the final function.
+            - Do not include explanations, comments, or markdown.
             """,
-            get_todo_instruction_tpl(task_range=(3, 5)),
         ]
     )
 
     agent: Agent = Agent(
         llm=LiteLLM("gpt-4.1-mini"),
         prompt=prompt_text,
-        tools=[todo_manager],
+        tools=[],
         default_options=AgentOptions(max_turns=30),
     )
 
@@ -83,7 +65,7 @@ async def main() -> None:
         timeout_sec=30,
         per_example_log_file=log_path,
         # agent specific ext. logs
-        extended_logs=True, # includes traces, tool usage, etc.
+        extended_logs=True,  # includes traces, tool usage, etc.
         code_sanitize_fn=sanitize_code,
     )
 

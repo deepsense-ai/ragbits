@@ -1,4 +1,5 @@
 import asyncio
+import os
 import logging
 from pathlib import Path
 
@@ -14,7 +15,6 @@ from ragbits.agents.tools.extra import (
     wiki_search,
 )
 from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
 from ragbits.core.llms import LiteLLM
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.evaluate.dataloaders.gaia import GaiaDataLoader
@@ -27,9 +27,6 @@ from ragbits.evaluate.pipelines.gaia import GaiaPipeline
 async def main() -> None:
     """Run GAIA example with an Agent and print aggregate metrics."""
     logging.getLogger("LiteLLM").setLevel(logging.ERROR)
-
-    todo_list = TodoList()
-    todo_manager = create_todo_manager(todo_list)
 
     gaia_prompt = (
         "You are a general AI assistant. I will ask you a question. "
@@ -51,36 +48,32 @@ async def main() -> None:
                 "Tool usage:\n"
                 "- Use arithmetic tools for calculations.\n"
                 "- Use arxiv_search/wiki_search to retrieve relevant facts when needed or explicitly asked.\n"
-                "- For multi-step/complex requests, start and manage work with the todo_manager workflow.\n"
+                "- For complex requests, plan your steps internally before answering concisely.\n"
                 "- For general web-search questions, use search_web tool and gather information."
             ),
-            get_todo_instruction_tpl(task_range=(3, 5)),
             get_extra_instruction_tpl(),
         ]
     )
 
-    web_search = get_web_search_tool(model_name="gpt-4.1-mini")
+    tools = [
+        add,
+        subtract,
+        multiply,
+        divide,
+        modulus,
+        arxiv_search,
+        wiki_search,
+        get_web_search_tool(model_name="gpt-4.1-mini")
+    ]
 
     agent: Agent = Agent(
         llm=LiteLLM("gpt-4.1-mini"),
         prompt=system_prompt,
-        tools=[
-            todo_manager,
-            web_search,
-            add,
-            subtract,
-            multiply,
-            divide,
-            modulus,
-            arxiv_search,
-            wiki_search,
-        ],
+        tools=tools,
         default_options=AgentOptions(max_turns=30),
     )
 
-    level = 1
-    config_name = {1: "2023_level1", 2: "2023_level2", 3: "2023_level3"}[level]
-    source = HuggingFaceSource(path="gaia-benchmark/GAIA", name=config_name, split="validation")
+    source = HuggingFaceSource(path="gaia-benchmark/GAIA", name="2023_level1", split="validation")
     dataloader = GaiaDataLoader(source=source, split="data[:30]", skip_file_attachments=True)
 
     log_path = Path(__file__).with_name("gaia_examples.ndjson")
@@ -99,7 +92,7 @@ async def main() -> None:
         evaluation_target=agent,
         per_example_log_file=log_path,
         # agent specific ext. logs
-        extended_logs=False, # includes traces, tool usage, etc.
+        extended_logs=False,  # includes traces, tool usage, etc.
         parse_answer_fn=parse_final_answer,
     )
 

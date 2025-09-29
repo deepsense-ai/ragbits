@@ -3,27 +3,23 @@ import logging
 from pathlib import Path
 
 from ragbits.agents import Agent, AgentOptions
-from ragbits.agents.tools.todo import TodoList, create_todo_manager, get_todo_instruction_tpl
+from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM
 from ragbits.core.sources.hf import HuggingFaceSource
+from ragbits.core.vector_stores import VectorStoreOptions
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.document_search import DocumentSearch
+from ragbits.document_search.ingestion.strategies import BatchedIngestStrategy
 from ragbits.evaluate.dataloaders.hotpot_qa import HotpotQADataLoader
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.hotpot_qa import HotpotQAExactMatch, HotpotQAF1
 from ragbits.evaluate.pipelines.hotpot_qa import HotpotQAPipeline
-from ragbits.core.vector_stores import VectorStoreOptions
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.document_search import DocumentSearch
-from ragbits.document_search.ingestion.strategies import BatchedIngestStrategy
 
 
 async def main() -> None:
     """Run HotpotQA example with an Agent and print aggregate metrics."""
     logging.getLogger("LiteLLM").setLevel(logging.ERROR)
-
-    todo_list = TodoList()
-    todo_manager = create_todo_manager(todo_list)
 
     hotpot_prompt = (
         "You are a helpful assistant. Use the given context to answer.\n"
@@ -32,24 +28,23 @@ async def main() -> None:
         "- If a name/title is required, respond only the name/title after 'Answer:'.\n"
         "- Do not add any extra text beyond the Answer line.\n"
         "- Your answer should as concise and minimal as possible, while still answering the question.\n"
-        "- For complex questions, use the planning tool as described."
+        "- Think step-by-step internally for complex questions before answering concisely."
     )
 
     system_prompt = "\n".join(
         [
             hotpot_prompt,
-            get_todo_instruction_tpl(task_range=(3, 5)),
         ]
     )
     agent: Agent = Agent(
         llm=LiteLLM("gpt-4.1-mini"),
         prompt=system_prompt,
-        tools=[todo_manager],
+        tools=[],
         default_options=AgentOptions(max_turns=5),
     )
 
-    source = HuggingFaceSource(path="hotpotqa/hotpot_qa", name="distractor", split="train")
-    dataloader = HotpotQADataLoader(source=source, split="data[:10]", level_filter="hard")
+    source = HuggingFaceSource(path="hotpotqa/hotpot_qa", name="distractor", split="validation")
+    dataloader = HotpotQADataLoader(source=source, split="data[:25]", level_filter="hard")
 
     log_path = Path(__file__).with_name("hotpot_examples.ndjson")
 
@@ -77,7 +72,7 @@ async def main() -> None:
         hops=3,
         per_example_log_file=log_path,
         # agent specific ext. logs
-        extended_logs=False, # includes traces, tool usage, etc.
+        extended_logs=False,  # includes traces, tool usage, etc.
         parse_answer_fn=parse_final_answer,
     )
 

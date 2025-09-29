@@ -23,6 +23,7 @@ class HuggingFaceSource(Source):
 
     protocol: ClassVar[str] = "hf"
     path: str
+    name: str | None = None
     split: str = "train"
     row: int | None = None
 
@@ -51,7 +52,10 @@ class HuggingFaceSource(Source):
         with trace(path=self.path, split=self.split, row=self.row) as outputs:
             if self.row is not None:
                 try:
-                    dataset = load_dataset(self.path, split=self.split, streaming=True)
+                    if self.name is not None and str(self.name).strip():
+                        dataset = load_dataset(self.path, self.name, split=self.split, streaming=True)
+                    else:
+                        dataset = load_dataset(self.path, split=self.split, streaming=True)
                 except ConnectionError as exc:
                     raise SourceConnectionError() from exc
                 except DatasetNotFoundError as exc:
@@ -79,7 +83,10 @@ class HuggingFaceSource(Source):
 
                 if not path.is_file():
                     try:
-                        dataset = load_dataset(self.path, split=self.split)
+                        if self.name is not None and str(self.name).strip():
+                            dataset = load_dataset(self.path, self.name, split=self.split)
+                        else:
+                            dataset = load_dataset(self.path, split=self.split)
                     except ConnectionError as exc:
                         raise SourceConnectionError() from exc
                     except DatasetNotFoundError as exc:

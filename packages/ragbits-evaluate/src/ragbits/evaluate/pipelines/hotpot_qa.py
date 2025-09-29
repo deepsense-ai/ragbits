@@ -11,24 +11,9 @@ from typing_extensions import Self
 from ragbits.agents import Agent
 from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, Usage
 from ragbits.document_search import DocumentSearch
-from ragbits.document_search.documents.document import Document, DocumentMeta, DocumentType
-from ragbits.document_search.documents.element import TextElement
-from ragbits.document_search.ingestion.parsers.base import DocumentParser
-from ragbits.document_search.ingestion.parsers.router import DocumentParserRouter
-from ragbits.document_search.ingestion.strategies.batched import BatchedIngestStrategy
+from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
-
-class ContextListParser(DocumentParser):
-    """
-    Parser for in-memory context strings (treated as a single TXT document).
-    """
-
-    supported_document_types = {DocumentType.TXT}
-
-    async def parse(self, document: Document) -> list[TextElement]:
-        content = document.local_path.read_text()
-        return [TextElement(content=content, document_meta=document.metadata)]
 
 
 class HotpotQAData(EvaluationData):
@@ -121,9 +106,6 @@ class HotpotQAPipeline(
             for content in row.reference_context:
                 documents.append(DocumentMeta.from_literal(content))
 
-        parser_router = DocumentParserRouter({DocumentType.TXT: ContextListParser()})
-        self.retriever.ingest_strategy = BatchedIngestStrategy(index_batch_size=1000)
-        self.retriever.parser_router = parser_router
         await self.retriever.ingest(documents)
 
         async def answer_with_retrieval(
@@ -209,7 +191,14 @@ class HotpotQAPipeline(
                     ensure_ascii=False,
                     default=str,
                 )
-            self._log_example(row=row, predicted_text=predicted_text, predicted_extracted=predicted_extracted, em=result.em_value, f1=result.f1_value, extended_log=ext_log_str)
+            self._log_example(
+                row=row,
+                predicted_text=predicted_text,
+                predicted_extracted=predicted_extracted,
+                em=result.em_value,
+                f1=result.f1_value,
+                extended_log=ext_log_str,
+            )
 
         return results
 
