@@ -15,7 +15,6 @@ from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.evaluate.pipelines.base import EvaluationData, EvaluationPipeline, EvaluationResult
 
 
-
 class HotpotQAData(EvaluationData):
     """
     Represents a single HotpotQA example.
@@ -67,6 +66,7 @@ class HotpotQAPipeline(
         per_example_log_file: Path | None = None,
         extended_logs: bool = False,
         parse_answer_fn: Callable[[str], str] | None = None,
+        question_generation_prompt_fn: Callable[[str, str], str] | None = None,
         retrieval_k: int = 3,
         element_max_chars: int = 500,
         hop_context_max_chars: int = 1200,
@@ -77,6 +77,7 @@ class HotpotQAPipeline(
         self.per_example_log_file = per_example_log_file
         self.extended_logs = extended_logs
         self.parse_answer_fn = parse_answer_fn
+        self.question_generation_prompt_fn = question_generation_prompt_fn
         self.retrieval_k = max(1, int(retrieval_k))
         self.element_max_chars = max(50, int(element_max_chars))
         self.hop_context_max_chars = max(100, int(hop_context_max_chars))
@@ -110,7 +111,7 @@ class HotpotQAPipeline(
 
         async def answer_with_retrieval(
             example: HotpotQAData,
-        ) -> tuple[str, Usage, list, list[dict]]:
+        ) -> tuple[str, Usage, list, list[dict], dict]:
             accumulated_context: list[str] = []
             hop_logs: list[dict] = []
             last_query = example.question
@@ -133,7 +134,12 @@ class HotpotQAPipeline(
                 hop_logs.append({"hop": hop_idx + 1, "question": last_query, "retrieved": hop_text})
                 if hop_text:
                     accumulated_context.append(hop_text)
-                    last_query = f"{example.question}\n\nContext so far:\n{hop_text}"
+                    # generate a new question for the next hop
+                    if hop_idx < self.hops - 1:
+                        last_query = await self._generate_next_question(
+                            original_question=example.question,
+                            accumulated_context="\n\n".join(accumulated_context),
+                        )
                 else:
                     break
 
@@ -145,20 +151,23 @@ class HotpotQAPipeline(
                 content, dbg = await self._generate_with_debug(prompt_input)
                 usage = cast(Usage, (dbg or {}).get("usage") or Usage())
                 tool_calls = cast(list, (dbg or {}).get("tool_calls") or [])
+                metadata = cast(dict, (dbg or {}).get("metadata") or {})
             else:
                 content, usage, tool_calls = await self._generate_answer(prompt_input)
+                metadata = {}
 
-            return str(content), usage, tool_calls, hop_logs
+            return str(content), usage, tool_calls, hop_logs, metadata
 
         results: list[HotpotQAResult] = []
         for row in data:
             try:
-                predicted_text, usage, tool_calls, hop_logs = await answer_with_retrieval(row)
+                predicted_text, usage, tool_calls, hop_logs, metadata = await answer_with_retrieval(row)
             except Exception:
                 predicted_text = ""
                 usage = Usage()
                 tool_calls = []
                 hop_logs = []
+                metadata = {}
             predicted_extracted = self._parse_answer(predicted_text)
             ref_norm = self._normalize(row.reference_answer)
 
@@ -183,11 +192,14 @@ class HotpotQAPipeline(
             ext_log_str = None
             if self.extended_logs:
                 ext_log_str = json.dumps(
-                    {
-                        "usage": usage,
-                        "tool_calls": tool_calls,
-                        "hops": hop_logs,
-                    },
+                    [
+                        {
+                            "usage": usage,
+                            "tool_calls": tool_calls,
+                            "hops": hop_logs,
+                            "metadata": metadata,
+                        }
+                    ],
                     ensure_ascii=False,
                     default=str,
                 )
@@ -207,7 +219,8 @@ class HotpotQAPipeline(
         if self.per_example_log_file is None:
             return
         self.per_example_log_file.parent.mkdir(parents=True, exist_ok=True)
-        self.per_example_log_file.touch(exist_ok=True)
+        with open(self.per_example_log_file, "w", encoding="utf-8") as _:
+            pass
 
     def _log_example(
         self,
@@ -275,6 +288,21 @@ class HotpotQAPipeline(
             return str(res.content), dbg
         resp = await target.generate(prompt)
         return str(resp), None
+
+    async def _generate_next_question(self, original_question: str, accumulated_context: str) -> str:
+        """Generate a new follow-up question based on the original question and accumulated context."""
+        if self.question_generation_prompt_fn is None:
+            # default: simple concatenation
+            return f"{original_question}\n\nContext so far:\n{accumulated_context}"
+        
+        question_generation_prompt = self.question_generation_prompt_fn(original_question, accumulated_context)
+        
+        target = self.evaluation_target
+        if isinstance(target, Agent):
+            resp = await target.llm.generate(question_generation_prompt)
+            return str(resp).strip()
+        resp = await target.generate(question_generation_prompt)
+        return str(resp).strip()
 
     @staticmethod
     def _normalize(text: str) -> str:

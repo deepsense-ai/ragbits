@@ -68,22 +68,16 @@ class GaiaEfficiency(Metric[GaiaResult]):
     """
     Efficiency and resource usage metrics:
     - gaia_avg_latency_ms: average response latency in milliseconds
-    - gaia_avg_cost_usd: average cost per task in USD
-    - gaia_avg_total_tokens: average total tokens used per task
     """
 
     async def compute(self, results: list[GaiaResult]) -> dict:
         """Compute efficiency and resource usage metrics.
 
         Returns:
-            Dictionary with average latency, cost, and token usage.
+            Dictionary with average latency.
         """
         avg_latency = float(mean(r.total_latency_ms for r in results)) if results else 0.0
-        avg_cost = float(mean(r.cost_usd for r in results)) if results else 0.0
-        avg_tokens = float(mean(r.total_tokens for r in results)) if results else 0.0
 
         return {
             "gaia_avg_latency_ms": avg_latency,
-            "gaia_avg_cost_usd": avg_cost,
-            "gaia_avg_total_tokens": avg_tokens,
         }

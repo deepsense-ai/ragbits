@@ -262,7 +262,8 @@ class HumanEvalPipeline(
         if self.per_example_log_file is None:
             return
         self.per_example_log_file.parent.mkdir(parents=True, exist_ok=True)
-        self.per_example_log_file.touch(exist_ok=True)
+        with open(self.per_example_log_file, "w", encoding="utf-8") as _:
+            pass
 
     def _log_example(self, row: HumanEvalData, result: HumanEvalResult, extended_log: str | None = None) -> None:
         """Append a single NDJSON record for debugging if enabled."""

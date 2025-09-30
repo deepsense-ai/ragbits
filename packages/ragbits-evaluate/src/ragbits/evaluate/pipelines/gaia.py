@@ -41,8 +41,6 @@ class GaiaResult(EvaluationResult):
     num_tool_calls: int
     tool_error_count: int
     total_latency_ms: int
-    total_tokens: int
-    cost_usd: float
     tool_names: list[str] | None = None
 
 
@@ -96,14 +94,12 @@ class GaiaPipeline(
                     content, dbg = await self._generate_with_debug(prompt_input)
                     if debug_traces is not None:
                         debug_traces.append(dbg)
-                    usage = cast(Usage, (dbg or {}).get("usage") or Usage())
                     tool_calls = cast(list, (dbg or {}).get("tool_calls") or [])
                 else:
-                    content, usage, tool_calls = await self._generate_answer(prompt_input)
+                    content, _, tool_calls = await self._generate_answer(prompt_input)
 
             except Exception as generation_exc:
                 content = ""
-                usage = Usage()
                 tool_calls = []
                 err_msg = f"GenerationError: {generation_exc.__class__.__name__}: {generation_exc}"
                 if self.extended_logs and debug_traces is not None:
@@ -130,8 +126,6 @@ class GaiaPipeline(
                     logging.getLogger(__name__).debug("Error while parsing tool call result: %s", exc)
 
             total_latency_ms = int((end_time - start_time) * 1000)
-            total_tokens = usage.total_tokens if usage else 0
-            cost_usd = usage.estimated_cost if usage else 0.0
 
             # Extract tool names (if any) from tool_calls
             tool_names: list[str] | None = None
@@ -158,8 +152,6 @@ class GaiaPipeline(
                 num_tool_calls=num_tool_calls,
                 tool_error_count=tool_error_count,
                 total_latency_ms=total_latency_ms,
-                total_tokens=total_tokens,
-                cost_usd=float(cost_usd),
                 tool_names=tool_names,
             )
             results.append(result)
@@ -177,7 +169,8 @@ class GaiaPipeline(
         if self.per_example_log_file is None:
             return
         self.per_example_log_file.parent.mkdir(parents=True, exist_ok=True)
-        self.per_example_log_file.touch(exist_ok=True)
+        with open(self.per_example_log_file, "w", encoding="utf-8") as _:
+            pass
 
     def _log_example(self, row: GaiaData, result: GaiaResult, extended_log: str | None = None) -> None:
         """Append a single NDJSON record for debugging if enabled."""
@@ -200,8 +193,6 @@ class GaiaPipeline(
             "num_tool_calls": result.num_tool_calls,
             "tool_error_count": result.tool_error_count,
             "total_latency_ms": result.total_latency_ms,
-            "total_tokens": result.total_tokens,
-            "cost_usd": result.cost_usd,
             "tool_frequency_usage": tool_frequency_usage,
         }
         record["extended_debug_logging"] = extended_log or "[]"
