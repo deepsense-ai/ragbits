@@ -27,13 +27,8 @@ To run the script, execute one of the following commands:
 
 import argparse
 import asyncio
-import json
 import logging
-import urllib.parse
-import urllib.request
-import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any
 
 from todo_agent import TodoAgent
 
@@ -79,78 +74,11 @@ def modulus(a: int, b: int) -> int:
     return a % b
 
 
-def _http_get(url: str, timeout: float = 10.0) -> bytes:
-    req = urllib.request.Request(url, headers={"User-Agent": "ragbits-agents/extra-tools"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
-
-
-def arxiv_search(query: str, max_results: int = 3) -> dict[str, Any]:
-    """Search arXiv and return up to `max_results` entries (title, summary, link)."""
-    if max_results <= 0:
-        return {"results": []}
-
-    base = "https://export.arxiv.org/api/query"
-    params = urllib.parse.urlencode(
-        {
-            "search_query": query,
-            "start": 0,
-            "max_results": max_results,
-            "sortBy": "relevance",
-            "sortOrder": "descending",
-        }
-    )
-    raw = _http_get(f"{base}?{params}")
-
-    root = ET.fromstring(raw)
-    ns = {"atom": "http://www.w3.org/2005/Atom"}
-    results: list[dict[str, str]] = []
-    for entry in root.findall("atom:entry", ns):
-        title = (entry.findtext("atom:title", default="", namespaces=ns) or "").strip()
-        summary = (entry.findtext("atom:summary", default="", namespaces=ns) or "").strip()
-        link_el = entry.find("atom:link[@rel='alternate']", ns)
-        link = link_el.get("href") if link_el is not None else ""
-        results.append({"title": title, "summary": summary, "link": link})
-
-    return {"results": results}
-
-
-def wiki_search(query: str, max_results: int = 2, language: str = "en") -> dict[str, Any]:
-    """Search Wikipedia and return up to `max_results` entries (title and url)."""
-    if max_results <= 0:
-        return {"results": []}
-
-    api = f"https://{language}.wikipedia.org/w/api.php"
-    params = urllib.parse.urlencode(
-        {
-            "action": "opensearch",
-            "search": query,
-            "limit": max_results,
-            "namespace": 0,
-            "format": "json",
-        }
-    )
-    raw = _http_get(f"{api}?{params}")
-    data = json.loads(raw.decode("utf-8"))
-
-    titles: list[str] = data[1] if len(data) > 1 else []
-    urls: list[str] = data[3] if len(data) > 3 else []
-
-    results: list[dict[str, Any]] = []
-    for i, title in enumerate(titles[:max_results]):
-        url = urls[i] if i < len(urls) else ""
-        results.append({"title": title, "url": url})
-
-    return {"results": results}
-
-
 def get_extra_instruction_tpl() -> str:
     """Generate tool usage instructions template for arithmetic and lookups."""
     return (
         "Tools (use when needed):\n"
         "- add(a, b), subtract(a, b), multiply(a, b), divide(a, b), modulus(a, b)\n"
-        "- arxiv_search(query, max_results=3)\n"
-        "- wiki_search(query, max_results=2, language='en')\n"
         "- web_search -> OpenAI websearch tool\n"
     )
 
@@ -180,8 +108,6 @@ def _build_tools() -> list:
         multiply,
         divide,
         modulus,
-        arxiv_search,
-        wiki_search,
         get_web_search_tool(model_name="gpt-4.1-mini"),
     ]
 
