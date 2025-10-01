@@ -31,6 +31,8 @@ import asyncio
 import logging
 from pathlib import Path
 
+from todo_agent import TodoAgent
+
 from ragbits.agents import Agent, AgentOptions
 from ragbits.core.embeddings import LiteLLMEmbedder
 from ragbits.core.llms import LiteLLM
@@ -44,8 +46,6 @@ from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.hotpot_qa import HotpotQAExactMatch, HotpotQAF1
 from ragbits.evaluate.pipelines.hotpot_qa import HotpotQAPipeline
-
-from todo_agent import TodoAgent
 
 
 def _build_system_prompt() -> str:
@@ -104,9 +104,7 @@ async def main(use_todo: bool) -> None:
         tools=[],
         default_options=AgentOptions(max_turns=5),
     )
-    evaluation_target = (
-        TodoAgent(agent=base_agent, domain_context="research QA") if use_todo else base_agent
-    )
+    evaluation_target = TodoAgent(agent=base_agent, domain_context="research QA") if use_todo else base_agent
 
     # Data loader
     source = HuggingFaceSource(path="hotpotqa/hotpot_qa", name="distractor", split="validation")

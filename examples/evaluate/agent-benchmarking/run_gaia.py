@@ -35,6 +35,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+from todo_agent import TodoAgent
+
 from ragbits.agents import Agent, AgentOptions
 from ragbits.agents.tools.openai import get_web_search_tool
 from ragbits.core.llms import LiteLLM
@@ -45,10 +47,8 @@ from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.gaia import GaiaEfficiency, GaiaOutcome, GaiaTooling
 from ragbits.evaluate.pipelines.gaia import GaiaPipeline
 
-from todo_agent import TodoAgent
+# Extra Agent tools
 
-
-# Extra Agent tools 
 
 def add(a: int, b: int) -> int:
     """Add two integers and return the result."""
@@ -137,7 +137,7 @@ def wiki_search(query: str, max_results: int = 2, language: str = "en") -> dict[
     urls: list[str] = data[3] if len(data) > 3 else []
 
     results: list[dict[str, Any]] = []
-    for i, title in enumerate(titles[: max_results]):
+    for i, title in enumerate(titles[:max_results]):
         url = urls[i] if i < len(urls) else ""
         results.append({"title": title, "url": url})
 
@@ -208,9 +208,7 @@ async def main(use_todo: bool) -> None:
         tools=_build_tools(),
         default_options=AgentOptions(max_turns=30),
     )
-    evaluation_target = (
-        TodoAgent(agent=base_agent, domain_context="general AI assistant") if use_todo else base_agent
-    )
+    evaluation_target = TodoAgent(agent=base_agent, domain_context="general AI assistant") if use_todo else base_agent
 
     # Data loader
     source = HuggingFaceSource(path="gaia-benchmark/GAIA", name="2023_level1", split="validation")
@@ -284,5 +282,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(main(args.use_todo))
-
-

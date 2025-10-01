@@ -294,9 +294,9 @@ class HotpotQAPipeline(
         if self.question_generation_prompt_fn is None:
             # default: simple concatenation
             return f"{original_question}\n\nContext so far:\n{accumulated_context}"
-        
+
         question_generation_prompt = self.question_generation_prompt_fn(original_question, accumulated_context)
-        
+
         target = self.evaluation_target
         if isinstance(target, Agent):
             resp = await target.llm.generate(question_generation_prompt)

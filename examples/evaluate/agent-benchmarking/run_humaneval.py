@@ -2,7 +2,7 @@
 Ragbits Evaluation Example: HumanEval (Agent vs TodoAgent)
 
 This example demonstrates how to evaluate HumanEval using either a classic `Agent`
-or a task-decomposing `TodoAgent`. Both modes share the 
+or a task-decomposing `TodoAgent`. Both modes share the
 same prompt, retrieval setup, and parsing logic.
 
 To run the script, execute one of the following commands:
@@ -30,6 +30,8 @@ import asyncio
 import logging
 from pathlib import Path
 
+from todo_agent import TodoAgent
+
 from ragbits.agents import Agent, AgentOptions
 from ragbits.core.llms import LiteLLM
 from ragbits.core.sources.hf import HuggingFaceSource
@@ -39,8 +41,6 @@ from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.human_eval import HumanEvalPassAtK, HumanEvalQualityPerf
 from ragbits.evaluate.pipelines.human_eval import HumanEvalPipeline
 
-from todo_agent import TodoAgent
-
 
 def _build_system_prompt() -> str:
     """Build a unified HumanEval system prompt shared by both modes."""
@@ -49,7 +49,7 @@ def _build_system_prompt() -> str:
             "You are an expert Python engineer.",
             "Implement exactly one function that solves the problem.",
             "Output ONLY the function as plain Python (no markdown). Include necessary imports.",
-            "Do not include explanations or comments."
+            "Do not include explanations or comments.",
         ]
     )
 
@@ -80,9 +80,7 @@ async def main(use_todo: bool) -> None:
         tools=[],
         default_options=AgentOptions(max_turns=30),
     )
-    evaluation_target = (
-        TodoAgent(agent=base_agent, domain_context="python engineer") if use_todo else base_agent
-    )
+    evaluation_target = TodoAgent(agent=base_agent, domain_context="python engineer") if use_todo else base_agent
 
     # Data
     source = HuggingFaceSource(path="openai/openai_humaneval", split="test")
