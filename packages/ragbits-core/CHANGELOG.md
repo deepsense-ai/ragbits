@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add name parameter for better filtering of HuggingFace dataloder (#829)
+
 ## 1.3.0 (2025-09-11)
 
 - feat: improve app startup speed with lazy LiteLLM loading
