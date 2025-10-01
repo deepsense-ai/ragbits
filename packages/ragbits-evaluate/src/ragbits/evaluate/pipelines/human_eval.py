@@ -6,7 +6,7 @@ import logging
 import multiprocessing
 import textwrap
 import time
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Coroutine, Iterable
 from dataclasses import dataclass
 from multiprocessing.connection import Connection
 from pathlib import Path
@@ -153,8 +153,49 @@ class HumanEvalPipeline(
             try:
                 config["evaluation_target"] = Agent.from_config(config)
             except Exception:
-                config["evaluation_target"] = LLM.subclass_from_config(config)
+                config["evaluation_target"] = LLM.from_config(config)
         return super().from_config(config)
+
+    def _process_generation(
+        self, raw: BaseException | tuple[str, dict | None] | str, debug_traces: list[dict | None] | None
+    ) -> tuple[str, dict | None]:
+        """Process a single generation result."""
+        if isinstance(raw, BaseException):
+            err_msg = f"GenerationError: {raw.__class__.__name__}: {raw}"
+            if self.extended_logs and debug_traces is not None:
+                debug_traces.append({"error": err_msg})
+            raise raw
+
+        if self.extended_logs and isinstance(raw, tuple):
+            content, dbg = raw
+            code = self._sanitize(content)
+            if debug_traces is not None:
+                debug_traces.append(dbg)
+            return code, dbg
+
+        if isinstance(raw, str):
+            code = self._sanitize(raw)
+            return code, None
+
+        raise TypeError(f"Unexpected type for raw: {type(raw)}")
+
+    def _evaluate_code_sample(self, code: str, row: HumanEvalData) -> tuple[bool, bool, float, str | None]:
+        """Evaluate a single code sample."""
+        # Compile check
+        try:
+            compile(code, filename="candidate.py", mode="exec")
+            compile_ok = True
+        except Exception as e:
+            return False, False, 0.0, f"SyntaxError: {e}"
+
+        ok, dur, err = _execute_in_subprocess(
+            code,
+            row.entry_point,
+            row.test,
+            timeout_sec=self.timeout_sec,
+            memory_limit_mb=self.memory_limit_mb,
+        )
+        return compile_ok, ok, dur, err
 
     async def __call__(self, data: Iterable[HumanEvalData]) -> Iterable[HumanEvalResult]:
         """Generate code completions per task and evaluate them.
@@ -171,7 +212,7 @@ class HumanEvalPipeline(
             errors: list[str | None] = []
 
             # Produce n samples
-            gen_tasks = []
+            gen_tasks: list[Coroutine[Any, Any, tuple[str, dict | None] | str]] = []
             for _ in range(self.n_samples):
                 if self.extended_logs:
                     gen_tasks.append(self._generate_with_debug(prompt_input))
@@ -181,51 +222,24 @@ class HumanEvalPipeline(
 
             debug_traces: list[dict | None] | None = [] if self.extended_logs else None
 
-            for _, raw in enumerate(generations):
-                if isinstance(raw, Exception):
+            for raw in generations:
+                try:
+                    code, _ = self._process_generation(raw, debug_traces)
+                    samples.append(code)
+                except BaseException as e:
                     samples.append("")
                     compile_ok.append(False)
                     pass_mask.append(False)
                     durations.append(0.0)
-                    err_msg = f"GenerationError: {raw.__class__.__name__}: {raw}"
+                    err_msg = f"GenerationError: {e.__class__.__name__}: {e}"
                     errors.append(err_msg)
-                    if self.extended_logs and debug_traces is not None:
-                        debug_traces.append({"error": err_msg})
                     continue
 
-                if self.extended_logs:
-                    # Raw is (content, debug)
-                    content, dbg = raw
-                    code = self._sanitize(content)
-                    samples.append(code)
-                    if debug_traces is not None:
-                        debug_traces.append(dbg)
-                else:
-                    # Raw is a simple string
-                    code = self._sanitize(raw)
-                    samples.append(code)
-
-                # Compile check
-                try:
-                    compile(code, filename="candidate.py", mode="exec")
-                    compile_ok.append(True)
-                except Exception as e:
-                    compile_ok.append(False)
-                    pass_mask.append(False)
-                    durations.append(0.0)
-                    errors.append(f"SyntaxError: {e}")
-                    continue
-
-                ok, dur, err = _execute_in_subprocess(
-                    code,
-                    row.entry_point,
-                    row.test,
-                    timeout_sec=self.timeout_sec,
-                    memory_limit_mb=self.memory_limit_mb,
-                )
-                pass_mask.append(ok)
-                durations.append(dur)
-                errors.append(err)
+                compile_result, passed, duration, error = self._evaluate_code_sample(code, row)
+                compile_ok.append(compile_result)
+                pass_mask.append(passed)
+                durations.append(duration)
+                errors.append(error)
 
             result = HumanEvalResult(
                 task_id=row.task_id,

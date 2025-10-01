@@ -113,7 +113,7 @@ async def main(use_todo: bool) -> None:
         await _print_todo_stats(log_path, dataloader)
 
 
-async def _print_todo_stats(log_path: Path, dataloader) -> None:
+async def _print_todo_stats(log_path: Path, dataloader: HumanEvalDataLoader) -> None:
     """Print aggregated TODO-agent statistics from extended logs."""
     print("\nTODO Orchestrator Statistics:")
     decomposed_count = 0

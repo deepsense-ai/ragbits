@@ -56,7 +56,8 @@ class HumanEvalQualityPerf(Metric[HumanEvalResult]):
     - humaneval_avg_exec_time_sec: average exec time over compilable runs
     """
 
-    async def compute(self, results: list[HumanEvalResult]) -> dict:
+    @staticmethod
+    async def compute(results: list[HumanEvalResult]) -> dict:
         """Compute code quality and execution performance metrics.
 
         Returns:

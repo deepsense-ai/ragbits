@@ -74,8 +74,37 @@ class GaiaPipeline(
             try:
                 config["evaluation_target"] = Agent.from_config(config)
             except Exception:
-                config["evaluation_target"] = LLM.subclass_from_config(config)
+                config["evaluation_target"] = LLM.from_config(config)
         return super().from_config(config)
+
+    @staticmethod
+    def _count_tool_errors(tool_calls: list) -> int:
+        """Count tool errors from tool_calls."""
+        tool_error_count = 0
+        for call in tool_calls:
+            try:
+                if isinstance(call.result, dict) and "error" in call.result:
+                    tool_error_count += 1
+            except Exception as exc:
+                logging.getLogger(__name__).debug("Error while parsing tool call result: %s", exc)
+        return tool_error_count
+
+    @staticmethod
+    def _extract_tool_names(tool_calls: list) -> list[str] | None:
+        """Extract tool names from tool_calls."""
+        if not tool_calls:
+            return None
+        tool_names = []
+        for call in tool_calls:
+            try:
+                name = getattr(call, "name", None)
+                if name is None and isinstance(call, dict):
+                    name = call.get("name")
+                if name:
+                    tool_names.append(str(name))
+            except Exception as exc:
+                logging.getLogger(__name__).debug("Tool name extraction error: %s", exc)
+        return tool_names
 
     async def __call__(self, data: Iterable[GaiaData]) -> Iterable[GaiaResult]:
         """Generate answer completions per task and evaluate them.
@@ -115,31 +144,9 @@ class GaiaPipeline(
 
             tool_triggered = bool(tool_calls)
             num_tool_calls = len(tool_calls)
-
-            # Count tool errors from AgentResult.tool_calls metadata if present
-            tool_error_count = 0
-            for call in tool_calls:
-                try:
-                    if isinstance(call.result, dict) and "error" in call.result:
-                        tool_error_count += 1
-                except Exception as exc:
-                    logging.getLogger(__name__).debug("Error while parsing tool call result: %s", exc)
-
+            tool_error_count = GaiaPipeline._count_tool_errors(tool_calls)
+            tool_names = GaiaPipeline._extract_tool_names(tool_calls)
             total_latency_ms = int((end_time - start_time) * 1000)
-
-            # Extract tool names (if any) from tool_calls
-            tool_names: list[str] | None = None
-            if tool_calls:
-                tool_names = []
-                for call in tool_calls:
-                    try:
-                        name = getattr(call, "name", None)
-                        if name is None and isinstance(call, dict):
-                            name = call.get("name")
-                        if name:
-                            tool_names.append(str(name))
-                    except Exception as exc:
-                        logging.getLogger(__name__).debug("Tool name extraction error: %s", exc)
 
             result = GaiaResult(
                 task_id=row.task_id,

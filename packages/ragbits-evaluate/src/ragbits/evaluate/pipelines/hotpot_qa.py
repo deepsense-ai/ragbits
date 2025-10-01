@@ -92,7 +92,7 @@ class HotpotQAPipeline(
             try:
                 config["evaluation_target"] = Agent.from_config(config)
             except Exception:
-                config["evaluation_target"] = LLM.subclass_from_config(config)
+                config["evaluation_target"] = LLM.from_config(config)
         config["retriever"] = DocumentSearch.from_config(config["document_search"])
         config["hops"] = int(config.get("hops", 3))
         config["retrieval_k"] = int(config.get("retrieval_k", 3))
@@ -100,68 +100,73 @@ class HotpotQAPipeline(
         config["hop_context_max_chars"] = int(config.get("hop_context_max_chars", 1200))
         return super().from_config(config)
 
-    async def __call__(self, data: Iterable[HotpotQAData]) -> Iterable[HotpotQAResult]:
-        """Ingest contexts, perform multi-hop retrieval, and answer HotpotQA questions."""
+    async def _ingest_documents(self, data: Iterable[HotpotQAData]) -> None:
+        """Ingest all documents from the data."""
         documents: list[DocumentMeta] = []
         for row in data:
             for content in row.reference_context:
                 documents.append(DocumentMeta.from_literal(content))
-
         await self.retriever.ingest(documents)
 
-        async def answer_with_retrieval(
-            example: HotpotQAData,
-        ) -> tuple[str, Usage, list, list[dict], dict]:
-            accumulated_context: list[str] = []
-            hop_logs: list[dict] = []
-            last_query = example.question
-            for hop_idx in range(self.hops):
-                elements = await self.retriever.search(last_query)
-                text_parts: list[str] = []
-                consumed = 0
-                for element in elements[: self.retrieval_k]:
-                    content = getattr(element, "content", "") if hasattr(element, "content") else ""
-                    if isinstance(content, str) and content:
-                        snippet = content.strip().replace("\n\n", "\n")[: self.element_max_chars]
-                        budget = max(0, self.hop_context_max_chars - consumed)
-                        take = snippet[:budget]
-                        if take:
-                            text_parts.append(take)
-                            consumed += len(take)
-                        if consumed >= self.hop_context_max_chars:
-                            break
-                hop_text = "\n\n".join(text_parts)
-                hop_logs.append({"hop": hop_idx + 1, "question": last_query, "retrieved": hop_text})
-                if hop_text:
-                    accumulated_context.append(hop_text)
-                    # generate a new question for the next hop
-                    if hop_idx < self.hops - 1:
-                        last_query = await self._generate_next_question(
-                            original_question=example.question,
-                            accumulated_context="\n\n".join(accumulated_context),
-                        )
-                else:
-                    break
-
-            full_context = "\n\n".join(accumulated_context)
-            # append retrieved context to user question
-            prompt_input = example.question if not full_context else f"{example.question}\n\nContext:\n{full_context}"
-
-            if self.extended_logs:
-                content, dbg = await self._generate_with_debug(prompt_input)
-                usage = cast(Usage, (dbg or {}).get("usage") or Usage())
-                tool_calls = cast(list, (dbg or {}).get("tool_calls") or [])
-                metadata = cast(dict, (dbg or {}).get("metadata") or {})
+    async def _perform_multihop_retrieval(self, example: HotpotQAData) -> tuple[str, list[dict]]:
+        """Perform multi-hop retrieval and return accumulated context and hop logs."""
+        accumulated_context: list[str] = []
+        hop_logs: list[dict] = []
+        last_query = example.question
+        for hop_idx in range(self.hops):
+            elements = await self.retriever.search(last_query)
+            text_parts: list[str] = []
+            consumed = 0
+            for element in elements[: self.retrieval_k]:
+                content = getattr(element, "content", "") if hasattr(element, "content") else ""
+                if isinstance(content, str) and content:
+                    snippet = content.strip().replace("\n\n", "\n")[: self.element_max_chars]
+                    budget = max(0, self.hop_context_max_chars - consumed)
+                    take = snippet[:budget]
+                    if take:
+                        text_parts.append(take)
+                        consumed += len(take)
+                    if consumed >= self.hop_context_max_chars:
+                        break
+            hop_text = "\n\n".join(text_parts)
+            hop_logs.append({"hop": hop_idx + 1, "question": last_query, "retrieved": hop_text})
+            if hop_text:
+                accumulated_context.append(hop_text)
+                # generate a new question for the next hop
+                if hop_idx < self.hops - 1:
+                    last_query = await self._generate_next_question(
+                        original_question=example.question,
+                        accumulated_context="\n\n".join(accumulated_context),
+                    )
             else:
-                content, usage, tool_calls = await self._generate_answer(prompt_input)
-                metadata = {}
+                break
+        return "\n\n".join(accumulated_context), hop_logs
 
-            return str(content), usage, tool_calls, hop_logs, metadata
+    async def _answer_with_retrieval(self, example: HotpotQAData) -> tuple[str, Usage, list, list[dict], dict]:
+        """Answer a question with multi-hop retrieval."""
+        full_context, hop_logs = await self._perform_multihop_retrieval(example)
+        prompt_input = example.question if not full_context else f"{example.question}\n\nContext:\n{full_context}"
+
+        if self.extended_logs:
+            content, dbg = await self._generate_with_debug(prompt_input)
+            usage = cast(Usage, (dbg or {}).get("usage") or Usage())
+            tool_calls = cast(list, (dbg or {}).get("tool_calls") or [])
+            metadata = cast(dict, (dbg or {}).get("metadata") or {})
+        else:
+            content, usage, tool_calls = await self._generate_answer(prompt_input)
+            metadata = {}
+
+        return str(content), usage, tool_calls, hop_logs, metadata
+
+    async def __call__(self, data: Iterable[HotpotQAData]) -> Iterable[HotpotQAResult]:
+        """Ingest contexts, perform multi-hop retrieval, and answer HotpotQA questions."""
+        data_list = list(data)
+        await self._ingest_documents(data_list)
 
         results: list[HotpotQAResult] = []
-        for row in data:
+        for row in data_list:
             try:
-                predicted_text, usage, tool_calls, hop_logs, metadata = await answer_with_retrieval(row)
+                predicted_text, usage, tool_calls, hop_logs, metadata = await self._answer_with_retrieval(row)
             except Exception:
                 predicted_text = ""
                 usage = Usage()

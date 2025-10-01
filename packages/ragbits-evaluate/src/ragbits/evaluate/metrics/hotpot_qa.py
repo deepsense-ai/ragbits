@@ -10,7 +10,8 @@ from ragbits.evaluate.pipelines.hotpot_qa import HotpotQAResult
 class HotpotQAExactMatch(Metric[HotpotQAResult]):
     """Computes EM over HotpotQA by type and overall."""
 
-    async def compute(self, results: list[HotpotQAResult]) -> dict:
+    @staticmethod
+    async def compute(results: list[HotpotQAResult]) -> dict:
         """Compute EM. Returns hotpotqa_<type>_em and hotpotqa_overall_em."""
         buckets: dict[str, list[float]] = defaultdict(list)
         for r in results:
@@ -32,7 +33,8 @@ class HotpotQAExactMatch(Metric[HotpotQAResult]):
 class HotpotQAF1(Metric[HotpotQAResult]):
     """Computes token-level F1 over HotpotQA by type and overall."""
 
-    async def compute(self, results: list[HotpotQAResult]) -> dict:
+    @staticmethod
+    async def compute(results: list[HotpotQAResult]) -> dict:
         """Compute F1. Returns hotpotqa_<type>_f1 and hotpotqa_overall_f1."""
         buckets: dict[str, list[float]] = defaultdict(list)
         for r in results:
