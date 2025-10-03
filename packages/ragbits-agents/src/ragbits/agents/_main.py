@@ -1,19 +1,25 @@
 import asyncio
+import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import ClassVar, Generic, TypeVar, cast, overload
+from typing import Any, ClassVar, Generic, Literal, TypeVar, Union, cast, overload
 
-from pydantic import BaseModel, Field
+from pydantic import (
+    BaseModel,
+    Field,
+)
 from typing_extensions import Self
 
 from ragbits import agents
 from ragbits.agents.exceptions import (
+    AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
     AgentMaxTokensExceededError,
     AgentMaxTurnsExceededError,
@@ -25,9 +31,15 @@ from ragbits.agents.exceptions import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
+from ragbits.agents.post_processors.base import (
+    BasePostProcessor,
+    PostProcessor,
+    StreamingPostProcessor,
+    stream_with_post_processing,
+)
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMResponseWithMetadata, ToolCall, Usage
+from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -41,6 +53,29 @@ with suppress(ImportError):
     from pydantic_ai import mcp
 
     from ragbits.core.llms import LiteLLM
+
+_Input = TypeVar("_Input", bound=BaseModel)
+_Output = TypeVar("_Output")
+
+
+@dataclass
+class DownstreamAgentResult:
+    """
+    Represents a streamed item from a downstream agent while executing a tool.
+    """
+
+    agent_id: str | None
+    """ID of the downstream agent."""
+    item: Union[
+        str,
+        ToolCall,
+        ToolCallResult,
+        "DownstreamAgentResult",
+        BasePrompt,
+        Usage,
+        SimpleNamespace,
+    ]
+    """The streamed item from the downstream agent."""
 
 
 @dataclass
@@ -144,13 +179,42 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 class AgentRunContext(BaseModel, Generic[DepsT]):
     """Context for the agent run."""
 
+    model_config = {"arbitrary_types_allowed": True}
+
     deps: AgentDependencies[DepsT] = Field(default_factory=lambda: AgentDependencies())
     """Container for external dependencies."""
     usage: Usage = Field(default_factory=Usage)
     """The usage of the agent."""
+    stream_downstream_events: bool = False
+    """Whether to stream events from downstream agents when tools execute other agents."""
+    downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
+    """Registry of all agents that participated in this run"""
+
+    def register_agent(self, agent: "Agent") -> None:
+        """
+        Register a downstream agent in this context.
+
+        Args:
+            agent: The agent instance to register.
+        """
+        self.downstream_agents[agent.id] = agent
+
+    def get_agent(self, agent_id: str) -> "Agent | None":
+        """
+        Retrieve a registered downstream agent by its ID.
+
+        Args:
+            agent_id: The unique identifier of the agent.
+
+        Returns:
+            The Agent instance if found, otherwise None.
+        """
+        return self.downstream_agents.get(agent_id)
 
 
-class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
+class AgentResultStreaming(
+    AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]
+):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
     by `run_streaming`. It can be used in an `async for` loop to process items as they arrive. After the loop completes,
@@ -158,21 +222,30 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
     """
 
     def __init__(
-        self, generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]
+        self,
+        generator: AsyncGenerator[
+            str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage
+        ],
     ):
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
+        self.downstream: dict[str | None, list[str | ToolCall | ToolCallResult]] = {}
         self.metadata: dict = {}
         self.history: ChatFormat
         self.usage: Usage = Usage()
 
-    def __aiter__(self) -> AsyncIterator[str | ToolCall | ToolCallResult]:
+    def __aiter__(
+        self,
+    ) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
         return self
 
-    async def __anext__(self) -> str | ToolCall | ToolCallResult:
+    async def __anext__(
+        self,
+    ) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
         try:
             item = await self._generator.__anext__()
+
             match item:
                 case str():
                     self.content += item
@@ -182,23 +255,28 @@ class AgentResultStreaming(AsyncIterator[str | ToolCall | ToolCallResult]):
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                case DownstreamAgentResult():
+                    if item.agent_id not in self.downstream:
+                        self.downstream[item.agent_id] = []
+                    if isinstance(item.item, str | ToolCall | ToolCallResult):
+                        self.downstream[item.agent_id].append(item.item)
                 case BasePrompt():
                     item.add_assistant_message(self.content)
                     self.history = item.chat
-                    item = await self._generator.__anext__()
-                    item = cast(SimpleNamespace, item)
-                    item.result = {
-                        "content": self.content,
-                        "metadata": self.metadata,
-                        "tool_calls": self.tool_calls,
-                    }
-                    raise StopAsyncIteration
                 case Usage():
                     self.usage = item
+                    # continue loop instead of tail recursion
                     return await self.__anext__()
+                case SimpleNamespace():
+                    result_dict = getattr(item, "result", {})
+                    self.content = result_dict.get("content", self.content)
+                    self.metadata = result_dict.get("metadata", self.metadata)
+                    self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
+
             return item
+
         except StopAsyncIteration:
             raise
 
@@ -215,10 +293,17 @@ class Agent(
     options_cls: type[AgentOptions] = AgentOptions
     default_module: ClassVar[ModuleType | None] = agents
     configuration_key: ClassVar[str] = "agent"
+    # Syntax sugar fields
+    user_prompt: ClassVar[str] = "{{ input }}"
+    system_prompt: ClassVar[str | None] = None
+    input_type: PromptInputT | None = None
+    prompt_cls: ClassVar[type[Prompt] | None] = None
 
     def __init__(
         self,
         llm: LLM[LLMClientOptionsT],
+        name: str | None = None,
+        description: str | None = None,
         prompt: str | type[Prompt[PromptInputT, PromptOutputT]] | Prompt[PromptInputT, PromptOutputT] | None = None,
         *,
         history: ChatFormat | None = None,
@@ -232,6 +317,8 @@ class Agent(
 
         Args:
             llm: The LLM to run the agent.
+            name: Optional name of the agent. Used to identify the agent instance.
+            description: Optional description of the agent.
             prompt: The prompt for the agent. Can be:
                 - str: A string prompt that will be used as system message when combined with string input,
                     or as the user message when no input is provided during run().
@@ -248,10 +335,26 @@ class Agent(
         self.id = uuid.uuid4().hex[:8]
         self.llm = llm
         self.prompt = prompt
-        self.tools = [Tool.from_callable(tool) for tool in tools or []]
+        self.name = name
+        self.description = description
+        self.tools = []
+        for tool in tools or []:
+            if isinstance(tool, tuple):
+                agent, kwargs = tool
+                self.tools.append(Tool.from_agent(agent, **kwargs))
+            elif isinstance(tool, Agent):
+                self.tools.append(Tool.from_agent(tool))
+            else:
+                self.tools.append(Tool.from_callable(tool))
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
+
+        if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
+            raise ValueError(
+                f"Agent {type(self).__name__} defines a system_prompt but has no input_type. ",
+                "Use Agent.prompt decorator to properly assign it.",
+            )
 
     @overload
     async def run(
@@ -260,6 +363,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -269,6 +373,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -277,6 +382,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -293,6 +399,7 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
+            post_processors: List of post-processors to apply to the response in order.
 
         Returns:
             The result of the agent run.
@@ -303,6 +410,24 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+        """
+        result = await self._run_without_post_processing(input, options, context, tool_choice)
+
+        if post_processors:
+            for processor in post_processors:
+                result = await processor.process(result, self, options, context)
+
+        return result
+
+    async def _run_without_post_processing(
+        self,
+        input: str | PromptInputT | None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+    ) -> AgentResult[PromptOutputT]:
+        """
+        Run the agent without applying post-processors.
         """
         if context is None:
             context = AgentRunContext()
@@ -336,10 +461,12 @@ class Agent(
                     break
 
                 for tool_call in response.tool_calls:
-                    result = await self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context)
-                    tool_calls.append(result)
-
-                    prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                    async for result in self._execute_tool(
+                        tool_call=tool_call, tools_mapping=tools_mapping, context=context
+                    ):
+                        if isinstance(result, ToolCallResult):
+                            tool_calls.append(result)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
 
                 turn_count += 1
             else:
@@ -371,6 +498,21 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: bool = False,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
+        input: str | None = None,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -380,6 +522,21 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: bool = False,
+    ) -> AgentResultStreaming: ...
+
+    @overload
+    def run_streaming(
+        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT] | None = None,
+        context: AgentRunContext | None = None,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        *,
+        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -388,6 +545,13 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
+        post_processors: (
+            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
+            | None
+        ) = None,
+        *,
+        allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -402,6 +566,8 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
+            post_processors: List of post-processors to apply to the response in order.
+            allow_non_streaming: Whether to allow non-streaming post-processors.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -412,8 +578,27 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+            AgentInvalidPostProcessorError: If the post-processor is invalid.
         """
-        generator = self._stream_internal(input, options, context, tool_choice)
+        generator = self._stream_internal(
+            input=input,
+            options=options,
+            context=context,
+            tool_choice=tool_choice,
+        )
+
+        if post_processors:
+            if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
+                raise AgentInvalidPostProcessorError(
+                    reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
+                )
+
+            generator = cast(
+                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+                generator,
+            )
+            generator = stream_with_post_processing(generator, post_processors, self)
+
         return AgentResultStreaming(generator)
 
     async def _stream_internal(
@@ -422,9 +607,11 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
+    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
         if context is None:
             context = AgentRunContext()
+
+        context.register_agent(cast(Agent[Any, Any, str], self))
 
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
@@ -435,24 +622,33 @@ class Agent(
         turn_count = 0
         max_turns = merged_options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
+
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
                     tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                     tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
+
                 async for chunk in streaming_result:
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
-                        result = await self._execute_tool(tool_call=chunk, tools_mapping=tools_mapping, context=context)
-                        yield result
-                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                        returned_tool_call = True
+                        async for result in self._execute_tool(
+                            tool_call=chunk,
+                            tools_mapping=tools_mapping,
+                            context=context,
+                        ):
+                            yield result
+                            if isinstance(result, ToolCallResult):
+                                prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            returned_tool_call = True
+
                 turn_count += 1
                 if streaming_result.usage:
                     context.usage += streaming_result.usage
@@ -504,14 +700,38 @@ class Agent(
         llm_options.max_tokens = min(actual_limits) - usage.total_tokens
         return llm_options
 
-    def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
+    def _prepare_synthesized_prompt(
+        self, input: PromptInputT
+    ) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT] | None:
         curr_history = deepcopy(self.history)
+        if (
+            hasattr(self, "prompt_cls")
+            and self.prompt_cls
+            and isinstance(self.prompt_cls, type)
+            and issubclass(self.prompt_cls, Prompt)
+        ):
+            prompt_cls = cast(type[Prompt[PromptInputT, PromptOutputT]], self.prompt_cls)
+            if self.keep_history:
+                self.prompt = cast(Prompt[PromptInputT, PromptOutputT], prompt_cls(input, curr_history))
+                return self.prompt
+            else:
+                return cast(Prompt[PromptInputT, PromptOutputT], prompt_cls(input))
+
         if isinstance(self.prompt, type) and issubclass(self.prompt, Prompt):
             if self.keep_history:
                 self.prompt = self.prompt(input, curr_history)
                 return self.prompt
             else:
-                return self.prompt(input, curr_history)
+                return self.prompt(input)
+
+        return None
+
+    def _get_prompt_with_history(self, input: PromptInputT) -> SimplePrompt | Prompt[PromptInputT, PromptOutputT]:
+        curr_history = deepcopy(self.history)
+        new_prompt = self._prepare_synthesized_prompt(input)
+
+        if new_prompt:
+            return new_prompt
 
         if isinstance(self.prompt, Prompt):
             self.prompt.add_user_message(input)
@@ -555,11 +775,13 @@ class Agent(
         return tools_mapping
 
     async def _execute_tool(
-        self, tool_call: ToolCall, tools_mapping: dict[str, Tool], context: AgentRunContext | None = None
-    ) -> ToolCallResult:
+        self,
+        tool_call: ToolCall,
+        tools_mapping: dict[str, Tool],
+        context: AgentRunContext,
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
-
         if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
@@ -577,10 +799,23 @@ class Agent(
                     else tool.on_tool_call(**call_args)
                 )
 
+                if isinstance(tool_output, AgentResultStreaming):
+                    async for downstream_item in tool_output:
+                        if context.stream_downstream_events:
+                            yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
+
+                    tool_output = {
+                        "content": tool_output.content,
+                        "metadata": tool_output.metadata,
+                        "tool_calls": tool_output.tool_calls,
+                        "usage": tool_output.usage,
+                    }
+
                 outputs.result = {
                     "tool_output": tool_output,
                     "tool_call_id": tool_call.id,
                 }
+
             except Exception as e:
                 outputs.result = {
                     "error": str(e),
@@ -588,7 +823,7 @@ class Agent(
                 }
                 raise AgentToolExecutionError(tool_call.name, e) from e
 
-        return ToolCallResult(
+        yield ToolCallResult(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
@@ -758,3 +993,81 @@ class Agent(
             tools=[tool.function for _, tool in pydantic_ai_agent._function_tools.items()],
             mcp_servers=cast(list[MCPServer], mcp_servers),
         )
+
+    def to_tool(self, name: str | None = None, description: str | None = None) -> Tool:
+        """
+        Convert the agent into a Tool instance.
+
+        Args:
+            name: Optional override for the tool name.
+            description: Optional override for the tool description.
+
+        Returns:
+            Tool instance representing the agent.
+        """
+        return Tool.from_agent(self, name=name or self.name, description=description or self.description)
+
+    @staticmethod
+    def _make_prompt_class_for_agent_subclass(agent_cls: type["Agent[Any, Any, Any]"]) -> type[Prompt] | None:
+        system = getattr(agent_cls, "system_prompt", None)
+        if not system:
+            raise ValueError(f"Agent {agent_cls.__name__} has no system_prompt")
+        user = getattr(agent_cls, "user_prompt", "{{ input }}")
+
+        input_type: type[BaseModel] | None = getattr(agent_cls, "input_type", None)
+        if input_type is None:
+            raise ValueError(f"Agent {agent_cls.__name__} cannot build a Prompt without input_type")
+
+        base_generic = Prompt
+        base = base_generic[input_type]
+
+        attrs = {
+            "system_prompt": system,
+            "user_prompt": user,
+        }
+
+        return types.new_class(
+            f"_{agent_cls.__name__}Prompt",
+            (base,),
+            exec_body=lambda ns: ns.update(attrs),
+        )
+
+    @overload
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, str]"]]: ...
+    @overload
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+        output_model: type[_Output],
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, _Output]"]]: ...
+    @staticmethod
+    def prompt_config(
+        input_model: type[_Input],
+        output_model: type[_Output] | type[NotGiven] = NotGiven,
+    ) -> Callable[[type[Any]], type["Agent[LLMOptions, _Input, _Output]"]]:
+        """
+        Decorator to bind both input and output types of an Agent subclass, with runtime checks.
+
+        Raises:
+            TypeError: if the decorated class is not a subclass of Agent,
+                       or if input_model is not a Pydantic BaseModel.
+        """
+        if not isinstance(input_model, type) or not issubclass(input_model, BaseModel):
+            raise TypeError(f"input_model must be a subclass of pydantic.BaseModel, got {input_model}")
+
+        if not isinstance(output_model, type):
+            raise TypeError(f"output_model must be a type, got {output_model}")
+
+        def decorator(cls: type[Any]) -> type["Agent[LLMOptions, _Input, _Output]"]:
+            if not isinstance(cls, type) or not issubclass(cls, Agent):
+                raise TypeError(f"Can only decorate subclasses of Agent, got {cls}")
+
+            cls.input_type = input_model
+            cls.prompt_cls = Agent._make_prompt_class_for_agent_subclass(cls)
+
+            return cast(type["Agent[LLMOptions, _Input, _Output]"], cls)
+
+        return decorator
