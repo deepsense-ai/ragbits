@@ -2,9 +2,10 @@
 
 import uuid
 from collections.abc import AsyncGenerator
-from dataclasses import dataclass, field
 from enum import Enum
 from types import SimpleNamespace
+
+from pydantic import BaseModel, Field
 
 from ragbits.agents import Agent
 from ragbits.agents._main import DownstreamAgentResult
@@ -28,8 +29,7 @@ class TaskStatus(str, Enum):
     RETRYING = "retrying"
 
 
-@dataclass
-class Task:
+class Task(BaseModel):
     """Simple task representation."""
 
     id: str
@@ -39,18 +39,17 @@ class Task:
     summary: str | None = None
     parent_id: str | None = None
     full_response: str | None = None
-    dependencies: list[str] = field(default_factory=list)
+    dependencies: list[str] = Field(default_factory=list)
 
 
-@dataclass
-class TodoResult:
+class TodoResult(BaseModel):
     """Result type for todo workflow."""
 
     type: str
     message: str | None = None
     current_task: Task | None = None
     next_task: Task | None = None
-    tasks: list[Task] | None = None
+    tasks: list[Task] = Field(default_factory=list)
     tasks_count: int | None = None
     progress: str | None = None
 
@@ -61,11 +60,10 @@ StreamingResponseType = (
 )
 
 
-@dataclass
-class TodoList:
+class TodoList(BaseModel):
     """Simple todo list for one agent run."""
 
-    tasks: list[Task] = field(default_factory=list)
+    tasks: list[Task] = Field(default_factory=list)
     current_index: int = 0
 
     def get_current_task(self) -> Task | None:
@@ -111,14 +109,14 @@ class TodoList:
             progress=f"{self.current_index + 1}/{len(self.tasks)}",
         )
 
-    def start_current_task(self) -> TodoResult:
+    def start_current_task(self) -> Task:
         """Start the current task."""
         current = self.get_current_task()
         if not current:
             raise ValueError("No current task to start")
 
         current.status = TaskStatus.IN_PROGRESS
-        return TodoResult(type="start_task", message=f"Started task: {current.description}", current_task=current)
+        return current
 
     def complete_current_task(self, summary: str) -> TodoResult:
         """Complete the current task with summary."""
@@ -160,22 +158,20 @@ class TodoList:
         return "Previous completed tasks:\n" + "\n".join(context_parts)
 
 
-@dataclass
-class TodoOrchestrator:
+class TodoOrchestrator(BaseModel):
     """High-level orchestrator for managing todo workflow with context passing."""
 
-    todo_list: TodoList = field(default_factory=TodoList)
+    todo_list: TodoList = Field(default_factory=TodoList)
     domain_context: str = ""
 
-    def __init__(self, domain_context: str = ""):
+    def __init__(self, domain_context: str = "") -> None:
         """
         Initialize TodoOrchestrator with domain-specific prompts.
 
         Args:
             domain_context: Additional context about the domain (e.g., "hiking guide", "software architect", etc.)
         """
-        self.todo_list = TodoList()
-        self.domain_context = domain_context
+        super().__init__(domain_context=domain_context)
 
     async def run_todo_workflow_streaming(
         self, agent: Agent, initial_query: str
@@ -220,8 +216,7 @@ class TodoOrchestrator:
 
         # Complex query - proceed with task breakdown
         yield TodoResult(type="status", message=f"📋 Complex query - created {len(tasks)} tasks:")
-        for i, task in enumerate(tasks, 1):
-            yield TodoResult(type="task_list", message=f"   {i}. {task}")
+        yield TodoResult(type="task_list", tasks=tasks, tasks_count=len(tasks))
 
         # Step 2: Execute each task with context from previous tasks
         task_summaries = []
@@ -249,7 +244,9 @@ class TodoOrchestrator:
             if completed_tasks:
                 latest_summary = completed_tasks[-1].summary
                 task_summaries.append(latest_summary)
-                yield TodoResult(type="task_completed", message="\n✅ Task completed\n")
+                yield TodoResult(
+                    type="task_completed", message="\n✅ Task completed\n", current_task=completed_tasks[-1]
+                )
 
         # Step 3: Generate comprehensive final summary with streaming
         yield TodoResult(type="status", message="📝 Generating comprehensive final summary...")
@@ -294,7 +291,7 @@ class TodoOrchestrator:
         # Default to COMPLEX if we can't determine (safer approach)
         return response != "SIMPLE"
 
-    async def _create_tasks_simple(self, agent: Agent, initial_query: str) -> list[str]:
+    async def _create_tasks_simple(self, agent: Agent, initial_query: str) -> list[Task]:
         """Create tasks based on initial query - simple, non-streaming."""
         # First, analyze if the query actually needs task breakdown
         is_complex = await TodoOrchestrator._analyze_query_complexity(agent, initial_query)
@@ -322,7 +319,7 @@ class TodoOrchestrator:
         tasks = self._parse_tasks_from_response(response)
         if tasks:
             self.todo_list.create_tasks(tasks)
-            return tasks
+            return self.todo_list.tasks  # Return the actual Task objects
 
         return []
 
@@ -350,7 +347,10 @@ class TodoOrchestrator:
         """
 
         # Mark task as started
-        self.todo_list.start_current_task()
+        current_task = self.todo_list.start_current_task()
+        yield TodoResult(
+            type="start_task", message=f"Started task: {current_task.description}", current_task=current_task
+        )
 
         full_response = ""
         last_summary_length = 0

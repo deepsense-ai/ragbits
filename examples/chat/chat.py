@@ -26,7 +26,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ragbits.agents.tools.todo import Task, TaskStatus
+from ragbits.agents import Agent
+from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -94,6 +95,14 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.todo_orchestrator = TodoOrchestrator()
+        self.agent = Agent(
+            llm=self.llm,
+            prompt="""
+            You are an expert hiking guide. Provide detailed, comprehensive information
+            about hiking routes, gear, transportation, and safety considerations.
+            """,
+        )
 
     async def chat(
         self,
@@ -142,33 +151,40 @@ class MyChat(ChatInterface):
             ),
         ]
 
-        parentTask = Task(id="task_id_1", description="Example task with a subtask")
-        subtaskTask = Task(id="task_id_2", description="Example subtask", parent_id="task_id_1")
-
         for live_update in example_live_updates:
             yield live_update
             await asyncio.sleep(2)
 
-        yield self.create_todo_item_response(parentTask)
-        yield self.create_todo_item_response(subtaskTask)
+        counter = 10
+        async for response in self.todo_orchestrator.run_todo_workflow_streaming(
+            self.agent, [*history, {"role": "user", "content": message}]
+        ):
+            print(response)
+            match response:
+                case str():
+                    if response.strip():
+                        yield self.create_text_response(response)
+                case TodoResult():
+                    if response.type in ("status"):
+                        yield self.create_live_update("0", LiveUpdateType.FINISH, response.message or "")
+                        counter += 1
+                    elif response.type in ("task_list"):
+                        for task in response.tasks:
+                            yield self.create_todo_item_response(task)
+                    elif response.type in ("start_task"):
+                        print(response.current_task)
+                        yield self.create_todo_item_response(response.current_task)
+                    elif response.type in ("task_summary_start", "final_summary_start"):
+                        yield self.create_live_update("0", LiveUpdateType.START, response.message or "")
+                    elif response.type in ("task_completed"):
+                        yield self.create_live_update("0", LiveUpdateType.FINISH, response.message or "")
+                        yield self.create_todo_item_response(response.current_task)
+                        counter += 1
+                    elif response.type in ("final_summary_end"):
+                        yield self.create_live_update("0", LiveUpdateType.FINISH, response.message or "")
+                        counter += 1
 
-        await asyncio.sleep(2)
-        parentTask.status = TaskStatus.IN_PROGRESS
-        yield self.create_todo_item_response(parentTask)
-        await asyncio.sleep(2)
-        subtaskTask.status = TaskStatus.IN_PROGRESS
-        yield self.create_todo_item_response(subtaskTask)
-        await asyncio.sleep(2)
-        parentTask.status = TaskStatus.COMPLETED
-        subtaskTask.status = TaskStatus.COMPLETED
-        yield self.create_todo_item_response(subtaskTask)
-        yield self.create_todo_item_response(parentTask)
-
-        streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
-        async for chunk in streaming_result:
-            yield self.create_text_response(chunk)
-
-        if streaming_result.usage:
-            yield self.create_usage_response(streaming_result.usage)
+        # if streaming_result.usage:
+        # yield self.create_usage_response(streaming_result.usage)
 
         yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])
