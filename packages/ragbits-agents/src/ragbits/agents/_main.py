@@ -115,6 +115,9 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_completion_tokens: int | None | NotGiven = NOT_GIVEN
     """The maximum number of completion tokens the agent can use, if NOT_GIVEN
     or None, agent will run forever"""
+    parallel_tool_calling: bool = False
+    """Whether to run the tools concurrently if multiple of them are requested by an LLM. Synchronous tools will be
+    run in a separate thread using `asyncio.to_thread`"""
 
 
 DepsT = TypeVar("DepsT")
@@ -460,13 +463,12 @@ class Agent(
                 if not response.tool_calls:
                     break
 
-                for tool_call in response.tool_calls:
-                    async for result in self._execute_tool(
-                        tool_call=tool_call, tools_mapping=tools_mapping, context=context
-                    ):
-                        if isinstance(result, ToolCallResult):
-                            tool_calls.append(result)
-                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                async for result in self._execute_tool_calls(
+                    response.tool_calls, tools_mapping, context, merged_options.parallel_tool_calling
+                ):
+                    if isinstance(result, ToolCallResult):
+                        tool_calls.append(result)
+                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
 
                 turn_count += 1
             else:
@@ -634,20 +636,20 @@ class Agent(
                     tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
-
+                tool_chunks = []
                 async for chunk in streaming_result:
                     yield chunk
-
                     if isinstance(chunk, ToolCall):
-                        async for result in self._execute_tool(
-                            tool_call=chunk,
-                            tools_mapping=tools_mapping,
-                            context=context,
-                        ):
-                            yield result
-                            if isinstance(result, ToolCallResult):
-                                prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                            returned_tool_call = True
+                        tool_chunks.append(chunk)
+
+                if len(tool_chunks) > 0:
+                    async for result in self._execute_tool_calls(
+                        tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
+                    ):
+                        yield result
+                        if isinstance(result, ToolCallResult):
+                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                        returned_tool_call = True
 
                 turn_count += 1
                 if streaming_result.usage:
@@ -663,6 +665,42 @@ class Agent(
             if self.keep_history:
                 self.history = prompt_with_history.chat
             yield outputs
+
+    async def _execute_tool_calls(
+        self,
+        tool_calls: list[ToolCall],
+        tools_mapping: dict[str, Tool],
+        context: AgentRunContext,
+        parallel_tool_calling: bool,
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+        """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
+        if parallel_tool_calling:
+            queue: asyncio.Queue = asyncio.Queue()
+
+            async def consume_tool(tool: ToolCall) -> None:
+                async for tool_result in self._execute_tool(
+                    tool_call=tool, tools_mapping=tools_mapping, context=context
+                ):
+                    await queue.put(tool_result)
+
+            async def monitor() -> None:
+                tasks = [asyncio.create_task(consume_tool(tool)) for tool in tool_calls]
+                await asyncio.gather(*tasks)
+                await queue.put(None)
+
+            asyncio.create_task(monitor())
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                yield item
+
+        else:
+            for tool_call in tool_calls:
+                async for result in self._execute_tool(
+                    tool_call=tool_call, tools_mapping=tools_mapping, context=context
+                ):
+                    yield result
 
     @staticmethod
     def _check_token_limits(
@@ -793,10 +831,10 @@ class Agent(
                 if tool.context_var_name:
                     call_args[tool.context_var_name] = context
 
-                tool_output = (
-                    await tool.on_tool_call(**call_args)
+                tool_output = await (
+                    tool.on_tool_call(**call_args)
                     if iscoroutinefunction(tool.on_tool_call)
-                    else tool.on_tool_call(**call_args)
+                    else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
                 if isinstance(tool_output, AgentResultStreaming):

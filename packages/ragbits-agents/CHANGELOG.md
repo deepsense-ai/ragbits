@@ -26,6 +26,7 @@
 - Add unique ID to each agent instance for better tracking and identification (#790)
 - Add audit tracing for tool calls to improve observability and debugging (#790)
 - Add AgentDependencies type (#781)
+- Add parallel tool calling in agent
 
 ## 1.2.2 (2025-08-08)
 
