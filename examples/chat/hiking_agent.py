@@ -1,33 +1,33 @@
 """
 Ragbits Chat Example: Chat Interface
 
-This example demonstrates how to use the `ChatInterface` to create a simple chat application.
-It showcases different response types, including text responses, live updates, and reference documents.
+This example demonstrates how to use the ChatInterface to create a simple chat application with agent capabilities.
+It showcases different response types, including text responses, live updates, and reference documents, as well as
+the use of todo lists to help agents handle complex tasks.
 
 To run the script, execute the following command:
 
     ```bash
-    ragbits api run examples.chat.chat:MyChat
+    ragbits api run examples.chat.hiking_agent:MyChat
     ```
 """
 
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
+#     "ragbits-agents",
 #     "ragbits-chat",
 # ]
 # ///
 #
 
-import asyncio
-import uuid
 from collections.abc import AsyncGenerator
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.agents import Agent
-from ragbits.agents.tools.todo import TodoOrchestrator
+from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -123,43 +123,38 @@ class MyChat(ChatInterface):
             - Text chunks for the actual response
             - Reference documents used to generate the response
         """
-        yield self.create_reference(
-            title="Example Reference",
-            content="This is an example reference document that might be relevant to your query.",
-            url="https://example.com/reference1",
-        )
+        live_update_counter = 0
 
-        yield self.create_state_update(
-            {"example_state_key": "example_state_value", "example_state_key_2": "example_state_value_2"}
-        )
-
-        yield self.create_image_response(
-            str(uuid.uuid4()),
-            "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
-        )
-
-        example_live_updates = [
-            self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),
-            self.create_live_update(
-                "0", LiveUpdateType.FINISH, "[EXAMPLE] Searched the web", "Found 11 matching results."
-            ),
-            self.create_live_update(
-                "1",
-                LiveUpdateType.FINISH,
-                "[EXAMPLE] Ingested the results from previous query",
-                "Found 4 connected topics.",
-            ),
-        ]
-
-        for live_update in example_live_updates:
-            yield live_update
-            await asyncio.sleep(2)
-
-        streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
-        async for chunk in streaming_result:
-            yield self.create_text_response(chunk)
-
-        if streaming_result.usage:
-            yield self.create_usage_response(streaming_result.usage)
-
-        yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])
+        async for response in self.todo_orchestrator.run_todo_workflow_streaming(
+            self.agent, [*history, {"role": "user", "content": message}]
+        ):
+            match response:
+                case str():
+                    if response.strip():
+                        yield self.create_text_response(response)
+                case TodoResult():
+                    if response.type in ("status"):
+                        yield self.create_live_update(
+                            str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
+                        )
+                        live_update_counter += 1
+                    elif response.type in ("task_list"):
+                        for task in response.tasks:
+                            yield self.create_todo_item_response(task)
+                    elif response.type in ("start_task"):
+                        yield self.create_todo_item_response(response.current_task)
+                    elif response.type in ("task_summary_start", "final_summary_start"):
+                        yield self.create_live_update(
+                            str(live_update_counter), LiveUpdateType.START, response.message or ""
+                        )
+                    elif response.type in ("task_completed"):
+                        yield self.create_live_update(
+                            str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
+                        )
+                        yield self.create_todo_item_response(response.current_task)
+                        live_update_counter += 1
+                    elif response.type in ("final_summary_end"):
+                        yield self.create_live_update(
+                            str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
+                        )
+                        live_update_counter += 1
