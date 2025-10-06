@@ -200,6 +200,11 @@ export class RagbitsClient {
                             }
 
                             await callbacks.onMessage(parsedData)
+                            // Yield control back to event loop to prevent freezing
+                            // TODO: Refactor the event processing to use an asynchronous queue to avoid UI freezes
+                            await new Promise((resolve) =>
+                                queueMicrotask(() => resolve(null))
+                            )
                         } catch (parseError) {
                             console.error('Error parsing JSON:', parseError)
                             await callbacks.onError(

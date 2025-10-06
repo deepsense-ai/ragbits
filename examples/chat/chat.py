@@ -26,8 +26,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ragbits.agents import Agent
-from ragbits.agents.tools.todo import TodoOrchestrator
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -95,14 +93,6 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
-        self.todo_orchestrator = TodoOrchestrator()
-        self.agent = Agent(
-            llm=self.llm,
-            prompt="""
-            You are an expert hiking guide. Provide detailed, comprehensive information
-            about hiking routes, gear, transportation, and safety considerations.
-            """,
-        )
 
     async def chat(
         self,

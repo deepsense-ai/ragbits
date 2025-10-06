@@ -8,12 +8,15 @@ import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistorySto
 import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
 import { useNavigate } from "react-router";
 import { getConversationRoute } from "../utils";
+import { useShallow } from "zustand/shallow";
 
 export default function ChatHistory() {
   const { selectConversation, deleteConversation, newConversation } =
     useHistoryActions();
   const navigate = useNavigate();
-  const conversations = useHistoryStore((s) => s.conversations);
+  const conversations = useHistoryStore(
+    useShallow((s) => Object.keys(s.conversations).reverse()),
+  );
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const [isCollapsed, setCollapsed] = useState(false);
   const collapseButtonTitle = isCollapsed ? "Open sidebar" : "Close sidebar";
@@ -112,46 +115,44 @@ export default function ChatHistory() {
               width: 0,
             }}
           >
-            {Object.entries(conversations)
-              .reverse()
-              .map(([conversationKey, conversation]) => {
-                if (isTemporaryConversation(conversation.conversationId)) {
-                  return null;
-                }
+            {conversations.map((conversation) => {
+              if (isTemporaryConversation(conversation)) {
+                return null;
+              }
 
-                const isSelected = conversationKey === currentConversation;
-                return (
-                  <div className="flex gap-2" key={conversationKey}>
+              const isSelected = conversation === currentConversation;
+              return (
+                <div className="flex gap-2" key={conversation}>
+                  <Button
+                    variant={isSelected ? "solid" : "light"}
+                    aria-label={`Select conversation ${conversation}`}
+                    data-active={isSelected}
+                    onPress={() => handleNavigate(conversation)}
+                    title={conversation}
+                    data-testid={`select-conversation-${conversation}`}
+                  >
+                    <div className="text-small truncate">
+                      {/* TODO: Change to some summary later? */}
+                      {conversation}
+                    </div>
+                  </Button>
+                  <DelayedTooltip
+                    content="Delete conversation"
+                    placement="right"
+                  >
                     <Button
-                      variant={isSelected ? "solid" : "light"}
-                      aria-label={`Select conversation ${conversationKey}`}
-                      data-active={isSelected}
-                      onPress={() => handleNavigate(conversationKey)}
-                      title={conversationKey}
-                      data-testid={`select-conversation-${conversationKey}`}
+                      isIconOnly
+                      aria-label={`Delete conversation ${conversation}`}
+                      onPress={() => deleteConversation(conversation)}
+                      variant="ghost"
+                      data-testid={`delete-conversation-${conversation}`}
                     >
-                      <div className="text-small truncate">
-                        {/* TODO: Change to some summary later? */}
-                        {conversation.conversationId}
-                      </div>
+                      <Icon icon="heroicons:trash" />
                     </Button>
-                    <DelayedTooltip
-                      content="Delete conversation"
-                      placement="right"
-                    >
-                      <Button
-                        isIconOnly
-                        aria-label={`Delete conversation ${conversationKey}`}
-                        onPress={() => deleteConversation(conversationKey)}
-                        variant="ghost"
-                        data-testid={`delete-conversation-${conversationKey}`}
-                      >
-                        <Icon icon="heroicons:trash" />
-                      </Button>
-                    </DelayedTooltip>
-                  </div>
-                );
-              })}
+                  </DelayedTooltip>
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
