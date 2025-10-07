@@ -1,5 +1,4 @@
 """
-Todo: move somewhere else
 Example usage of the MemoryTool with a regular Agent.
 
 This example demonstrates how to add long-term memory capabilities
@@ -116,7 +115,7 @@ async def main() -> None:
         print("-" * 60)
         print()
 
-    # Manual memory operations demonstration (internal methods only)
+    # Manual memory operations (internal methods only)
     print("7. Manual memory operations (internal methods):")
     print("=" * 60)
 
@@ -138,17 +137,13 @@ async def main() -> None:
     for memory in memories:
         print(f"  - {memory.content}")
 
-    # Test internal methods (not available to agents)
-    print("\n8. Testing internal methods (get_all_memories, delete_memory):")
-    print("=" * 60)
-
     # Get all memories for user_123
     all_memories = await long_term_memory.get_all_memories(user_id)
     print(f"Total memories for user_123: {len(all_memories)}")
     for i, memory in enumerate(all_memories, 1):
         print(f"  {i}. {memory.content} (ID: {memory.memory_id})")
 
-    # Test delete_memory
+    # Delete memory
     if all_memories:
         memory_to_delete = all_memories[0]
         print(f"\nDeleting memory: {memory_to_delete.content}")
@@ -162,3 +157,94 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+"""
+Example output:
+
+1. First conversation - storing information:
+============================================================
+Agent WITH Memory:
+Response: I've noted that you love hiking in the mountains and that you're planning a trip to Rome next month!
+If you need any tips or recommendations for either hiking or your trip to Rome, just let me know!
+
+Agent WITHOUT Memory:
+Response: I've noted that you love hiking in the mountains and that you're planning a trip to Rome next month.
+If you'd like recommendations for hiking spots, activities in Rome, or anything else related to your interests,
+just let me know!
+
+------------------------------------------------------------
+
+2. Second conversation - retrieving context:
+============================================================
+Agent WITH Memory:
+Response: Since you're planning a trip to Rome next month and love hiking in the mountains,
+here are some outdoor activities I would recommend:
+
+1. **Hiking in the surrounding areas**: Consider day trips to the nearby hills, such as the **Castelli Romani**.
+It's a beautiful area with great trails and stunning views.
+
+2. **Exploring parks**: Spend some time in **Villa Borghese**, which is a large park in the city.
+You can rent a bike or simply walk around and enjoy the gardens.
+
+3. **Visit the Tiber River**: Take a stroll along the Tiber River.
+There are plenty of areas to walk or cycle, plus you can stop for a drink or snack at one of the riverside cafes.
+
+4. **Day trips**: If you’re up for a bit of travel,
+consider visiting the **Abruzzo National Park** or the **Gran Sasso** mountains for more intense hiking experiences.
+
+5. **Outdoor dining**: Enjoy al fresco dining at local trattorias,
+which can be a delightful way to experience the local culture and cuisine in a pleasant setting.
+
+Let me know if you need more detailed information or other suggestions!
+
+Agent WITHOUT Memory:
+Response: To suggest the best outdoor activities for your trip,
+I’ll need to know the destination you're heading to and any specific interests you have,
+like hiking, water sports, or wildlife watching.
+Could you share more details?
+
+------------------------------------------------------------
+
+3. Different user (different memory key):
+============================================================
+Agent WITH Memory:
+Response: Great to know that you love cooking Asian food! Do you have a favorite dish or recipe?
+
+Agent WITHOUT Memory:
+Response: Hi! It's great to hear that you love cooking Asian food! Do you have a favorite dish or cuisine?
+
+------------------------------------------------------------
+
+4. 2nd user asking about travel (should not know 1st user's info):
+============================================================
+Agent WITH Memory:
+Response: I currently have a note about you loving to cook Asian food,
+which might hint at a travel interest in visiting Asian countries to explore their culinary culture.
+If there are more specific travel interests you'd like me to remember
+or if you want to share more about your travel preferences, feel free to let me know!
+
+Agent WITHOUT Memory:
+Response: I don't have specific memories about your travel interests yet.
+If you share some details about your preferences, favorite destinations, or types of travel experiences you enjoy,
+I can remember that for future conversations!
+
+------------------------------------------------------------
+
+7. Manual memory operations (internal methods):
+============================================================
+Stored memory with ID: 6c2f8a4a-96ee-4b5d-9122-78358ea8d10d
+Retrieved 1 memory about travel arrangements:
+  - User is planning a trip to Rome next month.
+Retrieved 1 memory about parents:
+  - User frequently visits his father in the countryside.
+Total memories for user_123: 3
+  1. User loves hiking in the mountains. (ID: cbbbaf09-67ec-4b82-8447-d2d22c825a0f)
+  2. User is planning a trip to Rome next month. (ID: 7731fd53-d275-4e9f-a0a3-e48ebc8664cf)
+  3. User frequently visits his father in the countryside. (ID: 6c2f8a4a-96ee-4b5d-9122-78358ea8d10d)
+
+Deleting memory: User loves hiking in the mountains.
+Delete successful: True
+Remaining memories: 2
+
+"""
