@@ -46,17 +46,9 @@ class ConversationPrompt(Prompt[ConversationInput, str]):
 async def main() -> None:
     """Demonstrate the memory tool functionality with comparison between agents with and without memory."""
     # Initialize components
-    embedder = LiteLLMEmbedder(
-        model_name="text-embedding-3-small",
-    )
-
-    # Create shared LLM instance (we'll create new agent instances for each conversation)
-    llm = LiteLLM(
-        model_name="gpt-4o-mini",
-    )
-
-    # Create shared vector store (persistent memory storage)
+    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
     shared_vector_store = InMemoryVectorStore(embedder=embedder)
+    llm = LiteLLM(model_name="gpt-4o-mini")
 
     # Test conversations
     conversations: list[dict[str, str | ConversationInput]] = [
@@ -85,7 +77,7 @@ async def main() -> None:
         print(f"{conv['title']}")
         print("=" * 60)
 
-        long_term_memory = LongTermMemory(embedder=embedder, vector_store=shared_vector_store)
+        long_term_memory = LongTermMemory(vector_store=shared_vector_store)
 
         # First two conversations use user_123, last two use user_456
         USER_123_THRESHOLD = 2

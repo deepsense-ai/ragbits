@@ -12,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.embeddings import DenseEmbedder
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, WhereQuery
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 
@@ -37,17 +36,14 @@ class LongTermMemory:
 
     def __init__(
         self,
-        embedder: DenseEmbedder,
         vector_store: InMemoryVectorStore,
         max_retrieval_results: int = 5,
     ):
         """
         Args:
-            embedder: The embedder to use for creating embeddings
             vector_store: The vector store to use for storing and retrieving memories
             max_retrieval_results: Default maximum number of memories to retrieve per query
         """
-        self.embedder = embedder
         self.vector_store = vector_store
         self.max_retrieval_results = max_retrieval_results
 
