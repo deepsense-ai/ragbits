@@ -238,6 +238,7 @@ class TodoOrchestrator(BaseModel):
             # Execute single task with focused context and stream summary
             async for task_response in self._execute_single_task_focused(agent, current_task, context, initial_query):
                 yield task_response
+            yield "\n\n"
 
             # Get the completed task summary
             completed_tasks = [t for t in self.todo_list.tasks if t.status == TaskStatus.COMPLETED]

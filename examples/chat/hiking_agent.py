@@ -85,8 +85,7 @@ class MyChat(ChatInterface):
         ):
             match response:
                 case str():
-                    if response.strip():
-                        yield self.create_text_response(response)
+                    yield self.create_text_response(response)
                 case TodoResult():
                     if response.type in ("status"):
                         yield self.create_live_update(
