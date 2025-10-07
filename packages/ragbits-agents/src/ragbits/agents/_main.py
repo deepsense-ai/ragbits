@@ -39,7 +39,15 @@ from ragbits.agents.post_processors.base import (
 )
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
 from ragbits.core.audit.traces import trace
-from ragbits.core.llms.base import LLM, LLMClientOptionsT, LLMOptions, LLMResponseWithMetadata, ToolCall, Usage
+from ragbits.core.llms.base import (
+    LLM,
+    LLMClientOptionsT,
+    LLMOptions,
+    LLMResponseWithMetadata,
+    Reasoning,
+    ToolCall,
+    Usage,
+)
 from ragbits.core.options import Options
 from ragbits.core.prompt.base import BasePrompt, ChatFormat, SimplePrompt
 from ragbits.core.prompt.prompt import Prompt, PromptInputT, PromptOutputT
@@ -94,6 +102,8 @@ class AgentResult(Generic[PromptOutputT]):
     """Tool calls run by the agent."""
     usage: Usage = Field(default_factory=Usage)
     """The token usage of the agent run."""
+    reasoning_traces: list[str] | None = None
+    """Reasoning traces from the agent run (only if log_reasoning is enabled)."""
 
 
 class AgentOptions(Options, Generic[LLMClientOptionsT]):
@@ -115,6 +125,8 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_completion_tokens: int | None | NotGiven = NOT_GIVEN
     """The maximum number of completion tokens the agent can use, if NOT_GIVEN
     or None, agent will run forever"""
+    log_reasoning: bool = False
+    """Whether to log/persist reasoning traces for debugging and evaluation."""
 
 
 DepsT = TypeVar("DepsT")
@@ -439,6 +451,7 @@ class Agent(
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
         tool_calls = []
+        reasoning_traces: list[str] = []
 
         turn_count = 0
         max_turns = merged_options.max_turns
@@ -457,6 +470,9 @@ class Agent(
                 )
                 context.usage += response.usage or Usage()
 
+                if merged_options.log_reasoning and response.reasoning:
+                    reasoning_traces.append(response.reasoning)
+
                 if not response.tool_calls:
                     break
 
@@ -466,7 +482,9 @@ class Agent(
                     ):
                         if isinstance(result, ToolCallResult):
                             tool_calls.append(result)
-                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(
+                                **result.__dict__,
+                            )
 
                 turn_count += 1
             else:
@@ -477,6 +495,8 @@ class Agent(
                 "metadata": response.metadata,
                 "tool_calls": tool_calls or None,
             }
+            if merged_options.log_reasoning and reasoning_traces:
+                outputs.result["reasoning_traces"] = reasoning_traces
 
             prompt_with_history = prompt_with_history.add_assistant_message(response.content)
 
@@ -489,6 +509,7 @@ class Agent(
                 tool_calls=tool_calls or None,
                 history=prompt_with_history.chat,
                 usage=context.usage,
+                reasoning_traces=reasoning_traces or None,
             )
 
     @overload
@@ -622,10 +643,13 @@ class Agent(
         turn_count = 0
         max_turns = merged_options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
+        reasoning_traces: list[str] = []
+        current_reasoning = ""
 
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
+                current_reasoning = ""
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
 
                 streaming_result = self.llm.generate_streaming(
@@ -636,6 +660,8 @@ class Agent(
                 )
 
                 async for chunk in streaming_result:
+                    if isinstance(chunk, Reasoning):
+                        current_reasoning += str(chunk)
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
@@ -646,8 +672,13 @@ class Agent(
                         ):
                             yield result
                             if isinstance(result, ToolCallResult):
-                                prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                                prompt_with_history = prompt_with_history.add_tool_use_message(
+                                    **result.__dict__,
+                                )
                             returned_tool_call = True
+
+                if merged_options.log_reasoning and current_reasoning:
+                    reasoning_traces.append(current_reasoning)
 
                 turn_count += 1
                 if streaming_result.usage:
@@ -662,6 +693,10 @@ class Agent(
             yield prompt_with_history
             if self.keep_history:
                 self.history = prompt_with_history.chat
+
+            if merged_options.log_reasoning and reasoning_traces:
+                outputs.result = {"reasoning_traces": reasoning_traces}
+
             yield outputs
 
     @staticmethod
