@@ -25,6 +25,7 @@ Short and pragmatic guide to orchestrating task execution with a Todo-oriented a
 
 - Python env managed by `uv`.
 - LLM provider configured (e.g., environment variables) and network access where needed.
+- `huggingface_cli` account login with access to relevant datasets (i.e. GAIA)
 - Example files referenced in this tutorial:
   - `packages/ragbits-agents/src/ragbits/agents/tools/todo.py`
   - `examples/agents/todo_tools_example.py`
