@@ -121,10 +121,11 @@ export default function ChatHistory() {
               }
 
               const isSelected = conversation === currentConversation;
+              const variant = isSelected ? "solid" : "light";
               return (
-                <div className="flex gap-2" key={conversation}>
+                <div className="flex gap-2" key={`${conversation}-${variant}`}>
                   <Button
-                    variant={isSelected ? "solid" : "light"}
+                    variant={variant}
                     aria-label={`Select conversation ${conversation}`}
                     data-active={isSelected}
                     onPress={() => handleNavigate(conversation)}

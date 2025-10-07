@@ -1,4 +1,4 @@
-import { Checkbox, CircularProgress } from "@heroui/react";
+import { Checkbox, CircularProgress, cn } from "@heroui/react";
 import { TaskTree } from "../utils/tasks";
 import { Task, TaskStatus } from "@ragbits/api-client-react";
 interface TodoListProps {
@@ -26,7 +26,7 @@ export default function TodoList({ tasks, depth = 0 }: TodoListProps) {
             />
           );
           return (
-            <div key={id} data-testid={`todo-task-${id}`}>
+            <div key={`${id}-${status}`} data-testid={`todo-task-${id}`}>
               <div>
                 <Checkbox
                   isSelected={status === TaskStatus.Completed}
@@ -39,18 +39,17 @@ export default function TodoList({ tasks, depth = 0 }: TodoListProps) {
                   }
                   classNames={{
                     hiddenInput: "cursor-default",
-                    wrapper:
+                    wrapper: cn(
                       status === TaskStatus.InProgress && "before:border-none",
+                    ),
                     base: "pointer-events-none hover:bg-transparent",
-                    label: [
+                    label: cn(
                       "transition-colors",
                       status === TaskStatus.Completed &&
                         "line-through text-default-400",
                       status === TaskStatus.InProgress && "text-primary italic",
                       status === TaskStatus.Pending && "text-default-900",
-                    ]
-                      .filter(Boolean)
-                      .join(" "),
+                    ),
                   }}
                 >
                   {description}
