@@ -17,6 +17,7 @@ export const ChatResponseType = {
     StateUpdate: 'state_update',
     MessageId: 'message_id',
     ConversationId: 'conversation_id',
+    ConversationSummary: 'conversation_summary',
     LiveUpdate: 'live_update',
     FollowupMessages: 'followup_messages',
     Image: 'image',
@@ -496,6 +497,10 @@ export interface TodoItemChatResonse {
     type: 'todo_item'
     content: Task
 }
+export interface ConversationSummaryResponse {
+    type: 'conversation_summary'
+    content: string
+}
 
 export interface ChunkedChatResponse {
     type: 'chunked_content'
@@ -517,3 +522,4 @@ export type ChatResponse =
     | ClearMessageResponse
     | MessageUsageChatResponse
     | TodoItemChatResonse
+    | ConversationSummaryResponse

@@ -3,6 +3,7 @@ import { Conversation, HistoryStore } from "../../../../types/history";
 import {
   handleAfterConversationId,
   handleConversationId,
+  handleConversationSummary,
   handleFollowupMessages,
   handleStateUpdate,
 } from "./nonMessageHandlers";
@@ -104,4 +105,7 @@ ChatHandlerRegistry.register(ChatResponseType.Usage, {
 });
 ChatHandlerRegistry.register(ChatResponseType.TodoItem, {
   handle: handleTodoItem,
+});
+ChatHandlerRegistry.register(ChatResponseType.ConversationSummary, {
+  handle: handleConversationSummary,
 });
