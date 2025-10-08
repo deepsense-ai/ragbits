@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Support for Thinking in agents (#837)
 - TodoOrchestrator & Todo list for agent (#823)
 
 - Support wrapping downstream agents as tools (#818)

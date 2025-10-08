@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Support for Thinking in agents (#837)
 
 ## 1.3.0 (2025-09-11)
 
