@@ -1,19 +1,15 @@
 """
-Ragbits Evaluation Example: GAIA (Agent vs TodoAgent)
+Ragbits Evaluation Example: GAIA
 
-This example demonstrates how to evaluate the GAIA benchmark using either a classic
-`Agent` or a task-decomposing `TodoAgent`, controlled by a command-line flag. Both modes
-share the same prompt, retrieval setup, and parsing logic.
+This example evaluates GAIA using any agent provided via a path compatible with
+the CLI's `import_agent_from_path` utility, e.g.:
 
-To run the script, execute one of the following commands:
+uv run python examples/evaluate/agent-benchmarking/run_gaia.py \
+    --agent_path examples/evaluate/agent-benchmarking/example_agents.py:gaia_agent
 
-    ```bash
-    # Agent mode
-    uv run python examples/evaluate/agent-benchmarking/run_gaia.py
-
-    # TodoAgent mode
-    uv run python examples/evaluate/agent-benchmarking/run_gaia.py --use_todo
-    ```
+To use the Todo-enabled variant, pass `gaia_todo_agent`. The script will
+conditionally print TODO stats when the agent is Todo-based and extended logs
+are enabled.
 """
 
 # /// script
@@ -30,11 +26,8 @@ import asyncio
 import logging
 from pathlib import Path
 
-from todo_agent import TodoAgent
-
-from ragbits.agents import Agent, AgentOptions
-from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.core.llms import LiteLLM
+from ragbits.agents import Agent
+from ragbits.agents.cli import import_agent_from_path
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.evaluate.dataloaders.gaia import GaiaDataLoader
 from ragbits.evaluate.evaluator import Evaluator
@@ -42,112 +35,28 @@ from ragbits.evaluate.metrics.base import MetricSet
 from ragbits.evaluate.metrics.gaia import GaiaEfficiency, GaiaOutcome, GaiaTooling
 from ragbits.evaluate.pipelines.gaia import GaiaPipeline
 
-# Extra Agent tools
 
-
-def add(a: int, b: int) -> int:
-    """Add two integers and return the result."""
-    return a + b
-
-
-def subtract(a: int, b: int) -> int:
-    """Subtract two integers and return the result (a - b)."""
-    return a - b
-
-
-def multiply(a: int, b: int) -> int:
-    """Multiply two integers and return the result."""
-    return a * b
-
-
-def divide(a: int, b: int) -> float:
-    """Divide two integers and return the result as float."""
-    if b == 0:
-        raise ValueError("Cannot divide by zero.")
-    return a / b
-
-
-def modulus(a: int, b: int) -> int:
-    """Compute remainder of a divided by b (a % b)."""
-    if b == 0:
-        raise ValueError("Cannot divide by zero.")
-    return a % b
-
-
-def get_extra_instruction_tpl() -> str:
-    """Generate tool usage instructions template for arithmetic and lookups."""
-    return (
-        "Tools (use when needed):\n"
-        "- add(a, b), subtract(a, b), multiply(a, b), divide(a, b), modulus(a, b)\n"
-        "- web_search -> OpenAI websearch tool\n"
-    )
-
-
-def _build_system_prompt() -> str:
-    """Build a unified GAIA system prompt shared by both modes."""
-    gaia_prompt = (
-        "You are a general AI assistant. Provide a concise solution and finish with:\n"
-        "FINAL ANSWER: [your final answer].\n"
-        "Rules for FINAL ANSWER: use digits for numbers (no units unless requested);\n"
-        "prefer few words for strings; for lists, return a comma-separated list."
-    )
-
-    return "\n".join(
-        [
-            gaia_prompt,
-            get_extra_instruction_tpl(),
-        ]
-    )
-
-
-def _build_tools() -> list:
-    """Return the shared toolset for GAIA."""
-    return [
-        add,
-        subtract,
-        multiply,
-        divide,
-        modulus,
-        get_web_search_tool(model_name="gpt-4.1-mini"),
-    ]
-
-
-def _parse_final_answer(text: str) -> str:
-    """Extract the FINAL ANSWER segment from model output."""
-    marker = "FINAL ANSWER:"
-    idx = text.rfind(marker)
-    if idx == -1:
-        return text.strip()
-    candidate = text[idx + len(marker) :].strip()
-    if candidate.startswith("[") and candidate.endswith("]"):
-        candidate = candidate[1:-1].strip()
-    return candidate
-
-
-async def main(use_todo: bool) -> None:
-    """Run GAIA evaluation in classic or Todo mode."""
+async def main(agent_path: str | None) -> None:
+    """Run GAIA evaluation with a pluggable agent."""
     logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 
-    base_agent: Agent = Agent(
-        llm=LiteLLM("gpt-4.1-mini"),
-        prompt=_build_system_prompt(),
-        tools=_build_tools(),
-        default_options=AgentOptions(max_turns=30),
-    )
-    evaluation_target = TodoAgent(agent=base_agent, domain_context="general AI assistant") if use_todo else base_agent
+    default_agent_path = "examples/evaluate/agent-benchmarking/example_agents.py:gaia_agent"
+    evaluation_target: Agent = import_agent_from_path(agent_path or default_agent_path)
 
     # Data loader
     source = HuggingFaceSource(path="gaia-benchmark/GAIA", name="2023_level1", split="validation")
     dataloader = GaiaDataLoader(source=source, split="data[:10]", skip_file_attachments=True)
 
     # Pipeline
+    use_todo = evaluation_target.__class__.__name__ == "TodoAgent"
     log_file = "gaia_todo_examples.ndjson" if use_todo else "gaia_examples.ndjson"
     log_path = Path(__file__).with_name(log_file)
+
     pipeline = GaiaPipeline(
         evaluation_target=evaluation_target,
         per_example_log_file=log_path,
         extended_logs=use_todo,
-        parse_answer_fn=_parse_final_answer,
+        parse_answer_fn=evaluation_target.parse_final_answer,
     )
 
     # Metrics
@@ -161,50 +70,19 @@ async def main(use_todo: bool) -> None:
         print(f"  {key}: {value:.4f}")
 
     if use_todo:
-        await _print_todo_stats(log_path, dataloader)
+        from utils import print_todo_stats
 
-
-async def _print_todo_stats(log_path: Path, dataloader: GaiaDataLoader) -> None:
-    """Print aggregated TODO-agent statistics from extended logs."""
-    print("\nTODO Orchestrator Statistics:")
-    decomposed_count = 0
-    total_tasks = 0
-    simple_count = 0
-    complex_count = 0
-
-    if log_path.exists():
-        import json
-
-        with open(log_path, encoding="utf-8") as f:
-            for line in f:
-                record = json.loads(line)
-                debug_log = record.get("extended_debug_logging", "[]")
-                if debug_log and debug_log != "[]":
-                    debug_data = json.loads(debug_log)
-                    if debug_data and len(debug_data) > 0:
-                        metadata = (debug_data[0] or {}).get("metadata", {})
-                        todo_meta = metadata.get("todo", {})
-
-                        if todo_meta.get("was_decomposed"):
-                            decomposed_count += 1
-                            total_tasks += int(todo_meta.get("num_tasks", 0))
-
-                        if todo_meta.get("complexity_classification") == "SIMPLE":
-                            simple_count += 1
-                        elif todo_meta.get("complexity_classification") == "COMPLEX":
-                            complex_count += 1
-
-    total = len(await dataloader.load())
-    rate = (decomposed_count / total * 100) if total else 0.0
-    avg_tasks = (total_tasks / decomposed_count) if decomposed_count else 0.0
-    print(f"  Decomposition rate: {decomposed_count}/{total} ({rate:.1f}%)")
-    print(f"  Average tasks per decomposed query: {avg_tasks:.1f}")
-    print(f"  Complexity classification: {simple_count} simple, {complex_count} complex")
+        await print_todo_stats(log_path, dataloader)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="GAIA evaluation example")
-    parser.add_argument("--use_todo", action="store_true", help="Run with TodoAgent instead of Agent")
+    parser = argparse.ArgumentParser(description="GAIA evaluation")
+    parser.add_argument(
+        "--agent_path",
+        type=str,
+        default=None,
+        help=("Path to agent 'path/to/file.py:var'. " "Defaults to exported gaia_agent in example_agents."),
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.use_todo))
+    asyncio.run(main(args.agent_path))
