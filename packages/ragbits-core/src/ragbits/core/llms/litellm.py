@@ -320,9 +320,8 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
             if (not response.completion_stream and not response.choices) and not response.reasoning:  # type: ignore
                 raise LLMEmptyResponseError()
         except AttributeError:
-            # some providers might not include some parameters (i.e. Gemini -> choices) 
+            # some providers might not include some parameters (i.e. Gemini -> choices)
             pass
-
 
         async def response_to_async_generator(response: "CustomStreamWrapper") -> AsyncGenerator[dict, None]:
             nonlocal input_tokens, provider_calculated_usage
@@ -470,47 +469,57 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
             raise LLMResponseError() from exc
         return response
 
-    def _preprocess_messages_for_claude(
-        self, conversation: ChatFormat, options: LiteLLMOptions
-    ) -> ChatFormat:
+    def _preprocess_messages_for_claude(self, conversation: ChatFormat, options: LiteLLMOptions) -> ChatFormat:
         """
         Preprocess messages for Claude when reasoning is enabled.
-        
+
         Claude + reasoning_effort + tool calls creates a conflict:
         - LiteLLM validates messages against OpenAI format (rejects Claude native format)
         - Claude requires thinking blocks when reasoning_effort is set (rejects OpenAI format)
 
         Subject to removal after the following are resolved on LiteLLM's side:
         Issue: https://github.com/BerriAI/litellm/issues/14194
-        Linked PR(s): https://github.com/BerriAI/litellm/pull/15220 
-        
+        Linked PR(s): https://github.com/BerriAI/litellm/pull/15220
+
         Solution: Summarize tool call history and append to last user message.
         This provides context to Claude without triggering validation errors.
-        
+
         Args:
             conversation: The conversation in OpenAI format
             options: LLM options including reasoning_effort
-            
+
         Returns:
             Processed conversation with tool context included
         """
+
+        def create_enhanced_user_message(
+            tool_summary_parts: list[str], original_user_msg: str | None
+        ) -> dict[str, Any]:
+            if tool_summary_parts and original_user_msg:
+                enhanced_message = original_user_msg
+                enhanced_message += "\n\n[Previous tool calls in this conversation:"
+
+                for summary in tool_summary_parts:
+                    enhanced_message += f"\n- {summary}"
+                enhanced_message += "\nUse this information to provide your final answer.]"
+                return {"role": "user", "content": enhanced_message}
+
+            return {"role": "user", "content": original_user_msg}
+
         # Only process for Claude models with reasoning enabled
         is_claude = "anthropic" in self.model_name.lower() or "claude" in self.model_name.lower()
         has_reasoning = options.reasoning_effort is not NOT_GIVEN and options.reasoning_effort is not None
-        
+
         if not (is_claude and has_reasoning):
             return conversation
-        
+
         # Check if conversation has tool calls
-        has_tool_calls = any(
-            msg.get("role") == "assistant" and msg.get("tool_calls") 
-            for msg in conversation
-        )
-        
+        has_tool_calls = any(msg.get("role") == "assistant" and msg.get("tool_calls") for msg in conversation)
+
         if not has_tool_calls:
             # No tool calls, conversation is fine as-is
             return conversation
-        
+
         # Build tool call summary from conversation history
         tool_summary_parts = []
         i = 0
@@ -522,52 +531,37 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
                     tool_name = tool_call["function"]["name"]
                     tool_args = tool_call["function"]["arguments"]
                     tool_id = tool_call["id"]
-                    
+
                     # Find corresponding tool result
                     tool_result = None
                     for j in range(i + 1, len(conversation)):
                         if conversation[j].get("role") == "tool" and conversation[j].get("tool_call_id") == tool_id:
                             tool_result = conversation[j].get("content")
                             break
-                    
+
                     if tool_result:
                         tool_summary_parts.append(f"{tool_name}({tool_args}) returned: {tool_result}")
             i += 1
-        
+
         # Build processed conversation
         processed = []
-        
+
         # Keep system message if present
         for msg in conversation:
             if msg.get("role") == "system":
                 processed.append(msg)
                 break
-        
+
         # Get the original user message (first non-system)
         original_user_msg = None
         for msg in conversation:
             if msg.get("role") == "user":
                 original_user_msg = msg.get("content", "")
                 break
-        
+
         # Create enhanced user message with tool context
-        if tool_summary_parts and original_user_msg:
-            enhanced_message = original_user_msg
-            enhanced_message += "\n\n[Previous tool calls in this conversation:"
-            for summary in tool_summary_parts:
-                enhanced_message += f"\n- {summary}"
-            enhanced_message += "\nUse this information to provide your final answer.]"
-            
-            processed.append({
-                "role": "user",
-                "content": enhanced_message
-            })
-        elif original_user_msg:
-            processed.append({
-                "role": "user",
-                "content": original_user_msg
-            })
-        
+        processed.append(create_enhanced_user_message(tool_summary_parts, original_user_msg))
+
         return processed
 
     def _get_response_format(

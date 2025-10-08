@@ -317,7 +317,9 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                             case Reasoning():
                                 if not in_reasoning_mode:
                                     loading.display = False
-                                    chat_log.write("\n🧠⚡ Thinking...: " if first_response else "\n\n🧠⚡ Thinking Further...: ")
+                                    chat_log.write(
+                                        "\n🧠⚡ Thinking...: " if first_response else "\n\n🧠⚡ Thinking Further...: "
+                                    )
                                     in_reasoning_mode = True
                                     first_response = False
                                 chat_log.write(str(result))

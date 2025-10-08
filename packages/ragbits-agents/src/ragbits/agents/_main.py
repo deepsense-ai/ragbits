@@ -644,12 +644,10 @@ class Agent(
         max_turns = merged_options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         reasoning_traces: list[str] = []
-        current_reasoning = ""
 
         with trace(input=input, options=merged_options) as outputs:
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
-                current_reasoning = ""
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
 
                 streaming_result = self.llm.generate_streaming(
@@ -660,8 +658,8 @@ class Agent(
                 )
 
                 async for chunk in streaming_result:
-                    if isinstance(chunk, Reasoning):
-                        current_reasoning += str(chunk)
+                    if isinstance(chunk, Reasoning) and merged_options.log_reasoning:
+                        reasoning_traces.append(str(chunk))
                     yield chunk
 
                     if isinstance(chunk, ToolCall):
@@ -676,9 +674,6 @@ class Agent(
                                     **result.__dict__,
                                 )
                             returned_tool_call = True
-
-                if merged_options.log_reasoning and current_reasoning:
-                    reasoning_traces.append(current_reasoning)
 
                 turn_count += 1
                 if streaming_result.usage:
