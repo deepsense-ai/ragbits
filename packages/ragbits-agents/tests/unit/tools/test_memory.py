@@ -32,7 +32,8 @@ def memory_tool(vector_store: InMemoryVectorStore) -> LongTermMemory:
 class TestMemoryEntry:
     """Test cases for MemoryEntry model."""
 
-    def test_memory_entry_creation(self) -> None:
+    @staticmethod
+    def test_memory_entry_creation() -> None:
         """Test that MemoryEntry can be created with required fields and auto-generates timestamp and ID."""
         memory = MemoryEntry(
             key="user_123",
@@ -49,14 +50,16 @@ class TestMemoryEntry:
 class TestLongTermMemory:
     """Test cases for LongTermMemory class."""
 
-    async def test_store_memory(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_store_memory(memory_tool: LongTermMemory) -> None:
         """Test that store_memory returns a memory ID."""
         memory_id = await memory_tool.store_memory("user_123", "User loves hiking")
 
         assert isinstance(memory_id, str)
         assert len(memory_id) > 0
 
-    async def test_store_and_retrieve_memory(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_store_and_retrieve_memory(memory_tool: LongTermMemory) -> None:
         """Test storing and retrieving a memory."""
         memory_id = await memory_tool.store_memory("user_123", "User loves hiking in the mountains")
         memories = await memory_tool.retrieve_memories("user_123", "hobbies", 1)
@@ -66,13 +69,15 @@ class TestLongTermMemory:
         assert memories[0].key == "user_123"
         assert memories[0].memory_id == memory_id
 
-    async def test_retrieve_memories_empty(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_retrieve_memories_empty(memory_tool: LongTermMemory) -> None:
         """Test retrieve_memories when no memories are found."""
         memories = await memory_tool.retrieve_memories("user_123", "hiking")
 
         assert memories == []
 
-    async def test_get_all_memories(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_get_all_memories(memory_tool: LongTermMemory) -> None:
         """Test get_all_memories returns all memories for a user."""
         await memory_tool.store_memory("user_123", "User loves hiking")
         await memory_tool.store_memory("user_123", "User loves cooking")
@@ -83,7 +88,8 @@ class TestLongTermMemory:
         assert len(memories) == 2
         assert all(memory.key == "user_123" for memory in memories)
 
-    async def test_delete_memory(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_delete_memory(memory_tool: LongTermMemory) -> None:
         """Test delete_memory removes the correct memory."""
         memory_id = await memory_tool.store_memory("user_123", "User loves hiking")
 
@@ -99,7 +105,8 @@ class TestLongTermMemory:
         memories = await memory_tool.get_all_memories("user_123")
         assert len(memories) == 0
 
-    async def test_delete_memory_not_found(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_delete_memory_not_found(memory_tool: LongTermMemory) -> None:
         """Test delete_memory when memory doesn't exist."""
         success = await memory_tool.delete_memory("user_123", "non-existent-id")
 
@@ -109,7 +116,8 @@ class TestLongTermMemory:
 class TestCreateMemoryTools:
     """Test cases for create_memory_tools function."""
 
-    async def test_create_memory_tools_returns_functions(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_create_memory_tools_returns_functions(memory_tool: LongTermMemory) -> None:
         """Test that create_memory_tools returns a list of callable functions."""
         tools = create_memory_tools(memory_tool, "user_123")
 
@@ -117,7 +125,8 @@ class TestCreateMemoryTools:
         assert callable(tools[0])  # store_memory
         assert callable(tools[1])  # retrieve_memories
 
-    async def test_store_memory_tool(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_store_memory_tool(memory_tool: LongTermMemory) -> None:
         """Test that the store_memory tool function works correctly."""
         tools = create_memory_tools(memory_tool, "user_123")
         store_memory = tools[0]
@@ -126,7 +135,8 @@ class TestCreateMemoryTools:
 
         assert isinstance(memory_id, str)
 
-    async def test_retrieve_memories_tool_no_memories(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_retrieve_memories_tool_no_memories(memory_tool: LongTermMemory) -> None:
         """Test retrieve_memories tool when no memories are found."""
         tools = create_memory_tools(memory_tool, "user_123")
         retrieve_memories = tools[1]
@@ -135,7 +145,8 @@ class TestCreateMemoryTools:
 
         assert result == "No memories found for user 'user_123' with given query"
 
-    async def test_retrieve_memories_tool_with_memories(self, memory_tool: LongTermMemory) -> None:
+    @staticmethod
+    async def test_retrieve_memories_tool_with_memories(memory_tool: LongTermMemory) -> None:
         """Test retrieve_memories tool when memories are found."""
         tools = create_memory_tools(memory_tool, "user_123")
         store_memory = tools[0]
