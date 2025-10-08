@@ -12,8 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, WhereQuery
-from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+from ragbits.core.vector_stores.base import VectorStore, VectorStoreEntry, VectorStoreOptions, WhereQuery
 
 
 class MemoryEntry(BaseModel):
@@ -36,7 +35,7 @@ class LongTermMemory:
 
     def __init__(
         self,
-        vector_store: InMemoryVectorStore,
+        vector_store: VectorStore,
         max_retrieval_results: int = 5,
     ):
         """
