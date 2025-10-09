@@ -193,6 +193,7 @@ export default function ChatHistory() {
                           if (e.key === "Escape") handleCancelEdit();
                         }}
                         className="flex-1"
+                        data-testid={`input-conversation-${conversation}`}
                       />
                     ) : (
                       <Button
@@ -215,6 +216,7 @@ export default function ChatHistory() {
                           isIconOnly
                           variant="light"
                           aria-label={`Conversation actions for ${conversation}`}
+                          data-testid={`dropdown-conversation-${conversation}`}
                         >
                           <Icon
                             icon="heroicons:ellipsis-vertical"
@@ -237,6 +239,7 @@ export default function ChatHistory() {
                               summary ?? conversation,
                             )
                           }
+                          data-testid={`edit-conversation-${conversation}`}
                         >
                           Edit
                         </DropdownItem>
@@ -246,6 +249,7 @@ export default function ChatHistory() {
                           color="danger"
                           startContent={<Icon icon="heroicons:trash" />}
                           onPress={() => deleteConversation(conversation)}
+                          data-testid={`delete-conversation-${conversation}`}
                         >
                           Delete conversation
                         </DropdownItem>

@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import functools
 import hmac
@@ -84,6 +85,13 @@ def with_chat_metadata(
                 metric_type=MetricType.COUNTER,
                 interface_class=self.__class__.__name__,
             )
+
+        if is_new_conversation:
+            try:
+                summary = await self.generate_conversation_title(message, history, context)
+                yield ChatResponse(type=ChatResponseType.CONVERSATION_SUMMARY, content=summary)
+            except Exception:
+                logger.exception("Failed to generate conversation title")
 
         responses = []
         main_response = ""
@@ -371,3 +379,51 @@ class ChatInterface(ABC):
         )
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
+
+    async def generate_conversation_title(self, message: str, history: ChatFormat, context: ChatContext) -> str:
+        """
+        Default overridable generator for conversation titles.
+
+        Strategy:
+        1. cheap heuristic to detect greetings / generic messages -> "New chat"
+        2. if subclass exposes `self.llm`, call it to get a concise title
+        3. fallback: extractive short phrase from the message
+        """
+        SIMPLE_MESSAGE_LENGTH = 2
+        history = history or []
+        context = context or ChatContext()
+
+        def is_generic_message(text: str) -> bool:
+            t = (text or "").strip().lower()
+            if not t:
+                return True
+            # For short messages (which might be typical openings like hello, etc.)
+            return len(t.split()) <= SIMPLE_MESSAGE_LENGTH
+
+        def sanitize_title(title: str) -> str:
+            title = (title or "").strip()
+            if not title:
+                return "New chat"
+            return title
+
+        # If subclass has an LLM, call with prompt that asks for a short (<=8 words) title or "New chat".
+        prompt = (
+            "You are a concise title generator for conversation threads. "
+            "Given the user's first message, return a single short title (3-8 words) summarizing the topic. "
+            "If the message is just a greeting or otherwise generic, respond exactly with: New chat\n\n"
+            "User message:\n"
+            f"{message}\n\nTitle:"
+        )
+
+        try:
+            if hasattr(self, "llm") and self.llm is not None:
+                gen = getattr(self.llm, "generate", None)
+                if asyncio.iscoroutinefunction(gen):
+                    resp = await gen(prompt)
+                    title = resp if isinstance(resp, str) else str(resp)
+                    return sanitize_title(title.splitlines()[0])
+            # No LLM available or LLM failed — fallback to extractive short phrase
+            return "New chat" if is_generic_message(message) else sanitize_title(" ".join(message.split()[:6]))
+        except Exception:
+            logger.exception("Conversation title generation failed — falling back to extractive title.")
+            return "New chat" if is_generic_message(message) else sanitize_title(" ".join(message.split()[:6]))
