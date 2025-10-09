@@ -253,7 +253,7 @@ class TodoOrchestrator(BaseModel):
         yield TodoResult(type="status", message="📝 Generating comprehensive final summary...")
         yield TodoResult(
             type="final_summary_start",
-            message=f"\n📊 COMPREHENSIVE {self.domain_context.upper()} SUMMARY:\n",
+            message=f"\n📊 Comprehensive {self.domain_context} summary:\n",
         )
 
         async for summary_response in self._generate_comprehensive_summary_streaming(
