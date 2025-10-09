@@ -253,7 +253,7 @@ class TodoOrchestrator(BaseModel):
         yield TodoResult(type="status", message="📝 Generating comprehensive final summary...")
         yield TodoResult(
             type="final_summary_start",
-            message=f"\n📊 COMPREHENSIVE {self.domain_context.upper()} SUMMARY:\n" + "=" * 60 + "\n",
+            message=f"\n📊 COMPREHENSIVE {self.domain_context.upper()} SUMMARY:\n",
         )
 
         async for summary_response in self._generate_comprehensive_summary_streaming(
@@ -261,7 +261,7 @@ class TodoOrchestrator(BaseModel):
         ):
             yield summary_response
 
-        yield TodoResult(type="final_summary_end", message="\n" + "=" * 60)
+        yield TodoResult(type="final_summary_end", message="\n")
         yield TodoResult(type="status", message="🎉 All tasks completed!")
 
     @staticmethod
