@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { Button, ButtonProps } from "@heroui/button";
+import { Button, ButtonProps } from "@heroui/react";
 import { Form, FormProps } from "@heroui/form";
 import { cn } from "@heroui/theme";
 import {
@@ -217,11 +217,10 @@ const PromptInput = ({
             aria-label={
               isLoading ? "Stop answering" : "Send message to the chat"
             }
-            color={!isLoading && !message ? "default" : "primary"}
+            color={"default"}
             isDisabled={!isLoading && !message}
             radius="full"
             size="sm"
-            type={isLoading ? "button" : "submit"}
             onPress={isLoading ? handleStopAnswering : undefined}
             data-testid="send-message"
             {...sendButtonProps}
