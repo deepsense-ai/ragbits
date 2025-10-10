@@ -54,7 +54,7 @@ const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
     history: {},
     followupMessages: null,
     serverState: null,
-    conversationId: "null",
+    conversationId: "temp-mock-id-1",
     eventsLog: [],
     lastMessageId: null,
     chatOptions: undefined,
@@ -108,6 +108,7 @@ describe("ChatHistory", () => {
           return;
         }
 
+        console.log(`delete-conversation-${key}`);
         expect(
           screen.getByTestId(`delete-conversation-${key}`),
         ).toBeInTheDocument();

@@ -7,6 +7,7 @@ import {
   MessageUsageChatResponse,
   ReferenceChatResponse,
   TextChatResponse,
+  TodoItemChatResonse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -96,4 +97,23 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
 ) => {
   const message = draft.history[ctx.messageId];
   message.usage = response.content;
+};
+
+export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
+  { content },
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  const tasks = message.tasks ?? [];
+  const newTasks = produce(tasks, (tasksDraft) => {
+    const taskIndex = tasksDraft.findIndex((t) => t.id === content.id);
+    if (taskIndex === -1) {
+      tasksDraft.push(content);
+    } else {
+      tasksDraft[taskIndex] = content;
+    }
+  });
+
+  message.tasks = newTasks;
 };
