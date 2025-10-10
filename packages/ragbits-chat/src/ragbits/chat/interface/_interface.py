@@ -11,6 +11,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
@@ -24,6 +25,8 @@ from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig, UserSettings
 from .types import (
     ChatContext,
+    ChatResponse,
+    ChatResponseType,
     ChatResponseUnion,
     ClearMessageContent,
     ClearMessageResponse,
@@ -281,6 +284,10 @@ class ChatInterface(ABC):
                 usage={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()}
             )
         )
+
+    @staticmethod
+    def create_todo_item_response(task: Task) -> ChatResponse:
+        return ChatResponse(type=ChatResponseType.TODO_ITEM, content=task)
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

@@ -112,6 +112,7 @@ describe("ChatHistory", () => {
           return;
         }
 
+        console.log(`delete-conversation-${key}`);
         expect(
           screen.getByTestId(`dropdown-conversation-${key}`),
         ).toBeInTheDocument();

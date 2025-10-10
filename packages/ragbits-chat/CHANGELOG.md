@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add todo list component to the UI, add support for todo events in API (#827)
 
 ## 1.5.0 (2026-02-19)
 

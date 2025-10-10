@@ -1,12 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+
 - TodoOrchestrator & Todo list for agent (#823)
 
-- Support wrapping downstream agents as tools (#818)
-- Add syntax sugar allowing easier Agents definition (#820)
-- Add post-processors (#821)
-- Support streaming from downstream agents (#812)
 
 ## 1.5.0 (2026-02-19)
 
@@ -24,7 +21,6 @@
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
 - Add the option to stream events from tools using generators and async generators (#921)
 - Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN, ON_EVENT) (#914) (#926) (#939)
-
 ## 1.4.2 (2026-02-18)
 
 ### Changed
@@ -55,7 +51,6 @@
 - Add unique ID to each agent instance for better tracking and identification (#790)
 - Add audit tracing for tool calls to improve observability and debugging (#790)
 - Add AgentDependencies type (#781)
-- Add parallel tool calling in agent
 
 ## 1.2.2 (2025-08-08)
 
