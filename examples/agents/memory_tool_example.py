@@ -113,7 +113,7 @@ async def main() -> None:
 
     user_id = "user_123"
 
-    # Store a specific memory using the shared memory tool
+    # Store a specific memory
     memory_id = await long_term_memory.store_memory(
         user_id=user_id, content="User frequently visits his father in the countryside."
     )
