@@ -111,6 +111,70 @@ In this scenario, the agent recognizes that the follow-up question "What about T
 AgentResult(content='The current temperature in Tokyo is 10°C.', ...)
 ```
 
+### Long term memory tool
+While `keep_history` maintains context within a single session, long-term memory tool enables agents to store and retrieve information across multiple separate conversations. It uses a vector store for semantic search and organizes memories by keys, allowing personalized context based on provided id.  
+```python
+from pydantic import BaseModel
+
+from ragbits.agents import Agent
+from ragbits.agents.tools.memory import LongTermMemory, create_memory_tools
+from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
+from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
+
+class ConversationInput(BaseModel):
+    message: str
+
+
+class ConversationPrompt(Prompt[ConversationInput, str]):
+    """Prompt for conversation with memory capabilities."""
+
+    system_prompt = """
+    You are a helpful assistant with long-term memory. You can remember information
+    from previous conversations and use it to provide more personalized responses.
+
+    You have access to memory tools that allow you to:
+    - Store important facts from conversations
+    - Retrieve relevant memories based on queries
+
+    Store all information about the user that might be useful in future conversations.
+    Always start with retrieving memories (implicit) to provide more relevant and personalized experience.
+    """
+
+    user_prompt = """
+    Message: {{ message }}
+    """
+
+async def main() -> None:
+    # Initialize components
+    llm = LiteLLM(model_name="gpt-4o-mini")
+    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    vector_store = InMemoryVectorStore(embedder=embedder)
+    long_term_memory = LongTermMemory(vector_store=vector_store)
+
+    memory_tools = create_memory_tools(long_term_memory, user_id="user_1")
+    agent = Agent(llm=llm, prompt=ConversationPrompt, tools=[*memory_tools])
+
+    # Provide context
+    await agent.run(ConversationInput(
+        message="I love hiking in the mountains. I'm planning a trip to Rome next month."
+    ))
+
+    # New session
+    llm = LiteLLM(model_name="gpt-4o-mini")
+    memory_tools = create_memory_tools(long_term_memory, user_id="user_1")
+    agent = Agent(llm=llm, prompt=ConversationPrompt, tools=[*memory_tools])
+
+    response2 = await agent.run(ConversationInput(
+        message="What outdoor activities would you recommend for my trip?"
+    ))
+    print(response2.content)
+
+    # Agent remembers Rome trip and hiking preference, suggests Castelli Romani trails, etc.
+```
+LongTermMemory class also provides internal methods for managing the memories. You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/memory_tool_example.py).  
+
 ## Binding dependencies via AgentRunContext
 You can bind your external dependencies before the first access and safely use them in tools. After first attribute lookup, the dependencies container freezes to prevent mutation during a run.
 
