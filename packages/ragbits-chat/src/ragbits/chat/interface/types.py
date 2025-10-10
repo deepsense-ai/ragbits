@@ -7,6 +7,7 @@ from zoneinfo import available_timezones
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -288,6 +289,7 @@ class ChatResponseType(str, Enum):
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
+    TODO_ITEM = "todo_item"
     CONFIRMATION_REQUEST = "confirmation_request"
     ERROR = "error"
 
@@ -396,8 +398,18 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
         content: The typed content for this response. Type is validated automatically.
     """
 
-    content: ChatResponseContentT
-
+    content: (
+        str
+        | Reference
+        | StateUpdate
+        | LiveUpdate
+        | list[str]
+        | Image
+        | dict[str, MessageUsage]
+        | ChunkedContent
+        | None
+        | Task
+    )
     def get_type(self) -> str:  # noqa: D102, PLR6301
         """Return the response type identifier from content.
 

@@ -8,6 +8,7 @@ import {
   Image,
   MessageUsage,
   RagbitsClient,
+  Task,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -25,14 +26,15 @@ export interface ChatMessage {
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
+  tasks?: Task[];
   extra?: Record<string, unknown>;
-  error?: string | null;
   confirmationRequests?: Record<string, ConfirmationRequest>;
   confirmationStates?: Record<
     string,
     "pending" | "confirmed" | "declined" | "skipped"
   >;
   hasConfirmationBreak?: boolean; // Flag to show visual separator after confirmations
+  error?: string | null; // Error message to display in this message
 }
 
 export interface Conversation {

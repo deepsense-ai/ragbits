@@ -9,6 +9,26 @@ import type { RJSFSchema } from '@rjsf/utils'
 export type TypeFrom<T> = T[keyof T]
 
 /**
+ * Represents the ChatResponseType enum
+ */
+export const ChatResponseType = {
+    Text: 'text',
+    Reference: 'reference',
+    StateUpdate: 'state_update',
+    MessageId: 'message_id',
+    ConversationId: 'conversation_id',
+    LiveUpdate: 'live_update',
+    FollowupMessages: 'followup_messages',
+    Image: 'image',
+    ChunkedContent: 'chunked_content',
+    ClearMessage: 'clear_message',
+    Usage: 'usage',
+    TodoItem: 'todo_item',
+} as const
+
+export type ChatResponseType = TypeFrom<typeof ChatResponseType>
+
+/**
  * Represents the FeedbackType enum
  */
 export const FeedbackType = {
@@ -38,6 +58,17 @@ export const MessageRole = {
 } as const
 
 export type MessageRole = TypeFrom<typeof MessageRole>
+
+/**
+ * Represents the TaskStatus enum
+ */
+export const TaskStatus = {
+    Pending: 'pending',
+    InProgress: 'in_progress',
+    Completed: 'completed',
+} as const
+
+export type TaskStatus = TypeFrom<typeof TaskStatus>
 
 /**
  * Represents the AuthType enum
@@ -168,6 +199,29 @@ export interface MessageUsage {
     prompt_tokens: number
     completion_tokens: number
     total_tokens: number
+}
+
+/**
+ * Simple task representation.
+ */
+export interface Task {
+    id: string
+    description: string
+    /**
+     * Task status options.
+     */
+    status:
+        | 'pending'
+        | 'in_progress'
+        | 'completed'
+        | 'failed'
+        | 'cancelled'
+        | 'retrying'
+    order: number
+    summary: string | null
+    parent_id: string | null
+    full_response: string | null
+    dependencies: string[]
 }
 
 /**
@@ -568,6 +622,21 @@ export interface ErrorChatResponse {
     content: ErrorContent
 }
 
+export interface TodoItemChatResonse {
+    type: 'todo_item'
+    content: Task
+}
+
+export interface TodoItemChatResonse {
+    type: 'todo_item'
+    content: Task
+}
+
+export interface TodoItemChatResonse {
+    type: 'todo_item'
+    content: Task
+}
+
 export interface ChunkedChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
@@ -590,3 +659,4 @@ export type ChatResponse =
     | ConversationSummaryResponse
     | ConfirmationRequestChatResponse
     | ErrorChatResponse
+    | TodoItemChatResonse

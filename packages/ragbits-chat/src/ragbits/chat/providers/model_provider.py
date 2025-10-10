@@ -11,6 +11,7 @@ from typing import cast
 from pydantic import BaseModel
 
 from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tools.todo import Task, TaskStatus
 from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 
@@ -88,6 +89,7 @@ class RagbitsChatModelProvider:
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
+                "TaskStatus": TaskStatus,
                 # Core data models
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
@@ -99,6 +101,7 @@ class RagbitsChatModelProvider:
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
                 "MessageUsage": MessageUsage,
+                "Task": Task,
                 "ConfirmationRequest": ConfirmationRequest,
                 # Response content wrappers (new way)
                 "TextContent": TextContent,
@@ -166,6 +169,8 @@ class RagbitsChatModelProvider:
                 "Image",
                 "User",
                 "MessageUsage",
+                "Task",
+                "TaskStatus",
                 # Response content wrappers (new way)
                 "TextContent",
                 "MessageIdContent",
