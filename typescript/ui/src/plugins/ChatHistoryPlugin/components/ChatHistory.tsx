@@ -16,6 +16,7 @@ import { isTemporaryConversation } from "../../../core/stores/HistoryStore/histo
 import { useNavigate } from "react-router";
 import { getConversationRoute } from "../utils";
 import { useShallow } from "zustand/shallow";
+import { zip } from "lodash";
 
 export default function ChatHistory() {
   const {
@@ -25,14 +26,14 @@ export default function ChatHistory() {
     setConversationProperties,
   } = useHistoryActions();
   const navigate = useNavigate();
-  const conversationsWithSummaries = useHistoryStore(
+  const conversations = useHistoryStore(
+    useShallow((s) => Object.keys(s.conversations).reverse()),
+  );
+  const summaries = useHistoryStore(
     useShallow((s) =>
-      Object.fromEntries(
-        Object.entries(s.conversations).map(([key, entry]) => [
-          key,
-          entry.summary,
-        ]),
-      ),
+      Object.values(s.conversations)
+        .reverse()
+        .map((entry) => entry.summary),
     ),
   );
   const currentConversation = useHistoryStore((s) => s.currentConversation);
@@ -164,101 +165,97 @@ export default function ChatHistory() {
               width: 0,
             }}
           >
-            {Object.entries(conversationsWithSummaries).map(
-              ([conversation, summary]) => {
-                if (isTemporaryConversation(conversation)) {
-                  return null;
-                }
+            {zip(conversations, summaries).map(([conversation, summary]) => {
+              if (!conversation || isTemporaryConversation(conversation)) {
+                return null;
+              }
 
-                const isSelected = conversation === currentConversation;
-                const isEdited = conversation === editingKey;
-                return (
-                  <div
-                    className="flex w-full justify-between gap-2"
-                    key={conversation}
-                  >
-                    {isEdited ? (
-                      <Input
-                        ref={inputRef}
-                        size="sm"
-                        variant="bordered"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        onBlur={() => {
-                          if (ignoreBlur) return;
-                          handleSaveEdit(conversation);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSaveEdit(conversation);
-                          if (e.key === "Escape") handleCancelEdit();
-                        }}
-                        className="flex-1"
-                        data-testid={`input-conversation-${conversation}`}
-                      />
-                    ) : (
+              const isSelected = conversation === currentConversation;
+              const isEdited = conversation === editingKey;
+              const variant = isSelected ? "solid" : "light";
+              return (
+                <div
+                  className="flex w-full justify-between gap-2"
+                  key={`${conversation}-${variant}`}
+                >
+                  {isEdited ? (
+                    <Input
+                      ref={inputRef}
+                      size="sm"
+                      variant="bordered"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => {
+                        if (ignoreBlur) return;
+                        handleSaveEdit(conversation);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit(conversation);
+                        if (e.key === "Escape") handleCancelEdit();
+                      }}
+                      className="flex-1"
+                      data-testid={`input-conversation-${conversation}`}
+                    />
+                  ) : (
+                    <Button
+                      variant={variant}
+                      aria-label={`Select conversation ${conversation}`}
+                      data-active={isSelected}
+                      onPress={() => handleNavigate(conversation)}
+                      title={summary ?? conversation}
+                      data-testid={`select-conversation-${conversation}`}
+                      className="flex-1 justify-start"
+                    >
+                      <div className="text-small truncate">
+                        {summary ?? conversation}
+                      </div>
+                    </Button>
+                  )}
+                  <Dropdown>
+                    <DropdownTrigger>
                       <Button
-                        variant={isSelected ? "solid" : "light"}
-                        aria-label={`Select conversation ${conversation}`}
-                        data-active={isSelected}
-                        onPress={() => handleNavigate(conversation)}
-                        title={summary ?? conversation}
-                        data-testid={`select-conversation-${conversation}`}
-                        className="flex-1 justify-start"
+                        isIconOnly
+                        variant="light"
+                        aria-label={`Conversation actions for ${conversation}`}
+                        data-testid={`dropdown-conversation-${conversation}`}
                       >
-                        <div className="text-small truncate">
-                          {summary ?? conversation}
-                        </div>
+                        <Icon
+                          icon="heroicons:ellipsis-vertical"
+                          className="rotate-90"
+                        />
                       </Button>
-                    )}
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button
-                          isIconOnly
-                          variant="light"
-                          aria-label={`Conversation actions for ${conversation}`}
-                          data-testid={`dropdown-conversation-${conversation}`}
-                        >
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Conversation actions">
+                      <DropdownItem
+                        key="edit"
+                        startContent={
                           <Icon
-                            icon="heroicons:ellipsis-vertical"
-                            className="rotate-90"
+                            icon="heroicons:pencil-square"
+                            className="mb-0.5"
                           />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu aria-label="Conversation actions">
-                        <DropdownItem
-                          key="edit"
-                          startContent={
-                            <Icon
-                              icon="heroicons:pencil-square"
-                              className="mb-0.5"
-                            />
-                          }
-                          onPress={() =>
-                            handleStartEdit(
-                              conversation,
-                              summary ?? conversation,
-                            )
-                          }
-                          data-testid={`edit-conversation-${conversation}`}
-                        >
-                          Edit
-                        </DropdownItem>
-                        <DropdownItem
-                          key="delete"
-                          className="text-danger mb-0.5"
-                          color="danger"
-                          startContent={<Icon icon="heroicons:trash" />}
-                          onPress={() => deleteConversation(conversation)}
-                          data-testid={`delete-conversation-${conversation}`}
-                        >
-                          Delete conversation
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
-                  </div>
-                );
-              },
-            )}
+                        }
+                        onPress={() =>
+                          handleStartEdit(conversation, summary ?? conversation)
+                        }
+                        data-testid={`edit-conversation-${conversation}`}
+                      >
+                        Edit
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger mb-0.5"
+                        color="danger"
+                        startContent={<Icon icon="heroicons:trash" />}
+                        onPress={() => deleteConversation(conversation)}
+                        data-testid={`delete-conversation-${conversation}`}
+                      >
+                        Delete conversation
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

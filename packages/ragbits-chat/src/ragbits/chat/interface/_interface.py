@@ -86,7 +86,7 @@ def with_chat_metadata(
                 interface_class=self.__class__.__name__,
             )
 
-        if is_new_conversation:
+            # Generate summary to serve as title for new conversations
             try:
                 summary = await self.generate_conversation_title(message, history, context)
                 yield ChatResponse(type=ChatResponseType.CONVERSATION_SUMMARY, content=summary)
