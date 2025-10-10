@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- customizable HeroUI theme (#841)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
