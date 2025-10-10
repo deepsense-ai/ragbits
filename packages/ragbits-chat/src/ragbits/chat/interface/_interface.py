@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import functools
 import hmac
@@ -11,6 +10,7 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 from ragbits.agents.tools.todo import Task
+from ragbits.chat.interface.summary import SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -88,7 +88,7 @@ def with_chat_metadata(
 
             # Generate summary to serve as title for new conversations
             try:
-                summary = await self.generate_conversation_title(message, history, context)
+                summary = await self.generate_conversation_summary(message, history, context)
                 yield ChatResponse(type=ChatResponseType.CONVERSATION_SUMMARY, content=summary)
             except Exception:
                 logger.exception("Failed to generate conversation title")
@@ -193,6 +193,7 @@ class ChatInterface(ABC):
     show_usage: bool = False
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
+    summary_generator: SummaryGenerator | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
@@ -380,50 +381,9 @@ class ChatInterface(ABC):
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
 
-    async def generate_conversation_title(self, message: str, history: ChatFormat, context: ChatContext) -> str:
-        """
-        Default overridable generator for conversation titles.
+    async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
+        """Delegate to the configured summary generator."""
+        if not self.summary_generator:
+            raise Exception("Tried to invoke `generate_conversation_summary`. No SummaryGenerator found.")
 
-        Strategy:
-        1. cheap heuristic to detect greetings / generic messages -> "New chat"
-        2. if subclass exposes `self.llm`, call it to get a concise title
-        3. fallback: extractive short phrase from the message
-        """
-        SIMPLE_MESSAGE_LENGTH = 2
-        history = history or []
-        context = context or ChatContext()
-
-        def is_generic_message(text: str) -> bool:
-            t = (text or "").strip().lower()
-            if not t:
-                return True
-            # For short messages (which might be typical openings like hello, etc.)
-            return len(t.split()) <= SIMPLE_MESSAGE_LENGTH
-
-        def sanitize_title(title: str) -> str:
-            title = (title or "").strip()
-            if not title:
-                return "New chat"
-            return title
-
-        # If subclass has an LLM, call with prompt that asks for a short (<=8 words) title or "New chat".
-        prompt = (
-            "You are a concise title generator for conversation threads. "
-            "Given the user's first message, return a single short title (3-8 words) summarizing the topic. "
-            "If the message is just a greeting or otherwise generic, respond exactly with: New chat\n\n"
-            "User message:\n"
-            f"{message}\n\nTitle:"
-        )
-
-        try:
-            if hasattr(self, "llm") and self.llm is not None:
-                gen = getattr(self.llm, "generate", None)
-                if asyncio.iscoroutinefunction(gen):
-                    resp = await gen(prompt)
-                    title = resp if isinstance(resp, str) else str(resp)
-                    return sanitize_title(title.splitlines()[0])
-            # No LLM available or LLM failed — fallback to extractive short phrase
-            return "New chat" if is_generic_message(message) else sanitize_title(" ".join(message.split()[:6]))
-        except Exception:
-            logger.exception("Conversation title generation failed — falling back to extractive title.")
-            return "New chat" if is_generic_message(message) else sanitize_title(" ".join(message.split()[:6]))
+        return await self.summary_generator.generate(message, history, context)
