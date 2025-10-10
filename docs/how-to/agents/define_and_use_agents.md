@@ -112,7 +112,7 @@ AgentResult(content='The current temperature in Tokyo is 10°C.', ...)
 ```
 
 ### Long term memory tool
-While `keep_history` maintains context within a single session, long-term memory tool enables agents to store and retrieve information across multiple separate conversations. It uses a vector store for semantic search and organizes memories by keys, allowing personalized context based on provided id.  
+While `keep_history` maintains context within a single session, long-term memory tool enables agents to store and retrieve information across multiple separate conversations. It uses a vector store for semantic search and organizes memories by keys, allowing personalized context based on provided id.
 ```python
 from pydantic import BaseModel
 
@@ -173,7 +173,7 @@ async def main() -> None:
 
     # Agent remembers Rome trip and hiking preference, suggests Castelli Romani trails, etc.
 ```
-LongTermMemory class also provides internal methods for managing the memories. You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/memory_tool_example.py).  
+LongTermMemory class also provides internal methods for managing the memories. You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/memory_tool_example.py).
 
 ## Binding dependencies via AgentRunContext
 You can bind your external dependencies before the first access and safely use them in tools. After first attribute lookup, the dependencies container freezes to prevent mutation during a run.
