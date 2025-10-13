@@ -34,8 +34,11 @@ def _handle_response(response: ResponseType) -> None:
 
 def _handle_streaming_response(response: TodoResult) -> None:
     """Handle TodoResult from the orchestrator."""
-    if response.type in ("status", "task_list"):
+    if response.type in ("status"):
         print(response.message or "")
+    elif response.type in ("task_list"):
+        for index, task in enumerate(response.tasks, 1):
+            print(f"{index}. {task.description}")
     elif response.type in ("task_summary_start", "final_summary_start"):
         print(response.message or "", end="", flush=True)
     elif response.type in ("task_completed", "final_summary_end"):
