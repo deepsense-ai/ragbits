@@ -19,7 +19,7 @@ from typing import Any, cast
 from ragbits.agents import Agent, AgentOptions, AgentResult
 from ragbits.agents.tool import ToolCallResult
 from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import TodoOrchestrator
+from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.base import LLMClientOptionsT, Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -69,11 +69,15 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
 
         tasks_created = False
         num_tasks = 0
+        in_final_summary = False
+        final_summary_only: str = ""
 
         async for item in self._orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
             match item:
                 case str():
                     final_text += item
+                    if in_final_summary:
+                        final_summary_only += item
                 case ToolCallResult():
                     if tool_calls is None:
                         tool_calls = []
@@ -82,6 +86,12 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
                     total_usage += item
                 case BasePrompt():
                     last_prompt = item
+                case TodoResult():
+                    if item.type == "final_summary_start":
+                        in_final_summary = True
+                        final_summary_only = ""
+                    elif item.type == "final_summary_end":
+                        in_final_summary = False
                 case _:
                     # Inspect orchestrator internal state to populate metadata
                     tasks_created = len(self._orchestrator.todo_list.tasks) > 0
@@ -99,8 +109,10 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         # Build result compatible with existing pipelines
         history = last_prompt.chat if last_prompt is not None else []
 
+        # If we had tasks and generated a final summary, use that; otherwise use all text
+        content_to_return = final_summary_only.strip() if final_summary_only else final_text.strip()
         return AgentResult(
-            content=final_text.strip(),
+            content=content_to_return,
             metadata={"todo": todo_meta},
             tool_calls=tool_calls,
             history=history,
