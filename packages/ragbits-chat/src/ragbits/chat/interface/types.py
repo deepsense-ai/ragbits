@@ -116,6 +116,7 @@ class ChatResponseType(str, Enum):
     STATE_UPDATE = "state_update"
     MESSAGE_ID = "message_id"
     CONVERSATION_ID = "conversation_id"
+    CONVERSATION_SUMMARY = "conversation_summary"
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
     IMAGE = "image"
@@ -216,6 +217,12 @@ class ChatResponse(BaseModel):
         Return the content as dict from model name to Usage if this is an usage response, else None
         """
         return cast(dict[str, MessageUsage], self.content) if self.type == ChatResponseType.USAGE else None
+
+    def as_conversation_summary(self) -> str | None:
+        """
+        Return the content as string if this is an conversation summary response, else None
+        """
+        return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_SUMMARY else None
 
 
 class ChatMessageRequest(BaseModel):

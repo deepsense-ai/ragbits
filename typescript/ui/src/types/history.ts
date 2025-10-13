@@ -36,7 +36,9 @@ export interface Conversation {
   chatOptions: Record<string, unknown> | undefined;
   isLoading: boolean;
   abortController: AbortController | null;
+  summary?: string;
 }
+
 export interface HistoryStore {
   conversations: Record<string, Conversation>;
   currentConversation: string;
@@ -59,7 +61,10 @@ export interface HistoryStore {
       extensions: Record<string, unknown>,
     ) => void;
     initializeChatOptions: (defaults: Record<string, unknown>) => void;
-    setChatOptions: (options: Record<string, unknown>) => void;
+    setConversationProperties: (
+      conversationKey: string,
+      properties: Partial<Conversation>,
+    ) => void;
   };
 
   primitives: {

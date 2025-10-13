@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
+from ragbits.chat.interface.summary import HybridSummaryGenerator
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
@@ -93,6 +94,7 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.summary_generator = HybridSummaryGenerator(self.llm)
 
     async def chat(
         self,

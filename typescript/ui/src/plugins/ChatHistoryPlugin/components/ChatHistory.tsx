@@ -1,23 +1,76 @@
-import { Button } from "@heroui/react";
+import {
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Input,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
 import { useNavigate } from "react-router";
 import { getConversationRoute } from "../utils";
+import { useShallow } from "zustand/shallow";
+import { zip } from "lodash";
 
 export default function ChatHistory() {
-  const { selectConversation, deleteConversation, newConversation } =
-    useHistoryActions();
+  const {
+    selectConversation,
+    deleteConversation,
+    newConversation,
+    setConversationProperties,
+  } = useHistoryActions();
   const navigate = useNavigate();
-  const conversations = useHistoryStore((s) => s.conversations);
+  const conversations = useHistoryStore(
+    useShallow((s) => Object.keys(s.conversations).reverse()),
+  );
+  const summaries = useHistoryStore(
+    useShallow((s) =>
+      Object.values(s.conversations)
+        .reverse()
+        .map((entry) => entry.summary),
+    ),
+  );
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const [isCollapsed, setCollapsed] = useState(false);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [ignoreBlur, setIgnoreBlur] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const collapseButtonTitle = isCollapsed ? "Open sidebar" : "Close sidebar";
   const newChatIcon = <Icon icon="heroicons:pencil-square" />;
+
+  const handleStartEdit = (conversationKey: string, currentSummary: string) => {
+    setEditingKey(conversationKey);
+    setEditValue(currentSummary ?? "");
+    setIgnoreBlur(true);
+    setTimeout(() => {
+      inputRef.current?.focus?.();
+      setTimeout(() => setIgnoreBlur(false), 120);
+    }, 0);
+  };
+
+  const handleSaveEdit = (conversationKey: string) => {
+    if (editingKey !== conversationKey) return;
+    const trimmed = (editValue || "").trim();
+    if (trimmed) {
+      setConversationProperties(conversationKey, { summary: trimmed });
+    }
+    setEditingKey(null);
+    setEditValue("");
+    setIgnoreBlur(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingKey(null);
+    setEditValue("");
+    setIgnoreBlur(false);
+  };
 
   const handleNewConversation = () => {
     const conversationId = newConversation();
@@ -112,46 +165,97 @@ export default function ChatHistory() {
               width: 0,
             }}
           >
-            {Object.entries(conversations)
-              .reverse()
-              .map(([conversationKey, conversation]) => {
-                if (isTemporaryConversation(conversation.conversationId)) {
-                  return null;
-                }
+            {zip(conversations, summaries).map(([conversation, summary]) => {
+              if (!conversation || isTemporaryConversation(conversation)) {
+                return null;
+              }
 
-                const isSelected = conversationKey === currentConversation;
-                return (
-                  <div className="flex gap-2" key={conversationKey}>
+              const isSelected = conversation === currentConversation;
+              const isEdited = conversation === editingKey;
+              const variant = isSelected ? "solid" : "light";
+              return (
+                <div
+                  className="flex w-full justify-between gap-2"
+                  key={`${conversation}-${variant}`}
+                >
+                  {isEdited ? (
+                    <Input
+                      ref={inputRef}
+                      size="sm"
+                      variant="bordered"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onBlur={() => {
+                        if (ignoreBlur) return;
+                        handleSaveEdit(conversation);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit(conversation);
+                        if (e.key === "Escape") handleCancelEdit();
+                      }}
+                      className="flex-1"
+                      data-testid={`input-conversation-${conversation}`}
+                    />
+                  ) : (
                     <Button
-                      variant={isSelected ? "solid" : "light"}
-                      aria-label={`Select conversation ${conversationKey}`}
+                      variant={variant}
+                      aria-label={`Select conversation ${conversation}`}
                       data-active={isSelected}
-                      onPress={() => handleNavigate(conversationKey)}
-                      title={conversationKey}
-                      data-testid={`select-conversation-${conversationKey}`}
+                      onPress={() => handleNavigate(conversation)}
+                      title={summary ?? conversation}
+                      data-testid={`select-conversation-${conversation}`}
+                      className="flex-1 justify-start"
                     >
                       <div className="text-small truncate">
-                        {/* TODO: Change to some summary later? */}
-                        {conversation.conversationId}
+                        {summary ?? conversation}
                       </div>
                     </Button>
-                    <DelayedTooltip
-                      content="Delete conversation"
-                      placement="right"
-                    >
+                  )}
+                  <Dropdown>
+                    <DropdownTrigger>
                       <Button
                         isIconOnly
-                        aria-label={`Delete conversation ${conversationKey}`}
-                        onPress={() => deleteConversation(conversationKey)}
-                        variant="ghost"
-                        data-testid={`delete-conversation-${conversationKey}`}
+                        variant="light"
+                        aria-label={`Conversation actions for ${conversation}`}
+                        data-testid={`dropdown-conversation-${conversation}`}
                       >
-                        <Icon icon="heroicons:trash" />
+                        <Icon
+                          icon="heroicons:ellipsis-vertical"
+                          className="rotate-90"
+                        />
                       </Button>
-                    </DelayedTooltip>
-                  </div>
-                );
-              })}
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="Conversation actions">
+                      <DropdownItem
+                        key="edit"
+                        startContent={
+                          <Icon
+                            icon="heroicons:pencil-square"
+                            className="mb-0.5"
+                          />
+                        }
+                        onPress={() =>
+                          handleStartEdit(conversation, summary ?? conversation)
+                        }
+                        data-testid={`edit-conversation-${conversation}`}
+                      >
+                        Edit
+                      </DropdownItem>
+                      <DropdownItem
+                        key="delete"
+                        className="text-danger mb-0.5"
+                        color="danger"
+                        startContent={<Icon icon="heroicons:trash" />}
+                        onPress={() => deleteConversation(conversation)}
+                        data-testid={`delete-conversation-${conversation}`}
+                      >
+                        Delete conversation
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

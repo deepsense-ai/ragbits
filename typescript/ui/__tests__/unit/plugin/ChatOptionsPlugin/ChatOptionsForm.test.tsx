@@ -8,7 +8,7 @@ import { useConfigContext } from "../../../../src/core/contexts/ConfigContext/us
 vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => ({
   useConversationProperty: vi.fn(() => ({})),
   useHistoryActions: vi.fn(() => ({
-    setChatOptions: vi.fn(),
+    setConversationProperties: vi.fn(),
     initializeChatOptions: vi.fn(),
   })),
 }));
@@ -40,11 +40,11 @@ vi.mock("@rjsf/utils/lib/schema/getDefaultFormState", () => ({
   getDefaultBasedOnSchemaType: vi.fn(() => ({ example: "default" })),
 }));
 
-const setChatOptionsMock = vi.fn();
+const setConversationProperitesMock = vi.fn();
 const initializeChatOptionsMock = vi.fn();
 function mockActions() {
   (useHistoryActions as Mock).mockReturnValue({
-    setChatOptions: setChatOptionsMock,
+    setConversationProperties: setConversationProperitesMock,
     initializeChatOptions: initializeChatOptionsMock,
   });
 }
@@ -80,7 +80,12 @@ describe("ChatOptionsForm", () => {
     await user.click(screen.getByTestId("chat-options-submit"));
 
     await waitFor(() => {
-      expect(setChatOptionsMock).toHaveBeenCalledWith({});
+      expect(setConversationProperitesMock).toHaveBeenCalledWith(
+        expect.anything(),
+        {
+          chatOptions: {},
+        },
+      );
     });
   });
 
@@ -95,7 +100,10 @@ describe("ChatOptionsForm", () => {
     await user.click(restoreBtn);
 
     await waitFor(() => {
-      expect(setChatOptionsMock).toHaveBeenCalledWith({ example: "default" });
+      expect(setConversationProperitesMock).toHaveBeenCalledWith(
+        expect.anything(),
+        { chatOptions: { example: "default" } },
+      );
     });
   });
 
