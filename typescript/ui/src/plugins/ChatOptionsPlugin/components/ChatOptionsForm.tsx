@@ -31,7 +31,8 @@ export default function ChatOptionsForm() {
   const chatOptions = useConversationProperty((s) => s.chatOptions);
   // Needed to solve flicker to default settings when the modal is closing
   const pendingSettingsRef = useRef<Record<string, unknown> | null>(null);
-  const { setChatOptions, initializeChatOptions } = useHistoryActions();
+  const { setConversationProperties, initializeChatOptions } =
+    useHistoryActions();
   const currentConversation = useHistoryStore((s) => s.currentConversation);
   const {
     config: { user_settings: userSettings },
@@ -82,7 +83,7 @@ export default function ChatOptionsForm() {
     }
 
     const settings = pendingSettingsRef.current;
-    setChatOptions(settings);
+    setConversationProperties(currentConversation, { chatOptions: settings });
     ensureSyncWithStorage(settings);
     pendingSettingsRef.current = null;
   };
