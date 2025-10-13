@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -116,12 +117,14 @@ class ChatResponseType(str, Enum):
     STATE_UPDATE = "state_update"
     MESSAGE_ID = "message_id"
     CONVERSATION_ID = "conversation_id"
+    CONVERSATION_SUMMARY = "conversation_summary"
     LIVE_UPDATE = "live_update"
     FOLLOWUP_MESSAGES = "followup_messages"
     IMAGE = "image"
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
+    TODO_ITEM = "todo_item"
 
 
 class ChatContext(BaseModel):
@@ -140,7 +143,16 @@ class ChatResponse(BaseModel):
 
     type: ChatResponseType
     content: (
-        str | Reference | StateUpdate | LiveUpdate | list[str] | Image | dict[str, MessageUsage] | ChunkedContent | None
+        str
+        | Reference
+        | StateUpdate
+        | LiveUpdate
+        | list[str]
+        | Image
+        | dict[str, MessageUsage]
+        | ChunkedContent
+        | None
+        | Task
     )
 
     def as_text(self) -> str | None:
@@ -216,6 +228,18 @@ class ChatResponse(BaseModel):
         Return the content as dict from model name to Usage if this is an usage response, else None
         """
         return cast(dict[str, MessageUsage], self.content) if self.type == ChatResponseType.USAGE else None
+
+    def as_task(self) -> Task | None:
+        """
+        Return the content as Task if this is an todo_item response, else None.
+        """
+        return cast(Task, self.content) if self.type == ChatResponseType.TODO_ITEM else None
+
+    def as_conversation_summary(self) -> str | None:
+        """
+        Return the content as string if this is an conversation summary response, else None
+        """
+        return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_SUMMARY else None
 
 
 class ChatMessageRequest(BaseModel):
