@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -250,6 +251,10 @@ class ChatInterface(ABC):
             type=ChatResponseType.USAGE,
             content={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()},
         )
+
+    @staticmethod
+    def create_todo_item_response(task: Task) -> ChatResponse:
+        return ChatResponse(type=ChatResponseType.TODO_ITEM, content=task)
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:
