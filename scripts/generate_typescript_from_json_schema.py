@@ -202,6 +202,7 @@ def _generate_chat_response_union_type() -> str:
         ("ClearMessageResponse", "clear_message", "never"),
         ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
         ("TodoItemChatResonse", "todo_item", "Task"),
+        ("ConversationSummaryResponse", "conversation_summary", "string"),
     ]
 
     internal_response_interfaces = [
