@@ -36,10 +36,11 @@ class TestAsanaSource:
     async def test_real_fetch_debug(self):
         """
         Real test that fetches actual Asana tasks and shows debug output.
-        This test will be skipped if ASANA_TOKEN is not set.
+        This test will be skipped if ASANA_TOKEN or ASANA_PROJECT_ID is not set.
         """
-        # Get ASANA_TOKEN from environment variable
+        # Get ASANA_TOKEN and ASANA_PROJECT_ID from environment variables
         asana_token = os.environ.get('ASANA_TOKEN')
+        asana_project_id = os.environ.get('ASANA_PROJECT_ID')
         
         if not asana_token:
             pytest.skip(
@@ -47,8 +48,15 @@ class TestAsanaSource:
                 "export ASANA_TOKEN='your_token_here'"
             )
         
+        if not asana_project_id:
+            pytest.skip(
+                "ASANA_PROJECT_ID environment variable not set. Please set it:\n"
+                "export ASANA_PROJECT_ID='your_project_id_here'"
+            )
+        
         print(f"\nDebugging AsanaSource fetch with real API...")
         print(f"Found ASANA_TOKEN: {asana_token[:10]}...")
+        print(f"Using project ID: {asana_project_id}")
         
         # Set up the Asana source exactly like in our implementation
         AsanaSource.set_access_token(asana_token)
@@ -63,9 +71,8 @@ class TestAsanaSource:
         ]
         AsanaSource.set_fields(assignee_fields)
         
-        source = AsanaSource(project_id="1211615960823175")
+        source = AsanaSource(project_id=asana_project_id)
         
-        print(f"Using project ID: {source.project_id}")
         print(f"Requested fields: {AsanaSource._asana_fields}")
         
         try:
