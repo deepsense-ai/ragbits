@@ -217,7 +217,7 @@ const PromptInput = ({
             aria-label={
               isLoading ? "Stop answering" : "Send message to the chat"
             }
-            color={"default"}
+            color={!isLoading && !message ? "default" : "primary"}
             isDisabled={!isLoading && !message}
             radius="full"
             size="sm"

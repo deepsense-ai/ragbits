@@ -76,6 +76,7 @@ export const ThemeContextProvider: FC<{ children: ReactNode }> = ({
     };
 
     loadCustomTheme();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
 
   // Handle light/dark mode switching
