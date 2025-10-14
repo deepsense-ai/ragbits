@@ -32,6 +32,11 @@ def run(
     ),
     debug_mode: bool = typer.Option(False, "--debug", help="Flag enabling debug tools in the default UI"),
     auth: str = typer.Option(None, help="Path to a module with Authentication Backend"),
+    theme: str = typer.Option(
+        None,
+        "--theme",
+        help="Path to a HeroUI theme JSON file from heroui.com/themes",
+    ),
 ) -> None:
     """
     Run API service with UI demo
@@ -42,5 +47,6 @@ def run(
         ui_build_dir=ui_build_dir,
         debug_mode=debug_mode,
         auth_backend=auth,
+        theme_path=theme,
     )
     api.run(host=host, port=port)

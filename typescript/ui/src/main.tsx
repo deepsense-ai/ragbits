@@ -43,15 +43,15 @@ loadIcons([
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <HeroUIProvider>
-      <ThemeContextProvider>
-        <RagbitsContextProvider baseUrl={API_URL}>
+      <RagbitsContextProvider baseUrl={API_URL}>
+        <ThemeContextProvider>
           <ConfigContextProvider>
             <BrowserRouter>
               <Routes />
             </BrowserRouter>
           </ConfigContextProvider>
-        </RagbitsContextProvider>
-      </ThemeContextProvider>
+        </ThemeContextProvider>
+      </RagbitsContextProvider>
     </HeroUIProvider>
   </StrictMode>,
 );
