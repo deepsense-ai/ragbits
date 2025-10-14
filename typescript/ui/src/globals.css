@@ -11,7 +11,6 @@ if you are using a copy of the UI for your own project.
 @theme {
   --breakpoint-xs: 28rem;
   --animate-pop-in: pop-in 0.2s ease-out forwards;
-  --color-primary: #1b54ff;
 
   @keyframes pop-in {
     0% {
