@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { Button, ButtonProps } from "@heroui/react";
+import { Button, ButtonProps } from "@heroui/button";
 import { Form, FormProps } from "@heroui/form";
 import { cn } from "@heroui/theme";
 import {
