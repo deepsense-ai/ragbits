@@ -17,6 +17,7 @@ export const ChatResponseType = {
     StateUpdate: 'state_update',
     MessageId: 'message_id',
     ConversationId: 'conversation_id',
+    ConversationSummary: 'conversation_summary',
     LiveUpdate: 'live_update',
     FollowupMessages: 'followup_messages',
     Image: 'image',
@@ -66,6 +67,9 @@ export const TaskStatus = {
     Pending: 'pending',
     InProgress: 'in_progress',
     Completed: 'completed',
+    Failed: 'failed',
+    Cancelled: 'cancelled',
+    Retrying: 'retrying',
 } as const
 
 export type TaskStatus = TypeFrom<typeof TaskStatus>
@@ -191,10 +195,18 @@ export interface Task {
     /**
      * Task status options.
      */
-    status: 'pending' | 'in_progress' | 'completed'
+    status:
+        | 'pending'
+        | 'in_progress'
+        | 'completed'
+        | 'failed'
+        | 'cancelled'
+        | 'retrying'
     order: number
     summary: string | null
     parent_id: string | null
+    full_response: string | null
+    dependencies: string[]
 }
 
 /**
@@ -497,6 +509,11 @@ export interface TodoItemChatResonse {
     content: Task
 }
 
+export interface ConversationSummaryResponse {
+    type: 'conversation_summary'
+    content: string
+}
+
 export interface ChunkedChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
@@ -517,3 +534,4 @@ export type ChatResponse =
     | ClearMessageResponse
     | MessageUsageChatResponse
     | TodoItemChatResonse
+    | ConversationSummaryResponse
