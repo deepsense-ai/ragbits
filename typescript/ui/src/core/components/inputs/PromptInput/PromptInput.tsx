@@ -221,6 +221,7 @@ const PromptInput = ({
             isDisabled={!isLoading && !message}
             radius="full"
             size="sm"
+            type={isLoading ? "button" : "submit"}
             onPress={isLoading ? handleStopAnswering : undefined}
             data-testid="send-message"
             {...sendButtonProps}
