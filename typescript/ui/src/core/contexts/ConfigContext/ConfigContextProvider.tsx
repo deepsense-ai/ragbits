@@ -38,6 +38,7 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
       authentication,
       show_usage,
     } = config.data;
+
     if (feedback.like.enabled || feedback.dislike.enabled) {
       pluginManager.activate(FeedbackFormPluginName);
     }
