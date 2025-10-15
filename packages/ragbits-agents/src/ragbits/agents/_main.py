@@ -622,7 +622,7 @@ class Agent(
 
         return AgentResultStreaming(generator)
 
-    async def _stream_internal(
+    async def _stream_internal(  # noqa: PLR0912
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
