@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add parallel tool calling support to agents for concurrent tool execution (#836)
 - TodoOrchestrator & Todo list for agent (#823)
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
