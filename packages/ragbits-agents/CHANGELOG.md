@@ -6,6 +6,7 @@
 - Add syntax sugar allowing easier Agents definition (#820)
 - Support streaming from downstream agents (#812)
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
+- Add Support for Thinking in agents (#837)
 
 ## 1.4.2 (2026-02-18)
 

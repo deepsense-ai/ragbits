@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Support for Thinking in agents (#837)
 
 ## 1.4.2 (2026-02-18)
 
@@ -8,7 +9,6 @@
 
 ## 1.4.0 (2026-02-04)
 
-- Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
 - Fix trace context managers not closing properly when streaming (#922)
