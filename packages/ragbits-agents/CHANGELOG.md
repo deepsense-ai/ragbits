@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Support for Thinking in agents (#837)
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
 - TodoOrchestrator & Todo list for agent (#823)
 - Support wrapping downstream agents as tools (#818)
