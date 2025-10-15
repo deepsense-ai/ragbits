@@ -11,6 +11,8 @@ pip install ragbits-core
 ## Quick Start
 
 ```python
+import asyncio
+
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 from ragbits.core.llms.litellm import LiteLLM

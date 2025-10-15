@@ -1,5 +1,6 @@
 import {
   ConversationIdChatResponse,
+  ConversationSummaryResponse,
   FollowupMessagesChatResponse,
   StateUpdateChatResponse,
 } from "@ragbits/api-client-react";
@@ -44,4 +45,10 @@ export const handleFollowupMessages: PrimaryHandler<
   FollowupMessagesChatResponse
 > = ({ content }, draft) => {
   draft.followupMessages = content;
+};
+
+export const handleConversationSummary: PrimaryHandler<
+  ConversationSummaryResponse
+> = ({ content }, draft) => {
+  draft.summary = content;
 };
