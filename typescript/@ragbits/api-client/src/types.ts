@@ -7,6 +7,7 @@ import {
     LogoutRequest,
     LoginRequest,
     LoginResponse,
+    OAuth2AuthorizeResponse,
 } from './autogen.types'
 
 export interface GenericResponse {

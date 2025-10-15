@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -23,13 +22,10 @@ class UserCredentials(BaseModel):
 
 
 class OAuth2Credentials(BaseModel):
-    """Represents OAuth2 authentication data."""
+    """Represents OAuth2 authentication data from Discord."""
 
     access_token: str
     token_type: str = "bearer"
-    refresh_token: str | None = None
-    expires_at: datetime | None = None
-    scope: str | None = None
 
 
 class JWTToken(BaseModel):
@@ -42,16 +38,7 @@ class JWTToken(BaseModel):
     user: User
 
 
-class CredentialsLoginRequest(BaseModel):
-    """
-    Request body for user login
-    """
-
-    username: str = Field(..., description="Username")
-    password: str = Field(..., description="Password")
-
-
-LoginRequest = CredentialsLoginRequest
+LoginRequest = UserCredentials
 
 
 class LoginResponse(BaseModel):
@@ -71,3 +58,12 @@ class LogoutRequest(BaseModel):
     """
 
     token: str = Field(..., description="Session ID to logout")
+
+
+class OAuth2AuthorizeResponse(BaseModel):
+    """
+    Response for OAuth2 authorization URL request
+    """
+
+    authorize_url: str = Field(..., description="URL to redirect user to for OAuth2 authorization")
+    state: str = Field(..., description="State parameter for CSRF protection")
