@@ -305,6 +305,34 @@ class AgentGAIA:
         return candidate
 
 
+class AgentSOCRATES:
+    """Factory for the SOCRATES base agent for multi-hop reasoning."""
+
+    @staticmethod
+    def build_system_prompt() -> str:
+        """Return the SOCRATES system prompt."""
+        return "You are a helpful AI assistant. Try to answer user query.\n"
+
+    @staticmethod
+    def build_tools() -> list[Callable[..., Any]]:
+        """Return the callable toolset used by the SOCRATES agent."""
+        tools: list[Callable[..., Any]] = [
+            cast(Callable[..., Any], get_web_search_tool(model_name="gpt-4.1-mini")),
+        ]
+        return tools
+
+    @classmethod
+    def build(cls) -> Agent:
+        """Build the SOCRATES agent and attach final-answer parser."""
+        agent: Agent = Agent(
+            llm=LiteLLM("gpt-4.1-mini"),
+            prompt=cls.build_system_prompt(),
+            tools=cls.build_tools(),
+            default_options=AgentOptions(max_turns=30),
+        )
+        return agent
+
+
 # Export agent instances for import
 humaneval_agent: Agent = AgentHumanEval.build()
 humaneval_todo_agent: Agent = TodoAgent(agent=humaneval_agent, domain_context="python engineer")
@@ -314,3 +342,6 @@ hotpot_todo_agent: Agent = TodoAgent(agent=hotpot_agent, domain_context="researc
 
 gaia_agent: Agent = AgentGAIA.build()
 gaia_todo_agent: Agent = TodoAgent(agent=gaia_agent, domain_context="general AI assistant")
+
+socrates_agent: Agent = AgentSOCRATES.build()
+socrates_todo_agent: Agent = TodoAgent(agent=socrates_agent, domain_context="general AI assistant")
