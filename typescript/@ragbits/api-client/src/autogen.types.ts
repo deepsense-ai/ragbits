@@ -139,14 +139,14 @@ export interface LiveUpdateContent {
  * Represents a single message in the conversation history.
  */
 export interface Message {
-    role: MessageRole
-    content: string
-    /**
-     * Extra information about the message
-     */
-    extra: {
-        [k: string]: unknown
-    } | null
+  role: MessageRole;
+  content: string;
+  /**
+   * Extra information about the message
+   */
+  extra: {
+    [k: string]: unknown;
+  } | null;
 }
 
 /**
