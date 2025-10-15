@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import { describe, it, vi, beforeEach, expect, Mock, afterEach } from "vitest";
 import { useStore } from "zustand";
 import { useInitializeUserStore } from "../../../../src/core/stores/HistoryStore/useInitializeUserStore";
-import Login from "../../../../src/plugins/AuthPlugin/components/Login";
+import CredentialsLogin from "../../../../src/plugins/AuthPlugin/components/CredentialsLogin";
 
 vi.mock("@ragbits/api-client-react", () => ({
   useRagbitsCall: vi.fn(() => ({
@@ -31,7 +31,7 @@ vi.mock(
   }),
 );
 
-describe("Login component", () => {
+describe("CredentialsLogin component", () => {
   const user = userEvent.setup();
   let loginMock: Mock;
   let navigateMock: Mock;
@@ -58,7 +58,7 @@ describe("Login component", () => {
   });
 
   it("renders username and password inputs and submit button", () => {
-    render(<Login />);
+    render(<CredentialsLogin />);
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(
@@ -67,7 +67,7 @@ describe("Login component", () => {
   });
 
   it("updates input values when typing", async () => {
-    render(<Login />);
+    render(<CredentialsLogin />);
     const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
@@ -85,7 +85,7 @@ describe("Login component", () => {
       user: { user_id: "user-1" },
     });
 
-    render(<Login />);
+    render(<CredentialsLogin />);
     const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
@@ -108,7 +108,7 @@ describe("Login component", () => {
   it("failed login sets error", async () => {
     callMock.mockResolvedValue({ success: false });
 
-    render(<Login />);
+    render(<CredentialsLogin />);
     const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
 
@@ -132,7 +132,7 @@ describe("Login component", () => {
   it("handles API errors gracefully", async () => {
     callMock.mockRejectedValue(new Error("Network error"));
 
-    render(<Login />);
+    render(<CredentialsLogin />);
     const usernameInput = screen.getByLabelText(/username/i);
     const passwordInput = screen.getByLabelText(/password/i);
 

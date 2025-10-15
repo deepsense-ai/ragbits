@@ -801,6 +801,14 @@ class AuthType(str, Enum):
     """Defines the available authentication types."""
 
     CREDENTIALS = "credentials"
+    OAUTH2 = "oauth2"
+
+
+class OAuth2ProviderConfig(BaseModel):
+    """Configuration for an OAuth2 provider."""
+
+    name: str = Field(..., description="Provider name (e.g., 'discord')")
+    display_name: str | None = Field(None, description="Display name for the provider (e.g., 'Discord')")
 
 
 class AuthenticationConfig(BaseModel):
@@ -808,6 +816,9 @@ class AuthenticationConfig(BaseModel):
 
     enabled: bool = Field(default=False, description="Enable/disable authentication")
     auth_types: list[AuthType] = Field(default=[], description="List of available authentication types")
+    oauth2_providers: list[OAuth2ProviderConfig] = Field(
+        default_factory=list, description="List of available OAuth2 providers"
+    )
 
 
 class ConfigResponse(BaseModel):
