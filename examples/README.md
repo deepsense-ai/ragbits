@@ -64,15 +64,16 @@ All necessary details are provided in the comments at the top of each script.
 
 ### Agents (`examples/agents/`)
 
-| Script                                                                                         |                   Ragbits Package                    | Description                                                                                              |
-|:-----------------------------------------------------------------------------------------------|:----------------------------------------------------:|:---------------------------------------------------------------------------------------------------------|
-| [Tool Use](/examples/agents/tool_use.py)                                                       | [ragbits-agents](/packages/ragbits-agents)           | Example of how to use agent with tools.                                                                  |
-| [Agent with Decorator](/examples/agents/with_decorator.py)                                     | [ragbits-agents](/packages/ragbits-agents)           | Example of how to use the `@Agent.prompt_config` decorator to define an agent as a class.               |
-| [Agent Dependencies](/examples/agents/dependencies.py)                                         | [ragbits-agents](/packages/ragbits-agents)           | Example of how to bind dependencies to an agent via `AgentRunContext`.                                   |
-| [OpenAI Native Tool Use](/examples/agents/openai_native_tool_use.py)                           | [ragbits-agents](/packages/ragbits-agents)           | Example of how to use agent with OpenAI native tools.                                                    |
-| [Downstream Agent Streaming](/examples/agents/downstream_agents_streaming.py)                  | [ragbits-agents](/packages/ragbits-agents)           | Example of how to stream outputs from downstream agents in real time.                                    |
-| [Streaming Events from Tools](/examples/agents/stream_events_from_tools.py)                    | [ragbits-agents](/packages/ragbits-agents)           | Example of how to define a tool that emits custom events that can be streamed from an agent.             |
-| [CLI Agent](/examples/agents/cli_agent.py)                                                     | [ragbits-agents](/packages/ragbits-agents)           | Example of how to expose an agent via the ragbits CLI for interactive use.                               |
+| Script                                                                                          |                Ragbits Package                | Description                                                                                              |
+|:------------------------------------------------------------------------------------------------|:---------------------------------------------:|:---------------------------------------------------------------------------------------------------------|
+| [Tool Use](/examples/agents/tool_use.py)                                                        |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to use agent with tools.                                                                  |
+| [Agent with Decorator](/examples/agents/with_decorator.py)                                      |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to use the `@Agent.prompt_config` decorator to define an agent as a class.               |
+| [Agent Dependencies](/examples/agents/dependencies.py)                                          |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to bind dependencies to an agent via `AgentRunContext`.                                   |
+| [OpenAI Native Tool Use](/examples/agents/openai_native_tool_use.py)                            |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to use agent with OpenAI native tools.                                                    |
+| [Downstream Agent Streaming](/examples/agents/downstream_agents_streaming.py)                   |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to stream outputs from downstream agents in real time.                                    |
+| [Streaming Events from Tools](/examples/agents/stream_events_from_tools.py)                     |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to define a tool that emits custom events that can be streamed from an agent.             |
+| [CLI Agent](/examples/agents/cli_agent.py)                                                      |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to expose an agent via the ragbits CLI for interactive use.                               |
+| [Memory Tool](/examples/agents/memory_tool_example.py)                                          |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to add long-term memory capabilities to an agent using the memory tool. |
 
 #### Hooks (`examples/agents/hooks/`)
 
