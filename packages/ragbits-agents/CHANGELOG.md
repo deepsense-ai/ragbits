@@ -5,9 +5,9 @@
 - Support wrapping downstream agents as tools (#819)
 - Add syntax sugar allowing easier Agents definition (#820)
 - Add post-processors (#821)
-- Support streaming from downstream agents (#812)
-
+- Support streaming from downstream agents (#825)
 - Add supervisor post-processor (#830)
+- Add parallel tool calling support to agents for concurrent tool execution (#836)
 
 ## 1.4.1 (2026-02-08)
 
@@ -32,6 +32,7 @@
 - Add unique ID to each agent instance for better tracking and identification (#790)
 - Add audit tracing for tool calls to improve observability and debugging (#790)
 - Add AgentDependencies type (#781)
+- Add parallel tool calling in agent
 
 ## 1.2.2 (2025-08-08)
 
