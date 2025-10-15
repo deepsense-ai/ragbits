@@ -9,6 +9,7 @@ import typer
 
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentResult
+from ragbits.core.llms.base import Reasoning
 
 agents_app = typer.Typer(help="Commands for managing agents")
 
@@ -308,17 +309,32 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
                     tools_log.write_line(f"🔧 Tool calls for message '{message[:50]}...':")
 
                     first_response = True
+                    in_reasoning_mode = False
                     agent_results = self.agent.run_streaming(message)
 
                     async for result in agent_results:
                         match result:
-                            case str():
-                                if first_response:
-                                    # Hide loading indicator and start agent response
+                            case Reasoning():
+                                if not in_reasoning_mode:
                                     loading.display = False
-                                    chat_log.write("\n🤖 Agent: ")
+                                    chat_log.write(
+                                        "\n🧠⚡ Thinking...: " if first_response else "\n\n🧠⚡ Thinking Further...: "
+                                    )
+                                    in_reasoning_mode = True
+                                    first_response = False
+                                chat_log.write(str(result))
+
+                            case str():
+                                if in_reasoning_mode or first_response:
+                                    if in_reasoning_mode:
+                                        chat_log.write("\n\n🤖 Agent: ")
+                                        in_reasoning_mode = False
+                                    else:  # first output (no reasoning before)
+                                        loading.display = False
+                                        chat_log.write("\n🤖 Agent: ")
                                     first_response = False
                                 chat_log.write(result)
+
                             case ToolCallResult():
                                 tools_log.write_line(f"  • {result.name}({result.arguments}) → {result.result}")
 

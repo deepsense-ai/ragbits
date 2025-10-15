@@ -8,6 +8,7 @@
 - Support streaming from downstream agents (#825)
 - Add supervisor post-processor (#830)
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
+- Add Support for Thinking in agents (#837)
 
 ## 1.4.1 (2026-02-08)
 

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Support for Thinking in agents (#837)
 
 ## 1.4.1 (2026-02-08)
 
