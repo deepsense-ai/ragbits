@@ -243,6 +243,59 @@ class AgentGAIA:
         return candidate
 
 
+class AgentMoreHopQA:
+    """Factory for the MoreHopQA base agent for multi-hop reasoning."""
+
+    @staticmethod
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    @staticmethod
+    def subtract(a: int, b: int) -> int:
+        """Subtract two integers."""
+        return a - b
+
+    @staticmethod
+    def multiply(a: int, b: int) -> int:
+        """Multiply two integers."""
+        return a * b
+
+    @staticmethod
+    def divide(a: int, b: int) -> float:
+        """Divide two integers as float."""
+        if b == 0:
+            raise ValueError("Cannot divide by zero.")
+        return a / b
+
+    @staticmethod
+    def build_system_prompt() -> str:
+        """Return the MoreHopQA system prompt."""
+        return "You are a helpful AI assistant. Answer the question concisely and accurately.\n"
+
+    @classmethod
+    def build_tools(cls) -> list[Callable[..., Any]]:
+        """Return the callable toolset used by the MoreHopQA agent."""
+        tools: list[Callable[..., Any]] = [
+            cls.add,
+            cls.subtract,
+            cls.multiply,
+            cls.divide,
+        ]
+        return tools
+
+    @classmethod
+    def build(cls) -> Agent:
+        """Build the MoreHopQA agent."""
+        agent: Agent = Agent(
+            llm=LiteLLM("gpt-4.1-mini"),
+            prompt=cls.build_system_prompt(),
+            tools=cls.build_tools(),
+            default_options=AgentOptions(max_turns=30),
+        )
+        return agent
+
+
 # Export agent instances for import
 humaneval_agent: Agent = AgentHumanEval.build()
 humaneval_planning_agent: Agent = build_planning_agent(
@@ -260,5 +313,12 @@ gaia_agent: Agent = AgentGAIA.build()
 gaia_planning_agent: Agent = build_planning_agent(
     base_prompt=AgentGAIA.build_system_prompt(),
     tools=AgentGAIA.build_tools(),
+    max_turns=50,
+)
+
+morehopqa_agent: Agent = AgentMoreHopQA.build()
+morehopqa_planning_agent: Agent = build_planning_agent(
+    base_prompt=AgentMoreHopQA.build_system_prompt(),
+    tools=AgentMoreHopQA.build_tools(),
     max_turns=50,
 )
