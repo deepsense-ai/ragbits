@@ -1,6 +1,7 @@
 import importlib
 import json
 import logging
+import re
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -11,7 +12,7 @@ import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -59,6 +60,7 @@ class RagbitsAPI:
         ui_build_dir: str | None = None,
         debug_mode: bool = False,
         auth_backend: AuthenticationBackend | type[AuthenticationBackend] | str | None = None,
+        theme_path: str | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -70,6 +72,7 @@ class RagbitsAPI:
             ui_build_dir: Path to a custom UI build directory. If None, uses the default package UI.
             debug_mode: Flag enabling debug tools in the default UI
             auth_backend: Authentication backend for user authentication. If None, no authentication required.
+            theme_path: Path to a JSON file containing HeroUI theme configuration from heroui.com/themes
         """
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
@@ -77,6 +80,7 @@ class RagbitsAPI:
         self.debug_mode = debug_mode
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.security = HTTPBearer(auto_error=False) if auth_backend else None
+        self.theme_path = Path(theme_path) if theme_path else None
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -187,6 +191,25 @@ class RagbitsAPI:
             )
 
             return JSONResponse(content=config_response.model_dump())
+
+        # Theme CSS endpoint - always available, returns 404 if no theme configured
+        @self.app.get("/api/theme", response_class=PlainTextResponse)
+        async def theme() -> PlainTextResponse:
+            if not self.theme_path or not self.theme_path.exists():
+                raise HTTPException(status_code=404, detail="No theme configured")
+
+            try:
+                with open(self.theme_path, encoding="utf-8") as f:
+                    json_content = f.read().strip()
+
+                css_content = RagbitsAPI._convert_heroui_json_to_css(json_content)
+
+                return PlainTextResponse(
+                    content=css_content, media_type="text/css", headers={"Cache-Control": "public, max-age=3600"}
+                )
+            except Exception as e:
+                logger.error(f"Error serving theme: {e}")
+                raise HTTPException(status_code=500, detail="Error loading theme") from e
 
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
@@ -680,3 +703,78 @@ class RagbitsAPI:
         Used for starting the API
         """
         uvicorn.run(self.app, host=host, port=port)
+
+    @staticmethod
+    def _convert_heroui_json_to_css(json_content: str) -> str:
+        """Convert HeroUI JSON theme configuration to CSS variables."""
+        try:
+            theme_config = json.loads(json_content)
+            css_lines = [
+                "/* Auto-generated CSS from HeroUI theme configuration */",
+                "",
+                ":root {",
+            ]
+
+            # Process light theme
+            if "themes" in theme_config and "light" in theme_config["themes"]:
+                light_colors = theme_config["themes"]["light"]["colors"]
+                css_lines.extend(RagbitsAPI._process_theme_colors(light_colors))
+
+            # Add layout properties
+            if "layout" in theme_config:
+                for prop, value in theme_config["layout"].items():
+                    css_prop = re.sub(r"([A-Z])", r"-\1", prop).lower()
+                    css_lines.append(f"  --heroui-{css_prop}: {value};")
+
+            css_lines.append("}")
+            css_lines.append("")
+
+            # Process dark theme
+            if "themes" in theme_config and "dark" in theme_config["themes"]:
+                css_lines.append(".dark {")
+                dark_colors = theme_config["themes"]["dark"]["colors"]
+                css_lines.extend(RagbitsAPI._process_theme_colors(dark_colors))
+
+                if "layout" in theme_config:
+                    for prop, value in theme_config["layout"].items():
+                        css_prop = re.sub(r"([A-Z])", r"-\1", prop).lower()
+                        css_lines.append(f"  --heroui-{css_prop}: {value};")
+
+                css_lines.append("}")
+
+            # Add body styling
+            css_lines.extend(
+                [
+                    "",
+                    "body {",
+                    "  background-color: var(--heroui-background);",
+                    "  color: var(--heroui-foreground);",
+                    "}",
+                ]
+            )
+
+            return "\n".join(css_lines)
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in theme file: {e}")
+            raise HTTPException(status_code=400, detail="Invalid JSON theme file") from e
+        except Exception as e:
+            logger.error(f"Error converting theme: {e}")
+            raise HTTPException(status_code=500, detail="Error processing theme") from e
+
+    @staticmethod
+    def _process_theme_colors(colors: dict) -> list[str]:
+        """Process theme colors and return CSS variable declarations."""
+        css_lines = []
+
+        for color_name, color_value in colors.items():
+            if isinstance(color_value, dict):
+                for shade, value in color_value.items():
+                    if shade == "DEFAULT":
+                        css_lines.append(f"  --heroui-{color_name}: {value};")
+                    elif isinstance(value, str):
+                        css_lines.append(f"  --heroui-{color_name}-{shade}: {value};")
+            elif isinstance(color_value, str):
+                css_lines.append(f"  --heroui-{color_name}: {color_value};")
+
+        return css_lines

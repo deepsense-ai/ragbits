@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Support for Thinking in agents (#837)
+- Add parallel tool calling support to agents for concurrent tool execution (#836)
 - TodoOrchestrator & Todo list for agent (#823)
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
@@ -27,6 +29,7 @@
 - Add unique ID to each agent instance for better tracking and identification (#790)
 - Add audit tracing for tool calls to improve observability and debugging (#790)
 - Add AgentDependencies type (#781)
+- Add parallel tool calling in agent
 
 ## 1.2.2 (2025-08-08)
 
