@@ -2,7 +2,7 @@
 
 Let's walk through a quick example of **basic question answering**. Specifically, let's build **a system for answering tech questions**, e.g. about Linux or iPhone apps.
 
-Install the latest Ragbits via `pip install -U ragbits` and follow along.
+Install the latest Ragbits via `pip install -U ragbits ragbits-agents` and follow along.
 
 ## Configuring the environment
 

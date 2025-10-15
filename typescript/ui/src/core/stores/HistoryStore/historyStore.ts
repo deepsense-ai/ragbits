@@ -278,11 +278,10 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
     },
-    setChatOptions: (options) => {
-      const { currentConversation } = get();
+    setConversationProperties: (conversationKey, properties) => {
       set(
-        updateConversation(currentConversation, (draft) => {
-          draft.chatOptions = options;
+        updateConversation(conversationKey, (draft) => {
+          Object.assign(draft, properties);
         }),
       );
     },
