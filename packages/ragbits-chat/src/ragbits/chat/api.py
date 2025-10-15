@@ -18,7 +18,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ragbits.chat.auth import AuthenticationBackend, User
-from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
+from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
+from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest, OAuth2Credentials
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -33,6 +34,7 @@ from ragbits.chat.interface.types import (
     FeedbackItem,
     FeedbackRequest,
     Image,
+    OAuth2ProviderConfig,
 )
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -122,7 +124,7 @@ class RagbitsAPI:
                 content={"detail": exc.errors(), "body": exc.body},
             )
 
-    def setup_routes(self) -> None:
+    def setup_routes(self) -> None:  # noqa: PLR0915
         """Defines API routes."""
         # Authentication routes
         if self.auth_backend:
@@ -136,6 +138,38 @@ class RagbitsAPI:
             @self.app.post("/api/auth/logout", response_class=JSONResponse)
             async def logout(request: LogoutRequest) -> JSONResponse:
                 return await self._handle_logout(request)
+
+            # OAuth2 routes (if OAuth2 backend is configured)
+            oauth2_backends = []
+            if isinstance(self.auth_backend, MultiAuthenticationBackend):
+                oauth2_backends = self.auth_backend.get_oauth2_backends()
+            elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+                oauth2_backends = [self.auth_backend]
+
+            if oauth2_backends:
+                # Create a mapping of provider name to backend for quick lookup
+                oauth2_backend_map = {backend.provider.name: backend for backend in oauth2_backends}
+
+                @self.app.get("/api/auth/authorize/{provider}", response_class=JSONResponse)
+                async def oauth2_authorize(provider: str) -> JSONResponse:
+                    """Generate OAuth2 authorization URL for specified provider."""
+                    backend = oauth2_backend_map.get(provider)
+                    if not backend:
+                        raise HTTPException(status_code=404, detail=f"OAuth2 provider '{provider}' not found")
+
+                    authorize_url, state = backend.generate_authorize_url()
+                    return JSONResponse(content={"authorize_url": authorize_url, "state": state})
+
+                @self.app.get("/api/auth/callback/{provider}", response_class=HTMLResponse)
+                async def oauth2_callback(
+                    provider: str, code: str | None = None, state: str | None = None
+                ) -> HTMLResponse:
+                    """Handle OAuth2 callback from provider."""
+                    backend = oauth2_backend_map.get(provider)
+                    if not backend:
+                        raise HTTPException(status_code=404, detail=f"OAuth2 provider '{provider}' not found")
+
+                    return await self._handle_oauth2_callback(code, state, backend)
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
             async def chat_message(
@@ -168,6 +202,39 @@ class RagbitsAPI:
         async def config() -> JSONResponse:
             feedback_config = self.chat_interface.feedback_config
 
+            # Determine available auth types and OAuth2 providers based on backend
+            auth_types = []
+            oauth2_providers = []
+
+            if self.auth_backend:
+                if isinstance(self.auth_backend, MultiAuthenticationBackend):
+                    # Multi backend: check what types are available
+                    if self.auth_backend.get_credentials_backends():
+                        auth_types.append(AuthType.CREDENTIALS)
+
+                    oauth2_backends = self.auth_backend.get_oauth2_backends()
+                    if oauth2_backends:
+                        auth_types.append(AuthType.OAUTH2)
+                        for backend in oauth2_backends:
+                            oauth2_providers.append(
+                                OAuth2ProviderConfig(
+                                    name=backend.provider.name,
+                                    display_name=backend.provider.display_name,
+                                )
+                            )
+                elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+                    # Single OAuth2 backend
+                    auth_types = [AuthType.OAUTH2]
+                    oauth2_providers = [
+                        OAuth2ProviderConfig(
+                            name=self.auth_backend.provider.name,
+                            display_name=self.auth_backend.provider.display_name,
+                        )
+                    ]
+                else:
+                    # Single credentials backend
+                    auth_types = [AuthType.CREDENTIALS]
+
             config_response = ConfigResponse(
                 feedback=FeedbackConfig(
                     like=FeedbackItem(
@@ -186,7 +253,8 @@ class RagbitsAPI:
                 show_usage=self.chat_interface.show_usage,
                 authentication=AuthenticationConfig(
                     enabled=self.auth_backend is not None,
-                    auth_types=[AuthType.CREDENTIALS],
+                    auth_types=auth_types,
+                    oauth2_providers=oauth2_providers,
                 ),
             )
 
@@ -497,15 +565,13 @@ class RagbitsAPI:
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
     async def _handle_login(self, request: LoginRequest) -> JSONResponse:
-        """Handle user login requests."""
+        """Handle user login requests with credentials."""
         if not self.auth_backend:
             raise HTTPException(status_code=500, detail="Authentication not configured")
 
         try:
-            from .auth.types import UserCredentials
-
-            credentials = UserCredentials(username=request.username, password=request.password)
-            auth_result = await self.auth_backend.authenticate_with_credentials(credentials)
+            # LoginRequest is UserCredentials
+            auth_result = await self.auth_backend.authenticate_with_credentials(request)
 
             if auth_result.success and auth_result.jwt_token:
                 return JSONResponse(
@@ -551,6 +617,150 @@ class RagbitsAPI:
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 content={"success": False, "error_message": "Internal server error"},
+            )
+
+    async def _handle_oauth2_callback(  # noqa: PLR6301
+        self, code: str | None, state: str | None, backend: OAuth2AuthenticationBackend
+    ) -> HTMLResponse:
+        """
+        Handle OAuth2 callback from provider.
+
+        This endpoint receives the authorization code from the OAuth2 provider,
+        exchanges it for an access token, authenticates the user, and redirects
+        to the frontend with the JWT token.
+
+        Args:
+            code: Authorization code from OAuth2 provider
+            state: CSRF protection state parameter
+            backend: The specific OAuth2 backend for this provider
+        """
+        # Verify required parameters
+        if not code:
+            return HTMLResponse(
+                content="""
+                <html>
+                    <body>
+                        <h1>Authentication Error</h1>
+                        <p>Missing authorization code</p>
+                        <a href="/login">Try again</a>
+                    </body>
+                </html>
+                """,
+                status_code=400,
+            )
+
+        # Verify state parameter for CSRF protection
+        if state and not backend.verify_state(state):
+            return HTMLResponse(
+                content="""
+                <html>
+                    <body>
+                        <h1>Authentication Error</h1>
+                        <p>Invalid or expired state parameter</p>
+                        <a href="/login">Try again</a>
+                    </body>
+                </html>
+                """,
+                status_code=400,
+            )
+
+        try:
+            # Exchange code for access token
+            access_token = await backend.exchange_code_for_token(code)
+            if not access_token:
+                return HTMLResponse(
+                    content="""
+                    <html>
+                        <body>
+                            <h1>Authentication Error</h1>
+                            <p>Failed to exchange authorization code</p>
+                            <a href="/login">Try again</a>
+                        </body>
+                    </html>
+                    """,
+                    status_code=400,
+                )
+
+            # Authenticate with the access token
+            oauth_credentials = OAuth2Credentials(access_token=access_token, token_type="Bearer")  # noqa: S106
+            auth_result = await backend.authenticate_with_oauth2(oauth_credentials)
+
+            if not auth_result.success or not auth_result.jwt_token:
+                return HTMLResponse(
+                    content=f"""
+                    <html>
+                        <body>
+                            <h1>Authentication Error</h1>
+                            <p>{auth_result.error_message or 'Authentication failed'}</p>
+                            <a href="/login">Try again</a>
+                        </body>
+                    </html>
+                    """,
+                    status_code=400,
+                )
+
+            # Success! Redirect to frontend with JWT token
+            jwt_token_str = auth_result.jwt_token.access_token
+            user_data = auth_result.user
+            user_id = user_data.user_id if user_data else ""
+            user_email = user_data.email if user_data else ""
+
+            # Return HTML that will store the token and redirect
+            # The auth store expects: token, tokenExpiration, user (with user_id and email)
+            return HTMLResponse(
+                content=f"""
+                <html>
+                    <head>
+                        <title>Authentication Successful</title>
+                    </head>
+                    <body>
+                        <h1>Signing you in...</h1>
+                        <script>
+                            // Store auth data in localStorage matching authStore format
+                            const authData = {{
+                                token: {{
+                                    access_token: "{jwt_token_str}",
+                                    token_type: "bearer",
+                                    expires_in: {auth_result.jwt_token.expires_in},
+                                    user: {{
+                                        user_id: "{user_id}",
+                                        email: {f'"{user_email}"' if user_email else 'null'}
+                                    }}
+                                }},
+                                user: {{
+                                    user_id: "{user_id}",
+                                    email: {f'"{user_email}"' if user_email else 'null'}
+                                }},
+                                tokenExpiration: Date.now() + ({auth_result.jwt_token.expires_in} * 1000),
+                                isAuthenticated: true
+                            }};
+                            // Store in the same format as the authStore expects
+                            const persistData = {{
+                                state: authData,
+                                version: 0
+                            }};
+                            localStorage.setItem('ragbits-auth', JSON.stringify(persistData));
+                            // Redirect to home page which will trigger rehydration
+                            window.location.href = '/';
+                        </script>
+                    </body>
+                </html>
+                """
+            )
+
+        except Exception as e:
+            logger.error(f"OAuth2 callback error: {e}")
+            return HTMLResponse(
+                content=f"""
+                <html>
+                    <body>
+                        <h1>Authentication Error</h1>
+                        <p>An error occurred during authentication: {str(e)}</p>
+                        <a href="/login">Try again</a>
+                    </body>
+                </html>
+                """,
+                status_code=500,
             )
 
     @staticmethod

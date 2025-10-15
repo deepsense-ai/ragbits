@@ -41,12 +41,14 @@ class RagbitsChatModelProvider:
 
         try:
             from ragbits.chat.auth.types import (
-                CredentialsLoginRequest,
                 JWTToken,
                 LoginRequest,
                 LoginResponse,
                 LogoutRequest,
+                OAuth2AuthorizeResponse,
+                OAuth2Credentials,
                 User,
+                UserCredentials,
             )
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
@@ -68,6 +70,7 @@ class RagbitsChatModelProvider:
                 Message,
                 MessageRole,
                 MessageUsage,
+                OAuth2ProviderConfig,
                 Reference,
                 StateUpdate,
             )
@@ -105,13 +108,16 @@ class RagbitsChatModelProvider:
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
+                "OAuth2AuthorizeResponse": OAuth2AuthorizeResponse,
+                "OAuth2ProviderConfig": OAuth2ProviderConfig,
                 # API request models
                 "ChatRequest": ChatMessageRequest,
                 "FeedbackRequest": FeedbackRequest,
                 # Auth
                 "AuthType": AuthType,
                 "AuthenticationConfig": AuthenticationConfig,
-                "CredentialsLoginRequest": CredentialsLoginRequest,
+                "UserCredentials": UserCredentials,
+                "OAuth2Credentials": OAuth2Credentials,
                 "JWTToken": JWTToken,
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
@@ -163,16 +169,19 @@ class RagbitsChatModelProvider:
                 "UserSettings",
                 "FeedbackConfig",
                 "AuthenticationConfig",
+                "OAuth2ProviderConfig",
             ],
             "responses": [
                 "FeedbackResponse",
                 "ConfigResponse",
                 "LoginResponse",
+                "OAuth2AuthorizeResponse",
             ],
             "requests": [
                 "ChatRequest",
                 "FeedbackRequest",
-                "CredentialsLoginRequest",
+                "UserCredentials",
+                "OAuth2Credentials",
                 "LoginRequest",
                 "LogoutRequest",
             ],

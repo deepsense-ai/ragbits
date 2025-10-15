@@ -7,6 +7,7 @@ import {
     LogoutRequest,
     LoginRequest,
     LoginResponse,
+    OAuth2AuthorizeResponse,
 } from './autogen.types'
 
 export interface GenericResponse {
@@ -99,6 +100,9 @@ export interface RequestOptions<
     method?: Endpoints[URL]['method']
     body?: Endpoints[URL]['request'] extends never
         ? undefined
+        : Endpoints[URL]['request']
+    params?: Endpoints[URL]['request'] extends never
+        ? never
         : Endpoints[URL]['request']
     headers?: Record<string, string>
     signal?: AbortSignal

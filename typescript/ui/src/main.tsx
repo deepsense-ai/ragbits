@@ -16,6 +16,7 @@ import { BrowserRouter } from "react-router";
 import { Routes } from "./core/components/Routes.tsx";
 import { AuthPlugin } from "./plugins/AuthPlugin/index.tsx";
 import { UsagePlugin } from "./plugins/UsagePlugin/index.tsx";
+import { CredentialsLoginPlugin } from "./plugins/AuthPlugin/plugins/CredentialsLoginPlugin.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -24,6 +25,8 @@ pluginManager.register(SharePlugin);
 pluginManager.register(ChatHistoryPlugin);
 pluginManager.register(AuthPlugin);
 pluginManager.register(UsagePlugin);
+pluginManager.register(CredentialsLoginPlugin);
+// OAuth2 login plugins are registered dynamically in ConfigContextProvider
 
 // Preload icons
 loadIcons([

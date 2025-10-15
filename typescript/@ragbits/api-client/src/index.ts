@@ -115,6 +115,7 @@ export class RagbitsClient {
         const {
             method = 'GET',
             body,
+            params,
             headers = {},
             ...restOptions
         } = options || {}
@@ -130,10 +131,19 @@ export class RagbitsClient {
                 typeof body === 'string' ? body : JSON.stringify(body)
         }
 
-        const response = await this._makeRequest(
-            this._buildApiUrl(endpoint.toString()),
-            requestOptions
-        )
+        // Build URL with query parameters if provided
+        let url = this._buildApiUrl(endpoint.toString())
+        if (params && Object.keys(params).length > 0) {
+            const searchParams = new URLSearchParams()
+            for (const [key, value] of Object.entries(params)) {
+                if (value !== undefined && value !== null) {
+                    searchParams.append(key, String(value))
+                }
+            }
+            url += `?${searchParams.toString()}`
+        }
+
+        const response = await this._makeRequest(url, requestOptions)
         return response.json()
     }
 
