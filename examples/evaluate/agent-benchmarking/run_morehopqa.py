@@ -82,7 +82,7 @@ async def main(
     # Metrics
     metrics = MetricSet(MoreHopQAOutcome(), MoreHopQATooling(), MoreHopQAEfficiency())
 
-    evaluator = Evaluator(batch_size=1, parallelize_batches=True)
+    evaluator = Evaluator(batch_size=5, parallelize_batches=True)
     results = await evaluator.compute(pipeline=pipeline, dataloader=dataloader, metricset=metrics)
 
     print("\nMetrics:")

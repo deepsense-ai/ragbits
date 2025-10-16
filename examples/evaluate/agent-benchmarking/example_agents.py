@@ -43,7 +43,6 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         )
         self._inner_agent = agent
         self._domain_context = domain_context
-        self._orchestrator = TodoOrchestrator(domain_context=domain_context)
 
     def __getattr__(self, name: str) -> object:
         """Proxy missing attributes to the wrapped inner agent."""
@@ -60,6 +59,7 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
     ) -> AgentResult[str]:
         """Run the orchestrated flow and return a single final answer."""
         query = input or ""
+        orchestrator = TodoOrchestrator(domain_context=self._domain_context)
 
         # Accumulate outputs from the orchestrated workflow
         final_text: str = ""
@@ -72,7 +72,7 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         in_final_summary = False
         final_summary_only: str = ""
 
-        async for item in self._orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
+        async for item in orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
             match item:
                 case str():
                     final_text += item
@@ -94,8 +94,8 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
                         in_final_summary = False
                 case _:
                     # Inspect orchestrator internal state to populate metadata
-                    tasks_created = len(self._orchestrator.todo_list.tasks) > 0
-                    num_tasks = len(self._orchestrator.todo_list.tasks)
+                    tasks_created = len(orchestrator.todo_list.tasks) > 0
+                    num_tasks = len(orchestrator.todo_list.tasks)
 
         # Compose metadata with TODO info
         complexity = "COMPLEX" if tasks_created else "SIMPLE"
