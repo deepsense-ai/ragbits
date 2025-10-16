@@ -23,6 +23,8 @@
 - Fix trace context managers not closing properly when streaming (#922)
 - Fixed litellm calls to supports_pdf_input and supports_vision
 
+- Add name parameter and slightly refactor HuggingFace dataloder (#829)
+
 ## 1.3.0 (2025-09-11)
 
 - feat: improve app startup speed with lazy LiteLLM loading
