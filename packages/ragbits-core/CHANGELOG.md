@@ -3,6 +3,8 @@
 ## Unreleased
 - Add Support for Thinking in agents (#837)
 
+- Add name parameter and slightly refactor HuggingFace dataloder (#829)
+
 ## 1.3.0 (2025-09-11)
 
 - feat: improve app startup speed with lazy LiteLLM loading

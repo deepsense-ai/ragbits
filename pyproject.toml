@@ -196,6 +196,9 @@ allow-star-arg-any = true
     "ANN201", # Missing return type annotation
     "PLR2004", # Magic numbers are ok in tests
 ]
+"**/pipelines/human_eval.py" = [
+    "S102", # exec is required for HumanEval code evaluation
+]
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 120
