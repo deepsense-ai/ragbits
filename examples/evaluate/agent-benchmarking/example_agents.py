@@ -11,8 +11,6 @@ Todo-augmented variants are exported as `<name>_todo_agent` and wrap the base
 agent with the `TodoAgent` orchestrator.
 """
 
-from __future__ import annotations
-
 from collections.abc import Callable
 from typing import Any, cast
 
