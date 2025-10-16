@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Feat: introduce agent evaluation pipelines and metrics (HotpotQA, HumanEval, GAIA) (#829)
+- Feat: introduce agent evaluation pipelines and metrics (HotpotQA, HumanEval, GAIA, MoreHopQA) (#829)
 
 ## 1.3.0 (2025-09-11)
 
