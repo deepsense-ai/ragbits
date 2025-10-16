@@ -22,14 +22,14 @@ MoreHopQA is a multi-hop reasoning benchmark that tests an agent's ability to fo
 chains of reasoning over several steps.
 """
 
-# # /// script
-# # requires-python = ">=3.10"
-# # dependencies = [
-# #     "ragbits-agents",
-# #     "ragbits-core",
-# #     "ragbits-evaluate",
-# # ]
-# # ///
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-agents",
+#     "ragbits-core",
+#     "ragbits-evaluate",
+# ]
+# ///
 
 import argparse
 import asyncio
@@ -88,18 +88,6 @@ async def main(
     print("\nMetrics:")
     for key, value in results.metrics.items():
         print(f"  {key}: {value:.4f}")
-
-    # Calculate and display cost information
-    print("\nCost Analysis:")
-    total_prompt_tokens = sum(r.usage.prompt_tokens if r.usage else 0 for r in results.results)
-    total_completion_tokens = sum(r.usage.completion_tokens if r.usage else 0 for r in results.results)
-    total_tokens = sum(r.usage.total_tokens if r.usage else 0 for r in results.results)
-    total_estimated_cost = sum(r.usage.estimated_cost if r.usage else 0 for r in results.results)
-
-    print(f"  Total prompt tokens: {total_prompt_tokens:,}")
-    print(f"  Total completion tokens: {total_completion_tokens:,}")
-    print(f"  Total tokens: {total_tokens:,}")
-    print(f"  Estimated total cost: ${total_estimated_cost:.4f}")
 
     if use_todo:
         from utils import print_todo_stats

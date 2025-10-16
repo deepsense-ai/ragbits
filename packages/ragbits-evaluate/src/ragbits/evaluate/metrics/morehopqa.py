@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from statistics import mean
 
 from ragbits.evaluate.metrics.base import Metric
