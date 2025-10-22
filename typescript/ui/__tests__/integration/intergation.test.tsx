@@ -126,8 +126,13 @@ describe("Integration tests", () => {
               {
                 content: "Test message",
                 role: MessageRole.User,
+                extra: null,
               },
-              { content: expect.any(String), role: MessageRole.Assistant },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
             ],
             message: "Test message 2",
           },
@@ -213,10 +218,23 @@ describe("Integration tests", () => {
               {
                 content: "Test message",
                 role: MessageRole.User,
+                extra: null,
               },
-              { content: expect.any(String), role: MessageRole.Assistant },
-              { content: "Test message 2", role: MessageRole.User },
-              { content: expect.any(String), role: MessageRole.Assistant },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
+              {
+                content: "Test message 2",
+                role: MessageRole.User,
+                extra: null,
+              },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
             ],
             message: "Test message 3",
           },
