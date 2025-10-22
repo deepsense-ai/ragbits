@@ -25,6 +25,7 @@ export const ChatResponseType = {
     ClearMessage: 'clear_message',
     Usage: 'usage',
     TodoItem: 'todo_item',
+    Custom: 'custom',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -132,6 +133,12 @@ export interface LiveUpdateContent {
 export interface Message {
     role: MessageRole
     content: string
+    /**
+     * Extra information about the message
+     */
+    extra: {
+        [k: string]: unknown
+    } | null
 }
 
 /**
@@ -207,6 +214,14 @@ export interface Task {
     parent_id: string | null
     full_response: string | null
     dependencies: string[]
+}
+
+/**
+ * Custom response representation.
+ */
+export interface Custom {
+    type: string
+    content: unknown
 }
 
 /**
@@ -514,6 +529,11 @@ export interface ConversationSummaryResponse {
     content: string
 }
 
+export interface CustomChatResponse {
+    type: 'custom'
+    content: Custom
+}
+
 export interface ChunkedChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
@@ -535,3 +555,4 @@ export type ChatResponse =
     | MessageUsageChatResponse
     | TodoItemChatResonse
     | ConversationSummaryResponse
+    | CustomChatResponse

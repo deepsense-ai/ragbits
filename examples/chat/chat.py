@@ -35,6 +35,14 @@ from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import ChatFormat
 
 
+class CustomExampleResponse(BaseModel):
+    """Custom response representation."""
+
+    name: str
+    age: int
+    city: str
+
+
 class LikeFormExample(BaseModel):
     """A simple example implementation of the like form that demonstrates how to use Pydantic for form definition."""
 
@@ -128,6 +136,10 @@ class MyChat(ChatInterface):
         yield self.create_image_response(
             str(uuid.uuid4()),
             "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
+        )
+
+        yield self.create_custom_response(
+            type="custom_type", content=CustomExampleResponse(name="John Doe", age=30, city="New York")
         )
 
         example_live_updates = [

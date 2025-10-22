@@ -25,6 +25,7 @@ from .types import (
     ChatContext,
     ChatResponse,
     ChatResponseType,
+    Custom,
     FeedbackType,
     Image,
     LiveUpdate,
@@ -264,6 +265,10 @@ class ChatInterface(ABC):
     @staticmethod
     def create_todo_item_response(task: Task) -> ChatResponse:
         return ChatResponse(type=ChatResponseType.TODO_ITEM, content=task)
+
+    @staticmethod
+    def create_custom_response(type: str, content: Any) -> ChatResponse:  # noqa: ANN401
+        return ChatResponse(type=ChatResponseType.CUSTOM, content=Custom(type=type, content=content))
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

@@ -16,6 +16,7 @@ import {
   handleText,
   handleTodoItem,
   handleUsage,
+  handleCustom,
 } from "./messageHandlers";
 
 type BaseHandlerContext = {
@@ -108,4 +109,7 @@ ChatHandlerRegistry.register(ChatResponseType.TodoItem, {
 });
 ChatHandlerRegistry.register(ChatResponseType.ConversationSummary, {
   handle: handleConversationSummary,
+});
+ChatHandlerRegistry.register(ChatResponseType.Custom, {
+  handle: handleCustom,
 });

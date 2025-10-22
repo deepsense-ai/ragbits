@@ -56,6 +56,7 @@ class RagbitsChatModelProvider:
                 ChatResponseType,
                 ChunkedContent,
                 ConfigResponse,
+                Custom,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
@@ -96,12 +97,13 @@ class RagbitsChatModelProvider:
                 "Image": Image,
                 "MessageUsage": MessageUsage,
                 "Task": Task,
+                "Custom": Custom,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
                 "PageMetaCustomization": PageMetaCustomization,
                 "UserSettings": UserSettings,
-                "FeedbackConfig": FeedbackConfig,  # Current from types.py (not deprecated forms.py)
+                "FeedbackConfig": FeedbackConfig,
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
@@ -156,6 +158,7 @@ class RagbitsChatModelProvider:
                 "MessageUsage",
                 "Task",
                 "TaskStatus",
+                "Custom",
             ],
             "configuration": [
                 "HeaderCustomization",

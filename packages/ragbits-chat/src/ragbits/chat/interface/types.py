@@ -23,6 +23,7 @@ class Message(BaseModel):
 
     role: MessageRole
     content: str
+    extra: dict[str, Any] | None = Field(default=None, description="Extra information about the message")
 
 
 class Reference(BaseModel):
@@ -125,6 +126,7 @@ class ChatResponseType(str, Enum):
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
     TODO_ITEM = "todo_item"
+    CUSTOM = "custom"
 
 
 class ChatContext(BaseModel):
@@ -136,6 +138,13 @@ class ChatContext(BaseModel):
     user: User | None = None
     session_id: str | None = None
     model_config = ConfigDict(extra="allow")
+
+
+class Custom(BaseModel):
+    """Custom response representation."""
+
+    type: str
+    content: Any
 
 
 class ChatResponse(BaseModel):
@@ -153,6 +162,7 @@ class ChatResponse(BaseModel):
         | ChunkedContent
         | None
         | Task
+        | Custom
     )
 
     def as_text(self) -> str | None:
@@ -240,6 +250,12 @@ class ChatResponse(BaseModel):
         Return the content as string if this is an conversation summary response, else None
         """
         return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_SUMMARY else None
+
+    def as_custom(self) -> Custom | None:
+        """
+        Return the content as Custom if this is a custom response, else None
+        """
+        return cast(Custom, self.content) if self.type == ChatResponseType.CUSTOM else None
 
 
 class ChatMessageRequest(BaseModel):

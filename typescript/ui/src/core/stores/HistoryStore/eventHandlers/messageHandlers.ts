@@ -8,6 +8,7 @@ import {
   ReferenceChatResponse,
   TextChatResponse,
   TodoItemChatResonse,
+  CustomChatResponse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -116,4 +117,11 @@ export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
   });
 
   message.tasks = newTasks;
+};
+
+export const handleCustom: PrimaryHandler<CustomChatResponse> = (response) => {
+  console.warn(
+    "⚠️ This is a custom response. It is not handled by the default Ragbits App.",
+  );
+  console.warn("⚠️ Custom response: ", response);
 };
