@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any, Protocol, TypeVar
 
 import sqlalchemy
@@ -187,7 +188,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         self,
         message: str,
         response: str,
-        extra_responses: list[ChatResponse],
+        extra_responses: Sequence[ChatResponse],
         context: ChatContext,
         timestamp: float,
     ) -> None:

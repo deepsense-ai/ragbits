@@ -53,10 +53,8 @@ class RagbitsChatModelProvider:
                 AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
-                ChatResponseType,
                 ChunkedContent,
                 ConfigResponse,
-                Custom,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
@@ -80,7 +78,6 @@ class RagbitsChatModelProvider:
 
             self._models_cache = {
                 # Enums
-                "ChatResponseType": ChatResponseType,
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
@@ -97,7 +94,6 @@ class RagbitsChatModelProvider:
                 "Image": Image,
                 "MessageUsage": MessageUsage,
                 "Task": Task,
-                "Custom": Custom,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -158,7 +154,6 @@ class RagbitsChatModelProvider:
                 "MessageUsage",
                 "Task",
                 "TaskStatus",
-                "Custom",
             ],
             "configuration": [
                 "HeaderCustomization",

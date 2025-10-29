@@ -1,5 +1,6 @@
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, cast
+from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,19 +27,33 @@ class Message(BaseModel):
     extra: dict[str, Any] | None = Field(default=None, description="Extra information about the message")
 
 
-class Reference(BaseModel):
+class ResponseContent(BaseModel, ABC):
+    """Base class for all chat response content types."""
+
+    @abstractmethod
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        """Return the type identifier for this content."""
+
+
+class Reference(ResponseContent):
     """Represents a document used as reference for the response."""
 
     title: str
     content: str
     url: str | None = None
 
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "reference"
 
-class StateUpdate(BaseModel):
+
+class StateUpdate(ResponseContent):
     """Represents an update to conversation state."""
 
     state: dict[str, Any]
     signature: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "state_update"
 
 
 class LiveUpdateType(str, Enum):
@@ -55,22 +70,28 @@ class LiveUpdateContent(BaseModel):
     description: str | None
 
 
-class LiveUpdate(BaseModel):
+class LiveUpdate(ResponseContent):
     """Represents an live update performed by an agent."""
 
     update_id: str
     type: LiveUpdateType
     content: LiveUpdateContent
 
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "live_update"
 
-class Image(BaseModel):
+
+class Image(ResponseContent):
     """Represents an image in the conversation."""
 
     id: str
     url: str
 
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "image"
 
-class ChunkedContent(BaseModel):
+
+class ChunkedContent(ResponseContent):
     """Represents a chunk of large content being transmitted."""
 
     id: str
@@ -79,6 +100,9 @@ class ChunkedContent(BaseModel):
     total_chunks: int
     mime_type: str
     data: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "chunked_content"
 
 
 class MessageUsage(BaseModel):
@@ -110,23 +134,75 @@ class MessageUsage(BaseModel):
         )
 
 
-class ChatResponseType(str, Enum):
-    """Types of responses that can be returned by the chat interface."""
+# Wrapper content classes for primitive types
+class TextContent(ResponseContent):
+    """Text content wrapper."""
 
-    TEXT = "text"
-    REFERENCE = "reference"
-    STATE_UPDATE = "state_update"
-    MESSAGE_ID = "message_id"
-    CONVERSATION_ID = "conversation_id"
-    CONVERSATION_SUMMARY = "conversation_summary"
-    LIVE_UPDATE = "live_update"
-    FOLLOWUP_MESSAGES = "followup_messages"
-    IMAGE = "image"
-    CHUNKED_CONTENT = "chunked_content"
-    CLEAR_MESSAGE = "clear_message"
-    USAGE = "usage"
-    TODO_ITEM = "todo_item"
-    CUSTOM = "custom"
+    text: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "text"
+
+
+class MessageIdContent(ResponseContent):
+    """Message ID content wrapper."""
+
+    message_id: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "message_id"
+
+
+class ConversationIdContent(ResponseContent):
+    """Conversation ID content wrapper."""
+
+    conversation_id: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "conversation_id"
+
+
+class ConversationSummaryContent(ResponseContent):
+    """Conversation summary content wrapper."""
+
+    summary: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "conversation_summary"
+
+
+class FollowupMessagesContent(ResponseContent):
+    """Followup messages content wrapper."""
+
+    messages: list[str]
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "followup_messages"
+
+
+class UsageContent(ResponseContent):
+    """Usage statistics content wrapper."""
+
+    usage: dict[str, MessageUsage]
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "usage"
+
+
+class ClearMessageContent(ResponseContent):
+    """Clear message content wrapper."""
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "clear_message"
+
+
+class TodoItemContent(ResponseContent):
+    """Todo item content wrapper."""
+
+    task: Task
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "todo_item"
 
 
 class ChatContext(BaseModel):
@@ -140,122 +216,106 @@ class ChatContext(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class Custom(BaseModel):
-    """Custom response representation."""
-
-    type: str
-    content: Any
+# Generic type variable for content, bounded to ResponseContent
+ChatResponseContentT = TypeVar("ChatResponseContentT", bound=ResponseContent)
 
 
-class ChatResponse(BaseModel):
-    """Container for different types of chat responses."""
+class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
+    """
+    Base class for all chat responses with typed content.
 
-    type: ChatResponseType
-    content: (
-        str
-        | Reference
-        | StateUpdate
-        | LiveUpdate
-        | list[str]
-        | Image
-        | dict[str, MessageUsage]
-        | ChunkedContent
-        | None
-        | Task
-        | Custom
-    )
+    Users can extend this to create custom response types:
 
-    def as_text(self) -> str | None:
-        """
-        Return the content as text if this is a text response, else None.
+    Example:
+        class MyAnalyticsContent(ResponseContent):
+            user_count: int
+            page_views: int
 
-        Example:
-            if text := response.as_text():
-                print(f"Got text: {text}")
-        """
-        return str(self.content) if self.type == ChatResponseType.TEXT else None
+            def get_type(self) -> str:
+                return "analytics"
 
-    def as_reference(self) -> Reference | None:
-        """
-        Return the content as Reference if this is a reference response, else None.
+        class AnalyticsResponse(ChatResponse[MyAnalyticsContent]):
+            pass  # get_type() is automatically inherited!
 
-        Example:
-            if ref := response.as_reference():
-                print(f"Got reference: {ref.title}")
-        """
-        return cast(Reference, self.content) if self.type == ChatResponseType.REFERENCE else None
+        # Use it
+        response = AnalyticsResponse(content=MyAnalyticsContent(user_count=100, page_views=500))
+    """
 
-    def as_state_update(self) -> StateUpdate | None:
-        """
-        Return the content as StateUpdate if this is a state update, else None.
+    content: ChatResponseContentT
 
-        Example:
-            if state_update := response.as_state_update():
-                state = verify_state(state_update)
-        """
-        return cast(StateUpdate, self.content) if self.type == ChatResponseType.STATE_UPDATE else None
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        """Return the response type identifier from content."""
+        return self.content.get_type()
 
-    def as_conversation_id(self) -> str | None:
-        """
-        Return the content as ConversationID if this is a conversation id, else None.
-        """
-        return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_ID else None
 
-    def as_live_update(self) -> LiveUpdate | None:
-        """
-        Return the content as LiveUpdate if this is a live update, else None.
+class TextResponse(ChatResponse[TextContent]):
+    """Text response from the chat."""
 
-        Example:
-            if live_update := response.as_live_update():
-                print(f"Got live update: {live_update.content.label}")
-        """
-        return cast(LiveUpdate, self.content) if self.type == ChatResponseType.LIVE_UPDATE else None
 
-    def as_followup_messages(self) -> list[str] | None:
-        """
-        Return the content as list of strings if this is a followup messages response, else None.
+class ReferenceResponse(ChatResponse[Reference]):
+    """Reference document response."""
 
-        Example:
-            if followup_messages := response.as_followup_messages():
-                print(f"Got followup messages: {followup_messages}")
-        """
-        return cast(list[str], self.content) if self.type == ChatResponseType.FOLLOWUP_MESSAGES else None
 
-    def as_image(self) -> Image | None:
-        """
-        Return the content as Image if this is an image response, else None.
-        """
-        return cast(Image, self.content) if self.type == ChatResponseType.IMAGE else None
+class StateUpdateResponse(ChatResponse[StateUpdate]):
+    """State update response."""
 
-    def as_clear_message(self) -> None:
-        """
-        Return the content of clear_message response, which is None
-        """
-        return cast(None, self.content)
 
-    def as_usage(self) -> dict[str, MessageUsage] | None:
-        """
-        Return the content as dict from model name to Usage if this is an usage response, else None
-        """
-        return cast(dict[str, MessageUsage], self.content) if self.type == ChatResponseType.USAGE else None
+class MessageIdResponse(ChatResponse[MessageIdContent]):
+    """Message ID response."""
 
-    def as_task(self) -> Task | None:
-        """
-        Return the content as Task if this is an todo_item response, else None.
-        """
-        return cast(Task, self.content) if self.type == ChatResponseType.TODO_ITEM else None
 
-    def as_conversation_summary(self) -> str | None:
-        """
-        Return the content as string if this is an conversation summary response, else None
-        """
-        return cast(str, self.content) if self.type == ChatResponseType.CONVERSATION_SUMMARY else None
+class ConversationIdResponse(ChatResponse[ConversationIdContent]):
+    """Conversation ID response."""
 
-    def as_custom(self) -> Custom | None:
-        """
-        Return the content as Custom if this is a custom response, else None
-        """
-        return cast(Custom, self.content) if self.type == ChatResponseType.CUSTOM else None
+
+class ConversationSummaryResponse(ChatResponse[ConversationSummaryContent]):
+    """Conversation summary response."""
+
+
+class LiveUpdateResponse(ChatResponse[LiveUpdate]):
+    """Live update response."""
+
+
+class FollowupMessagesResponse(ChatResponse[FollowupMessagesContent]):
+    """Followup messages response."""
+
+
+class ImageResponse(ChatResponse[Image]):
+    """Image response."""
+
+
+class ChunkedContentResponse(ChatResponse[ChunkedContent]):
+    """Chunked content response."""
+
+
+class ClearMessageResponse(ChatResponse[ClearMessageContent]):
+    """Clear message response."""
+
+
+class UsageResponse(ChatResponse[UsageContent]):
+    """Usage statistics response."""
+
+
+class TodoItemResponse(ChatResponse[TodoItemContent]):
+    """Todo item response."""
+
+
+# Union type for all built-in chat responses
+ChatResponseUnion = (
+    TextResponse
+    | ReferenceResponse
+    | StateUpdateResponse
+    | MessageIdResponse
+    | ConversationIdResponse
+    | ConversationSummaryResponse
+    | LiveUpdateResponse
+    | FollowupMessagesResponse
+    | ImageResponse
+    | ChunkedContentResponse
+    | ClearMessageResponse
+    | UsageResponse
+    | TodoItemResponse
+)
 
 
 class ChatMessageRequest(BaseModel):
@@ -280,9 +340,7 @@ class FeedbackResponse(BaseModel):
 
 
 class FeedbackRequest(BaseModel):
-    """
-    Request body for feedback submission
-    """
+    """Request body for feedback submission."""
 
     message_id: str = Field(..., description="ID of the message receiving feedback")
     feedback: FeedbackType = Field(..., description="Type of feedback (like or dislike)")
