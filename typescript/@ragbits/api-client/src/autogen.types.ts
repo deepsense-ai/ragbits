@@ -25,6 +25,7 @@ export const ChatResponseType = {
     ClearMessage: 'clear_message',
     Usage: 'usage',
     TodoItem: 'todo_item',
+    ConfirmationRequest: 'confirmation_request',
 } as const
 
 export type ChatResponseType = TypeFrom<typeof ChatResponseType>
@@ -107,6 +108,19 @@ export interface ChunkedContent {
     total_chunks: number
     mime_type: string
     data: string
+}
+
+/**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+    timeout_seconds: number
 }
 
 /**
@@ -509,6 +523,11 @@ export interface TodoItemChatResonse {
     content: Task
 }
 
+export interface ConfirmationRequestChatResponse {
+    type: 'confirmation_request'
+    content: ConfirmationRequest
+}
+
 export interface ConversationSummaryResponse {
     type: 'conversation_summary'
     content: string
@@ -534,4 +553,5 @@ export type ChatResponse =
     | ClearMessageResponse
     | MessageUsageChatResponse
     | TodoItemChatResonse
+    | ConfirmationRequestChatResponse
     | ConversationSummaryResponse

@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
@@ -125,6 +126,7 @@ class ChatResponseType(str, Enum):
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
     TODO_ITEM = "todo_item"
+    CONFIRMATION_REQUEST = "confirmation_request"
 
 
 class ChatContext(BaseModel):
@@ -153,6 +155,7 @@ class ChatResponse(BaseModel):
         | ChunkedContent
         | None
         | Task
+        | ConfirmationRequest
     )
 
     def as_text(self) -> str | None:
@@ -234,6 +237,12 @@ class ChatResponse(BaseModel):
         Return the content as Task if this is an todo_item response, else None.
         """
         return cast(Task, self.content) if self.type == ChatResponseType.TODO_ITEM else None
+
+    def as_confirmation_request(self) -> ConfirmationRequest | None:
+        """
+        Return the content as ConfirmationRequest if this is a confirmation request, else None.
+        """
+        return cast(ConfirmationRequest, self.content) if self.type == ChatResponseType.CONFIRMATION_REQUEST else None
 
     def as_conversation_summary(self) -> str | None:
         """

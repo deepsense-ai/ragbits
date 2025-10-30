@@ -1,5 +1,6 @@
 import {
   ClearMessageResponse,
+  ConfirmationRequestChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -116,4 +117,11 @@ export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
   });
 
   message.tasks = newTasks;
+};
+
+export const handleConfirmationRequest: PrimaryHandler<
+  ConfirmationRequestChatResponse
+> = (response, draft, ctx) => {
+  const message = draft.history[ctx.messageId];
+  message.confirmationRequest = response.content;
 };

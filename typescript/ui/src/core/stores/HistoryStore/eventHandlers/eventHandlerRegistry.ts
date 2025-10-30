@@ -9,6 +9,7 @@ import {
 } from "./nonMessageHandlers";
 import {
   handleClearMessage,
+  handleConfirmationRequest,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
@@ -108,4 +109,7 @@ ChatHandlerRegistry.register(ChatResponseType.TodoItem, {
 });
 ChatHandlerRegistry.register(ChatResponseType.ConversationSummary, {
   handle: handleConversationSummary,
+});
+ChatHandlerRegistry.register(ChatResponseType.ConfirmationRequest, {
+  handle: handleConfirmationRequest,
 });

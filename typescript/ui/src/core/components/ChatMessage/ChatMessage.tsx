@@ -7,6 +7,7 @@ import ImageGallery from "./ImageGallery.tsx";
 import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
+import ConfirmationDialog from "./ConfirmationDialog.tsx";
 import {
   useConversationProperty,
   useMessage,
@@ -14,6 +15,7 @@ import {
 import { MessageRole } from "@ragbits/api-client";
 import TodoList from "../TodoList.tsx";
 import { AnimatePresence, motion } from "framer-motion";
+import { useHistoryStore } from "../../stores/HistoryStore/useHistoryStore.ts";
 
 type ChatMessageProps = {
   classNames?: {
@@ -30,13 +32,23 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
+    const conversation = useHistoryStore((s) =>
+      s.primitives.getCurrentConversation(),
+    );
 
     if (!message) {
       throw new Error("Tried to render non-existent message");
     }
 
-    const { serverId, content, role, references, liveUpdates, images } =
-      message;
+    const {
+      serverId,
+      content,
+      role,
+      references,
+      liveUpdates,
+      images,
+      confirmationRequest,
+    } = message;
     const rightAlign = role === MessageRole.User;
     const isLoading =
       isHistoryLoading &&
@@ -52,6 +64,30 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showMessageReferences =
       !isLoading && references && references.length > 0;
     const showLiveUpdates = liveUpdates;
+    const showConfirmation = !!confirmationRequest;
+
+    const handleConfirmation = async (confirmed: boolean) => {
+      if (!confirmationRequest) return;
+
+      try {
+        await fetch("/api/confirm", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            confirmation_id: confirmationRequest.confirmation_id,
+            confirmed,
+          }),
+        });
+
+        // Clear the confirmation request from the message after responding
+        // Note: Direct mutation here - zustand will see the change on next render
+        conversation.history[messageId].confirmationRequest = undefined;
+      } catch (error) {
+        console.error("Failed to send confirmation:", error);
+      }
+    };
 
     return (
       <div
@@ -107,6 +143,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       <TodoList tasks={message.tasks} />
                     </motion.div>
                   </AnimatePresence>
+                )}
+                {showConfirmation && (
+                  <ConfirmationDialog
+                    confirmationRequest={confirmationRequest}
+                    onConfirm={() => handleConfirmation(true)}
+                    onSkip={() => handleConfirmation(false)}
+                  />
                 )}
                 <MarkdownContent
                   content={content}

@@ -14,10 +14,12 @@ from typing import Any, ClassVar, Generic, Literal, TypeVar, Union, cast, overlo
 from pydantic import (
     BaseModel,
     Field,
+    PrivateAttr,
 )
 from typing_extensions import Self
 
 from ragbits import agents
+from ragbits.agents.confirmation import ConfirmationManager, ConfirmationRequest
 from ragbits.agents.exceptions import (
     AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
@@ -78,6 +80,7 @@ class DownstreamAgentResult:
         str,
         ToolCall,
         ToolCallResult,
+        ConfirmationRequest,
         "DownstreamAgentResult",
         BasePrompt,
         Usage,
@@ -144,23 +147,27 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    _frozen: bool
-    _value: DepsT | None
+    _frozen: bool = PrivateAttr(default=False)
+    _value: DepsT | None = PrivateAttr(default=None)
 
-    def __init__(self, value: DepsT | None = None) -> None:
-        super().__init__()
+    def __init__(self, value: DepsT | None = None, **data) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(**data)
         self._value = value
         self._frozen = False
 
     def __setattr__(self, name: str, value: object) -> None:
-        is_frozen = False
-        if name != "_frozen":
-            try:
-                is_frozen = object.__getattribute__(self, "_frozen")
-            except AttributeError:
-                is_frozen = False
+        # Check if we're frozen, but allow setting private attributes during init
+        if name in ("_frozen", "_value"):
+            super().__setattr__(name, value)
+            return
 
-        if is_frozen and name not in {"_frozen"}:
+        try:
+            pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+            is_frozen = pydantic_private.get("_frozen", False)
+        except AttributeError:
+            is_frozen = False
+
+        if is_frozen:
             raise RuntimeError("Dependencies are immutable after first access")
 
         super().__setattr__(name, value)
@@ -171,23 +178,34 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 
     @value.setter
     def value(self, value: DepsT) -> None:
-        if self._frozen:
+        # Access _frozen from __pydantic_private__ to avoid recursion
+        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+        if pydantic_private.get("_frozen"):
             raise RuntimeError("Dependencies are immutable after first access")
-        self._value = value
+        pydantic_private["_value"] = value
 
     def _freeze(self) -> None:
-        if not self._frozen:
-            self._frozen = True
+        # Access _frozen from __pydantic_private__ to avoid recursion
+        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+        if not pydantic_private.get("_frozen"):
+            pydantic_private["_frozen"] = True
 
     def __getattr__(self, name: str) -> object:
-        value = object.__getattribute__(self, "_value")
+        # Access _value from __pydantic_private__ to avoid recursion
+        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+        value = pydantic_private.get("_value")
         if value is None:
             raise AttributeError(name)
         self._freeze()
         return getattr(value, name)
 
     def __contains__(self, key: str) -> bool:
-        value = object.__getattribute__(self, "_value")
+        # Access _value from __pydantic_private__ to avoid recursion
+        try:
+            pydantic_private = object.__getattribute__(self, "__pydantic_private__")
+            value = pydantic_private.get("_value")
+        except AttributeError:
+            return False
         return hasattr(value, key) if value is not None else False
 
 
@@ -228,7 +246,16 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
 
 
 class AgentResultStreaming(
-    AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]
+    AsyncIterator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | ConfirmationRequest
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+    ]
 ):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
@@ -239,7 +266,15 @@ class AgentResultStreaming(
     def __init__(
         self,
         generator: AsyncGenerator[
-            str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage
+            str
+            | ToolCall
+            | ToolCallResult
+            | ConfirmationRequest
+            | DownstreamAgentResult
+            | SimpleNamespace
+            | BasePrompt
+            | Usage,
+            None,
         ],
     ):
         self._generator = generator
@@ -252,12 +287,30 @@ class AgentResultStreaming(
 
     def __aiter__(
         self,
-    ) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
+    ) -> AsyncIterator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | ConfirmationRequest
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+    ]:
         return self
 
-    async def __anext__(
+    async def __anext__(  # noqa: PLR0912
         self,
-    ) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
+    ) -> (
+        str
+        | ToolCall
+        | ToolCallResult
+        | ConfirmationRequest
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+    ):
         try:
             item = await self._generator.__anext__()
 
@@ -270,6 +323,9 @@ class AgentResultStreaming(
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                case ConfirmationRequest():
+                    # Pass through confirmation requests to the caller
+                    pass
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
                         self.downstream[item.agent_id] = []
@@ -628,7 +684,17 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
+    ) -> AsyncGenerator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | DownstreamAgentResult
+        | ConfirmationRequest
+        | SimpleNamespace
+        | BasePrompt
+        | Usage,
+        None,
+    ]:
         if context is None:
             context = AgentRunContext()
 
@@ -698,7 +764,7 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
         parallel_tool_calling: bool,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
         if parallel_tool_calling:
             queue: asyncio.Queue = asyncio.Queue()
@@ -838,18 +904,53 @@ class Agent(
 
         return tools_mapping
 
-    async def _execute_tool(
+    async def _execute_tool(  # noqa: PLR0912, PLR0915
         self,
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
         tool = tools_mapping[tool_call.name]
+
+        # Check if tool requires confirmation
+        if tool.requires_confirmation:
+            confirmation_manager: ConfirmationManager | None = None
+            # Use __contains__ (in operator) instead of hasattr for AgentDependencies
+            if "confirmation_manager" in context.deps:
+                with suppress(AttributeError):
+                    confirmation_manager = context.deps.confirmation_manager  # type: ignore[assignment, attr-defined]
+
+            if confirmation_manager:
+                # Request confirmation
+                request, future = await confirmation_manager.request_confirmation(
+                    tool_name=tool_call.name,
+                    tool_description=tool.description or "",
+                    arguments=tool_call.arguments,
+                )
+
+                # Yield confirmation request (will be streamed to frontend)
+                yield request
+
+                # Wait for user response
+                try:
+                    confirmed = await asyncio.wait_for(future, timeout=65)
+                except asyncio.TimeoutError:
+                    confirmed = False
+
+                if not confirmed:
+                    # User denied or timeout - return cancelled result
+                    yield ToolCallResult(
+                        id=tool_call.id,
+                        name=tool_call.name,
+                        arguments=tool_call.arguments,
+                        result="❌ Action cancelled by user",
+                    )
+                    return
 
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:

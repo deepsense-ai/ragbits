@@ -1,5 +1,6 @@
 import {
   ChatResponse,
+  ConfirmationRequest,
   LiveUpdate,
   MessageRole,
   Reference,
@@ -26,6 +27,7 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
+  confirmationRequest?: ConfirmationRequest;
 }
 
 export interface Conversation {
