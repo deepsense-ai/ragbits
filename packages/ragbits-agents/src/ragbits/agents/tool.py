@@ -51,14 +51,17 @@ class Tool:
     context_var_name: str | None = None
     """The name of the context variable that this tool accepts."""
     id: str | None = None
+    requires_confirmation: bool = False
+    """Whether this tool requires user confirmation before execution."""
 
     @classmethod
-    def from_callable(cls, callable: Callable) -> Self:
+    def from_callable(cls, callable: Callable, requires_confirmation: bool = False) -> Self:
         """
         Create a Tool instance from a callable function.
 
         Args:
             callable: The function to convert into a Tool
+            requires_confirmation: Whether this tool requires user confirmation before execution
 
         Returns:
             A new Tool instance representing the callable function.
@@ -71,6 +74,7 @@ class Tool:
             parameters=schema["function"]["parameters"],
             on_tool_call=callable,
             context_var_name=get_context_variable_name(callable),
+            requires_confirmation=requires_confirmation,
         )
 
     def to_function_schema(self) -> dict[str, Any]:
