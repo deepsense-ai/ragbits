@@ -37,6 +37,116 @@ hide:
 </div>
 ---
 
+
+*Ragbits is a comprehensive Python framework providing modular building blocks for rapidly developing production-ready GenAI applications. It offers type-safe LLM interactions, flexible RAG pipelines with support for 20+ document formats, multi-agent coordination, real-time observability, and seamless integrations with vector stores, data sources, and chat interfaces.*
+
+
+## Installation
+
+=== "pip"
+
+    ```sh
+    pip install ragbits
+    ```
+
+=== "uv"
+
+    ```sh
+    uv add ragbits
+    ```
+
+## Build your first agent and run it in CLI
+
+```python title="main.py"
+import asyncio
+
+from ragbits.agents import Agent
+from ragbits.core.llms import LiteLLM
+
+llm = LiteLLM(model_name="gpt-4.1-nano")
+agent = Agent(llm=llm)
+
+async def main():
+    response = await agent.run("Hello how are you?")
+    print(response.content)
+
+asyncio.run(main())
+```
+
+```shell
+python main.py
+
+Hello! I'm doing well, thank you. How can I assist you today?
+```
+
+## Expose it as a server and chat with UI
+
+```python hl_lines="4-7 13-34" title="main.py"
+from ragbits.agents import Agent
+from ragbits.core.llms import LiteLLM
+
+from collections.abc import AsyncGenerator
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
+from ragbits.core.prompt import ChatFormat
+
+
+llm = LiteLLM(model_name="gpt-4.1-nano")
+agent = Agent(llm=llm)
+
+class MyChat(ChatInterface):
+    async def chat(
+        self,
+        message: str,
+        history: ChatFormat,
+        context: ChatContext,
+    ) -> AsyncGenerator[ChatResponse]:
+        async for result in agent.run_streaming(message):
+            match result:
+                case str():
+                    yield self.create_live_update(
+                        update_id="1",
+                        type=LiveUpdateType.START,
+                        label="Answering...",
+                    )
+                    yield self.create_text_response(result)
+
+        yield self.create_live_update(
+            update_id="1",
+            type=LiveUpdateType.FINISH,
+            label="Answer",
+        )
+```
+
+```shell
+ragbits api run main:MyChat
+
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+Open Your browser and go to `127.0.0.1:8000` and start chatting!
+
+![](assets/chat.png)
+
+
+## Wants to add more? Check our how-to sections
+
+<div style="text-align:center; font-size:1rem; font-weight:600; margin-top:1em;">
+  <a href="how-to/prompts/use_prompting">Custom Prompts</a> |
+  <a href="how-to/llms/use_tools_with_llms">Tools</a> |
+  <a href="how-to/agents/provide_mcp_tools">MCP</a> |
+  <a href="how-to/agents/serve_ragbits_agents">Agent to Agent (A2A)</a> |
+  <a href="how-to/document_search/ingest-documents">RAG</a> |
+  <a href="how-to/audit/use_tracing">Observability</a> |
+  <a href="how-to/evaluate/evaluate">Evaluation</a> |
+  <a href="how-to/guardrails/use_guardrails">Guardrails</a> |
+  <a href="how-to/chatbots/api.md">UI Customization</a>
+</div>
+
+
+
+-----------------------
+
 ## Features
 
 ### 🔨 Build Reliable & Scalable GenAI Apps
@@ -69,8 +179,6 @@ hide:
 
 
 ## Installation
-
-To get started quickly, you can install with:
 
 === "pip"
 
