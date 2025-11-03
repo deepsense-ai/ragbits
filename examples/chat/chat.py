@@ -36,7 +36,15 @@ from ragbits.core.prompt import ChatFormat
 
 
 class CustomExampleResponse(BaseModel):
-    """Custom response representation."""
+    """Example of a custom response type using a Pydantic model.
+
+    This demonstrates the recommended approach for creating custom responses with
+    type safety and validation. The model will be automatically serialized to JSON
+    when sent to the client.
+
+    For simpler use cases, you can also use plain dictionaries, lists, or primitive
+    types as custom response content.
+    """
 
     name: str
     age: int
@@ -138,9 +146,26 @@ class MyChat(ChatInterface):
             "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
         )
 
+        # Example 1: Custom response using a Pydantic model (recommended for type safety)
+        # The model provides validation and clear structure for complex data
         yield self.create_custom_response(
-            type="custom_type", content=CustomExampleResponse(name="John Doe", age=30, city="New York")
+            type="user_profile",
+            content=CustomExampleResponse(name="John Doe", age=30, city="New York"),
         )
+
+        # Example 2: Custom response using a dictionary (flexible for dynamic data)
+        # Useful when the structure varies or when you don't need strict typing
+        yield self.create_custom_response(
+            type="chart_data",
+            content={
+                "labels": ["Q1", "Q2", "Q3", "Q4"],
+                "values": [100, 150, 120, 180],
+                "chart_type": "line",
+            },
+        )
+
+        # Example 3: Custom response with simple types (for basic notifications or counts)
+        yield self.create_custom_response(type="notification_count", content=5)
 
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),

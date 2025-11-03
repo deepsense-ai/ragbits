@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
@@ -141,10 +141,75 @@ class ChatContext(BaseModel):
 
 
 class Custom(BaseModel):
-    """Custom response representation."""
+    """Custom response representation for extending the chat interface with application-specific response types.
+
+    The Custom type allows developers to send structured data beyond the built-in response types
+    (text, reference, image, etc.). This is useful for specialized UI components, application-specific
+    data visualizations, or custom interactions.
+
+    Examples:
+        Using a Pydantic model (recommended for type safety)::
+
+            class UserProfile(BaseModel):
+                name: str
+                age: int
+                city: str
+
+
+            response = ChatInterface.create_custom_response(
+                type="user_profile", content=UserProfile(name="John", age=30, city="NYC")
+            )
+
+        Using a dictionary for flexible data::
+
+            response = ChatInterface.create_custom_response(type="chart_data", content={"labels": ["A", "B"], "values": [10, 20]})
+
+        Using simple types::
+
+            response = ChatInterface.create_custom_response(type="notification_count", content=42)
+
+    Attributes:
+        type: A string identifier for the custom response type. This should be unique and
+            descriptive (e.g., "user_profile", "chart_data", "analytics_summary").
+            Frontend handlers can use this to determine how to render the response.
+        content: The actual data payload. Must be JSON-serializable (dict, list, str, int,
+            float, bool, None, or a Pydantic BaseModel). Complex objects will be validated
+            to ensure they can be serialized for transmission to the client.
+    """
 
     type: str
     content: Any
+
+    @field_validator("content")
+    @classmethod
+    def validate_content_serializable(cls, v: Any) -> Any:  # noqa: ANN401
+        """Validate that content is JSON-serializable.
+
+        Args:
+            v: The content value to validate
+
+        Returns:
+            The validated content
+
+        Raises:
+            ValueError: If content is not JSON-serializable
+        """
+        import json
+
+        # Allow BaseModel instances (they have their own serialization)
+        if isinstance(v, BaseModel):
+            return v
+
+        # Check if the value is JSON-serializable
+        try:
+            json.dumps(v)
+        except (TypeError, ValueError) as e:
+            raise ValueError(
+                f"Custom response content must be JSON-serializable. "
+                f"Received type {type(v).__name__} which cannot be serialized: {e}"
+            ) from e
+
+        return v
 
 
 class ChatResponse(BaseModel):

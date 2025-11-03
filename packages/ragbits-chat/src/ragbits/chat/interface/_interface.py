@@ -268,6 +268,39 @@ class ChatInterface(ABC):
 
     @staticmethod
     def create_custom_response(type: str, content: Any) -> ChatResponse:  # noqa: ANN401
+        """Create a custom response with application-specific content.
+
+        This method allows extending the chat interface with custom response types beyond
+        the built-in ones. Custom responses can be used to send structured data to the
+        frontend for specialized rendering or interactions.
+
+        Args:
+            type: A unique identifier for this custom response type (e.g., "user_profile",
+                "chart_data", "analytics_summary"). This helps frontend handlers determine
+                how to process and render the response.
+            content: The data payload to send. Must be JSON-serializable (dict, list, str,
+                int, float, bool, None, or a Pydantic BaseModel).
+
+        Returns:
+            A ChatResponse with type CUSTOM containing the structured data.
+
+        Raises:
+            ValueError: If content is not JSON-serializable.
+
+        Examples:
+            Send a structured user profile::
+
+                class UserProfile(BaseModel):
+                    name: str
+                    age: int
+
+
+                yield self.create_custom_response(type="user_profile", content=UserProfile(name="Alice", age=25))
+
+            Send chart data as a dictionary::
+
+                yield self.create_custom_response(type="chart_data", content={"labels": ["Jan", "Feb"], "values": [100, 150]})
+        """
         return ChatResponse(type=ChatResponseType.CUSTOM, content=Custom(type=type, content=content))
 
     @staticmethod
