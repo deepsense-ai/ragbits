@@ -299,9 +299,7 @@ class ChatInterface(ABC):
 
             Send chart data as a dictionary::
 
-                yield self.create_custom_response(
-                    type="chart_data", content={"labels": ["Jan", "Feb"], "values": [100, 150]}
-                )
+                yield self.create_custom_response(type="chart", content={"x": ["Jan", "Feb"], "y": [100, 150]})
         """
         return ChatResponse(type=ChatResponseType.CUSTOM, content=Custom(type=type, content=content))
 
