@@ -1,7 +1,7 @@
+import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
-import warnings
 
 from pydantic import BaseModel, ConfigDict, Field
 
