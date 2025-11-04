@@ -162,7 +162,9 @@ class Custom(BaseModel):
 
         Using a dictionary for flexible data::
 
-            response = ChatInterface.create_custom_response(type="chart_data", content={"labels": ["A", "B"], "values": [10, 20]})
+            response = ChatInterface.create_custom_response(
+                type="chart_data", content={"labels": ["A", "B"], "values": [10, 20]}
+            )
 
         Using simple types::
 
