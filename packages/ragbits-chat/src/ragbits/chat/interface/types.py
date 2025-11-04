@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Generic, TypeVar
+from typing import Any, Generic, TypeVar, cast
+import warnings
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -28,11 +29,51 @@ class Message(BaseModel):
 
 
 class ResponseContent(BaseModel, ABC):
-    """Base class for all chat response content types."""
+    """Base class for all chat response content types.
+
+    Extend this class to create custom response types with full type safety and validation.
+    Each content type must implement the `get_type()` method to return a unique type identifier.
+
+    Example:
+        Create a custom analytics content type::
+
+            from pydantic import Field
+            from ragbits.chat.interface.types import ResponseContent, ChatResponse
+
+            class AnalyticsContent(ResponseContent):
+                \"\"\"Custom analytics data content.\"\"\"
+
+                user_count: int = Field(..., description="Number of users")
+                page_views: int = Field(..., description="Number of page views")
+                avg_session_time: float = Field(..., description="Average session time in seconds")
+
+                def get_type(self) -> str:
+                    return "analytics"
+
+            class AnalyticsResponse(ChatResponse[AnalyticsContent]):
+                \"\"\"Analytics response for streaming to clients.\"\"\"
+
+            # Use it in your chat interface:
+            analytics_data = AnalyticsContent(user_count=1500, page_views=25000, avg_session_time=180.5)
+            yield AnalyticsResponse(content=analytics_data)
+
+    Notes:
+        - The type identifier returned by `get_type()` should be unique and descriptive
+        - All fields are automatically validated by Pydantic
+        - Content is automatically serialized for transmission to clients
+        - Frontend handlers can use the type identifier to determine how to render the response
+    """
 
     @abstractmethod
     def get_type(self) -> str:  # noqa: D102, PLR6301
-        """Return the type identifier for this content."""
+        """Return the type identifier for this content.
+
+        This identifier is used by clients to determine how to handle and render the response.
+        It should be a unique, descriptive string (e.g., "analytics", "chart_data", "user_profile").
+
+        Returns:
+            A unique string identifier for this content type.
+        """
 
 
 class Reference(ResponseContent):
@@ -205,6 +246,41 @@ class TodoItemContent(ResponseContent):
         return "todo_item"
 
 
+class ChatResponseType(str, Enum):
+    """Types of responses that can be returned by the chat interface.
+
+    .. deprecated:: 1.4.0
+        Use specific response classes (TextResponse, ReferenceResponse, etc.) instead.
+        This enum is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Migration guide:
+
+        Old code::
+
+            if response.type == ChatResponseType.TEXT:
+                print(response.as_text())
+
+        New code::
+
+            if isinstance(response, TextResponse):
+                print(response.content.text)
+    """
+
+    TEXT = "text"
+    REFERENCE = "reference"
+    STATE_UPDATE = "state_update"
+    MESSAGE_ID = "message_id"
+    CONVERSATION_ID = "conversation_id"
+    CONVERSATION_SUMMARY = "conversation_summary"
+    LIVE_UPDATE = "live_update"
+    FOLLOWUP_MESSAGES = "followup_messages"
+    IMAGE = "image"
+    CHUNKED_CONTENT = "chunked_content"
+    CLEAR_MESSAGE = "clear_message"
+    USAGE = "usage"
+    TODO_ITEM = "todo_item"
+
+
 class ChatContext(BaseModel):
     """Represents the context of a chat conversation."""
 
@@ -221,31 +297,224 @@ ChatResponseContentT = TypeVar("ChatResponseContentT", bound=ResponseContent)
 
 
 class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
-    """
-    Base class for all chat responses with typed content.
+    r"""Base class for all chat responses with typed, validated content.
 
-    Users can extend this to create custom response types:
+    This generic base class provides type-safe response handling. Extend it with your custom
+    ResponseContent type to create application-specific responses that integrate seamlessly
+    with the chat interface.
+
+    The generic approach provides several benefits:
+        - Full type safety and IDE autocomplete for response content
+        - Automatic validation through Pydantic
+        - Clear separation between different response types
+        - Easy extension without modifying core code
 
     Example:
-        class MyAnalyticsContent(ResponseContent):
-            user_count: int
-            page_views: int
+        Create a custom user profile response::
 
-            def get_type(self) -> str:
-                return "analytics"
+            from pydantic import Field
+            from ragbits.chat.interface.types import ResponseContent, ChatResponse
 
-        class AnalyticsResponse(ChatResponse[MyAnalyticsContent]):
-            pass  # get_type() is automatically inherited!
+            class UserProfileContent(ResponseContent):
+                \"\"\"User profile information.\"\"\"
 
-        # Use it
-        response = AnalyticsResponse(content=MyAnalyticsContent(user_count=100, page_views=500))
+                name: str = Field(..., min_length=1)
+                age: int = Field(..., ge=0, le=150)
+                email: str = Field(..., pattern=r".+@.+\\..+")
+                bio: str | None = None
+
+                def get_type(self) -> str:
+                    return "user_profile"
+
+            class UserProfileResponse(ChatResponse[UserProfileContent]):
+                \"\"\"User profile response for streaming to clients.\"\"\"
+
+            # Use in your ChatInterface.chat() method:
+            async def chat(self, message: str, history: list, context: ChatContext) -> AsyncGenerator:
+                # ... process message ...
+
+                profile = UserProfileContent(
+                    name="Alice Johnson",
+                    age=28,
+                    email="alice@example.com",
+                    bio="Software engineer passionate about AI"
+                )
+                yield UserProfileResponse(content=profile)
+
+        Create a chart data response::
+
+            class ChartDataContent(ResponseContent):
+                \"\"\"Chart visualization data.\"\"\"
+
+                labels: list[str]
+                values: list[float]
+                chart_type: Literal["line", "bar", "pie"]
+
+                def get_type(self) -> str:
+                    return "chart_data"
+
+            class ChartDataResponse(ChatResponse[ChartDataContent]):
+                \"\"\"Chart data response.\"\"\"
+
+            # Use it:
+            chart = ChartDataContent(
+                labels=["Q1", "Q2", "Q3", "Q4"],
+                values=[100.5, 150.2, 120.0, 180.3],
+                chart_type="line"
+            )
+            yield ChartDataResponse(content=chart)
+
+    Attributes:
+        content: The typed content for this response. Type is validated automatically.
     """
 
     content: ChatResponseContentT
 
     def get_type(self) -> str:  # noqa: D102, PLR6301
-        """Return the response type identifier from content."""
+        """Return the response type identifier from content.
+
+        This method delegates to the content's get_type() method, ensuring consistent
+        type identification across the response hierarchy.
+
+        Returns:
+            The unique type identifier for this response.
+        """
         return self.content.get_type()
+
+    @property
+    def type(self) -> ChatResponseType:
+        """Return the response type as ChatResponseType enum.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks instead of comparing .type attribute.
+            This property is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The ChatResponseType enum value for this response.
+        """
+        warnings.warn(
+            "The 'type' property is deprecated. Use isinstance() checks instead "
+            "(e.g., isinstance(response, TextResponse)). "
+            "This property will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        type_str = self.get_type()
+        return ChatResponseType(type_str)
+
+    def as_text(self) -> str | None:
+        """Return the content as text if this is a text response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Example (deprecated)::
+
+            if text := response.as_text():
+                print(f"Got text: {text}")
+
+        Example (new approach)::
+
+            if isinstance(response, TextResponse):
+                print(f"Got text: {response.content.text}")
+
+        Returns:
+            The text content if this is a TextResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_text()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, TextResponse): text = response.content.text). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, TextContent):
+            return self.content.text
+        return None
+
+    def as_reference(self) -> Reference | None:
+        """Return the content as Reference if this is a reference response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Example (deprecated)::
+
+            if ref := response.as_reference():
+                print(f"Got reference: {ref.title}")
+
+        Example (new approach)::
+
+            if isinstance(response, ReferenceResponse):
+                print(f"Got reference: {response.content.title}")
+
+        Returns:
+            The Reference content if this is a ReferenceResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_reference()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ReferenceResponse): ref = response.content). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, Reference):
+            return cast(Reference, self.content)
+        return None
+
+    def as_state_update(self) -> StateUpdate | None:
+        """Return the content as StateUpdate if this is a state update, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Example (deprecated)::
+
+            if state_update := response.as_state_update():
+                verify_state(state_update)
+
+        Example (new approach)::
+
+            if isinstance(response, StateUpdateResponse):
+                verify_state(response.content)
+
+        Returns:
+            The StateUpdate content if this is a StateUpdateResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_state_update()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, StateUpdateResponse): state = response.content). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, StateUpdate):
+            return cast(StateUpdate, self.content)
+        return None
+
+    def as_conversation_id(self) -> str | None:
+        """Return the conversation ID if this is a conversation ID response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The conversation ID if this is a ConversationIdResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_conversation_id()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ConversationIdResponse): id = response.content.conversation_id). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ConversationIdContent):
+            return self.content.conversation_id
+        return None
 
 
 class TextResponse(ChatResponse[TextContent]):
