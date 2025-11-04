@@ -106,3 +106,6 @@ class ConfirmationManager:
             future.set_result(confirmed)
             return True
         return False
+
+
+
