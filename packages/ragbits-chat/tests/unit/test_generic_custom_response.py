@@ -1,7 +1,7 @@
 """Unit tests for generic custom response functionality."""
 
 # ruff: noqa: PLR6301
-from typing import Literal
+from typing import Any, Literal
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
@@ -377,7 +377,7 @@ class TestMultipleCustomResponses:
             """Settings response."""
 
         # Create multiple different responses
-        responses = [
+        responses: list[ChatResponse[Any]] = [
             ProfileResponse(content=ProfileContent(name="Alice")),
             StatsResponse(content=StatsContent(count=100)),
             SettingsResponse(content=SettingsContent(enabled=True)),
