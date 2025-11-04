@@ -86,9 +86,7 @@ class TestCustomResponseCreation:
 
         # Create and verify
         metadata = MetadataModel(created_by="system", timestamp="2025-01-01T00:00:00Z")
-        content = AnalyticsContent(
-            labels=["A", "B", "C"], values=[10.5, 20.3, 30.7], metadata=metadata
-        )
+        content = AnalyticsContent(labels=["A", "B", "C"], values=[10.5, 20.3, 30.7], metadata=metadata)
         response = AnalyticsResponse(content=content)
 
         assert response.get_type() == "analytics"
@@ -144,9 +142,7 @@ class TestCustomResponseCreation:
         assert response1.content.link is None
 
         # With optional fields
-        content2 = NotificationContent(
-            title="Alert", message="Check this", urgency="high", link="https://example.com"
-        )
+        content2 = NotificationContent(title="Alert", message="Check this", urgency="high", link="https://example.com")
         response2 = NotificationResponse(content=content2)
 
         assert response2.content.urgency == "high"
