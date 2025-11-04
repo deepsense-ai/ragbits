@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatResponse, ChatResponseType, Custom
+from ragbits.chat.interface.types import ChatResponse, ChatResponseType, Custom, Reference
 
 
 class SampleUserProfile(BaseModel):
@@ -50,6 +50,7 @@ class TestCustomResponseCreation:
         response = ChatInterface.create_custom_response(type="item_list", content=items)
 
         assert response.type == ChatResponseType.CUSTOM
+        assert isinstance(response.content, Custom)
         assert response.content.type == "item_list"
         assert response.content.content == items
 
@@ -57,22 +58,27 @@ class TestCustomResponseCreation:
         """Test creating custom responses with primitive types."""
         # Integer
         response_int = ChatInterface.create_custom_response(type="count", content=42)
+        assert isinstance(response_int.content, Custom)
         assert response_int.content.content == 42
 
         # String
         response_str = ChatInterface.create_custom_response(type="status", content="active")
+        assert isinstance(response_str.content, Custom)
         assert response_str.content.content == "active"
 
         # Boolean
         response_bool = ChatInterface.create_custom_response(type="enabled", content=True)
+        assert isinstance(response_bool.content, Custom)
         assert response_bool.content.content is True
 
         # Float
         response_float = ChatInterface.create_custom_response(type="percentage", content=75.5)
+        assert isinstance(response_float.content, Custom)
         assert response_float.content.content == 75.5
 
         # None
         response_none = ChatInterface.create_custom_response(type="empty", content=None)
+        assert isinstance(response_none.content, Custom)
         assert response_none.content.content is None
 
     def test_create_custom_response_with_nested_structure(self):
@@ -86,7 +92,9 @@ class TestCustomResponseCreation:
         response = ChatInterface.create_custom_response(type="nested_data", content=nested_data)
 
         assert response.type == ChatResponseType.CUSTOM
+        assert isinstance(response.content, Custom)
         assert response.content.content == nested_data
+        assert isinstance(response.content.content, dict)
         assert response.content.content["user"]["name"] == "Bob"
         assert response.content.content["scores"][1] == 92
 
@@ -149,7 +157,7 @@ class TestCustomResponseAccessor:
         # Test with different response types
         reference_response = ChatResponse(
             type=ChatResponseType.REFERENCE,
-            content={"title": "Doc", "content": "Content", "url": "http://example.com"},
+            content=Reference(title="Doc", content="Content", url="http://example.com"),
         )
         assert reference_response.as_custom() is None
 
