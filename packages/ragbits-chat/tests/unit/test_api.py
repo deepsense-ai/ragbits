@@ -120,8 +120,8 @@ async def test_chat_response_to_sse() -> None:
     # Should now have 2 chat responses
     assert len(responses) == 2
 
-    # Second should be the text response
-    assert responses[0] == 'data: {"type": "text", "content": "Hello"}\n\n'
+    # First should be the text response
+    assert responses[0] == 'data: {"type": "text", "content": {"text": "Hello"}}\n\n'
 
     # Parse the second response JSON to check it
     second_response = responses[1].replace("data: ", "").strip()
@@ -158,7 +158,7 @@ def test_chat_endpoint(client: TestClient) -> None:
 
     # Test the content of the streamed response
     content = response.content.decode("utf-8")
-    assert 'data: {"type": "text", "content": "Test response"}' in content
+    assert 'data: {"type": "text", "content": {"text": "Test response"}}' in content
     assert 'data: {"type": "reference", "content": {"title": "Test Reference"' in content
 
 
