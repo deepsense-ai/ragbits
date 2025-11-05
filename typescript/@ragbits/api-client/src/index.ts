@@ -182,11 +182,7 @@ export class RagbitsClient {
                     buffer = lines.pop() ?? ''
 
                     for (const line of lines) {
-                        if (
-                            typeof line !== 'string' ||
-                            !line.startsWith('data: ')
-                        )
-                            continue
+                        if (!line.startsWith('data: ')) continue
 
                         try {
                             const jsonString = line.replace('data: ', '').trim()
@@ -195,12 +191,7 @@ export class RagbitsClient {
                                 jsonString
                             ) as EndpointResponse<URL, Endpoints>
 
-                            if (
-                                typeof parsedData === 'object' &&
-                                parsedData &&
-                                'type' in parsedData &&
-                                parsedData.type === 'chunked_content'
-                            ) {
+                            if (parsedData.type === 'chunked_content') {
                                 this.handleChunkedContent(parsedData, callbacks)
                                 continue
                             }
