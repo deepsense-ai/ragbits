@@ -1,4 +1,4 @@
-import { ChatResponseType, ChunkedChatResponse, Image } from './autogen.types'
+import { ChunkedChatResponse, Image } from './autogen.types'
 import type {
     ClientConfig,
     StreamCallbacks,
@@ -182,7 +182,11 @@ export class RagbitsClient {
                     buffer = lines.pop() ?? ''
 
                     for (const line of lines) {
-                        if (!line.startsWith('data: ')) continue
+                        if (
+                            typeof line !== 'string' ||
+                            !line.startsWith('data: ')
+                        )
+                            continue
 
                         try {
                             const jsonString = line.replace('data: ', '').trim()
@@ -192,8 +196,10 @@ export class RagbitsClient {
                             ) as EndpointResponse<URL, Endpoints>
 
                             if (
-                                parsedData.type ===
-                                ChatResponseType.ChunkedContent
+                                typeof parsedData === 'object' &&
+                                parsedData &&
+                                'type' in parsedData &&
+                                parsedData.type === 'chunked_content'
                             ) {
                                 this.handleChunkedContent(parsedData, callbacks)
                                 continue
@@ -346,13 +352,13 @@ export class RagbitsClient {
             await callbacks.onError(new Error('Error reading stream'))
         }
 
-        if (contentType === ChatResponseType.Image) {
+        if (contentType === 'image') {
             // Create the complete image response
             const completeImageResponse: {
-                type: typeof ChatResponseType.Image
+                type: 'image'
                 content: Image
             } = {
-                type: ChatResponseType.Image,
+                type: 'image',
                 content: {
                     id: id,
                     url: `${imageInfo.mimeType},${completeBase64}`,

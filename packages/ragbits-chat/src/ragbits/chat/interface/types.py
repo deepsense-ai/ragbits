@@ -516,6 +516,173 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
             return self.content.conversation_id
         return None
 
+    def as_live_update(self) -> LiveUpdate | None:
+        """Return the content as LiveUpdate if this is a live update, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Example (deprecated)::
+
+            if live_update := response.as_live_update():
+                print(f"Got live update: {live_update.content.label}")
+
+        Example (new approach)::
+
+            if isinstance(response, LiveUpdateResponse):
+                print(f"Got live update: {response.content.content.label}")
+
+        Returns:
+            The LiveUpdate content if this is a LiveUpdateResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_live_update()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, LiveUpdateResponse): update = response.content). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, LiveUpdate):
+            return cast(LiveUpdate, self.content)
+        return None
+
+    def as_followup_messages(self) -> list[str] | None:
+        """Return the content as list of strings if this is a followup messages response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Example (deprecated)::
+
+            if followup_messages := response.as_followup_messages():
+                print(f"Got followup messages: {followup_messages}")
+
+        Example (new approach)::
+
+            if isinstance(response, FollowupMessagesResponse):
+                print(f"Got followup messages: {response.content.messages}")
+
+        Returns:
+            The followup messages if this is a FollowupMessagesResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_followup_messages()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, FollowupMessagesResponse): messages = response.content.messages). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, FollowupMessagesContent):
+            return self.content.messages
+        return None
+
+    def as_image(self) -> Image | None:
+        """Return the content as Image if this is an image response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The Image content if this is an ImageResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_image()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ImageResponse): image = response.content). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, Image):
+            return cast(Image, self.content)
+        return None
+
+    def as_clear_message(self) -> None:
+        """Return the content of clear_message response, which is None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            None if this is a ClearMessageResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_clear_message()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ClearMessageResponse): ...). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ClearMessageContent):
+            return None
+        return None
+
+    def as_usage(self) -> dict[str, MessageUsage] | None:
+        """Return the content as dict from model name to Usage if this is an usage response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The usage dict if this is a UsageResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_usage()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, UsageResponse): usage = response.content.usage). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, UsageContent):
+            return self.content.usage
+        return None
+
+    def as_task(self) -> Task | None:
+        """Return the content as Task if this is an todo_item response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The Task content if this is a TodoItemResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_task()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, TodoItemResponse): task = response.content.task). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, TodoItemContent):
+            return self.content.task
+        return None
+
+    def as_conversation_summary(self) -> str | None:
+        """Return the content as string if this is an conversation summary response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The conversation summary if this is a ConversationSummaryResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_conversation_summary()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ConversationSummaryResponse): summary = response.content.summary). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ConversationSummaryContent):
+            return self.content.summary
+        return None
+
 
 class TextResponse(ChatResponse[TextContent]):
     """Text response from the chat."""
