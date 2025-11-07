@@ -13,6 +13,7 @@ from ragbits.chat.client import (
 )
 from ragbits.chat.interface.types import (
     ChatResponse,
+    ChatResponseType,
     ChatResponseUnion,
     ClearMessageContent,
     ClearMessageResponse,
@@ -45,6 +46,7 @@ __all__ = [
     "AuthenticationBackend",
     "AuthenticationResponse",
     "ChatResponse",
+    "ChatResponseType",
     "ChatResponseUnion",
     "ClearMessageContent",
     "ClearMessageResponse",

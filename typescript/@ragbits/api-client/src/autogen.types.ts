@@ -9,28 +9,6 @@ import type { RJSFSchema } from '@rjsf/utils'
 export type TypeFrom<T> = T[keyof T]
 
 /**
- * Represents the ChatResponseType enum
- */
-export const ChatResponseType = {
-    Text: 'text',
-    Reference: 'reference',
-    StateUpdate: 'state_update',
-    MessageId: 'message_id',
-    ConversationId: 'conversation_id',
-    ConversationSummary: 'conversation_summary',
-    LiveUpdate: 'live_update',
-    FollowupMessages: 'followup_messages',
-    Image: 'image',
-    ChunkedContent: 'chunked_content',
-    ClearMessage: 'clear_message',
-    Usage: 'usage',
-    TodoItem: 'todo_item',
-    Custom: 'custom',
-} as const
-
-export type ChatResponseType = TypeFrom<typeof ChatResponseType>
-
-/**
  * Represents the FeedbackType enum
  */
 export const FeedbackType = {
@@ -217,11 +195,54 @@ export interface Task {
 }
 
 /**
- * Custom response representation.
+ * Text content wrapper.
  */
-export interface Custom {
-    type: string
-    content: unknown
+export interface TextContent {
+    text: string
+}
+
+/**
+ * Message ID content wrapper.
+ */
+export interface MessageIdContent {
+    message_id: string
+}
+
+/**
+ * Conversation ID content wrapper.
+ */
+export interface ConversationIdContent {
+    conversation_id: string
+}
+
+/**
+ * Conversation summary content wrapper.
+ */
+export interface ConversationSummaryContent {
+    summary: string
+}
+
+/**
+ * Followup messages content wrapper.
+ */
+export interface FollowupMessagesContent {
+    messages: string[]
+}
+
+/**
+ * Usage statistics content wrapper.
+ */
+export interface UsageContent {
+    usage: {
+        [k: string]: MessageUsage
+    }
+}
+
+/**
+ * Todo item content wrapper.
+ */
+export interface TodoItemContent {
+    task: Task
 }
 
 /**
@@ -348,7 +369,7 @@ export interface ChatRequest {
 }
 
 /**
- * Request body for feedback submission
+ * Request body for feedback submission.
  */
 export interface FeedbackRequest {
     /**
@@ -471,7 +492,7 @@ export interface User {
  */
 export interface TextChatResponse {
     type: 'text'
-    content: string
+    content: TextContent
 }
 
 export interface ReferenceChatResponse {
@@ -481,12 +502,12 @@ export interface ReferenceChatResponse {
 
 export interface MessageIdChatResponse {
     type: 'message_id'
-    content: string
+    content: MessageIdContent
 }
 
 export interface ConversationIdChatResponse {
     type: 'conversation_id'
-    content: string
+    content: ConversationIdContent
 }
 
 export interface StateUpdateChatResponse {
@@ -501,7 +522,7 @@ export interface LiveUpdateChatResponse {
 
 export interface FollowupMessagesChatResponse {
     type: 'followup_messages'
-    content: string[]
+    content: FollowupMessagesContent
 }
 
 export interface ImageChatResponse {
@@ -509,29 +530,24 @@ export interface ImageChatResponse {
     content: Image
 }
 
-export interface ClearMessageResponse {
-    type: 'clear_message'
-    content: never
-}
-
 export interface MessageUsageChatResponse {
     type: 'usage'
-    content: Record<string, MessageUsage>
+    content: UsageContent
+}
+
+export interface ClearMessageChatResponse {
+    type: 'clear_message'
+    content: unknown
 }
 
 export interface TodoItemChatResonse {
     type: 'todo_item'
-    content: Task
+    content: TodoItemContent
 }
 
 export interface ConversationSummaryResponse {
     type: 'conversation_summary'
-    content: string
-}
-
-export interface CustomChatResponse {
-    type: 'custom'
-    content: Custom
+    content: ConversationSummaryContent
 }
 
 export interface ChunkedChatResponse {
@@ -551,8 +567,7 @@ export type ChatResponse =
     | LiveUpdateChatResponse
     | FollowupMessagesChatResponse
     | ImageChatResponse
-    | ClearMessageResponse
     | MessageUsageChatResponse
+    | ClearMessageChatResponse
     | TodoItemChatResonse
     | ConversationSummaryResponse
-    | CustomChatResponse
