@@ -17,7 +17,6 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from ragbits.agents.confirmation import ConfirmationManager
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
 from ragbits.chat.interface import ChatInterface
@@ -47,13 +46,6 @@ logger = logging.getLogger(__name__)
 # Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
 # Account for JSON overhead: metadata + base64 data should fit comfortably in browser limits
 CHUNK_SIZE = 102400  # ~100KB bytes base64 chunks for ultra-safe JSON parsing and SSE transmission
-
-
-class ConfirmationResponse(BaseModel):
-    """Response to a confirmation request from the user."""
-
-    confirmation_id: str
-    confirmed: bool
 
 
 class RagbitsAPI:
@@ -89,7 +81,6 @@ class RagbitsAPI:
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.security = HTTPBearer(auto_error=False) if auth_backend else None
         self.theme_path = Path(theme_path) if theme_path else None
-        self.confirmation_manager = ConfirmationManager()
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -220,13 +211,6 @@ class RagbitsAPI:
                 logger.error(f"Error serving theme: {e}")
                 raise HTTPException(status_code=500, detail="Error loading theme") from e
 
-        # Confirmation endpoint - for handling user confirmations of tool calls
-        @self.app.post("/api/confirm", response_class=JSONResponse)
-        async def confirm(response: ConfirmationResponse) -> JSONResponse:
-            """Handle user confirmation response for tool calls."""
-            success = self.confirmation_manager.resolve_confirmation(response.confirmation_id, response.confirmed)
-            return JSONResponse(content={"status": success})
-
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
@@ -256,17 +240,14 @@ class RagbitsAPI:
 
         return auth_result.user
 
+    @staticmethod
     def _prepare_chat_context(
-        self,
         request: ChatMessageRequest,
         authenticated_user: User | None,
         credentials: HTTPAuthorizationCredentials | None,
     ) -> ChatContext:
         """Prepare and validate chat context from request."""
         chat_context = ChatContext(**request.context)
-
-        # Add confirmation manager to context
-        chat_context.confirmation_manager = self.confirmation_manager  # type: ignore[attr-defined]
 
         # Add session_id to context if authenticated
         if authenticated_user and credentials:
@@ -321,7 +302,7 @@ class RagbitsAPI:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
             # Prepare chat context
-            chat_context = self._prepare_chat_context(request, authenticated_user, credentials)
+            chat_context = RagbitsAPI._prepare_chat_context(request, authenticated_user, credentials)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(

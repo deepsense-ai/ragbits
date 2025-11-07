@@ -256,6 +256,15 @@ class ConfirmationRequestContent(ResponseContent):
         return "confirmation_request"
 
 
+class ConfirmationStatusContent(ResponseContent):
+    """Confirmation status content wrapper."""
+
+    confirmation_status: ConfirmationStatus
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "confirmation_status"
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -290,6 +299,16 @@ class ChatResponseType(str, Enum):
     USAGE = "usage"
     TODO_ITEM = "todo_item"
     CONFIRMATION_REQUEST = "confirmation_request"
+    CONFIRMATION_STATUS = "confirmation_status"
+
+
+class ConfirmationStatus(BaseModel):
+    """Status update for a confirmation request."""
+
+    confirmation_id: str
+    """ID of the confirmation request being updated."""
+    status: str  # "confirmed" or "declined"
+    """The confirmation status."""
 
 
 class ChatContext(BaseModel):
@@ -300,6 +319,7 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    confirmed_tools: list[dict[str, Any]] | None = None
     model_config = ConfigDict(extra="allow")
 
 
@@ -772,6 +792,10 @@ class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
     """Confirmation request response."""
 
 
+class ConfirmationStatusResponse(ChatResponse[ConfirmationStatusContent]):
+    """Confirmation status response."""
+
+
 # Union type for all built-in chat responses
 ChatResponseUnion = (
     TextResponse
@@ -788,6 +812,7 @@ ChatResponseUnion = (
     | UsageResponse
     | TodoItemResponse
     | ConfirmationRequestResponse
+    | ConfirmationStatusResponse
 )
 
 

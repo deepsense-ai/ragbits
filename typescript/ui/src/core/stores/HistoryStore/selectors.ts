@@ -29,3 +29,12 @@ export const useMessages = () =>
       Object.values(s.primitives.getCurrentConversation().history),
     ),
   );
+
+export const useHasPendingConfirmations = () =>
+  useHistoryStore((s) => {
+    const history = s.primitives.getCurrentConversation().history;
+    return Object.values(history).some(
+      (msg) =>
+        msg.confirmationRequest && msg.confirmationState === "pending",
+    );
+  });
