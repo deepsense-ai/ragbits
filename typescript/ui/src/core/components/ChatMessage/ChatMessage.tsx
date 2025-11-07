@@ -8,6 +8,7 @@ import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
 import ConfirmationDialog from "./ConfirmationDialog.tsx";
+import ConfirmationDialogs from "./ConfirmationDialogs.tsx";
 import {
   useConversationProperty,
   useMessage,
@@ -16,6 +17,7 @@ import { MessageRole } from "@ragbits/api-client";
 import TodoList from "../TodoList.tsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { useHistoryStore } from "../../stores/HistoryStore/useHistoryStore.ts";
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 type ChatMessageProps = {
   classNames?: {
@@ -32,9 +34,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
-    const conversation = useHistoryStore((s) =>
-      s.primitives.getCurrentConversation(),
-    );
+    const sendSilentConfirmation = useHistoryStore((s) => s.actions.sendSilentConfirmation);
+    const { client: ragbitsClient } = useRagbitsContext();
 
     if (!message) {
       throw new Error("Tried to render non-existent message");
@@ -48,6 +49,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       liveUpdates,
       images,
       confirmationRequest,
+      confirmationRequests,
+      confirmationStates,
     } = message;
     const rightAlign = role === MessageRole.User;
     const isLoading =
@@ -63,30 +66,67 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       !isLoading && images && Object.keys(images).length > 0;
     const showMessageReferences =
       !isLoading && references && references.length > 0;
-    const showLiveUpdates = liveUpdates;
-    const showConfirmation = !!confirmationRequest;
+    const showLiveUpdates = liveUpdates && Object.keys(liveUpdates).length > 0;
 
-    const handleConfirmation = async (confirmed: boolean) => {
+    // Support both legacy single confirmation and new multiple confirmations
+    // Prioritize the new system - if we have multiple confirmations, use that
+    const showConfirmations = confirmationRequests && confirmationRequests.length > 0;
+    const showConfirmation = !showConfirmations && !!confirmationRequest;
+
+    const handleConfirmation = (confirmed: boolean) => {
       if (!confirmationRequest) return;
 
-      try {
-        await fetch("/api/confirm", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            confirmation_id: confirmationRequest.confirmation_id,
-            confirmed,
-          }),
-        });
+      console.log("🔍 Confirmation button clicked:", {
+        confirmed,
+        confirmation_id: confirmationRequest.confirmation_id,
+        tool_name: confirmationRequest.tool_name,
+      });
 
-        // Clear the confirmation request from the message after responding
-        // Note: Direct mutation here - zustand will see the change on next render
-        conversation.history[messageId].confirmationRequest = undefined;
-      } catch (error) {
-        console.error("Failed to send confirmation:", error);
-      }
+      // Use sendSilentConfirmation to avoid adding a user message
+      sendSilentConfirmation(
+        messageId,
+        confirmationRequest.confirmation_id,
+        confirmed,
+        ragbitsClient,
+      );
+    };
+
+    const handleSingleConfirmation = (confirmationId: string) => {
+      console.log("🔍 Single confirmation:", confirmationId);
+      sendSilentConfirmation(messageId, confirmationId, true, ragbitsClient);
+    };
+
+    const handleSingleSkip = (confirmationId: string) => {
+      console.log("🔍 Single skip:", confirmationId);
+      sendSilentConfirmation(messageId, confirmationId, false, ragbitsClient);
+    };
+
+    const handleBulkConfirm = (confirmationIds: string[]) => {
+      console.log("🔍 Bulk confirm:", confirmationIds);
+
+      // Build decisions for ALL confirmations (confirmed and declined)
+      // This ensures the backend knows about all decisions, not just confirmed ones
+      const allIds = confirmationRequests?.map(req => req.confirmation_id) || [];
+      const decisions = allIds.reduce(
+        (acc, id) => ({ ...acc, [id]: confirmationIds.includes(id) }),
+        {} as Record<string, boolean>
+      );
+
+      console.log("📤 Sending all decisions:", decisions);
+      sendSilentConfirmation(messageId, allIds, decisions, ragbitsClient);
+    };
+
+    const handleBulkSkip = (confirmationIds: string[]) => {
+      console.log("🔍 Bulk skip:", confirmationIds);
+
+      // Build decisions for ALL confirmations
+      const allIds = confirmationRequests?.map(req => req.confirmation_id) || [];
+      const decisions = allIds.reduce(
+        (acc, id) => ({ ...acc, [id]: false }),
+        {} as Record<string, boolean>
+      );
+
+      sendSilentConfirmation(messageId, allIds, decisions, ragbitsClient);
     };
 
     return (
@@ -149,6 +189,17 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     confirmationRequest={confirmationRequest}
                     onConfirm={() => handleConfirmation(true)}
                     onSkip={() => handleConfirmation(false)}
+                    initialState={message.confirmationState}
+                  />
+                )}
+                {showConfirmations && confirmationStates && (
+                  <ConfirmationDialogs
+                    confirmationRequests={confirmationRequests}
+                    confirmationStates={confirmationStates}
+                    onConfirm={handleSingleConfirmation}
+                    onSkip={handleSingleSkip}
+                    onBulkConfirm={handleBulkConfirm}
+                    onBulkSkip={handleBulkSkip}
                   />
                 )}
                 <MarkdownContent

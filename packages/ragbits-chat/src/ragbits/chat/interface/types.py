@@ -24,6 +24,7 @@ class Message(BaseModel):
 
     role: MessageRole
     content: str
+    extra: dict[str, Any] | None = None
 
 
 class Reference(BaseModel):
@@ -127,6 +128,16 @@ class ChatResponseType(str, Enum):
     USAGE = "usage"
     TODO_ITEM = "todo_item"
     CONFIRMATION_REQUEST = "confirmation_request"
+    CONFIRMATION_STATUS = "confirmation_status"
+
+
+class ConfirmationStatus(BaseModel):
+    """Status update for a confirmation request."""
+
+    confirmation_id: str
+    """ID of the confirmation request being updated."""
+    status: str  # "confirmed" or "declined"
+    """The confirmation status."""
 
 
 class ChatContext(BaseModel):
@@ -137,6 +148,7 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    confirmed_tools: list[dict[str, Any]] | None = None
     model_config = ConfigDict(extra="allow")
 
 
@@ -156,6 +168,7 @@ class ChatResponse(BaseModel):
         | None
         | Task
         | ConfirmationRequest
+        | ConfirmationStatus
     )
 
     def as_text(self) -> str | None:

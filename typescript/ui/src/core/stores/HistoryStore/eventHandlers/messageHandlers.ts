@@ -1,6 +1,7 @@
 import {
   ClearMessageResponse,
   ConfirmationRequestChatResponse,
+  ConfirmationStatusChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -19,7 +20,25 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.content += response.content;
+
+  // Check if this is the first text after confirmation(s)
+  const isAfterConfirmation =
+    (!!message.confirmationRequest ||
+      (message.confirmationRequests &&
+        message.confirmationRequests.length > 0)) &&
+    message.content.length === 0;
+
+  // Add visual separator if this is the first text after confirmation
+  const textToAdd = isAfterConfirmation
+    ? "\n\n" + response.content
+    : response.content;
+
+  // Add text content
+  message.content += textToAdd;
+
+  // Don't auto-skip here - it's too aggressive and marks confirmations as skipped
+  // even during the initial agent response. Instead, confirmations stay "pending"
+  // until user clicks a button or they get marked as skipped by other means
 };
 
 export const handleReference: PrimaryHandler<ReferenceChatResponse> = (
@@ -123,5 +142,53 @@ export const handleConfirmationRequest: PrimaryHandler<
   ConfirmationRequestChatResponse
 > = (response, draft, ctx) => {
   const message = draft.history[ctx.messageId];
+
+  console.log(
+    "📥 Confirmation request received:",
+    response.content.confirmation_id,
+  );
+
+  // Initialize arrays if they don't exist
+  if (!message.confirmationRequests) {
+    message.confirmationRequests = [];
+  }
+  if (!message.confirmationStates) {
+    message.confirmationStates = {};
+  }
+
+  // Add to new array-based system
+  message.confirmationRequests.push(response.content);
+  message.confirmationStates[response.content.confirmation_id] = "pending";
+
+  console.log(
+    `📊 Total confirmations now: ${message.confirmationRequests.length}`,
+  );
+
+  // Keep legacy single confirmation for backward compatibility (last one wins)
   message.confirmationRequest = response.content;
+  message.confirmationState = "pending";
+};
+
+export const handleConfirmationStatus: PrimaryHandler<
+  ConfirmationStatusChatResponse
+> = (response, draft) => {
+  const { confirmation_id, status } = response.content;
+
+  // Find the message with matching confirmation_id and update its state
+  Object.values(draft.history).forEach((message) => {
+    // Update legacy single confirmation
+    if (message.confirmationRequest?.confirmation_id === confirmation_id) {
+      message.confirmationState = status as "confirmed" | "declined";
+    }
+
+    // Update new multiple confirmations system
+    if (
+      message.confirmationStates &&
+      confirmation_id in message.confirmationStates
+    ) {
+      message.confirmationStates[confirmation_id] = status as
+        | "confirmed"
+        | "declined";
+    }
+  });
 };

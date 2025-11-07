@@ -203,6 +203,8 @@ def _generate_chat_response_union_type() -> str:
         ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
         ("TodoItemChatResonse", "todo_item", "Task"),
         ("ConversationSummaryResponse", "conversation_summary", "string"),
+        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequest"),
+        ("ConfirmationStatusChatResponse", "confirmation_status", "ConfirmationStatus"),
     ]
 
     internal_response_interfaces = [

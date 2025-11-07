@@ -1,4 +1,5 @@
 import asyncio
+import json
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -19,7 +20,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from ragbits import agents
-from ragbits.agents.confirmation import ConfirmationManager, ConfirmationRequest
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import (
     AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
@@ -222,6 +223,8 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
+    confirmed_tools: list[dict[str, Any]] | None = None
+    """List of tools that have been confirmed for execution (for confirmation workflow)."""
 
     def register_agent(self, agent: "Agent") -> None:
         """
@@ -731,13 +734,23 @@ class Agent(
                         tool_chunks.append(chunk)
 
                 if len(tool_chunks) > 0:
+                    has_pending_confirmation = False
                     async for result in self._execute_tool_calls(
                         tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
                     ):
                         yield result
-                        if isinstance(result, ToolCallResult):
+                        if isinstance(result, ConfirmationRequest):
+                            # Mark that we have a pending confirmation
+                            has_pending_confirmation = True
+                        elif isinstance(result, ToolCallResult):
                             prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                        returned_tool_call = True
+                            returned_tool_call = True
+
+                    # If we have pending confirmations, stop the agent loop
+                    # The agent should not continue until the user confirms/declines
+                    if has_pending_confirmation:
+                        print("🛑 Pending confirmations detected, stopping agent loop", flush=True)  # noqa: T201
+                        break
 
                 turn_count += 1
                 if streaming_result.usage:
@@ -758,7 +771,7 @@ class Agent(
 
             yield outputs
 
-    async def _execute_tool_calls(
+    async def _execute_tool_calls(  # noqa: PLR0912
         self,
         tool_calls: list[ToolCall],
         tools_mapping: dict[str, Tool],
@@ -788,11 +801,42 @@ class Agent(
                 yield item
 
         else:
+            # Collect all confirmation requests before yielding any
+            # This ensures the user sees all confirmations at once
+            confirmation_requests: list[ConfirmationRequest] = []
+            pending_results: list[ToolCallResult] = []
+
             for tool_call in tool_calls:
+                tool_outputs: list[ToolCallResult | DownstreamAgentResult | ConfirmationRequest] = []
                 async for result in self._execute_tool(
                     tool_call=tool_call, tools_mapping=tools_mapping, context=context
                 ):
+                    tool_outputs.append(result)
+
+                # Check if this tool needs confirmation
+                has_confirmation = any(isinstance(r, ConfirmationRequest) for r in tool_outputs)
+
+                if has_confirmation:
+                    # Collect confirmations and pending results, don't yield yet
+                    for output in tool_outputs:
+                        if isinstance(output, ConfirmationRequest):
+                            confirmation_requests.append(output)
+                        elif isinstance(output, ToolCallResult) and output.result == "⏳ Awaiting user confirmation":
+                            pending_results.append(output)
+                else:
+                    # No confirmation needed, yield results immediately
+                    for output in tool_outputs:
+                        yield output
+
+            # After processing all tools, yield all confirmations at once
+            if confirmation_requests:
+                print(f"🎯 Yielding {len(confirmation_requests)} confirmations in batch", flush=True)  # noqa: T201
+                for conf in confirmation_requests:
+                    yield conf
+                print(f"📋 Yielding {len(pending_results)} pending results", flush=True)  # noqa: T201
+                for result in pending_results:
                     yield result
+                print("✅ Finished yielding all confirmations and results, agent should pause now", flush=True)  # noqa: T201
 
     @staticmethod
     def _check_token_limits(
@@ -919,15 +963,39 @@ class Agent(
 
         # Check if tool requires confirmation
         if tool.requires_confirmation:
-            confirmation_manager: ConfirmationManager | None = None
-            # Use __contains__ (in operator) instead of hasattr for AgentDependencies
-            if "confirmation_manager" in context.deps:
-                with suppress(AttributeError):
-                    confirmation_manager = context.deps.confirmation_manager  # type: ignore[assignment, attr-defined]
+            # Check if this tool has been confirmed in the context
+            confirmed_tools = context.confirmed_tools or []
 
-            if confirmation_manager:
-                # Request confirmation
-                request, future = await confirmation_manager.request_confirmation(
+            # Generate a stable confirmation ID based on tool name and arguments
+            import hashlib
+
+            confirmation_id = hashlib.sha256(
+                f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
+            ).hexdigest()[:16]
+
+            # Check if this specific tool call has been confirmed or declined
+            is_confirmed = any(
+                ct.get("confirmation_id") == confirmation_id and ct.get("confirmed") for ct in confirmed_tools
+            )
+            is_declined = any(
+                ct.get("confirmation_id") == confirmation_id and not ct.get("confirmed", True) for ct in confirmed_tools
+            )
+
+            if is_declined:
+                # Tool was explicitly declined - skip execution entirely
+                print(f"⏭️  Tool {tool_call.name} was declined, skipping", flush=True)  # noqa: T201
+                yield ToolCallResult(
+                    id=tool_call.id,
+                    name=tool_call.name,
+                    arguments=tool_call.arguments,
+                    result="❌ Action declined by user",
+                )
+                return
+
+            if not is_confirmed:
+                # Tool not confirmed yet - create and yield confirmation request
+                request = ConfirmationRequest(
+                    confirmation_id=confirmation_id,
                     tool_name=tool_call.name,
                     tool_description=tool.description or "",
                     arguments=tool_call.arguments,
@@ -936,21 +1004,14 @@ class Agent(
                 # Yield confirmation request (will be streamed to frontend)
                 yield request
 
-                # Wait for user response
-                try:
-                    confirmed = await asyncio.wait_for(future, timeout=65)
-                except asyncio.TimeoutError:
-                    confirmed = False
-
-                if not confirmed:
-                    # User denied or timeout - return cancelled result
-                    yield ToolCallResult(
-                        id=tool_call.id,
-                        name=tool_call.name,
-                        arguments=tool_call.arguments,
-                        result="❌ Action cancelled by user",
-                    )
-                    return
+                # Yield a pending result and exit without executing
+                yield ToolCallResult(
+                    id=tool_call.id,
+                    name=tool_call.name,
+                    arguments=tool_call.arguments,
+                    result="⏳ Awaiting user confirmation",
+                )
+                return
 
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:

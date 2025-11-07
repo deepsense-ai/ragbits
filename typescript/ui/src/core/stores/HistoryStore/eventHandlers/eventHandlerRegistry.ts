@@ -10,6 +10,7 @@ import {
 import {
   handleClearMessage,
   handleConfirmationRequest,
+  handleConfirmationStatus,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
@@ -112,4 +113,7 @@ ChatHandlerRegistry.register(ChatResponseType.ConversationSummary, {
 });
 ChatHandlerRegistry.register(ChatResponseType.ConfirmationRequest, {
   handle: handleConfirmationRequest,
+});
+ChatHandlerRegistry.register(ChatResponseType.ConfirmationStatus, {
+  handle: handleConfirmationStatus,
 });

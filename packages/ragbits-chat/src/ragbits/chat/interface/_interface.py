@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.summary import SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -96,6 +97,7 @@ def with_chat_metadata(
         responses = []
         main_response = ""
         extra_responses = []
+        pending_confirmations = []
         timestamp = time.time()
         response_token_count = 0.0
         first_token_time = None
@@ -119,6 +121,12 @@ def with_chat_metadata(
                     main_response = main_response + response.content
                     # Rough token estimation (words * 1.3 for subword tokens)
                     response_token_count += len(response.content.split()) * 1.3
+                elif response.type == ChatResponseType.CONFIRMATION_REQUEST and isinstance(
+                    response.content, ConfirmationRequest
+                ):
+                    # Collect confirmation requests to store in message extra
+                    pending_confirmations.append(response.content.model_dump())
+                    extra_responses.append(response)
                 else:
                     extra_responses.append(response)
                 yield response

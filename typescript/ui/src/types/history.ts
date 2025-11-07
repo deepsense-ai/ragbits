@@ -27,7 +27,15 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
+  // Legacy single confirmation support (kept for backward compatibility)
   confirmationRequest?: ConfirmationRequest;
+  confirmationState?: "pending" | "confirmed" | "declined" | "skipped";
+  // New multiple confirmations support
+  confirmationRequests?: ConfirmationRequest[];
+  confirmationStates?: Record<
+    string,
+    "pending" | "confirmed" | "declined" | "skipped"
+  >;
 }
 
 export interface Conversation {
@@ -55,7 +63,17 @@ export interface HistoryStore {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
-    sendMessage: (text: string, ragbitsClient: RagbitsClient) => void;
+    sendMessage: (
+      text: string,
+      ragbitsClient: RagbitsClient,
+      additionalContext?: Record<string, unknown>,
+    ) => void;
+    sendSilentConfirmation: (
+      messageId: string,
+      confirmationIds: string | string[],
+      confirmed: boolean | Record<string, boolean>,
+      ragbitsClient: RagbitsClient,
+    ) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
      * overwrite previous ones.
