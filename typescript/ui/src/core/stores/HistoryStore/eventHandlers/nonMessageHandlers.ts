@@ -18,9 +18,9 @@ export const handleConversationId: PrimaryHandler<
   { originalConversationId: string }
 > = ({ content }, draft, ctx) => {
   const originalConversationId = ctx.conversationIdRef.current;
-  draft.conversationId = content;
+  draft.conversationId = content.conversation_id;
   // Update the ref to propagate the change
-  ctx.conversationIdRef.current = content;
+  ctx.conversationIdRef.current = content.conversation_id;
   return { originalConversationId };
 };
 
@@ -44,11 +44,11 @@ export const handleAfterConversationId: AfterHandler<
 export const handleFollowupMessages: PrimaryHandler<
   FollowupMessagesChatResponse
 > = ({ content }, draft) => {
-  draft.followupMessages = content;
+  draft.followupMessages = content.messages;
 };
 
 export const handleConversationSummary: PrimaryHandler<
   ConversationSummaryResponse
 > = ({ content }, draft) => {
-  draft.summary = content;
+  draft.summary = content.summary;
 };

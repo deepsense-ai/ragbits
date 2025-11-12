@@ -22,24 +22,41 @@ from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig, UserSettings
 from .types import (
     ChatContext,
-    ChatResponse,
-    ChatResponseType,
+    ChatResponseUnion,
+    ClearMessageContent,
+    ClearMessageResponse,
+    ConversationIdContent,
+    ConversationIdResponse,
+    ConversationSummaryContent,
+    ConversationSummaryResponse,
     FeedbackType,
+    FollowupMessagesContent,
+    FollowupMessagesResponse,
     Image,
+    ImageResponse,
     LiveUpdate,
     LiveUpdateContent,
+    LiveUpdateResponse,
     LiveUpdateType,
+    MessageIdContent,
+    MessageIdResponse,
     MessageUsage,
     Reference,
+    ReferenceResponse,
     StateUpdate,
+    StateUpdateResponse,
+    TextContent,
+    TextResponse,
+    UsageContent,
+    UsageResponse,
 )
 
 logger = logging.getLogger(__name__)
 
 
 def with_chat_metadata(
-    func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponse, None]],
-) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponse, None]]:
+    func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponseUnion, None]],
+) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponseUnion, None]]:
     """
     Decorator that adds message and conversation metadata to the chat method and handles history persistence.
     Generates message_id and conversation_id (if first message) and stores them in context.
@@ -49,7 +66,7 @@ def with_chat_metadata(
     @functools.wraps(func)
     async def wrapper(
         self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
-    ) -> AsyncGenerator[ChatResponse, None]:
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
         start_time = time.time()
 
         # Assure history and context are not None
@@ -68,14 +85,14 @@ def with_chat_metadata(
         # Generate message_id if not present
         if not context.message_id:
             context.message_id = str(uuid.uuid4())
-            yield ChatResponse(type=ChatResponseType.MESSAGE_ID, content=context.message_id)
+            yield MessageIdResponse(content=MessageIdContent(message_id=context.message_id))
 
         # Generate conversation_id if this is the first message
         is_new_conversation = False
         if not context.conversation_id:
             context.conversation_id = str(uuid.uuid4())
             is_new_conversation = True
-            yield ChatResponse(type=ChatResponseType.CONVERSATION_ID, content=context.conversation_id)
+            yield ConversationIdResponse(content=ConversationIdContent(conversation_id=context.conversation_id))
 
             # Track new conversation
             record_metric(
@@ -88,7 +105,7 @@ def with_chat_metadata(
             # Generate summary to serve as title for new conversations
             try:
                 summary = await self.generate_conversation_summary(message, history, context)
-                yield ChatResponse(type=ChatResponseType.CONVERSATION_SUMMARY, content=summary)
+                yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
             except Exception:
                 logger.exception("Failed to generate conversation title")
 
@@ -102,9 +119,9 @@ def with_chat_metadata(
         try:
             async for response in func(self, message, history, context):
                 responses.append(response)
-                if response.type == ChatResponseType.TEXT and isinstance(response.content, str):
+                if isinstance(response, TextResponse):
                     # Record time to first token on the first TEXT response
-                    if first_token_time is None and response.content:
+                    if first_token_time is None and response.content.text:
                         first_token_time = time.time() - start_time
                         record_metric(
                             ChatHistogramMetric.CHAT_TIME_TO_FIRST_TOKEN,
@@ -115,9 +132,9 @@ def with_chat_metadata(
                             history_length=str(history_length),
                         )
 
-                    main_response = main_response + response.content
+                    main_response = main_response + response.content.text
                     # Rough token estimation (words * 1.3 for subword tokens)
-                    response_token_count += len(response.content.split()) * 1.3
+                    response_token_count += len(response.content.text.split()) * 1.3
                 else:
                     extra_responses.append(response)
                 yield response
@@ -201,63 +218,57 @@ class ChatInterface(ABC):
             cls.chat = functools.wraps(cls.chat)(with_chat_metadata(cls.chat))  # type: ignore
 
     @staticmethod
-    def create_text_response(text: str) -> ChatResponse:
+    def create_text_response(text: str) -> TextResponse:
         """Helper method to create a text response."""
-        return ChatResponse(type=ChatResponseType.TEXT, content=text)
+        return TextResponse(content=TextContent(text=text))
 
     @staticmethod
     def create_reference(
         title: str,
         content: str,
         url: str | None = None,
-    ) -> ChatResponse:
+    ) -> ReferenceResponse:
         """Helper method to create a reference response."""
-        return ChatResponse(
-            type=ChatResponseType.REFERENCE,
-            content=Reference(title=title, content=content, url=url),
-        )
+        return ReferenceResponse(content=Reference(title=title, content=content, url=url))
 
     @staticmethod
-    def create_state_update(state: dict[str, Any]) -> ChatResponse:
+    def create_state_update(state: dict[str, Any]) -> StateUpdateResponse:
         """Helper method to create a state update response with signature."""
         signature = ChatInterface._sign_state(state)
-        return ChatResponse(
-            type=ChatResponseType.STATE_UPDATE,
-            content=StateUpdate(state=state, signature=signature),
-        )
+        return StateUpdateResponse(content=StateUpdate(state=state, signature=signature))
 
     @staticmethod
     def create_live_update(
         update_id: str, type: LiveUpdateType, label: str, description: str | None = None
-    ) -> ChatResponse:
+    ) -> LiveUpdateResponse:
         """Helper method to create a live update response."""
-        return ChatResponse(
-            type=ChatResponseType.LIVE_UPDATE,
+        return LiveUpdateResponse(
             content=LiveUpdate(
                 update_id=update_id, type=type, content=LiveUpdateContent(label=label, description=description)
-            ),
+            )
         )
 
     @staticmethod
-    def create_followup_messages(messages: list[str]) -> ChatResponse:
+    def create_followup_messages(messages: list[str]) -> FollowupMessagesResponse:
         """Helper method to create a live update response."""
-        return ChatResponse(type=ChatResponseType.FOLLOWUP_MESSAGES, content=messages)
+        return FollowupMessagesResponse(content=FollowupMessagesContent(messages=messages))
 
     @staticmethod
-    def create_image_response(image_id: str, image_url: str) -> ChatResponse:
+    def create_image_response(image_id: str, image_url: str) -> ImageResponse:
         """Helper method to create an image response."""
-        return ChatResponse(type=ChatResponseType.IMAGE, content=Image(id=image_id, url=image_url))
+        return ImageResponse(content=Image(id=image_id, url=image_url))
 
     @staticmethod
-    def create_clear_message_response() -> ChatResponse:
+    def create_clear_message_response() -> ClearMessageResponse:
         """Helper method to create an clear message response."""
-        return ChatResponse(type=ChatResponseType.CLEAR_MESSAGE, content=None)
+        return ClearMessageResponse(content=ClearMessageContent())
 
     @staticmethod
-    def create_usage_response(usage: Usage) -> ChatResponse:
-        return ChatResponse(
-            type=ChatResponseType.USAGE,
-            content={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()},
+    def create_usage_response(usage: Usage) -> UsageResponse:
+        return UsageResponse(
+            content=UsageContent(
+                usage={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()}
+            )
         )
 
     @staticmethod
@@ -318,7 +329,7 @@ class ChatInterface(ABC):
         message: str,
         history: ChatFormat,
         context: ChatContext,
-    ) -> AsyncGenerator[ChatResponse, None]:
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
         """
         Process a chat message and yield responses asynchronously.
 
@@ -338,17 +349,17 @@ class ChatInterface(ABC):
             ```python
             chat = MyChatImplementation()
             async for response in chat.chat("What is Python?"):
-                if text := response.as_text():
-                    print(f"Text: {text}")
-                elif ref := response.as_reference():
-                    print(f"Reference: {ref.title}")
-                elif state := response.as_state_update():
-                    if verify_state(state.state, state.signature):
+                if isinstance(response, TextResponse):
+                    print(f"Text: {response.content}")
+                elif isinstance(response, ReferenceResponse):
+                    print(f"Reference: {response.content.title}")
+                elif isinstance(response, StateUpdateResponse):
+                    if verify_state(response.content.state, response.content.signature):
                         # Update client state
                         pass
             ```
         """
-        yield ChatResponse(type=ChatResponseType.TEXT, content="Ragbits cannot respond - please implement chat method!")
+        yield TextResponse(content=TextContent(text="Ragbits cannot respond - please implement chat method!"))
         raise NotImplementedError("Chat implementations must implement chat method")
 
     async def save_feedback(

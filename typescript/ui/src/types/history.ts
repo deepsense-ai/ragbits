@@ -24,6 +24,7 @@ export interface ChatMessage {
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
+  extra?: Record<string, unknown>;
 }
 
 export interface Conversation {

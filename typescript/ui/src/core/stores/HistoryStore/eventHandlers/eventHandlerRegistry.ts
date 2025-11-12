@@ -1,4 +1,4 @@
-import { ChatResponse, ChatResponseType } from "@ragbits/api-client-react";
+import { ChatResponse } from "@ragbits/api-client-react";
 import { Conversation, HistoryStore } from "../../../../types/history";
 import {
   handleAfterConversationId,
@@ -41,10 +41,10 @@ export type HandlerEntry<
 };
 
 class ChatResponseHandlerRegistry {
-  private handlers = new Map<ChatResponseType, unknown>();
+  private handlers = new Map<string, unknown>();
 
   register<
-    K extends ChatResponseType,
+    K extends ChatResponse["type"],
     R extends Extract<ChatResponse, { type: K }>,
     Ctx extends object = object,
   >(type: K, entry: HandlerEntry<R, Ctx>) {
@@ -57,51 +57,57 @@ class ChatResponseHandlerRegistry {
   }
 
   get<
-    K extends ChatResponseType,
+    K extends ChatResponse["type"],
     R extends Extract<ChatResponse, { type: K }>,
     Ctx extends object = object,
   >(type: K): HandlerEntry<R, Ctx> {
     const raw = this.handlers.get(type);
     if (!raw) {
-      throw new Error(`No handler registered for type: ${String(type)}`);
+      console.warn(`No handler registered for type: ${String(type)}`);
+      console.warn(`Continuing with empty handler...`);
+
+      return {
+        handle: () => {},
+        after: () => {},
+      } as HandlerEntry<R, Ctx>;
     }
     return raw as HandlerEntry<R, Ctx>;
   }
 }
 
 export const ChatHandlerRegistry = new ChatResponseHandlerRegistry();
-ChatHandlerRegistry.register(ChatResponseType.StateUpdate, {
+ChatHandlerRegistry.register("state_update", {
   handle: handleStateUpdate,
 });
-ChatHandlerRegistry.register(ChatResponseType.ConversationId, {
+ChatHandlerRegistry.register("conversation_id", {
   handle: handleConversationId,
   after: handleAfterConversationId,
 });
-ChatHandlerRegistry.register(ChatResponseType.FollowupMessages, {
+ChatHandlerRegistry.register("followup_messages", {
   handle: handleFollowupMessages,
 });
 
-ChatHandlerRegistry.register(ChatResponseType.Text, {
+ChatHandlerRegistry.register("text", {
   handle: handleText,
 });
-ChatHandlerRegistry.register(ChatResponseType.Reference, {
+ChatHandlerRegistry.register("reference", {
   handle: handleReference,
 });
-ChatHandlerRegistry.register(ChatResponseType.MessageId, {
+ChatHandlerRegistry.register("message_id", {
   handle: handleMessageId,
 });
-ChatHandlerRegistry.register(ChatResponseType.LiveUpdate, {
+ChatHandlerRegistry.register("live_update", {
   handle: handleLiveUpdate,
 });
-ChatHandlerRegistry.register(ChatResponseType.Image, {
+ChatHandlerRegistry.register("image", {
   handle: handleImage,
 });
-ChatHandlerRegistry.register(ChatResponseType.ClearMessage, {
+ChatHandlerRegistry.register("clear_message", {
   handle: handleClearMessage,
 });
-ChatHandlerRegistry.register(ChatResponseType.Usage, {
+ChatHandlerRegistry.register("usage", {
   handle: handleUsage,
 });
-ChatHandlerRegistry.register(ChatResponseType.ConversationSummary, {
+ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,
 });

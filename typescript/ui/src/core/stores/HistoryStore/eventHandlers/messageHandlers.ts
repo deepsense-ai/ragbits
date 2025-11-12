@@ -1,5 +1,5 @@
 import {
-  ClearMessageResponse,
+  ClearMessageChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -17,7 +17,7 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.content += response.content;
+  message.content += response.content.text;
 };
 
 export const handleReference: PrimaryHandler<ReferenceChatResponse> = (
@@ -35,7 +35,7 @@ export const handleMessageId: PrimaryHandler<MessageIdChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.serverId = response.content;
+  message.serverId = response.content.message_id;
 };
 
 export const handleLiveUpdate: PrimaryHandler<LiveUpdateChatResponse> = (
@@ -76,7 +76,7 @@ export const handleImage: PrimaryHandler<ImageChatResponse> = (
   });
 };
 
-export const handleClearMessage: PrimaryHandler<ClearMessageResponse> = (
+export const handleClearMessage: PrimaryHandler<ClearMessageChatResponse> = (
   _,
   draft,
   ctx,
@@ -95,5 +95,5 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.usage = response.content;
+  message.usage = response.content.usage;
 };

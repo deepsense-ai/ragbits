@@ -91,10 +91,10 @@ class _DummyAsyncStreamResponse:
 def sse_lines() -> list[str]:
     """Return a list of valid SSE lines covering all relevant response types."""
     return [
-        'data: {"type": "conversation_id", "content": "conv123"}\n\n',
+        'data: {"type": "conversation_id", "content": {"conversation_id": "conv123"}}\n\n',
         'data: {"type": "state_update", "content": {"state": {"foo": "bar"}, "signature": "sig"}}\n\n',
-        'data: {"type": "text", "content": "Hello"}\n\n',
-        'data: {"type": "text", "content": " world"}\n\n',
+        'data: {"type": "text", "content": {"text": "Hello"}}\n\n',
+        'data: {"type": "text", "content": {"text": " world"}}\n\n',
     ]
 
 
@@ -109,7 +109,7 @@ def test_sync_conversation_run_and_state_update(sse_lines: list[str]) -> None:
         conv = SyncRagbitsConversation(base_url="http://testserver", http_client=http_client)
         responses = conv.run("Hello")
 
-    aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
+    aggregated = "".join(r.content.text for r in responses if r.type.value == "text")
 
     assert aggregated == "Hello world"
     assert len(conv.history) == 2
@@ -162,7 +162,7 @@ async def test_async_conversation_run_and_state_update(sse_lines: list[str]) -> 
         conv = RagbitsConversation(base_url="http://testserver", http_client=http_client)
         responses = await conv.run("Hello")
 
-    aggregated = "".join(str(r.content) for r in responses if r.type.value == "text")
+    aggregated = "".join(r.content.text for r in responses if r.type.value == "text")
 
     assert aggregated == "Hello world"
     assert len(conv.history) == 2

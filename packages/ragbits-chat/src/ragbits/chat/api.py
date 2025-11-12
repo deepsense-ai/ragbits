@@ -6,7 +6,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -25,14 +25,14 @@ from ragbits.chat.interface.types import (
     AuthType,
     ChatContext,
     ChatMessageRequest,
-    ChatResponse,
-    ChatResponseType,
+    ChatResponseUnion,
     ChunkedContent,
     ConfigResponse,
     FeedbackConfig,
     FeedbackItem,
     FeedbackRequest,
     Image,
+    ImageResponse,
 )
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -328,17 +328,17 @@ class RagbitsAPI:
                         content = str(data_dict.get("content", ""))
 
                         match data_dict.get("type"):
-                            case ChatResponseType.TEXT:
+                            case "text":
                                 response_text += content
-                            case ChatResponseType.REFERENCE:
+                            case "reference":
                                 reference_text += content
-                            case ChatResponseType.STATE_UPDATE:
+                            case "state_update":
                                 state_update_text += content
-                            case ChatResponseType.MESSAGE_ID:
+                            case "message_id":
                                 outputs.message_id = content
-                            case ChatResponseType.CONVERSATION_ID:
+                            case "conversation_id":
                                 outputs.conversation_id = content
-                            case ChatResponseType.IMAGE:
+                            case "image":
                                 outputs.image_url = content
 
                         yield chunk
@@ -555,7 +555,7 @@ class RagbitsAPI:
 
     @staticmethod
     async def _chat_response_to_sse(
-        responses: AsyncGenerator[ChatResponse],
+        responses: AsyncGenerator[ChatResponseUnion],
     ) -> AsyncGenerator[str, None]:
         """
         Formats chat responses into Server-Sent Events (SSE) format for streaming to the client.
@@ -579,9 +579,9 @@ class RagbitsAPI:
                     }
 
                 # Auto-chunk large images using ChunkedContent model
-                if response.type == ChatResponseType.IMAGE and cast(Image, response.content).url.startswith("data:"):
+                if isinstance(response, ImageResponse) and cast(Image, response.content).url.startswith("data:"):
                     # Auto-chunk the image
-                    async for chunk_response in RagbitsAPI._create_chunked_responses(ChatResponseType.IMAGE, response):
+                    async for chunk_response in RagbitsAPI._create_chunked_responses(response):
                         yield f"data: {json.dumps(chunk_response)}\n\n"
 
                     continue  # Skip normal processing for chunked images
@@ -591,7 +591,7 @@ class RagbitsAPI:
                 # - Regular URL images (https://..., http://..., /path/to/image.jpg)
                 data = json.dumps(
                     {
-                        "type": response.type.value,
+                        "type": response.get_type(),
                         "content": response_to_send.model_dump()
                         if isinstance(response_to_send, BaseModel)
                         else response_to_send,
@@ -615,9 +615,7 @@ class RagbitsAPI:
             )
 
     @staticmethod
-    async def _create_chunked_responses(
-        type: Literal[ChatResponseType.IMAGE], base64_response: ChatResponse
-    ) -> AsyncGenerator[dict, None]:
+    async def _create_chunked_responses(base64_response: ImageResponse) -> AsyncGenerator[dict, None]:
         """Create chunked responses from a base64 response."""
         image_content = cast(Image, base64_response.content)
         mime_type, base64_data = image_content.url.split(",", 1)
@@ -627,14 +625,14 @@ class RagbitsAPI:
         for i, chunk in enumerate(chunks):
             chunked_content = ChunkedContent(
                 id=image_content.id,
-                content_type=type.value,
+                content_type="image",
                 chunk_index=i,
                 total_chunks=len(chunks),
                 mime_type=mime_type,
                 data=chunk,
             )
 
-            yield {"type": ChatResponseType.CHUNKED_CONTENT.value, "content": chunked_content.model_dump()}
+            yield {"type": "chunked_content", "content": chunked_content.model_dump()}
 
     @staticmethod
     def _load_chat_interface(implementation: type[ChatInterface] | str) -> ChatInterface:

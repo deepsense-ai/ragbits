@@ -1,4 +1,4 @@
-import { ChatResponseType, ChunkedChatResponse, Image } from './autogen.types'
+import { ChunkedChatResponse, Image } from './autogen.types'
 import type {
     ClientConfig,
     StreamCallbacks,
@@ -191,10 +191,7 @@ export class RagbitsClient {
                                 jsonString
                             ) as EndpointResponse<URL, Endpoints>
 
-                            if (
-                                parsedData.type ===
-                                ChatResponseType.ChunkedContent
-                            ) {
+                            if (parsedData.type === 'chunked_content') {
                                 this.handleChunkedContent(parsedData, callbacks)
                                 continue
                             }
@@ -341,13 +338,13 @@ export class RagbitsClient {
             await callbacks.onError(new Error('Error reading stream'))
         }
 
-        if (contentType === ChatResponseType.Image) {
+        if (contentType === 'image') {
             // Create the complete image response
             const completeImageResponse: {
-                type: typeof ChatResponseType.Image
+                type: 'image'
                 content: Image
             } = {
-                type: ChatResponseType.Image,
+                type: 'image',
                 content: {
                     id: id,
                     url: `${imageInfo.mimeType},${completeBase64}`,

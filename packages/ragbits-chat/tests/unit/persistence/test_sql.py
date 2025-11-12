@@ -1,7 +1,14 @@
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference, StateUpdate
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatResponse,
+    Reference,
+    ReferenceResponse,
+    StateUpdate,
+    StateUpdateResponse,
+)
 from ragbits.chat.persistence.sql import SQLHistoryPersistence, SQLHistoryPersistenceOptions
 
 
@@ -123,18 +130,16 @@ async def test_json_data_integrity(sql_persistence: SQLHistoryPersistence) -> No
     )
 
     # Create complex extra responses
-    complex_extra_responses = [
-        ChatResponse(
-            type=ChatResponseType.REFERENCE,
+    complex_extra_responses: list[ChatResponse] = [
+        ReferenceResponse(
             content=Reference(
                 title="Complex Reference",
                 content="This is a complex reference with detailed information",
                 url="https://example.com/complex",
-            ),
+            )
         ),
-        ChatResponse(
-            type=ChatResponseType.STATE_UPDATE,
-            content=StateUpdate(state={"updated_field": "new_value", "counter": 42}, signature="test_signature"),
+        StateUpdateResponse(
+            content=StateUpdate(state={"updated_field": "new_value", "counter": 42}, signature="test_signature")
         ),
     ]
 
