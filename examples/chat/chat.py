@@ -29,10 +29,56 @@ from pydantic import BaseModel, ConfigDict, Field
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.summary import HybridSummaryGenerator
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatResponse,
+    LiveUpdateType,
+    ResponseContent,
+)
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import ChatFormat
+
+
+# Example 1: Custom response for user profile data
+class UserProfileContent(ResponseContent):
+    """Example custom response content for user profile information.
+
+    This demonstrates how to create a custom response type using the generic approach.
+    The content is fully typed, validated by Pydantic, and automatically serialized.
+    """
+
+    name: str = Field(..., min_length=1, description="User's full name")
+    age: int = Field(..., ge=0, le=150, description="User's age")
+    city: str = Field(..., description="User's city")
+
+    def get_type(self) -> str:  # noqa: PLR6301
+        """Return the type identifier for this content."""
+        return "user_profile"
+
+
+class UserProfileResponse(ChatResponse[UserProfileContent]):
+    """User profile response for streaming to clients."""
+
+
+# Example 2: Custom response for chart/analytics data
+class ChartDataContent(ResponseContent):
+    """Example custom response content for chart visualization data.
+
+    This shows a more complex custom response with lists and nested data.
+    """
+
+    labels: list[str] = Field(..., description="Chart labels")
+    values: list[float] = Field(..., description="Chart data values")
+    chart_type: Literal["line", "bar", "pie"] = Field(default="line", description="Type of chart")
+
+    def get_type(self) -> str:  # noqa: PLR6301
+        """Return the type identifier for this content."""
+        return "chart_data"
+
+
+class ChartDataResponse(ChatResponse[ChartDataContent]):
+    """Chart data response for streaming to clients."""
 
 
 class LikeFormExample(BaseModel):
@@ -129,6 +175,20 @@ class MyChat(ChatInterface):
             str(uuid.uuid4()),
             "https://media.istockphoto.com/id/1145618475/photo/villefranche-on-sea-in-evening.jpg?s=612x612&w=0&k=20&c=vQGj6uK7UUVt0vQhZc9yhRO_oYBEf8IeeDxGyJKbLKI=",
         )
+
+        # Example 1: Send custom user profile response
+        # This demonstrates the generic approach to custom responses with full type safety
+        user_profile = UserProfileContent(name="John Doe", age=30, city="New York")
+        yield UserProfileResponse(content=user_profile)
+
+        # Example 2: Send custom chart data response
+        # Shows how to send more complex data structures
+        chart_data = ChartDataContent(
+            labels=["Q1", "Q2", "Q3", "Q4"],
+            values=[100.5, 150.2, 120.0, 180.3],
+            chart_type="line",
+        )
+        yield ChartDataResponse(content=chart_data)
 
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),

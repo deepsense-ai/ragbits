@@ -21,7 +21,6 @@ import {
   RagbitsContextProvider,
   StreamCallbacks,
   ChatResponse,
-  ChatResponseType,
   MessageRole,
   FeedbackType,
 } from "@ragbits/api-client-react";
@@ -126,8 +125,13 @@ describe("Integration tests", () => {
               {
                 content: "Test message",
                 role: MessageRole.User,
+                extra: null,
               },
-              { content: expect.any(String), role: MessageRole.Assistant },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
             ],
             message: "Test message 2",
           },
@@ -213,10 +217,23 @@ describe("Integration tests", () => {
               {
                 content: "Test message",
                 role: MessageRole.User,
+                extra: null,
               },
-              { content: expect.any(String), role: MessageRole.Assistant },
-              { content: "Test message 2", role: MessageRole.User },
-              { content: expect.any(String), role: MessageRole.Assistant },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
+              {
+                content: "Test message 2",
+                role: MessageRole.User,
+                extra: null,
+              },
+              {
+                content: expect.any(String),
+                role: MessageRole.Assistant,
+                extra: null,
+              },
             ],
             message: "Test message 3",
           },
@@ -237,24 +254,29 @@ describe("Integration tests", () => {
       });
     });
     it("should recieve stream of known events", async () => {
-      const originalMakeStreamRequest =
-        RagbitsClient.prototype.makeStreamRequest;
-      vi.spyOn(RagbitsClient.prototype, "makeStreamRequest").mockImplementation(
-        function (this: RagbitsClient, endpoint, data, callbacks, signal) {
+      // Store the original bound method
+      const originalMethod =
+        ragbitsClient.makeStreamRequest.bind(ragbitsClient);
+
+      // Replace it with a wrapper
+      ragbitsClient.makeStreamRequest = vi.fn(
+        (endpoint, data, callbacks, signal) => {
           const modifiedCallbacks = {
             ...(callbacks as StreamCallbacks<unknown>),
-            onMessage: (event: ChatResponse) => {
-              expect(Object.values(ChatResponseType)).toContain(event.type);
+            onMessage: async (event: ChatResponse) => {
+              // Verify event has a valid type field
+              expect(event.type).toBeDefined();
+              expect(typeof event.type).toBe("string");
+              expect(event.content).toBeDefined();
+              expect(typeof event.content).toBe("object");
+
+              // Call the original callback
+              await callbacks?.onMessage?.(event);
             },
           };
 
-          return originalMakeStreamRequest.call(
-            this,
-            endpoint,
-            data,
-            modifiedCallbacks,
-            signal,
-          );
+          // Call the original method with modified callbacks
+          return originalMethod(endpoint, data, modifiedCallbacks, signal);
         },
       );
 
@@ -275,6 +297,8 @@ describe("Integration tests", () => {
           timeout: 20000, // Long timeout because of the sleep between live updates
         },
       );
+
+      expect(ragbitsClient.makeStreamRequest).toHaveBeenCalled();
     });
   });
 
