@@ -53,23 +53,29 @@ class RagbitsChatModelProvider:
                 AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
-                ChatResponseType,
                 ChunkedContent,
                 ConfigResponse,
+                ConversationIdContent,
+                ConversationSummaryContent,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
                 FeedbackResponse,
                 FeedbackType,
+                FollowupMessagesContent,
                 Image,
                 LiveUpdate,
                 LiveUpdateContent,
                 LiveUpdateType,
                 Message,
+                MessageIdContent,
                 MessageRole,
                 MessageUsage,
                 Reference,
                 StateUpdate,
+                TextContent,
+                TodoItemContent,
+                UsageContent,
             )
             from ragbits.chat.interface.ui_customization import (
                 HeaderCustomization,
@@ -79,7 +85,6 @@ class RagbitsChatModelProvider:
 
             self._models_cache = {
                 # Enums
-                "ChatResponseType": ChatResponseType,
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
@@ -96,12 +101,20 @@ class RagbitsChatModelProvider:
                 "Image": Image,
                 "MessageUsage": MessageUsage,
                 "Task": Task,
+                # Response content wrappers (new way)
+                "TextContent": TextContent,
+                "MessageIdContent": MessageIdContent,
+                "ConversationIdContent": ConversationIdContent,
+                "ConversationSummaryContent": ConversationSummaryContent,
+                "FollowupMessagesContent": FollowupMessagesContent,
+                "UsageContent": UsageContent,
+                "TodoItemContent": TodoItemContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
                 "PageMetaCustomization": PageMetaCustomization,
                 "UserSettings": UserSettings,
-                "FeedbackConfig": FeedbackConfig,  # Current from types.py (not deprecated forms.py)
+                "FeedbackConfig": FeedbackConfig,
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
@@ -156,6 +169,15 @@ class RagbitsChatModelProvider:
                 "MessageUsage",
                 "Task",
                 "TaskStatus",
+                # Response content wrappers (new way)
+                "TextContent",
+                "MessageIdContent",
+                "ConversationIdContent",
+                "ConversationSummaryContent",
+                "FollowupMessagesContent",
+                "UsageContent",
+                "ClearMessageContent",
+                "TodoItemContent",
             ],
             "configuration": [
                 "HeaderCustomization",
