@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 from pathlib import Path
 
 from ..interface.types import ChatContext, ChatResponse
@@ -19,7 +20,7 @@ class FileHistoryPersistence(HistoryPersistenceStrategy):
         self,
         message: str,
         response: str,
-        extra_responses: list[ChatResponse],
+        extra_responses: Sequence[ChatResponse],
         context: ChatContext,
         timestamp: float,
     ) -> None:

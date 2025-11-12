@@ -14,21 +14,6 @@ describe('Package Exports', () => {
         expect(RagbitsApiClient.FeedbackType.Dislike).toBe('dislike')
     })
 
-    it('should export ChatResponseType enum', () => {
-        expect(RagbitsApiClient.ChatResponseType).toBeDefined()
-        expect(typeof RagbitsApiClient.ChatResponseType).toBe('object')
-        expect(RagbitsApiClient.ChatResponseType.Text).toBe('text')
-        expect(RagbitsApiClient.ChatResponseType.Reference).toBe('reference')
-        expect(RagbitsApiClient.ChatResponseType.StateUpdate).toBe(
-            'state_update'
-        )
-        expect(RagbitsApiClient.ChatResponseType.MessageId).toBe('message_id')
-        expect(RagbitsApiClient.ChatResponseType.ConversationId).toBe(
-            'conversation_id'
-        )
-        expect(RagbitsApiClient.ChatResponseType.LiveUpdate).toBe('live_update')
-    })
-
     it('should export MessageRole enum', () => {
         expect(RagbitsApiClient.MessageRole).toBeDefined()
         expect(typeof RagbitsApiClient.MessageRole).toBe('object')

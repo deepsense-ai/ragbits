@@ -88,12 +88,12 @@ class _DummyAsyncStreamResponse:
 def sse_lines() -> list[str]:
     """Representative SSE lines covering all supported ChatResponse types."""
     return [
-        'data: {"type": "conversation_id", "content": "cid"}\n\n',
+        'data: {"type": "conversation_id", "content": {"conversation_id": "cid"}}\n\n',
         'data: {"type": "state_update", "content": {"state": {"x": 1}, "signature": "sig"}}\n\n',
-        'data: {"type": "message_id", "content": "mid"}\n\n',
-        'data: {"type": "text", "content": "foo"}\n\n',
+        'data: {"type": "message_id", "content": {"message_id": "mid"}}\n\n',
+        'data: {"type": "text", "content": {"text": "foo"}}\n\n',
         'data: {"type": "reference", "content": {"title": "Doc", "content": "Body", "url": null}}\n\n',
-        'data: {"type": "text", "content": " bar"}\n\n',
+        'data: {"type": "text", "content": {"text": " bar"}}\n\n',
     ]
 
 

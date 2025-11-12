@@ -1,10 +1,40 @@
 # CHANGELOG
 
 ## Unreleased
+
+### Added
+
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
 - Add todo list component to the UI, add support for todo events in API (#827)
-
+- Add custom response type to the chat interface with full type safety and validation (#849)
+  - New class-based response system: `TextResponse`, `ReferenceResponse`, `StateUpdateResponse`, etc.
+  - Support for custom response types by extending `ResponseContent` and `ChatResponse`
+  - Full Pydantic validation for all response content
 - customizable HeroUI theme (#841)
+
+### Deprecated
+
+- **BACKWARD COMPATIBILITY MAINTAINED**: The following APIs are deprecated and will be removed in version 2.0.0:
+  - `ChatResponseType` enum - Use `isinstance()` checks with specific response classes instead
+  - `ChatResponse.type` property - Use `isinstance()` checks instead
+  - `ChatResponse.as_text()` method - Use `isinstance(response, TextResponse)` instead
+  - `ChatResponse.as_reference()` method - Use `isinstance(response, ReferenceResponse)` instead
+  - `ChatResponse.as_state_update()` method - Use `isinstance(response, StateUpdateResponse)` instead
+  - `ChatResponse.as_conversation_id()` method - Use `isinstance(response, ConversationIdResponse)` instead
+
+All deprecated APIs emit `DeprecationWarning` when used and remain fully functional for backward compatibility.
+
+**Migration Example:**
+
+```python
+# Old (deprecated but still works):
+if response.type == ChatResponseType.TEXT:
+    print(response.as_text())
+
+# New (recommended):
+if isinstance(response, TextResponse):
+    print(response.content.text)
+```
 
 ## 1.3.0 (2025-09-11)
 

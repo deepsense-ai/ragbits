@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ChatResponseType, FeedbackType, RagbitsClient } from '../src'
+import { RagbitsClient, FeedbackType } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../src'
@@ -181,19 +181,19 @@ describe('RagbitsClient', () => {
 
             expect(messages).toHaveLength(4)
             expect(messages[0]).toEqual({
-                type: ChatResponseType.Text,
+                type: 'text',
                 content: 'Hello there!',
             })
             expect(messages[1]).toEqual({
-                type: ChatResponseType.Text,
+                type: 'text',
                 content: 'How can I help you?',
             })
             expect(messages[2]).toEqual({
-                type: ChatResponseType.MessageId,
+                type: 'message_id',
                 content: 'msg-123',
             })
             expect(messages[3]).toEqual({
-                type: ChatResponseType.ConversationId,
+                type: 'conversation_id',
                 content: 'conv-456',
             })
             expect(errors).toHaveLength(0)
@@ -508,7 +508,7 @@ describe('RagbitsClient', () => {
                 { message: 'Start streaming', history: [], context: {} },
                 {
                     onMessage: (data) => {
-                        if (data.type !== ChatResponseType.Text) {
+                        if (data.type !== 'text') {
                             return
                         }
 

@@ -4,7 +4,7 @@ import { act } from 'react'
 import { waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react'
 import { useRagbitsStream, RagbitsContextProvider } from '../src'
-import { ChatResponseType, type ChatResponse } from '@ragbits/api-client'
+import { type ChatResponse } from '@ragbits/api-client'
 
 function createWrapper() {
     return function Wrapper({ children }: { children: React.ReactNode }) {
@@ -66,19 +66,19 @@ describe('useRagbitsStream', () => {
 
         expect(messages).toHaveLength(4)
         expect(messages[0]).toEqual({
-            type: ChatResponseType.Text,
+            type: 'text',
             content: 'Hello',
         })
         expect(messages[1]).toEqual({
-            type: ChatResponseType.Text,
+            type: 'text',
             content: ' there!',
         })
         expect(messages[2]).toEqual({
-            type: ChatResponseType.MessageId,
+            type: 'message_id',
             content: 'msg-123',
         })
         expect(messages[3]).toEqual({
-            type: ChatResponseType.ConversationId,
+            type: 'conversation_id',
             content: 'conv-456',
         })
         expect(errors).toHaveLength(0)

@@ -1,6 +1,6 @@
 import json
 from collections.abc import AsyncGenerator
-from typing import Any, Literal
+from typing import Literal
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
@@ -10,8 +10,16 @@ from pydantic import BaseModel, ConfigDict, Field
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig
-from ragbits.chat.interface.types import ChatContext, ChatResponse, ChatResponseType, Reference
+from ragbits.chat.interface.types import (
+    ChatContext,
+    ChatResponseUnion,
+    Reference,
+    ReferenceResponse,
+    TextContent,
+    TextResponse,
+)
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+from ragbits.core.prompt.base import ChatFormat
 
 
 class LikeFormExample(BaseModel):
@@ -46,8 +54,8 @@ class MockChatInterface(ChatInterface):
         self.feedback_config = FeedbackConfig()
 
     async def chat(
-        self, message: str, history: list[Any] | None = None, context: ChatContext | None = None
-    ) -> AsyncGenerator[ChatResponse, None]:
+        self, message: str, history: ChatFormat, context: ChatContext
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
         """Mock implementation that yields test responses."""
         yield self.create_text_response("Test response")
         yield self.create_reference(title="Test Reference", content="Test content", url="http://test.com")
@@ -99,11 +107,9 @@ def authenticate_user(client: TestClient, username: str = "testuser", password: 
 async def test_chat_response_to_sse() -> None:
     """Test conversion of chat responses to SSE format."""
 
-    async def mock_generator() -> AsyncGenerator[ChatResponse, None]:
-        yield ChatResponse(type=ChatResponseType.TEXT, content="Hello")
-        yield ChatResponse(
-            type=ChatResponseType.REFERENCE, content=Reference(title="Ref", content="Content", url="http://example.com")
-        )
+    async def mock_generator() -> AsyncGenerator[ChatResponseUnion, None]:
+        yield TextResponse(content=TextContent(text="Hello"))
+        yield ReferenceResponse(content=Reference(title="Ref", content="Content", url="http://example.com"))
 
     sse_generator = RagbitsAPI._chat_response_to_sse(mock_generator())
 
@@ -114,8 +120,8 @@ async def test_chat_response_to_sse() -> None:
     # Should now have 2 chat responses
     assert len(responses) == 2
 
-    # Second should be the text response
-    assert responses[0] == 'data: {"type": "text", "content": "Hello"}\n\n'
+    # First should be the text response
+    assert responses[0] == 'data: {"type": "text", "content": {"text": "Hello"}}\n\n'
 
     # Parse the second response JSON to check it
     second_response = responses[1].replace("data: ", "").strip()
@@ -152,7 +158,7 @@ def test_chat_endpoint(client: TestClient) -> None:
 
     # Test the content of the streamed response
     content = response.content.decode("utf-8")
-    assert 'data: {"type": "text", "content": "Test response"}' in content
+    assert 'data: {"type": "text", "content": {"text": "Test response"}}' in content
     assert 'data: {"type": "reference", "content": {"title": "Test Reference"' in content
 
 
@@ -253,8 +259,8 @@ def test_load_chat_interface_from_string(mock_import: MagicMock) -> None:
 
     class TestChatInterface(ChatInterface):
         async def chat(
-            self, message: str, history: list[Any] | None = None, context: ChatContext | None = None
-        ) -> AsyncGenerator[ChatResponse, None]:
+            self, message: str, history: ChatFormat, context: ChatContext
+        ) -> AsyncGenerator[ChatResponseUnion, None]:
             yield self.create_text_response("Test")
 
     mock_module = MagicMock()

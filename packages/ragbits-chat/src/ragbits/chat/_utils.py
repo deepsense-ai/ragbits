@@ -5,7 +5,7 @@ import logging
 
 from pydantic import TypeAdapter
 
-from .interface.types import ChatResponse
+from .interface.types import ChatResponse, ChatResponseUnion
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def parse_sse_line(line: str) -> ChatResponse | None:
     try:
         json_payload = line[len(PREFIX) :].strip()
         data = json.loads(json_payload)
-        adapter: TypeAdapter[ChatResponse] = TypeAdapter(ChatResponse)
+        adapter: TypeAdapter[ChatResponseUnion] = TypeAdapter(ChatResponseUnion)
         return adapter.validate_python(data)
     except Exception as exc:
         logger.error("Failed to parse SSE line: %s", exc, exc_info=True)
