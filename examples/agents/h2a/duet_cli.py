@@ -9,10 +9,12 @@ Run:
   --max-turns 5 \
   --agent-model-name gpt-4o-mini \
   --sim-user-model-name gpt-4o-mini \
+  --checker-model-name gpt-4o-mini \
   --log-file duet_conversation.log
     
 
 """
+
 from __future__ import annotations
 
 import argparse
@@ -70,6 +72,54 @@ class SimulatedUser:
         return response.strip()
 
 
+class GoalChecker:
+    """A lightweight judge model that decides whether the goal has been achieved.
+
+    It inspects the conversation so far and returns a boolean decision.
+    """
+
+    def __init__(self, llm: LiteLLM, goal: str) -> None:
+        self.llm = llm
+        self.goal = goal
+
+    async def is_goal_achieved(self, history: List[Turn]) -> Tuple[bool, str]:
+        history_text = []
+        for t in history:
+            history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
+        history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
+
+        prompt = (
+            "[SYSTEM]\n"
+            "You are a strict goal-completion judge for a user-assistant conversation. "
+            "Decide if the assistant has fulfilled the user's goal.\n"
+            f"User goal: {self.goal}\n\n"
+            "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
+            '{"done": true|false, "reason": "short reason"}\n\n'
+            "[CONVERSATION]\n"
+            f"{history_block}\n\n"
+            "[TASK]\nReturn the JSON now:"
+        )
+
+        response = await self.llm.generate(prompt=prompt)
+        text = response.strip()
+        # Be robust to slight deviations by attempting a minimal parse
+        done = False
+        reason = ""
+        try:
+            import json
+
+            data = json.loads(text)
+            done = bool(data.get("done", False))
+            reason = str(data.get("reason", "")).strip()
+        except Exception:
+            # Fallback: simple heuristics
+            upper = text.upper()
+            if "DONE" in upper and "FALSE" not in upper:
+                done = True
+            reason = text
+        return done, reason
+
+
 def _build_llm(override_model_name: str | None) -> LiteLLM:
     model = override_model_name or config.llm_model
     return LiteLLM(model_name=model, use_structured_output=True, api_key=config.openai_api_key)
@@ -81,6 +131,7 @@ async def run_duet(
     log_file: str | None = None,
     agent_model_name: str | None = None,
     sim_user_model_name: str | None = None,
+    checker_model_name: str | None = None,
 ) -> None:
     # Create the financial agent directly (as ChatApp does internally)
     llm = _build_llm(agent_model_name)
@@ -88,6 +139,8 @@ async def run_duet(
 
     # Simulated user uses an independent llm (can share the same provider)
     sim_user = SimulatedUser(llm=_build_llm(sim_user_model_name), goal=goal)
+    # Independent goal checker model
+    goal_checker = GoalChecker(llm=_build_llm(checker_model_name), goal=goal)
 
     history: List[Turn] = []
 
@@ -103,6 +156,7 @@ async def run_duet(
             f.write(f"Goal: {goal}\n")
             f.write(f"Financial agent model: {llm.model_name}\n")
             f.write(f"Simulated user model: {_build_llm(sim_user_model_name).model_name}\n")
+            f.write(f"Goal checker model: {_build_llm(checker_model_name).model_name}\n")
 
     # Seed: ask the simulated user for the first message based on the goal
     user_message = await sim_user.next_message(history=[])
@@ -119,8 +173,7 @@ async def run_duet(
             break
 
         concise_prefix = (
-            "[STYLE]\nAnswer very concisely (<= 2 sentences). "
-            "If specifics are unknown, say so briefly.\n\n"
+            "[STYLE]\nAnswer very concisely (<= 2 sentences). If specifics are unknown, say so briefly.\n\n"
         )
         prompt_input = FinancePromptInput(input=concise_prefix + user_message)
         assistant_reply_parts: List[str] = []
@@ -137,6 +190,15 @@ async def run_duet(
 
         history.append(Turn(user=user_message, assistant=assistant_reply))
 
+        # Ask the judge if goal is achieved
+        done, reason = await goal_checker.is_goal_achieved(history)
+        if log_path:
+            with log_path.open("a", encoding="utf-8") as f:
+                f.write(f"Turn {turn_idx} - Goal check: done={done} reason={reason}\n")
+        if done:
+            print(f"Conversation ended (goal achieved). Reason: {reason}")
+            break
+
         # Ask the simulator for the next user message
         user_message = await sim_user.next_message(history)
 
@@ -149,7 +211,7 @@ async def run_duet(
             f.write(f"Session end: {end_time}\n")
 
 
-def parse_args() -> Tuple[str, int, str | None, str | None, str | None]:
+def parse_args() -> Tuple[str, int, str | None, str | None, str | None, str | None]:
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits + simulated user)")
     parser.add_argument("--goal", required=True, help="Simulated user goal/intention")
     parser.add_argument("--max-turns", type=int, default=5, help="Max number of conversation turns")
@@ -171,12 +233,25 @@ def parse_args() -> Tuple[str, int, str | None, str | None, str | None]:
         default=None,
         help="Override simulated user LLM model name (defaults to config.llm_model)",
     )
+    parser.add_argument(
+        "--checker-model-name",
+        type=str,
+        default=None,
+        help="Override goal checker LLM model name (defaults to config.llm_model)",
+    )
     args = parser.parse_args()
-    return args.goal, args.max_turns, args.log_file, args.agent_model_name, args.sim_user_model_name
+    return (
+        args.goal,
+        args.max_turns,
+        args.log_file,
+        args.agent_model_name,
+        args.sim_user_model_name,
+        args.checker_model_name,
+    )
 
 
 def main() -> None:
-    goal, max_turns, log_file, agent_model_name, sim_user_model_name = parse_args()
+    goal, max_turns, log_file, agent_model_name, sim_user_model_name, checker_model_name = parse_args()
     asyncio.run(
         run_duet(
             goal=goal,
@@ -184,11 +259,10 @@ def main() -> None:
             log_file=log_file,
             agent_model_name=agent_model_name,
             sim_user_model_name=sim_user_model_name,
+            checker_model_name=checker_model_name,
         )
     )
 
 
 if __name__ == "__main__":
     main()
-
-
