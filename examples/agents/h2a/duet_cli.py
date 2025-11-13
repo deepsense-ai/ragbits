@@ -3,10 +3,12 @@ Terminal conversation between the ragbits financial agent and a simulated user.
 
 Run:
     cd examples/agents/h2a
-    
+
     uv run python -m duet_cli \
   --goal "Get two promissing stocks for me to invest in" \
-  --model-name gpt-4o-mini \
+  --max-turns 5 \
+  --agent-model-name gpt-4o-mini \
+  --sim-user-model-name gpt-4o-mini \
   --log-file duet_conversation.log
     
 
@@ -77,14 +79,15 @@ async def run_duet(
     goal: str,
     max_turns: int = 5,
     log_file: str | None = None,
-    model_name: str | None = None,
+    agent_model_name: str | None = None,
+    sim_user_model_name: str | None = None,
 ) -> None:
     # Create the financial agent directly (as ChatApp does internally)
-    llm = _build_llm(model_name)
+    llm = _build_llm(agent_model_name)
     financial_agent = Agent(llm=llm, prompt=FinancePrompt, tools=[get_yahoo_finance_markdown])
 
     # Simulated user uses an independent llm (can share the same provider)
-    sim_user = SimulatedUser(llm=_build_llm(model_name), goal=goal)
+    sim_user = SimulatedUser(llm=_build_llm(sim_user_model_name), goal=goal)
 
     history: List[Turn] = []
 
@@ -98,7 +101,8 @@ async def run_duet(
             f.write("\n" + "=" * 80 + "\n")
             f.write(f"Session start: {now_warsaw.isoformat()}\n")
             f.write(f"Goal: {goal}\n")
-            f.write(f"Model: {llm.model_name}\n")
+            f.write(f"Financial agent model: {llm.model_name}\n")
+            f.write(f"Simulated user model: {_build_llm(sim_user_model_name).model_name}\n")
 
     # Seed: ask the simulated user for the first message based on the goal
     user_message = await sim_user.next_message(history=[])
@@ -145,7 +149,7 @@ async def run_duet(
             f.write(f"Session end: {end_time}\n")
 
 
-def parse_args() -> Tuple[str, int, str | None, str | None]:
+def parse_args() -> Tuple[str, int, str | None, str | None, str | None]:
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits + simulated user)")
     parser.add_argument("--goal", required=True, help="Simulated user goal/intention")
     parser.add_argument("--max-turns", type=int, default=5, help="Max number of conversation turns")
@@ -156,18 +160,32 @@ def parse_args() -> Tuple[str, int, str | None, str | None]:
         help="Path to a log file to append all conversations",
     )
     parser.add_argument(
-        "--model-name",
+        "--agent-model-name",
         type=str,
         default=None,
-        help="Override LLM model name (defaults to config.llm_model)",
+        help="Override financial agent LLM model name (defaults to config.llm_model)",
+    )
+    parser.add_argument(
+        "--sim-user-model-name",
+        type=str,
+        default=None,
+        help="Override simulated user LLM model name (defaults to config.llm_model)",
     )
     args = parser.parse_args()
-    return args.goal, args.max_turns, args.log_file, args.model_name
+    return args.goal, args.max_turns, args.log_file, args.agent_model_name, args.sim_user_model_name
 
 
 def main() -> None:
-    goal, max_turns, log_file, model_name = parse_args()
-    asyncio.run(run_duet(goal=goal, max_turns=max_turns, log_file=log_file, model_name=model_name))
+    goal, max_turns, log_file, agent_model_name, sim_user_model_name = parse_args()
+    asyncio.run(
+        run_duet(
+            goal=goal,
+            max_turns=max_turns,
+            log_file=log_file,
+            agent_model_name=agent_model_name,
+            sim_user_model_name=sim_user_model_name,
+        )
+    )
 
 
 if __name__ == "__main__":
