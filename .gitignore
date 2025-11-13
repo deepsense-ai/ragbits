@@ -109,3 +109,6 @@ node_modules/
 lazygit
 
 lazygit.tar.gz
+
+# chat conversation logs
+duet_conversation.log
