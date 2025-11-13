@@ -41,7 +41,6 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         )
         self._inner_agent = agent
         self._domain_context = domain_context
-        self._orchestrator = TodoOrchestrator(domain_context=domain_context)
 
     def __getattr__(self, name: str) -> object:
         """Proxy missing attributes to the wrapped inner agent."""
@@ -58,6 +57,7 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
     ) -> AgentResult[str]:
         """Run the orchestrated flow and return a single final answer."""
         query = input or ""
+        orchestrator = TodoOrchestrator(domain_context=self._domain_context)
 
         # Accumulate outputs from the orchestrated workflow
         final_text: str = ""
@@ -70,7 +70,7 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         in_final_summary = False
         final_summary_only: str = ""
 
-        async for item in self._orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
+        async for item in orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
             match item:
                 case str():
                     final_text += item
@@ -92,8 +92,8 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
                         in_final_summary = False
                 case _:
                     # Inspect orchestrator internal state to populate metadata
-                    tasks_created = len(self._orchestrator.todo_list.tasks) > 0
-                    num_tasks = len(self._orchestrator.todo_list.tasks)
+                    tasks_created = len(orchestrator.todo_list.tasks) > 0
+                    num_tasks = len(orchestrator.todo_list.tasks)
 
         # Compose metadata with TODO info
         complexity = "COMPLEX" if tasks_created else "SIMPLE"
@@ -303,6 +303,59 @@ class AgentGAIA:
         return candidate
 
 
+class AgentMoreHopQA:
+    """Factory for the MoreHopQA base agent for multi-hop reasoning."""
+
+    @staticmethod
+    def add(a: int, b: int) -> int:
+        """Add two integers."""
+        return a + b
+
+    @staticmethod
+    def subtract(a: int, b: int) -> int:
+        """Subtract two integers."""
+        return a - b
+
+    @staticmethod
+    def multiply(a: int, b: int) -> int:
+        """Multiply two integers."""
+        return a * b
+
+    @staticmethod
+    def divide(a: int, b: int) -> float:
+        """Divide two integers as float."""
+        if b == 0:
+            raise ValueError("Cannot divide by zero.")
+        return a / b
+
+    @staticmethod
+    def build_system_prompt() -> str:
+        """Return the MoreHopQA system prompt."""
+        return "You are a helpful AI assistant. Answer the question concisely and accurately.\n"
+
+    @classmethod
+    def build_tools(cls) -> list[Callable[..., Any]]:
+        """Return the callable toolset used by the MoreHopQA agent."""
+        tools: list[Callable[..., Any]] = [
+            cls.add,
+            cls.subtract,
+            cls.multiply,
+            cls.divide,
+        ]
+        return tools
+
+    @classmethod
+    def build(cls) -> Agent:
+        """Build the MoreHopQA agent."""
+        agent: Agent = Agent(
+            llm=LiteLLM("gpt-4.1-mini"),
+            prompt=cls.build_system_prompt(),
+            tools=cls.build_tools(),
+            default_options=AgentOptions(max_turns=30),
+        )
+        return agent
+
+
 # Export agent instances for import
 humaneval_agent: Agent = AgentHumanEval.build()
 humaneval_todo_agent: Agent = TodoAgent(agent=humaneval_agent, domain_context="python engineer")
@@ -312,3 +365,6 @@ hotpot_todo_agent: Agent = TodoAgent(agent=hotpot_agent, domain_context="researc
 
 gaia_agent: Agent = AgentGAIA.build()
 gaia_todo_agent: Agent = TodoAgent(agent=gaia_agent, domain_context="general AI assistant")
+
+morehopqa_agent: Agent = AgentMoreHopQA.build()
+morehopqa_todo_agent: Agent = TodoAgent(agent=morehopqa_agent, domain_context="multi-hop reasoning")

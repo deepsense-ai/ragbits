@@ -49,3 +49,4 @@ All necessary details are provided in the comments at the top of each script.
 | [Agent Benchmark: HotpotQA](/examples/evaluate/agent-benchmarking/run_hotpot.py) | [ragbits-evaluate](/packages/ragbits-evaluate) | Example of how to benchmark on HotpotQA comparing `Agent` and `TodoAgent`. |
 | [Agent Benchmark: GAIA](/examples/evaluate/agent-benchmarking/run_gaia.py)       | [ragbits-evaluate](/packages/ragbits-evaluate) | Example of how to benchmark on GAIA with tools comparing `Agent` and `TodoAgent`. |
 | [Agent Benchmark: HumanEval](/examples/evaluate/agent-benchmarking/run_humaneval.py) | [ragbits-evaluate](/packages/ragbits-evaluate) | Example of how to benchmark on HumanEval comparing `Agent` and `TodoAgent`. |
+| [Agent Benchmark: MoreHopQA](/examples/evaluate/agent-benchmarking/run_morehopqa.py) | [ragbits-evaluate](/packages/ragbits-evaluate) | Example of how to benchmark on MoreHopQA comparing `Agent` and `TodoAgent`. |
