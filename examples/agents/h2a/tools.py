@@ -1,53 +1,256 @@
+import json
+
 import httpx
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md
 
 
-async def get_yahoo_finance_markdown() -> str:
+# =============================================================================
+# Hotel API Tools
+# =============================================================================
+
+HOTEL_API_BASE_URL = "http://localhost:8000"
+
+
+async def list_cities() -> str:
     """
-    Download content from Yahoo Finance homepage and return it as markdown string.
+    Get a list of all available cities with hotels.
 
     Returns:
-        str: Markdown formatted content from Yahoo Finance
+        str: JSON string containing list of city names
     """
-    url = "https://finance.yahoo.com/"
-
-    user_agent = (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    )
-    headers = {"User-Agent": user_agent}
-
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, headers=headers)
+            response = await client.get(f"{HOTEL_API_BASE_URL}/cities")
             response.raise_for_status()
-
-            soup = BeautifulSoup(response.text, "html.parser")
-            main_container = soup.find(class_="mainContainer")
-
-            if not main_container:
-                return "Error: mainContainer not found on the page"
-
-            for element in main_container(["script", "style", "noscript", "meta", "head"]):
-                element.decompose()
-
-            markdown_content = md(
-                str(main_container),
-                heading_style="ATX",
-                bullets="-",
-                strip=["script", "style", "meta", "head", "title"],
-                autolinks=True,
-                escape_misc=False,
-                wrap=True,
-                wrap_width=80,
-            )
-
-            return markdown_content
-
+            cities = response.json()
+            return json.dumps(cities, indent=2)
     except httpx.RequestError as e:
-        return f"Error fetching content: {e}"
+        return f"Error fetching cities: {e}"
     except httpx.HTTPStatusError as e:
-        return f"HTTP error: {e.response.status_code}"
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
     except Exception as e:
-        return f"Error processing content: {e}"
+        return f"Error processing cities: {e}"
+
+
+async def list_hotels(city: str | None = None) -> str:
+    """
+    Get a list of hotels, optionally filtered by city.
+
+    Args:
+        city: Optional city name to filter hotels (e.g., "Kraków", "Warszawa", "Gdańsk")
+
+    Returns:
+        str: JSON string containing list of hotels with id, name, city, address, rating, and amenities
+    """
+    try:
+        params = {}
+        if city:
+            params["city"] = city
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{HOTEL_API_BASE_URL}/hotels", params=params)
+            response.raise_for_status()
+            hotels = response.json()
+            return json.dumps(hotels, indent=2)
+    except httpx.RequestError as e:
+        return f"Error fetching hotels: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing hotels: {e}"
+
+
+async def get_hotel_details(hotel_id: int) -> str:
+    """
+    Get detailed information about a specific hotel including all its rooms.
+
+    Args:
+        hotel_id: The ID of the hotel to retrieve
+
+    Returns:
+        str: JSON string containing hotel details with rooms, including room id, number, type, price, capacity, and amenities
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{HOTEL_API_BASE_URL}/hotels/{hotel_id}")
+            response.raise_for_status()
+            hotel = response.json()
+            return json.dumps(hotel, indent=2)
+    except httpx.RequestError as e:
+        return f"Error fetching hotel details: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing hotel details: {e}"
+
+
+async def search_available_rooms(
+    start_date: str,
+    end_date: str,
+    city: str | None = None,
+    min_price: float | None = None,
+    max_price: float | None = None,
+    room_type: str | None = None,
+) -> str:
+    """
+    Search for available rooms matching the specified criteria.
+
+    Args:
+        start_date: Check-in date in YYYY-MM-DD format (e.g., "2025-03-01")
+        end_date: Check-out date in YYYY-MM-DD format (e.g., "2025-03-05")
+        city: Optional city name to filter by (e.g., "Kraków", "Warszawa", "Gdańsk")
+        min_price: Optional minimum price per night in PLN
+        max_price: Optional maximum price per night in PLN
+        room_type: Optional room type filter ("standard", "deluxe", or "suite")
+
+    Returns:
+        str: JSON string containing list of available rooms with hotel and room details
+    """
+    try:
+        params = {
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+        if city:
+            params["city"] = city
+        if min_price is not None:
+            params["min_price"] = min_price
+        if max_price is not None:
+            params["max_price"] = max_price
+        if room_type:
+            params["room_type"] = room_type
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{HOTEL_API_BASE_URL}/rooms/available", params=params)
+            response.raise_for_status()
+            rooms = response.json()
+            return json.dumps(rooms, indent=2)
+    except httpx.RequestError as e:
+        return f"Error searching rooms: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing room search: {e}"
+
+
+async def create_reservation(
+    hotel_id: int,
+    room_id: int,
+    guest_name: str,
+    start_date: str,
+    end_date: str,
+) -> str:
+    """
+    Create a new hotel reservation.
+
+    Args:
+        hotel_id: The ID of the hotel
+        room_id: The ID of the room to reserve
+        guest_name: Name of the guest making the reservation
+        start_date: Check-in date in YYYY-MM-DD format (e.g., "2025-03-10")
+        end_date: Check-out date in YYYY-MM-DD format (e.g., "2025-03-12")
+
+    Returns:
+        str: JSON string containing reservation details including reservation_id, hotel_name, room details, and total_price
+    """
+    try:
+        payload = {
+            "hotel_id": hotel_id,
+            "room_id": room_id,
+            "guest_name": guest_name,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{HOTEL_API_BASE_URL}/reservations",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            response.raise_for_status()
+            reservation = response.json()
+            return json.dumps(reservation, indent=2)
+    except httpx.RequestError as e:
+        return f"Error creating reservation: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing reservation: {e}"
+
+
+async def list_reservations(guest_name: str | None = None) -> str:
+    """
+    Get a list of reservations, optionally filtered by guest name.
+
+    Args:
+        guest_name: Optional guest name to filter reservations (partial match supported)
+
+    Returns:
+        str: JSON string containing list of reservations with details
+    """
+    try:
+        params = {}
+        if guest_name:
+            params["guest_name"] = guest_name
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{HOTEL_API_BASE_URL}/reservations", params=params)
+            response.raise_for_status()
+            reservations = response.json()
+            return json.dumps(reservations, indent=2)
+    except httpx.RequestError as e:
+        return f"Error fetching reservations: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing reservations: {e}"
+
+
+async def get_reservation(reservation_id: int) -> str:
+    """
+    Get details of a specific reservation.
+
+    Args:
+        reservation_id: The ID of the reservation to retrieve
+
+    Returns:
+        str: JSON string containing reservation details including hotel, room, guest, dates, and total price
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(f"{HOTEL_API_BASE_URL}/reservations/{reservation_id}")
+            response.raise_for_status()
+            reservation = response.json()
+            return json.dumps(reservation, indent=2)
+    except httpx.RequestError as e:
+        return f"Error fetching reservation: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing reservation: {e}"
+
+
+async def cancel_reservation(reservation_id: int) -> str:
+    """
+    Cancel an existing reservation and free up the room.
+
+    Args:
+        reservation_id: The ID of the reservation to cancel
+
+    Returns:
+        str: Success message confirming the cancellation
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.delete(f"{HOTEL_API_BASE_URL}/reservations/{reservation_id}")
+            response.raise_for_status()
+            result = response.json()
+            return json.dumps(result, indent=2)
+    except httpx.RequestError as e:
+        return f"Error canceling reservation: {e}"
+    except httpx.HTTPStatusError as e:
+        return f"HTTP error: {e.response.status_code} - {e.response.text}"
+    except Exception as e:
+        return f"Error processing cancellation: {e}"

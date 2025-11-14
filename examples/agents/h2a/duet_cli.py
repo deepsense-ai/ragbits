@@ -1,12 +1,12 @@
 """
-Terminal conversation between the ragbits financial agent and a simulated user.
+Terminal conversation between the ragbits hotel booking agent and a simulated user.
 
 Run:
     cd examples/agents/h2a
 
     uv run python -m duet_cli \
-  --goal "Get two promissing stocks for me to invest in" \
-  --max-turns 5 \
+  --goal "Book a deluxe room in Kraków for 2 nights starting March 15, 2025" \
+  --max-turns 10 \
   --agent-model-name gpt-4o-mini \
   --sim-user-model-name gpt-4o-mini \
   --checker-model-name gpt-4o-mini \
@@ -29,8 +29,17 @@ from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
 
 from config import config
-from prompt_finance import FinancePrompt, FinancePromptInput
-from tools import get_yahoo_finance_markdown
+from prompt_hotel import HotelPrompt, HotelPromptInput
+from tools import (
+    cancel_reservation,
+    create_reservation,
+    get_hotel_details,
+    get_reservation,
+    list_cities,
+    list_hotels,
+    list_reservations,
+    search_available_rooms,
+)
 
 
 @dataclass
@@ -127,15 +136,28 @@ def _build_llm(override_model_name: str | None) -> LiteLLM:
 
 async def run_duet(
     goal: str,
-    max_turns: int = 5,
+    max_turns: int = 10,
     log_file: str | None = None,
     agent_model_name: str | None = None,
     sim_user_model_name: str | None = None,
     checker_model_name: str | None = None,
 ) -> None:
-    # Create the financial agent directly (as ChatApp does internally)
+    # Create the hotel booking agent directly (as ChatApp does internally)
     llm = _build_llm(agent_model_name)
-    financial_agent = Agent(llm=llm, prompt=FinancePrompt, tools=[get_yahoo_finance_markdown])
+    hotel_agent = Agent(
+        llm=llm,
+        prompt=HotelPrompt,
+        tools=[
+            list_cities,
+            list_hotels,
+            get_hotel_details,
+            search_available_rooms,
+            create_reservation,
+            list_reservations,
+            get_reservation,
+            cancel_reservation,
+        ],
+    )
 
     # Simulated user uses an independent llm (can share the same provider)
     sim_user = SimulatedUser(llm=_build_llm(sim_user_model_name), goal=goal)
@@ -154,7 +176,7 @@ async def run_duet(
             f.write("\n" + "=" * 80 + "\n")
             f.write(f"Session start: {now_warsaw.isoformat()}\n")
             f.write(f"Goal: {goal}\n")
-            f.write(f"Financial agent model: {llm.model_name}\n")
+            f.write(f"Hotel agent model: {llm.model_name}\n")
             f.write(f"Simulated user model: {_build_llm(sim_user_model_name).model_name}\n")
             f.write(f"Goal checker model: {_build_llm(checker_model_name).model_name}\n")
 
@@ -173,12 +195,13 @@ async def run_duet(
             break
 
         concise_prefix = (
-            "[STYLE]\nAnswer very concisely (<= 2 sentences). If specifics are unknown, say so briefly.\n\n"
+            "[STYLE]\nAnswer helpfully and clearly. Provide specific details when available (hotel names, room types, prices, dates). "
+            "If information is unavailable, explain why briefly.\n\n"
         )
-        prompt_input = FinancePromptInput(input=concise_prefix + user_message)
+        prompt_input = HotelPromptInput(input=concise_prefix + user_message)
         assistant_reply_parts: List[str] = []
 
-        async for chunk in financial_agent.run_streaming(prompt_input):
+        async for chunk in hotel_agent.run_streaming(prompt_input):
             if isinstance(chunk, str):
                 assistant_reply_parts.append(chunk)
 
@@ -212,9 +235,9 @@ async def run_duet(
 
 
 def parse_args() -> Tuple[str, int, str | None, str | None, str | None, str | None]:
-    parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits + simulated user)")
-    parser.add_argument("--goal", required=True, help="Simulated user goal/intention")
-    parser.add_argument("--max-turns", type=int, default=5, help="Max number of conversation turns")
+    parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits hotel agent + simulated user)")
+    parser.add_argument("--goal", required=True, help="Simulated user goal/intention (e.g., hotel booking request)")
+    parser.add_argument("--max-turns", type=int, default=10, help="Max number of conversation turns")
     parser.add_argument(
         "--log-file",
         type=str,
@@ -225,7 +248,7 @@ def parse_args() -> Tuple[str, int, str | None, str | None, str | None, str | No
         "--agent-model-name",
         type=str,
         default=None,
-        help="Override financial agent LLM model name (defaults to config.llm_model)",
+        help="Override hotel agent LLM model name (defaults to config.llm_model)",
     )
     parser.add_argument(
         "--sim-user-model-name",
