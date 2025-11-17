@@ -27,10 +27,6 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
-  // Legacy single confirmation support (kept for backward compatibility)
-  confirmationRequest?: ConfirmationRequest;
-  confirmationState?: "pending" | "confirmed" | "declined" | "skipped";
-  // New multiple confirmations support
   confirmationRequests?: ConfirmationRequest[];
   confirmationStates?: Record<
     string,

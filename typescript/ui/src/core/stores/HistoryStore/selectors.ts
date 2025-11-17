@@ -35,6 +35,9 @@ export const useHasPendingConfirmations = () =>
     const history = s.primitives.getCurrentConversation().history;
     return Object.values(history).some(
       (msg) =>
-        msg.confirmationRequest && msg.confirmationState === "pending",
+        msg.confirmationStates &&
+        Object.values(msg.confirmationStates).some(
+          (state) => state === "pending",
+        ),
     );
   });

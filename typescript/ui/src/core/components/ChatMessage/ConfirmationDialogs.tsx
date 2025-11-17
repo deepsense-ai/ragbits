@@ -1,11 +1,14 @@
 import { Button, Chip, Checkbox } from "@heroui/react";
 import { ConfirmationRequest } from "@ragbits/api-client-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 type ConfirmationDialogsProps = {
   confirmationRequests: ConfirmationRequest[];
-  confirmationStates: Record<string, "pending" | "confirmed" | "declined" | "skipped">;
+  confirmationStates: Record<
+    string,
+    "pending" | "confirmed" | "declined" | "skipped"
+  >;
   onConfirm: (confirmationId: string) => void;
   onSkip: (confirmationId: string) => void;
   onBulkConfirm: (confirmationIds: string[]) => void;
@@ -65,7 +68,7 @@ const ConfirmationDialogs = ({
   };
 
   const pendingRequests = confirmationRequests.filter(
-    (req) => confirmationStates[req.confirmation_id] === "pending"
+    (req) => confirmationStates[req.confirmation_id] === "pending",
   );
 
   const hasPending = pendingRequests.length > 0;
@@ -96,8 +99,8 @@ const ConfirmationDialogs = ({
   };
 
   const handleConfirmSelected = () => {
-    const selectedArray = Array.from(selectedIds).filter((id) =>
-      confirmationStates[id] === "pending"
+    const selectedArray = Array.from(selectedIds).filter(
+      (id) => confirmationStates[id] === "pending",
     );
     onBulkConfirm(selectedArray);
     setSelectedIds(new Set());
@@ -134,7 +137,7 @@ const ConfirmationDialogs = ({
       >
         {/* Bulk action buttons */}
         {hasPending && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               color="success"
@@ -165,7 +168,9 @@ const ConfirmationDialogs = ({
         )}
 
         {/* List of confirmations */}
-        <div className={`flex flex-col gap-2 ${confirmationRequests.length > 3 ? "max-h-[400px] overflow-y-auto pr-2" : ""}`}>
+        <div
+          className={`flex flex-col gap-2 ${confirmationRequests.length > 3 ? "max-h-[400px] overflow-y-auto pr-2" : ""}`}
+        >
           {confirmationRequests.map((req) => {
             const state = confirmationStates[req.confirmation_id] || "pending";
             const isPending = state === "pending";
@@ -194,7 +199,9 @@ const ConfirmationDialogs = ({
                 {isPending && (
                   <Checkbox
                     isSelected={isSelected}
-                    onValueChange={() => handleToggleSelection(req.confirmation_id)}
+                    onValueChange={() =>
+                      handleToggleSelection(req.confirmation_id)
+                    }
                     size="sm"
                     className="shrink-0"
                   />
@@ -263,6 +270,3 @@ const ConfirmationDialogs = ({
 };
 
 export default ConfirmationDialogs;
-
-
-
