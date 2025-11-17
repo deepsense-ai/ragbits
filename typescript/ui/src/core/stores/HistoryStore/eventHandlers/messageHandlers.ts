@@ -23,9 +23,8 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
 
   // Check if this is the first text after confirmation(s)
   const isAfterConfirmation =
-    (!!message.confirmationRequest ||
-      (message.confirmationRequests &&
-        message.confirmationRequests.length > 0)) &&
+    message.confirmationRequests &&
+    message.confirmationRequests.length > 0 &&
     message.content.length === 0;
 
   // Add visual separator if this is the first text after confirmation
@@ -164,10 +163,6 @@ export const handleConfirmationRequest: PrimaryHandler<
   console.log(
     `📊 Total confirmations now: ${message.confirmationRequests.length}`,
   );
-
-  // Keep legacy single confirmation for backward compatibility (last one wins)
-  message.confirmationRequest = response.content;
-  message.confirmationState = "pending";
 };
 
 export const handleConfirmationStatus: PrimaryHandler<
@@ -177,12 +172,6 @@ export const handleConfirmationStatus: PrimaryHandler<
 
   // Find the message with matching confirmation_id and update its state
   Object.values(draft.history).forEach((message) => {
-    // Update legacy single confirmation
-    if (message.confirmationRequest?.confirmation_id === confirmation_id) {
-      message.confirmationState = status as "confirmed" | "declined";
-    }
-
-    // Update new multiple confirmations system
     if (
       message.confirmationStates &&
       confirmation_id in message.confirmationStates

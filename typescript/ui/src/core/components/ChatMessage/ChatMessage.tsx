@@ -7,7 +7,6 @@ import ImageGallery from "./ImageGallery.tsx";
 import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
-import ConfirmationDialog from "./ConfirmationDialog.tsx";
 import ConfirmationDialogs from "./ConfirmationDialogs.tsx";
 import {
   useConversationProperty,
@@ -34,7 +33,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
-    const sendSilentConfirmation = useHistoryStore((s) => s.actions.sendSilentConfirmation);
+    const sendSilentConfirmation = useHistoryStore(
+      (s) => s.actions.sendSilentConfirmation,
+    );
     const { client: ragbitsClient } = useRagbitsContext();
 
     if (!message) {
@@ -48,7 +49,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       references,
       liveUpdates,
       images,
-      confirmationRequest,
       confirmationRequests,
       confirmationStates,
     } = message;
@@ -68,28 +68,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       !isLoading && references && references.length > 0;
     const showLiveUpdates = liveUpdates && Object.keys(liveUpdates).length > 0;
 
-    // Support both legacy single confirmation and new multiple confirmations
-    // Prioritize the new system - if we have multiple confirmations, use that
-    const showConfirmations = confirmationRequests && confirmationRequests.length > 0;
-    const showConfirmation = !showConfirmations && !!confirmationRequest;
-
-    const handleConfirmation = (confirmed: boolean) => {
-      if (!confirmationRequest) return;
-
-      console.log("🔍 Confirmation button clicked:", {
-        confirmed,
-        confirmation_id: confirmationRequest.confirmation_id,
-        tool_name: confirmationRequest.tool_name,
-      });
-
-      // Use sendSilentConfirmation to avoid adding a user message
-      sendSilentConfirmation(
-        messageId,
-        confirmationRequest.confirmation_id,
-        confirmed,
-        ragbitsClient,
-      );
-    };
+    const showConfirmations =
+      confirmationRequests && confirmationRequests.length > 0;
 
     const handleSingleConfirmation = (confirmationId: string) => {
       console.log("🔍 Single confirmation:", confirmationId);
@@ -106,10 +86,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
       // Build decisions for ALL confirmations (confirmed and declined)
       // This ensures the backend knows about all decisions, not just confirmed ones
-      const allIds = confirmationRequests?.map(req => req.confirmation_id) || [];
+      const allIds =
+        confirmationRequests?.map((req) => req.confirmation_id) || [];
       const decisions = allIds.reduce(
         (acc, id) => ({ ...acc, [id]: confirmationIds.includes(id) }),
-        {} as Record<string, boolean>
+        {} as Record<string, boolean>,
       );
 
       console.log("📤 Sending all decisions:", decisions);
@@ -120,10 +101,11 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       console.log("🔍 Bulk skip:", confirmationIds);
 
       // Build decisions for ALL confirmations
-      const allIds = confirmationRequests?.map(req => req.confirmation_id) || [];
+      const allIds =
+        confirmationRequests?.map((req) => req.confirmation_id) || [];
       const decisions = allIds.reduce(
         (acc, id) => ({ ...acc, [id]: false }),
-        {} as Record<string, boolean>
+        {} as Record<string, boolean>,
       );
 
       sendSilentConfirmation(messageId, allIds, decisions, ragbitsClient);
@@ -183,14 +165,6 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                       <TodoList tasks={message.tasks} />
                     </motion.div>
                   </AnimatePresence>
-                )}
-                {showConfirmation && (
-                  <ConfirmationDialog
-                    confirmationRequest={confirmationRequest}
-                    onConfirm={() => handleConfirmation(true)}
-                    onSkip={() => handleConfirmation(false)}
-                    initialState={message.confirmationState}
-                  />
                 )}
                 {showConfirmations && confirmationStates && (
                   <ConfirmationDialogs

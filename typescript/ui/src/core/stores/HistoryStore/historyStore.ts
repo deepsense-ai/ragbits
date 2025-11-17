@@ -408,27 +408,14 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       set(
         updateConversation(conversationId, (draft) => {
           const message = draft.history[messageId];
-          if (message) {
-            // Update legacy single confirmation (backward compatibility)
-            if (
-              message.confirmationRequest &&
-              idsArray.includes(message.confirmationRequest.confirmation_id)
-            ) {
-              const decision =
-                decisionsMap[message.confirmationRequest.confirmation_id];
-              message.confirmationState = decision ? "confirmed" : "declined";
-            }
-
-            // Update multiple confirmations system
-            if (message.confirmationStates) {
-              idsArray.forEach((id) => {
-                if (id in message.confirmationStates!) {
-                  message.confirmationStates![id] = decisionsMap[id]
-                    ? "confirmed"
-                    : "declined";
-                }
-              });
-            }
+          if (message && message.confirmationStates) {
+            idsArray.forEach((id) => {
+              if (id in message.confirmationStates!) {
+                message.confirmationStates![id] = decisionsMap[id]
+                  ? "confirmed"
+                  : "declined";
+              }
+            });
 
             // Clear the "⏳ Awaiting user confirmation" live update
             // before the agent re-runs and sends new updates

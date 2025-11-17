@@ -32,6 +32,7 @@ from pathlib import Path
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentRunContext
 from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tool import requires_confirmation
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
@@ -47,6 +48,9 @@ from ragbits.core.prompt import ChatFormat
 # Get the absolute path to the temp directory
 TEMP_DIR = Path(__file__).parent.parent.parent / "temp"
 TEMP_DIR = TEMP_DIR.resolve()
+
+# Ensure temp directory exists
+TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _validate_path(path: str) -> tuple[bool, str, Path | None]:
@@ -276,6 +280,7 @@ def search_files(pattern: str, directory: str = "") -> str:
     return json.dumps(result, indent=2)
 
 
+@requires_confirmation
 def create_file(filepath: str, content: str, context: AgentRunContext | None = None) -> str:
     """
     Create a new file with content. Requires confirmation.
@@ -327,6 +332,7 @@ def create_file(filepath: str, content: str, context: AgentRunContext | None = N
     return json.dumps(result, indent=2)
 
 
+@requires_confirmation
 def delete_file(filepath: str, context: AgentRunContext | None = None) -> str:
     """
     Delete a file. Requires confirmation.
@@ -377,6 +383,7 @@ def delete_file(filepath: str, context: AgentRunContext | None = None) -> str:
     return json.dumps(result, indent=2)
 
 
+@requires_confirmation
 def move_file(source: str, destination: str, context: AgentRunContext | None = None) -> str:
     """
     Move or rename a file. Requires confirmation.
@@ -443,6 +450,7 @@ def move_file(source: str, destination: str, context: AgentRunContext | None = N
     return json.dumps(result, indent=2)
 
 
+@requires_confirmation
 def create_directory(dirpath: str, context: AgentRunContext | None = None) -> str:
     """
     Create a new directory. Requires confirmation.
@@ -486,6 +494,7 @@ def create_directory(dirpath: str, context: AgentRunContext | None = None) -> st
     return json.dumps(result, indent=2)
 
 
+@requires_confirmation
 def delete_directory(dirpath: str, context: AgentRunContext | None = None) -> str:
     """
     Delete an empty directory. Requires confirmation.
@@ -620,12 +629,6 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
         print(f"🔍 Agent created with {len(agent.tools)} tools")  # noqa: T201
-
-        # Mark specific tools as requiring confirmation
-        for tool in agent.tools:
-            if tool.name in ["create_file", "delete_file", "move_file", "create_directory", "delete_directory"]:
-                tool.requires_confirmation = True
-                print(f"✅ Marked tool '{tool.name}' as requiring confirmation")  # noqa: T201
 
         # Create agent context with confirmed_tools from the request context
         agent_context: AgentRunContext = AgentRunContext()

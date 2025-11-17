@@ -57,7 +57,6 @@ export interface BaseApiEndpoints {
     '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
     '/api/auth/logout': EndpointDefinition<LogoutRequest, GenericResponse>
     '/api/theme': EndpointDefinition<never, string>
-
 }
 
 /**

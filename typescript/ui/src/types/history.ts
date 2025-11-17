@@ -28,10 +28,6 @@ export interface ChatMessage {
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
   extra?: Record<string, unknown>;
-  // Legacy single confirmation support (kept for backward compatibility)
-  confirmationRequest?: ConfirmationRequest;
-  confirmationState?: "pending" | "confirmed" | "declined" | "skipped";
-  // New multiple confirmations support
   confirmationRequests?: ConfirmationRequest[];
   confirmationStates?: Record<
     string,

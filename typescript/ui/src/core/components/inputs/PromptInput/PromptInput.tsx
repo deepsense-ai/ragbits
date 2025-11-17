@@ -195,7 +195,11 @@ const PromptInput = ({
               "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
           }}
           name="message"
-          placeholder={isDisabled ? "Please respond to pending confirmation..." : "Enter a message here"}
+          placeholder={
+            isDisabled
+              ? "Please respond to pending confirmation..."
+              : "Enter a message here"
+          }
           autoFocus
           maxRows={16}
           minRows={1}
