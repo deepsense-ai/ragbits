@@ -70,8 +70,7 @@ class SimulatedUser:
             "You are simulating a concise human user in a terminal chat. "
             f"Your goal is: {self.goal}. "
             "Given the assistant's last reply and the conversation so far, "
-            "write ONLY the next user message. Be specific and brief. "
-            "If the goal has been achieved, reply with: DONE\n\n"
+            "write ONLY the next user message. Be specific and brief.\n\n"
             "[CONVERSATION]\n"
             f"{history_block}\n\n"
             "[TASK]\nWrite the next USER message now:"
@@ -189,10 +188,6 @@ async def run_duet(
         if log_path:
             with log_path.open("a", encoding="utf-8") as f:
                 f.write(f"Turn {turn_idx} - User: {user_message}\n")
-
-        if user_message.upper() == "DONE":
-            print("Conversation ended (user indicates goal achieved).")
-            break
 
         concise_prefix = (
             "[STYLE]\nAnswer helpfully and clearly. Provide specific details when available (hotel names, room types, prices, dates). "
